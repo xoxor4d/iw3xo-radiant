@@ -37,6 +37,12 @@ DWORD WINAPI RemoteNet_SearchServerThread(LPVOID)
 			continue;
 		}
 
+		if (!Dvars::radiant_live)
+		{
+			printf("[LiveRadiant]: Disabled, no config file found! Restart radiant!\n");
+			break;
+		}
+
 		// wait till the user enables live-link
 		if (!Dvars::radiant_live->current.enabled)
 		{
