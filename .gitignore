@@ -62,9 +62,6 @@ Temporary Items
 build
 user*.bat
 *.psd
-assets/*.exe
-res/*.exe
-IW3xRadiant.exe
 *.zip
 *.tmp
 

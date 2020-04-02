@@ -8,6 +8,7 @@ namespace Game
 		bool radiant_floatingWindows;
 		bool radiant_initiated;
 		bool radiant_config_loaded;
+		bool radiant_config_not_found;
 
 		// Misc
 		Game::TrackWorldspawn trackWorldspawn = Game::TrackWorldspawn();

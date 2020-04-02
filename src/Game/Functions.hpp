@@ -9,6 +9,7 @@ namespace Game
 		extern bool radiant_floatingWindows;
 		extern bool radiant_initiated;
 		extern bool radiant_config_loaded;
+		extern bool radiant_config_not_found;
 
 		// Misc
 		extern Game::TrackWorldspawn trackWorldspawn;

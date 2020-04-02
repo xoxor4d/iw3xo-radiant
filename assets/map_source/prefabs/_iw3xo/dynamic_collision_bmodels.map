@@ -1,0 +1,266 @@
+iwmap 4
+"000_Global" flags  active
+"000_Global/DYN_BRUSHES" flags 
+"The Map" flags 
+// entity 0
+{
+"classname" "worldspawn"
+}
+// entity 1
+{
+"targetname" "dynbrush01"
+"classname" "script_brushmodel"
+// brush 0
+{
+layer "000_Global/DYN_BRUSHES"
+  contents detail;
+ ( 989 994 961 ) ( 989 994 1023 ) ( 996 993 1024 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 995 1023 1024 ) ( 995 1023 960 ) ( 996 993 960 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 995 1023 960 ) ( 995 1023 1024 ) ( 988 1022 1023 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 989 994 1023 ) ( 989 994 961 ) ( 988 1022 961 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 996 1022 1024 ) ( 988 1022 1023 ) ( 996 1054 1024 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 988 1020 961 ) ( 996 1020 960 ) ( 988 1052 961 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 2
+{
+"targetname" "dynbrush03"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+layer "000_Global/DYN_BRUSHES"
+  contents detail;
+ ( 1003 998 965 ) ( 1003 998 1019 ) ( 1006 997 1020 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1005 1019 1020 ) ( 1005 1019 964 ) ( 1006 997 964 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1005 1019 964 ) ( 1005 1019 1020 ) ( 1002 1018 1019 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1003 998 1019 ) ( 1003 998 965 ) ( 1002 1018 965 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1006 1020 1020 ) ( 1002 1020 1019 ) ( 1006 1052 1020 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1002 1020 965 ) ( 1006 1020 964 ) ( 1002 1052 965 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 3
+{
+"targetname" "dynbrush02"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+layer "000_Global/DYN_BRUSHES"
+  contents detail;
+ ( 998 996 963 ) ( 998 996 1021 ) ( 1001 995 1022 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1000 1021 1022 ) ( 1000 1021 962 ) ( 1001 995 962 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1000 1021 962 ) ( 1000 1021 1022 ) ( 997 1020 1021 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 998 996 1021 ) ( 998 996 963 ) ( 997 1020 963 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1001 1022 1022 ) ( 997 1022 1021 ) ( 1001 1054 1022 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 997 1020 963 ) ( 1001 1020 962 ) ( 997 1052 963 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 4
+{
+"targetname" "dynbrush04"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1011 998 1020 ) ( 1011 998 964 ) ( 1008 999 965 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1011 998 964 ) ( 1011 998 1020 ) ( 1010 1018 1020 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1010 1018 964 ) ( 1010 1018 1020 ) ( 1007 1017 1019 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1008 999 1019 ) ( 1008 999 965 ) ( 1007 1017 965 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1011 1020 1019 ) ( 1007 1020 1018 ) ( 1011 1052 1019 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1007 1020 966 ) ( 1011 1020 965 ) ( 1007 1052 966 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 5
+{
+"targetname" "dynbrush05"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1016 999 1019 ) ( 1016 999 965 ) ( 1013 1000 966 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1016 999 965 ) ( 1016 999 1019 ) ( 1015 1017 1019 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1015 1017 965 ) ( 1015 1017 1019 ) ( 1012 1016 1018 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1013 1000 1018 ) ( 1013 1000 966 ) ( 1012 1016 966 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1016 1020 1018 ) ( 1012 1020 1017 ) ( 1016 1052 1018 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1012 1020 967 ) ( 1016 1020 966 ) ( 1012 1052 967 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 6
+{
+"targetname" "dynbrush06"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1021 1000 1017 ) ( 1021 1000 967 ) ( 1018 1001 968 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1021 1000 967 ) ( 1021 1000 1017 ) ( 1020 1016 1017 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1020 1016 967 ) ( 1020 1016 1017 ) ( 1017 1015 1016 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1018 1001 1016 ) ( 1018 1001 968 ) ( 1017 1015 968 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1021 1020 1017 ) ( 1017 1020 1016 ) ( 1021 1052 1017 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1017 1020 968 ) ( 1021 1020 967 ) ( 1017 1052 968 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 7
+{
+"targetname" "dynbrush07"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1026 1001 1017 ) ( 1026 1001 967 ) ( 1023 1002 968 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1026 1001 967 ) ( 1026 1001 1017 ) ( 1025 1015 1017 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1025 1015 967 ) ( 1025 1015 1017 ) ( 1022 1014 1016 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1023 1002 1016 ) ( 1023 1002 968 ) ( 1022 1014 968 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1026 1020 1016 ) ( 1022 1020 1015 ) ( 1026 1052 1016 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1022 1020 969 ) ( 1026 1020 968 ) ( 1022 1052 969 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 8
+{
+"targetname" "dynbrush08"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1031 1002 1016 ) ( 1031 1002 968 ) ( 1028 1003 969 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1031 1002 968 ) ( 1031 1002 1016 ) ( 1030 1014 1016 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1030 1014 968 ) ( 1030 1014 1016 ) ( 1027 1013 1015 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1028 1003 1015 ) ( 1028 1003 969 ) ( 1027 1013 969 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1031 1020 1015 ) ( 1027 1020 1014 ) ( 1031 1052 1015 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1027 1020 970 ) ( 1031 1020 969 ) ( 1027 1052 970 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 9
+{
+"targetname" "dynbrush09"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1036 1003 1015 ) ( 1036 1003 969 ) ( 1033 1004 970 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1036 1003 969 ) ( 1036 1003 1015 ) ( 1035 1013 1015 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1035 1013 969 ) ( 1035 1013 1015 ) ( 1032 1012 1014 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1033 1004 1014 ) ( 1033 1004 970 ) ( 1032 1012 970 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1036 1020 1014 ) ( 1032 1020 1013 ) ( 1036 1052 1014 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1032 1020 971 ) ( 1036 1020 970 ) ( 1032 1052 971 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 10
+{
+"targetname" "dynbrush10"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1041 1004 1013 ) ( 1041 1004 971 ) ( 1038 1003 972 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1041 1004 971 ) ( 1041 1004 1013 ) ( 1040 1012 1013 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1040 1012 971 ) ( 1040 1012 1013 ) ( 1037 1013 1012 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1038 1003 1013 ) ( 1038 1003 971 ) ( 1037 1013 971 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1041 1020 1013 ) ( 1037 1020 1012 ) ( 1041 1052 1013 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1037 1020 972 ) ( 1041 1020 971 ) ( 1037 1052 972 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 11
+{
+"targetname" "dynbrush11"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1046 1003 1013 ) ( 1046 1003 971 ) ( 1043 1002 972 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1046 1003 971 ) ( 1046 1003 1013 ) ( 1045 1013 1013 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1045 1013 971 ) ( 1045 1013 1013 ) ( 1042 1014 1012 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1043 1002 1012 ) ( 1043 1002 972 ) ( 1042 1014 972 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1046 1020 1012 ) ( 1042 1020 1011 ) ( 1046 1052 1012 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1042 1020 973 ) ( 1046 1020 972 ) ( 1042 1052 973 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 12
+{
+"targetname" "dynbrush12"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1051 1002 1012 ) ( 1051 1002 972 ) ( 1048 1001 973 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1051 1002 972 ) ( 1051 1002 1012 ) ( 1050 1014 1012 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1050 1014 972 ) ( 1050 1014 1012 ) ( 1047 1015 1011 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1048 1001 1011 ) ( 1048 1001 973 ) ( 1047 1015 973 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1051 1020 1011 ) ( 1047 1020 1010 ) ( 1051 1052 1011 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1047 1020 974 ) ( 1051 1020 973 ) ( 1047 1052 974 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 13
+{
+"targetname" "dynbrush13"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1056 1001 1011 ) ( 1056 1001 973 ) ( 1053 1000 974 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1056 1001 973 ) ( 1056 1001 1011 ) ( 1055 1015 1011 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1055 1015 973 ) ( 1055 1015 1011 ) ( 1052 1016 1010 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1053 1000 1010 ) ( 1053 1000 974 ) ( 1052 1016 974 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1056 1020 1010 ) ( 1052 1020 1009 ) ( 1056 1052 1010 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1052 1020 975 ) ( 1056 1020 974 ) ( 1052 1052 975 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 14
+{
+"targetname" "dynbrush14"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1061 1000 1010 ) ( 1061 1000 974 ) ( 1058 999 975 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1061 1000 974 ) ( 1061 1000 1010 ) ( 1060 1016 1010 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1060 1016 974 ) ( 1060 1016 1010 ) ( 1057 1017 1009 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1058 999 1009 ) ( 1058 999 975 ) ( 1057 1017 975 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1061 1020 1009 ) ( 1057 1020 1008 ) ( 1061 1052 1009 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1057 1020 976 ) ( 1061 1020 975 ) ( 1057 1052 976 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 15
+{
+"targetname" "dynbrush15"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1066 999 1009 ) ( 1066 999 975 ) ( 1063 998 976 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1066 999 975 ) ( 1066 999 1009 ) ( 1065 1017 1009 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1065 1017 975 ) ( 1065 1017 1009 ) ( 1062 1018 1008 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1063 998 1008 ) ( 1063 998 976 ) ( 1062 1018 976 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1066 1020 1008 ) ( 1062 1020 1007 ) ( 1066 1052 1008 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1062 1020 977 ) ( 1066 1020 976 ) ( 1062 1052 977 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}
+// entity 16
+{
+"targetname" "dynbrush16"
+"classname" "script_brushmodel"
+"target" "dynbrush01"
+// brush 0
+{
+  contents detail;
+ ( 1071 998 1008 ) ( 1071 998 976 ) ( 1068 997 977 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1071 998 976 ) ( 1071 998 1008 ) ( 1070 1018 1008 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1070 1018 976 ) ( 1070 1018 1008 ) ( 1067 1019 1007 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1068 997 1007 ) ( 1068 997 977 ) ( 1067 1019 977 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1071 1020 1007 ) ( 1067 1020 1006 ) ( 1071 1052 1007 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+ ( 1066 1020 978 ) ( 1070 1020 977 ) ( 1066 1052 978 ) ap_stairs 128 32 0 0 0 0 lightmap_gray 16384 16384 0 0 0 0
+}
+}

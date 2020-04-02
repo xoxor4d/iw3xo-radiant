@@ -89,7 +89,7 @@ namespace Dvars
 
 		Dvars::radiant_liveDebug = Dvars::Register_AddonBool(
 			/*name*/	"radiant_liveDebug",
-			/*default*/	1,
+			/*default*/	0,
 			/*flag*/	Game::dvar_flags::saved,
 			/*desc*/	"enables debug prints.");
 	}

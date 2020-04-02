@@ -28,8 +28,9 @@ namespace Components
 			if (!cfgFile.is_open())
 			{
 				printf(Utils::VA("|-> Could not find \"iw3r.cfg\" in \"%s\". Loading defaults!\n", Dvars::fs_homepath->current.string));
-
-				Game::Globals::radiant_config_loaded = true; // radiant-live wont init otherwise
+				
+				Dvars::Register_AddonDvars();
+				Game::Globals::radiant_config_not_found = true;
 				return;
 			}
 

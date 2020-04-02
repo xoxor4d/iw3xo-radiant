@@ -31,18 +31,29 @@ DWORD WINAPI RemoteNet_SearchServerThread(LPVOID)
 		
 	while (true)
 	{
-		if (!Game::Globals::radiant_config_loaded )
+		// wait for config to load
+		if (!Game::Globals::radiant_config_loaded)
 		{
+			// no config file found, registered default dvars 
+			if (Game::Globals::radiant_config_not_found && Dvars::radiant_live && Dvars::radiant_live->current.enabled)
+			{
+				goto INIT_DEFAULT;
+			}
+
 			Sleep(200);
 			continue;
 		}
-
-		// wait till the user enables live-link
-		if (!Dvars::radiant_live->current.enabled)
+		else
 		{
-			Sleep(1000);
-			continue;
+			// wait till the user enables live-link
+			if (Dvars::radiant_live && !Dvars::radiant_live->current.enabled)
+			{
+				Sleep(1000);
+				continue;
+			}
 		}
+
+	INIT_DEFAULT:
 
 		Sleep(200);
 
@@ -103,16 +114,26 @@ DWORD WINAPI RemoteNet_SearchServerThread(LPVOID)
 		printf("[LiveRadiant]: Game connected!\n");
 		g_RemoteSocketStatus = 1;
 
-
 		// Loop indefinitely until the game disconnects or live-link gets disabled
 		while (true)
 		{
-			// Check for a socket error if live-link was disabled
-			if (g_RemoteSocket == INVALID_SOCKET || !Dvars::radiant_live->current.enabled)
+			if (Dvars::radiant_live)
 			{
-				break;
+				// Check for a socket error or if live-link was disabled
+				if (g_RemoteSocket == INVALID_SOCKET || !Dvars::radiant_live->current.enabled)
+				{
+					break;
+				}
 			}
-				
+			else
+			{
+				// Check for a socket error
+				if (g_RemoteSocket == INVALID_SOCKET)
+				{
+					break;
+				}
+			}
+			
 			int error = 0;
 			int len = sizeof(int);
 			int retval = getsockopt(g_RemoteSocket, SOL_SOCKET, SO_ERROR, (char *)&error, &len);
@@ -122,7 +143,7 @@ DWORD WINAPI RemoteNet_SearchServerThread(LPVOID)
 				break;
 			}
 				
-			Sleep(50); // time inbetween commands?
+			Sleep(50);
 		}
 
 		closesocket(g_RemoteSocket);
