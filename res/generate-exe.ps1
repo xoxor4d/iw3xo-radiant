@@ -15,7 +15,7 @@ winresourcer --operation=add "--exeFile=$PSScriptRoot\iw3r.tmp" --resourceType=I
 
 # Make it load iw3r.dll instead of d3d9.dll
 echo "Updating the D3D9 library path..."
-replace-string-keepoffset "$PSScriptRoot\iw3x.tmp" "d3d9.dll" "iw3r.dll"
+replace-string-keepoffset "$PSScriptRoot\iw3r.tmp" "d3d9.dll" "iw3r.dll"
 
 # Let's place it into the root directory
 mv -Force "$PSScriptRoot\iw3r.tmp" "$PSScriptRoot\..\IW3xRadiant.exe"
