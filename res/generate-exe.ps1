@@ -13,5 +13,9 @@ echo "Updating version information..."
 echo "Updating the icon..."
 winresourcer --operation=add "--exeFile=$PSScriptRoot\iw3r.tmp" --resourceType=Icongroup --resourceName=1 --lang=1033 "--resourceFile=$PSScriptRoot\..\assets\ico_3xr.ico"
 
+# Make it load iw3r.dll instead of d3d9.dll
+echo "Updating the D3D9 library path..."
+replace-string-keepoffset "$PSScriptRoot\iw3x.tmp" "d3d9.dll" "iw3r.dll"
+
 # Let's place it into the root directory
 mv -Force "$PSScriptRoot\iw3r.tmp" "$PSScriptRoot\..\IW3xRadiant.exe"
