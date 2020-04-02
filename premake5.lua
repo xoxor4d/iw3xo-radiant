@@ -113,5 +113,5 @@ workspace "iw3xo-radiant"
 		warnings "Extra"
 
 		configuration "Release"
-			flags { "FatalCompileWarnings" }
+		--	flags { "FatalCompileWarnings" }
 		configuration {}

@@ -63,6 +63,7 @@ build
 user*.bat
 *.psd
 *.exe
+*.zip
 
 # IDA
 # =========================
