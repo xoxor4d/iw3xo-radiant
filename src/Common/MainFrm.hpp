@@ -7,7 +7,7 @@
 
 class CMainFrame
 {
-	friend BOOL RadiantMod_Init();
+	friend BOOL Init();
 
 private:
 	// Do not allow this class to be instanced

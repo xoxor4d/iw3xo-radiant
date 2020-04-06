@@ -6,6 +6,8 @@ namespace Game
 	namespace Globals
 	{
 		// Init
+		extern std::string loadedModules;
+
 		extern bool radiant_floatingWindows;
 		extern bool radiant_initiated;
 		extern bool radiant_config_loaded;
@@ -19,10 +21,6 @@ namespace Game
 		extern CWnd *m_pCamWnd_ref;
 	}
 
-	//VANILLA_FUNC(Com_Error, void(*)(char *error, ...), 0x499F50);
-
-	
-	//extern DWORD* camWnd_ptr;
 	extern int	*g_nUpdateBitsPtr;
 	extern int	&g_nUpdateBits;
 	extern bool &g_bScreenUpdates;
@@ -36,7 +34,7 @@ namespace Game
 	extern DWORD* sortedDvarsAddons;
 	extern int sortedDvarsAddonsCount;
 
-	static DWORD* frontEndDataOut_ptr = (DWORD*)(0x73D480); // frontEndDataOut pointer
+	static DWORD* frontEndDataOut_ptr = (DWORD*)(0x73D480);  // frontEndDataOut pointer
 	static DWORD* currSelectedBrushes = (DWORD*)(0x23F1864); // (selected_brushes array pointer)
 
 	static DWORD* worldEntity_ptr = (DWORD*)(0x25D5B30); // holds pointer to worldEntity
@@ -79,4 +77,6 @@ namespace Game
 	void Dvar_SetString(Game::dvar_s *dvar /*esi*/, const char *string /*ebx*/);
 	Game::dvar_s* Dvar_FindVar(const char* dvar);
 	Game::dvar_s* Dvar_SetFromStringFromSource(const char *string /*ecx*/, Game::dvar_s *dvar /*esi*/, int source);
+
+	void ConsoleError(const std::string& msg);
 }

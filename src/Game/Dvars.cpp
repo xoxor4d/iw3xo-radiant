@@ -92,5 +92,7 @@ namespace Dvars
 			/*default*/	0,
 			/*flag*/	Game::dvar_flags::saved,
 			/*desc*/	"enables debug prints.");
+
+		printf("\n");
 	}
 }

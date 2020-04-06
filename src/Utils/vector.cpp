@@ -15,35 +15,42 @@ namespace Utils
 			x2 = number * 0.5F;
 			y = number;
 			i = *(long *)&y;						// evil floating point bit level hacking
-			i = 0x5f3759df - (i >> 1);               // what the fuck?
+			i = 0x5f3759df - (i >> 1);              // what the fuck?
 			y = *(float *)&i;
-			y = y * (threehalfs - (x2 * y * y));   // 1st iteration
+			y = y * (threehalfs - (x2 * y * y));    // 1st iteration
 			return y;
 		}
 
-		int _VectorCompare(const vec3_t v1, const vec3_t v2) {
-			if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) {
+		int _VectorCompare(const vec3_t v1, const vec3_t v2) 
+		{
+			if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) 
+			{
 				return 0;
 			}
+
 			return 1;
 		}
 
-		vec_t _VectorLength(const vec3_t v) {
+		vec_t _VectorLength(const vec3_t v) 
+		{
 			return (vec_t)sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 		}
 
-		vec_t _VectorLengthSquared(const vec3_t v) {
+		vec_t _VectorLengthSquared(const vec3_t v) 
+		{
 			return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 		}
 
-		vec_t _Distance(const vec3_t p1, const vec3_t p2) {
+		vec_t _Distance(const vec3_t p1, const vec3_t p2) 
+		{
 			vec3_t	v;
 
 			VectorSubtract(p2, p1, v);
 			return _VectorLength(v);
 		}
 
-		vec_t _DistanceSquared(const vec3_t p1, const vec3_t p2) {
+		vec_t _DistanceSquared(const vec3_t p1, const vec3_t p2) 
+		{
 			vec3_t	v;
 
 			VectorSubtract(p2, p1, v);
@@ -90,11 +97,12 @@ namespace Utils
 		// (float) normalize input vector and returns "float length"
 		vec_t _VectorNormalize(vec3_t v)
 		{
-			float	length, ilength;
+			float length, ilength;
 
 			length = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 
-			if (length) {
+			if (length) 
+			{
 				ilength = 1 / length;
 				v[0] *= ilength;
 				v[1] *= ilength;
@@ -107,7 +115,7 @@ namespace Utils
 		// (float) normalize input vector, stores result in output if length != 0 and returns "float length"
 		vec_t _VectorNormalize2(const vec3_t v, vec3_t out)
 		{
-			float	length, ilength;
+			float length, ilength;
 
 			length = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
 			length = sqrt(length);
@@ -119,7 +127,8 @@ namespace Utils
 				out[1] = v[1] * ilength;
 				out[2] = v[2] * ilength;
 			}
-			else {
+			else 
+			{
 				VectorClear(out);
 			}
 
@@ -183,6 +192,5 @@ namespace Utils
 			out[1] = in[1];
 			out[2] = in[2];
 		}
-
 	}
 }

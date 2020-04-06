@@ -32,6 +32,7 @@ namespace Components
 	{
 		if (component)
 		{
+			Game::Globals::loadedModules.append(Utils::VA("Component registered: %s\n", component->getName()));
 			Loader::Components.push_back(component);
 		}
 	}

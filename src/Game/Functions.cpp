@@ -5,6 +5,8 @@ namespace Game
 	namespace Globals
 	{
 		// Init
+		std::string loadedModules;
+
 		bool radiant_floatingWindows;
 		bool radiant_initiated;
 		bool radiant_config_loaded;
@@ -18,7 +20,6 @@ namespace Game
 		CWnd *m_pCamWnd_ref;
 	}
 
-	//DWORD* camWnd_ptr = reinterpret_cast<DWORD*>(0x2423958);
 	int	*g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
 	int	&g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
 	bool &g_bScreenUpdates = *reinterpret_cast<bool*>(0x739B0F);
@@ -96,5 +97,11 @@ namespace Game
 			pop eax
 			retn
 		}
+	}
+
+	void ConsoleError(const std::string &msg)
+	{
+		std::string err = "[!] " + msg + "\n";
+		printf(err.c_str());
 	}
 }

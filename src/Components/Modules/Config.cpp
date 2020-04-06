@@ -6,6 +6,8 @@ namespace Components
 	// the game re-registers them and uses the values of the external dvars
 	void Config::LoadDvars()
 	{
+		printf(Utils::VA("\n-------------- Modules -------------- \n%s\n", Game::Globals::loadedModules.c_str()), 0);
+
 		// fs_homepath should be registered internally already
 		Dvars::fs_homepath = Game::Dvar_FindVar("fs_homepath");
 

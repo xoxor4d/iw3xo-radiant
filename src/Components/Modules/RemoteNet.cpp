@@ -309,9 +309,6 @@ namespace Components
 				return;
 			}
 
-			//Game::g_nUpdateBits = 0x0001;
-			//Game::g_bScreenUpdates = true;
-
 			Game::Globals::m_pCamWnd_ref->RedrawWindow(NULL, NULL, RDW_INTERNALPAINT | RDW_UPDATENOW);
 
 			// Debug entries not working as the backend is not active ..
