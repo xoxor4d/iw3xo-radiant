@@ -19,6 +19,7 @@ https://xoxor4d.github.io/projects/iw3xo-radiant/
 
 #### Credits
 - The IW4x Team (client base)
+- Nukem (https://github.com/Nukem9/LinkerMod)
 - The Plutonium Project Team
 
 #### Disclaimer
