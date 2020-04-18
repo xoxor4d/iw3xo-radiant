@@ -12,10 +12,13 @@ Running both, IW3xRadiant and IW3xo, enables a live-link between CoD4 and Radian
 4. Copy everything within the assets folder into your cod4-root
 
 Requires:
-- https://github.com/xoxor4d/iw3xo-dev
+https://github.com/xoxor4d/iw3xo-dev
 
-Project Page:
+Project Page:  
 https://xoxor4d.github.io/projects/iw3xo-radiant/
+
+Discord:  
+https://discord.gg/t5jRGbj
 
 #### Credits
 - The IW4x Team (client base)
