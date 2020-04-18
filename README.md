@@ -2,6 +2,11 @@
 This project is aimed at developers and includes various modifications/additions and was built to be used with IW3xo.  
 Running both, IW3xRadiant and IW3xo, enables a live-link between CoD4 and Radiant.
 
+Pre-build binaries: https://github.com/xoxor4d/iw3xo-radiant/releases
+
+___
+
+
 #### Building the project:
 1. Hit "generate.bat" to build project files with premake
 2. Load the project in Visual Studio and open project-settings to setup paths (Debug/Release):
@@ -11,16 +16,21 @@ Running both, IW3xRadiant and IW3xo, enables a live-link between CoD4 and Radian
 3. Build -> Build Solution
 4. Copy everything within the assets folder into your cod4-root
 
-Requires:
-- https://github.com/xoxor4d/iw3xo-dev
+___
 
-Project Page:
+Requires:  
+https://github.com/xoxor4d/iw3xo-dev
+
+Project Page:  
 https://xoxor4d.github.io/projects/iw3xo-radiant/
 
-#### Credits
+Discord:  
+https://discord.gg/t5jRGbj
+
+## Credits
 - The IW4x Team (client base)
 - Nukem (https://github.com/Nukem9/LinkerMod)
 - The Plutonium Project Team
 
-#### Disclaimer
+## Disclaimer
 This software has been created purely for the purposes of academic research. Project maintainers are not responsible or liable for misuse of the software. Use responsibly.
