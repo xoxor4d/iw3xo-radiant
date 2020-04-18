@@ -114,6 +114,8 @@ DWORD WINAPI RemoteNet_SearchServerThread(LPVOID)
 		printf("[LiveRadiant]: Game connected!\n");
 		g_RemoteSocketStatus = 1;
 
+		Game::Globals::live_connected = true;
+
 		// Loop indefinitely until the game disconnects or live-link gets disabled
 		while (true)
 		{
@@ -145,6 +147,8 @@ DWORD WINAPI RemoteNet_SearchServerThread(LPVOID)
 				
 			Sleep(50);
 		}
+
+		Game::Globals::live_connected = false;
 
 		closesocket(g_RemoteSocket);
 		g_RemoteSocketStatus = INVALID_SOCKET;
@@ -422,17 +426,23 @@ namespace Components
 		}
 			
 		int ret = send(g_RemoteSocket, (const char *)Command, sizeof(Game::RadiantCommand), 0);
-		
+
 		if (ret == SOCKET_ERROR)
 		{
 			printf("[LiveRadiant]: Socket ERROR");
+			
+			closesocket(g_RemoteSocket);
+			g_RemoteSocket = INVALID_SOCKET;
+			g_RemoteSocketStatus = INVALID_SOCKET;
+
+			Game::Globals::live_connected = false;
 		}
 
 		if (RADIANT_DEBUG_CMDS)
 		{
 			commandsSend++;
 
-			const char *cmdType = "";
+			const char* cmdType = "";
 
 			switch (Command->type)
 			{
@@ -485,13 +495,6 @@ namespace Components
 			}
 
 			printf(Utils::VA("Send command num: [%d] of type: [%s]\n", commandsSend, cmdType));
-		}
-
-		if (ret == SOCKET_ERROR)
-		{
-			closesocket(g_RemoteSocket);
-			g_RemoteSocket = INVALID_SOCKET;
-			g_RemoteSocketStatus = INVALID_SOCKET;
 		}
 	}
 
@@ -676,7 +679,6 @@ namespace Components
 #endif
 			}
 
-
 			std::vector<float>toAdd(3, 0.0f);
 			std::vector<std::vector<float>> windingPtsList(16, toAdd); // windingPtCount
 
@@ -765,7 +767,7 @@ namespace Components
 			return;
 		}
 
-
+		// *
 		// CMD :: BRUSH SELECT (send one select command to clear all saved brush-data in the game)
 		memset(&cmd, 0, sizeof(Game::RadiantCommand));
 
@@ -806,7 +808,7 @@ namespace Components
 				}
 			}
 
-
+			// *
 			// CMD :: BRUSH COUNT (amount of selected brushes so the game knows how many brushes to draw)
 			memset(&cmd, 0, sizeof(Game::RadiantCommand));
 
@@ -829,135 +831,166 @@ namespace Components
 	{
 		const static uint32_t stockFuncAdr = 0x458590;
 		const static uint32_t retnPt = 0x47660F;
-		__asm
+		
+		__asm pushad
+		if (Game::Globals::live_connected)
 		{
-			pushad
-			push	1 // select = true
-			Call	RemNet::Cmd_SendBrushSelectDeselect
-			add		esp, 4
-			popad
-
-			Call	stockFuncAdr
-			jmp		retnPt
+			__asm
+			{
+				push	1 // select = true
+				Call	RemNet::Cmd_SendBrushSelectDeselect
+				add		esp, 4
+			}
 		}
+		__asm popad
+
+		__asm Call	stockFuncAdr
+		__asm jmp	retnPt
 	}
 
 	__declspec(naked) void onBrush_Deselect_stub()
 	{
 		const static uint32_t stockFuncAdr = 0x458590;
 		const static uint32_t retnPt = 0x4766D0;
-		__asm
+		
+		__asm pushad
+		if (Game::Globals::live_connected)
 		{
-			pushad
-			push	0 // select = false
-			Call	RemNet::Cmd_SendBrushSelectDeselect
-			add		esp, 4
-			popad
-
-			Call	stockFuncAdr
-			jmp		retnPt
+			__asm
+			{
+				push	0 // select = false
+				Call	RemNet::Cmd_SendBrushSelectDeselect
+				add		esp, 4
+			}
 		}
+		__asm popad
+
+		__asm Call	stockFuncAdr
+		__asm jmp	retnPt
 	}
 
 	__declspec(naked) void onBrush_DeselectESC_stub()
 	{
 		const static uint32_t retnPt = 0x48E995;
-		__asm
+		
+		__asm pushad
+		if (Game::Globals::live_connected)
 		{
-			pushad
-			push	0 // select = false
-			Call	RemNet::Cmd_SendBrushSelectDeselect
-			add		esp, 4
-			popad
-
-			mov		[Game::g_nUpdateBitsPtr], -1
-			jmp		retnPt
+			__asm
+			{
+				push	0 // select = false
+				Call	RemNet::Cmd_SendBrushSelectDeselect
+				add		esp, 4
+			}
 		}
+		__asm popad
+
+		__asm mov	[Game::g_nUpdateBitsPtr], -1
+		__asm jmp	retnPt
 	}
 
 	__declspec(naked) void onBrush_NewBrushDrag_stub()
 	{
 		const static uint32_t stockFuncAdr = 0x40A480; //VA
 		const static uint32_t retnPt = 0x4681EF;
-		__asm
+		
+		__asm pushad
+		if (Game::Globals::live_connected)
 		{
-			pushad
-			push	1 // select = true
-			Call	RemNet::Cmd_SendBrushSelectDeselect
-			add		esp, 4
-			popad
-
-			Call	stockFuncAdr
-			jmp		retnPt
+			__asm
+			{
+				push	1 // select = true
+				Call	RemNet::Cmd_SendBrushSelectDeselect
+				add		esp, 4
+			}
 		}
+		__asm popad
+
+		__asm Call	stockFuncAdr
+		__asm jmp	retnPt
 	}
 
 	__declspec(naked) void onBrush_MoveSelection_DragAndEdge_stub()
 	{
 		const static uint32_t retnPt = 0x47FEF2;
-		__asm
+		
+		__asm pushad
+		if (Game::Globals::live_connected)
 		{
-			pushad
-			push	1 // select = true
-			Call	RemNet::Cmd_SendBrushSelectDeselect
-			add		esp, 4
-			popad
-
-			// overwritten op
-			mov		[esp + 0C0h], ecx
-			jmp		retnPt
+			__asm
+			{
+				push	1 // select = true
+				Call	RemNet::Cmd_SendBrushSelectDeselect
+				add		esp, 4
+			}
 		}
+		__asm popad
+
+		__asm mov	[esp + 0C0h], ecx
+		__asm jmp	retnPt
 	}
 
 	__declspec(naked) void onBrush_MoveSelection_Vertex_stub()
 	{
 		const static uint32_t stockFuncAdr = 0x402810;
 		const static uint32_t retnPt = 0x47F3FD;
-		__asm
-		{
-			pushad
-			push	1 // select = true
-			Call	RemNet::Cmd_SendBrushSelectDeselect
-			add		esp, 4
-			popad
 
-			Call	stockFuncAdr
-			jmp		retnPt
+		__asm pushad
+		if (Game::Globals::live_connected)
+		{
+			__asm
+			{
+				push	1 // select = true
+				Call	RemNet::Cmd_SendBrushSelectDeselect
+				add		esp, 4
+			}
 		}
+		__asm popad
+
+		__asm Call	stockFuncAdr
+		__asm jmp	retnPt
 	}
 
 	__declspec(naked) void onBrush_MoveSelection_Rotation_stub()
 	{
 		const static uint32_t stockFuncAdr = 0x40A480; //VA
 		const static uint32_t retnPt = 0x47FD16;
-		__asm
-		{
-			pushad
-			push	1 // select = true
-			Call	RemNet::Cmd_SendBrushSelectDeselect
-			add		esp, 4
-			popad
 
-			Call	stockFuncAdr
-			jmp		retnPt
+		__asm pushad
+		if (Game::Globals::live_connected)
+		{
+			__asm
+			{
+				push	1 // select = true
+				Call	RemNet::Cmd_SendBrushSelectDeselect
+				add		esp, 4
+			}
 		}
+		__asm popad
+
+		__asm Call	stockFuncAdr
+		__asm jmp	retnPt
 	}
 
 	__declspec(naked) void onBrush_Hotkey_RotateZ_stub()
 	{
 		const static uint32_t stockFuncAdr = 0x45EA20; // what ever that is
 		const static uint32_t retnPt = 0x4252A5; // next op
-		__asm
-		{
-			pushad
-			push	1 // select = true
-			Call	RemNet::Cmd_SendBrushSelectDeselect
-			add		esp, 4
-			popad
 
-			Call	stockFuncAdr
-			jmp		retnPt
+		__asm pushad
+		if (Game::Globals::live_connected)
+		{
+			__asm
+			{
+				push	1 // select = true
+				Call	RemNet::Cmd_SendBrushSelectDeselect
+				add		esp, 4
+			}
 		}
+		__asm popad
+
+		__asm Call	stockFuncAdr
+		__asm jmp	retnPt
 	}
 
 

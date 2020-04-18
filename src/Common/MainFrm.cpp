@@ -172,8 +172,11 @@ void CMainFrame::UpdateWindows(int nBits)
 		return;
 	}
 
-	TrackWorldspawnSettings();
-
+	if (Game::Globals::live_connected) 
+	{
+		TrackWorldspawnSettings();
+	}
+	
 	if (nBits & (W_XY | W_XY_OVERLAY))
 	{
 		if (this->m_pXYWnd)
@@ -197,7 +200,7 @@ void CMainFrame::UpdateWindows(int nBits)
 			}
 
 			// only update the remote cam when we actually move it, not when we update the cam window by doing something in the gridWnd etc.
-			else
+			else if(Game::Globals::live_connected)
 			{
 				// Attempt to update the remote camera
 				if (CCamWnd::ActiveWindow)

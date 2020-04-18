@@ -12,12 +12,14 @@ namespace Game
 		bool radiant_config_loaded;
 		bool radiant_config_not_found;
 
+		CWnd* m_pCamWnd_ref;
+
 		// Misc
 		Game::TrackWorldspawn trackWorldspawn = Game::TrackWorldspawn();
 
-		// Server
+		// Live Link
 		Game::ProcessServerCommands cServerCmd = Game::ProcessServerCommands();
-		CWnd *m_pCamWnd_ref;
+		bool live_connected;
 	}
 
 	int	*g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);

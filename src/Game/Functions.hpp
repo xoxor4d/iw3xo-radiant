@@ -13,12 +13,15 @@ namespace Game
 		extern bool radiant_config_loaded;
 		extern bool radiant_config_not_found;
 
+		extern CWnd* m_pCamWnd_ref;
+
 		// Misc
 		extern Game::TrackWorldspawn trackWorldspawn;
 
-		// Server
+		// Live Link
 		extern Game::ProcessServerCommands cServerCmd;
-		extern CWnd *m_pCamWnd_ref;
+		extern bool live_connected;
+		
 	}
 
 	extern int	*g_nUpdateBitsPtr;
