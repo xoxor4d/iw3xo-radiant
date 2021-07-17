@@ -3,7 +3,7 @@
 
 std::map<std::string, std::function<void(std::vector<std::string>)>> commands;
 
-void RegisterCommand(std::string &name, std::function<void(std::vector<std::string>)> cb)
+void RegisterCommand(const std::string &name, std::function<void(std::vector<std::string>)> cb)
 {
 	commands[name] = cb;
 }
@@ -231,7 +231,7 @@ namespace Components
 					}
 				}
 
-				Game::Dvar_SetFromStringFromSource(dvarValue.c_str(), getDvarDummy, 0);
+				Game::Dvar_SetFromStringFromSource(dvarValue.c_str(), getDvarDummy, 1);
 			}
 			else
 			{

@@ -44,7 +44,7 @@ namespace Game
 
 	// -----------------------------------------------------------
 
-	typedef void(*Com_Error_t)(char *error, ...);
+	typedef void(*Com_Error_t)(const char *error, ...);
 		extern Com_Error_t Com_Error;
 
 	typedef HBRUSH(__thiscall* OnCtlColor_t)(void* thisptr, class CDC* pDC, class CWnd* pWnd, UINT nCtlColor);
