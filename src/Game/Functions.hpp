@@ -37,6 +37,8 @@ namespace Game
 
 		extern gui_present_s gui_present;
 		extern Game::gui_t gui;
+
+		extern HWND test_hwnd;
 		
 	}
 

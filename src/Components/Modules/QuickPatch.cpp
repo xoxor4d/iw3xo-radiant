@@ -86,8 +86,13 @@ BOOL init_threads()
 	return TRUE;
 }
 
+
+
 // tests
 //#define SPLITTER_TEST
+//#define CREATE_SECOND_CAMERA
+
+
 
 namespace Components
 {
@@ -162,6 +167,7 @@ namespace Components
 	}
 #endif
 
+
 	void add_iw3xradiant_searchpath()
 	{
 		if(const auto fs_basepath = Game::Dvar_FindVar("fs_basepath"); 
@@ -187,6 +193,75 @@ namespace Components
 			jmp		retn_pt;
 		}
 	}
+
+#ifdef CREATE_SECOND_CAMERA
+	void __declspec(naked) set_rinitforwindow_stub()
+	{
+		const static uint32_t retn_pt = 0x4166CB;
+		__asm
+		{
+			mov     eax, Game::Globals::test_hwnd;
+			jmp		retn_pt;
+		}
+	}
+
+	CCamWnd* cam__init(CCamWnd* cam)
+	{
+		const static uint32_t CCamWnd_CamInit_Func = 0x402C40;
+		__asm
+		{
+			mov		esi, cam;
+			call	CCamWnd_CamInit_Func;
+		}
+	}
+
+	void testtest()
+	{
+		typedef void* (__cdecl* operator_new_t)(size_t size);
+		operator_new_t operator_new = reinterpret_cast<operator_new_t>(0x583A58);
+
+		auto _new = operator_new(828u);
+		auto cam = cam__init(reinterpret_cast<CCamWnd*>(_new));
+
+		tagRECT rect = { 5, 25, 100, 100 };
+		
+		auto vtable = reinterpret_cast<CWnd_vtbl*>(cam->__vftable);
+
+		//CMainFrame::ActiveWindow->m_pCamWnd = cam;
+
+		vtable->Create(
+			cam
+			, "QCamera"
+			, 0
+			, WS_OVERLAPPED | WS_MINIMIZEBOX | WS_THICKFRAME | WS_CAPTION | WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_MAXIMIZEBOX
+			, &rect
+			,CMainFrame::ActiveWindow
+			, 1234u
+			, 0);
+
+		//cam->m_hWnd = CMainFrame::ActiveWindow->m_pCamWnd->m_hWnd;
+		Game::Globals::test_hwnd = cam->m_hWnd;
+
+		ShowWindow(cam->m_hWnd, SW_SHOW);
+
+		int x = 1;
+	}
+	
+	__declspec(naked) void test_stub()
+	{
+		const static uint32_t CreateQEChildren_Func = 0x421820;
+		const static uint32_t retn_pt = 0x422989;
+		__asm
+		{
+			pushad;
+			call	testtest;
+			popad;
+
+			call	CreateQEChildren_Func; // og
+			jmp		retn_pt;
+		}
+	}
+#endif
 	
 	QuickPatch::QuickPatch()
 	{
@@ -201,9 +276,17 @@ namespace Components
 		//Utils::Hook::Nop(0x4818DF, 5); // ScanFile
 		//Utils::Hook::Nop(0x48B8BE, 5); // ScanWeapon
 
+#ifdef CREATE_SECOND_CAMERA
+		// Create static
+		Utils::Hook(0x4166C6, set_rinitforwindow_stub, HOOK_JUMP).install()->quick();
+		Utils::Hook(0x422984, test_stub, HOOK_JUMP).install()->quick();
+#endif
+		
+		
+#ifdef SPLITTER_TEST
 		// -----------------------------------------------------------------------------------------------------------------------------
 		// this creates a third main splitter below the console and assigns the camwindow (input etc is working but drawing doesnt work)
-#ifdef SPLITTER_TEST
+
 		// 3 panes for main splitter
 		Utils::Hook::Set<BYTE>(0x422CD4 + 1, 0x3);
 
@@ -214,10 +297,10 @@ namespace Components
 		// set rowinfo
 		Utils::Hook::Nop(0x422FC3, 6);
 		Utils::Hook(0x422FC3, setrowinfo_stub, HOOK_JUMP).install()->quick();
-#endif
-		// -----------------------------------------------------------------------------------------------------------------------------
-
 		
+		// -----------------------------------------------------------------------------------------------------------------------------
+#endif
+
 
 		// Hook / Grab CameraWnd object (only when using floating windows) :: (CMainFrame::UpdateWindows sets CMainFrame::ActiveWindow otherwise)
 		Utils::Hook(0x42270C, CCam_ctor_stub, HOOK_JUMP).install()->quick();

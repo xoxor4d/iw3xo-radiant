@@ -261,6 +261,12 @@ namespace Components
 			vtable->SetStatusText(&CMainFrame::ActiveWindow->m_wndStatusBar, 0x75);
 		}
 
+		ImGui::SameLine();
+		if(ImGui::Button("show cam"))
+		{
+			//ShowWindow(Game::Globals::test_hwnd, SW_SHOW);
+		}
+
 	END_GUI:
 		ImGui::PopStyleColor(5);
 		ImGui::PopStyleVar(1);
@@ -472,13 +478,18 @@ namespace Components
 		// *
 		// Commands
 		Command::RegisterCommand("gui"s, [](std::vector < std::string > args)
-			{
+		{
 				Gui::toggle(GET_GGUI.menus[Game::GUI_MENUS::DEVGUI], 0, true);
-			});
+		});
 		
 		Command::RegisterCommand("gui_demo"s, [](std::vector < std::string > args)
 		{
 			Gui::toggle(GET_GGUI.menus[Game::GUI_MENUS::DEMO], 0, true);
+		});
+
+		Command::RegisterCommand("show_cam"s, [](std::vector<std::string> args) ->void
+		{
+			ShowWindow(Game::Globals::test_hwnd, SW_SHOW);
 		});
 	}
 

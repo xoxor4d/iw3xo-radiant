@@ -27,6 +27,8 @@ namespace Game
 		// Gui
 		gui_present_s gui_present = gui_present_s();
 		Game::gui_t gui = Game::gui_t();
+
+		HWND test_hwnd;
 		
 	}
 
