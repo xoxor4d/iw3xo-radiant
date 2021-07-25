@@ -294,8 +294,8 @@ namespace Components
 			if (CCamWnd::ActiveWindow)
 			{
 				if (!sscanf(strCommand, "%f %f %f %f %f %f",
-					&CCamWnd::ActiveWindow->cameraOrigin[0], &CCamWnd::ActiveWindow->cameraOrigin[1], &CCamWnd::ActiveWindow->cameraOrigin[2],
-					&CCamWnd::ActiveWindow->cameraAngles[0], &CCamWnd::ActiveWindow->cameraAngles[1], &CCamWnd::ActiveWindow->cameraAngles[2]))
+					&CCamWnd::ActiveWindow->camera.origin[0], &CCamWnd::ActiveWindow->camera.origin[1], &CCamWnd::ActiveWindow->camera.origin[2],
+					&CCamWnd::ActiveWindow->camera.angles[0], &CCamWnd::ActiveWindow->camera.angles[1], &CCamWnd::ActiveWindow->camera.angles[2]))
 				{
 					printf("[!]: sscanf failed to read command of type: SERVER_CAMERA_UPDATE\n");
 				}
@@ -303,8 +303,8 @@ namespace Components
 				if (Dvars::radiant_liveDebug->current.enabled)
 				{
 					printf(Utils::VA("[SERVER-CMD]: SERVER_CAMERA_UPDATE (Origin: (%.1f %.1f %.1f) Angles: (%.1f %.1f %.1f))\n",
-						CCamWnd::ActiveWindow->cameraOrigin[0], CCamWnd::ActiveWindow->cameraOrigin[1], CCamWnd::ActiveWindow->cameraOrigin[2],
-						CCamWnd::ActiveWindow->cameraAngles[0], CCamWnd::ActiveWindow->cameraAngles[1], CCamWnd::ActiveWindow->cameraAngles[2]));
+						CCamWnd::ActiveWindow->camera.origin[0], CCamWnd::ActiveWindow->camera.origin[1], CCamWnd::ActiveWindow->camera.origin[2],
+						CCamWnd::ActiveWindow->camera.angles[0], CCamWnd::ActiveWindow->camera.angles[1], CCamWnd::ActiveWindow->camera.angles[2]));
 				}
 			}
 			else

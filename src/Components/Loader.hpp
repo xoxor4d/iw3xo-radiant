@@ -25,6 +25,9 @@ namespace Components
 	};
 }
 
+#include "Modules/Command.hpp"
+#include "Modules/D3D9Ex.hpp"
+#include "Modules/Gui.hpp"
 #include "Modules/QuickPatch.hpp"
 #include "Modules/RemoteNet.hpp"
 #include "Modules/Config.hpp"

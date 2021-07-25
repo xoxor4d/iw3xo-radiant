@@ -9,6 +9,9 @@ namespace Components
 	{
 		Loader::MemAllocator.clear();
 
+		Loader::Register(new Command());
+		Loader::Register(new D3D9Ex());
+		Loader::Register(new Gui());
 		Loader::Register(new QuickPatch());
 		Loader::Register(new RemNet());
 		Loader::Register(new Config());

@@ -48,8 +48,29 @@ public:
 	}
 };
 
+HWND CWnd::GetWindow()
+{
+	if(this && this->m_hWnd)
+	{
+		return this->m_hWnd;
+	}
+
+	return nullptr;
+}
+
 BOOL CWnd::RedrawWindow(LPCRECT lpRectUpdate, struct CRgn* prgnUpdate, UINT flags)
 {
 	HRGN hrgnUpdate = (HRGN)reinterpret_cast<CGdiObject*>(prgnUpdate)->GetSafeHandle();
 	return ::RedrawWindow(this->m_hWnd, lpRectUpdate, hrgnUpdate, flags);
+}
+
+namespace afx
+{
+	// *
+	// -------------------------------------- function typedefs -------------------------------------------
+	// *
+	
+	CSplitterWnd__GetPane_t CSplitterWnd__GetPane = reinterpret_cast<CSplitterWnd__GetPane_t>(0x5A5409);
+	CSplitterWnd__SetRowInfo_t CSplitterWnd__SetRowInfo = reinterpret_cast<CSplitterWnd__SetRowInfo_t>(0x5A544B);
+
 }

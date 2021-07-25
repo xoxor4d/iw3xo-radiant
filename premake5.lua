@@ -1,3 +1,33 @@
+dependencies = {
+	basePath = "./deps"
+}
+
+function dependencies.load()
+	dir = path.join(dependencies.basePath, "premake/*.lua")
+	deps = os.matchfiles(dir)
+
+	for i, dep in pairs(deps) do
+		dep = dep:gsub(".lua", "")
+		require(dep)
+	end
+end
+
+function dependencies.imports()
+	for i, proj in pairs(dependencies) do
+		if type(i) == 'number' then
+			proj.import()
+		end
+	end
+end
+
+function dependencies.projects()
+	for i, proj in pairs(dependencies) do
+		if type(i) == 'number' then
+			proj.project()
+		end
+	end
+end
+
 newaction {
 	trigger = "generate-buildinfo",
 	description = "Sets up build information file like version.h.",
@@ -25,72 +55,98 @@ newaction {
 	end
 }
 
+dependencies.load()
+
 workspace "iw3xo-radiant"
 	location "./build"
 	objdir "%{wks.location}/obj"
 	targetdir "%{wks.location}/bin/%{cfg.buildcfg}"
-	buildlog "%{wks.location}/obj/%{cfg.architecture}/%{cfg.buildcfg}/%{prj.name}/%{prj.name}.log"
-	configurations { "Debug", "Release" }
-	architecture "x32"
-	platforms "x86"
-	systemversion "10.0.17763.0"
-	startproject "iw3r"
+	
+    configurations { 
+        "Debug", 
+        "Release" 
+    }
 
-	disablewarnings {
+	platforms "Win32"
+	architecture "x86"
+
+    buildoptions "/std:c++latest"
+	systemversion "latest"
+    symbols "On"
+    staticruntime "On"
+
+    disablewarnings {
 		"4239",
 		"4505",
 		"4996",
 	}
 
-	buildoptions {
-		"/std:c++latest"
-	}
-	systemversion "10.0.17763.0"
-	defines { "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS" }
+    defines { 
+        "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS" 
+    }
 
-	configuration "windows"
-		defines { "_WINDOWS", "WIN32" }
-		staticruntime "On"
-		
-		if symbols ~= nil then
-			symbols "On"
-		else
-			flags { "Symbols" }
-		end
-
+    configuration "windows"
+		defines { 
+            "_WINDOWS", 
+            "WIN32" 
+        }
+        
 	configuration "Release"
-		defines { "NDEBUG" }
-		flags { "MultiProcessorCompile", "LinkTimeOptimization", "No64BitChecks" }
-		optimize "Full"
+        optimize "Full"
+		
+        defines { 
+            "NDEBUG" 
+        }
 
+		flags { 
+            "MultiProcessorCompile", 
+            "LinkTimeOptimization", 
+            "No64BitChecks" 
+        }
+		
 	configuration "Debug"
-		defines { "DEBUG", "_DEBUG" }
-		flags { "MultiProcessorCompile", "No64BitChecks" }
-		optimize "Debug"
+        optimize "Debug"
+		defines { 
+            "DEBUG", 
+            "_DEBUG" 
+        }
 
+		flags { 
+            "MultiProcessorCompile", 
+            "No64BitChecks" 
+        }
+		
+    configuration {}
+
+	startproject "iw3r"
 	project "iw3r"
 		kind "SharedLib"
 		language "C++"
+
+		pchheader "STDInclude.hpp"
+		pchsource "src/STDInclude.cpp"
+
 		files {
 			"./src/**.rc",
 			"./src/**.hpp",
 			"./src/**.cpp",
 		}
+
 		includedirs {
 			"%{prj.location}/src",
 			"./src",
 		}
+
 		resincludedirs {
-			"$(ProjectDir)src" -- fix for VS IDE
+			"$(ProjectDir)src"
 		}
 
-		-- Pre-compiled header
-		pchheader "STDInclude.hpp" -- must be exactly same as used in #include directives
-		pchsource "src/STDInclude.cpp" -- real path
-		buildoptions { "/Zm100 -Zm100" }
+        buildoptions { 
+            "/Zm100 -Zm100" 
+        }
 
-		-- Virtual paths
-		if not _OPTIONS["no-new-structure"] then
+        -- Virtual paths
+		--[[ if not _OPTIONS["no-new-structure"] then
 			vpaths {
 				["Headers/*"] = { "./src/**.hpp" },
 				["Sources/*"] = { "./src/**.cpp" },
@@ -100,18 +156,27 @@ workspace "iw3xo-radiant"
 
 		vpaths {
 			["Docs/*"] = { "**.txt","**.md" },
-		}
-		
-		-- Pre-build
-		prebuildcommands {
-			"cd %{_MAIN_SCRIPT_DIR}",
-			"tools\\premake5 generate-buildinfo"
-		}
+		} ]]
 
-		-- Specific configurations
+        -- Specific configurations
 		flags { "UndefinedIdentifiers" }
 		warnings "Extra"
 
+        
 		configuration "Release"
-		--	flags { "FatalCompileWarnings" }
+			flags { 
+                "FatalCompileWarnings" 
+            }
+			
+			-- Pre-build
+			prebuildcommands {
+			"cd %{_MAIN_SCRIPT_DIR}",
+			"tools\\premake5 generate-buildinfo"
+			}
+            
 		configuration {}
+
+        dependencies.imports()
+
+        group "Dependencies"
+            dependencies.projects()

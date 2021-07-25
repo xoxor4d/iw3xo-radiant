@@ -1,5 +1,8 @@
 #pragma once
+#include "Common/MainFrm.hpp"
 #include "Utils/function.hpp"
+
+#define GET_PARENTWND (CMainFrame*) *(DWORD*)(Game::g_pParentWnd_ptr)
 
 namespace Game
 {
@@ -21,8 +24,24 @@ namespace Game
 		// Live Link
 		extern Game::ProcessServerCommands cServerCmd;
 		extern bool live_connected;
+
+		// Renderer
+		extern IDirect3DDevice9* d3d9_device;
+
+		// Gui
+		struct gui_present_s
+		{
+			bool CCamWnd;
+		};
+		
+
+		extern gui_present_s gui_present;
+		extern Game::gui_t gui;
 		
 	}
+
+	// radiant globals
+	extern int& g_nScaleHow;
 
 	extern int	*g_nUpdateBitsPtr;
 	extern int	&g_nUpdateBits;
@@ -39,8 +58,8 @@ namespace Game
 
 	static DWORD* frontEndDataOut_ptr = (DWORD*)(0x73D480);  // frontEndDataOut pointer
 	static DWORD* currSelectedBrushes = (DWORD*)(0x23F1864); // (selected_brushes array pointer)
-
 	static DWORD* worldEntity_ptr = (DWORD*)(0x25D5B30); // holds pointer to worldEntity
+	static DWORD* g_pParentWnd_ptr = (DWORD*)(0x25D5A70);
 
 	// -----------------------------------------------------------
 
@@ -55,11 +74,21 @@ namespace Game
 
 	//bool IsBrushSelected(Game::brush_t* bSel);
 
+	
+	// *
+	// renderer
+	static utils::function<void()> R_EndFrame = 0x4FCBC0;
+	
 	// no error but doesnt reload everything
 	static utils::function< void()>	DX_ResetDevice = 0x5015F0;
 
-	// -----------------------------------------------------------
-	// DVARS
+
+	// *
+	// gui
+	void ImGui_HandleKeyIO(HWND hwnd, UINT key, SHORT zDelta = 0, UINT nChar = 0);
+
+	// *
+	// dvars
 
 	static utils::function< void (Game::dvar_s* dvar, bool value)>							Dvar_SetBool = 0x4B37F0;
 	static utils::function< void (Game::dvar_s* dvar, std::int32_t value)>					Dvar_SetInt = 0x4B3810;
@@ -82,4 +111,8 @@ namespace Game
 	Game::dvar_s* Dvar_SetFromStringFromSource(const char *string /*ecx*/, Game::dvar_s *dvar /*esi*/, int source);
 
 	void ConsoleError(const std::string& msg);
+
+	void FS_ScanForDir(const char* directory, const char* search_path, int localized);
+	Game::GfxImage* Image_FindExisting(const char* name);
+	Game::GfxImage* Image_RegisterHandle(const char* name);
 }

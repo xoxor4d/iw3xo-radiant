@@ -1,5 +1,9 @@
 #include "STDInclude.hpp"
 
+IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+CMainFrame* CMainFrame::ActiveWindow;
+
 // Taken directly from q3radiant
 // https://github.com/id-Software/Quake-III-Arena
 #define W_CAMERA		0x0001
@@ -19,10 +23,13 @@
 
 void __declspec(naked) CMainFrame::hk_RoutineProcessing(void)
 {
-	_asm
+	__asm
 	{
 		push ecx
-		mov ecx, eax
+		mov ecx, eax // eax = this :: ecx => this(__stdcall)
+		
+		mov CMainFrame::ActiveWindow, ecx;
+		
 		call CMainFrame::RoutineProcessing
 		pop ecx
 		retn
@@ -31,6 +38,8 @@ void __declspec(naked) CMainFrame::hk_RoutineProcessing(void)
 
 void CMainFrame::RoutineProcessing()
 {
+	//this->m_wndStatusBar.vtbl().SetStatusText(&this->m_wndStatusBar, 0x75);
+	
 	if (!this->m_bDoLoop)
 	{
 		return;
@@ -46,32 +55,32 @@ void CMainFrame::RoutineProcessing()
 		Game::g_oldtime = 0.0;
 	}
 
-	double time = clock() / 1000.0;
+	const double time = clock() / 1000.0;
 	double oldtime = time - Game::g_time;
 
 	Game::g_time = time;
 
 	if (oldtime > 2.0)
 	{
-		oldtime = 0.1; // 0.1
+		oldtime = 0.1;
 	}
 
 	Game::g_oldtime = oldtime;
 
 	if (oldtime > 0.2)
 	{
-		oldtime = 0.2; // 0.2
+		oldtime = 0.2;
 	}
 
 	if (this->m_pCamWnd)
 	{
-		float delta = (float)oldtime;
+		const auto delta = static_cast<float>(oldtime);
 		this->m_pCamWnd->Cam_MouseControl(delta);
 	}
 
 	if (Game::g_nUpdateBits)
 	{
-		int nBits = Game::g_nUpdateBits;
+		const int nBits = Game::g_nUpdateBits;
 		Game::g_nUpdateBits = 0;
 		this->UpdateWindows(nBits);
 	}
@@ -81,10 +90,10 @@ void CMainFrame::RoutineProcessing()
 
 bool Worldspawn_OnKeyChange(const Game::epair_t* epair, const char* key, float* value, const int &valueSize)
 {
-	bool changed = false;
-
 	if (!Utils::Q_stricmp(epair->key, key))
 	{
+		bool changed = false;
+		
 		std::vector<std::string> KeyValues = Utils::Explode(epair->value, ' ');
 
 		int count = KeyValues.size();
@@ -113,9 +122,9 @@ bool Worldspawn_OnKeyChange(const Game::epair_t* epair, const char* key, float* 
 void TrackWorldspawnSettings()
 {
 	// trackWorldspawn
-	auto world = GET_WORLDENTITY;
-
-	if (world && world->firstActive->eclass->name)
+	
+	if (const auto world = GET_WORLDENTITY; 
+		world && world->firstActive->eclass->name)
 	{
 		if (!Utils::Q_stricmp(world->firstActive->eclass->name, "worldspawn"))
 		{
@@ -158,6 +167,7 @@ void TrackWorldspawnSettings()
 	}
 }
 
+
 void CMainFrame::UpdateWindows(int nBits)
 {
 	// grab camera if not using floating windows
@@ -176,12 +186,18 @@ void CMainFrame::UpdateWindows(int nBits)
 	{
 		TrackWorldspawnSettings();
 	}
+
+	// check d3d device or we ASSERT in R_CheckHwnd_or_Device (!dx_device) when using floating windows
+	if (!Game::Globals::d3d9_device)
+	{
+		return;
+	}
 	
 	if (nBits & (W_XY | W_XY_OVERLAY))
 	{
 		if (this->m_pXYWnd)
 		{
-			m_pXYWnd->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+			m_pXYWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 		}
 	}
 
@@ -189,9 +205,12 @@ void CMainFrame::UpdateWindows(int nBits)
 	{
 		if (this->m_pCamWnd)
 		{
+			
+#if !CCAMWND_REALTIME
 			// Redraw the camera view
-			m_pCamWnd->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
-
+			m_pCamWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+#endif
+			
 			Game::Globals::m_pCamWnd_ref = m_pCamWnd;
 
 			// on update cam window through the 2d grid or something else
@@ -205,7 +224,7 @@ void CMainFrame::UpdateWindows(int nBits)
 				// Attempt to update the remote camera
 				if (CCamWnd::ActiveWindow)
 				{
-					Components::RemNet::Cmd_SendCameraUpdate(CCamWnd::ActiveWindow->cameraOrigin, CCamWnd::ActiveWindow->cameraAngles);
+					Components::RemNet::Cmd_SendCameraUpdate(CCamWnd::ActiveWindow->camera.origin, CCamWnd::ActiveWindow->camera.angles);
 				}
 			}
 		}
@@ -215,7 +234,7 @@ void CMainFrame::UpdateWindows(int nBits)
 	{
 		if (this->m_pZWnd)
 		{
-			m_pZWnd->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+			m_pZWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 		}
 	}
 
@@ -223,7 +242,168 @@ void CMainFrame::UpdateWindows(int nBits)
 	{
 		if (this->m_pTexWnd) 
 		{
-			m_pTexWnd->RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW);
+			m_pTexWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 		}
 	}
+}
+
+// typedef CFrameWnd::DefWindowProc
+typedef LRESULT(__thiscall* wndproc_t)(CMainFrame*, UINT Msg, WPARAM wParam, LPARAM lParam);
+/* ------------------------- */ wndproc_t o_wndproc = reinterpret_cast<wndproc_t>(0x584D97);
+
+// hook windowproc to always update the camera window on mouse movement + imgui io (not including mouse clicks)
+LRESULT __fastcall CMainFrame::WindowProc(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	// update the window on mouse movement (everywhere within windows)
+	// * having sunlight preview enabled causes a crash upon loading a new map => 0x4067CD => see 'sunlight_preview_arg_check'
+	/*if(pThis->m_pCamWnd)
+	{
+		pThis->UpdateWindows(W_CAMERA);
+	}*/
+
+	if (GGUI_READY)
+	{
+		// handle mouse cursor for open menus
+		for (auto menu = 0; menu < GGUI_MENU_COUNT; menu++)
+		{
+			if (Game::Globals::gui.menus[menu].menustate)
+			{
+				if (ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam))
+				{
+					//if (ImGui::GetIO().WantCaptureMouse)
+					//{
+					//	ShowCursor(0);
+					//	ImGui::GetIO().MouseDrawCursor = 1;
+					//	return true;
+					//}
+				}
+			}
+		}
+
+		//ShowCursor(1);
+		//ImGui::GetIO().MouseDrawCursor = 0;
+	}
+
+	// => CFrameWnd::DefWindowProc
+	return o_wndproc(pThis, Msg, wParam, lParam);
+}
+
+
+// *
+// | -------------------- MSG typedefs ------------------------
+// *
+
+
+typedef void(__thiscall* on_cmainframe_scroll)(CMainFrame*, UINT, SHORT, CPoint);
+	on_cmainframe_scroll __on_mscroll;
+
+
+typedef void(__thiscall* on_cmainframe_key)(CMainFrame*, UINT, UINT, UINT);
+	on_cmainframe_key __on_keydown;
+
+typedef void(__stdcall* on_cmainframe_keyup)(CMainFrame*, UINT);
+	on_cmainframe_keyup __on_keyup;
+
+
+// *
+// | -------------------- Mouse Scroll ------------------------
+// *
+
+void __fastcall CMainFrame::on_mscroll(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
+{
+	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
+
+#if !CCAMWND_REALTIME
+	pThis->UpdateWindows(W_CAMERA);
+#endif
+	
+	// do not pass msg if mouse is inside an imgui window
+	if (!ImGui::GetIO().WantCaptureMouse)
+	{
+		return __on_mscroll(pThis, nFlags, zDelta, point);
+	}
+}
+
+// *
+// | ------------------------ Key ----------------------------
+// *
+
+void __fastcall CMainFrame::on_keydown(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_KEYDOWN, 0, nChar);
+
+#if !CCAMWND_REALTIME
+	pThis->UpdateWindows(W_CAMERA);
+#endif
+	
+	// do not pass the msg if mouse is inside an imgui window
+	if (!ImGui::GetIO().WantCaptureMouse)
+	{
+		return __on_keydown(pThis, nChar, nRepCnt, nFlags);
+	}
+}
+
+void __stdcall CMainFrame::on_keyup(CMainFrame* pThis, UINT nChar)
+{
+	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_KEYUP, 0, nChar);
+
+#if !CCAMWND_REALTIME
+	pThis->UpdateWindows(W_CAMERA);
+#endif
+	
+	// do not pass the msg if mouse is inside an imgui window
+	if (!ImGui::GetIO().WantCaptureMouse)
+	{
+		return __on_keyup(pThis, nChar);
+	}
+}
+
+// *
+// | ----------------------------------------------------------
+// *
+
+
+// check for nullptr (world_entity)
+void __declspec(naked) sunlight_preview_arg_check()
+{
+	const static uint32_t retn_pt = 0x4067D0;
+	const static uint32_t onzero_retn_pt = 0x4067E0;
+	__asm
+	{
+		mov		[ebp - 20DCh], ecx; // og
+		
+		pushad;
+		test	edx, edx;			// world_entity
+		jz		ENT_IS_ZERO;
+
+		popad;
+		mov     esi, [edx + 8];		// og
+		jmp		retn_pt;
+
+		ENT_IS_ZERO:
+		popad;
+		jmp		onzero_retn_pt;
+	}
+}
+
+void CMainFrame::main()
+{
+	// hook MainFrameWnd continuous thread
+	Utils::Hook(0x421A90, CMainFrame::hk_RoutineProcessing, HOOK_JUMP).install()->quick();
+
+	// this might be needed later, not useful for the camera window tho
+	// hook windowproc to always update the camera window on mouse movement + imgui io (not including mouse clicks)
+	//Utils::Hook(0x421A7B, CMainFrame::WindowProc, HOOK_CALL).install()->quick();
+
+	
+	// *
+	// detour cmainframe member functions to get imgui input
+	
+	__on_mscroll	= reinterpret_cast<on_cmainframe_scroll>(Utils::Hook::Detour(0x42B850, on_mscroll, HK_JUMP));
+	__on_keydown	= reinterpret_cast<on_cmainframe_key>(Utils::Hook::Detour(0x422370, on_keydown, HK_JUMP));
+	__on_keyup		= reinterpret_cast<on_cmainframe_keyup>(Utils::Hook::Detour(0x422270, on_keyup, HK_JUMP));
+
+	// check for nullptr (world_entity) in a sunlight preview function. Only required with the ^ hook, see note there.
+	Utils::Hook::Nop(0x4067C7, 6);
+	Utils::Hook(0x4067C7, sunlight_preview_arg_check, HOOK_JUMP).install()->quick();
 }

@@ -2,6 +2,11 @@
 
 namespace Utils
 {
+	uintptr_t Hook::Detour(uintptr_t offset, void* stub, Detours::X86Option option)
+	{
+		return Detours::X86::DetourFunction(offset, reinterpret_cast<uintptr_t>(stub), option);
+	}
+	
 	std::map<void*, void*> Hook::Interceptor::IReturn;
 	std::map<void*, void(*)()> Hook::Interceptor::ICallbacks;
 

@@ -131,10 +131,11 @@ namespace Game
 	{
 		none = 0,
 		saved = 1,
-		latched = 0x20,
-		cheat_protected = 0x80,
 		write_protected = 0x10,
+		latched = 0x20,
 		read_only = 0x40,
+		cheat_protected = 0x80,
+		external = 0x4000,
 	};
 
 	struct dvar_s
@@ -152,6 +153,60 @@ namespace Game
 		DvarLimits domain;
 		bool(__cdecl *domainFunc)(dvar_s *, DvarValue);
 		dvar_s *hashNext;
+	};
+
+	enum MapType
+	{
+		MAPTYPE_NONE = 0x0,
+		MAPTYPE_INVALID1 = 0x1,
+		MAPTYPE_INVALID2 = 0x2,
+		MAPTYPE_2D = 0x3,
+		MAPTYPE_3D = 0x4,
+		MAPTYPE_CUBE = 0x5,
+		MAPTYPE_COUNT = 0x6,
+	};
+
+	struct GfxImageLoadDef
+	{
+		char levelCount;
+		char flags;
+		__int16 dimensions[3];
+		int format;
+		int resourceSize;
+		char data[1];
+	};
+
+	union GfxTexture
+	{
+		GfxImageLoadDef* loadDef;
+		void* data;
+	};
+
+	struct Picmip
+	{
+		char platform[2];
+	};
+
+	struct CardMemory
+	{
+		int platform[2];
+	};
+
+	struct GfxImage
+	{
+		MapType mapType;
+		GfxTexture texture;
+		Picmip picmip;
+		bool noPicmip;
+		char semantic;
+		char track;
+		CardMemory cardMemory;
+		unsigned __int16 width;
+		unsigned __int16 height;
+		unsigned __int16 depth;
+		char category;
+		bool delayLoadPixels;
+		const char* name;
 	};
 
 	struct texdef_t
@@ -801,5 +856,264 @@ namespace Game
 		int *staticModelLit;
 		DebugGlobals debugGlobals[1];
 		int drawType;
+	};
+
+	enum GUI_MENUS
+	{
+		DEMO = 0,
+		DEVGUI = 1,
+	};
+
+	struct gui_menus_t
+	{
+		bool menustate;
+		bool mouse_ignores_menustate;
+		bool was_open;
+		bool hk_is_clicked;
+		bool hk_is_down;
+		bool one_time_init;
+		bool got_layout_from_menu;
+		float position[2];
+		float size[2];
+		int horzAlign;
+		int vertAlign;
+	};
+
+	struct gui_t
+	{
+		bool imgui_initialized;
+		bool dvars_initialized;
+		bool any_menus_open;
+		gui_menus_t menus[GGUI_MENU_COUNT];
+	};
+
+	enum WindowMessages : UINT
+	{
+		_WM_CREATE = 0x1,
+		_WM_DESTROY = 0x2,
+		_WM_MOVE = 0x3,
+		_WM_SIZE = 0x5,
+		_WM_ACTIVATE = 0x6,
+		_WM_SETFOCUS = 0x7,
+		_WM_KILLFOCUS = 0x8,
+		_WM_ENABLE = 0xA,
+		_WM_SETREDRAW = 0xB,
+		_WM_SETTEXT = 0xC,
+		_WM_GETTEXT = 0xD,
+		_WM_GETTEXTLENGTH = 0xE,
+		_WM_PAINT = 0xF,
+		_WM_CLOSE = 0x10,
+		_WM_QUERYENDSESSION = 0x11,
+		_WM_QUERYOPEN = 0x13,
+		_WM_ENDSESSION = 0x16,
+		_WM_QUIT = 0x12,
+		_WM_ERASEBKGND = 0x14,
+		_WM_SYSCOLORCHANGE = 0x15,
+		_WM_SHOWWINDOW = 0x18,
+		_WM_WININICHANGE = 0x1A,
+		_WM_DEVMODECHANGE = 0x1B,
+		_WM_ACTIVATEAPP = 0x1C,
+		_WM_FONTCHANGE = 0x1D,
+		_WM_TIMECHANGE = 0x1E,
+		_WM_CANCELMODE = 0x1F,
+		_WM_SETCURSOR = 0x20,
+		_WM_MOUSEACTIVATE = 0x21,
+		_WM_CHILDACTIVATE = 0x22,
+		_WM_QUEUESYNC = 0x23,
+		_WM_GETMINMAXINFO = 0x24,
+		_WM_PAINTICON = 0x26,
+		_WM_ICONERASEBKGND = 0x27,
+		_WM_NEXTDLGCTL = 0x28,
+		_WM_SPOOLERSTATUS = 0x2A,
+		_WM_DRAWITEM = 0x2B,
+		_WM_MEASUREITEM = 0x2C,
+		_WM_DELETEITEM = 0x2D,
+		_WM_VKEYTOITEM = 0x2E,
+		_WM_CHARTOITEM = 0x2F,
+		_WM_SETFONT = 0x30,
+		_WM_GETFONT = 0x31,
+		_WM_SETHOTKEY = 0x32,
+		_WM_GETHOTKEY = 0x33,
+		_WM_QUERYDRAGICON = 0x37,
+		_WM_COMPAREITEM = 0x39,
+		_WM_GETOBJECT = 0x3D,
+		_WM_COMPACTING = 0x41,
+		_WM_COMMNOTIFY = 0x44,
+		_WM_WINDOWPOSCHANGING = 0x46,
+		_WM_WINDOWPOSCHANGED = 0x47,
+		_WM_POWER = 0x48,
+		_WM_COPYDATA = 0x4A,
+		_WM_CANCELJOURNAL = 0x4B,
+		_WM_NOTIFY = 0x4E,
+		_WM_INPUTLANGCHANGEREQUEST = 0x50,
+		_WM_INPUTLANGCHANGE = 0x51,
+		_WM_TCARD = 0x52,
+		_WM_HELP = 0x53,
+		_WM_USERCHANGED = 0x54,
+		_WM_NOTIFYFORMAT = 0x55,
+		_WM_CONTEXTMENU = 0x7B,
+		_WM_STYLECHANGING = 0x7C,
+		_WM_STYLECHANGED = 0x7D,
+		_WM_DISPLAYCHANGE = 0x7E,
+		_WM_GETICON = 0x7F,
+		_WM_SETICON = 0x80,
+		_WM_NCCREATE = 0x81,
+		_WM_NCDESTROY = 0x82,
+		_WM_NCCALCSIZE = 0x83,
+		_WM_NCHITTEST = 0x84,
+		_WM_NCPAINT = 0x85,
+		_WM_NCACTIVATE = 0x86,
+		_WM_GETDLGCODE = 0x87,
+		_WM_SYNCPAINT = 0x88,
+		_WM_NCMOUSEMOVE = 0xA0,
+		_WM_NCLBUTTONDOWN = 0xA1,
+		_WM_NCLBUTTONUP = 0xA2,
+		_WM_NCLBUTTONDBLCLK = 0xA3,
+		_WM_NCRBUTTONDOWN = 0xA4,
+		_WM_NCRBUTTONUP = 0xA5,
+		_WM_NCRBUTTONDBLCLK = 0xA6,
+		_WM_NCMBUTTONDOWN = 0xA7,
+		_WM_NCMBUTTONUP = 0xA8,
+		_WM_NCMBUTTONDBLCLK = 0xA9,
+		_WM_NCXBUTTONDOWN = 0xAB,
+		_WM_NCXBUTTONUP = 0xAC,
+		_WM_NCXBUTTONDBLCLK = 0xAD,
+		_WM_INPUT_DEVICE_CHANGE = 0xFE,
+		_WM_INPUT = 0xFF,
+		_WM_KEYFIRST = 0x100,
+		_WM_KEYDOWN = 0x100,
+		_WM_KEYUP = 0x101,
+		_WM_CHAR = 0x102,
+		_WM_DEADCHAR = 0x103,
+		_WM_SYSKEYDOWN = 0x104,
+		_WM_SYSKEYUP = 0x105,
+		_WM_SYSCHAR = 0x106,
+		_WM_SYSDEADCHAR = 0x107,
+		_WM_UNICHAR = 0x109,
+		_WM_KEYLAST = 0x109,
+		_WM_IME_STARTCOMPOSITION = 0x10D,
+		_WM_IME_ENDCOMPOSITION = 0x10E,
+		_WM_IME_COMPOSITION = 0x10F,
+		_WM_IME_KEYLAST = 0x10F,
+		_WM_INITDIALOG = 0x110,
+		_WM_COMMAND = 0x111,
+		_WM_SYSCOMMAND = 0x112,
+		_WM_TIMER = 0x113,
+		_WM_HSCROLL = 0x114,
+		_WM_VSCROLL = 0x115,
+		_WM_INITMENU = 0x116,
+		_WM_INITMENUPOPUP = 0x117,
+		_WM_MENUSELECT = 0x11F,
+		_WM_MENUCHAR = 0x120,
+		_WM_ENTERIDLE = 0x121,
+		_WM_MENURBUTTONUP = 0x122,
+		_WM_MENUDRAG = 0x123,
+		_WM_MENUGETOBJECT = 0x124,
+		_WM_UNINITMENUPOPUP = 0x125,
+		_WM_MENUCOMMAND = 0x126,
+		_WM_CHANGEUISTATE = 0x127,
+		_WM_UPDATEUISTATE = 0x128,
+		_WM_QUERYUISTATE = 0x129,
+		_WM_CTLCOLORMSGBOX = 0x132,
+		_WM_CTLCOLOREDIT = 0x133,
+		_WM_CTLCOLORLISTBOX = 0x134,
+		_WM_CTLCOLORBTN = 0x135,
+		_WM_CTLCOLORDLG = 0x136,
+		_WM_CTLCOLORSCROLLBAR = 0x137,
+		_WM_CTLCOLORSTATIC = 0x138,
+		_MN_GETHMENU = 0x1E1,
+		_WM_MOUSEFIRST = 0x200,
+		_WM_MOUSEMOVE = 0x200,
+		_WM_LBUTTONDOWN = 0x201,
+		_WM_LBUTTONUP = 0x202,
+		_WM_LBUTTONDBLCLK = 0x203,
+		_WM_RBUTTONDOWN = 0x204,
+		_WM_RBUTTONUP = 0x205,
+		_WM_RBUTTONDBLCLK = 0x206,
+		_WM_MBUTTONDOWN = 0x207,
+		_WM_MBUTTONUP = 0x208,
+		_WM_MBUTTONDBLCLK = 0x209,
+		_WM_MOUSEWHEEL = 0x20A,
+		_WM_XBUTTONDOWN = 0x20B,
+		_WM_XBUTTONUP = 0x20C,
+		_WM_XBUTTONDBLCLK = 0x20D,
+		_WM_MOUSEHWHEEL = 0x20E,
+		_WM_PARENTNOTIFY = 0x210,
+		_WM_ENTERMENULOOP = 0x211,
+		_WM_EXITMENULOOP = 0x212,
+		_WM_NEXTMENU = 0x213,
+		_WM_SIZING = 0x214,
+		_WM_CAPTURECHANGED = 0x215,
+		_WM_MOVING = 0x216,
+		_WM_POWERBROADCAST = 0x218,
+		_WM_DEVICECHANGE = 0x219,
+		_WM_MDICREATE = 0x220,
+		_WM_MDIDESTROY = 0x221,
+		_WM_MDIACTIVATE = 0x222,
+		_WM_MDIRESTORE = 0x223,
+		_WM_MDINEXT = 0x224,
+		_WM_MDIMAXIMIZE = 0x225,
+		_WM_MDITILE = 0x226,
+		_WM_MDICASCADE = 0x227,
+		_WM_MDIICONARRANGE = 0x228,
+		_WM_MDIGETACTIVE = 0x229,
+		_WM_MDISETMENU = 0x230,
+		_WM_ENTERSIZEMOVE = 0x231,
+		_WM_EXITSIZEMOVE = 0x232,
+		_WM_DROPFILES = 0x233,
+		_WM_MDIREFRESHMENU = 0x234,
+		_WM_IME_SETCONTEXT = 0x281,
+		_WM_IME_NOTIFY = 0x282,
+		_WM_IME_CONTROL = 0x283,
+		_WM_IME_COMPOSITIONFULL = 0x284,
+		_WM_IME_SELECT = 0x285,
+		_WM_IME_CHAR = 0x286,
+		_WM_IME_REQUEST = 0x288,
+		_WM_IME_KEYDOWN = 0x290,
+		_WM_IME_KEYUP = 0x291,
+		_WM_MOUSEHOVER = 0x2A1,
+		_WM_MOUSELEAVE = 0x2A3,
+		_WM_NCMOUSEHOVER = 0x2A0,
+		_WM_NCMOUSELEAVE = 0x2A2,
+		_WM_WTSSESSION_CHANGE = 0x2B1,
+		_WM_TABLET_FIRST = 0x2C0,
+		_WM_TABLET_LAST = 0x2DF,
+		_WM_CUT = 0x300,
+		_WM_COPY = 0x301,
+		_WM_PASTE = 0x302,
+		_WM_CLEAR = 0x303,
+		_WM_UNDO = 0x304,
+		_WM_RENDERFORMAT = 0x305,
+		_WM_RENDERALLFORMATS = 0x306,
+		_WM_DESTROYCLIPBOARD = 0x307,
+		_WM_DRAWCLIPBOARD = 0x308,
+		_WM_PAINTCLIPBOARD = 0x309,
+		_WM_VSCROLLCLIPBOARD = 0x30A,
+		_WM_SIZECLIPBOARD = 0x30B,
+		_WM_ASKCBFORMATNAME = 0x30C,
+		_WM_CHANGECBCHAIN = 0x30D,
+		_WM_HSCROLLCLIPBOARD = 0x30E,
+		_WM_QUERYNEWPALETTE = 0x30F,
+		_WM_PALETTEISCHANGING = 0x310,
+		_WM_PALETTECHANGED = 0x311,
+		_WM_HOTKEY = 0x312,
+		_WM_PRINT = 0x317,
+		_WM_PRINTCLIENT = 0x318,
+		_WM_APPCOMMAND = 0x319,
+		_WM_THEMECHANGED = 0x31A,
+		_WM_CLIPBOARDUPDATE = 0x31D,
+		_WM_DWMCOMPOSITIONCHANGED = 0x31E,
+		_WM_DWMNCRENDERINGCHANGED = 0x31F,
+		_WM_DWMCOLORIZATIONCOLORCHANGED = 0x320,
+		_WM_DWMWINDOWMAXIMIZEDCHANGE = 0x321,
+		_WM_GETTITLEBARINFOEX = 0x33F,
+		_WM_HANDHELDFIRST = 0x358,
+		_WM_HANDHELDLAST = 0x35F,
+		_WM_AFXFIRST = 0x360,
+		_WM_AFXLAST = 0x37F,
+		_WM_PENWINFIRST = 0x380,
+		_WM_PENWINLAST = 0x38F,
+		_WM_APP = 0x8000,
+		_WM_USER = 0x400,
 	};
 }

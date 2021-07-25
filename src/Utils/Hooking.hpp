@@ -3,11 +3,18 @@
 #define HOOK_JUMP true
 #define HOOK_CALL false
 
+#define HK_JUMP Detours::X86Option::USE_JUMP
+#define HK_CALL Detours::X86Option::USE_CALL
+
 namespace Utils
 {
 	class Hook
 	{
 	public:
+
+		static uintptr_t Detour(uintptr_t offset, void* stub, Detours::X86Option option);
+
+		
 		class Signature
 		{
 		public:
