@@ -73,4 +73,7 @@ namespace afx
 	CSplitterWnd__GetPane_t CSplitterWnd__GetPane = reinterpret_cast<CSplitterWnd__GetPane_t>(0x5A5409);
 	CSplitterWnd__SetRowInfo_t CSplitterWnd__SetRowInfo = reinterpret_cast<CSplitterWnd__SetRowInfo_t>(0x5A544B);
 
+	CWnd_SetFocus_t CWnd_SetFocus = reinterpret_cast<CWnd_SetFocus_t>(0x58EAAC);
+	CWnd_FromHandle_t CWnd_FromHandle = reinterpret_cast<CWnd_FromHandle_t>(0x5871BD);
+	
 }

@@ -312,28 +312,25 @@ typedef void(__stdcall* on_cmainframe_keyup)(CMainFrame*, UINT);
 void __fastcall CMainFrame::on_mscroll(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
 {
 	ImGui::SetCurrentContext(Game::Globals::_context_camera);
-	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
-
-#if !CCAMWND_REALTIME
-	pThis->UpdateWindows(W_CAMERA);
-#endif
-	
-	// do not pass msg if mouse is inside an imgui window
-	if (!ImGui::GetIO().WantCaptureMouse)
+	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		return __on_mscroll(pThis, nFlags, zDelta, point);
+		Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
+		return;
 	}
+
+	ImGui::SetCurrentContext(Game::Globals::_context_cxy);
+	if (ImGui::GetIO().WantCaptureMouse)
+	{
+		Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
+		return;
+	}
+
+	return __on_mscroll(pThis, nFlags, zDelta, point);
 }
 
 // *
 // | ------------------------ Key ----------------------------
 // *
-
-typedef void(__thiscall* cwnd_setfocus_t)(CWnd*);
-cwnd_setfocus_t cwnd_setfocus = reinterpret_cast<cwnd_setfocus_t>(0x58EAAC);
-
-typedef void(__stdcall* cwnd_fromhandle_t)(HWND);
-cwnd_fromhandle_t cwnd_fromhandle = reinterpret_cast<cwnd_fromhandle_t>(0x5871BD);
 
 void focus_window(CWnd* wnd)
 {
@@ -344,8 +341,8 @@ void focus_window(CWnd* wnd)
 		BringWindowToTop(hwnd);
 	}
 
-	cwnd_setfocus(wnd);
-	cwnd_fromhandle(SetCapture(hwnd));
+	afx::CWnd_SetFocus(wnd);
+	afx::CWnd_FromHandle(SetCapture(hwnd));
 }
 
 void __fastcall CMainFrame::on_keydown(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -364,18 +361,6 @@ void __fastcall CMainFrame::on_keydown(CMainFrame* pThis, [[maybe_unused]] void*
 	}
 
 	return __on_keydown(pThis, nChar, nRepCnt, nFlags);
-	
-//	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_KEYDOWN, 0, nChar);
-//
-//#if !CCAMWND_REALTIME
-//	pThis->UpdateWindows(W_CAMERA);
-//#endif
-//	
-//	// do not pass the msg if mouse is inside an imgui window
-//	if (!ImGui::GetIO().WantCaptureMouse)
-//	{
-//		return __on_keydown(pThis, nChar, nRepCnt, nFlags);
-//	}
 }
 
 void __stdcall CMainFrame::on_keyup(CMainFrame* pThis, UINT nChar)
@@ -393,18 +378,6 @@ void __stdcall CMainFrame::on_keyup(CMainFrame* pThis, UINT nChar)
 	}
 
 	return __on_keyup(pThis, nChar);
-	
-//	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_KEYUP, 0, nChar);
-//
-//#if !CCAMWND_REALTIME
-//	pThis->UpdateWindows(W_CAMERA);
-//#endif
-//	
-//	// do not pass the msg if mouse is inside an imgui window
-//	if (!ImGui::GetIO().WantCaptureMouse)
-//	{
-//		return __on_keyup(pThis, nChar);
-//	}
 }
 
 // *

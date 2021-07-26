@@ -1312,5 +1312,11 @@ namespace afx
 
 	typedef void(__thiscall* CSplitterWnd__SetRowInfo_t)(CSplitterWnd*, int row, int, int);
 	extern CSplitterWnd__SetRowInfo_t CSplitterWnd__SetRowInfo;
+
+	typedef void(__thiscall* CWnd_SetFocus_t)(CWnd*);
+	extern CWnd_SetFocus_t CWnd_SetFocus;
+
+	typedef void(__stdcall* CWnd_FromHandle_t)(HWND);
+	extern CWnd_FromHandle_t CWnd_FromHandle;
 	
 }
