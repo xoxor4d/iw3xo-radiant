@@ -38,10 +38,18 @@ DWORD WINAPI ccamwnd_msg_pump(LPVOID)
 			
 			com_lastFrameTime = com_frameTime;
 
-			auto hwnd = CCamWnd::ActiveWindow->GetWindow();
-			if  (hwnd != nullptr)
+			// update cam window ~ 250fps
+			if  (const auto hwnd = CCamWnd::ActiveWindow->GetWindow(); 
+				hwnd != nullptr)
 			{
-				SendMessageA(CCamWnd::ActiveWindow->GetWindow(), WM_PAINT, 0, 0);
+				SendMessageA(hwnd, WM_PAINT, 0, 0);
+			}
+
+			// update xy window ~ 250fps
+			if (const auto hwnd = CMainFrame::ActiveWindow->m_pXYWnd->GetWindow();
+				hwnd != nullptr)
+			{
+				SendMessageA(hwnd, WM_PAINT, 0, 0);
 			}
 		}
 	}
@@ -269,6 +277,7 @@ namespace Components
 		
 		CMainFrame::main();
 		CCamWnd::main();
+		CXYWnd::main();
 
 		Utils::Hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
 

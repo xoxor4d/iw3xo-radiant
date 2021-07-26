@@ -201,6 +201,28 @@ namespace Components
 			IDirect3D9Ex* m_pIDirect3D9Ex;
 		};
 
+		
+		/*class _D3D9SwapEx : public IDirect3DSwapChain9Ex
+		{
+		public:
+			_D3D9SwapEx(IDirect3DSwapChain9Ex* pOriginal) : m_pIDirect3D9SwapChain(pOriginal) {};
+			virtual ~_D3D9SwapEx() {};
+
+			HRESULT __stdcall Present(const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion, DWORD dwFlags) override;
+			HRESULT __stdcall GetFrontBufferData(IDirect3DSurface9* pDestSurface) override;
+			HRESULT __stdcall GetBackBuffer(UINT iBackBuffer, D3DBACKBUFFER_TYPE Type, IDirect3DSurface9** ppBackBuffer) override;
+			HRESULT __stdcall GetRasterStatus(D3DRASTER_STATUS* pRasterStatus) override;
+			HRESULT __stdcall GetDisplayMode(D3DDISPLAYMODE* pMode) override;
+			HRESULT __stdcall GetDevice(IDirect3DDevice9** ppDevice) override;
+			HRESULT __stdcall GetPresentParameters(D3DPRESENT_PARAMETERS* pPresentationParameters) override;
+			HRESULT __stdcall GetLastPresentCount(UINT* pLastPresentCount) override;
+			HRESULT __stdcall GetPresentStats(D3DPRESENTSTATS* pPresentationStatistics) override;
+			HRESULT __stdcall GetDisplayModeEx(D3DDISPLAYMODEEX* pMode, D3DDISPLAYROTATION* pRotation) override;
+		
+		private:
+			IDirect3DSwapChain9* m_pIDirect3D9SwapChain;
+		};*/
+
 		static IDirect3D9* __stdcall Direct3DCreate9Stub(UINT sdk);
 	};
 }

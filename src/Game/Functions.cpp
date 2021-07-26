@@ -29,17 +29,27 @@ namespace Game
 		Game::gui_t gui = Game::gui_t();
 
 		HWND test_hwnd;
+
+		bool imgui_camera_init = false;
+		bool imgui_cxy_init = false;
+
+		ImGuiContext* _context_camera;
+		ImGuiContext* _context_cxy;
 		
 	}
 
 	// radiant globals
 	int& g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
-
+	CPrefsDlg* g_PrefsDlg = reinterpret_cast<CPrefsDlg*>(0x73C704);
+	Game::qeglobals_t* g_qeglobals = reinterpret_cast<Game::qeglobals_t*>(0x25F39C0);
+	
 	int	*g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
 	int	&g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
 	bool &g_bScreenUpdates = *reinterpret_cast<bool*>(0x739B0F);
 	double &g_time = *reinterpret_cast<double*>(0x2665678);
 	double &g_oldtime = *reinterpret_cast<double*>(0x2665670);
+
+	Game::DxGlobals* dx = reinterpret_cast<Game::DxGlobals*>(0x1365684);
 
 	int *dvarCount = reinterpret_cast<int*>(0x242394C);
 	Game::dvar_s* dvarPool = reinterpret_cast<Game::dvar_s*>(0x2427DA4); // dvarpool + 1 dvar size

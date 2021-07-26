@@ -858,6 +858,132 @@ namespace Game
 		int drawType;
 	};
 
+	struct IDirect3DSwapChain9Vtbl
+	{
+		HRESULT(__stdcall* QueryInterface)(IDirect3DSwapChain9* This, const IID* const riid, void** ppvObj);
+		ULONG(__stdcall* AddRef)(IDirect3DSwapChain9* This);
+		ULONG(__stdcall* Release)(IDirect3DSwapChain9* This);
+		HRESULT(__stdcall* Present)(IDirect3DSwapChain9* This, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion, DWORD dwFlags);
+		HRESULT(__stdcall* GetFrontBufferData)(IDirect3DSwapChain9* This, IDirect3DSurface9* pDestSurface);
+		HRESULT(__stdcall* GetBackBuffer)(IDirect3DSwapChain9* This, UINT iBackBuffer, D3DBACKBUFFER_TYPE Type, IDirect3DSurface9** ppBackBuffer);
+		HRESULT(__stdcall* GetRasterStatus)(IDirect3DSwapChain9* This, D3DRASTER_STATUS* pRasterStatus);
+		HRESULT(__stdcall* GetDisplayMode)(IDirect3DSwapChain9* This, D3DDISPLAYMODE* pMode);
+		HRESULT(__stdcall* GetDevice)(IDirect3DSwapChain9* This, IDirect3DDevice9** ppDevice);
+		HRESULT(__stdcall* GetPresentParameters)(IDirect3DSwapChain9* This, D3DPRESENT_PARAMETERS* pPresentationParameters);
+		D3DPRESENT_PARAMETERS PresentParameters;
+		D3DDISPLAYMODE DisplayMode;
+	};
+
+	struct IDirect3DSwapChain9
+	{
+		IDirect3DSwapChain9Vtbl* lpVtbl;
+	};
+
+	struct GfxWindowTarget
+	{
+		HWND__* hwnd;
+		IDirect3DSwapChain9* swapChain;
+		int width;
+		int height;
+	};
+
+	struct __declspec(align(8)) DxGlobals
+	{
+		IDirect3DQuery9* query;
+		HINSTANCE__* hinst;
+		IDirect3D9* d3d9;
+		IDirect3DDevice9* device;
+		unsigned int adapterIndex;
+		bool adapterNativeIsValid;
+		int adapterNativeWidth;
+		int adapterNativeHeight;
+		int adapterFullscreenWidth;
+		int adapterFullscreenHeight;
+		int depthStencilFormat;
+		unsigned int displayModeCount;
+		_D3DDISPLAYMODE displayModes[256];
+		const char* resolutionNameTable[257];
+		const char* refreshRateNameTable[257];
+		char modeText[5120];
+		IDirect3DQuery9* fencePool[8];
+		unsigned int nextFence;
+		int gpuSync;
+		int multiSampleType;
+		unsigned int multiSampleQuality;
+		IDirect3DSurface9* singleSampleDepthStencilSurface;
+		bool deviceLost;
+		bool inScene;
+		int targetWindowIndex;
+		int windowCount;
+		GfxWindowTarget windows[5];
+		int flushGpuQueryCount;
+		IDirect3DQuery9* flushGpuQuery;
+		unsigned __int64 gpuSyncDelay;
+		unsigned __int64 gpuSyncStart;
+		unsigned __int64 gpuSyncEnd;
+		int pad02;
+		bool flushGpuQueryIssued;
+		int linearNonMippedMinFilter;
+		int linearNonMippedMagFilter;
+		int linearMippedMinFilter;
+		int linearMippedMagFilter;
+		int anisotropicMinFilter;
+		int anisotropicMagFilter;
+		int linearMippedAnisotropy;
+		int anisotropyFor2x;
+		int anisotropyFor4x;
+		int mipFilterMode;
+		unsigned int mipBias;
+		IDirect3DQuery9* swapFence;
+	};
+
+	struct pedge_t
+	{
+		int p1;
+		int p2;
+		face_t* f1;
+		face_t* f2;
+	};
+
+	struct terrainVert_t
+	{
+		float height;
+		float scale;
+	};
+
+	struct qeglobals_t
+	{
+		bool d_showgrid;
+		int d_gridsize;
+		int d_num_entities;
+		entity_s* d_project_entity;
+		float d_new_brush_bottom_x;
+		float d_new_brush_bottom_y;
+		float d_new_brush_bottom_z;
+		float d_new_brush_top_x;
+		float d_new_brush_top_y;
+		float d_new_brush_top_z;
+		HINSTANCE d_hInstance;
+		HWND d_hwndMain;
+		HWND d_hwndCamera;
+		HWND d_hwndEdit;
+		HWND d_hwndEntity;
+		HWND d_hwndTexture;
+		HWND d_hwndXY;
+		HWND d_hwndZ;
+		HWND d_hwndStatus;
+		HWND d_hwndGroup;
+		HWND d_hwndMedia;
+		vec3_t d_points[2048];
+		int d_numpoints;
+		pedge_t d_edges[512];
+		int d_numedges;
+		terrainVert_t* d_terrapoints[4096];
+		int d_numterrapoints;
+		int d_num_move_points;
+		float* d_move_points[4096];
+	};
+
 	enum GUI_MENUS
 	{
 		DEMO = 0,

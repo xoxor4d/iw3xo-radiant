@@ -1,11 +1,5 @@
 #pragma once
 
-//struct CPoint
-//{
-//	int x;
-//	int y;
-//};
-
 struct camera_s
 {
 	int	width;

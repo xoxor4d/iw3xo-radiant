@@ -268,6 +268,10 @@ namespace Components
 			Gui::render_loop();
 		//}
 
+		/*if (!GET_GGUI.imgui_initialized) {
+			Gui::imgui_init();
+		}*/
+
 		return m_pIDirect3DDevice9->EndScene();
 	}
 

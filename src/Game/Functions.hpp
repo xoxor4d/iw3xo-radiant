@@ -32,6 +32,7 @@ namespace Game
 		struct gui_present_s
 		{
 			bool CCamWnd;
+			bool CXYWnd;
 		};
 		
 
@@ -39,17 +40,27 @@ namespace Game
 		extern Game::gui_t gui;
 
 		extern HWND test_hwnd;
+
+		extern bool imgui_camera_init;
+		extern bool imgui_cxy_init;
+
+		extern ImGuiContext* _context_camera;
+		extern ImGuiContext* _context_cxy;
 		
 	}
 
 	// radiant globals
 	extern int& g_nScaleHow;
+	extern CPrefsDlg* g_PrefsDlg;
+	extern Game::qeglobals_t* g_qeglobals;
 
 	extern int	*g_nUpdateBitsPtr;
 	extern int	&g_nUpdateBits;
 	extern bool &g_bScreenUpdates;
 	extern double &g_time;
 	extern double &g_oldtime;
+
+	extern Game::DxGlobals* dx;
 
 	extern int *dvarCount;
 	extern Game::dvar_s *dvarPool;

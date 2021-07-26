@@ -24,6 +24,10 @@ function imgui.project()
 			path.join(imgui.source, "*.hpp"),
             path.join(imgui.source, "*.c"),
             path.join(imgui.source, "*.h"),
+            path.join(imgui.source, "backends/imgui_impl_dx9.cpp"),
+            path.join(imgui.source, "backends/imgui_impl_dx9.h"),
+            path.join(imgui.source, "backends/imgui_impl_win32.cpp"),
+            path.join(imgui.source, "backends/imgui_impl_win32.h"),
 		}
 
 		warnings "Off"

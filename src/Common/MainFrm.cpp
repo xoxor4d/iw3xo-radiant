@@ -261,28 +261,28 @@ LRESULT __fastcall CMainFrame::WindowProc(CMainFrame* pThis, [[maybe_unused]] vo
 		pThis->UpdateWindows(W_CAMERA);
 	}*/
 
-	if (GGUI_READY)
-	{
-		// handle mouse cursor for open menus
-		for (auto menu = 0; menu < GGUI_MENU_COUNT; menu++)
-		{
-			if (Game::Globals::gui.menus[menu].menustate)
-			{
-				if (ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam))
-				{
-					//if (ImGui::GetIO().WantCaptureMouse)
-					//{
-					//	ShowCursor(0);
-					//	ImGui::GetIO().MouseDrawCursor = 1;
-					//	return true;
-					//}
-				}
-			}
-		}
+	//if (GGUI_READY)
+	//{
+	//	// handle mouse cursor for open menus
+	//	for (auto menu = 0; menu < GGUI_MENU_COUNT; menu++)
+	//	{
+	//		if (Game::Globals::gui.menus[menu].menustate)
+	//		{
+	//			if (ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam))
+	//			{
+	//				if (ImGui::GetIO().WantCaptureMouse)
+	//				{
+	//					ShowCursor(0);
+	//					ImGui::GetIO().MouseDrawCursor = 1;
+	//					return true;
+	//				}
+	//			}
+	//		}
+	//	}
 
-		//ShowCursor(1);
-		//ImGui::GetIO().MouseDrawCursor = 0;
-	}
+	//	ShowCursor(1);
+	//	ImGui::GetIO().MouseDrawCursor = 0;
+	//}
 
 	// => CFrameWnd::DefWindowProc
 	return o_wndproc(pThis, Msg, wParam, lParam);
@@ -298,8 +298,8 @@ typedef void(__thiscall* on_cmainframe_scroll)(CMainFrame*, UINT, SHORT, CPoint)
 	on_cmainframe_scroll __on_mscroll;
 
 
-typedef void(__thiscall* on_cmainframe_key)(CMainFrame*, UINT, UINT, UINT);
-	on_cmainframe_key __on_keydown;
+typedef void(__thiscall* on_cmainframe_keydown)(CMainFrame*, UINT, UINT, UINT);
+	on_cmainframe_keydown __on_keydown;
 
 typedef void(__stdcall* on_cmainframe_keyup)(CMainFrame*, UINT);
 	on_cmainframe_keyup __on_keyup;
@@ -311,6 +311,7 @@ typedef void(__stdcall* on_cmainframe_keyup)(CMainFrame*, UINT);
 
 void __fastcall CMainFrame::on_mscroll(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
 {
+	ImGui::SetCurrentContext(Game::Globals::_context_camera);
 	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
 
 #if !CCAMWND_REALTIME
@@ -328,34 +329,82 @@ void __fastcall CMainFrame::on_mscroll(CMainFrame* pThis, [[maybe_unused]] void*
 // | ------------------------ Key ----------------------------
 // *
 
+typedef void(__thiscall* cwnd_setfocus_t)(CWnd*);
+cwnd_setfocus_t cwnd_setfocus = reinterpret_cast<cwnd_setfocus_t>(0x58EAAC);
+
+typedef void(__stdcall* cwnd_fromhandle_t)(HWND);
+cwnd_fromhandle_t cwnd_fromhandle = reinterpret_cast<cwnd_fromhandle_t>(0x5871BD);
+
+void focus_window(CWnd* wnd)
+{
+	HWND hwnd = wnd->GetWindow();
+	
+	if(GetTopWindow(Game::g_qeglobals->d_hwndMain) != hwnd)
+	{
+		BringWindowToTop(hwnd);
+	}
+
+	cwnd_setfocus(wnd);
+	cwnd_fromhandle(SetCapture(hwnd));
+}
+
 void __fastcall CMainFrame::on_keydown(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_KEYDOWN, 0, nChar);
-
-#if !CCAMWND_REALTIME
-	pThis->UpdateWindows(W_CAMERA);
-#endif
-	
-	// do not pass the msg if mouse is inside an imgui window
-	if (!ImGui::GetIO().WantCaptureMouse)
+	ImGui::SetCurrentContext(Game::Globals::_context_camera);
+	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		return __on_keydown(pThis, nChar, nRepCnt, nFlags);
+		return;
 	}
+
+	ImGui::SetCurrentContext(Game::Globals::_context_cxy);
+	if (ImGui::GetIO().WantCaptureMouse)
+	{
+		focus_window(CMainFrame::ActiveWindow->m_pXYWnd);
+		return;
+	}
+
+	return __on_keydown(pThis, nChar, nRepCnt, nFlags);
+	
+//	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_KEYDOWN, 0, nChar);
+//
+//#if !CCAMWND_REALTIME
+//	pThis->UpdateWindows(W_CAMERA);
+//#endif
+//	
+//	// do not pass the msg if mouse is inside an imgui window
+//	if (!ImGui::GetIO().WantCaptureMouse)
+//	{
+//		return __on_keydown(pThis, nChar, nRepCnt, nFlags);
+//	}
 }
 
 void __stdcall CMainFrame::on_keyup(CMainFrame* pThis, UINT nChar)
 {
-	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_KEYUP, 0, nChar);
-
-#if !CCAMWND_REALTIME
-	pThis->UpdateWindows(W_CAMERA);
-#endif
-	
-	// do not pass the msg if mouse is inside an imgui window
-	if (!ImGui::GetIO().WantCaptureMouse)
+	ImGui::SetCurrentContext(Game::Globals::_context_camera);
+	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		return __on_keyup(pThis, nChar);
+		return;
 	}
+	
+	ImGui::SetCurrentContext(Game::Globals::_context_cxy);
+	if (ImGui::GetIO().WantCaptureMouse)
+	{
+		return;
+	}
+
+	return __on_keyup(pThis, nChar);
+	
+//	Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_KEYUP, 0, nChar);
+//
+//#if !CCAMWND_REALTIME
+//	pThis->UpdateWindows(W_CAMERA);
+//#endif
+//	
+//	// do not pass the msg if mouse is inside an imgui window
+//	if (!ImGui::GetIO().WantCaptureMouse)
+//	{
+//		return __on_keyup(pThis, nChar);
+//	}
 }
 
 // *
@@ -400,7 +449,7 @@ void CMainFrame::main()
 	// detour cmainframe member functions to get imgui input
 	
 	__on_mscroll	= reinterpret_cast<on_cmainframe_scroll>(Utils::Hook::Detour(0x42B850, on_mscroll, HK_JUMP));
-	__on_keydown	= reinterpret_cast<on_cmainframe_key>(Utils::Hook::Detour(0x422370, on_keydown, HK_JUMP));
+	__on_keydown	= reinterpret_cast<on_cmainframe_keydown>(Utils::Hook::Detour(0x422370, on_keydown, HK_JUMP));
 	__on_keyup		= reinterpret_cast<on_cmainframe_keyup>(Utils::Hook::Detour(0x422270, on_keyup, HK_JUMP));
 
 	// check for nullptr (world_entity) in a sunlight preview function. Only required with the ^ hook, see note there.

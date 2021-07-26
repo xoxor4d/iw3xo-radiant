@@ -72,9 +72,9 @@
 #define STATIC_ASSERT_OFFSET(struct, member, offset)	static_assert(offsetof(struct, member) == offset, "Offset check")
 
 #include <imgui.h>
-#include <imgui_impl_dx9.h>
-#include <imgui_impl_win32.h>
-#include <imgui_md.h>
+#include <backends/imgui_impl_dx9.h>
+#include <backends/imgui_impl_win32.h>
+#include "Common/imgui/addons.h"
 
 #include "detours/Detours.h"
 
