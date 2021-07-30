@@ -279,6 +279,45 @@ namespace Components
 		}
 	}
 #endif
+
+	void load_raw_materials_progressbar(int index, int material_total_count)
+	{
+		const int    idx = index + 1;
+		const double percentage = ((double)idx / (double)material_total_count);
+		
+		const int val  = static_cast<int>(percentage * 100);
+		const int lpad = static_cast<int>(percentage * 60);
+		const int rpad = 60 - lpad;
+
+		printf("\rLoading raw materials: %3d%% [%.*s%*s]", val, lpad, "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||", rpad, "");
+
+		if (val == 100)
+		{
+			printf("\n");
+		}
+			
+		fflush(stdout);
+	}
+
+	__declspec(naked) void load_raw_materials_progressbar_stub()
+	{
+		const static uint32_t retn_pt = 0x45AF65;
+		__asm
+		{
+			pushad;
+			mov		eax, [ebp - 54h];
+			push	eax;
+			push	ecx;
+			call	load_raw_materials_progressbar;
+			add		esp, 8;
+			popad;
+			
+			add     ecx, 1; // og
+			cmp     ecx, [ebp - 54h]; // ebp - 54 = total amount of materials
+
+			jmp		retn_pt;
+		}
+	}
 	
 	QuickPatch::QuickPatch()
 	{
@@ -296,6 +335,9 @@ namespace Components
 		Utils::Hook::Set<BYTE>(0x496CB6, 0xB9); // mov ecx,00000000 (0xB9 00 00 00 00)
 		Utils::Hook::Set<DWORD>(0x496CB6 + 1, 0x0); // mov ecx,00000000 (0xB9 00 00 00 00)
 
+		// load raw materials progressbar
+		Utils::Hook::Nop(0x45AF5F, 6);
+		Utils::Hook(0x45AF5F, load_raw_materials_progressbar_stub, HOOK_JUMP).install()->quick();
 		
 #ifdef HIDE_MAINFRAME_TOOLBAR
 		Utils::Hook(0x4211C6, show_toolbar_stub, HOOK_JUMP).install()->quick();
