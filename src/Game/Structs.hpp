@@ -1094,7 +1094,7 @@ namespace Game
 		Glyph* glyphs;
 	};
 
-	struct qeglobals_t
+	struct __declspec(align(8)) qeglobals_t
 	{
 		bool d_showgrid;
 		int d_gridsize;
@@ -1170,7 +1170,7 @@ namespace Game
 		char pad_dontDrawSelectedOutlines[3];
 		bool dontDrawSelectedTint;
 		char pad_dontDrawSelectedTint[3];
-		bool draw_toggle_unk01;
+		bool preview_at_max_intensity;
 		char pad_draw_toggle_unk01[3];
 		bool toggle_unk02;
 		bool toggle_unk03;
@@ -1192,6 +1192,7 @@ namespace Game
 		void* d_filterGlobals_layerFilters;
 	};
 
+
 	struct undo_s
 	{
 		double time;
@@ -1203,6 +1204,16 @@ namespace Game
 		undo_s* prev;
 		undo_s* next;
 	};
+
+	enum ENTITY_DEFS
+	{
+		ENTITY_WIREFRAME		= 0x1,
+		ENTITY_SKIN_MODEL		= 0x10,
+		ENTITY_SELECTED_ONLY	= 0x100,
+		ENTITY_BOXED			= 0x1000,
+		ENTITY_SKINNED			= 0x10000,
+	};
+
 	
 	enum WindowMessages : UINT
 	{
@@ -1472,5 +1483,6 @@ namespace ggui
 	{
 		imgui_context ccamerawnd;
 		imgui_context cxywnd;
+		//bool cxywnd_menubar_state;
 	};
 }

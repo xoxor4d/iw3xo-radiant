@@ -33,7 +33,7 @@ namespace Game
 
 	// radiant globals
 	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
-	CPrefsDlg*	g_PrefsDlg = reinterpret_cast<CPrefsDlg*>(0x73C704);
+	//CPrefsDlg*	g_PrefsDlg = reinterpret_cast<CPrefsDlg*>(0x73C704);
 	Game::qeglobals_t* g_qeglobals = reinterpret_cast<Game::qeglobals_t*>(0x25F39C0);
 	
 	int*	g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
@@ -43,15 +43,21 @@ namespace Game
 	double& g_oldtime = *reinterpret_cast<double*>(0x2665670);
 	bool&	g_region_active = *reinterpret_cast<bool*>(0x23F1744);
 
+	CPrefsDlg* g_PrefsDlg()
+	{
+		const auto prefs = reinterpret_cast<CPrefsDlg*>(*(DWORD*)0x73C704);
+		return prefs;
+	}
+	
 	Game::undo_s* g_lastundo()
 	{
-		const auto undo = reinterpret_cast<Game::undo_s*>(*(DWORD*)(Game::g_lastundo_ptr));
+		const auto undo = reinterpret_cast<Game::undo_s*>(*(DWORD*)0x23F162C);
 		return undo;
 	}
 	
 	Game::undo_s* g_lastredo()
 	{
-		const auto redo = reinterpret_cast<Game::undo_s*>(*(DWORD*)(Game::g_lastredo_ptr));
+		const auto redo = reinterpret_cast<Game::undo_s*>(*(DWORD*)0x23F15CC);
 		return redo;
 	}
 	

@@ -288,7 +288,13 @@ namespace Components
 		CCamWnd::main();
 		CXYWnd::main();
 
+		// add iw3xradiant search path (imgui images)
 		Utils::Hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
+
+		// disable top-most mode for inspector/entity window
+		Utils::Hook::Nop(0x496CB6, 13); // clear instructions
+		Utils::Hook::Set<BYTE>(0x496CB6, 0xB9); // mov ecx,00000000 (0xB9 00 00 00 00)
+		Utils::Hook::Set<DWORD>(0x496CB6 + 1, 0x0); // mov ecx,00000000 (0xB9 00 00 00 00)
 
 		
 #ifdef HIDE_MAINFRAME_TOOLBAR
@@ -351,6 +357,7 @@ namespace Components
 		// NOP startup console-spam
 		//Utils::Hook::Nop(0x4818DF, 5); // ScanFile
 		//Utils::Hook::Nop(0x48B8BE, 5); // ScanWeapon
+
 		
 		// remove the statusbar (not the console!)
 		//Utils::Hook::Nop(0x41F8E0, 5);

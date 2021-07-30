@@ -37,7 +37,7 @@ namespace Game
 	
 	// radiant globals
 	extern int&			g_nScaleHow;
-	extern CPrefsDlg*	g_PrefsDlg;
+	//extern CPrefsDlg*	g_PrefsDlg;
 	extern Game::qeglobals_t* g_qeglobals;
 
 	extern int*		g_nUpdateBitsPtr;
@@ -47,14 +47,12 @@ namespace Game
 	extern double&	g_oldtime;
 	extern bool&	g_region_active;
 
-//#define GET_LASTUNDO reinterpret_cast<Game::undo_s*>(*(DWORD*)(Game::g_lastundo))
-//#define GET_LASTREDO reinterpret_cast<Game::undo_s*>(*(DWORD*)(Game::g_lastredo))
-
+	extern CPrefsDlg* g_PrefsDlg();
 	extern Game::undo_s* g_lastundo();
 	extern Game::undo_s* g_lastredo();
 
-	static DWORD* g_lastundo_ptr = (DWORD*)(0x23F162C);
-	static DWORD* g_lastredo_ptr = (DWORD*)(0x23F15CC);
+	//static DWORD* g_lastundo_ptr = (DWORD*)(0x23F162C);
+	//static DWORD* g_lastredo_ptr = (DWORD*)(0x23F15CC);
 	
 	extern Game::DxGlobals* dx;
 

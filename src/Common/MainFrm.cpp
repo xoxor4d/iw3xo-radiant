@@ -339,23 +339,6 @@ void __fastcall CMainFrame::on_mscroll(CMainFrame* pThis, [[maybe_unused]] void*
 // | ------------------------ Key ----------------------------
 // *
 
-//void focus_window(CWnd* wnd)
-//{
-//	HWND hwnd = wnd->GetWindow();
-//	
-//	if(GetTopWindow(Game::g_qeglobals->d_hwndMain) != hwnd)
-//	{
-//		BringWindowToTop(hwnd);
-//	}
-//
-//	afx::CWnd_SetFocus(wnd);
-//	afx::CWnd_FromHandle(SetCapture(hwnd));
-//}
-
-/*
- * 
- */
-
 void __fastcall CMainFrame::on_keydown(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	IMGUI_BEGIN_CCAMERAWND;
@@ -435,19 +418,6 @@ void __declspec(naked) sunlight_preview_arg_check()
 	}
 }
 
-//void __declspec(naked) winproc_stub()
-//{
-//	const static uint32_t retn_pt = 0x421A7B;
-//	__asm
-//	{
-//		push    eax;		// lParam
-//		push    ecx;		// wParam
-//		push    edx;		// msg
-//		mov     ecx, esi;	// this
-//		
-//		jmp		retn_pt;
-//	}
-//}
 
 void CMainFrame::main()
 {

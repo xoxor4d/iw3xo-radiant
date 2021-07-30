@@ -40,6 +40,13 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
 // seperator with spacing
 #define SEPERATORV(spacing) SPACING(0.0f, spacing); ImGui::Separator(); SPACING(0.0f, spacing) 
 
+#define IMGUI_MENU_WIDGET_SINGLE(label, func)                                                       \
+    ImGui::Text(label); ImGui::SameLine();                                                          \
+    const ImGuiMenuColumns* offsets = &ImGui::GetCurrentWindow()->DC.MenuColumns;                   \
+	ImGui::SetCursorPosX(offsets->OffsetShortcut + 5);                                              \
+	ImGui::PushItemWidth(offsets->Widths[2] + offsets->Widths[3] + 5);                              \
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, 0));   \
+	func; ImGui::PopItemWidth(); ImGui::PopStyleVar();
 
 namespace Components
 {
@@ -173,7 +180,7 @@ namespace Components
 
 		if (ImGui::BeginMenuBar()) 
 		{
-			if (ImGui::BeginMenu("File")) 
+			if (ImGui::BeginMenu("File"))
 			{
 				if (ImGui::MenuItem("New Map")) {
 					mainframe_cdeclcall(void, 0x423AA0); //CMainFrame::OnFileNew
@@ -418,7 +425,7 @@ namespace Components
 				}
 
 				if (ImGui::MenuItem("Show Last Hidden", "SHIFT-CTRL-H")) {
-					cdeclcall(void, 0x42B6B0); // CMainFrame::OnHideUnselected
+					cdeclcall(void, 0x42B6E0); // CMainFrame::OnHideUnselected
 				}
 
 				if (ImGui::MenuItem("Show Hidden", "SHIFT-H")) {
@@ -427,15 +434,85 @@ namespace Components
 				
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Cubic Clip Zoom In", "CTRL-[")) {
-					mainframe_thiscall(void, 0x428F10); // CMainFrame::OnViewCubein
+				if (ImGui::BeginMenu("Draw Entities As"))
+				{
+					if (ImGui::MenuItem("Bounding Box", 0, Game::g_PrefsDlg()->m_nEntityShowState == Game::ENTITY_BOXED)) {
+						mainframe_thiscall(void, 0x42B320); // CMainFrame::OnViewEntitiesasBoundingbox
+					}
+
+					if (ImGui::MenuItem("Wireframe", 0, Game::g_PrefsDlg()->m_nEntityShowState == (Game::ENTITY_SKINNED | Game::ENTITY_WIREFRAME))) {
+						mainframe_thiscall(void, 0x42B410); // CMainFrame::OnViewEntitiesasWireframe
+					}
+
+					if (ImGui::MenuItem("Selected Wireframe", 0, Game::g_PrefsDlg()->m_nEntityShowState == (Game::ENTITY_SELECTED_ONLY | Game::ENTITY_WIREFRAME))) {
+						mainframe_thiscall(void, 0x42B380); // CMainFrame::OnViewEntitiesasSelectedwireframe
+					}
+
+					if (ImGui::MenuItem("Selected Skinned", 0, Game::g_PrefsDlg()->m_nEntityShowState == (Game::ENTITY_SELECTED_ONLY | Game::ENTITY_SKIN_MODEL))) {
+						mainframe_thiscall(void, 0x42B350); // CMainFrame::OnViewEntitiesasSelectedskinned
+					}
+
+					if (ImGui::MenuItem("Skinned", 0, Game::g_PrefsDlg()->m_nEntityShowState == (Game::ENTITY_SKINNED | Game::ENTITY_SKIN_MODEL))) {
+						mainframe_thiscall(void, 0x42B3B0); // CMainFrame::OnViewEntitiesasSkinned
+					}
+
+					if (ImGui::MenuItem("Skinned And Boxed", 0, Game::g_PrefsDlg()->m_nEntityShowState == (Game::ENTITY_SKINNED | Game::ENTITY_BOXED | Game::ENTITY_SKIN_MODEL))) {
+						mainframe_thiscall(void, 0x42B3E0); // CMainFrame::OnViewEntitiesasSkinnedandboxed
+					}
+					
+					ImGui::EndMenu(); // Draw Entities As
 				}
 
-				if (ImGui::MenuItem("Cubic Clip Zoom Out", "CTRL-]")) {
-					mainframe_thiscall(void, 0x428F50); // CMainFrame::OnViewCubeout
+				if (ImGui::BeginMenu("Light Preview"))
+				{
+					if (ImGui::MenuItem("Enable Light Preview", "F8", Game::g_PrefsDlg()->enable_light_preview)) {
+						mainframe_thiscall(void, 0x4240C0); // CMainFrame::OnEnableLightPreview
+					}
+
+					if (ImGui::MenuItem("Enable Sun Preview", "CTRL-F8", Game::g_PrefsDlg()->preview_sun_aswell)) {
+						mainframe_thiscall(void, 0x424060); // CMainFrame::OnPreviewSun
+					}
+
+					SEPERATORV(0.0f);
+					
+					if (ImGui::MenuItem("Start Previewing Selected", "SHIFT-F8")) {
+						mainframe_thiscall(void, 0x424120); // CMainFrame::OnStartPreviewSelected
+					}
+
+					if (ImGui::MenuItem("Stop Previewing Selected", "SHIFT-ALT-F8")) {
+						mainframe_thiscall(void, 0x424170); // CMainFrame::OnStopPreviewSelected
+					}
+
+					if (ImGui::MenuItem("Clear Preview List", "ALT-F8")) {
+						mainframe_thiscall(void, 0x4241C0); // CMainFrame::OnClearPreviewList
+					}
+
+					SEPERATORV(0.0f);
+					
+					if (ImGui::MenuItem("Preview At Max Intensity", "ALT-CTRL-F8", !Game::g_qeglobals->preview_at_max_intensity)) {
+						cdeclcall(void, 0x425670); // CMainFrame::OnPreviewAtMaxIntensity
+					}
+
+					if (ImGui::MenuItem("Show Regions For Selected", "SHIFT-CTRL-F8")) {
+						mainframe_thiscall(void, 0x4241E0); // CMainFrame::OnShowRegionsForSelected
+					}
+
+					ImGui::EndMenu(); // Light Preview
 				}
-				
-				if (ImGui::MenuItem("Cubic Clipping", "CTRL-\\")) {
+
+				SEPERATORV(0.0f);
+
+				//if (ImGui::MenuItem("Cubic Clip Zoom In", "CTRL-[")) {
+				//	mainframe_thiscall(void, 0x428F10); // CMainFrame::OnViewCubein
+				//}
+
+				//if (ImGui::MenuItem("Cubic Clip Zoom Out", "CTRL-]")) {
+				//	mainframe_thiscall(void, 0x428F50); // CMainFrame::OnViewCubeout
+				//}
+
+				IMGUI_MENU_WIDGET_SINGLE("Cubic Scale", ImGui::DragInt("", &Game::g_PrefsDlg()->m_nCubicScale, 1, 1, 220));
+
+				if (ImGui::MenuItem("Cubic Clipping", "CTRL-\\", Game::g_PrefsDlg()->m_bCubicClipping)) {
 					mainframe_thiscall(void, 0x428F90); // CMainFrame::OnViewCubicclipping
 				}
 
