@@ -5,4 +5,5 @@ namespace ImGui
 {
 	bool IsItemHoveredDelay(float delay_in_seconds);
 	void StyleColorsDevgui(ImGuiStyle* = NULL);
+
 }

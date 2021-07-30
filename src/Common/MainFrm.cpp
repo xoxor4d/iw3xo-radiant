@@ -204,12 +204,11 @@ void CMainFrame::UpdateWindows(int nBits)
 	if (nBits & W_CAMERA || ((nBits & W_CAMERA_IFON) && this->m_bCamPreview))
 	{
 		if (this->m_pCamWnd)
-		{
-			
-#if !CCAMWND_REALTIME
+		{	
+//#if !CCAMWND_REALTIME
 			// Redraw the camera view
-			m_pCamWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
-#endif
+			//m_pCamWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+//#endif
 			
 			Game::Globals::m_pCamWnd_ref = m_pCamWnd;
 
@@ -251,38 +250,45 @@ void CMainFrame::UpdateWindows(int nBits)
 typedef LRESULT(__thiscall* wndproc_t)(CMainFrame*, UINT Msg, WPARAM wParam, LPARAM lParam);
 /* ------------------------- */ wndproc_t o_wndproc = reinterpret_cast<wndproc_t>(0x584D97);
 
-// hook windowproc to always update the camera window on mouse movement + imgui io (not including mouse clicks)
-LRESULT __fastcall CMainFrame::WindowProc(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam)
+/*
+ * only active if clicked outside -> clicked imgui directly, not active if clicked into xywnd or camwnd and then into imgui
+ */
+
+// handle wm_char events for non-focused subwindows, see above msg
+LRESULT __fastcall CMainFrame::windowproc(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	// update the window on mouse movement (everywhere within windows)
-	// * having sunlight preview enabled causes a crash upon loading a new map => 0x4067CD => see 'sunlight_preview_arg_check'
-	/*if(pThis->m_pCamWnd)
+	if (Components::Gui::all_contexts_ready())
 	{
-		pThis->UpdateWindows(W_CAMERA);
-	}*/
+		// ! do not set imgui context for every msg
+		
+		if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
+		{
+			IMGUI_BEGIN_CCAMERAWND;
+			if (ImGui::GetIO().WantCaptureMouse)
+			{
+				ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam);
+				return true;
+			}
+			else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
+			{
+				ImGuiIO& io = ImGui::GetIO();
+				memset(io.KeysDown, 0, sizeof(io.KeysDown));
+			}
 
-	//if (GGUI_READY)
-	//{
-	//	// handle mouse cursor for open menus
-	//	for (auto menu = 0; menu < GGUI_MENU_COUNT; menu++)
-	//	{
-	//		if (Game::Globals::gui.menus[menu].menustate)
-	//		{
-	//			if (ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam))
-	//			{
-	//				if (ImGui::GetIO().WantCaptureMouse)
-	//				{
-	//					ShowCursor(0);
-	//					ImGui::GetIO().MouseDrawCursor = 1;
-	//					return true;
-	//				}
-	//			}
-	//		}
-	//	}
-
-	//	ShowCursor(1);
-	//	ImGui::GetIO().MouseDrawCursor = 0;
-	//}
+			
+			IMGUI_BEGIN_CXYWND;
+			if (ImGui::GetIO().WantCaptureMouse)
+			{
+				ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam);
+				return true;
+			}
+			else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
+			{
+				ImGuiIO& io = ImGui::GetIO();
+				memset(io.KeysDown, 0, sizeof(io.KeysDown));
+			}
+		}
+	}
 
 	// => CFrameWnd::DefWindowProc
 	return o_wndproc(pThis, Msg, wParam, lParam);
@@ -311,14 +317,15 @@ typedef void(__stdcall* on_cmainframe_keyup)(CMainFrame*, UINT);
 
 void __fastcall CMainFrame::on_mscroll(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
 {
-	ImGui::SetCurrentContext(Game::Globals::_context_camera);
+	IMGUI_BEGIN_CCAMERAWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
 		Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
 		return;
 	}
 
-	ImGui::SetCurrentContext(Game::Globals::_context_cxy);
+	
+	IMGUI_BEGIN_CXYWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
 		Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
@@ -332,48 +339,68 @@ void __fastcall CMainFrame::on_mscroll(CMainFrame* pThis, [[maybe_unused]] void*
 // | ------------------------ Key ----------------------------
 // *
 
-void focus_window(CWnd* wnd)
-{
-	HWND hwnd = wnd->GetWindow();
-	
-	if(GetTopWindow(Game::g_qeglobals->d_hwndMain) != hwnd)
-	{
-		BringWindowToTop(hwnd);
-	}
+//void focus_window(CWnd* wnd)
+//{
+//	HWND hwnd = wnd->GetWindow();
+//	
+//	if(GetTopWindow(Game::g_qeglobals->d_hwndMain) != hwnd)
+//	{
+//		BringWindowToTop(hwnd);
+//	}
+//
+//	afx::CWnd_SetFocus(wnd);
+//	afx::CWnd_FromHandle(SetCapture(hwnd));
+//}
 
-	afx::CWnd_SetFocus(wnd);
-	afx::CWnd_FromHandle(SetCapture(hwnd));
-}
+/*
+ * 
+ */
 
 void __fastcall CMainFrame::on_keydown(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	ImGui::SetCurrentContext(Game::Globals::_context_camera);
+	IMGUI_BEGIN_CCAMERAWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
+		Game::ImGui_HandleKeyIO(CMainFrame::ActiveWindow->m_pCamWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
 		return;
 	}
+	else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		memset(io.KeysDown, 0, sizeof(io.KeysDown));
+	}
 
-	ImGui::SetCurrentContext(Game::Globals::_context_cxy);
+
+	IMGUI_BEGIN_CXYWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		focus_window(CMainFrame::ActiveWindow->m_pXYWnd);
+		Game::ImGui_HandleKeyIO(CMainFrame::ActiveWindow->m_pXYWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
 		return;
 	}
-
+	else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		memset(io.KeysDown, 0, sizeof(io.KeysDown));
+	}
+	
 	return __on_keydown(pThis, nChar, nRepCnt, nFlags);
 }
 
+
 void __stdcall CMainFrame::on_keyup(CMainFrame* pThis, UINT nChar)
 {
-	ImGui::SetCurrentContext(Game::Globals::_context_camera);
+	IMGUI_BEGIN_CCAMERAWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
+		Game::ImGui_HandleKeyIO(CMainFrame::ActiveWindow->m_pCamWnd->GetWindow(), WM_KEYUP, 0, nChar);
 		return;
 	}
+
 	
-	ImGui::SetCurrentContext(Game::Globals::_context_cxy);
+	IMGUI_BEGIN_CXYWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
+		Game::ImGui_HandleKeyIO(CMainFrame::ActiveWindow->m_pXYWnd->GetWindow(), WM_KEYUP, 0, nChar);
 		return;
 	}
 
@@ -408,16 +435,28 @@ void __declspec(naked) sunlight_preview_arg_check()
 	}
 }
 
+//void __declspec(naked) winproc_stub()
+//{
+//	const static uint32_t retn_pt = 0x421A7B;
+//	__asm
+//	{
+//		push    eax;		// lParam
+//		push    ecx;		// wParam
+//		push    edx;		// msg
+//		mov     ecx, esi;	// this
+//		
+//		jmp		retn_pt;
+//	}
+//}
+
 void CMainFrame::main()
 {
 	// hook MainFrameWnd continuous thread
 	Utils::Hook(0x421A90, CMainFrame::hk_RoutineProcessing, HOOK_JUMP).install()->quick();
 
 	// this might be needed later, not useful for the camera window tho
-	// hook windowproc to always update the camera window on mouse movement + imgui io (not including mouse clicks)
-	//Utils::Hook(0x421A7B, CMainFrame::WindowProc, HOOK_CALL).install()->quick();
+	Utils::Hook(0x421A7B, CMainFrame::windowproc, HOOK_CALL).install()->quick();
 
-	
 	// *
 	// detour cmainframe member functions to get imgui input
 	

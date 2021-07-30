@@ -2,14 +2,6 @@
 
 namespace Dvars
 {
-	Game::dvar_s* r_d3d9ex = nullptr;
-
-	Game::dvar_s* imgui_devgui_pos_x = nullptr;
-	Game::dvar_s* imgui_devgui_pos_y = nullptr;
-
-	Game::dvar_s* imgui_devgui_size_x = nullptr;
-	Game::dvar_s* imgui_devgui_size_y = nullptr;
-
 	// radiant-live
 	Game::dvar_s* radiant_live = nullptr;
 	Game::dvar_s* radiant_livePort = nullptr;
@@ -58,13 +50,6 @@ namespace Dvars
 		printf("[Dvars]: Register_AddonDvars() start ...\n");
 
 		Components::Gui::register_dvars();
-		
-		Dvars::r_d3d9ex = Dvars::Register_AddonBool(
-			/* name		*/ "r_d3d9ex",
-			/* default	*/ true,
-			/* flags	*/ Game::dvar_flags::saved,
-			/* desc		*/ "extended d3d9 interface");
-
 
 		Dvars::radiant_live = Dvars::Register_AddonBool(
 			/* name		*/ "radiant_live",
@@ -85,17 +70,6 @@ namespace Dvars
 			/* default	*/ false,
 			/* flags	*/ Game::dvar_flags::saved,
 			/* desc		*/ "enables debug prints.");
-
-		//Game::dvar_s* dvartest[100];
-
-		//for(auto i = 0; i < 100; i++)
-		//{
-		//	dvartest[i] = Dvars::Register_AddonBool(
-		//		/* name		*/ Utils::VA("dvartest%d", i),
-		//		/* default	*/ false,
-		//		/* flags	*/ Game::dvar_flags::none,
-		//		/* desc		*/ "testvar");
-		//}
 
 		printf("\n");
 	}

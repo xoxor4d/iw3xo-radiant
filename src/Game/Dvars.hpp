@@ -4,14 +4,6 @@
 
 namespace Dvars
 {
-	extern Game::dvar_s* r_d3d9ex;
-
-	extern Game::dvar_s* imgui_devgui_pos_x;
-	extern Game::dvar_s* imgui_devgui_pos_y;
-	
-	extern Game::dvar_s* imgui_devgui_size_x;
-	extern Game::dvar_s* imgui_devgui_size_y;
-	
 	// radiant-live
 	extern Game::dvar_s* radiant_live;
 	extern Game::dvar_s* radiant_livePort;

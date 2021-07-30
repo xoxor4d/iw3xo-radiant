@@ -48,7 +48,7 @@ public:
 
 	static CMainFrame* ActiveWindow;
 	
-	static LRESULT __fastcall	WindowProc(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam);
+	static LRESULT __fastcall	windowproc(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static void __fastcall		on_mscroll(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point);
 	static void __fastcall		on_keydown(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags);
 	static void __stdcall		on_keyup(CMainFrame* pThis, UINT nChar);

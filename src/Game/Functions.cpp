@@ -1,5 +1,10 @@
 #include "STDInclude.hpp"
 
+namespace ggui
+{
+	imgui_state_t state = imgui_state_t();
+}
+
 namespace Game
 {
 	namespace Globals
@@ -23,35 +28,36 @@ namespace Game
 
 		// Renderer
 		IDirect3DDevice9* d3d9_device = nullptr;
-
-		// Gui
-		gui_present_s gui_present = gui_present_s();
-		Game::gui_t gui = Game::gui_t();
-
-		HWND test_hwnd;
-
-		bool imgui_camera_init = false;
-		bool imgui_cxy_init = false;
-
-		ImGuiContext* _context_camera;
-		ImGuiContext* _context_cxy;
 		
 	}
 
 	// radiant globals
-	int& g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
-	CPrefsDlg* g_PrefsDlg = reinterpret_cast<CPrefsDlg*>(0x73C704);
+	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
+	CPrefsDlg*	g_PrefsDlg = reinterpret_cast<CPrefsDlg*>(0x73C704);
 	Game::qeglobals_t* g_qeglobals = reinterpret_cast<Game::qeglobals_t*>(0x25F39C0);
 	
-	int	*g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
-	int	&g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
-	bool &g_bScreenUpdates = *reinterpret_cast<bool*>(0x739B0F);
-	double &g_time = *reinterpret_cast<double*>(0x2665678);
-	double &g_oldtime = *reinterpret_cast<double*>(0x2665670);
+	int*	g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
+	int&	g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
+	bool&	g_bScreenUpdates = *reinterpret_cast<bool*>(0x739B0F);
+	double& g_time = *reinterpret_cast<double*>(0x2665678);
+	double& g_oldtime = *reinterpret_cast<double*>(0x2665670);
+	bool&	g_region_active = *reinterpret_cast<bool*>(0x23F1744);
 
+	Game::undo_s* g_lastundo()
+	{
+		const auto undo = reinterpret_cast<Game::undo_s*>(*(DWORD*)(Game::g_lastundo_ptr));
+		return undo;
+	}
+	
+	Game::undo_s* g_lastredo()
+	{
+		const auto redo = reinterpret_cast<Game::undo_s*>(*(DWORD*)(Game::g_lastredo_ptr));
+		return redo;
+	}
+	
 	Game::DxGlobals* dx = reinterpret_cast<Game::DxGlobals*>(0x1365684);
 
-	int *dvarCount = reinterpret_cast<int*>(0x242394C);
+	int* dvarCount = reinterpret_cast<int*>(0x242394C);
 	Game::dvar_s* dvarPool = reinterpret_cast<Game::dvar_s*>(0x2427DA4); // dvarpool + 1 dvar size
 	Game::dvar_s* dvarPool_FirstEmpty = reinterpret_cast<Game::dvar_s*>(0x242C14C); // first empty dvar 
 	DWORD* sortedDvars = reinterpret_cast<DWORD*>(0x2423958); // sorted dvar* list
@@ -127,10 +133,14 @@ namespace Game
 		        io.KeysDown[nChar] = false;
 		    return;
 			
-		//case WM_CHAR:
+		case WM_CHAR:
 		//    // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
 		//    io.AddInputCharacter((unsigned int)wParam);
-		//    return;
+			int x = 1;
+
+			//ToAscii() + GetKeyboardState()
+			
+		    return;
 		}
 	}
 	
@@ -236,6 +246,12 @@ namespace Game
 		}
 
 		return image;
+	}
+
+	bool mainframe_is_combined_view()
+	{
+		// combined view = 0
+		return CMainFrame::ActiveWindow->m_nCurrentStyle;
 	}
 	
 }

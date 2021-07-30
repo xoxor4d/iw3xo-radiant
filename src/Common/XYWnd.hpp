@@ -69,6 +69,7 @@ public:
 
 	//
 	static void				main();
+	static LRESULT WINAPI	windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static void				on_endframe();
 
 	static void __fastcall	on_lbutton_down(CXYWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);

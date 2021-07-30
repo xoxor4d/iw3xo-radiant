@@ -12,12 +12,11 @@
 #define GGUI_ANY_MENUS_OPEN Game::Globals::gui.any_menus_open
 #define GGUI_MENU_COUNT 2
 
+#define IMGUI_CONTEXT_COUNT 2 // amount of imgui contexts
+#define IMGUI_CONTEXT_MENUS 1 // amount of menus per context
 
-// set to 0 to disable the camera window running at a constant framerate
-// * imgui will not feel 'right' if disabled tho
-#define CCAMWND_REALTIME true
-
-
+#define IMGUI_BEGIN_CCAMERAWND ImGui::SetCurrentContext(ggui::state.ccamerawnd.context)
+#define IMGUI_BEGIN_CXYWND ImGui::SetCurrentContext(ggui::state.cxywnd.context)
 
 #include <windows.h>
 #include <stdio.h>
@@ -74,7 +73,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_dx9.h>
 #include <backends/imgui_impl_win32.h>
-#include "Common/imgui/addons.h"
+#include "Common/imgui/addons.hpp"
 
 #include "detours/Detours.h"
 

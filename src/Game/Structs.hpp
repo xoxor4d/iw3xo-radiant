@@ -951,6 +951,149 @@ namespace Game
 		float scale;
 	};
 
+	struct LPMRUMENU
+	{
+		WORD wNbItemFill;
+		WORD wNbLruShow;
+		WORD wNbLruMenu;
+		WORD wMaxSizeLruItem;
+		WORD wIdMru;
+		LPSTR lpMRU;
+	};
+	
+	enum SavedInfo_Colors
+	{
+		COLOR_TEXTUREBACK = 0x0,
+		COLOR_GRIDBACK = 0x1,
+		COLOR_GRIDMINOR = 0x2,
+		COLOR_GRIDMAJOR = 0x3,
+		COLOR_CAMERABACK = 0x4,
+		COLOR_ENTITY = 0x5,
+		COLOR_UNK02 = 0x6,
+		COLOR_GRIDBLOCK = 0x7,
+		COLOR_GRIDTEXT = 0x8,
+		COLOR_BRUSHES_0 = 0x9,
+		COLOR_SELBRUSHES = 0xA,
+		COLOR_SELBRUSHES_CAMERA_REAL = 0xB,
+		COLOR_CLIPPER = 0xC,
+		COLOR_VIEWNAME_R = 0xD,
+		COLOR_DETAIL_BRUSH_R = 0xE,
+		COLOR_DRAW_TOGGLESUFS_R = 0xF,
+		COLOR_SELFACE_CAMERA_R = 0x10,
+		COLOR_FUNC_GROUP_R = 0x11,
+		COLOR_FUNC_CULLGROUP_R = 0x12,
+		COLOR_WEAPON_CLIP_R = 0x13,
+		COLOR_SIZE_INFO_R = 0x14,
+		COLOR_MODEL_R = 0x15,
+		COLOR_UNKOWN_R = 0x16,
+		COLOR_WIREFRAME_R = 0x17,
+		COLOR_FROZEN_LAYERS_R = 0x18,
+		COLOR_UNKOWN2_R = 0x19,
+		COLOR_UNKOWN3_R = 0x1A,
+	};
+
+	struct SavedInfo_t
+	{
+		int iSize;
+		int iTextMenu;
+		char szProject[256];
+		vec4_t colors[27];
+	};
+
+	enum select_t
+	{
+		sel_brush = 0x0,
+		sel_vertex = 0x1,
+		sel_edge = 0x2,
+		sel_singlevertex = 0x3,
+		sel_curvepoint = 0x4,
+		sel_area = 0x5,
+		sel_terrainpoint = 0x6,
+		sel_terraintexture = 0x7,
+		sel_addpoint = 0x8,
+		sel_cycle_edge_direction_quad = 0x9,
+		sel_editpoint = 0xA,
+	};
+
+	struct select_info_t
+	{
+		int numBrushesAndPatches;
+		int numEntWithFlag;
+		int numPatches;
+		int numBrushes;
+		int numFixedSize;
+	};
+
+	struct GfxDrawSurfFields
+	{
+		unsigned __int64 objectId : 16;
+		unsigned __int64 reflectionProbeIndex : 8;
+		unsigned __int64 customIndex : 5;
+		unsigned __int64 materialSortedIndex : 11;
+		unsigned __int64 prepass : 2;
+		unsigned __int64 primaryLightIndex : 8;
+		unsigned __int64 surfType : 4;
+		unsigned __int64 primarySortKey : 6;
+		unsigned __int64 unused : 4;
+	};
+
+	union GfxDrawSurf
+	{
+		GfxDrawSurfFields fields;
+		unsigned __int64 packed;
+	};
+
+	struct MaterialInfo
+	{
+		const char* name;
+		char gameFlags;
+		char sortKey;
+		char textureAtlasRowCount;
+		char textureAtlasColumnCount;
+		GfxDrawSurf drawSurf;
+		unsigned int surfaceTypeBits;
+		unsigned __int16 hashIndex;
+	};
+
+	struct Material
+	{
+		MaterialInfo info;
+		char stateBitsEntry[34];
+		char textureCount;
+		char constantCount;
+		char stateBitsCount;
+		char stateFlags;
+		char cameraRegion;
+		void* techniqueSet; // MaterialTechniqueSet
+		void* textureTable; // MaterialTextureDef
+		void* constantTable; // MaterialConstantDef
+		void* stateBitsTable; // GfxStateBits
+	};
+
+	struct Glyph
+	{
+		unsigned __int16 letter;
+		char x0;
+		char y0;
+		char dx;
+		char pixelWidth;
+		char pixelHeight;
+		float s0;
+		float t0;
+		float s1;
+		float t1;
+	};
+
+	struct Font_s
+	{
+		const char* fontName;
+		int pixelHeight;
+		int glyphCount;
+		Material* material;
+		Material* glowMaterial;
+		Glyph* glyphs;
+	};
+
 	struct qeglobals_t
 	{
 		bool d_showgrid;
@@ -982,37 +1125,85 @@ namespace Game
 		int d_numterrapoints;
 		int d_num_move_points;
 		float* d_move_points[4096];
+		vec3_t d_select_translate_unk;
+		float unkown_pmesh_float1;
+		int pad_01;
+		char patch_verts_array01[196600];
+		int patch_verts_array01_count;
+		float unkown_pmesh_float2;
+		float unkown_pmesh_float3;
+		char patch_verts_array02[196600];
+		int patch_verts_array02_count;
+		int pad_02;
+		int unk01;
+		void* d_activeLayer;
+		char random_texture_stuff[6300];
+		LPMRUMENU* d_lpMruMenu;
+		SavedInfo_t d_savedinfo;
+		int d_xyShowFlags;
+		int d_gridsize2;
+		int d_picmip;
+		int d_workcount;
+		int d_select_count;
+		brush_t* d_select_order[2];
+		vec3_t d_select_translate;
+		select_t d_select_mode;
+		select_info_t d_select_info;
+		int surfInsp_nIDButton;
+		int surfInsp_unk01;
+		int surfInsp_unk02;
+		Font_s* d_font_list;
+		Material* d_white;
+		Material* d_opague;
+		Material* d_additive;
+		int d_parsed_brushes;
+		int pad_d_parsed_brushes;
+		int some_cam_xy_count1;
+		int some_cam_xy_count2;
+		int some_cam_xy_count3;
+		int some_cam_xy_count4;
+		void* camera_fov_setup;
+		bool use_ini;
+		char pad_use_ini[3];
+		char use_ini_registry[64];
+		bool dontDrawSelectedOutlines;
+		char pad_dontDrawSelectedOutlines[3];
+		bool dontDrawSelectedTint;
+		char pad_dontDrawSelectedTint[3];
+		bool draw_toggle_unk01;
+		char pad_draw_toggle_unk01[3];
+		bool toggle_unk02;
+		bool toggle_unk03;
+		bool toggle_unk04;
+		bool bLockPatchVerts;
+		bool bUnlockPatchVerts;
+		bool toggle_unk05;
+		char pad3[6];
+		double g_oldtime;
+		double g_time;
+		int g_filterCount_maybe;
+		int g_layerCount_maybe;
+		__int16 w_cyclePreviewMode;
+		char pad_cyclePreviewMode[2];
+		void* d_filterGlobals_geometryFilters;
+		void* d_filterGlobals_entityFilters;
+		void* d_filterGlobals_triggerFilters;
+		void* d_filterGlobals_otherFilters;
+		void* d_filterGlobals_layerFilters;
 	};
 
-	enum GUI_MENUS
+	struct undo_s
 	{
-		DEMO = 0,
-		DEVGUI = 1,
+		double time;
+		int id;
+		int done;
+		char* operation;
+		brush_t brushlist;
+		entity_s ent;
+		undo_s* prev;
+		undo_s* next;
 	};
-
-	struct gui_menus_t
-	{
-		bool menustate;
-		bool mouse_ignores_menustate;
-		bool was_open;
-		bool hk_is_clicked;
-		bool hk_is_down;
-		bool one_time_init;
-		bool got_layout_from_menu;
-		float position[2];
-		float size[2];
-		int horzAlign;
-		int vertAlign;
-	};
-
-	struct gui_t
-	{
-		bool imgui_initialized;
-		bool dvars_initialized;
-		bool any_menus_open;
-		gui_menus_t menus[GGUI_MENU_COUNT];
-	};
-
+	
 	enum WindowMessages : UINT
 	{
 		_WM_CREATE = 0x1,
@@ -1241,5 +1432,45 @@ namespace Game
 		_WM_PENWINLAST = 0x38F,
 		_WM_APP = 0x8000,
 		_WM_USER = 0x400,
+	};
+}
+
+namespace ggui
+{
+	enum e_gfxwindow
+	{
+		CCAMERAWND = 0,
+		CXYWND = 1,
+	};
+
+	enum e_menu
+	{
+		CAM_DEMO = 0,
+		
+		XY_DEMO = 0,
+		XY_TOOLBAR = 1,
+	};
+	
+	struct imgui_context_menu
+	{
+		bool menustate;
+		bool was_open;
+		bool one_time_init;
+		float position[2];
+		float size[2];
+	};
+
+	struct imgui_context
+	{
+		bool context_initialized;
+		ImGuiContext* context;
+		Game::GfxWindowTarget* dx_window;
+		imgui_context_menu menus[IMGUI_CONTEXT_MENUS];
+	};
+
+	struct imgui_state_t
+	{
+		imgui_context ccamerawnd;
+		imgui_context cxywnd;
 	};
 }

@@ -22,6 +22,8 @@ namespace Components
 
 	ULONG D3D9Ex::D3D9Device::Release()
 	{
+		Gui::shutdown();
+
 		ULONG count = m_pIDirect3DDevice9->Release();
 		ULONG last_count = count;
 
@@ -114,11 +116,19 @@ namespace Components
 
 	HRESULT D3D9Ex::D3D9Device::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 	{
-		if (GGUI_READY)
+		if (Gui::all_contexts_ready())
 		{
 			ImGui_ImplDX9_InvalidateDeviceObjects();
-			m_pIDirect3DDevice9->Reset(pPresentationParameters);
+
+			HRESULT hr = m_pIDirect3DDevice9->Reset(pPresentationParameters);
+			if (hr == D3DERR_INVALIDCALL)
+			{
+				ASSERT_MSG(0, "m_pIDirect3DDevice9->Reset == D3DERR_INVALIDCALL");
+			}
+
 			ImGui_ImplDX9_CreateDeviceObjects();
+
+			return hr;
 		}
 
 		return m_pIDirect3DDevice9->Reset(pPresentationParameters);
@@ -263,14 +273,7 @@ namespace Components
 
 	HRESULT D3D9Ex::D3D9Device::EndScene()
 	{
-		//if (Components::active.Gui)
-		//{
-			Gui::render_loop();
-		//}
-
-		/*if (!GET_GGUI.imgui_initialized) {
-			Gui::imgui_init();
-		}*/
+		Gui::render_loop();
 
 		return m_pIDirect3DDevice9->EndScene();
 	}
@@ -902,16 +905,13 @@ namespace Components
 
 	IDirect3D9* __stdcall D3D9Ex::Direct3DCreate9Stub(UINT sdk)
 	{
-		if (Dvars::r_d3d9ex && Dvars::r_d3d9ex->current.enabled)
-		{
-			IDirect3D9Ex* d3d9ex = nullptr;
-			
-			if (SUCCEEDED(Direct3DCreate9Ex(sdk, &d3d9ex))) {
-				return (new D3D9Ex::_D3D9Ex(d3d9ex));
-			}
-
-			printf("Direct3D9Ex failed to initialize. Defaulting to Direct3D9.\n");
+		IDirect3D9Ex* d3d9ex = nullptr;
+		
+		if (SUCCEEDED(Direct3DCreate9Ex(sdk, &d3d9ex))) {
+			return (new D3D9Ex::_D3D9Ex(d3d9ex));
 		}
+
+		printf("Direct3D9Ex failed to initialize. Defaulting to Direct3D9.\n");
 
 		return (new D3D9Ex::_D3D9(Direct3DCreate9(sdk)));
 	}

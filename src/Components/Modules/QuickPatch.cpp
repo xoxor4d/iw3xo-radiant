@@ -1,6 +1,12 @@
 #include "STDInclude.hpp"
 
-DWORD WINAPI ccamwnd_msg_pump(LPVOID)
+// tests
+//#define SPLITTER_TEST
+//#define CREATE_SECOND_CAMERA
+//#define HIDE_MAINFRAME_MENUBAR // fully working
+//#define HIDE_MAINFRAME_TOOLBAR // fully working
+
+DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 {
 	const int maxfps = 1000 / 250;
 
@@ -39,7 +45,7 @@ DWORD WINAPI ccamwnd_msg_pump(LPVOID)
 			com_lastFrameTime = com_frameTime;
 
 			// update cam window ~ 250fps
-			if  (const auto hwnd = CCamWnd::ActiveWindow->GetWindow(); 
+			if  (const auto hwnd = CMainFrame::ActiveWindow->m_pCamWnd->GetWindow();
 				hwnd != nullptr)
 			{
 				SendMessageA(hwnd, WM_PAINT, 0, 0);
@@ -59,10 +65,8 @@ DWORD WINAPI ccamwnd_msg_pump(LPVOID)
 
 BOOL init_threads()
 {
-#if CCAMWND_REALTIME
 	// Create a message pump thread to have the camera update at a constant framerate
-	CreateThread(nullptr, 0, ccamwnd_msg_pump, nullptr, 0, nullptr);
-#endif
+	CreateThread(nullptr, 0, realtimewnd_msg_pump, nullptr, 0, nullptr);
 
 	// Create LiveRadiant thread (connecting to the server)
 	CreateThread(nullptr, 0, RemoteNet_SearchServerThread, nullptr, 0, nullptr);
@@ -93,13 +97,6 @@ BOOL init_threads()
 	CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(Components::Command::CommandThread), nullptr, 0, nullptr);
 	return TRUE;
 }
-
-
-
-// tests
-//#define SPLITTER_TEST
-//#define CREATE_SECOND_CAMERA
-
 
 
 namespace Components
@@ -270,6 +267,18 @@ namespace Components
 		}
 	}
 #endif
+
+#ifdef HIDE_MAINFRAME_TOOLBAR
+	__declspec(naked) void show_toolbar_stub()
+	{
+		const static uint32_t retn_pt = 0x4211CB;
+		__asm
+		{
+			mov		eax, 0;
+			jmp		retn_pt;
+		}
+	}
+#endif
 	
 	QuickPatch::QuickPatch()
 	{
@@ -281,10 +290,29 @@ namespace Components
 
 		Utils::Hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
 
-		// NOP startup console-spam
-		//Utils::Hook::Nop(0x4818DF, 5); // ScanFile
-		//Utils::Hook::Nop(0x48B8BE, 5); // ScanWeapon
+		
+#ifdef HIDE_MAINFRAME_TOOLBAR
+		Utils::Hook(0x4211C6, show_toolbar_stub, HOOK_JUMP).install()->quick();
+#endif
 
+		
+#ifdef HIDE_MAINFRAME_MENUBAR
+		// -----------------------------------------------------------------------
+		// disable mainframe menubar
+		
+		// create mainframe without menu
+		Utils::Hook::Set<BYTE>(0x4507CA + 1, 0x0);
+
+		// CMainFrame::OnCreate :: nop CMenu::DestroyMenu call (nullptr exception)
+		Utils::Hook::Nop(0x42104A, 5);
+
+		// CMainFrame::OnCreate :: make LoadMenuA load a null menu
+		Utils::Hook::Set<BYTE>(0x421057 + 1, 0x0);
+
+		// -----------------------------------------------------------------------
+#endif
+
+		
 #ifdef CREATE_SECOND_CAMERA
 		// Create static
 		Utils::Hook(0x4166C6, set_rinitforwindow_stub, HOOK_JUMP).install()->quick();
@@ -320,6 +348,9 @@ namespace Components
 		// disable black world on selecting a brush with sun preview enabled -> still disables active sun preview .. no black world tho
 		Utils::Hook::Nop(0x406A11, 5);
 
+		// NOP startup console-spam
+		//Utils::Hook::Nop(0x4818DF, 5); // ScanFile
+		//Utils::Hook::Nop(0x48B8BE, 5); // ScanWeapon
 		
 		// remove the statusbar (not the console!)
 		//Utils::Hook::Nop(0x41F8E0, 5);

@@ -4,6 +4,11 @@
 
 #define GET_PARENTWND (CMainFrame*) *(DWORD*)(Game::g_pParentWnd_ptr)
 
+namespace ggui
+{
+	extern imgui_state_t state;
+}
+
 namespace Game
 {
 	namespace Globals
@@ -27,43 +32,34 @@ namespace Game
 
 		// Renderer
 		extern IDirect3DDevice9* d3d9_device;
-
-		// Gui
-		struct gui_present_s
-		{
-			bool CCamWnd;
-			bool CXYWnd;
-		};
-		
-
-		extern gui_present_s gui_present;
-		extern Game::gui_t gui;
-
-		extern HWND test_hwnd;
-
-		extern bool imgui_camera_init;
-		extern bool imgui_cxy_init;
-
-		extern ImGuiContext* _context_camera;
-		extern ImGuiContext* _context_cxy;
 		
 	}
-
+	
 	// radiant globals
-	extern int& g_nScaleHow;
-	extern CPrefsDlg* g_PrefsDlg;
+	extern int&			g_nScaleHow;
+	extern CPrefsDlg*	g_PrefsDlg;
 	extern Game::qeglobals_t* g_qeglobals;
 
-	extern int	*g_nUpdateBitsPtr;
-	extern int	&g_nUpdateBits;
-	extern bool &g_bScreenUpdates;
-	extern double &g_time;
-	extern double &g_oldtime;
+	extern int*		g_nUpdateBitsPtr;
+	extern int&		g_nUpdateBits;
+	extern bool&	g_bScreenUpdates;
+	extern double&	g_time;
+	extern double&	g_oldtime;
+	extern bool&	g_region_active;
 
+//#define GET_LASTUNDO reinterpret_cast<Game::undo_s*>(*(DWORD*)(Game::g_lastundo))
+//#define GET_LASTREDO reinterpret_cast<Game::undo_s*>(*(DWORD*)(Game::g_lastredo))
+
+	extern Game::undo_s* g_lastundo();
+	extern Game::undo_s* g_lastredo();
+
+	static DWORD* g_lastundo_ptr = (DWORD*)(0x23F162C);
+	static DWORD* g_lastredo_ptr = (DWORD*)(0x23F15CC);
+	
 	extern Game::DxGlobals* dx;
 
-	extern int *dvarCount;
-	extern Game::dvar_s *dvarPool;
+	extern int* dvarCount;
+	extern Game::dvar_s* dvarPool;
 	extern Game::dvar_s* dvarPool_FirstEmpty;
 	extern DWORD* sortedDvars;
 	extern DWORD* sortedDvarsAddons;
@@ -128,4 +124,6 @@ namespace Game
 	void FS_ScanForDir(const char* directory, const char* search_path, int localized);
 	Game::GfxImage* Image_FindExisting(const char* name);
 	Game::GfxImage* Image_RegisterHandle(const char* name);
+
+	bool mainframe_is_combined_view();
 }

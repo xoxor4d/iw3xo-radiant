@@ -40,7 +40,7 @@ public:
 	void Cam_MouseControl(float dtime);
 
 	static void				main();
-	static BOOL WINAPI		wndproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+	static BOOL WINAPI		windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static void				on_endframe();
 
 	static void __fastcall	on_lbutton_down(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
@@ -48,6 +48,11 @@ public:
 
 	static void __fastcall	on_rbutton_down(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 	static void __fastcall	on_rbutton_up(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+
+	static void __fastcall	on_mouse_move(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+
+	static void __stdcall	on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	static void __stdcall	on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
 STATIC_ASSERT_OFFSET(CCamWnd, camera.origin, 0x64); // diff. offset then bo1
 STATIC_ASSERT_OFFSET(CCamWnd, camera.angles, 0x70); // ^
