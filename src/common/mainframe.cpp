@@ -59,7 +59,7 @@ void cmainframe::routine_processing()
 	if (this->m_pCamWnd)
 	{
 		const auto delta = static_cast<float>(oldtime);
-		this->m_pCamWnd->Cam_MouseControl(delta);
+		this->m_pCamWnd->mouse_control(delta);
 	}
 
 	if (game::g_nUpdateBits)
