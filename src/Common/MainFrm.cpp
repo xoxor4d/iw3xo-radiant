@@ -246,6 +246,23 @@ void CMainFrame::UpdateWindows(int nBits)
 	}
 }
 
+
+#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
+#define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
+
+BOOL is_mouse_outside_window(HWND hWnd)
+{
+	RECT  cr;
+	DWORD msgpos = GetMessagePos();
+	POINT pt = { GET_X_LPARAM(msgpos), GET_Y_LPARAM(msgpos) };
+
+	ScreenToClient(hWnd, &pt);
+	GetClientRect(hWnd, &cr);
+	
+	return !PtInRect(&cr, pt);
+}
+
+
 // typedef CFrameWnd::DefWindowProc
 typedef LRESULT(__thiscall* wndproc_t)(CMainFrame*, UINT Msg, WPARAM wParam, LPARAM lParam);
 /* ------------------------- */ wndproc_t o_wndproc = reinterpret_cast<wndproc_t>(0x584D97);
@@ -257,9 +274,37 @@ typedef LRESULT(__thiscall* wndproc_t)(CMainFrame*, UINT Msg, WPARAM wParam, LPA
 // handle wm_char events for non-focused subwindows, see above msg
 LRESULT __fastcall CMainFrame::windowproc(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	static TRACKMOUSEEVENT tme{};
+	static BOOL mouse_tracing = false;
+	
 	if (Components::Gui::all_contexts_ready())
 	{
 		// ! do not set imgui context for every msg
+
+		if (Msg == WM_SETCURSOR)
+		{
+			// auto close mainframe menubar popups when the mouse leaves the cxy window
+			if (CMainFrame::ActiveWindow && CMainFrame::ActiveWindow->m_pXYWnd)
+			{
+				if (is_mouse_outside_window(CMainFrame::ActiveWindow->m_pXYWnd->GetWindow()))
+				{
+					const auto imgui_context_old = ImGui::GetCurrentContext();
+
+					IMGUI_BEGIN_CXYWND;
+					const auto ccontext = ImGui::GetCurrentContext();
+
+					if (ccontext->OpenPopupStack.Size > 0)
+					{
+						//printf("closing popup #%d\n", ccontext->OpenPopupStack.Size - 1);
+						ImGui::ClosePopupToLevel(ccontext->OpenPopupStack.Size - 1, false);
+					}
+
+					// restore context
+					ImGui::SetCurrentContext(imgui_context_old);
+				}
+			}
+		}
+
 		
 		if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 		{
