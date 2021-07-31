@@ -1,23 +1,23 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
-namespace Utils
+namespace utils
 {
-	uintptr_t Hook::Detour(uintptr_t offset, void* stub, Detours::X86Option option)
+	uintptr_t hook::detour(uintptr_t offset, void* stub, Detours::X86Option option)
 	{
 		return Detours::X86::DetourFunction(offset, reinterpret_cast<uintptr_t>(stub), option);
 	}
 	
-	std::map<void*, void*> Hook::Interceptor::IReturn;
-	std::map<void*, void(*)()> Hook::Interceptor::ICallbacks;
+	std::map<void*, void*> hook::interceptor::i_return_;
+	std::map<void*, void(*)()> hook::interceptor::i_callbacks_;
 
-	void Hook::Signature::process()
+	void hook::signature::process()
 	{
 		if (this->signatures.empty()) return;
 
 		char* _start = reinterpret_cast<char*>(this->start);
 
 		unsigned int sigCount = this->signatures.size();
-		Hook::Signature::Container* containers = this->signatures.data();
+		hook::signature::container* containers = this->signatures.data();
 
 		for (size_t i = 0; i < this->length; ++i)
 		{
@@ -25,7 +25,7 @@ namespace Utils
 
 			for (unsigned int k = 0; k < sigCount; ++k)
 			{
-				Hook::Signature::Container* container = &containers[k];
+				hook::signature::container* container = &containers[k];
 
 				unsigned int j;
 				for (j = 0; j < strlen(container->mask); ++j)
@@ -44,24 +44,24 @@ namespace Utils
 		}
 	}
 
-	void Hook::Signature::add(Hook::Signature::Container& container)
+	void hook::signature::add(hook::signature::container& container)
 	{
-		Hook::Signature::signatures.push_back(container);
+		hook::signature::signatures.push_back(container);
 	}
 
-	void Hook::Interceptor::Install(void* place, void(*stub)())
+	void hook::interceptor::install(void* place, void(*stub)())
 	{
-		return Hook::Interceptor::Install(reinterpret_cast<void**>(place), stub);
+		return hook::interceptor::install(reinterpret_cast<void**>(place), stub);
 	}
 
-	void Hook::Interceptor::Install(void** place, void(*stub)())
+	void hook::interceptor::install(void** place, void(*stub)())
 	{
-		Hook::Interceptor::IReturn[place] = *place;
-		Hook::Interceptor::ICallbacks[place] = stub;
-		*place = Hook::Interceptor::InterceptionStub;
+		hook::interceptor::i_return_[place] = *place;
+		hook::interceptor::i_callbacks_[place] = stub;
+		*place = hook::interceptor::interception_stub;
 	}
 
-	__declspec(naked) void Hook::Interceptor::InterceptionStub()
+	__declspec(naked) void hook::interceptor::interception_stub()
 	{
 		__asm
 		{
@@ -71,8 +71,8 @@ namespace Utils
 			lea eax, [esp + 20h]                    // Load initial stack pointer
 			push eax                                // Push it onto the stack
 
-			call Hook::Interceptor::RunCallback     // Run the callback based on the given stack pointer
-			call Hook::Interceptor::PopReturn       // Get the initial return address according to the stack pointer
+			call hook::interceptor::run_callback     // Run the callback based on the given stack pointer
+			call hook::interceptor::pop_return       // get the initial return address according to the stack pointer
 
 			add esp, 4h                             // Clear the stack
 
@@ -83,31 +83,31 @@ namespace Utils
 		}
 	}
 
-	void Hook::Interceptor::RunCallback(void* place)
+	void hook::interceptor::run_callback(void* place)
 	{
-		auto iCallback = Hook::Interceptor::ICallbacks.find(place);
-		if (iCallback != Hook::Interceptor::ICallbacks.end())
+		auto i_callback = hook::interceptor::i_callbacks_.find(place);
+		if (i_callback != hook::interceptor::i_callbacks_.end())
 		{
-			iCallback->second();
-			Hook::Interceptor::ICallbacks.erase(iCallback);
+			i_callback->second();
+			hook::interceptor::i_callbacks_.erase(i_callback);
 		}
 	}
 
-	void* Hook::Interceptor::PopReturn(void* _place)
+	void* hook::interceptor::pop_return(void* _place)
 	{
 		void* retVal = nullptr;
 
-		auto iReturn = Hook::Interceptor::IReturn.find(_place);
-		if (iReturn != Hook::Interceptor::IReturn.end())
+		auto i_return = hook::interceptor::i_return_.find(_place);
+		if (i_return != hook::interceptor::i_return_.end())
 		{
-			retVal = iReturn->second;
-			Hook::Interceptor::IReturn.erase(iReturn);
+			retVal = i_return->second;
+			hook::interceptor::i_return_.erase(i_return);
 		}
 
 		return retVal;
 	}
 
-	Hook::~Hook()
+	hook::~hook()
 	{
 		if (this->initialized)
 		{
@@ -115,17 +115,17 @@ namespace Utils
 		}
 	}
 
-	Hook* Hook::initialize(DWORD _place, void(*_stub)(), bool _useJump)
+	hook* hook::initialize(DWORD _place, void(*_stub)(), bool _useJump)
 	{
 		return this->initialize(_place, reinterpret_cast<void*>(_stub), _useJump);
 	}
 
-	Hook* Hook::initialize(DWORD _place, void* _stub, bool _useJump)
+	hook* hook::initialize(DWORD _place, void* _stub, bool _useJump)
 	{
 		return this->initialize(reinterpret_cast<void*>(_place), _stub, _useJump);
 	}
 
-	Hook* Hook::initialize(void* _place, void* _stub, bool _useJump)
+	hook* hook::initialize(void* _place, void* _stub, bool _useJump)
 	{
 		if (this->initialized) return this;
 		this->initialized = true;
@@ -139,7 +139,7 @@ namespace Utils
 		return this;
 	}
 
-	Hook* Hook::install(bool unprotect, bool keepUnportected)
+	hook* hook::install(bool unprotect, bool keepUnportected)
 	{
 		std::lock_guard<std::mutex> _(this->stateMutex);
 
@@ -166,15 +166,15 @@ namespace Utils
 		return this;
 	}
 
-	void Hook::quick()
+	void hook::quick()
 	{
-		if (Hook::installed)
+		if (hook::installed)
 		{
-			Hook::installed = false;
+			hook::installed = false;
 		}
 	}
 
-	Hook* Hook::uninstall(bool unprotect)
+	hook* hook::uninstall(bool unprotect)
 	{
 		std::lock_guard<std::mutex> _(this->stateMutex);
 
@@ -196,12 +196,12 @@ namespace Utils
 		return this;
 	}
 
-	void* Hook::getAddress()
+	void* hook::get_address()
 	{
 		return this->place;
 	}
 
-	void Hook::Nop(void* place, size_t length)
+	void hook::nop(void* place, size_t length)
 	{
 		DWORD oldProtect;
 		VirtualProtect(place, length, PAGE_EXECUTE_READWRITE, &oldProtect);
@@ -212,12 +212,12 @@ namespace Utils
 		FlushInstructionCache(GetCurrentProcess(), place, length);
 	}
 
-	void Hook::Nop(DWORD place, size_t length)
+	void hook::nop(DWORD place, size_t length)
 	{
-		Nop(reinterpret_cast<void*>(place), length);
+		nop(reinterpret_cast<void*>(place), length);
 	}
 
-	void Hook::SetString(void* place, const char* string, size_t length)
+	void hook::set_string(void* place, const char* string, size_t length)
 	{
 		DWORD oldProtect;
 		VirtualProtect(place, length + 1, PAGE_EXECUTE_READWRITE, &oldProtect);
@@ -227,30 +227,30 @@ namespace Utils
 		VirtualProtect(place, length + 1, oldProtect, &oldProtect);
 	}
 
-	void Hook::SetString(DWORD place, const char* string, size_t length)
+	void hook::set_string(DWORD place, const char* string, size_t length)
 	{
-		Hook::SetString(reinterpret_cast<void*>(place), string, length);
+		hook::set_string(reinterpret_cast<void*>(place), string, length);
 	}
 
-	void Hook::SetString(void* place, const char* string)
+	void hook::set_string(void* place, const char* string)
 	{
-		Hook::SetString(place, string, strlen(static_cast<char*>(place)));
+		hook::set_string(place, string, strlen(static_cast<char*>(place)));
 	}
 
-	void Hook::SetString(DWORD place, const char* string)
+	void hook::set_string(DWORD place, const char* string)
 	{
-		Hook::SetString(reinterpret_cast<void*>(place), string);
+		hook::set_string(reinterpret_cast<void*>(place), string);
 	}
 
-	void Hook::RedirectJump(void* place, void* stub)
+	void hook::redirect_jump(void* place, void* stub)
 	{
 		char* operandPtr = static_cast<char*>(place) + 2;
 		int newOperand = reinterpret_cast<int>(stub) - (reinterpret_cast<int>(place) + 6);
-		Utils::Hook::Set<int>(operandPtr, newOperand);
+		utils::hook::set<int>(operandPtr, newOperand);
 	}
 
-	void Hook::RedirectJump(DWORD place, void* stub)
+	void hook::redirect_jump(DWORD place, void* stub)
 	{
-		Hook::RedirectJump(reinterpret_cast<void*>(place), stub);
+		hook::redirect_jump(reinterpret_cast<void*>(place), stub);
 	}
 }

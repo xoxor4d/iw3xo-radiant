@@ -1,29 +1,29 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
-namespace Utils
+namespace utils
 {
-	void* Memory::AllocateAlign(size_t length, size_t alignment)
+	void* memory::allocate_align(size_t length, size_t alignment)
 	{
 		void* data = _aligned_malloc(length, alignment);
 		assert(data != nullptr);
 		return data;
 	}
 
-	void* Memory::Allocate(size_t length)
+	void* memory::allocate(size_t length)
 	{
 		void* data = calloc(length, 1);
 		assert(data != nullptr);
 		return data;
 	}
 
-	char* Memory::DuplicateString(std::string string)
+	char* memory::duplicate_string(std::string string)
 	{
-		char* newString = Memory::AllocateArray<char>(string.size() + 1);
+		char* newString = memory::AllocateArray<char>(string.size() + 1);
 		std::memcpy(newString, string.data(), string.size());
 		return newString;
 	}
 
-	void Memory::Free(void* data)
+	void memory::free(void* data)
 	{
 		if (data)
 		{
@@ -31,12 +31,12 @@ namespace Utils
 		}
 	}
 
-	void Memory::Free(const void* data)
+	void memory::free(const void* data)
 	{
-		Memory::Free(const_cast<void*>(data));
+		memory::free(const_cast<void*>(data));
 	}
 
-	void Memory::FreeAlign(void* data)
+	void memory::free_align(void* data)
 	{
 		if (data)
 		{
@@ -44,13 +44,13 @@ namespace Utils
 		}
 	}
 
-	void Memory::FreeAlign(const void* data)
+	void memory::free_align(const void* data)
 	{
-		Memory::FreeAlign(const_cast<void*>(data));
+		memory::free_align(const_cast<void*>(data));
 	}
 
 	// Complementary function for memset, which checks if memory is filled with a char
-	bool Memory::IsSet(void* mem, char chr, size_t length)
+	bool memory::is_set(void* mem, char chr, size_t length)
 	{
 		char* memArr = reinterpret_cast<char*>(mem);
 

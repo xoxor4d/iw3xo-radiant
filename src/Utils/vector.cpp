@@ -1,12 +1,12 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 #include "vector.hpp"
 #include "cmath"
 
-namespace Utils
+namespace utils
 {
 	namespace vector // https://github.com/id-Software/Quake-III-Arena/blob/master/code/game/q_math.c
 	{
-		float Q_rsqrt(float number)
+		float q_rsqrt(float number)
 		{
 			long i;
 			float x2, y;
@@ -21,7 +21,7 @@ namespace Utils
 			return y;
 		}
 
-		int _VectorCompare(const vec3_t v1, const vec3_t v2) 
+		int compare(const vec3_t v1, const vec3_t v2) 
 		{
 			if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) 
 			{
@@ -31,25 +31,25 @@ namespace Utils
 			return 1;
 		}
 
-		vec_t _VectorLength(const vec3_t v) 
+		vec_t length(const vec3_t v) 
 		{
 			return (vec_t)sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 		}
 
-		vec_t _VectorLengthSquared(const vec3_t v) 
+		vec_t length_squared(const vec3_t v) 
 		{
 			return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
 		}
 
-		vec_t _Distance(const vec3_t p1, const vec3_t p2) 
+		vec_t distance(const vec3_t p1, const vec3_t p2) 
 		{
 			vec3_t	v;
 
 			VectorSubtract(p2, p1, v);
-			return _VectorLength(v);
+			return length(v);
 		}
 
-		vec_t _DistanceSquared(const vec3_t p1, const vec3_t p2) 
+		vec_t distance_squared(const vec3_t p1, const vec3_t p2) 
 		{
 			vec3_t	v;
 
@@ -58,7 +58,7 @@ namespace Utils
 		}
 
 		// zero's input vector
-		void _VectorZero(vec3_t v1)
+		void zero(vec3_t v1)
 		{
 			v1[0] = 0.0f;
 			v1[1] = 0.0f;
@@ -66,7 +66,7 @@ namespace Utils
 		}
 
 		// inverse input vector
-		void _VectorInverse(vec3_t v)
+		void inverse(vec3_t v)
 		{
 			v[0] = -v[0];
 			v[1] = -v[1];
@@ -74,7 +74,7 @@ namespace Utils
 		}
 
 		// cross product of v1 / v2, result stored in cross
-		void _CrossProduct(const vec3_t v1, const vec3_t v2, vec3_t cross)
+		void cross_product(const vec3_t v1, const vec3_t v2, vec3_t cross)
 		{
 			cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
 			cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
@@ -83,11 +83,11 @@ namespace Utils
 
 		// fast vector normalize routine that does not check to make sure
 		// that length != 0, nor does it return length, uses rsqrt approximation
-		void _VectorNormalizeFast(vec3_t v)
+		void normalize_fast(vec3_t v)
 		{
 			float ilength;
 
-			ilength = Q_rsqrt(DotProduct(v, v));
+			ilength = q_rsqrt(DotProduct(v, v));
 
 			v[0] *= ilength;
 			v[1] *= ilength;
@@ -95,7 +95,7 @@ namespace Utils
 		}
 
 		// (float) normalize input vector and returns "float length"
-		vec_t _VectorNormalize(vec3_t v)
+		vec_t normalize(vec3_t v)
 		{
 			float length, ilength;
 
@@ -113,7 +113,7 @@ namespace Utils
 		}
 
 		// (float) normalize input vector, stores result in output if length != 0 and returns "float length"
-		vec_t _VectorNormalize2(const vec3_t v, vec3_t out)
+		vec_t normalize2(const vec3_t v, vec3_t out)
 		{
 			float length, ilength;
 
@@ -136,49 +136,47 @@ namespace Utils
 
 		}
 
-		// out = v1 + (scale * v2)
-		void _VectorMA(const vec3_t v1, float scale, const vec3_t v2, vec3_t out)
+		void ma(const vec3_t veca, float scale, const vec3_t vecb, vec3_t out)
 		{
-			out[0] = v1[0] + scale * v2[0];
-			out[1] = v1[1] + scale * v2[1];
-			out[2] = v1[2] + scale * v2[2];
+			out[0] = veca[0] + scale * vecb[0];
+			out[1] = veca[1] + scale * vecb[1];
+			out[2] = veca[2] + scale * vecb[2];
 		}
 
-		// (float) Dot Product of two 3D Vectors
-		vec_t _DotProduct(const vec3_t v1, const vec3_t v2)
+		vec_t dot(const vec3_t v1, const vec3_t v2)
 		{
 			return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 		}
 
-		void _VectorSubtract(const vec3_t veca, const vec3_t vecb, vec3_t out)
+		void subtract(const vec3_t veca, const vec3_t vecb, vec3_t out)
 		{
 			out[0] = veca[0] - vecb[0];
 			out[1] = veca[1] - vecb[1];
 			out[2] = veca[2] - vecb[2];
 		}
 
-		void _VectorAdd(const vec3_t veca, const vec3_t vecb, vec3_t out)
+		void add(const vec3_t veca, const vec3_t vecb, vec3_t out)
 		{
 			out[0] = veca[0] + vecb[0];
 			out[1] = veca[1] + vecb[1];
 			out[2] = veca[2] + vecb[2];
 		}
 
-		void _VectorCopy(const vec3_t in, vec3_t out)
+		void copy(const vec3_t in, vec3_t out)
 		{
 			out[0] = in[0];
 			out[1] = in[1];
 			out[2] = in[2];
 		}
 
-		void _VectorScale(const vec3_t in, float scale, vec3_t out)
+		void scale(const vec3_t in, float scale, vec3_t out)
 		{
 			out[0] = in[0] * scale;
 			out[1] = in[1] * scale;
 			out[2] = in[2] * scale;
 		}
 
-		void _Vector4Scale(const vec4_t in, vec_t scale, vec4_t out)
+		void vec4_scale(const vec4_t in, vec_t scale, vec4_t out)
 		{
 			out[0] = in[0] * scale;
 			out[1] = in[1] * scale;
@@ -186,7 +184,7 @@ namespace Utils
 			out[3] = in[3] * scale;
 		}
 
-		void _Vector4toVector3(const vec4_t in, vec3_t out)
+		void vec4_to_vec3(const vec4_t in, vec3_t out)
 		{
 			out[0] = in[0];
 			out[1] = in[1];

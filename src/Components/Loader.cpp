@@ -1,47 +1,47 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
-namespace Components
+namespace components
 {
-	std::vector<Component*> Loader::Components;
-	Utils::Memory::Allocator Loader::MemAllocator;
+	std::vector<component*> loader::components_;
+	utils::memory::allocator loader::mem_allocator_;
 
-	void Loader::Initialize()
+	void loader::initialize()
 	{
-		Loader::MemAllocator.clear();
+		loader::mem_allocator_.clear();
 
-		Loader::Register(new Command());
-		Loader::Register(new D3D9Ex());
-		Loader::Register(new Gui());
-		Loader::Register(new QuickPatch());
-		Loader::Register(new RemNet());
-		Loader::Register(new Config());
+		loader::Register(new command());
+		loader::Register(new d3d9ex());
+		loader::Register(new gui());
+		loader::Register(new quick_patch());
+		loader::Register(new remote_net());
+		loader::Register(new config());
 	}
 
-	void Loader::Uninitialize()
+	void loader::uninitialize()
 	{
-		std::reverse(Loader::Components.begin(), Loader::Components.end());
-		for (auto component : Loader::Components)
+		std::reverse(loader::components_.begin(), loader::components_.end());
+		for (auto component : loader::components_)
 		{
 			delete component;
 		}
 
-		Loader::Components.clear();
-		Loader::MemAllocator.clear();
+		loader::components_.clear();
+		loader::mem_allocator_.clear();
 		fflush(stdout);
 		fflush(stderr);
 	}
 
-	void Loader::Register(Component* component)
+	void loader::Register(component* component)
 	{
 		if (component)
 		{
-			Game::Globals::loadedModules.append(Utils::VA("Component registered: %s\n", component->getName()));
-			Loader::Components.push_back(component);
+			game::glob::loadedModules.append(utils::va("component registered: %s\n", component->get_name()));
+			loader::components_.push_back(component);
 		}
 	}
 
-	Utils::Memory::Allocator* Loader::GetAlloctor()
+	utils::memory::allocator* loader::GetAlloctor()
 	{
-		return &Loader::MemAllocator;
+		return &loader::mem_allocator_;
 	}
 }

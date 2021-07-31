@@ -1,21 +1,21 @@
 #pragma once
 
-namespace Utils
+namespace utils
 {
-	class Memory
+	class memory
 	{
 	public:
-		class Allocator
+		class allocator
 		{
 		public:
 			typedef void(*FreeCallback)(void*);
 
-			Allocator()
+			allocator()
 			{
 				this->pool.clear();
 				this->refMemory.clear();
 			}
-			~Allocator()
+			~allocator()
 			{
 				this->clear();
 			}
@@ -36,7 +36,7 @@ namespace Utils
 
 				for (auto data : this->pool)
 				{
-					Memory::Free(data);
+					memory::free(data);
 				}
 
 				this->pool.clear();
@@ -56,7 +56,7 @@ namespace Utils
 				auto j = std::find(this->pool.begin(), this->pool.end(), data);
 				if (j != this->pool.end())
 				{
-					Memory::Free(data);
+					memory::free(data);
 					this->pool.erase(j);
 				}
 			}
@@ -77,7 +77,7 @@ namespace Utils
 			{
 				std::lock_guard<std::mutex> _(this->mutex);
 
-				void* data = Memory::Allocate(length);
+				void* data = memory::allocate(length);
 				this->pool.push_back(data);
 				return data;
 			}
@@ -99,7 +99,7 @@ namespace Utils
 			{
 				std::lock_guard<std::mutex> _(this->mutex);
 
-				char* data = Memory::DuplicateString(string);
+				char* data = memory::duplicate_string(string);
 				this->pool.push_back(data);
 				return data;
 			}
@@ -110,25 +110,25 @@ namespace Utils
 			std::mutex mutex;
 		};
 
-		static void* AllocateAlign(size_t length, size_t alignment);
-		static void* Allocate(size_t length);
-		template <typename T> static inline T* Allocate()
+		static void* allocate_align(size_t length, size_t alignment);
+		static void* allocate(size_t length);
+		template <typename T> static inline T* allocate()
 		{
 			return AllocateArray<T>(1);
 		}
 		template <typename T> static inline T* AllocateArray(size_t count = 1)
 		{
-			return static_cast<T*>(Allocate(count * sizeof(T)));
+			return static_cast<T*>(allocate(count * sizeof(T)));
 		}
 
-		static char* DuplicateString(std::string string);
+		static char* duplicate_string(std::string string);
 
-		static void Free(void* data);
-		static void Free(const void* data);
+		static void free(void* data);
+		static void free(const void* data);
 
-		static void FreeAlign(void* data);
-		static void FreeAlign(const void* data);
+		static void free_align(void* data);
+		static void free_align(const void* data);
 
-		static bool IsSet(void* mem, char chr, size_t length);
+		static bool is_set(void* mem, char chr, size_t length);
 	};
 }

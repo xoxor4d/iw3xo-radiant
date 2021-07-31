@@ -123,8 +123,8 @@ workspace "iw3xo-radiant"
 		kind "SharedLib"
 		language "C++"
 
-		pchheader "STDInclude.hpp"
-		pchsource "src/STDInclude.cpp"
+		pchheader "std_include.hpp"
+		pchsource "src/std_include.cpp"
 
 		files {
 			"./src/**.rc",

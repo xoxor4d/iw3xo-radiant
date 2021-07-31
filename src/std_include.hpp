@@ -5,7 +5,7 @@
 #define WIN32_LEAN_AND_MEAN
 
 // *
-// Gui
+// gui
 #define GET_GGUI Game::Globals::gui
 #define GGUI_READY Game::Globals::gui.imgui_initialized
 #define GGUI_READY_DVARS Game::Globals::gui.dvars_initialized
@@ -73,25 +73,25 @@
 #include <imgui.h>
 #include <backends/imgui_impl_dx9.h>
 #include <backends/imgui_impl_win32.h>
-#include "Common/imgui/addons.hpp"
+#include "common/imgui/imgui_addons.hpp"
 
 #include "detours/Detours.h"
 
-#include "Utils/Utils.hpp"
-#include "Utils/Memory.hpp"
-#include "Utils/Hooking.hpp"
-#include "Utils/function.hpp"
-#include "Utils/vector.hpp"
+#include "utils/utils.hpp"
+#include "utils/memory.hpp"
+#include "utils/hooking.hpp"
+#include "utils/function.hpp"
+#include "utils/vector.hpp"
 
-#include "Common/afx.hpp"
-#include "Game/Structs.hpp"
-#include "Game/Functions.hpp"
-#include "Game/Dvars.hpp"
+#include "common/afx.hpp"
+#include "game/structs.hpp"
+#include "game/functions.hpp"
+#include "game/dvars.hpp"
 
-#include "Common/CamWnd.hpp"
-#include "Common/MainFrm.hpp"
+#include "common/camwnd.hpp"
+#include "common/mainframe.hpp"
 
-#include "Components/Fonts.hpp"
-#include "Components/Loader.hpp"
+#include "components/fonts.hpp"
+#include "components/loader.hpp"
 
 using namespace std::literals;

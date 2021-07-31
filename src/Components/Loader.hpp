@@ -1,33 +1,33 @@
 #pragma once
 
-namespace Components
+namespace components
 {
-	class Component
+	class component
 	{
 	public:
-		Component() {};
-		virtual ~Component() {};
-		virtual const char* getName() { return "Unknown"; };
+		component() {};
+		virtual ~component() {};
+		virtual const char* get_name() { return "Unknown"; };
 	};
 
-	class Loader
+	class loader
 	{
 	public:
-		static void Initialize();
-		static void Uninitialize();
-		static void Register(Component* component);
+		static void initialize();
+		static void uninitialize();
+		static void Register(component* component);
 
-		static Utils::Memory::Allocator* GetAlloctor();
+		static utils::memory::allocator* GetAlloctor();
 
 	private:
-		static std::vector<Component*> Components;
-		static Utils::Memory::Allocator MemAllocator;
+		static std::vector<component*> components_;
+		static utils::memory::allocator mem_allocator_;
 	};
 }
 
-#include "Modules/Command.hpp"
-#include "Modules/D3D9Ex.hpp"
-#include "Modules/Gui.hpp"
-#include "Modules/QuickPatch.hpp"
-#include "Modules/RemoteNet.hpp"
-#include "Modules/Config.hpp"
+#include "modules/command.hpp"
+#include "modules/d3d9ex.hpp"
+#include "modules/gui.hpp"
+#include "modules/quick_patch.hpp"
+#include "modules/remote_net.hpp"
+#include "modules/config.hpp"

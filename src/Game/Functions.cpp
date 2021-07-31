@@ -1,4 +1,4 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
 namespace ggui
 {
@@ -7,9 +7,9 @@ namespace ggui
 	
 }
 
-namespace Game
+namespace game
 {
-	namespace Globals
+	namespace glob
 	{
 		// Init
 		std::string loadedModules;
@@ -22,10 +22,10 @@ namespace Game
 		CWnd* m_pCamWnd_ref;
 
 		// Misc
-		Game::TrackWorldspawn trackWorldspawn = Game::TrackWorldspawn();
+		game::TrackWorldspawn track_worldspawn = game::TrackWorldspawn();
 
 		// Live Link
-		Game::ProcessServerCommands cServerCmd = Game::ProcessServerCommands();
+		game::ProcessServerCommands cServerCmd = game::ProcessServerCommands();
 		bool live_connected;
 
 		// Renderer
@@ -36,7 +36,7 @@ namespace Game
 	// radiant globals
 	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
 	//CPrefsDlg*	g_PrefsDlg = reinterpret_cast<CPrefsDlg*>(0x73C704);
-	Game::qeglobals_t* g_qeglobals = reinterpret_cast<Game::qeglobals_t*>(0x25F39C0);
+	game::qeglobals_t* g_qeglobals = reinterpret_cast<game::qeglobals_t*>(0x25F39C0);
 	
 	int*	g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
 	int&	g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
@@ -51,29 +51,29 @@ namespace Game
 		return prefs;
 	}
 	
-	Game::undo_s* g_lastundo()
+	game::undo_s* g_lastundo()
 	{
-		const auto undo = reinterpret_cast<Game::undo_s*>(*(DWORD*)0x23F162C);
+		const auto undo = reinterpret_cast<game::undo_s*>(*(DWORD*)0x23F162C);
 		return undo;
 	}
 	
-	Game::undo_s* g_lastredo()
+	game::undo_s* g_lastredo()
 	{
-		const auto redo = reinterpret_cast<Game::undo_s*>(*(DWORD*)0x23F15CC);
+		const auto redo = reinterpret_cast<game::undo_s*>(*(DWORD*)0x23F15CC);
 		return redo;
 	}
 	
-	Game::DxGlobals* dx = reinterpret_cast<Game::DxGlobals*>(0x1365684);
+	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
 
 	int* dvarCount = reinterpret_cast<int*>(0x242394C);
-	Game::dvar_s* dvarPool = reinterpret_cast<Game::dvar_s*>(0x2427DA4); // dvarpool + 1 dvar size
-	Game::dvar_s* dvarPool_FirstEmpty = reinterpret_cast<Game::dvar_s*>(0x242C14C); // first empty dvar 
+	game::dvar_s* dvarPool = reinterpret_cast<game::dvar_s*>(0x2427DA4); // dvarpool + 1 dvar size
+	game::dvar_s* dvarPool_FirstEmpty = reinterpret_cast<game::dvar_s*>(0x242C14C); // first empty dvar 
 	DWORD* sortedDvars = reinterpret_cast<DWORD*>(0x2423958); // sorted dvar* list
 	DWORD* sortedDvarsAddons = reinterpret_cast<DWORD*>(0x2423CEC); // first empty pointer
 	int sortedDvarsAddonsCount = 0;
 
-	//Game::selbrush_t *selected_brushes = reinterpret_cast<Game::selbrush_t*>(0x23F1864);
-	//Game::selbrush_t *selected_brushes_next = reinterpret_cast<Game::selbrush_t*>(0x23F1868);
+	//game::selbrush_t *selected_brushes = reinterpret_cast<game::selbrush_t*>(0x23F1864);
+	//game::selbrush_t *selected_brushes_next = reinterpret_cast<game::selbrush_t*>(0x23F1868);
 
 	//entity_s* edit_entity = reinterpret_cast<entity_s*>(0x240A108); // add structs
 	//entity_s* world_entity = reinterpret_cast<entity_s*>(0x25D5B30); // add structs
@@ -82,81 +82,10 @@ namespace Game
 	OnCtlColor_t OnCtlColor = OnCtlColor_t(0x587907);
 
 	
-	// "custom" ImGui_ImplWin32_WndProcHandler
-	// * hook a wndclass::function handling input and call this function with the corrosponding WM_ msg
-	void ImGui_HandleKeyIO(HWND hwnd, UINT key, SHORT zDelta, UINT nChar)
-	{
-		if (ImGui::GetCurrentContext() == NULL)
-			return;
-
-		ImGuiIO& io = ImGui::GetIO();
-
-		switch (key)
-		{
-		case WM_SETFOCUS:
-			std::fill_n(io.KeysDown, 512, 0);
-			return;
-
-		case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK:
-		case WM_RBUTTONDOWN: case WM_RBUTTONDBLCLK:
-		case WM_MBUTTONDOWN: case WM_MBUTTONDBLCLK:
-		{
-			int button = 0;
-			if (key == WM_LBUTTONDOWN || key == WM_LBUTTONDBLCLK) { button = 0; }
-			if (key == WM_RBUTTONDOWN || key == WM_RBUTTONDBLCLK) { button = 1; }
-			if (key == WM_MBUTTONDOWN || key == WM_MBUTTONDBLCLK) { button = 2; }
-			if (!ImGui::IsAnyMouseDown() && ::GetCapture() == nullptr)
-				::SetCapture(hwnd);
-			io.MouseDown[button] = true;
-			return;
-		}
-
-		case WM_LBUTTONUP:
-		case WM_RBUTTONUP:
-		case WM_MBUTTONUP:
-		{
-			int button = 0;
-			if (key == WM_LBUTTONUP) { button = 0; }
-			if (key == WM_RBUTTONUP) { button = 1; }
-			if (key == WM_MBUTTONUP) { button = 2; }
-			io.MouseDown[button] = false;
-			if (!ImGui::IsAnyMouseDown() && ::GetCapture() == hwnd)
-				::ReleaseCapture();
-			return;
-		}
-
-		case WM_MOUSEWHEEL:
-			io.MouseWheel += static_cast<float>(zDelta) / 120.0f; // WHEEL_DELTA
-			return;
-
-		case WM_KEYDOWN:
-		case WM_SYSKEYDOWN:
-		    if (nChar < 256)
-		        io.KeysDown[nChar] = true;
-		    return;
-			
-		case WM_KEYUP:
-		case WM_SYSKEYUP:
-		    if (nChar < 256)
-		        io.KeysDown[nChar] = false;
-		    return;
-			
-		case WM_CHAR:
-		//    // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-		//    io.AddInputCharacter((unsigned int)wParam);
-			int x = 1;
-
-			//ToAscii() + GetKeyboardState()
-			
-		    return;
-		}
-	}
-	
-	
 	// -----------------------------------------------------------
 	// DVARS
 
-	void Dvar_SetString(Game::dvar_s *dvar /*esi*/, const char *string /*ebx*/)
+	void Dvar_SetString(game::dvar_s *dvar /*esi*/, const char *string /*ebx*/)
 	{
 		const static uint32_t Dvar_SetString_Func = 0x4B38D0;
 		
@@ -167,7 +96,7 @@ namespace Game
 		__asm popad
 	}
 
-	const char* Dvar_DisplayableValue(Game::dvar_s* dvar)
+	const char* Dvar_DisplayableValue(game::dvar_s* dvar)
 	{
 		const static uint32_t Dvar_DisplayableValue_Func = 0x4AFAA0;
 		__asm
@@ -177,7 +106,7 @@ namespace Game
 		}
 	}
 
-	Game::dvar_s * Dvar_SetFromStringFromSource(const char *string /*ecx*/, Game::dvar_s *dvar /*esi*/, int source)
+	game::dvar_s * Dvar_SetFromStringFromSource(const char *string /*ecx*/, game::dvar_s *dvar /*esi*/, int source)
 	{
 		const static uint32_t Dvar_SetFromStringFromSource_Func = 0x4B3910;
 		__asm
@@ -191,7 +120,7 @@ namespace Game
 		}
 	}
 
-	__declspec(naked) Game::dvar_s* Dvar_FindVar(const char* /*dvar*/)
+	__declspec(naked) game::dvar_s* Dvar_FindVar(const char* /*dvar*/)
 	{
 		__asm
 		{
@@ -210,7 +139,7 @@ namespace Game
 		}
 	}
 
-	void ConsoleError(const std::string &msg)
+	void console_error(const std::string &msg)
 	{
 		std::string err = "[!] " + msg + "\n";
 		printf(err.c_str());
@@ -231,7 +160,7 @@ namespace Game
 		}
 	}
 
-	Game::GfxImage* Image_FindExisting(const char* name)
+	game::GfxImage* Image_FindExisting(const char* name)
 	{
 		const static uint32_t Image_FindExisting_Func = 0x513200;
 		__asm
@@ -243,23 +172,17 @@ namespace Game
 		}
 	}
 
-	Game::GfxImage* Image_RegisterHandle(const char* name)
+	game::GfxImage* Image_RegisterHandle(const char* name)
 	{
-		Game::GfxImage* image = Game::Image_FindExisting(name);
+		game::GfxImage* image = game::Image_FindExisting(name);
 		
 		if (!image)
 		{
 			// Image_FindExisting_LoadObj
-			image = utils::function<Game::GfxImage* (const char* name, int, int)>(0x54FFC0)(name, 1, 0);
+			image = utils::function<game::GfxImage* (const char* name, int, int)>(0x54FFC0)(name, 1, 0);
 		}
 
 		return image;
-	}
-
-	bool mainframe_is_combined_view()
-	{
-		// combined view = 0
-		return CMainFrame::ActiveWindow->m_nCurrentStyle;
 	}
 	
 }

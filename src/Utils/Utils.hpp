@@ -1,6 +1,6 @@
 #define ARR_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
-namespace Utils
+namespace utils
 {
 	static std::vector<std::string> split(const std::string& rawInput, const std::vector<char>& delims)
 	{
@@ -58,16 +58,16 @@ namespace Utils
 	int		Q_stricmpn(const char *s1, const char *s2, int n);
 	int		Q_stricmp(const char *s1, const char *s2);
 
-	const char *VA(const char *fmt, ...);
+	const char *va(const char *fmt, ...);
 
-	std::string StrToLower(std::string input);
-	bool StartsWith(std::string haystack, std::string needle);
-	bool EndsWith(std::string haystack, std::string needle);
-	std::vector<std::string> Explode(const std::string& str, char delim);
-	void Replace(std::string &string, std::string find, std::string replace);
-	void EraseSubstring(std::string &base, std::string replace);
+	std::string str_to_lower(std::string input);
+	bool starts_with(std::string haystack, std::string needle);
+	bool ends_with(std::string haystack, std::string needle);
+	std::vector<std::string> explode(const std::string& str, char delim);
+	void replace(std::string &string, std::string find, std::string replace);
+	void erase_substring(std::string &base, std::string replace);
 
-	std::string &LTrim(std::string &s);
-	std::string &RTrim(std::string &s);
-	std::string &Trim(std::string &s);
+	std::string &ltrim(std::string &s);
+	std::string &rtrim(std::string &s);
+	std::string &trim(std::string &s);
 }

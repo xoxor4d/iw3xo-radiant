@@ -1,14 +1,14 @@
 #pragma once
 
-namespace Components
+namespace components
 {
-	class Gui : public Component
+	class gui : public component
 	{
 	public:
-		Gui();
-		~Gui();
+		gui();
+		~gui();
 
-		const char* getName() override { return "Gui"; };
+		const char* get_name() override { return "gui"; };
 
 		//static void imgui_init_ccamerawnd();
 		static void shutdown();

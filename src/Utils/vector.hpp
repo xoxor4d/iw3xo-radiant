@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Utils
+namespace utils
 {
 	namespace vector // https://github.com/id-Software/Quake-III-Arena/blob/master/code/game/q_shared.h
 	{
@@ -23,24 +23,24 @@ namespace Utils
 		#define Vector4Copy(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
 
 		// just in case you do't want to use the macros
-		int		_VectorCompare(const vec3_t v1, const vec3_t v2);
-		vec_t	_DotProduct(const vec3_t v1, const vec3_t v2);
-		vec_t	_VectorLength(const vec3_t v);
-		vec_t	_VectorLengthSquared(const vec3_t v);
-		vec_t	_Distance(const vec3_t p1, const vec3_t p2);
-		vec_t	_DistanceSquared(const vec3_t p1, const vec3_t p2);
-		vec_t	_VectorNormalize(vec3_t v);		// returns vector length
-		vec_t	_VectorNormalize2(const vec3_t v, vec3_t out);
-		void	_VectorNormalizeFast(vec3_t v);
-		void	_VectorZero(vec3_t v1);
-		void	_VectorSubtract(const vec3_t veca, const vec3_t vecb, vec3_t out);
-		void	_VectorAdd(const vec3_t veca, const vec3_t vecb, vec3_t out);
-		void	_VectorCopy(const vec3_t in, vec3_t out);
-		void	_VectorScale(const vec3_t in, float scale, vec3_t out);
-		void	_VectorMA(const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc);
-		void	_VectorInverse(vec3_t v);
-		void	_CrossProduct(const vec3_t v1, const vec3_t v2, vec3_t cross);
-		void	_Vector4Scale(const vec4_t in, vec_t scale, vec4_t out);
-		void	_Vector4toVector3(const vec4_t in, vec3_t out);
+		int		compare(const vec3_t v1, const vec3_t v2);
+		vec_t	dot(const vec3_t v1, const vec3_t v2);
+		vec_t	length(const vec3_t v);
+		vec_t	length_squared(const vec3_t v);
+		vec_t	distance(const vec3_t p1, const vec3_t p2);
+		vec_t	distance_squared(const vec3_t p1, const vec3_t p2);
+		vec_t	normalize(vec3_t v);		// returns vector length
+		vec_t	normalize2(const vec3_t v, vec3_t out);
+		void	normalize_fast(vec3_t v);
+		void	zero(vec3_t v1);
+		void	subtract(const vec3_t veca, const vec3_t vecb, vec3_t out);
+		void	add(const vec3_t veca, const vec3_t vecb, vec3_t out);
+		void	copy(const vec3_t in, vec3_t out);
+		void	scale(const vec3_t in, float scale, vec3_t out);
+		void	ma(const vec3_t veca, float scale, const vec3_t vecb, vec3_t out);
+		void	inverse(vec3_t v);
+		void	cross_product(const vec3_t v1, const vec3_t v2, vec3_t cross);
+		void	vec4_scale(const vec4_t in, vec_t scale, vec4_t out);
+		void	vec4_to_vec3(const vec4_t in, vec3_t out);
 	}
 }

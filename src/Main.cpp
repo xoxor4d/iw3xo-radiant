@@ -1,29 +1,29 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
-namespace Main
+namespace main
 {
-	static Utils::Hook EntryPointHook;
+	static utils::hook entry_point_hook;
 
-	void Initialize()
+	void initialize()
 	{
-		Main::EntryPointHook.uninstall();
-		Components::Loader::Initialize();
+		main::entry_point_hook.uninstall();
+		components::loader::initialize();
 	}
 
 	void Uninitialize()
 	{
-		Components::Loader::Uninitialize();
+		components::loader::uninitialize();
 	}
 }
 
-__declspec(naked) void EntryPoint()
+__declspec(naked) void entry_point()
 {
     __asm
     {
         // This has to be called, otherwise the hook is not uninstalled and we're deadlocking
-        call Main::Initialize
+        call main::initialize
 
-		// same address as EntryPointHook.initialize
+		// same address as entry_point_hook.initialize
         mov eax, 5C4299h
         jmp eax
     }
@@ -39,12 +39,12 @@ BOOL APIENTRY DllMain(HMODULE /*hModule*/, DWORD  ul_reason_for_call, LPVOID /*l
 		Beep(523, 100);
 
 		// Adress is the entry adress found in IDA under Exports
-		Main::EntryPointHook.initialize(0x5C4299, EntryPoint)->install();
+		main::entry_point_hook.initialize(0x5C4299, entry_point)->install();
 	}
 
 	else if (ul_reason_for_call == DLL_PROCESS_DETACH)
 	{
-		Main::Uninitialize();
+		main::Uninitialize();
 	}
 
 	return TRUE;

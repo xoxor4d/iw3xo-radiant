@@ -1,9 +1,9 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 #include "imgui_internal.h"
 
 namespace ImGui
 {
-	bool ImGui::IsItemHoveredDelay(float delay_in_seconds)
+	bool IsItemHoveredDelay(float delay_in_seconds)
 	{
 		ImGuiContext& g = *GImGui;
 
@@ -15,7 +15,68 @@ namespace ImGui
 		return false;
 	}
 
-	void ImGui::StyleColorsDevgui(ImGuiStyle* dst)
+	// "custom" ImGui_ImplWin32_WndProcHandler
+	// * hook a wndclass::function handling input and call this function with the corrosponding WM_ msg
+	void HandleKeyIO(HWND hwnd, UINT key, SHORT zDelta, UINT nChar)
+	{
+		if (ImGui::GetCurrentContext() == NULL)
+			return;
+
+		ImGuiIO& io = ImGui::GetIO();
+
+		switch (key)
+		{
+		case WM_SETFOCUS:
+			std::fill_n(io.KeysDown, 512, 0);
+			return;
+
+		case WM_LBUTTONDOWN: case WM_LBUTTONDBLCLK:
+		case WM_RBUTTONDOWN: case WM_RBUTTONDBLCLK:
+		case WM_MBUTTONDOWN: case WM_MBUTTONDBLCLK:
+		{
+			int button = 0;
+			if (key == WM_LBUTTONDOWN || key == WM_LBUTTONDBLCLK) { button = 0; }
+			if (key == WM_RBUTTONDOWN || key == WM_RBUTTONDBLCLK) { button = 1; }
+			if (key == WM_MBUTTONDOWN || key == WM_MBUTTONDBLCLK) { button = 2; }
+			if (!ImGui::IsAnyMouseDown() && ::GetCapture() == nullptr)
+				::SetCapture(hwnd);
+			io.MouseDown[button] = true;
+			return;
+		}
+
+		case WM_LBUTTONUP:
+		case WM_RBUTTONUP:
+		case WM_MBUTTONUP:
+		{
+			int button = 0;
+			if (key == WM_LBUTTONUP) { button = 0; }
+			if (key == WM_RBUTTONUP) { button = 1; }
+			if (key == WM_MBUTTONUP) { button = 2; }
+			io.MouseDown[button] = false;
+			if (!ImGui::IsAnyMouseDown() && ::GetCapture() == hwnd)
+				::ReleaseCapture();
+			return;
+		}
+
+		case WM_MOUSEWHEEL:
+			io.MouseWheel += static_cast<float>(zDelta) / 120.0f; // WHEEL_DELTA
+			return;
+
+		case WM_KEYDOWN:
+		case WM_SYSKEYDOWN:
+			if (nChar < 256)
+				io.KeysDown[nChar] = true;
+			return;
+
+		case WM_KEYUP:
+		case WM_SYSKEYUP:
+			if (nChar < 256)
+				io.KeysDown[nChar] = false;
+			return;
+		}
+	}
+
+	void StyleColorsDevgui(ImGuiStyle* dst)
 	{
 		ImGuiStyle* style = dst ? dst : &ImGui::GetStyle();
 		ImVec4* colors = style->Colors;

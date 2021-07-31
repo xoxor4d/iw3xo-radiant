@@ -1,8 +1,8 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
 IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-CMainFrame* CMainFrame::ActiveWindow;
+cmainframe* cmainframe::activewnd;
 
 // Taken directly from q3radiant
 // https://github.com/id-Software/Quake-III-Arena
@@ -21,51 +21,35 @@ CMainFrame* CMainFrame::ActiveWindow;
 #define W_MEDIA			0x1000 
 #define W_ALL			0xFFFFFFFF
 
-void __declspec(naked) CMainFrame::hk_RoutineProcessing(void)
-{
-	__asm
-	{
-		push ecx
-		mov ecx, eax // eax = this :: ecx => this(__stdcall)
-		
-		mov CMainFrame::ActiveWindow, ecx;
-		
-		call CMainFrame::RoutineProcessing
-		pop ecx
-		retn
-	}
-}
 
-void CMainFrame::RoutineProcessing()
+void cmainframe::routine_processing()
 {
-	//this->m_wndStatusBar.vtbl().SetStatusText(&this->m_wndStatusBar, 0x75);
-	
 	if (!this->m_bDoLoop)
 	{
 		return;
 	}
 
-	if (0.0 == Game::g_time)
+	if (0.0 == game::g_time)
 	{
-		Game::g_time = 0.0;
+		game::g_time = 0.0;
 	}
 
-	if (0.0 == Game::g_oldtime)
+	if (0.0 == game::g_oldtime)
 	{
-		Game::g_oldtime = 0.0;
+		game::g_oldtime = 0.0;
 	}
 
 	const double time = clock() / 1000.0;
-	double oldtime = time - Game::g_time;
+	double oldtime = time - game::g_time;
 
-	Game::g_time = time;
+	game::g_time = time;
 
 	if (oldtime > 2.0)
 	{
 		oldtime = 0.1;
 	}
 
-	Game::g_oldtime = oldtime;
+	game::g_oldtime = oldtime;
 
 	if (oldtime > 0.2)
 	{
@@ -78,30 +62,49 @@ void CMainFrame::RoutineProcessing()
 		this->m_pCamWnd->Cam_MouseControl(delta);
 	}
 
-	if (Game::g_nUpdateBits)
+	if (game::g_nUpdateBits)
 	{
-		const int nBits = Game::g_nUpdateBits;
-		Game::g_nUpdateBits = 0;
-		this->UpdateWindows(nBits);
+		const int nBits = game::g_nUpdateBits;
+		game::g_nUpdateBits = 0;
+		this->update_windows(nBits);
 	}
 
-	Game::Globals::radiant_initiated = true;
+	game::glob::radiant_initiated = true;
 }
 
-bool Worldspawn_OnKeyChange(const Game::epair_t* epair, const char* key, float* value, const int &valueSize)
+void __declspec(naked) cmainframe::hk_RoutineProcessing(void)
 {
-	if (!Utils::Q_stricmp(epair->key, key))
+	__asm
+	{
+		push	ecx;
+
+		// eax = this :: ecx => this(__stdcall)
+		mov		ecx, eax; 
+
+		// update activewnd
+		mov		cmainframe::activewnd, ecx; 
+
+		call	cmainframe::routine_processing;
+		pop		ecx;
+		retn;
+	}
+}
+
+
+bool worldspawn_on_key_change(const game::epair_t* epair, const char* key, float* value, const int &valueSize)
+{
+	if (!utils::Q_stricmp(epair->key, key))
 	{
 		bool changed = false;
 		
-		std::vector<std::string> KeyValues = Utils::Explode(epair->value, ' ');
+		std::vector<std::string> KeyValues = utils::explode(epair->value, ' ');
 
 		int count = KeyValues.size();
 		if (count > valueSize) count = valueSize;
 
 		for (auto i = 0; i < count; i++)
 		{
-			float temp = Utils::try_stof(KeyValues[i], true);
+			float temp = utils::try_stof(KeyValues[i], true);
 
 			if (value[i] != temp)
 			{
@@ -119,76 +122,76 @@ bool Worldspawn_OnKeyChange(const Game::epair_t* epair, const char* key, float* 
 	return false;
 }
 
-void TrackWorldspawnSettings()
+void track_worldspawn_settings()
 {
-	// trackWorldspawn
+	// track_worldspawn
 	
 	if (const auto world = GET_WORLDENTITY; 
 		world && world->firstActive->eclass->name)
 	{
-		if (!Utils::Q_stricmp(world->firstActive->eclass->name, "worldspawn"))
+		if (!utils::Q_stricmp(world->firstActive->eclass->name, "worldspawn"))
 		{
 			for (auto epair = world->firstActive->epairs; epair; epair = epair->next)
 			{
-				if (Worldspawn_OnKeyChange(epair, "sundirection", Game::Globals::trackWorldspawn.sundirection, 3))
+				if (worldspawn_on_key_change(epair, "sundirection", game::glob::track_worldspawn.sundirection, 3))
 				{
-					if (Game::Globals::trackWorldspawn.initiated)
+					if (game::glob::track_worldspawn.initiated)
 					{
-						Components::RemNet::Cmd_SendDvar(Utils::VA("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f %.1f %.1f\"\n}", "r_lighttweaksundirection",
-							Game::Globals::trackWorldspawn.sundirection[0], Game::Globals::trackWorldspawn.sundirection[1], Game::Globals::trackWorldspawn.sundirection[2]));
+						components::remote_net::Cmd_SendDvar(utils::va("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f %.1f %.1f\"\n}", "r_lighttweaksundirection",
+							game::glob::track_worldspawn.sundirection[0], game::glob::track_worldspawn.sundirection[1], game::glob::track_worldspawn.sundirection[2]));
 					}
 				}
 
-				if (Worldspawn_OnKeyChange(epair, "suncolor", Game::Globals::trackWorldspawn.suncolor, 3))
+				if (worldspawn_on_key_change(epair, "suncolor", game::glob::track_worldspawn.suncolor, 3))
 				{
-					if (Game::Globals::trackWorldspawn.initiated)
+					if (game::glob::track_worldspawn.initiated)
 					{
-						Components::RemNet::Cmd_SendDvar(Utils::VA("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f %.1f %.1f\"\n}", "r_lighttweaksuncolor",
-							Game::Globals::trackWorldspawn.suncolor[0], Game::Globals::trackWorldspawn.suncolor[1], Game::Globals::trackWorldspawn.suncolor[2]));
+						components::remote_net::Cmd_SendDvar(utils::va("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f %.1f %.1f\"\n}", "r_lighttweaksuncolor",
+							game::glob::track_worldspawn.suncolor[0], game::glob::track_worldspawn.suncolor[1], game::glob::track_worldspawn.suncolor[2]));
 					}
 				}
 
-				if (Worldspawn_OnKeyChange(epair, "sunlight", &Game::Globals::trackWorldspawn.sunlight, 1))
+				if (worldspawn_on_key_change(epair, "sunlight", &game::glob::track_worldspawn.sunlight, 1))
 				{
-					if (Game::Globals::trackWorldspawn.initiated)
+					if (game::glob::track_worldspawn.initiated)
 					{
-						Components::RemNet::Cmd_SendDvar(Utils::VA("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f\"\n}", "r_lighttweaksunlight",
-							Game::Globals::trackWorldspawn.sunlight));
+						components::remote_net::Cmd_SendDvar(utils::va("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f\"\n}", "r_lighttweaksunlight",
+							game::glob::track_worldspawn.sunlight));
 					}
 				}
 			}
 		}
 
-		if (!Game::Globals::trackWorldspawn.initiated)
+		if (!game::glob::track_worldspawn.initiated)
 		{
-			Game::Globals::trackWorldspawn.initiated = true;
+			game::glob::track_worldspawn.initiated = true;
 			return;
 		}
 	}
 }
 
 
-void CMainFrame::UpdateWindows(int nBits)
+void cmainframe::update_windows(int nBits)
 {
 	// grab camera if not using floating windows
-	if (!Game::Globals::radiant_floatingWindows && this->m_pCamWnd)
+	if (!game::glob::radiant_floatingWindows && this->m_pCamWnd)
 	{
-		CCamWnd::ActiveWindow = this->m_pCamWnd;
-		Game::Globals::radiant_floatingWindows = true;
+		ccamwnd::activewnd = this->m_pCamWnd;
+		game::glob::radiant_floatingWindows = true;
 	}
 
-	if (!Game::g_bScreenUpdates)
+	if (!game::g_bScreenUpdates)
 	{
 		return;
 	}
 
-	if (Game::Globals::live_connected) 
+	if (game::glob::live_connected) 
 	{
-		TrackWorldspawnSettings();
+		track_worldspawn_settings();
 	}
 
 	// check d3d device or we ASSERT in R_CheckHwnd_or_Device (!dx_device) when using floating windows
-	if (!Game::Globals::d3d9_device)
+	if (!game::glob::d3d9_device)
 	{
 		return;
 	}
@@ -210,7 +213,7 @@ void CMainFrame::UpdateWindows(int nBits)
 			//m_pCamWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 //#endif
 			
-			Game::Globals::m_pCamWnd_ref = m_pCamWnd;
+			game::glob::m_pCamWnd_ref = m_pCamWnd;
 
 			// on update cam window through the 2d grid or something else
 			if ((nBits & W_CAMERA_IFON) && this->m_bCamPreview || nBits < 0 || nBits == 3)
@@ -218,12 +221,12 @@ void CMainFrame::UpdateWindows(int nBits)
 			}
 
 			// only update the remote cam when we actually move it, not when we update the cam window by doing something in the gridWnd etc.
-			else if(Game::Globals::live_connected)
+			else if(game::glob::live_connected)
 			{
 				// Attempt to update the remote camera
-				if (CCamWnd::ActiveWindow)
+				if (ccamwnd::activewnd)
 				{
-					Components::RemNet::Cmd_SendCameraUpdate(CCamWnd::ActiveWindow->camera.origin, CCamWnd::ActiveWindow->camera.angles);
+					components::remote_net::cmd_send_camera_update(ccamwnd::activewnd->camera.origin, ccamwnd::activewnd->camera.angles);
 				}
 			}
 		}
@@ -264,7 +267,7 @@ BOOL is_mouse_outside_window(HWND hWnd)
 
 
 // typedef CFrameWnd::DefWindowProc
-typedef LRESULT(__thiscall* wndproc_t)(CMainFrame*, UINT Msg, WPARAM wParam, LPARAM lParam);
+typedef LRESULT(__thiscall* wndproc_t)(cmainframe*, UINT Msg, WPARAM wParam, LPARAM lParam);
 /* ------------------------- */ wndproc_t o_wndproc = reinterpret_cast<wndproc_t>(0x584D97);
 
 /*
@@ -272,21 +275,21 @@ typedef LRESULT(__thiscall* wndproc_t)(CMainFrame*, UINT Msg, WPARAM wParam, LPA
  */
 
 // handle wm_char events for non-focused subwindows, see above msg
-LRESULT __fastcall CMainFrame::windowproc(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam)
+LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	static TRACKMOUSEEVENT tme{};
 	static BOOL mouse_tracing = false;
 	
-	if (Components::Gui::all_contexts_ready())
+	if (components::gui::all_contexts_ready())
 	{
 		// ! do not set imgui context for every msg
 
 		if (Msg == WM_SETCURSOR)
 		{
 			// auto close mainframe menubar popups when the mouse leaves the cxy window
-			if (CMainFrame::ActiveWindow && CMainFrame::ActiveWindow->m_pXYWnd)
+			if (cmainframe::activewnd && cmainframe::activewnd->m_pXYWnd)
 			{
-				if (is_mouse_outside_window(CMainFrame::ActiveWindow->m_pXYWnd->GetWindow()))
+				if (is_mouse_outside_window(cmainframe::activewnd->m_pXYWnd->GetWindow()))
 				{
 					const auto imgui_context_old = ImGui::GetCurrentContext();
 
@@ -345,14 +348,14 @@ LRESULT __fastcall CMainFrame::windowproc(CMainFrame* pThis, [[maybe_unused]] vo
 // *
 
 
-typedef void(__thiscall* on_cmainframe_scroll)(CMainFrame*, UINT, SHORT, CPoint);
+typedef void(__thiscall* on_cmainframe_scroll)(cmainframe*, UINT, SHORT, CPoint);
 	on_cmainframe_scroll __on_mscroll;
 
 
-typedef void(__thiscall* on_cmainframe_keydown)(CMainFrame*, UINT, UINT, UINT);
+typedef void(__thiscall* on_cmainframe_keydown)(cmainframe*, UINT, UINT, UINT);
 	on_cmainframe_keydown __on_keydown;
 
-typedef void(__stdcall* on_cmainframe_keyup)(CMainFrame*, UINT);
+typedef void(__stdcall* on_cmainframe_keyup)(cmainframe*, UINT);
 	on_cmainframe_keyup __on_keyup;
 
 
@@ -360,12 +363,12 @@ typedef void(__stdcall* on_cmainframe_keyup)(CMainFrame*, UINT);
 // | -------------------- Mouse Scroll ------------------------
 // *
 
-void __fastcall CMainFrame::on_mscroll(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
+void __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
+		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
 		return;
 	}
 
@@ -373,7 +376,7 @@ void __fastcall CMainFrame::on_mscroll(CMainFrame* pThis, [[maybe_unused]] void*
 	IMGUI_BEGIN_CXYWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
+		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
 		return;
 	}
 
@@ -384,12 +387,12 @@ void __fastcall CMainFrame::on_mscroll(CMainFrame* pThis, [[maybe_unused]] void*
 // | ------------------------ Key ----------------------------
 // *
 
-void __fastcall CMainFrame::on_keydown(CMainFrame* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
+void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		Game::ImGui_HandleKeyIO(CMainFrame::ActiveWindow->m_pCamWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
+		ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
 		return;
 	}
 	else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
@@ -402,7 +405,7 @@ void __fastcall CMainFrame::on_keydown(CMainFrame* pThis, [[maybe_unused]] void*
 	IMGUI_BEGIN_CXYWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		Game::ImGui_HandleKeyIO(CMainFrame::ActiveWindow->m_pXYWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
+		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
 		return;
 	}
 	else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
@@ -415,12 +418,12 @@ void __fastcall CMainFrame::on_keydown(CMainFrame* pThis, [[maybe_unused]] void*
 }
 
 
-void __stdcall CMainFrame::on_keyup(CMainFrame* pThis, UINT nChar)
+void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		Game::ImGui_HandleKeyIO(CMainFrame::ActiveWindow->m_pCamWnd->GetWindow(), WM_KEYUP, 0, nChar);
+		ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYUP, 0, nChar);
 		return;
 	}
 
@@ -428,7 +431,7 @@ void __stdcall CMainFrame::on_keyup(CMainFrame* pThis, UINT nChar)
 	IMGUI_BEGIN_CXYWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		Game::ImGui_HandleKeyIO(CMainFrame::ActiveWindow->m_pXYWnd->GetWindow(), WM_KEYUP, 0, nChar);
+		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYUP, 0, nChar);
 		return;
 	}
 
@@ -464,22 +467,22 @@ void __declspec(naked) sunlight_preview_arg_check()
 }
 
 
-void CMainFrame::main()
+void cmainframe::main()
 {
 	// hook MainFrameWnd continuous thread
-	Utils::Hook(0x421A90, CMainFrame::hk_RoutineProcessing, HOOK_JUMP).install()->quick();
+	utils::hook(0x421A90, cmainframe::hk_RoutineProcessing, HOOK_JUMP).install()->quick();
 
 	// this might be needed later, not useful for the camera window tho
-	Utils::Hook(0x421A7B, CMainFrame::windowproc, HOOK_CALL).install()->quick();
+	utils::hook(0x421A7B, cmainframe::windowproc, HOOK_CALL).install()->quick();
 
 	// *
 	// detour cmainframe member functions to get imgui input
 	
-	__on_mscroll	= reinterpret_cast<on_cmainframe_scroll>(Utils::Hook::Detour(0x42B850, on_mscroll, HK_JUMP));
-	__on_keydown	= reinterpret_cast<on_cmainframe_keydown>(Utils::Hook::Detour(0x422370, on_keydown, HK_JUMP));
-	__on_keyup		= reinterpret_cast<on_cmainframe_keyup>(Utils::Hook::Detour(0x422270, on_keyup, HK_JUMP));
+	__on_mscroll	= reinterpret_cast<on_cmainframe_scroll> (utils::hook::detour(0x42B850, cmainframe::on_mscroll, HK_JUMP));
+	__on_keydown	= reinterpret_cast<on_cmainframe_keydown>(utils::hook::detour(0x422370, cmainframe::on_keydown, HK_JUMP));
+	__on_keyup		= reinterpret_cast<on_cmainframe_keyup>  (utils::hook::detour(0x422270, cmainframe::on_keyup, HK_JUMP));
 
 	// check for nullptr (world_entity) in a sunlight preview function. Only required with the ^ hook, see note there.
-	Utils::Hook::Nop(0x4067C7, 6);
-	Utils::Hook(0x4067C7, sunlight_preview_arg_check, HOOK_JUMP).install()->quick();
+	utils::hook::nop(0x4067C7, 6);
+		 utils::hook(0x4067C7, sunlight_preview_arg_check, HOOK_JUMP).install()->quick();
 }

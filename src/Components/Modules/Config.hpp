@@ -1,16 +1,16 @@
 #pragma once
 
-namespace Components
+namespace components
 {
-	class Config : public Component
+	class config : public component
 	{
 	public:
-		Config();
-		~Config();
-		const char* getName() override { return "Config"; };
+		config();
+		~config();
+		const char* get_name() override { return "config"; };
 
-		static void		LoadDvars();
-		static void		WriteDvars();
+		static void		load_dvars();
+		static void		write_dvars();
 
 	private:
 	};

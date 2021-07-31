@@ -1,20 +1,19 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
 IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-CCamWnd* CCamWnd::ActiveWindow;
+ccamwnd* ccamwnd::activewnd;
 
-void CCamWnd::Cam_MouseControl(float dtime)
+void ccamwnd::Cam_MouseControl(float dtime)
 {
-	static DWORD dwCall = 0x403950;
-
-	_asm
+	const static uint32_t Cam_MouseControl_Func = 0x403950;
+	__asm
 	{
-		push esi
-		mov esi, ecx // esi = this
-		push dtime
-		call dwCall // Automatically fixes the stack
-		pop esi
+		push	esi;
+		mov		esi, ecx; // esi = this
+		push	dtime;
+		call	Cam_MouseControl_Func; // __userpurge :: automatically fixes the stack
+		pop		esi;
 	}
 
 	return;
@@ -26,9 +25,9 @@ void CCamWnd::Cam_MouseControl(float dtime)
 // *
 
 
-typedef void(__thiscall* on_ccamwnd_msg)(CCamWnd*, UINT, CPoint);
+typedef void(__thiscall* on_ccamwnd_msg)(ccamwnd*, UINT, CPoint);
 
-	// mouse scrolling handled in CMainFrame
+	// mouse scrolling handled in cmainframe
     on_ccamwnd_msg __on_lbutton_down;
     on_ccamwnd_msg __on_lbutton_up;
     on_ccamwnd_msg __on_rbutton_down;
@@ -45,11 +44,11 @@ typedef void(__stdcall* on_ccamwnd_key)(UINT nChar, UINT nRepCnt, UINT nFlags);
 // | ----------------- Left Mouse Button ---------------------
 // *
 
-void __fastcall CCamWnd::on_lbutton_down(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+void __fastcall ccamwnd::on_lbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 	
-    Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
+    ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
 
     // do not pass the msg if mouse is inside an imgui window
     if (!ImGui::GetIO().WantCaptureMouse)
@@ -58,11 +57,11 @@ void __fastcall CCamWnd::on_lbutton_down(CCamWnd* pThis, [[maybe_unused]] void* 
     }
 }
 
-void __fastcall CCamWnd::on_lbutton_up(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+void __fastcall ccamwnd::on_lbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 	
-    Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
+    ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
 
     // do not pass the msg if mouse is inside an imgui window
     if (!ImGui::GetIO().WantCaptureMouse)
@@ -75,11 +74,11 @@ void __fastcall CCamWnd::on_lbutton_up(CCamWnd* pThis, [[maybe_unused]] void* ed
 // | ----------------- Right Mouse Button ---------------------
 // *
 
-void __fastcall CCamWnd::on_rbutton_down(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+void __fastcall ccamwnd::on_rbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 	
-    Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_RBUTTONDOWN);
+    ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONDOWN);
 
     // do not pass the msg if mouse is inside an imgui window
     if (!ImGui::GetIO().WantCaptureMouse)
@@ -88,11 +87,11 @@ void __fastcall CCamWnd::on_rbutton_down(CCamWnd* pThis, [[maybe_unused]] void* 
     }
 }
 
-void __fastcall CCamWnd::on_rbutton_up(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+void __fastcall ccamwnd::on_rbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 	
-    Game::ImGui_HandleKeyIO(pThis->GetWindow(), WM_RBUTTONUP);
+    ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONUP);
 
     // do not pass the msg if mouse is inside an imgui window
     if (!ImGui::GetIO().WantCaptureMouse)
@@ -101,7 +100,7 @@ void __fastcall CCamWnd::on_rbutton_up(CCamWnd* pThis, [[maybe_unused]] void* ed
     }
 }
 
-void __fastcall CCamWnd::on_mouse_move(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+void __fastcall ccamwnd::on_mouse_move(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 
@@ -112,32 +111,32 @@ void __fastcall CCamWnd::on_mouse_move(CCamWnd* pThis, [[maybe_unused]] void* ed
 }
 
 
-void __stdcall CCamWnd::on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags)
+void __stdcall ccamwnd::on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		Game::ImGui_HandleKeyIO(CMainFrame::ActiveWindow->m_pCamWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
+		ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
 	}
 	else
 	{
-		// CMainFrame::OnKeyDown
+		// cmainframe::OnKeyDown
 		return __on_keydown_cam(nChar, nRepCnt, nFlags);
 	}
 }
 
-void __stdcall CCamWnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
+void __stdcall ccamwnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
-		Game::ImGui_HandleKeyIO(CMainFrame::ActiveWindow->m_pCamWnd->GetWindow(), WM_KEYUP, 0, nChar);
+		ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYUP, 0, nChar);
 	}
 	else
 	{
-		// CMainFrame::OnKeyUp
+		// cmainframe::OnKeyUp
 		return __on_keyup_cam(nChar, nRepCnt, nFlags);
 	}
 }
@@ -146,17 +145,17 @@ void __stdcall CCamWnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 // | ----------------------------------------------------------
 // *
 
-//void CCamWnd::on_endframe()
+//void ccamwnd::on_endframe()
 //{
-//    Game::R_EndFrame();
+//    game::R_EndFrame();
 //}
 
 // *
 // *
 
-BOOL WINAPI CCamWnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+BOOL WINAPI ccamwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if (Components::Gui::all_contexts_ready())
+	if (components::gui::all_contexts_ready())
 	{
 		// fix mouse cursor for imgui windows
 		//if (Msg == WM_NCHITTEST)
@@ -217,28 +216,28 @@ BOOL WINAPI CCamWnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 	}
 
 	// => og CamWndProc
-    return Utils::Hook::Call<BOOL(__stdcall)(HWND, UINT, WPARAM, LPARAM)>(0x402D90)(hWnd, Msg, wParam, lParam);
+    return utils::hook::call<BOOL(__stdcall)(HWND, UINT, WPARAM, LPARAM)>(0x402D90)(hWnd, Msg, wParam, lParam);
 }
 
 // *
 // *
 
-void CCamWnd::main()
+void ccamwnd::main()
 {
-	// hook CCamWnd message handler
-    Utils::Hook::Set(0x402E86 + 4, CCamWnd::windowproc);
+	// hook ccamwnd message handler
+    utils::hook::set(0x402E86 + 4, ccamwnd::windowproc);
 	
 	// endframe hook
-    //Utils::Hook(0x40305C, CCamWnd::on_endframe, HOOK_CALL).install()->quick();
+    //utils::hook(0x40305C, ccamwnd::on_endframe, HOOK_CALL).install()->quick();
 	
-	__on_lbutton_down   = reinterpret_cast<on_ccamwnd_msg>(Utils::Hook::Detour(0x403160, CCamWnd::on_lbutton_down, HK_JUMP));
-    __on_lbutton_up     = reinterpret_cast<on_ccamwnd_msg>(Utils::Hook::Detour(0x4031D0, CCamWnd::on_lbutton_up, HK_JUMP));
+	__on_lbutton_down   = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x403160, ccamwnd::on_lbutton_down, HK_JUMP));
+    __on_lbutton_up     = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x4031D0, ccamwnd::on_lbutton_up, HK_JUMP));
 
-    __on_rbutton_down   = reinterpret_cast<on_ccamwnd_msg>(Utils::Hook::Detour(0x4032B0, CCamWnd::on_rbutton_down, HK_JUMP));
-    __on_rbutton_up     = reinterpret_cast<on_ccamwnd_msg>(Utils::Hook::Detour(0x403310, CCamWnd::on_rbutton_up, HK_JUMP));
+    __on_rbutton_down   = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x4032B0, ccamwnd::on_rbutton_down, HK_JUMP));
+    __on_rbutton_up     = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x403310, ccamwnd::on_rbutton_up, HK_JUMP));
 
-	__on_mouse_move		= reinterpret_cast<on_ccamwnd_msg>(Utils::Hook::Detour(0x403100, CCamWnd::on_mouse_move, HK_JUMP));
+	__on_mouse_move		= reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x403100, ccamwnd::on_mouse_move, HK_JUMP));
 
-	__on_keydown_cam	= reinterpret_cast<on_ccamwnd_key>(Utils::Hook::Detour(0x402F60, CCamWnd::on_keydown, HK_JUMP));
-	__on_keyup_cam		= reinterpret_cast<on_ccamwnd_key>(Utils::Hook::Detour(0x408B70, CCamWnd::on_keyup, HK_JUMP));
+	__on_keydown_cam	= reinterpret_cast<on_ccamwnd_key>(utils::hook::detour(0x402F60, ccamwnd::on_keydown, HK_JUMP));
+	__on_keyup_cam		= reinterpret_cast<on_ccamwnd_key>(utils::hook::detour(0x408B70, ccamwnd::on_keyup, HK_JUMP));
 }

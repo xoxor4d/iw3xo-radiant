@@ -1,20 +1,20 @@
-// https://github.com/IW4x/iw4x-client/blob/develop/src/Components/Modules/D3D9Ex.hpp
+// https://github.com/IW4x/iw4x-client/blob/develop/src/components/Modules/d3d9ex.hpp
 #pragma once
 
-namespace Components
+namespace components
 {
-	class D3D9Ex : public Component
+	class d3d9ex : public component
 	{
 	public:
-		D3D9Ex();
-		const char* getName() override { return "D3D9Ex"; };
+		d3d9ex();
+		const char* get_name() override { return "d3d9ex"; };
 
 	private:
-		class D3D9Device : public IDirect3DDevice9
+		class d3d9device : public IDirect3DDevice9
 		{
 		public:
-			D3D9Device(IDirect3DDevice9* pOriginal) : m_pIDirect3DDevice9(pOriginal) {};
-			virtual ~D3D9Device() {};
+			d3d9device(IDirect3DDevice9* pOriginal) : m_pIDirect3DDevice9(pOriginal) {};
+			virtual ~d3d9device() {};
 
 			HRESULT __stdcall QueryInterface(REFIID riid, void** ppvObj) override;
 			ULONG   __stdcall AddRef() override;
@@ -140,11 +140,11 @@ namespace Components
 			IDirect3DDevice9 *m_pIDirect3DDevice9;
 		};
 
-		class _D3D9 : public IDirect3D9
+		class _d3d9 : public IDirect3D9
 		{
 		public:
-			_D3D9(IDirect3D9 *pOriginal) : m_pIDirect3D9(pOriginal) {};
-			virtual ~_D3D9() {};
+			_d3d9(IDirect3D9 *pOriginal) : m_pIDirect3D9(pOriginal) {};
+			virtual ~_d3d9() {};
 
 			HRESULT  __stdcall QueryInterface(REFIID riid, void** ppvObj) override;
 			ULONG    __stdcall AddRef() override;
@@ -168,11 +168,11 @@ namespace Components
 			IDirect3D9 *m_pIDirect3D9;
 		};
 
-		class _D3D9Ex : public IDirect3D9Ex
+		class _d3d9ex : public IDirect3D9Ex
 		{
 		public:
-			_D3D9Ex(IDirect3D9Ex* pOriginal) : m_pIDirect3D9Ex(pOriginal) {};
-			virtual ~_D3D9Ex() {};
+			_d3d9ex(IDirect3D9Ex* pOriginal) : m_pIDirect3D9Ex(pOriginal) {};
+			virtual ~_d3d9ex() {};
 
 			HRESULT  __stdcall QueryInterface(REFIID riid, void** ppvObj) override;
 			ULONG    __stdcall AddRef() override;

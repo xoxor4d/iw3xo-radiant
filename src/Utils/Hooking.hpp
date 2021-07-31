@@ -6,101 +6,101 @@
 #define HK_JUMP Detours::X86Option::USE_JUMP
 #define HK_CALL Detours::X86Option::USE_CALL
 
-namespace Utils
+namespace utils
 {
-	class Hook
+	class hook
 	{
 	public:
 
-		static uintptr_t Detour(uintptr_t offset, void* stub, Detours::X86Option option);
+		static uintptr_t detour(uintptr_t offset, void* stub, Detours::X86Option option);
 
 		
-		class Signature
+		class signature
 		{
 		public:
-			struct Container
+			struct container
 			{
 				const char* signature;
 				const char* mask;
 				std::function<void(char*)> callback;
 			};
 
-			Signature(void* _start, size_t _length) : start(_start), length(_length) {}
-			Signature(DWORD _start, size_t _length) : Signature(reinterpret_cast<void*>(_start), _length) {}
-			Signature() : Signature(0x400000, 0x800000) {}
+			signature(void* _start, size_t _length) : start(_start), length(_length) {}
+			signature(DWORD _start, size_t _length) : signature(reinterpret_cast<void*>(_start), _length) {}
+			signature() : signature(0x400000, 0x800000) {}
 
 			void process();
-			void add(Container& container);
+			void add(container& container);
 
 		private:
 			void* start;
 			size_t length;
-			std::vector<Container> signatures;
+			std::vector<container> signatures;
 		};
 
-		class Interceptor
+		class interceptor
 		{
 		public:
-			static void Install(void* place, void(*stub)());
-			static void Install(void** place, void(*stub)());
+			static void install(void* place, void(*stub)());
+			static void install(void** place, void(*stub)());
 
 		private:
-			static std::map<void*, void*> IReturn;
-			static std::map<void*, void(*)()> ICallbacks;
+			static std::map<void*, void*> i_return_;
+			static std::map<void*, void(*)()> i_callbacks_;
 
-			static void InterceptionStub();
-			static void RunCallback(void* place);
-			static void* PopReturn(void* place);
+			static void interception_stub();
+			static void run_callback(void* place);
+			static void* pop_return(void* place);
 		};
 
-		Hook() : initialized(false), installed(false), place(nullptr), stub(nullptr), original(nullptr), useJump(false), protection(0) { ZeroMemory(this->buffer, sizeof(this->buffer)); }
+		hook() : initialized(false), installed(false), place(nullptr), stub(nullptr), original(nullptr), useJump(false), protection(0) { ZeroMemory(this->buffer, sizeof(this->buffer)); }
 
-		Hook(void* place, void* stub, bool useJump = true) : Hook() { this->initialize(place, stub, useJump); }
-		Hook(void* place, void(*stub)(), bool useJump = true) : Hook(place, reinterpret_cast<void*>(stub), useJump) {}
+		hook(void* place, void* stub, bool useJump = true) : hook() { this->initialize(place, stub, useJump); }
+		hook(void* place, void(*stub)(), bool useJump = true) : hook(place, reinterpret_cast<void*>(stub), useJump) {}
 
-		Hook(DWORD place, void* stub, bool useJump = true) : Hook(reinterpret_cast<void*>(place), stub, useJump) {}
-		Hook(DWORD place, DWORD stub, bool useJump = true) : Hook(reinterpret_cast<void*>(place), reinterpret_cast<void*>(stub), useJump) {}
-		Hook(DWORD place, void(*stub)(), bool useJump = true) : Hook(reinterpret_cast<void*>(place), reinterpret_cast<void*>(stub), useJump) {}
+		hook(DWORD place, void* stub, bool useJump = true) : hook(reinterpret_cast<void*>(place), stub, useJump) {}
+		hook(DWORD place, DWORD stub, bool useJump = true) : hook(reinterpret_cast<void*>(place), reinterpret_cast<void*>(stub), useJump) {}
+		hook(DWORD place, void(*stub)(), bool useJump = true) : hook(reinterpret_cast<void*>(place), reinterpret_cast<void*>(stub), useJump) {}
 
-		~Hook();
+		~hook();
 
-		Hook* initialize(void* place, void* stub, bool useJump = true);
-		Hook* initialize(DWORD place, void* stub, bool useJump = true);
-		Hook* initialize(DWORD place, void(*stub)(), bool useJump = true); // For lambdas
-		Hook* install(bool unprotect = true, bool keepUnportected = false);
-		Hook* uninstall(bool unprotect = true);
+		hook* initialize(void* place, void* stub, bool useJump = true);
+		hook* initialize(DWORD place, void* stub, bool useJump = true);
+		hook* initialize(DWORD place, void(*stub)(), bool useJump = true); // For lambdas
+		hook* install(bool unprotect = true, bool keepUnportected = false);
+		hook* uninstall(bool unprotect = true);
 
-		void* getAddress();
+		void* get_address();
 		void quick();
 
-		template <typename T> static std::function<T> Call(DWORD function)
+		template <typename T> static std::function<T> call(DWORD function)
 		{
 			return std::function<T>(reinterpret_cast<T*>(function));
 		}
 
-		template <typename T> static std::function<T> Call(FARPROC function)
+		template <typename T> static std::function<T> call(FARPROC function)
 		{
-			return Call<T>(reinterpret_cast<DWORD>(function));
+			return call<T>(reinterpret_cast<DWORD>(function));
 		}
 
-		template <typename T> static std::function<T> Call(void* function)
+		template <typename T> static std::function<T> call(void* function)
 		{
-			return Call<T>(reinterpret_cast<DWORD>(function));
+			return call<T>(reinterpret_cast<DWORD>(function));
 		}
 
-		static void SetString(void* place, const char* string, size_t length);
-		static void SetString(DWORD place, const char* string, size_t length);
+		static void set_string(void* place, const char* string, size_t length);
+		static void set_string(DWORD place, const char* string, size_t length);
 
-		static void SetString(void* place, const char* string);
-		static void SetString(DWORD place, const char* string);
+		static void set_string(void* place, const char* string);
+		static void set_string(DWORD place, const char* string);
 
-		static void Nop(void* place, size_t length);
-		static void Nop(DWORD place, size_t length);
+		static void nop(void* place, size_t length);
+		static void nop(DWORD place, size_t length);
 
-		static void RedirectJump(void* place, void* stub);
-		static void RedirectJump(DWORD place, void* stub);
+		static void redirect_jump(void* place, void* stub);
+		static void redirect_jump(DWORD place, void* stub);
 
-		template <typename T> static void Set(void* place, T value)
+		template <typename T> static void set(void* place, T value)
 		{
 			DWORD oldProtect;
 			VirtualProtect(place, sizeof(T), PAGE_EXECUTE_READWRITE, &oldProtect);
@@ -111,67 +111,9 @@ namespace Utils
 			FlushInstructionCache(GetCurrentProcess(), place, sizeof(T));
 		}
 
-		template <typename T> static void Set(DWORD place, T value)
+		template <typename T> static void set(DWORD place, T value)
 		{
-			return Set<T>(reinterpret_cast<void*>(place), value);
-		}
-
-		template <typename T> static void Xor(void* place, T value)
-		{
-			DWORD oldProtect;
-			VirtualProtect(place, sizeof(T), PAGE_EXECUTE_READWRITE, &oldProtect);
-
-			*static_cast<T*>(place) ^= value;
-
-			VirtualProtect(place, sizeof(T), oldProtect, &oldProtect);
-			FlushInstructionCache(GetCurrentProcess(), place, sizeof(T));
-		}
-
-		template <typename T> static void Xor(DWORD place, T value)
-		{
-			return Xor<T>(reinterpret_cast<void*>(place), value);
-		}
-
-		template <typename T> static void Or(void* place, T value)
-		{
-			DWORD oldProtect;
-			VirtualProtect(place, sizeof(T), PAGE_EXECUTE_READWRITE, &oldProtect);
-
-			*static_cast<T*>(place) |= value;
-
-			VirtualProtect(place, sizeof(T), oldProtect, &oldProtect);
-			FlushInstructionCache(GetCurrentProcess(), place, sizeof(T));
-		}
-
-		template <typename T> static void Or(DWORD place, T value)
-		{
-			return Or<T>(reinterpret_cast<void*>(place), value);
-		}
-
-		template <typename T> static void And(void* place, T value)
-		{
-			DWORD oldProtect;
-			VirtualProtect(place, sizeof(T), PAGE_EXECUTE_READWRITE, &oldProtect);
-
-			*static_cast<T*>(place) &= value;
-
-			VirtualProtect(place, sizeof(T), oldProtect, &oldProtect);
-			FlushInstructionCache(GetCurrentProcess(), place, sizeof(T));
-		}
-
-		template <typename T> static void And(DWORD place, T value)
-		{
-			return And<T>(reinterpret_cast<void*>(place), value);
-		}
-
-		template <typename T> static T Get(void* place)
-		{
-			return *static_cast<T*>(place);
-		}
-
-		template <typename T> static T Get(DWORD place)
-		{
-			return Get<T>(reinterpret_cast<void*>(place));
+			return set<T>(reinterpret_cast<void*>(place), value);
 		}
 
 	private:

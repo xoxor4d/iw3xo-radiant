@@ -1,11 +1,11 @@
 #pragma once
 
-class CXYWnd : public CWnd
+class cxywnd : public CWnd
 {
 private:
 	// Do not allow this class to be instanced
-	CXYWnd() = delete;
-	~CXYWnd() = delete;
+	cxywnd() = delete;
+	~cxywnd() = delete;
 
 public:
 	bool m_bActive;
@@ -24,7 +24,7 @@ public:
 	int m_nButtonstate;
 	int m_nPressx;
 	int m_nPressy;
-	Game::vec3_t m_vPressdelta;
+	game::vec3_t m_vPressdelta;
 	bool m_bPress_selection;
 	bool xx2;
 	bool xx3;
@@ -52,9 +52,9 @@ public:
 	int x104;
 	int x105;
 	int x106;
-	Game::brush_t* g_brUndo_01;
+	game::brush_t* g_brUndo_01;
 	DWORD dword108;
-	Game::brush_t* g_brUndo_02;
+	game::brush_t* g_brUndo_02;
 	DWORD dword110;
 	DWORD dword114;
 	DWORD dword118;
@@ -72,13 +72,13 @@ public:
 	static LRESULT WINAPI	windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static void				on_endframe();
 
-	static void __fastcall	on_lbutton_down(CXYWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
-	static void __fastcall	on_lbutton_up(CXYWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_lbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_lbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 
-	static void __fastcall	on_rbutton_down(CXYWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
-	static void __fastcall	on_rbutton_up(CXYWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_rbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_rbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 
-	static void __fastcall	on_mouse_move(CXYWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_mouse_move(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 
 	static void __stdcall	on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	static void __stdcall	on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags);

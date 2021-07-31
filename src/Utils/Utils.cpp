@@ -1,9 +1,9 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
 #define VA_BUFFER_COUNT		32
 #define VA_BUFFER_SIZE		65536
 
-namespace Utils
+namespace utils
 {
 	int try_stoi(const std::string str, bool quite)
 	{
@@ -17,7 +17,7 @@ namespace Utils
 		{
 			if (!quite)
 			{
-				printf(Utils::VA("[!] (%s) is not a valid argument! Defaulting to integer 0!\n", str.c_str()));
+				printf(utils::va("[!] (%s) is not a valid argument! Defaulting to integer 0!\n", str.c_str()));
 			}
 		}
 
@@ -36,7 +36,7 @@ namespace Utils
 		{
 			if (!quite)
 			{
-				printf(Utils::VA("[!] (%s) is not a valid argument! Defaulting to float 0.0f!\n", str.c_str()));
+				printf(utils::va("[!] (%s) is not a valid argument! Defaulting to float 0.0f!\n", str.c_str()));
 			}
 		}
 
@@ -101,7 +101,7 @@ namespace Utils
 		return (s1 && s2) ? Q_stricmpn(s1, s2, 99999) : -1;
 	}
 
-	const char *VA(const char *fmt, ...)
+	const char *va(const char *fmt, ...)
 	{
 		static char g_vaBuffer[VA_BUFFER_COUNT][VA_BUFFER_SIZE];
 		static int g_vaNextBufferIndex = 0;
@@ -115,13 +115,13 @@ namespace Utils
 		return dest;
 	}
 
-	std::string StrToLower(std::string input)
+	std::string str_to_lower(std::string input)
 	{
 		std::transform(input.begin(), input.end(), input.begin(), ::tolower);
 		return input;
 	}
 
-	std::vector<std::string> Explode(const std::string& str, char delim)
+	std::vector<std::string> explode(const std::string& str, char delim)
 	{
 		std::vector<std::string> result;
 		std::istringstream iss(str);
@@ -142,7 +142,7 @@ namespace Utils
 		return result;
 	}
 
-	void Replace(std::string &string, std::string find, std::string replace)
+	void replace(std::string &string, std::string find, std::string replace)
 	{
 		size_t nPos = 0;
 
@@ -153,17 +153,17 @@ namespace Utils
 		}
 	}
 
-	bool StartsWith(std::string haystack, std::string needle)
+	bool starts_with(std::string haystack, std::string needle)
 	{
 		return (haystack.size() >= needle.size() && !strncmp(needle.data(), haystack.data(), needle.size()));
 	}
 
-	bool EndsWith(std::string haystack, std::string needle)
+	bool ends_with(std::string haystack, std::string needle)
 	{
 		return (strstr(haystack.data(), needle.data()) == (haystack.data() + haystack.size() - needle.size()));
 	}
 
-	void EraseSubstring(std::string &base, std::string replace)
+	void erase_substring(std::string &base, std::string replace)
 	{
 		auto it = base.find(replace.c_str());
 		if (it != std::string::npos)
@@ -172,35 +172,35 @@ namespace Utils
 		}
 	}
 
-	int IsSpace(int c)
+	int is_space(int c)
 	{
 		if (c < -1) return 0;
 		return _isspace_l(c, nullptr);
 	}
 
 	// trim from start
-	std::string &LTrim(std::string &s)
+	std::string &ltrim(std::string &s)
 	{
 		s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int val)
 		{
-			return !IsSpace(val);
+			return !is_space(val);
 		}));
 		return s;
 	}
 
 	// trim from end
-	std::string &RTrim(std::string &s)
+	std::string &rtrim(std::string &s)
 	{
 		s.erase(std::find_if(s.rbegin(), s.rend(), [](int val)
 		{
-			return !IsSpace(val);
+			return !is_space(val);
 		}).base(), s.end());
 		return s;
 	}
 
 	// trim from both ends
-	std::string &Trim(std::string &s)
+	std::string &trim(std::string &s)
 	{
-		return LTrim(RTrim(s));
+		return ltrim(rtrim(s));
 	}
 }

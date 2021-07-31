@@ -1,42 +1,42 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
-namespace Dvars
+namespace dvars
 {
 	// radiant-live
-	Game::dvar_s* radiant_live = nullptr;
-	Game::dvar_s* radiant_livePort = nullptr;
-	Game::dvar_s* radiant_liveDebug = nullptr;
+	game::dvar_s* radiant_live = nullptr;
+	game::dvar_s* radiant_livePort = nullptr;
+	game::dvar_s* radiant_liveDebug = nullptr;
 
 	// stock dvars (not registered but ptr assigned)
-	Game::dvar_s* fs_homepath = nullptr;
+	game::dvar_s* fs_homepath = nullptr;
 
 	// ---------------------------------------------
 
-	Game::dvar_s* Register_AddonInt(const char* dvarName, int value, int mins, int maxs, __int16 flags, const char* description)
+	game::dvar_s* register_int(const char* dvarName, int value, int mins, int maxs, __int16 flags, const char* description)
 	{
-		Game::dvar_s* dvar = Game::Dvar_RegisterInt(dvarName, value, mins, maxs, flags, description);
+		game::dvar_s* dvar = game::Dvar_RegisterInt(dvarName, value, mins, maxs, flags, description);
 
-		printf(Utils::VA("|-> %s <int>\n", dvarName));
+		printf(utils::va("|-> %s <int>\n", dvarName));
 
 		// return a pointer to our dvar
 		return dvar;
 	}
 
-	Game::dvar_s* Register_AddonBool(const char* dvarName, char value, __int16 flags, const char* description)
+	game::dvar_s* register_bool(const char* dvarName, char value, __int16 flags, const char* description)
 	{
-		Game::dvar_s* dvar = Game::Dvar_RegisterBool(dvarName, value, flags, description);
+		game::dvar_s* dvar = game::Dvar_RegisterBool(dvarName, value, flags, description);
 		
-		printf(Utils::VA("|-> %s <bool>\n", dvarName));
+		printf(utils::va("|-> %s <bool>\n", dvarName));
 
 		// return a pointer to our dvar
 		return dvar;
 	}
 
-	Game::dvar_s* Register_AddonFloat(const char* dvarName, float value, float mins, float maxs, __int16 flags, const char* description)
+	game::dvar_s* register_float(const char* dvarName, float value, float mins, float maxs, __int16 flags, const char* description)
 	{
-		Game::dvar_s*  dvar = Game::Dvar_RegisterFloat(dvarName, value, mins, maxs, flags, description);
+		game::dvar_s*  dvar = game::Dvar_RegisterFloat(dvarName, value, mins, maxs, flags, description);
 
-		printf(Utils::VA("|-> %s <float>\n", dvarName));
+		printf(utils::va("|-> %s <float>\n", dvarName));
 
 		// return a pointer to our dvar
 		return dvar;
@@ -45,30 +45,30 @@ namespace Dvars
 	// --------------------------------------------------
 
 	// register all new dvars here (exec. after config was loaded)
-	void Register_AddonDvars()
+	void register_addon_dvars()
 	{
-		printf("[Dvars]: Register_AddonDvars() start ...\n");
+		printf("[dvars]: register_addon_dvars() start ...\n");
 
-		Components::Gui::register_dvars();
+		components::gui::register_dvars();
 
-		Dvars::radiant_live = Dvars::Register_AddonBool(
+		dvars::radiant_live = dvars::register_bool(
 			/* name		*/ "radiant_live",
 			/* default	*/ true,
-			/* flags	*/ Game::dvar_flags::saved,
+			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "enables radiant <-> game link.");
 
-		Dvars::radiant_livePort = Dvars::Register_AddonInt(
+		dvars::radiant_livePort = dvars::register_int(
 			/* name		*/	"radiant_livePort",
 			/* default	*/	3700,
 			/* mins		*/	0,
 			/* maxs		*/	99999,
-			/* flags	*/	Game::dvar_flags::saved,
+			/* flags	*/	game::dvar_flags::saved,
 			/* desc		*/	"port to be used for live-link.");
 
-		Dvars::radiant_liveDebug = Dvars::Register_AddonBool(
+		dvars::radiant_liveDebug = dvars::register_bool(
 			/* name		*/ "radiant_liveDebug",
 			/* default	*/ false,
-			/* flags	*/ Game::dvar_flags::saved,
+			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "enables debug prints.");
 
 		printf("\n");

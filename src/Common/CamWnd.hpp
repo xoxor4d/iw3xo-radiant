@@ -6,24 +6,24 @@ struct camera_s
 	int height;
 	bool timing;
 	char pad_timing[3];
-	Game::vec3_t origin;
-	Game::vec3_t angles;
+	game::vec3_t origin;
+	game::vec3_t angles;
 	int draw_mode;
-	Game::vec3_t color;
-	Game::vec3_t forward;
-	Game::vec3_t right;
-	Game::vec3_t up;
-	Game::vec3_t vup;
-	Game::vec3_t vpn;
-	Game::vec3_t vright;
+	game::vec3_t color;
+	game::vec3_t forward;
+	game::vec3_t right;
+	game::vec3_t up;
+	game::vec3_t vup;
+	game::vec3_t vpn;
+	game::vec3_t vright;
 };
 
-class CCamWnd : public CWnd
+class ccamwnd : public CWnd
 {
 private:
 	// Do not allow this class to be instanced
-	CCamWnd() = delete;
-	~CCamWnd() = delete;
+	ccamwnd() = delete;
+	~ccamwnd() = delete;
 
 public:
 	void* m_pUnkown;
@@ -35,7 +35,7 @@ public:
 	CPoint m_ptLastCursor;
 
 	//
-	static CCamWnd *ActiveWindow;
+	static ccamwnd *activewnd;
 
 	void Cam_MouseControl(float dtime);
 
@@ -43,17 +43,17 @@ public:
 	static BOOL WINAPI		windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static void				on_endframe();
 
-	static void __fastcall	on_lbutton_down(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
-	static void __fastcall	on_lbutton_up(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_lbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_lbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 
-	static void __fastcall	on_rbutton_down(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
-	static void __fastcall	on_rbutton_up(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_rbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_rbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 
-	static void __fastcall	on_mouse_move(CCamWnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_mouse_move(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 
 	static void __stdcall	on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	static void __stdcall	on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
-STATIC_ASSERT_OFFSET(CCamWnd, camera.origin, 0x64); // diff. offset then bo1
-STATIC_ASSERT_OFFSET(CCamWnd, camera.angles, 0x70); // ^
-STATIC_ASSERT_OFFSET(CCamWnd, m_nCambuttonstate, 0xD4);
+STATIC_ASSERT_OFFSET(ccamwnd, camera.origin, 0x64); // diff. offset then bo1
+STATIC_ASSERT_OFFSET(ccamwnd, camera.angles, 0x70); // ^
+STATIC_ASSERT_OFFSET(ccamwnd, m_nCambuttonstate, 0xD4);

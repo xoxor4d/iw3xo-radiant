@@ -1,4 +1,4 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
 // tests
 //#define SPLITTER_TEST
@@ -6,6 +6,7 @@
 //#define HIDE_MAINFRAME_MENUBAR // fully working
 //#define HIDE_MAINFRAME_TOOLBAR // fully working
 
+// Create a message pump thread so that we can update certain windows at a constant framerate
 DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 {
 	const int maxfps = 1000 / 250;
@@ -16,7 +17,7 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 	
 	while(true)
 	{
-		if(Game::Globals::d3d9_device)
+		if(game::glob::d3d9_device)
 		{
 			while (true)
 			{
@@ -45,14 +46,14 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 			com_lastFrameTime = com_frameTime;
 
 			// update cam window ~ 250fps
-			if  (const auto hwnd = CMainFrame::ActiveWindow->m_pCamWnd->GetWindow();
+			if  (const auto hwnd = cmainframe::activewnd->m_pCamWnd->GetWindow();
 				hwnd != nullptr)
 			{
 				SendMessageA(hwnd, WM_PAINT, 0, 0);
 			}
 
 			// update xy window ~ 250fps
-			if (const auto hwnd = CMainFrame::ActiveWindow->m_pXYWnd->GetWindow();
+			if (const auto hwnd = cmainframe::activewnd->m_pXYWnd->GetWindow();
 				hwnd != nullptr)
 			{
 				SendMessageA(hwnd, WM_PAINT, 0, 0);
@@ -69,10 +70,10 @@ BOOL init_threads()
 	CreateThread(nullptr, 0, realtimewnd_msg_pump, nullptr, 0, nullptr);
 
 	// Create LiveRadiant thread (connecting to the server)
-	CreateThread(nullptr, 0, RemoteNet_SearchServerThread, nullptr, 0, nullptr);
+	CreateThread(nullptr, 0, remote_net_search_server_thread, nullptr, 0, nullptr);
 
 	// Create LiveRadiant thread (receiving commands from the server)
-	CreateThread(nullptr, 0, RemoteNet_ReceivePacket_Thread, nullptr, 0, nullptr);
+	CreateThread(nullptr, 0, remote_net_receive_packet_thread, nullptr, 0, nullptr);
 
 
 	// -----------
@@ -92,24 +93,24 @@ BOOL init_threads()
 		SetConsoleTitleA("IW3R Console");
 	}
 
-	// Command Thread
-	//CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(CommandThread), nullptr, 0, nullptr);
-	CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(Components::Command::CommandThread), nullptr, 0, nullptr);
+	// command Thread
+	//CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(command_thread), nullptr, 0, nullptr);
+	CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(components::command::command_thread), nullptr, 0, nullptr);
 	return TRUE;
 }
 
 
-namespace Components
+namespace components
 {
-	__declspec(naked) void CCam_ctor_stub()
+	__declspec(naked) void ccam_init_stub()
 	{
-		const static uint32_t CCam_ActiveWindow_Func = 0x402C40;
+		const static uint32_t CCam_activewnd_Func = 0x402C40;
 		const static uint32_t retnPt = 0x422711;
 		__asm
 		{
-			Call	CCam_ActiveWindow_Func
-			mov		CCamWnd::ActiveWindow, eax
-			mov		Game::Globals::radiant_floatingWindows, 1
+			Call	CCam_activewnd_Func
+			mov		ccamwnd::activewnd, eax
+			mov		game::glob::radiant_floatingWindows, 1
 			jmp		retnPt
 		}
 	}
@@ -120,7 +121,7 @@ namespace Components
 		typedef void (__thiscall* CSplitterWnd__SetRowInfo_t)(CSplitterWnd*, int row, int, int);
 		/* ------------------------- */ const auto test = reinterpret_cast<CSplitterWnd__SetRowInfo_t>(0x5A544B);
 
-		test(&CMainFrame::ActiveWindow->m_wndSplit, 2, 50, 50);
+		test(&cmainframe::activewnd->m_wndSplit, 2, 50, 50);
 	}
 
 	__declspec(naked) void setrowinfo_stub()
@@ -140,19 +141,19 @@ namespace Components
 	void createstatic(void* create_context)
 	{
 		//(main_frame->m_wndSplit.CreateStatic)(&main_frame->m_wndSplit, 1, 0, &ceditWnd, 25, 100, a3);
-		auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(CMainFrame::ActiveWindow->m_wndSplit.__vftable);
+		auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
 
 		tagSIZE size = tagSIZE(25, 100);
 		void* texclass = reinterpret_cast<void*>(0x6D50D8); // cam
 		
-		vtable->CreateView(&CMainFrame::ActiveWindow->m_wndSplit, 2, 0, (CRuntimeClass*)texclass, size, (CCreateContext*)create_context);
+		vtable->CreateView(&cmainframe::activewnd->m_wndSplit, 2, 0, (CRuntimeClass*)texclass, size, (CCreateContext*)create_context);
 
 		
 		typedef CWnd* (__thiscall* CSplitterWnd__GetPane_t)(CSplitterWnd*, int row, int col);
 		/* ------------------------- */ const auto test = reinterpret_cast<CSplitterWnd__GetPane_t>(0x5A5409);
 
-		CCamWnd* window = reinterpret_cast<CCamWnd*>(test(&CMainFrame::ActiveWindow->m_wndSplit, 2, 0));
-		CMainFrame::ActiveWindow->m_pCamWnd = window;
+		ccamwnd* window = reinterpret_cast<ccamwnd*>(test(&cmainframe::activewnd->m_wndSplit, 2, 0));
+		cmainframe::activewnd->m_pCamWnd = window;
 	}
 
 	__declspec(naked) void createstatic_stub()
@@ -175,10 +176,10 @@ namespace Components
 
 	void add_iw3xradiant_searchpath()
 	{
-		if(const auto fs_basepath = Game::Dvar_FindVar("fs_basepath"); 
+		if(const auto fs_basepath = game::Dvar_FindVar("fs_basepath"); 
 			fs_basepath)
 		{
-			Game::FS_ScanForDir("bin/IW3xRadiant", fs_basepath->current.string, false);
+			game::FS_ScanForDir("bin/IW3xRadiant", fs_basepath->current.string, false);
 		}
 		
 	}
@@ -205,12 +206,12 @@ namespace Components
 		const static uint32_t retn_pt = 0x4166CB;
 		__asm
 		{
-			mov     eax, Game::Globals::test_hwnd;
+			mov     eax, game::glob::test_hwnd;
 			jmp		retn_pt;
 		}
 	}
 
-	CCamWnd* cam__init(CCamWnd* cam)
+	ccamwnd* cam__init(ccamwnd* cam)
 	{
 		const static uint32_t CCamWnd_CamInit_Func = 0x402C40;
 		__asm
@@ -226,13 +227,13 @@ namespace Components
 		operator_new_t operator_new = reinterpret_cast<operator_new_t>(0x583A58);
 
 		auto _new = operator_new(828u);
-		auto cam = cam__init(reinterpret_cast<CCamWnd*>(_new));
+		auto cam = cam__init(reinterpret_cast<ccamwnd*>(_new));
 
 		tagRECT rect = { 5, 25, 100, 100 };
 		
 		auto vtable = reinterpret_cast<CWnd_vtbl*>(cam->__vftable);
 
-		//CMainFrame::ActiveWindow->m_pCamWnd = cam;
+		//cmainframe::activewnd->m_pCamWnd = cam;
 
 		vtable->Create(
 			cam
@@ -240,12 +241,12 @@ namespace Components
 			, 0
 			, WS_OVERLAPPED | WS_MINIMIZEBOX | WS_THICKFRAME | WS_CAPTION | WS_VISIBLE | WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_MAXIMIZEBOX
 			, &rect
-			,CMainFrame::ActiveWindow
+			,cmainframe::activewnd
 			, 1234u
 			, 0);
 
-		//cam->m_hWnd = CMainFrame::ActiveWindow->m_pCamWnd->m_hWnd;
-		Game::Globals::test_hwnd = cam->m_hWnd;
+		//cam->m_hWnd = cmainframe::activewnd->m_pCamWnd->m_hWnd;
+		game::glob::test_hwnd = cam->m_hWnd;
 
 		ShowWindow(cam->m_hWnd, SW_SHOW);
 
@@ -319,28 +320,28 @@ namespace Components
 		}
 	}
 	
-	QuickPatch::QuickPatch()
+	quick_patch::quick_patch()
 	{
 		init_threads();
 		
-		CMainFrame::main();
-		CCamWnd::main();
-		CXYWnd::main();
+		cmainframe::main();
+		ccamwnd::main();
+		cxywnd::main();
 
 		// add iw3xradiant search path (imgui images)
-		Utils::Hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
 
 		// disable top-most mode for inspector/entity window
-		Utils::Hook::Nop(0x496CB6, 13); // clear instructions
-		Utils::Hook::Set<BYTE>(0x496CB6, 0xB9); // mov ecx,00000000 (0xB9 00 00 00 00)
-		Utils::Hook::Set<DWORD>(0x496CB6 + 1, 0x0); // mov ecx,00000000 (0xB9 00 00 00 00)
+		utils::hook::nop(0x496CB6, 13); // clear instructions
+		utils::hook::set<BYTE>(0x496CB6, 0xB9); // mov ecx,00000000 (0xB9 00 00 00 00)
+		utils::hook::set<DWORD>(0x496CB6 + 1, 0x0); // mov ecx,00000000 (0xB9 00 00 00 00)
 
 		// load raw materials progressbar
-		Utils::Hook::Nop(0x45AF5F, 6);
-		Utils::Hook(0x45AF5F, load_raw_materials_progressbar_stub, HOOK_JUMP).install()->quick();
+		utils::hook::nop(0x45AF5F, 6);
+		utils::hook(0x45AF5F, load_raw_materials_progressbar_stub, HOOK_JUMP).install()->quick();
 		
 #ifdef HIDE_MAINFRAME_TOOLBAR
-		Utils::Hook(0x4211C6, show_toolbar_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x4211C6, show_toolbar_stub, HOOK_JUMP).install()->quick();
 #endif
 
 		
@@ -349,13 +350,13 @@ namespace Components
 		// disable mainframe menubar
 		
 		// create mainframe without menu
-		Utils::Hook::Set<BYTE>(0x4507CA + 1, 0x0);
+		utils::hook::set<BYTE>(0x4507CA + 1, 0x0);
 
-		// CMainFrame::OnCreate :: nop CMenu::DestroyMenu call (nullptr exception)
-		Utils::Hook::Nop(0x42104A, 5);
+		// cmainframe::OnCreate :: nop CMenu::DestroyMenu call (nullptr exception)
+		utils::hook::nop(0x42104A, 5);
 
-		// CMainFrame::OnCreate :: make LoadMenuA load a null menu
-		Utils::Hook::Set<BYTE>(0x421057 + 1, 0x0);
+		// cmainframe::OnCreate :: make LoadMenuA load a null menu
+		utils::hook::set<BYTE>(0x421057 + 1, 0x0);
 
 		// -----------------------------------------------------------------------
 #endif
@@ -363,8 +364,8 @@ namespace Components
 		
 #ifdef CREATE_SECOND_CAMERA
 		// Create static
-		Utils::Hook(0x4166C6, set_rinitforwindow_stub, HOOK_JUMP).install()->quick();
-		Utils::Hook(0x422984, test_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x4166C6, set_rinitforwindow_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x422984, test_stub, HOOK_JUMP).install()->quick();
 #endif
 		
 		
@@ -373,114 +374,113 @@ namespace Components
 		// this creates a third main splitter below the console and assigns the camwindow (input etc is working but drawing doesnt work)
 
 		// 3 panes for main splitter
-		Utils::Hook::Set<BYTE>(0x422CD4 + 1, 0x3);
+		utils::hook::set<BYTE>(0x422CD4 + 1, 0x3);
 
 		// Create static
-		Utils::Hook::Nop(0x422D7E, 6);
-		Utils::Hook(0x422D7E, createstatic_stub, HOOK_JUMP).install()->quick();
+		utils::hook::nop(0x422D7E, 6);
+		utils::hook(0x422D7E, createstatic_stub, HOOK_JUMP).install()->quick();
 		
 		// set rowinfo
-		Utils::Hook::Nop(0x422FC3, 6);
-		Utils::Hook(0x422FC3, setrowinfo_stub, HOOK_JUMP).install()->quick();
+		utils::hook::nop(0x422FC3, 6);
+		utils::hook(0x422FC3, setrowinfo_stub, HOOK_JUMP).install()->quick();
 		
 		// -----------------------------------------------------------------------------------------------------------------------------
 #endif
 
 
-		// Hook / Grab CameraWnd object (only when using floating windows) :: (CMainFrame::UpdateWindows sets CMainFrame::ActiveWindow otherwise)
-		Utils::Hook(0x42270C, CCam_ctor_stub, HOOK_JUMP).install()->quick();
+		// hook / Grab CameraWnd object (only when using floating windows) :: (cmainframe::update_windows sets cmainframe::activewnd otherwise)
+		utils::hook(0x42270C, ccam_init_stub, HOOK_JUMP).install()->quick();
 		
 		// disable black world on selecting a brush with sun preview enabled -> no longer able to clone brushes ...
-		//Utils::Hook::Set<BYTE>(0x484904, 0xEB);
+		//utils::hook::set<BYTE>(0x484904, 0xEB);
 
 		// disable black world on selecting a brush with sun preview enabled -> still disables active sun preview .. no black world tho
-		Utils::Hook::Nop(0x406A11, 5);
+		utils::hook::nop(0x406A11, 5);
 
 		// NOP startup console-spam
-		//Utils::Hook::Nop(0x4818DF, 5); // ScanFile
-		//Utils::Hook::Nop(0x48B8BE, 5); // ScanWeapon
+		//utils::hook::nop(0x4818DF, 5); // ScanFile
+		//utils::hook::nop(0x48B8BE, 5); // ScanWeapon
 
 		
 		// remove the statusbar (not the console!)
-		//Utils::Hook::Nop(0x41F8E0, 5);
-		//Utils::Hook::Nop(0x420B04, 63);
+		//utils::hook::nop(0x41F8E0, 5);
+		//utils::hook::nop(0x420B04, 63);
 
 		// disable bottom console
-		//Utils::Hook::Set<BYTE>(0x422CD4 + 1, 0x1);
+		//utils::hook::set<BYTE>(0x422CD4 + 1, 0x1);
 
 		// disable text in console
-		//Utils::Hook::Nop(0x422D76, 5);
+		//utils::hook::nop(0x422D76, 5);
 
 		// no console + textures tab on entity window if split view
-		//Utils::Hook::Set<BYTE>(0x4966CA, 0xEB);
+		//utils::hook::set<BYTE>(0x4966CA, 0xEB);
 
 
 		
-		//Utils::Hook::Set<BYTE>(0x422D42 + 1, 0x0);
-		//Utils::Hook::Set<BYTE>(0x422D58 + 1, 0x0);
+		//utils::hook::set<BYTE>(0x422D42 + 1, 0x0);
+		//utils::hook::set<BYTE>(0x422D58 + 1, 0x0);
 		
 		// d_hwndEdit == console
-		//Utils::Hook::Nop(0x422D71, 10);
+		//utils::hook::nop(0x422D71, 10);
 
 
 		// --------
 		// Commands 
 
 		// print dvar values to console
-		Command::RegisterCommand("getdvar"s, [](std::vector < std::string > args)
+		command::register_command("getdvar"s, [](std::vector < std::string > args)
 		{
 			// Check if enough arguments have been passed to the command
 			if (args.size() == 1)
 			{
-				Game::ConsoleError("usage: getdvar <dvarName>");
+				game::console_error("usage: getdvar <dvarName>");
 				return;
 			}
 
-			std::string dvarType;
-			Game::dvar_s* getDvarDummy = Game::Dvar_FindVar(args[1].c_str());
+			std::string	  dvarType;
+			game::dvar_s* dvar_dummy = game::Dvar_FindVar(args[1].c_str());
 
-			//Dvars::radiant_livePort
-			if (getDvarDummy)
+			if (dvar_dummy)
 			{
-				switch (getDvarDummy->type)
+				switch (dvar_dummy->type)
 				{
-				case Game::dvar_type::boolean:
+				case game::dvar_type::boolean:
 					dvarType = "[BOOL] %s->current.enabled = %s\n";
 					break;
 
-				case Game::dvar_type::value:
+				case game::dvar_type::value:
 					dvarType = "[FLOAT] %s->current.value = %s\n";
 					break;
 
-				case Game::dvar_type::vec2:
+				case game::dvar_type::vec2:
 					dvarType = "[VEC2] %s->current.vector = %s\n";
 					break;
 
-				case Game::dvar_type::vec3:
+				case game::dvar_type::vec3:
 					dvarType = "[VEC3] %s->current.vector = %s\n";
 					break;
 
-				case Game::dvar_type::vec4:
+				case game::dvar_type::vec4:
 					dvarType = "[VEC4] %s->current.vector = %s\n";
 					break;
 
-				case Game::dvar_type::integer:
+				case game::dvar_type::integer:
 					dvarType = "[INT] %s->current.integer = %s\n";
 					break;
 
-				case Game::dvar_type::enumeration:
-					dvarType = "[ENUM] %s->current.integer = " + std::to_string(getDvarDummy->current.integer) + " :: %s\n";
+				case game::dvar_type::enumeration:
+					dvarType = "[ENUM] %s->current.integer = " + std::to_string(dvar_dummy->current.integer) + " :: %s\n";
 					break;
 
-				case Game::dvar_type::string:
+				case game::dvar_type::string:
 					dvarType = "[STRING] %s->current.string = %s\n";
 					break;
 
-				case Game::dvar_type::color:
+				case game::dvar_type::color:
 					dvarType = "[COLOR] %s->current.vector = %s\n";
 					break;
 
-				case Game::dvar_type::rgb:
+				case game::dvar_type::rgb:
 					dvarType = "[RGB] %s->current.vector = %s\n";
 					break;
 
@@ -492,69 +492,68 @@ namespace Components
 				// dvar description
 				//dvarType += "|-> %s\n";
 
-				std::string dvarDescription;
+				std::string dvar_description;
 
-				if (!getDvarDummy->description)
+				if (!dvar_dummy->description)
 				{
-					dvarDescription = "no description";
+					dvar_description = "no description";
 				}
 				else
 				{
-					dvarDescription = getDvarDummy->description;
+					dvar_description = dvar_dummy->description;
 				}
 
-				printf(Utils::VA(dvarType.c_str(), getDvarDummy->name, Game::Dvar_DisplayableValue(getDvarDummy)));
-				printf("|-> %s\n", dvarDescription.c_str());
+				printf(utils::va(dvarType.c_str(), dvar_dummy->name, game::Dvar_DisplayableValue(dvar_dummy)));
+				printf("|-> %s\n", dvar_description.c_str());
 			}
 
 			else
 			{
-				Game::ConsoleError(Utils::VA("unkown dvar: \"%s\"", args[1].data()));
+				game::console_error(utils::va("unkown dvar: \"%s\"", args[1].data()));
 			}
 		});
 
 		// set dvar values via console
-		Command::RegisterCommand("setdvar"s, [](std::vector < std::string > args)
+		command::register_command("setdvar"s, [](std::vector < std::string > args)
 		{
 			// Check if enough arguments have been passed to the command
 			if (args.size() <= 2)
 			{
-				Game::ConsoleError("usage: setdvar <dvarName> <value/s>");
+				game::console_error("usage: setdvar <dvarName> <value/s>");
 				return;
 			}
 
-			Game::dvar_s* getDvarDummy = Game::Dvar_FindVar(args[1].c_str());
+			game::dvar_s* dvar_dummy = game::Dvar_FindVar(args[1].c_str());
 
 			// if dvar exists
-			if (getDvarDummy)
+			if (dvar_dummy)
 			{
 
-				std::string dvarValue;
+				std::string dvar_value;
 
 				// do not append a " " if we only have 1 dvarString arg
 				if (args.size() == 3)
 				{
-					dvarValue = args[2];
+					dvar_value = args[2];
 				}
-
 				else
 				{
 					// combine all dvar value args
 					for (auto argCount = 2; argCount < (int)args.size(); argCount++)
 					{
-						dvarValue += args[argCount] + " ";
+						dvar_value += args[argCount] + " ";
 					}
 				}
 
-				Game::Dvar_SetFromStringFromSource(dvarValue.c_str(), getDvarDummy, 1);
+				game::Dvar_SetFromStringFromSource(dvar_value.c_str(), dvar_dummy, 1);
 			}
 			else
 			{
-				Game::ConsoleError(Utils::VA("unkown dvar: \"%s\"", args[1].data()));
+				game::console_error(utils::va("unkown dvar: \"%s\"", args[1].data()));
 			}
 		});
 	}
 
-	QuickPatch::~QuickPatch()
+	quick_patch::~quick_patch()
 	{ }
 }

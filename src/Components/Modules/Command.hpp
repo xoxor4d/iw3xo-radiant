@@ -1,17 +1,17 @@
 #pragma once
 
-namespace Components
+namespace components
 {
-	class Command : public Component
+	class command : public component
 	{
 	public:
-		Command();
-		~Command();
-		const char* getName() override { return "Command"; };
+		command();
+		~command();
+		const char* get_name() override { return "command"; };
 
-		static void CommandThread();
-        static void RegisterCommand(const std::string &name, std::function<void(std::vector<std::string>)> cb);
-		static void ExecuteCommand(std::vector<std::string> args);
+		static void command_thread();
+        static void register_command(const std::string &name, std::function<void(std::vector<std::string>)> cb);
+		static void execute_command(std::vector<std::string> args);
 
 	private:
         static std::map<std::string, std::function<void(std::vector<std::string>)>> cmd;

@@ -1,27 +1,27 @@
-#include "STDInclude.hpp"
+#include "std_include.hpp"
 
-namespace Components
+namespace components
 {
-    std::map<std::string, std::function<void(std::vector<std::string>)>> Command::cmd;
+    std::map<std::string, std::function<void(std::vector<std::string>)>> command::cmd;
 
-    void Command::RegisterCommand(const std::string &name, std::function<void(std::vector<std::string>)> cb)
+    void command::register_command(const std::string &name, std::function<void(std::vector<std::string>)> cb)
     {
-        Command::cmd[name] = cb;
+        command::cmd[name] = cb;
     }
 
-    void Command::ExecuteCommand(std::vector<std::string> args)
+    void command::execute_command(std::vector<std::string> args)
     {
-    	if (Command::cmd.find(args[0]) != Command::cmd.end())
+    	if (command::cmd.find(args[0]) != command::cmd.end())
     	{
-            Command::cmd[args[0]](args);
+            command::cmd[args[0]](args);
     	}
     	else 
     	{
-    		Game::ConsoleError(Utils::VA("Unknown command \"%s\"", args[0].data()));
+    		game::console_error(utils::va("Unknown command \"%s\"", args[0].data()));
     	}
     }
 
-    void Command::CommandThread()
+    void command::command_thread()
     {
     	while (true)
     	{
@@ -32,29 +32,29 @@ namespace Components
 
     		if (input.find(' ') != std::string::npos) 
     		{
-    			args = Utils::split(input, ' ');
+    			args = utils::split(input, ' ');
     		}
     		else 
     		{
     			args.push_back(input);
     		}
 
-            Command::ExecuteCommand(args);
+            command::execute_command(args);
     	}
     }
 
 
-	Command::Command()
+	command::command()
 	{
 	}
 
-	Command::~Command()
+	command::~command()
 	{ 
-        /* for (auto command : Command::Functions)
+        /* for (auto command : command::Functions)
 		{
 			delete command;
 		}
 
-		Command::Functions.clear(); */
+		command::Functions.clear(); */
     }
 }

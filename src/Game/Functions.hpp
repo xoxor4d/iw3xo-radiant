@@ -1,8 +1,6 @@
 #pragma once
-#include "Common/MainFrm.hpp"
-#include "Utils/function.hpp"
 
-#define GET_PARENTWND (CMainFrame*) *(DWORD*)(Game::g_pParentWnd_ptr)
+#define GET_PARENTWND (CMainFrame*) *(DWORD*)(game::g_pParentWnd_ptr)
 
 namespace ggui
 {
@@ -11,9 +9,9 @@ namespace ggui
 	
 }
 
-namespace Game
+namespace game
 {
-	namespace Globals
+	namespace glob
 	{
 		// Init
 		extern std::string loadedModules;
@@ -26,10 +24,10 @@ namespace Game
 		extern CWnd* m_pCamWnd_ref;
 
 		// Misc
-		extern Game::TrackWorldspawn trackWorldspawn;
+		extern game::TrackWorldspawn track_worldspawn;
 
 		// Live Link
-		extern Game::ProcessServerCommands cServerCmd;
+		extern game::ProcessServerCommands cServerCmd;
 		extern bool live_connected;
 
 		// Renderer
@@ -40,7 +38,7 @@ namespace Game
 	// radiant globals
 	extern int&			g_nScaleHow;
 	//extern CPrefsDlg*	g_PrefsDlg;
-	extern Game::qeglobals_t* g_qeglobals;
+	extern game::qeglobals_t* g_qeglobals;
 
 	extern int*		g_nUpdateBitsPtr;
 	extern int&		g_nUpdateBits;
@@ -50,17 +48,17 @@ namespace Game
 	extern bool&	g_region_active;
 
 	extern CPrefsDlg* g_PrefsDlg();
-	extern Game::undo_s* g_lastundo();
-	extern Game::undo_s* g_lastredo();
+	extern game::undo_s* g_lastundo();
+	extern game::undo_s* g_lastredo();
 
 	//static DWORD* g_lastundo_ptr = (DWORD*)(0x23F162C);
 	//static DWORD* g_lastredo_ptr = (DWORD*)(0x23F15CC);
 	
-	extern Game::DxGlobals* dx;
+	extern game::DxGlobals* dx;
 
 	extern int* dvarCount;
-	extern Game::dvar_s* dvarPool;
-	extern Game::dvar_s* dvarPool_FirstEmpty;
+	extern game::dvar_s* dvarPool;
+	extern game::dvar_s* dvarPool_FirstEmpty;
 	extern DWORD* sortedDvars;
 	extern DWORD* sortedDvarsAddons;
 	extern int sortedDvarsAddonsCount;
@@ -79,9 +77,9 @@ namespace Game
 		extern OnCtlColor_t OnCtlColor;
 
 	static utils::function<bool(bool bQuiet)> QE_SingleBrush = 0x48C8B0; // no warnings when bQuiet
-	static utils::function<void(Game::DebugGlobals *debugGlobalsEntry, const float *mins, const float *maxs, const float *color)> R_AddDebugBox = 0x528710;
+	static utils::function<void(game::DebugGlobals *debugGlobalsEntry, const float *mins, const float *maxs, const float *color)> R_AddDebugBox = 0x528710;
 
-	//bool IsBrushSelected(Game::brush_t* bSel);
+	//bool IsBrushSelected(game::brush_t* bSel);
 
 	
 	// *
@@ -93,37 +91,32 @@ namespace Game
 
 
 	// *
-	// gui
-	void ImGui_HandleKeyIO(HWND hwnd, UINT key, SHORT zDelta = 0, UINT nChar = 0);
-
-	// *
 	// dvars
 
-	static utils::function< void (Game::dvar_s* dvar, bool value)>							Dvar_SetBool = 0x4B37F0;
-	static utils::function< void (Game::dvar_s* dvar, std::int32_t value)>					Dvar_SetInt = 0x4B3810;
-	static utils::function< void (Game::dvar_s* dvar, float value)>							Dvar_SetFloat = 0x4B3830;
-	static utils::function< void (Game::dvar_s* dvar, float r, float g, float b, float a)>	Dvar_SetColor = 0x4B38E0;
+	static utils::function< void (game::dvar_s* dvar, bool value)>							Dvar_SetBool = 0x4B37F0;
+	static utils::function< void (game::dvar_s* dvar, std::int32_t value)>					Dvar_SetInt = 0x4B3810;
+	static utils::function< void (game::dvar_s* dvar, float value)>							Dvar_SetFloat = 0x4B3830;
+	static utils::function< void (game::dvar_s* dvar, float r, float g, float b, float a)>	Dvar_SetColor = 0x4B38E0;
 
-	static utils::function< void (Game::dvar_s* dvar, float x, float y)>						Dvar_SetVec2 = 0x4B3850;
-	static utils::function< void (Game::dvar_s* dvar, float x, float y, float z)>				Dvar_SetVec3 = 0x4B3870;
-	static utils::function< void (Game::dvar_s* dvar, float x, float y, float z, float w)>		Dvar_SetVec4 = 0x4B38A0;
+	static utils::function< void (game::dvar_s* dvar, float x, float y)>						Dvar_SetVec2 = 0x4B3850;
+	static utils::function< void (game::dvar_s* dvar, float x, float y, float z)>				Dvar_SetVec3 = 0x4B3870;
+	static utils::function< void (game::dvar_s* dvar, float x, float y, float z, float w)>		Dvar_SetVec4 = 0x4B38A0;
 
-	static utils::function< Game::dvar_s* (const char* dvarName, int value, int mins, int maxs, __int16 flags, const char* description)> Dvar_RegisterInt = 0x4B2660;
-	static utils::function< Game::dvar_s* (const char* dvarName, char value, __int16 flags, const char* description)> Dvar_RegisterBool = 0x4B25F0;
-	static utils::function< Game::dvar_s* (const char* dvarName, float value, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterFloat = 0x4B26D0;
-	static utils::function< Game::dvar_s* (const char *dvarName, const char *value, __int16 flags, const char *description)> Dvar_RegisterString = 0x4B28E0;
+	static utils::function< game::dvar_s* (const char* dvarName, int value, int mins, int maxs, __int16 flags, const char* description)> Dvar_RegisterInt = 0x4B2660;
+	static utils::function< game::dvar_s* (const char* dvarName, char value, __int16 flags, const char* description)> Dvar_RegisterBool = 0x4B25F0;
+	static utils::function< game::dvar_s* (const char* dvarName, float value, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterFloat = 0x4B26D0;
+	static utils::function< game::dvar_s* (const char *dvarName, const char *value, __int16 flags, const char *description)> Dvar_RegisterString = 0x4B28E0;
 
 	// ASM
-	const char* Dvar_DisplayableValue(Game::dvar_s* dvar);
-	void Dvar_SetString(Game::dvar_s *dvar /*esi*/, const char *string /*ebx*/);
-	Game::dvar_s* Dvar_FindVar(const char* dvar);
-	Game::dvar_s* Dvar_SetFromStringFromSource(const char *string /*ecx*/, Game::dvar_s *dvar /*esi*/, int source);
+	const char* Dvar_DisplayableValue(game::dvar_s* dvar);
+	void Dvar_SetString(game::dvar_s *dvar /*esi*/, const char *string /*ebx*/);
+	game::dvar_s* Dvar_FindVar(const char* dvar);
+	game::dvar_s* Dvar_SetFromStringFromSource(const char *string /*ecx*/, game::dvar_s *dvar /*esi*/, int source);
 
-	void ConsoleError(const std::string& msg);
+	void console_error(const std::string& msg);
 
 	void FS_ScanForDir(const char* directory, const char* search_path, int localized);
-	Game::GfxImage* Image_FindExisting(const char* name);
-	Game::GfxImage* Image_RegisterHandle(const char* name);
-
-	bool mainframe_is_combined_view();
+	game::GfxImage* Image_FindExisting(const char* name);
+	game::GfxImage* Image_RegisterHandle(const char* name);
+	
 }

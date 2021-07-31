@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Game
+namespace game
 {
 	typedef float vec_t;
 	typedef vec_t vec2_t[2];
@@ -1475,7 +1475,7 @@ namespace ggui
 	{
 		bool context_initialized;
 		ImGuiContext* context;
-		Game::GfxWindowTarget* dx_window;
+		game::GfxWindowTarget* dx_window;
 		imgui_context_menu menus[IMGUI_CONTEXT_MENUS];
 	};
 
