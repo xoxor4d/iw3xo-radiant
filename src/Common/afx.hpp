@@ -103,6 +103,7 @@ struct CCmdTarget__XConnPtContainer
 	unsigned int m_vtbl;
 };
 
+struct AFX_MODULE_STATE;
 
 class CCmdTarget : public CObject
 {
@@ -115,7 +116,7 @@ public:
 	CCmdTarget__XDispatch m_xDispatch;
 	int m_bResultExpected;
 	CCmdTarget__XConnPtContainer m_xConnPtContainer;
-	void* m_pModuleState; // AFX_MODULE_STATE
+	AFX_MODULE_STATE* m_pModuleState; // AFX_MODULE_STATE
 };
 
 

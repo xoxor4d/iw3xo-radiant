@@ -3,6 +3,8 @@
 namespace ggui
 {
 	imgui_state_t state = imgui_state_t();
+	bool mainframe_menubar_visible = true;
+	
 }
 
 namespace Game

@@ -75,6 +75,8 @@ namespace Components
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
 
+		//io.MouseDrawCursor = true;
+
 		// font (see Fonts.cpp)
         io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f);
 
@@ -114,7 +116,8 @@ namespace Components
 		ImGuiIO& io = ImGui::GetIO();
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
-
+		//io.MouseDrawCursor = true;
+		
 		// font (see Fonts.cpp)
 		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f);
 
@@ -140,7 +143,6 @@ namespace Components
 	 * 
 	 */
 
-	
 	void cxywnd_gui(ggui::imgui_context& context)
 	{
 		ImGuiIO& io = ImGui::GetIO();
@@ -708,11 +710,21 @@ namespace Components
 			CFrameWnd_ShowControlBar(CMainFrame::ActiveWindow, &CMainFrame::ActiveWindow->m_wndToolBar, vtable->IsVisible(&CMainFrame::ActiveWindow->m_wndToolBar) ? 0 : 1, 1);
 		}
 
-		// TODO! - implement
+		// TODO! - do not show on the main toolbar
 		ImGui::SameLine();
 		if (ImGui::Button("Toggle Menubar"))
 		{
-			
+			if(!ggui::mainframe_menubar_visible)
+			{
+				const auto menubar = LoadMenu(CMainFrame::ActiveWindow->m_pModuleState->m_hCurrentInstanceHandle, MAKEINTRESOURCE(0xD6)); // 0xD6 = IDR_MENU_QUAKE3
+				SetMenu(CMainFrame::ActiveWindow->GetWindow(), menubar);
+				ggui::mainframe_menubar_visible = true;
+			}
+			else
+			{
+				SetMenu(CMainFrame::ActiveWindow->GetWindow(), 0);
+				ggui::mainframe_menubar_visible = false;
+			}
 		}
 
 	END_GUI:

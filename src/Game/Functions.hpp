@@ -7,6 +7,8 @@
 namespace ggui
 {
 	extern imgui_state_t state;
+	extern bool mainframe_menubar_visible;
+	
 }
 
 namespace Game

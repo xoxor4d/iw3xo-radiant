@@ -156,8 +156,45 @@ void __stdcall CCamWnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 BOOL WINAPI CCamWnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if (ggui::state.ccamerawnd.context_initialized)
+	if (Components::Gui::all_contexts_ready())
 	{
+		// fix mouse cursor for imgui windows
+		//if (Msg == WM_NCHITTEST)
+		{
+			// save current context
+			const auto imgui_context_old = ImGui::GetCurrentContext();
+
+			IMGUI_BEGIN_CCAMERAWND;
+			ImGuiIO& io = ImGui::GetIO();
+			
+			// disable win32 cursor if we hover imgui windows
+			if (ImGui::GetIO().WantCaptureMouse) 
+			{
+				// get info for current cursor
+				CURSORINFO ci = { sizeof(CURSORINFO) };
+				if (GetCursorInfo(&ci))
+				{
+					auto size_ns = LoadCursor(0, IDC_SIZENS);
+					auto size_we = LoadCursor(0, IDC_SIZEWE);
+
+					// do not hide the size arrow when moving splitters across imgui windows
+					if(ci.hCursor != size_ns && ci.hCursor != size_we)
+					{
+						io.MouseDrawCursor = true;
+						SetCursor(nullptr);
+					}
+				}
+			}
+			else
+			{
+				io.MouseDrawCursor = false;
+			}
+
+			// restore context
+			ImGui::SetCurrentContext(imgui_context_old);
+		}
+
+		
 		// only process the char event, else we get odd multi context behaviour
 		if (Msg == WM_CHAR)
 		{
@@ -178,7 +215,7 @@ BOOL WINAPI CCamWnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			}
 		}
 	}
-	
+
 	// => og CamWndProc
     return Utils::Hook::Call<BOOL(__stdcall)(HWND, UINT, WPARAM, LPARAM)>(0x402D90)(hWnd, Msg, wParam, lParam);
 }

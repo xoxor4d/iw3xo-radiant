@@ -289,7 +289,7 @@ namespace Components
 		const int lpad = static_cast<int>(percentage * 60);
 		const int rpad = 60 - lpad;
 
-		printf("\rLoading raw materials: %3d%% [%.*s%*s]", val, lpad, "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||", rpad, "");
+		printf("\rLoading raw materials: %3d%% [%.*s%*s] %d/%d", val, lpad, "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||", rpad, "", idx, material_total_count);
 
 		if (val == 100)
 		{

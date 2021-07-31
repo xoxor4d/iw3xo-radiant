@@ -157,7 +157,7 @@ void __stdcall CXYWnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 LRESULT WINAPI CXYWnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if (ggui::state.cxywnd.context_initialized)
+	if (Components::Gui::all_contexts_ready())
 	{
 		// we only need the char event
 		if (Msg == WM_CHAR)
