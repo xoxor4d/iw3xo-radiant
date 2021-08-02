@@ -70,7 +70,8 @@ public:
 	//
 	static void				main();
 	static LRESULT WINAPI	windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
-	static void				on_endframe();
+	static void __cdecl		on_resize(HWND__* hwnd, int width, int height);
+	//static void			on_endframe();
 
 	static void __fastcall	on_lbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 	static void __fastcall	on_lbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);

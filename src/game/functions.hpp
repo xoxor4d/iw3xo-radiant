@@ -2,6 +2,23 @@
 
 #define GET_PARENTWND (CMainFrame*) *(DWORD*)(game::g_pParentWnd_ptr)
 
+// Taken directly from q3radiant
+// https://github.com/id-Software/Quake-III-Arena
+#define W_CAMERA		0x0001
+#define W_XY			0x0002
+#define W_XY_OVERLAY	0x0004
+#define W_Z				0x0008
+#define W_TEXTURE		0x0010
+#define W_Z_OVERLAY		0x0020
+#define W_CONSOLE		0x0040
+#define W_ENTITY		0x0080
+#define W_CAMERA_IFON	0x0100
+#define W_XZ			0x0200  //--| only used for patch vertex manip stuff
+#define W_YZ			0x0400  //--|
+#define W_GROUP			0x0800 
+#define W_MEDIA			0x1000 
+#define W_ALL			0xFFFFFFFF
+
 namespace ggui
 {
 	extern imgui_state_t state;
@@ -47,6 +64,15 @@ namespace game
 	extern double&	g_oldtime;
 	extern bool&	g_region_active;
 
+	extern game::filter_material_t* filter_surfacetype_array;
+	extern game::filter_material_t* filter_locale_array;
+	extern game::filter_material_t* filter_usage_array;
+	extern std::uint8_t& texWndGlob_surfaceTypeFilter;
+	extern std::uint8_t& texWndGlob_localeFilter;
+	extern std::uint8_t& texWndGlob_usageFilter;
+	extern int& texWndGlob_localeCount;
+	extern int& texWndGlob_usageCount;
+	
 	extern CPrefsDlg* g_PrefsDlg();
 	extern game::undo_s* g_lastundo();
 	extern game::undo_s* g_lastredo();
@@ -85,6 +111,7 @@ namespace game
 	// *
 	// renderer
 	static utils::function<void()> R_EndFrame = 0x4FCBC0;
+	static utils::function<void()> R_ReloadImages = 0x513D70;
 	
 	// no error but doesnt reload everything
 	static utils::function< void()>	DX_ResetDevice = 0x5015F0;

@@ -6,10 +6,11 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
 #define mainframe_thiscall(return_val, addr)	\
 	utils::hook::call<return_val(__fastcall)(cmainframe*)>(addr)(cmainframe::activewnd)
 
-
 #define mainframe_cdeclcall(return_val, addr)	\
 	utils::hook::call<return_val(__cdecl)(cmainframe*)>(addr)(cmainframe::activewnd)
 
+#define mainframe_stdcall(return_val, addr)	\
+	utils::hook::call<return_val(__stdcall)(cmainframe*)>(addr)(cmainframe::activewnd)
 
 #define cdeclcall(return_val, addr)	\
 	utils::hook::call<return_val(__cdecl)()>(addr)()
@@ -140,7 +141,99 @@ namespace components
 	 * 
 	 */
 
-	void cxywnd_gui(ggui::imgui_context& context)
+	
+	const float GRID_SIZE[11] =
+	{ 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f, 128.0f, 256.0f, 512.0f };
+
+	enum GRID_E : int
+	{
+		GRID_05,
+		GRID_1,
+		GRID_2,
+		GRID_4,
+		GRID_8,
+		GRID_16,
+		GRID_32,
+		GRID_64,
+		GRID_128,
+		GRID_256,
+		GRID_512,
+	};
+
+	void set_grid_size(const GRID_E size)
+	{
+		game::g_qeglobals->d_gridsize = size;
+		if (game::g_PrefsDlg()->m_bSnapTToGrid)
+		{
+			game::g_qeglobals->d_gridsize_float = GRID_SIZE[size];
+		}
+		
+		mainframe_thiscall(void, 0x428A00); // CMainFrame::SetGridStatus
+		game::g_nUpdateBits |= W_Z | W_XY;
+	}
+
+	
+	enum RENDER_METHOD_E : int
+	{
+		RM_WIREFRAME,
+		RM_FULLBRIGHT,
+		RM_NORMALFAKELIGHT,
+		RM_VIEWFAKELIGHT,
+		RM_CASETEXTURES,
+	};
+	
+	void set_render_method(const RENDER_METHOD_E meth)
+	{
+		switch(meth)
+		{
+			case RM_WIREFRAME: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80DE; break;
+			case RM_FULLBRIGHT: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80DF; break;
+			case RM_NORMALFAKELIGHT: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80E0; break;
+			case RM_VIEWFAKELIGHT: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80E1; break;
+			case RM_CASETEXTURES: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80E2; break;
+		}
+
+		if (cmainframe::activewnd->m_pCamWnd->camera.draw_mode != meth)
+		{
+			cmainframe::activewnd->m_pCamWnd->camera.draw_mode = meth;
+			game::g_nUpdateBits |= W_CAMERA;
+		}
+	}
+
+	void set_texture_resolution(int picmip)
+	{
+		game::g_qeglobals->d_picmip = picmip;
+
+		// CMainFrame::PicMip
+		mainframe_stdcall(void, 0x420860); // sets the stock menu ..
+
+		// R_UpdateMipMap
+		cdeclcall(void, 0x5139A0);
+
+		// R_ReloadImages
+		game::R_ReloadImages();
+
+		game::g_nUpdateBits = -1;
+	}
+
+	void color_menu(ggui::imgui_context_menu& menu)
+	{
+		int _stylevars = 0;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(800, 300));	_stylevars++;
+		
+		ImGui::Begin("colors_xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+
+		ImGui::ColorEdit4("Texture Background ??", game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Grid Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBACK], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Grid Minor", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMINOR], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Grid Major", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMAJOR], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Camera Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_CAMERABACK], ImGuiColorEditFlags_Float);
+
+		ImGui::PopStyleVar(_stylevars);
+		ImGui::End();
+	}
+	
+	void cxywnd_gui(ggui::imgui_context_cxy& context)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 
@@ -518,12 +611,520 @@ namespace components
 				ImGui::EndMenu(); // View
 			}
 
+			if (ImGui::BeginMenu("Selection"))
+			{
+				if (ImGui::MenuItem("Drag Edges", "E")) {
+					cdeclcall(void, 0x4257D0); // CMainFrame::OnSelectionDragedges
+				}
+
+				if (ImGui::MenuItem("Drag Vertices", "V")) {
+					cdeclcall(void, 0x425840); // CMainFrame::OnSelectionDragVertices
+				}
+
+				SEPERATORV(0.0f);
+				
+				if (ImGui::MenuItem("Clone", "SPACE")) {
+					cdeclcall(void, 0x425480); // CMainFrame::OnSelectionClone
+				}
+
+				if (ImGui::MenuItem("Deselect", "ESCAPE")) {
+					mainframe_thiscall(void, 0x425740); // CMainFrame::OnSelectionDeselect
+				}
+				
+				SEPERATORV(0.0f);
+				
+				if (ImGui::BeginMenu("Flip"))
+				{
+					if (ImGui::MenuItem("Flip X")) {
+						cdeclcall(void, 0x4250A0); // CMainFrame::OnBrushFlipx
+					}
+
+					if (ImGui::MenuItem("Flip Y")) {
+						cdeclcall(void, 0x4250C0); // CMainFrame::OnBrushFlipy
+					}
+
+					if (ImGui::MenuItem("Flip Z")) {
+						cdeclcall(void, 0x4250E0); // CMainFrame::OnBrushFlipz
+					}
+
+					ImGui::EndMenu(); // Flip
+				}
+
+				if (ImGui::BeginMenu("Rotate"))
+				{
+					if (ImGui::MenuItem("Rotate X")) {
+						cdeclcall(void, 0x425100); // CMainFrame::OnBrushRotatex
+					}
+
+					if (ImGui::MenuItem("Rotate Y")) {
+						cdeclcall(void, 0x425190); // CMainFrame::OnBrushRotatey
+					}
+
+					if (ImGui::MenuItem("Rotate Z", "SHIFT-D")) {
+						cdeclcall(void, 0x425220); // CMainFrame::OnBrushRotatez
+					}
+
+					if (ImGui::MenuItem("Arbitrary Rotation")) {
+						cdeclcall(void, 0x425300); // CMainFrame::OnSelectionArbitraryrotation
+					}
+
+					ImGui::EndMenu(); // Rotate
+				}
+
+				if (ImGui::BeginMenu("Scale"))
+				{
+					if (ImGui::MenuItem("Lock X", 0, (game::g_nScaleHow == 2 || game::g_nScaleHow == 4 || game::g_nScaleHow == 6))) {
+						mainframe_thiscall(LRESULT, 0x428BC0); // CMainFrame::OnScalelockX
+					}
+					
+					if (ImGui::MenuItem("Lock Y", 0, (game::g_nScaleHow == 1 || game::g_nScaleHow == 4 || game::g_nScaleHow == 5))) {
+						mainframe_thiscall(LRESULT, 0x428B60); // CMainFrame::OnScalelockY
+					}
+
+					if (ImGui::MenuItem("Lock Z", 0, (game::g_nScaleHow > 0 && game::g_nScaleHow <= 3))) {
+						mainframe_thiscall(LRESULT, 0x428B90); // CMainFrame::OnScalelockZ
+					}
+
+					if (ImGui::MenuItem("Arbitrary Scale")) {
+						cdeclcall(void, 0x4283D0); // CMainFrame::OnSelectScale
+					}
+					
+					ImGui::EndMenu(); // Scale
+				}
+				
+
+				if (ImGui::MenuItem("Maya Export")) {
+					cdeclcall(void, 0x4263C0); // CMainFrame::OnExportToMaya
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::BeginMenu("CSG"))
+				{
+					if (ImGui::MenuItem("Hollow")) {
+						cdeclcall(void, 0x425570); // CMainFrame::OnSelectionMakehollow
+					}
+
+					if (ImGui::MenuItem("Merge", "CTRL-U")) {
+						cdeclcall(void, 0x4255D0); // CMainFrame::OnSelectionCsgmerge
+					}
+
+					if (ImGui::MenuItem("Auto Caulk", "ALT-C")) {
+						cdeclcall(void, 0x425600); // CMainFrame::OnSelectionAutoCaulk
+					}
+
+					ImGui::EndMenu(); // CSG
+				}
+
+				if (ImGui::BeginMenu("Clipper"))
+				{
+					if (ImGui::MenuItem("Toggle Clipper", "X")) {
+						mainframe_thiscall(void, 0x426510); // CMainFrame::OnViewClipper
+					}
+
+					if (ImGui::MenuItem("Clip Selected", "RETURN")) {
+						mainframe_thiscall(void, 0x427170); // CMainFrame::OnClipSelected
+					}
+
+					if (ImGui::MenuItem("Split Selected", "SHIFT-RETURN")) {
+						mainframe_thiscall(void, 0x4271D0); // CMainFrame::OnSplitSelected
+					}
+
+					if (ImGui::MenuItem("Flip Clip Orientation", "CTRL-RETURN")) {
+						mainframe_thiscall(void, 0x427140); // CMainFrame::OnFlipClip
+					}
+
+					ImGui::EndMenu(); // Clipper
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Select Targetname")) {
+					cdeclcall(void, 0x426390); // CMainFrame::OnSelectionTargetname
+				}
+
+				if (ImGui::MenuItem("Select Classname")) {
+					cdeclcall(void, 0x4263A0); // CMainFrame::OnSelectionClassname
+				}
+
+				if (ImGui::MenuItem("Select By Key/Value", "SHIFT-CTRL-F")) {
+					cdeclcall(void, 0x4263B0); // CMainFrame::OnSelectionKeyValue
+				}
+
+				if (ImGui::MenuItem("Select Connected", "ALT-CTRL-E")) {
+					cdeclcall(void, 0x425550); // CMainFrame::OnSelectConneted
+				}
+
+				if (ImGui::BeginMenu("Select"))
+				{
+					if (ImGui::MenuItem("Select Complete Tall")) {
+						cdeclcall(void, 0x426340); // CMainFrame::OnSelectionSelectcompletetall
+					}
+
+					if (ImGui::MenuItem("Select Partial Tall")) {
+						cdeclcall(void, 0x426360); // CMainFrame::OnSelectionSelectpartialtall
+					}
+
+					if (ImGui::MenuItem("Select Touching")) {
+						cdeclcall(void, 0x426370); // CMainFrame::OnSelectionSelecttouching
+					}
+
+					if (ImGui::MenuItem("Select Inside")) {
+						cdeclcall(void, 0x426350); // CMainFrame::OnSelectionSelectinside
+					}
+
+					ImGui::EndMenu(); // Clipper
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Connect Entities", "W")) {
+					cdeclcall(void, 0x425510); // CMainFrame::OnSelectionConnect
+				}
+
+				if (ImGui::MenuItem("Ungroup Entity")) {
+					cdeclcall(void, 0x426380); // CMainFrame::OnSelectionUngroupentity
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Make Detail", "SHIFT-CTRL-D")) {
+					cdeclcall(void, 0x4261C0); // CMainFrame::OnSelectionMakeDetail
+				}
+
+				if (ImGui::MenuItem("Make Structural", "SHIFT-CTRL-S")) {
+					cdeclcall(void, 0x426200); // CMainFrame::OnSelectionMakeStructural
+				}
+				
+				if (ImGui::MenuItem("Make Weapon Clip", "SHIFT-CTRL-W")) {
+					cdeclcall(void, 0x426240); // CMainFrame::OnSelectionMakeWeaponclip
+				}
+				
+				if (ImGui::MenuItem("Make Non-Colliding", "SHIFT-CTRL-MINUS")) {
+					cdeclcall(void, 0x426280); // CMainFrame::OnSelectionMakeNonColliding
+				}
+				
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Make Split Coplanar Geo")) {
+					cdeclcall(void, 0x4262C0); // CMainFrame::OnSelectionMakeSplitCoplanar
+				}
+
+				if (ImGui::MenuItem("Make Don't Split Coplanar Geo")) {
+					cdeclcall(void, 0x426300); // CMainFrame::OnSelectionMakeDontSplitCoplanar
+				}
+				
+				ImGui::EndMenu(); // Selection
+			}
+
+			if (ImGui::BeginMenu("Grid"))
+			{
+				if (ImGui::MenuItem("Grid 0.5", "~", game::g_qeglobals->d_gridsize == GRID_05)) {
+					set_grid_size(GRID_05);
+				}
+
+				if (ImGui::MenuItem("Grid 1", "1", game::g_qeglobals->d_gridsize == GRID_1)) {
+					set_grid_size(GRID_1);
+				}
+
+				if (ImGui::MenuItem("Grid 2", "2", game::g_qeglobals->d_gridsize == GRID_2)) {
+					set_grid_size(GRID_2);
+				}
+
+				if (ImGui::MenuItem("Grid 4", "3", game::g_qeglobals->d_gridsize == GRID_4)) {
+					set_grid_size(GRID_4);
+				}
+
+				if (ImGui::MenuItem("Grid 8", "4", game::g_qeglobals->d_gridsize == GRID_8)) {
+					set_grid_size(GRID_8);
+				}
+
+				if (ImGui::MenuItem("Grid 16", "5", game::g_qeglobals->d_gridsize == GRID_16)) {
+					set_grid_size(GRID_16);
+				}
+
+				if (ImGui::MenuItem("Grid 32", "6", game::g_qeglobals->d_gridsize == GRID_32)) {
+					set_grid_size(GRID_32);
+				}
+
+				if (ImGui::MenuItem("Grid 64", "7", game::g_qeglobals->d_gridsize == GRID_64)) {
+					set_grid_size(GRID_64);
+				}
+
+				if (ImGui::MenuItem("Grid 128", 0, game::g_qeglobals->d_gridsize == GRID_128)) {
+					set_grid_size(GRID_128);
+				}
+
+				if (ImGui::MenuItem("Grid 256", "8", game::g_qeglobals->d_gridsize == GRID_256)) {
+					set_grid_size(GRID_256);
+				}
+
+				if (ImGui::MenuItem("Grid 512", "9", game::g_qeglobals->d_gridsize == GRID_512)) {
+					set_grid_size(GRID_512);
+				}
+
+				if (ImGui::MenuItem("Snap To Grid", "ALT-CTRL-G", !game::g_PrefsDlg()->m_bNoClamp)) {
+					mainframe_thiscall(void, 0x428380); // CMainFrame::OnSnaptogrid
+				}
+
+				ImGui::EndMenu(); // Grid
+			}
+			
+
+			if (ImGui::BeginMenu("Textures"))
+			{
+				if (ImGui::MenuItem("Show All", "CTRL-A")) {
+					cdeclcall(void, 0x42B440); // CMainFrame::OnTexturesShowall
+				}
+
+				if (ImGui::MenuItem("Show In Use", "U")) {
+					mainframe_thiscall(void, 0x424B20); // CMainFrame::OnTexturesShowinuse
+				}
+
+				if (ImGui::MenuItem("Surface Inspector", "S")) {
+					cdeclcall(void, 0x424B60); // CMainFrame::OnTexturesInspector
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Find / Replace")) {
+					cdeclcall(void, 0x428B40); // CMainFrame::OnTextureReplaceall
+				}
+
+				if (ImGui::BeginMenu("Render Method"))
+				{
+					if (ImGui::MenuItem("Wireframe", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_WIREFRAME))  {
+						set_render_method(RM_WIREFRAME);
+					}
+
+					if (ImGui::MenuItem("Fullbright", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_FULLBRIGHT)) {
+						set_render_method(RM_FULLBRIGHT);
+					}
+
+					if (ImGui::MenuItem("Normal-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_NORMALFAKELIGHT)) {
+						set_render_method(RM_NORMALFAKELIGHT);
+					}
+
+					if (ImGui::MenuItem("View-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_VIEWFAKELIGHT)) {
+						set_render_method(RM_VIEWFAKELIGHT);
+					}
+
+					if (ImGui::MenuItem("Case Textures", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_CASETEXTURES)) {
+						set_render_method(RM_CASETEXTURES);
+					}
+					
+					ImGui::EndMenu(); // Render Method
+				}
+
+				if (ImGui::BeginMenu("Texture Filter"))
+				{
+					if (ImGui::MenuItem("Unchanged", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 0)) {
+						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 0);
+					}
+
+					if (ImGui::MenuItem("Force Trilinear", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 1)) {
+						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 1);
+					}
+
+					if (ImGui::MenuItem("Force Bilinear", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 2)) {
+						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 2);
+					}
+
+					if (ImGui::MenuItem("Force Mipmaps Off", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 3)) {
+						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 3);
+					}
+					
+					ImGui::EndMenu(); // Texture Filter
+				}
+
+				if (ImGui::BeginMenu("Texture Resolution"))
+				{
+					if (ImGui::MenuItem("Maximum", 0, game::g_qeglobals->d_picmip == 0)) {
+						set_texture_resolution(0);
+					}
+
+					if (ImGui::MenuItem("High", 0, game::g_qeglobals->d_picmip == 1)) {
+						set_texture_resolution(1);
+					}
+					
+					if (ImGui::MenuItem("Normal", 0, game::g_qeglobals->d_picmip == 2)) {
+						set_texture_resolution(2);
+					}
+
+					if (ImGui::MenuItem("Low", 0, game::g_qeglobals->d_picmip == 3)) {
+						set_texture_resolution(3);
+					}
+					
+					ImGui::EndMenu(); // Texture Resolution
+				}
+
+				if (ImGui::BeginMenu("Texture Window Scale"))
+				{
+					if (ImGui::MenuItem("200%", 0, game::g_PrefsDlg()->m_nTextureWindowScale == 200)) {
+						mainframe_thiscall(void, 0x42B020); // CMainFrame::OnTexturesTexturewindowscale200
+					}
+
+					if (ImGui::MenuItem("100%", 0, game::g_PrefsDlg()->m_nTextureWindowScale == 100)) {
+						mainframe_thiscall(void, 0x42B000); // CMainFrame::OnTexturesTexturewindowscale100
+					}
+
+					if (ImGui::MenuItem("50%", 0, game::g_PrefsDlg()->m_nTextureWindowScale == 50)) {
+						mainframe_thiscall(void, 0x42B060); // CMainFrame::OnTexturesTexturewindowscale50
+					}
+
+					if (ImGui::MenuItem("25%", 0, game::g_PrefsDlg()->m_nTextureWindowScale == 25)) {
+						mainframe_thiscall(void, 0x42B040); // CMainFrame::OnTexturesTexturewindowscale25
+					}
+
+					if (ImGui::MenuItem("10%", 0, game::g_PrefsDlg()->m_nTextureWindowScale == 10)) {
+						mainframe_thiscall(void, 0x42AFE0); // CMainFrame::OnTexturesTexturewindowscale10
+					}
+					
+					ImGui::EndMenu(); // Texture Window Scale
+				}
+
+				if (ImGui::BeginMenu("Texture Lock"))
+				{
+					if (ImGui::MenuItem("Moves", 0, game::g_PrefsDlg()->m_bTextureLock == 1)) {
+						mainframe_thiscall(void, 0x426B80); // CMainFrame::OnToggleLockMoves
+					}
+
+					if (ImGui::MenuItem("Rotations", 0, game::g_PrefsDlg()->m_bRotateLock == 1)) {
+						mainframe_thiscall(void, 0x429230); // CMainFrame::OnToggleLockRotations
+					}
+
+					if (ImGui::MenuItem("Lightmaps", 0, game::g_PrefsDlg()->m_bLightmapLock == 1)) {
+						mainframe_thiscall(void, 0x426BF0); // CMainFrame::OnToggleLockLightmap
+					}
+					
+					ImGui::EndMenu(); // Texture Lock
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::BeginMenu("Layered Materials"))
+				{
+					if (ImGui::MenuItem("Toogle Tool Window", "F4")) {
+						cdeclcall(void, 0x42BFE0); // CMainFrame::OnToggleLayeredMaterials
+					}
+
+					if (ImGui::MenuItem("Save")) {
+						cdeclcall(void, 0x42C020); // CMainFrame::OnSaveLayeredMaterials
+					}
+					
+					ImGui::EndMenu(); // Layered Materials
+				}
+
+				if (ImGui::BeginMenu("Edit Layer"))
+				{
+					if (ImGui::MenuItem("Cycle", "SHIFT-L")) {
+						cdeclcall(void, 0x424010); // CMainFrame::OnEditLayerCycle
+					}
+
+					SEPERATORV(0.0f);
+
+					if (ImGui::MenuItem("Material", 0, game::g_qeglobals->current_edit_layer == 0)) {
+						cdeclcall(void, 0x424030); // CMainFrame::OnEditLayerMaterial
+					}
+
+					if (ImGui::MenuItem("Lightmap", 0, game::g_qeglobals->current_edit_layer == 1)) {
+						cdeclcall(void, 0x424040); // CMainFrame::OnEditLayerLightmap
+					}
+
+					if (ImGui::MenuItem("Smoothing", 0, game::g_qeglobals->current_edit_layer == 2)) {
+						cdeclcall(void, 0x424050); // CMainFrame::OnEditLayerSmoothing
+					}
+					
+					ImGui::EndMenu(); // Edit Layer
+				}
+
+				if (ImGui::MenuItem("Refresh Textures", "F5")) {
+					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
+				}
+
+				if (ImGui::BeginMenu("Usage Filter"))
+				{
+					for (std::uint8_t i = 0; i < game::texWndGlob_usageCount; i++)
+					{
+						const char* name = game::filter_usage_array[i].name;
+						if (name)
+						{
+							if (ImGui::MenuItem(name, 0, game::texWndGlob_usageFilter == i))
+							{
+								game::texWndGlob_usageFilter = i;
+								game::g_nUpdateBits |= W_TEXTURE;
+							}
+						}
+						else if (game::filter_usage_array[i].index == -1)
+						{
+							SEPERATORV(0.0f);
+						}
+					}
+					
+					ImGui::EndMenu(); // Usage Filter
+				}
+
+				if (ImGui::BeginMenu("Locale Filter"))
+				{
+					for (std::uint8_t i = 0; i < game::texWndGlob_localeCount; i++)
+					{
+						const char* name = game::filter_locale_array[i].name;
+						if (name)
+						{
+							if (ImGui::MenuItem(name, 0, game::texWndGlob_localeFilter == i))
+							{
+								game::texWndGlob_localeFilter = i;
+								game::g_nUpdateBits |= W_TEXTURE;
+							}
+						}
+						else if(game::filter_locale_array[i].index == -1)
+						{
+							SEPERATORV(0.0f);
+						}
+					}
+					
+					ImGui::EndMenu(); // Locale Filter
+				}
+
+				if (ImGui::BeginMenu("Surface Type Filter"))
+				{
+					for(std::uint8_t i = 0; i < 29; i++) // hardcoded value
+					{
+						const char* name = game::filter_surfacetype_array[i].name;
+						if (name)
+						{
+							if (ImGui::MenuItem(name, 0, game::texWndGlob_surfaceTypeFilter == i))
+							{
+								game::texWndGlob_surfaceTypeFilter = i;
+								game::g_nUpdateBits |= W_TEXTURE;
+							}
+						}
+					}
+					
+					ImGui::EndMenu(); // Surface Type Filter
+				}
+
+				ImGui::EndMenu(); // Textures
+			}
+
+			if (ImGui::BeginMenu("Misc"))
+			{
+				if (ImGui::MenuItem("Colors")) {
+					gui::toggle(context.m_colors, 0, true);
+				}
+				
+				ImGui::EndMenu(); // Misc
+			}
+
 			ImGui::EndMenuBar();
 		}
 
 		
 		// *
 		// create default docking layout
+
+		// TODO! create seperate dockspace for the toolbar - with ImGuiDockNodeFlags_AutoHideTabBar
+		// TODO! create another dockspace for all other windows - without ImGuiDockNodeFlags_AutoHideTabBar
 		
 		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 		{
@@ -544,11 +1145,11 @@ namespace components
 				ImGui::DockBuilderSetNodeSize(dock_toolbar, ImVec2(viewport->Size.x, 36));
 
 				// split the resulting node (dockspace_id) -> dockspace_id will be everything to the right of the split
-				//auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
-
+				auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
+				
 				// we now dock our windows into the docking node we made above
 				ImGui::DockBuilderDockWindow("toolbar_xywnd", dock_toolbar);
-				//ImGui::DockBuilderDockWindow("test_gui1", dock_id_left);
+				ImGui::DockBuilderDockWindow("colors_xywnd", dock_id_left);
 				//ImGui::DockBuilderDockWindow("test_gui2", dockspace_id);
 				
 				ImGui::DockBuilderFinish(dockspace_id);
@@ -590,7 +1191,7 @@ namespace components
 		// *
 		// sizes (not really needed because the toolbar is pre-docked)
 
-		auto toolbar_menu = context.menus[0];
+		auto toolbar_menu = context.m_toolbar;
 		
 		toolbar_menu.position[0] = viewport->Pos.x;
 		toolbar_menu.position[1] = viewport->Pos.y;
@@ -650,6 +1251,8 @@ namespace components
 			} TT("lock grid along the z-axis");
 		}
 
+		ImGui::SameLine();
+		if (ImGui::Button("Reload Images")) { game::R_ReloadImages(); }
 		
 		// TODO! - remove me
 		ImGui::SameLine();
@@ -792,9 +1395,11 @@ namespace components
 			// create all dockable windows in cxywnd_gui
 			cxywnd_gui(ggui::state.cxywnd);
 
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_colors, color_menu(ggui::state.cxywnd.m_colors));
+
 			// toggleable demo menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.menus[ggui::e_menu::XY_DEMO],
-					ImGui::ShowDemoWindow(&ggui::state.cxywnd.menus[ggui::e_menu::XY_DEMO].menustate));
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_demo,
+					ImGui::ShowDemoWindow(&ggui::state.cxywnd.m_demo.menustate));
 
 			// end the current context frame
 			goto END_FRAME;
@@ -924,7 +1529,7 @@ namespace components
 	{
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{
-			gui::toggle(ggui::state.cxywnd.menus[ggui::e_menu::XY_DEMO], 0, true);
+			gui::toggle(ggui::state.cxywnd.m_demo, 0, true);
 		});
 	}
 

@@ -4,24 +4,6 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
 
 cmainframe* cmainframe::activewnd;
 
-// Taken directly from q3radiant
-// https://github.com/id-Software/Quake-III-Arena
-#define W_CAMERA		0x0001
-#define W_XY			0x0002
-#define W_XY_OVERLAY	0x0004
-#define W_Z				0x0008
-#define W_TEXTURE		0x0010
-#define W_Z_OVERLAY		0x0020
-#define W_CONSOLE		0x0040
-#define W_ENTITY		0x0080
-#define W_CAMERA_IFON	0x0100
-#define W_XZ			0x0200  //--| only used for patch vertex manip stuff
-#define W_YZ			0x0400  //--|
-#define W_GROUP			0x0800 
-#define W_MEDIA			0x1000 
-#define W_ALL			0xFFFFFFFF
-
-
 void cmainframe::routine_processing()
 {
 	if (!this->m_bDoLoop)

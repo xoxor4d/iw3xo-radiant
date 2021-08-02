@@ -887,6 +887,20 @@ namespace game
 		int height;
 	};
 
+	struct GfxWindowParms
+	{
+		HWND hwnd;
+		int hz;
+		bool fullscreen;
+		int x;
+		int y;
+		int sceneWidth;
+		int sceneHeight;
+		int displayWidth;
+		int displayHeight;
+		int aaSamples;
+	};
+
 	struct __declspec(align(8)) DxGlobals
 	{
 		IDirect3DQuery9* query;
@@ -1135,13 +1149,13 @@ namespace game
 		char patch_verts_array02[196600];
 		int patch_verts_array02_count;
 		int pad_02;
-		int unk01;
+		int current_edit_layer; // material, lightmap, smoothing
 		void* d_activeLayer;
 		char random_texture_stuff[6300];
 		LPMRUMENU* d_lpMruMenu;
 		SavedInfo_t d_savedinfo;
 		int d_xyShowFlags;
-		int d_gridsize2;
+		float d_gridsize_float;
 		int d_picmip;
 		int d_workcount;
 		int d_select_count;
@@ -1192,6 +1206,11 @@ namespace game
 		void* d_filterGlobals_layerFilters;
 	};
 
+	struct filter_material_t
+	{
+		const char* name;
+		int index;
+	};
 
 	struct undo_s
 	{
@@ -1214,7 +1233,6 @@ namespace game
 		ENTITY_SKINNED			= 0x10000,
 	};
 
-	
 	enum WindowMessages : UINT
 	{
 		_WM_CREATE = 0x1,
@@ -1454,14 +1472,6 @@ namespace ggui
 		CXYWND = 1,
 	};
 
-	enum e_menu
-	{
-		CAM_DEMO = 0,
-		
-		XY_DEMO = 0,
-		XY_TOOLBAR = 1,
-	};
-	
 	struct imgui_context_menu
 	{
 		bool menustate;
@@ -1471,18 +1481,28 @@ namespace ggui
 		float size[2];
 	};
 
-	struct imgui_context
+	struct imgui_context_cam
 	{
 		bool context_initialized;
 		ImGuiContext* context;
 		game::GfxWindowTarget* dx_window;
-		imgui_context_menu menus[IMGUI_CONTEXT_MENUS];
+		imgui_context_menu m_demo;
+	};
+
+	struct imgui_context_cxy
+	{
+		bool context_initialized;
+		ImGuiContext* context;
+		game::GfxWindowTarget* dx_window;
+		imgui_context_menu m_toolbar;
+		imgui_context_menu m_colors;
+		imgui_context_menu m_demo;
 	};
 
 	struct imgui_state_t
 	{
-		imgui_context ccamerawnd;
-		imgui_context cxywnd;
+		imgui_context_cam ccamerawnd;
+		imgui_context_cxy cxywnd;
 		//bool cxywnd_menubar_state;
 	};
 }
