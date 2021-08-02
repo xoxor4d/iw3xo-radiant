@@ -218,18 +218,55 @@ namespace components
 
 	void color_menu(ggui::imgui_context_menu& menu)
 	{
-		int _stylevars = 0;
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(800, 300));	_stylevars++;
+		//int _stylevars = 0;
+		//ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(800, 300));	_stylevars++;
 		
 		ImGui::Begin("colors_xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 
-		ImGui::ColorEdit4("Texture Background ??", game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Camera Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_CAMERABACK], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Texture Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], ImGuiColorEditFlags_Float);
+
+		SEPERATORV(0.0f);
+		
 		ImGui::ColorEdit4("Grid Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBACK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Grid Minor", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMINOR], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Grid Major", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMAJOR], ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Camera Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_CAMERABACK], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Grid Block", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBLOCK], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Grid Text", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDTEXT], ImGuiColorEditFlags_Float);
 
-		ImGui::PopStyleVar(_stylevars);
+		SEPERATORV(0.0f);
+		
+		ImGui::ColorEdit4("Unselected Brushes", game::g_qeglobals->d_savedinfo.colors[game::COLOR_BRUSHES], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Selected Brushes", game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELBRUSHES], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Selected Brushes Cam", game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELBRUSHES_CAMERA], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Selected Face Cam", game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELFACE_CAMERA], ImGuiColorEditFlags_Float);
+
+		SEPERATORV(0.0f);
+		
+		ImGui::ColorEdit4("Detail", game::g_qeglobals->d_savedinfo.colors[game::COLOR_DETAIL_BRUSH], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Non-Colliding", game::g_qeglobals->d_savedinfo.colors[game::COLOR_NONCOLLIDING], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Weapon Clip", game::g_qeglobals->d_savedinfo.colors[game::COLOR_WEAPON_CLIP], ImGuiColorEditFlags_Float);
+
+		SEPERATORV(0.0f);
+		
+		ImGui::ColorEdit4("Size Info", game::g_qeglobals->d_savedinfo.colors[game::COLOR_SIZE_INFO], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Clipper", game::g_qeglobals->d_savedinfo.colors[game::COLOR_CLIPPER], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Model", game::g_qeglobals->d_savedinfo.colors[game::COLOR_MODEL], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Wireframe", game::g_qeglobals->d_savedinfo.colors[game::COLOR_WIREFRAME], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Frozen Layers", game::g_qeglobals->d_savedinfo.colors[game::COLOR_FROZEN_LAYERS], ImGuiColorEditFlags_Float);
+		
+		SEPERATORV(0.0f);
+		
+		ImGui::ColorEdit4("Viewname", game::g_qeglobals->d_savedinfo.colors[game::COLOR_VIEWNAME], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Func Group", game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_GROUP], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Func Cull Group", game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_CULLGROUP], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Entity", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITY], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Entity Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Togglesurfs", game::g_qeglobals->d_savedinfo.colors[game::COLOR_DRAW_TOGGLESUFS], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN2], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], ImGuiColorEditFlags_Float);
+		
+		//ImGui::PopStyleVar(_stylevars);
 		ImGui::End();
 	}
 	
@@ -241,7 +278,7 @@ namespace components
 		int _stylecolors = 0;
 		
 		// styles that need to be set before the dockspace is created
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(800, 36));	_stylevars++;
+		//ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(800, 36));	_stylevars++;
 
 
 		// *
@@ -1129,23 +1166,30 @@ namespace components
 		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 		{
 			ImGuiID dockspace_id = ImGui::GetID("cxywnd_dockspace_layout");
-			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_AutoHideTabBar);
+			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode); // | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
+			// init dockspace once
 			static auto first_time = true;
 			if (first_time)
 			{
 				first_time = false;
 
-				ImGui::DockBuilderRemoveNode(dockspace_id); // clear any previous layout
+				// clear any previous layout
+				ImGui::DockBuilderRemoveNode(dockspace_id);
 				ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
 				ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
 
 				// create toolbar dockspace
-				auto dock_toolbar = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Up, 0.0f, nullptr, &dockspace_id);
+				auto dock_toolbar = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Up, 0.05f, nullptr, &dockspace_id);
 				ImGui::DockBuilderSetNodeSize(dock_toolbar, ImVec2(viewport->Size.x, 36));
 
+				// ^ undockable toolbar without tabbar
+				ImGuiDockNode* node = ImGui::DockBuilderGetNode(dock_toolbar);
+				node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe | ImGuiDockNodeFlags_NoDockingSplitMe;
+				
 				// split the resulting node (dockspace_id) -> dockspace_id will be everything to the right of the split
-				auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.2f, nullptr, &dockspace_id);
+				const float split_ratio_left = viewport->Size.x < 1000.0f ? 0.5f : (1.0f / viewport->Size.x) * 500.0f;
+				auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, split_ratio_left, nullptr, &dockspace_id);
 				
 				// we now dock our windows into the docking node we made above
 				ImGui::DockBuilderDockWindow("toolbar_xywnd", dock_toolbar);
