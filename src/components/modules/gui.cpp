@@ -469,6 +469,10 @@ namespace components
 						mainframe_thiscall(void, 0x426B30); // cmainframe::OnTogglez
 					}
 
+					if (ImGui::MenuItem("XY Crosshair", "SHIFT-X", game::g_bCrossHairs)) {
+						game::g_bCrossHairs ^= 1;
+					}
+
 					if (ImGui::MenuItem("Entity View", "N")) {
 						mainframe_thiscall(void, 0x423F00); // cmainframe::OnViewEntity
 					}
@@ -1144,15 +1148,321 @@ namespace components
 				ImGui::EndMenu(); // Textures
 			}
 
+			
 			if (ImGui::BeginMenu("Misc"))
 			{
 				if (ImGui::MenuItem("Colors")) {
 					gui::toggle(context.m_colors, 0, true);
 				}
+
+				if (ImGui::MenuItem("Find Brush")) {
+					cdeclcall(void, 0x424B80); // CMainFrame::OnMiscFindbrush
+				}
+
+				if (ImGui::MenuItem("Got To Position")) {
+					cdeclcall(void, 0x424BA0); // CMainFrame::OnMiscGoToPosition
+				}
+
+				if (ImGui::MenuItem("-> Leak Spot / Error", "SHIFT-CTRL-K")) {
+					cdeclcall(void, 0x424BC0); // CMainFrame::OnMiscNextleakspot
+				}
+
+				if (ImGui::MenuItem("<- Leak Spot / Error", "SHIFT-CTRL-L")) {
+					cdeclcall(void, 0x424BE0); // CMainFrame::OnMiscPreviousleakspot
+				}
+
+				if (ImGui::MenuItem("Print XY View")) {
+					cdeclcall(void, 0x424C00); // CMainFrame::OnMiscPrintxy
+				}
+
+				if (ImGui::MenuItem("Entity Color Dialog", "K")) {
+					cdeclcall(void, 0x424C10); // CMainFrame::OnMiscSelectentitycolor
+				}
+
+				if (ImGui::MenuItem("Script Group Dialog")) {
+					cdeclcall(void, 0x424E20); // CMainFrame::OnScriptGroup
+				}
+
+				if (ImGui::MenuItem("Delete Exportables")) {
+					cdeclcall(void, 0x424E30); // CMainFrame::OnDeleteExportables
+				}
+
+				if (ImGui::MenuItem("Vehicle Group Dialog", "SHIFT-V")) {
+					cdeclcall(void, 0x42BD50); // CMainFrame::OnMiscVehicleGroup
+				}
+
+				if (ImGui::MenuItem("Dyn Entity Dialog")) {
+					cdeclcall(void, 0x42BD90); // CMainFrame::OnMiscDynEntities
+				}
+				
+				if (ImGui::MenuItem("Models Replace Dialog")) {
+					cdeclcall(void, 0x42BF00); // CMainFrame::OnReplaceModels
+				}
+
+				// no clue what that does
+				if (ImGui::MenuItem("Cycle Preview Models")) {
+					mainframe_thiscall(void, 0x42BDD0); // CMainFrame::OnMiscCyclePreviewModels
+				}
 				
 				ImGui::EndMenu(); // Misc
 			}
 
+			
+			if (ImGui::BeginMenu("Region"))
+			{
+				if(ImGui::MenuItem("Region Off")) {
+					cdeclcall(void, 0x4252B0); // CMainFrame::OnRegionOff
+				}
+
+				if (ImGui::MenuItem("Set XY")) {
+					cdeclcall(void, 0x4252F0); // CMainFrame::OnRegionSetxy
+				}
+
+				if (ImGui::MenuItem("Set Tall Brush")) {
+					cdeclcall(void, 0x4252E0); // CMainFrame::OnRegionSettallbrush
+				}
+
+				if (ImGui::MenuItem("Set Brush")) {
+					cdeclcall(void, 0x4252C0); // CMainFrame::OnRegionSetbrush
+				}
+
+				if (ImGui::MenuItem("Set Selected Brush")) {
+					cdeclcall(void, 0x4252D0); // CMainFrame::OnRegionSetselection
+				}
+				
+				ImGui::EndMenu(); // Region
+			}
+
+			
+			if (ImGui::BeginMenu("Brush"))
+			{
+				if (ImGui::MenuItem("Arbitrary Sided Cylinder")) {
+					cdeclcall(void, 0x424EE0); // CMainFrame::OnBrushArbitrarysided
+				}
+
+				if (ImGui::MenuItem("Cone")) {
+					cdeclcall(void, 0x429170); // CMainFrame::OnBrushMakecone
+				}
+
+				if (ImGui::MenuItem("Sphere")) {
+					cdeclcall(void, 0x42B630); // CMainFrame::OnBrushPrimitivesSphere
+				}
+
+				if (ImGui::MenuItem("Box")) {
+					cdeclcall(void, 0x429200); // CMainFrame::OnMakePhysBox
+				}
+
+				if (ImGui::MenuItem("Cylinder")) {
+					cdeclcall(void, 0x4291D0); // CMainFrame::OnMakePhysCylinder
+				}
+				
+				ImGui::EndMenu(); // Brush
+			}
+
+			
+			if (ImGui::BeginMenu("Patch"))
+			{
+				if (ImGui::MenuItem("Simple Curve Patch")) {
+					cdeclcall(void, 0x429A20); // CMainFrame::OnCurveSimplepatchmesh
+				}
+
+				if (ImGui::MenuItem("Simple Terrain Patch")) {
+					cdeclcall(void, 0x429DA0); // CMainFrame::OnTerrainSimplepatchmesh
+				}
+
+				if (ImGui::MenuItem("Curve To Terrain")) {
+					cdeclcall(void, 0x429B30); // CMainFrame::OnCurveToTerrain
+				}
+				
+				if (ImGui::MenuItem("Faces To Terrain")) {
+					cdeclcall(void, 0x429BE0); // CMainFrame::OnFaceToTerrain
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::BeginMenu("Primitives"))
+				{
+					if (ImGui::MenuItem("Bevel")) {
+						cdeclcall(void, 0x42A450); // CMainFrame::OnCurvePatchbevel
+					}
+
+					if (ImGui::MenuItem("Square Bevel")) {
+						cdeclcall(void, 0x42B5E0); // CMainFrame::OnCuveSquareBevel
+					}
+
+					if (ImGui::MenuItem("End Cap")) {
+						cdeclcall(void, 0x42A4A0); // CMainFrame::OnCurvePatchendcap
+					}
+
+					if (ImGui::MenuItem("Square End Cap")) {
+						cdeclcall(void, 0x42B590); // CMainFrame::OnCurveSquareEndCap
+					}
+
+					SEPERATORV(0.0f);
+
+					if (ImGui::MenuItem("Cylinder")) {
+						cdeclcall(void, 0x42A3B0); // CMainFrame::OnCurvePatchtube
+					}
+
+					if (ImGui::MenuItem("Dense Cylinder")) {
+						cdeclcall(void, 0x42AB90); // CMainFrame::OnCurvePatchdensetube
+					}
+
+					if (ImGui::MenuItem("Very Dense Cylinder")) {
+						cdeclcall(void, 0x42AC40); // CMainFrame::OnCurvePatchverydensetube
+					}
+
+					if (ImGui::MenuItem("Square Cylinder")) {
+						cdeclcall(void, 0x42AF00); // CMainFrame::OnCurvePatchsquare
+					}
+
+					if (ImGui::MenuItem("Cone")) {
+						cdeclcall(void, 0x42A360); // CMainFrame::OnCurvePatchcone
+					}
+
+					// not implemented
+					//if (ImGui::MenuItem("Sphere")) {
+					//	cdeclcall(void, 0x1); // CMainFrame::
+					//}
+					
+					ImGui::EndMenu(); // Primitives
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Advanced Edit Dialog", "Y")) {
+					cdeclcall(void, 0x42BC90); // CMainFrame::OnAdvancedEditDlg
+				}
+
+				if (ImGui::BeginMenu("Insert"))
+				{
+					if (ImGui::MenuItem("Insert 2 Columns")) {
+						cdeclcall(void, 0x42A740); // CMainFrame::OnCurveInsertInsertcolumn
+					}
+
+					if (ImGui::MenuItem("Insert 2 Rows")) {
+						cdeclcall(void, 0x42A790); // CMainFrame::OnCurveInsertInsertrow
+					}
+
+					if (ImGui::MenuItem("Add 2 Columns")) {
+						cdeclcall(void, 0x42A6A0); // CMainFrame::OnCurveInsertAddcolumn
+					}
+
+					if (ImGui::MenuItem("Add 2 Rows")) {
+						cdeclcall(void, 0x42A6F0); // CMainFrame::OnCurveInsertAddrow
+					}
+
+					if (ImGui::MenuItem("Add Terrain Row / Column")) {
+						cdeclcall(void, 0x42B080); // CMainFrame::OnAddTerrainRowColumn
+					}
+					
+					ImGui::EndMenu(); // Insert
+				}
+
+				if (ImGui::BeginMenu("Delete"))
+				{
+					if (ImGui::MenuItem("First 2 Columns")) {
+						cdeclcall(void, 0x42A810); // CMainFrame::OnCurveDeleteFirstcolumn
+					}
+
+					if (ImGui::MenuItem("First 2 Rows")) {
+						cdeclcall(void, 0x42A860); // CMainFrame::OnCurveDeleteFirstrow
+					}
+
+					if (ImGui::MenuItem("Last 2 Columns")) {
+						cdeclcall(void, 0x42A8B0); // CMainFrame::OnCurveDeleteLastcolumn
+					}
+
+					if (ImGui::MenuItem("Last 2 Rows")) {
+						cdeclcall(void, 0x42A900); // CMainFrame::OnCurveDeleteLastrow
+					}
+
+					if (ImGui::MenuItem("Remove Terrain Row / Column")) {
+						cdeclcall(void, 0x42B0B0); // CMainFrame::OnRemoveTerrainRowColumn
+					}
+					
+					ImGui::EndMenu(); // Delete
+				}
+
+				if (ImGui::BeginMenu("Matrix"))
+				{
+					if (ImGui::MenuItem("Transpose")) {
+						cdeclcall(void, 0x42B1E0); // CMainFrame::OnCurveMatrixTranspose
+					}
+
+					if (ImGui::MenuItem("Re-disperse Columns")) {
+						cdeclcall(void, 0x42AD80); // CMainFrame::OnCurveRedisperseCols
+					}
+
+					if (ImGui::MenuItem("Re-disperse Rows")) {
+						cdeclcall(void, 0x42AD90); // CMainFrame::OnCurveRedisperseRows
+					}
+
+					ImGui::EndMenu(); // Matrix
+				}
+
+				if (ImGui::MenuItem("Split", "SHIFT-CTRL-X")) {
+					cdeclcall(void, 0x42B0C0); // CMainFrame::OnSplitPatch
+				}
+
+				if (ImGui::MenuItem("Invert", "CTRL-I")) {
+					cdeclcall(void, 0x42A7E0); // CMainFrame::OnCurveNegative
+				}
+
+				if (ImGui::MenuItem("Thicken", "SHIFT-CTRL-T")) {
+					cdeclcall(void, 0x42B0D0); // CMainFrame::OnCurveThicken
+				}
+
+				if (ImGui::MenuItem("Cap", "SHIFT-C")) {
+					cdeclcall(void, 0x42AD40); // CMainFrame::OnCurveCap
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Turn Terrain Edges")) {
+					cdeclcall(void, 0x4294E0); // CMainFrame::OnTurnTerrainEdges
+				}
+
+				if (ImGui::MenuItem("Lock Vertices", "CTRL-PERIOD")) {
+					mainframe_thiscall(void, 0x42B4F0); // CMainFrame::ToggleLockPatchVertMode
+				}
+
+				if (ImGui::MenuItem("Unlock Vertices", "SHIFT-CTRL-PERIOD")) {
+					mainframe_thiscall(void, 0x42B510); // CMainFrame::ToggleUnlockPatchVertMode
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Cycle Cap Texture", "SHIFT-CTRL-N")) {
+					cdeclcall(void, 0x42B1A0); // CMainFrame::OnCurveCyclecap
+				}
+				
+				if (ImGui::MenuItem("Vert Edit Dialog", "G")) {
+					cdeclcall(void, 0x42BCD0); // CMainFrame::OnVertexEditDlg
+				}
+
+				if (ImGui::MenuItem("Cap Texture", "SHIFT-CTRL-P")) {
+					cdeclcall(void, 0x42AE50); // CMainFrame::OnPatchCap
+				}
+				
+				ImGui::EndMenu(); // Patch
+			}
+			
+		
+			if (ImGui::BeginMenu("Help"))
+			{
+				// TODO! implement help
+
+				if (ImGui::MenuItem("Command List")) {
+					cdeclcall(void, 0x426E00); // CMainFrame::OnHelpCommandlist
+				}
+
+				// TODO! implement about
+				
+				
+				ImGui::EndMenu(); // Help
+			}
+			
 			ImGui::EndMenuBar();
 		}
 

@@ -63,7 +63,8 @@ namespace game
 	extern double&	g_time;
 	extern double&	g_oldtime;
 	extern bool&	g_region_active;
-
+	extern bool&	g_bCrossHairs;
+	
 	extern game::filter_material_t* filter_surfacetype_array;
 	extern game::filter_material_t* filter_locale_array;
 	extern game::filter_material_t* filter_usage_array;

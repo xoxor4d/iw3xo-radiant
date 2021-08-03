@@ -278,6 +278,7 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 					IMGUI_BEGIN_CXYWND;
 					const auto ccontext = ImGui::GetCurrentContext();
 
+					// TODO! this might still close too much on heavy lag, preventing imgui io 
 					if (ccontext->OpenPopupStack.Size > 0)
 					{
 						//printf("closing popup #%d\n", ccontext->OpenPopupStack.Size - 1);
@@ -320,6 +321,8 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 		}
 	}
 
+	// TODO! crash on radiant shutdown with disabled menubar (via toggle button)
+	
 	// => CFrameWnd::DefWindowProc
 	return o_wndproc(pThis, Msg, wParam, lParam);
 }

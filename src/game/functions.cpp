@@ -44,7 +44,8 @@ namespace game
 	double& g_time = *reinterpret_cast<double*>(0x2665678);
 	double& g_oldtime = *reinterpret_cast<double*>(0x2665670);
 	bool&	g_region_active = *reinterpret_cast<bool*>(0x23F1744);
-
+	bool&	g_bCrossHairs = *reinterpret_cast<bool*>(0x25D5B06);
+	
 	game::filter_material_t* filter_surfacetype_array = reinterpret_cast<game::filter_material_t*>(0x73AF80);
 	game::filter_material_t* filter_locale_array = reinterpret_cast<game::filter_material_t*>(0x73A780);
 	game::filter_material_t* filter_usage_array = reinterpret_cast<game::filter_material_t*>(0x739F80);
