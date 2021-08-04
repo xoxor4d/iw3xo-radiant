@@ -321,8 +321,6 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 		}
 	}
 
-	// TODO! crash on radiant shutdown with disabled menubar (via toggle button)
-	
 	// => CFrameWnd::DefWindowProc
 	return o_wndproc(pThis, Msg, wParam, lParam);
 }

@@ -1676,7 +1676,16 @@ namespace components
 			}
 			else
 			{
-				SetMenu(cmainframe::activewnd->GetWindow(), 0);
+				// destroy the menu or radiant crashes on shutdown when its trying to get the menubar style
+		
+				// GetMenuFromHandle
+				if(const auto menu = utils::hook::call<CMenu * (__fastcall)(cmainframe*)>(0x42EE20)(cmainframe::activewnd); menu)
+				{
+					// CMenu::DestroyMenu
+					utils::hook::call<void(__fastcall)(CMenu*)>(0x58A908)(menu);
+				}
+				
+				SetMenu(cmainframe::activewnd->GetWindow(), nullptr);
 				ggui::mainframe_menubar_visible = false;
 			}
 		}

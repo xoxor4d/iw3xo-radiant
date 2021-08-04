@@ -91,6 +91,10 @@ public:
 	CObject_vtbl* __vftable /*VFT*/;
 };
 
+struct CMenu : CObject
+{
+	HMENU__* m_hMenu;
+};
 
 struct CCmdTarget__XDispatch
 {
