@@ -1108,6 +1108,74 @@ namespace game
 		Glyph* glyphs;
 	};
 
+	struct GfxCodeMatrices
+	{
+		GfxMatrix matrix[32];
+	};
+
+	struct GfxPlacement
+	{
+		float quat[4];
+		float origin[3];
+	};
+
+	struct GfxScaledPlacement
+	{
+		GfxPlacement base;
+		float scale;
+	};
+
+	enum GfxViewMode
+	{
+		VIEW_MODE_NONE = 0x0,
+		VIEW_MODE_3D = 0x1,
+		VIEW_MODE_2D = 0x2,
+		VIEW_MODE_IDENTITY = 0x3,
+	};
+
+	enum GfxViewportBehavior
+	{
+		GFX_USE_VIEWPORT_FOR_VIEW = 0x0,
+		GFX_USE_VIEWPORT_FULL = 0x1,
+	};
+
+	struct __declspec(align(16)) GfxCmdBufSourceState
+	{
+		GfxCodeMatrices matrices;
+		GfxCmdBufInput input;
+		GfxViewParms viewParms;
+		GfxMatrix shadowLookupMatrix;
+		unsigned __int16 constVersions[90];
+		unsigned __int16 matrixVersions[8];
+		float eyeOffset[4];
+		unsigned int shadowableLightForShadowLookupMatrix;
+		GfxScaledPlacement* objectPlacement;
+		GfxViewParms* viewParms3D;
+		unsigned int depthHackFlags;
+		GfxScaledPlacement skinnedPlacement;
+		int cameraView;
+		GfxViewMode viewMode;
+		GfxSceneDef sceneDef;
+		GfxViewport sceneViewport;
+		float materialTime;
+		GfxViewportBehavior viewportBehavior;
+		int renderTargetWidth;
+		int renderTargetHeight;
+		bool viewportIsDirty;
+		unsigned int shadowableLightIndex;
+	};
+
+	struct GfxCmdDrawText3D
+	{
+		game::GfxCmdHeader header;
+		float org[3];
+		game::Font_s* font;
+		float xPixelStep[3];
+		float yPixelStep[3];
+		game::GfxColor color;
+		char text[4];
+	}; STATIC_ASSERT_SIZE(GfxCmdDrawText3D, 0x34);
+
 	struct __declspec(align(8)) qeglobals_t
 	{
 		bool d_showgrid;

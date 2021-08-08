@@ -319,6 +319,37 @@ namespace components
 			jmp		retn_pt;
 		}
 	}
+
+
+	
+
+	//void testtest()
+	//{
+	//	// R_Set2D
+	//	utils::function<void(game::GfxCmdBufSourceState*)>(0x53CF50)(game::gfx_cmd_buf_source_state);
+	//	
+	//	if(test_font && test_color)
+	//	{
+	//		utils::function<void(const char* text, int text_len, game::Font_s* font, float x, float y, float xscale, float yscale, float rotation, float* color, int style, int curor_pos, char cursor_letter)>
+	//			(0x4FB980)("Test", 0x7FFFFFFF, test_font, 0.0f, 0.0f, 2.0f, 2.0f, 0.0f, test_color, 0, 0, 0);
+	//	}
+	//}
+
+	//__declspec(naked) void set2d_test_stub()
+	//{
+	//	const static uint32_t R_DrawLine_Func = 0x4FD1A0;
+	//	const static uint32_t retn_pt = 0x46569C;
+	//	__asm
+	//	{
+	//		pushad;
+	//		call	testtest;
+	//		popad;
+	//		
+	//		call	R_DrawLine_Func;
+	//		jmp		retn_pt;
+	//	}
+	//}
+	
 	
 	quick_patch::quick_patch()
 	{
@@ -327,6 +358,8 @@ namespace components
 		cmainframe::main();
 		ccamwnd::main();
 		cxywnd::main();
+
+		//utils::hook(0x465697, set2d_test_stub, HOOK_JUMP).install()->quick();
 
 		// add iw3xradiant search path (imgui images)
 		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();

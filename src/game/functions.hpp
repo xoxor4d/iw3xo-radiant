@@ -73,6 +73,8 @@ namespace game
 	extern std::uint8_t& texWndGlob_usageFilter;
 	extern int& texWndGlob_localeCount;
 	extern int& texWndGlob_usageCount;
+
+	extern game::GfxCmdBufSourceState* gfx_cmd_buf_source_state;
 	
 	extern CPrefsDlg* g_PrefsDlg();
 	extern game::undo_s* g_lastundo();
@@ -146,5 +148,7 @@ namespace game
 	void FS_ScanForDir(const char* directory, const char* search_path, int localized);
 	game::GfxImage* Image_FindExisting(const char* name);
 	game::GfxImage* Image_RegisterHandle(const char* name);
+
+	game::GfxCmdHeader* R_RenderBufferCmdCheck(int bytes /*ebx*/, int render_cmd /*edi*/);
 	
 }

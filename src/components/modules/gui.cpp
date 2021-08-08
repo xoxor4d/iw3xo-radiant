@@ -1479,10 +1479,9 @@ namespace components
 			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode); // | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoDockingInCentralNode);
 
 			// init dockspace once
-			static auto first_time = true;
-			if (first_time)
+			if (!context.m_toolbar.one_time_init)
 			{
-				first_time = false;
+				context.m_toolbar.one_time_init = true;
 
 				// clear any previous layout
 				ImGui::DockBuilderRemoveNode(dockspace_id);
@@ -1728,7 +1727,7 @@ namespace components
 			gui::begin_frame();
 
 			// TODO! always show demo window (for now)
-			ImGui::ShowDemoWindow(nullptr);
+			//ImGui::ShowDemoWindow(nullptr);
 			
 			// end the current context frame
 			goto END_FRAME;
@@ -1758,6 +1757,7 @@ namespace components
 			// create all dockable windows in cxywnd_gui
 			cxywnd_gui(ggui::state.cxywnd);
 
+			//color_menu(ggui::state.cxywnd.m_colors); // always open
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_colors, color_menu(ggui::state.cxywnd.m_colors));
 
 			// toggleable demo menu
@@ -1800,8 +1800,6 @@ namespace components
 
 			ImGui_ImplWin32_Shutdown();
 			ImGui::DestroyContext();
-
-			ggui::state.ccamerawnd.context_initialized = false;
 		}
 
 		if (ggui::state.cxywnd.context_initialized)
@@ -1815,8 +1813,6 @@ namespace components
 			
 			ImGui_ImplWin32_Shutdown();
 			ImGui::DestroyContext();
-
-			ggui::state.cxywnd.context_initialized = false;
 		}
 
 		memset(&ggui::state, 0, sizeof(ggui::imgui_state_t));

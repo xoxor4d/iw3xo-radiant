@@ -54,7 +54,9 @@ namespace game
 	std::uint8_t& texWndGlob_usageFilter = *reinterpret_cast<std::uint8_t*>(0x25D799C); // current selected index
 	int& texWndGlob_localeCount = *reinterpret_cast<int*>(0x25D7998); // amount of loaded locale filters
 	int& texWndGlob_usageCount = *reinterpret_cast<int*>(0x25D7994); // amount of loaded usage filters
-	
+
+	game::GfxCmdBufSourceState* gfx_cmd_buf_source_state = reinterpret_cast<game::GfxCmdBufSourceState*>(0x174D760);
+
 	CPrefsDlg* g_PrefsDlg()
 	{
 		const auto prefs = reinterpret_cast<CPrefsDlg*>(*(DWORD*)0x73C704);
@@ -193,6 +195,17 @@ namespace game
 		}
 
 		return image;
+	}
+
+	game::GfxCmdHeader* R_RenderBufferCmdCheck(int bytes /*ebx*/, int render_cmd /*edi*/)
+	{
+		const static uint32_t R_RenderBufferCmdCheck_Func = 0x4FAEB0;
+		__asm
+		{
+			mov		ebx, bytes;
+			mov		edi, render_cmd;
+			call	R_RenderBufferCmdCheck_Func;
+		}
 	}
 	
 }
