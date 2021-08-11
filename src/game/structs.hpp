@@ -1,5 +1,6 @@
 #pragma once
-
+#pragma warning(push)
+#pragma warning(disable: 4324)
 namespace game
 {
 	typedef float vec_t;
@@ -1574,3 +1575,4 @@ namespace ggui
 		//bool cxywnd_menubar_state;
 	};
 }
+#pragma warning(pop)

@@ -66,13 +66,18 @@
 #define ASSERT_MSG(expr, msg) assert((msg, expr))
 #define STRINGIZE_(x) #x
 #define STRINGIZE(x) STRINGIZE_(x)
-#define AssertSize(x, size) static_assert(sizeof(x) == size, STRINGIZE(x) " structure has an invalid size.")
+#define AssertSize(x, size)								static_assert(sizeof(x) == size, STRINGIZE(x) " structure has an invalid size.")
 #define STATIC_ASSERT_SIZE(struct, size)				static_assert(sizeof(struct) == size, "Size check")
 #define STATIC_ASSERT_OFFSET(struct, member, offset)	static_assert(offsetof(struct, member) == offset, "Offset check")
 
+#pragma warning(push)
+#pragma warning(disable: 6011)
+#pragma warning(disable: 28182)
 #include <imgui.h>
 #include <backends/imgui_impl_dx9.h>
 #include <backends/imgui_impl_win32.h>
+#pragma warning(pop)
+
 #include "common/imgui/imgui_addons.hpp"
 
 #include "detours/Detours.h"
@@ -90,6 +95,7 @@
 
 #include "common/camwnd.hpp"
 #include "common/mainframe.hpp"
+#include "common/radiantapp.hpp"
 
 #include "components/fonts.hpp"
 #include "components/loader.hpp"

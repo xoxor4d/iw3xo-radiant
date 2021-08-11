@@ -3,7 +3,7 @@
 namespace ggui
 {
 	imgui_state_t state = imgui_state_t();
-	bool mainframe_menubar_visible = true;
+	bool mainframe_menubar_enabled = false;
 	
 }
 
@@ -62,6 +62,17 @@ namespace game
 		const auto prefs = reinterpret_cast<CPrefsDlg*>(*(DWORD*)0x73C704);
 		return prefs;
 	}
+
+	void CPrefsDlg_SavePrefs()
+	{
+		const static uint32_t SavePrefs_addr = 0x44F280;
+		__asm
+		{
+			call	game::g_PrefsDlg;
+			mov		esi, eax;
+			call	SavePrefs_addr;
+		}
+	}
 	
 	game::undo_s* g_lastundo()
 	{
@@ -96,6 +107,42 @@ namespace game
 	
 	// -----------------------------------------------------------
 	// DVARS
+
+	game::dvar_s* Dvar_RegisterVec4(const char* dvar_name /*ecx*/, float x, float y, float z, float w, float mins, float maxs, __int16 flags /*di/edi*/, const char* description)
+	{
+		const static uint32_t Dvar_RegisterVec4 = 0x4B2860;
+		__asm
+		{
+			push	description;
+			sub		esp, 24;
+			
+			fld		maxs;
+			fstp    dword ptr[esp + 20];
+			
+			fld		mins;
+			fstp    dword ptr[esp + 16];
+			
+			fld		w;
+			fstp    dword ptr[esp + 12];
+			
+			fld		z;
+			fstp    dword ptr[esp + 8];
+			
+			fld		y;
+			fstp    dword ptr[esp + 4];
+			
+			fld		x;
+			fstp    dword ptr[esp];
+
+			xor		edi, edi;
+			mov		di, flags;
+			
+			mov		ecx, dvar_name;
+			
+			call	Dvar_RegisterVec4;
+			add		esp, 28;
+		}
+	}
 
 	void Dvar_SetString(game::dvar_s *dvar /*esi*/, const char *string /*ebx*/)
 	{

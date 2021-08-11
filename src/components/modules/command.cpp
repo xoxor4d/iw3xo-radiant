@@ -9,6 +9,19 @@ namespace components
         command::cmd[name] = cb;
     }
 
+	void command::execute(std::string cmd_name)
+	{
+		if (command::cmd.find(cmd_name) != command::cmd.end())
+		{
+			std::vector<std::string> null;
+			command::cmd[cmd_name](null);
+		}
+		else
+		{
+			game::console_error(utils::va("Unknown command \"%s\"", cmd_name.c_str()));
+		}
+	}
+	
     void command::execute_command(std::vector<std::string> args)
     {
     	if (command::cmd.find(args[0]) != command::cmd.end())

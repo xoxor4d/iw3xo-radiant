@@ -265,7 +265,13 @@ namespace components
 		ImGui::ColorEdit4("Togglesurfs", game::g_qeglobals->d_savedinfo.colors[game::COLOR_DRAW_TOGGLESUFS], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN2], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], ImGuiColorEditFlags_Float);
-		
+
+		SEPERATORV(0.0f);
+
+		ImGui::ColorEdit4("Gui Menubar Bg", dvars::gui_menubar_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Docked Bg", dvars::gui_dockedwindow_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Undocked Bg", dvars::gui_window_bg_color->current.vector, ImGuiColorEditFlags_Float);
+
 		//ImGui::PopStyleVar(_stylevars);
 		ImGui::End();
 	}
@@ -295,8 +301,11 @@ namespace components
 		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-		ImGui::PushStyleColor(ImGuiCol_MenuBarBg, (ImVec4)ImColor(1, 1, 1, 200));
-
+		ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));	_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::ToImVec4(dvars::gui_dockedwindow_bg_color->current.vector));	_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));	_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));	_stylecolors++;
+		
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -1509,7 +1518,7 @@ namespace components
 			}
 		}
 		
-		ImGui::PopStyleColor(1);
+		//ImGui::PopStyleColor(1);
 		ImGui::End();
 		
 		// ----------------------------
@@ -1527,11 +1536,10 @@ namespace components
 
 		// *
 		// create toolbar window
-		
+
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(1.0f, 4.0f));		_stylevars++;
 
 		ImGui::PushStyleColor(ImGuiCol_Border, (ImVec4)ImColor(1, 1, 1, 0));			_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, (ImVec4)ImColor(1, 1, 1, 120));		_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(100, 100, 100, 70));	_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 70));		_stylecolors++;
@@ -1667,26 +1675,16 @@ namespace components
 		ImGui::SameLine();
 		if (ImGui::Button("Toggle Menubar"))
 		{
-			if(!ggui::mainframe_menubar_visible)
+			if (!ggui::mainframe_menubar_enabled)
 			{
-				const auto menubar = LoadMenu(cmainframe::activewnd->m_pModuleState->m_hCurrentInstanceHandle, MAKEINTRESOURCE(0xD6)); // 0xD6 = IDR_MENU_QUAKE3
-				SetMenu(cmainframe::activewnd->GetWindow(), menubar);
-				ggui::mainframe_menubar_visible = true;
+				command::execute("menubar_show");
 			}
 			else
 			{
-				// destroy the menu or radiant crashes on shutdown when its trying to get the menubar style
-		
-				// GetMenuFromHandle
-				if(const auto menu = utils::hook::call<CMenu * (__fastcall)(cmainframe*)>(0x42EE20)(cmainframe::activewnd); menu)
-				{
-					// CMenu::DestroyMenu
-					utils::hook::call<void(__fastcall)(CMenu*)>(0x58A908)(menu);
-				}
-				
-				SetMenu(cmainframe::activewnd->GetWindow(), nullptr);
-				ggui::mainframe_menubar_visible = false;
+				command::execute("menubar_hide");
 			}
+
+			game::CPrefsDlg_SavePrefs();
 		}
 
 	END_GUI:
@@ -1750,6 +1748,7 @@ namespace components
 			// global style vars for current context
 			ImGuiStyle& style = ImGui::GetStyle();
 			style.FrameBorderSize = 0.0f;
+			style.Colors[ImGuiCol_WindowBg] = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector);
 
 			// begin context frame
 			gui::begin_frame();
@@ -1873,13 +1872,38 @@ namespace components
 	// *
 	void gui::register_dvars()
 	{
-		//dvars::imgui_devgui_pos_x = dvars::register_float(
-		//	/* name		*/ "imgui_devgui_pos_x",
-		//	/* value	*/ 20.0f,
-		//	/* minVal	*/ 0.0f,
-		//	/* maxVal	*/ 4096.0f,
-		//	/* flags	*/ game::dvar_flags::saved,
-		//	/* desc		*/ "X position of the devgui");
+		dvars::gui_menubar_bg_color = dvars::register_vec4(
+			/* name		*/ "gui_menubar_bg_color",
+			/* x		*/ 0.30f,
+			/* y		*/ 0.01f,
+			/* z		*/ 0.02f,
+			/* w		*/ 0.6f,
+			/* minVal	*/ 0.0f,
+			/* maxVal	*/ 1.0f,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "gui menubar background color");
+		
+		dvars::gui_dockedwindow_bg_color = dvars::register_vec4(
+			/* name		*/ "gui_dockedwindow_bg_color",
+			/* x		*/ 0.050f,
+			/* y		*/ 0.050f,
+			/* z		*/ 0.050f,
+			/* w		*/ 0.65f,
+			/* minVal	*/ 0.0f,
+			/* maxVal	*/ 1.0f,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "gui toolbar background color");
+
+		dvars::gui_window_bg_color = dvars::register_vec4(
+			/* name		*/ "gui_window_bg_color",
+			/* x		*/ 0.050f,
+			/* y		*/ 0.050f,
+			/* z		*/ 0.050f,
+			/* w		*/ 0.65f,
+			/* minVal	*/ 0.0f,
+			/* maxVal	*/ 1.0f,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "gui background color");
 	}
 
 	
@@ -1889,6 +1913,31 @@ namespace components
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{
 			gui::toggle(ggui::state.cxywnd.m_demo, 0, true);
+		});
+		
+
+		command::register_command("menubar_show"s, [](std::vector<std::string> args)
+		{
+			const auto menubar = LoadMenu(cmainframe::activewnd->m_pModuleState->m_hCurrentInstanceHandle, MAKEINTRESOURCE(0xD6)); // 0xD6 = IDR_MENU_QUAKE3
+			SetMenu(cmainframe::activewnd->GetWindow(), menubar);
+			//dvars::set_bool(dvars::radiant_enable_menubar, true);
+			ggui::mainframe_menubar_enabled = true;
+		});
+		
+		
+		command::register_command("menubar_hide"s, [](std::vector<std::string> args)
+		{
+			// destroy the menu or radiant crashes on shutdown when its trying to get the menubar style
+			// GetMenuFromHandle
+			if (const auto menu = utils::hook::call<CMenu * (__fastcall)(cmainframe*)>(0x42EE20)(cmainframe::activewnd); menu)
+			{
+				// CMenu::DestroyMenu
+				utils::hook::call<void(__fastcall)(CMenu*)>(0x58A908)(menu);
+			}
+
+			SetMenu(cmainframe::activewnd->GetWindow(), nullptr);
+			//dvars::set_bool(dvars::radiant_enable_menubar, false);
+			ggui::mainframe_menubar_enabled = false;
 		});
 	}
 

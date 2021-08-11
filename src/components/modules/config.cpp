@@ -197,6 +197,7 @@ namespace components
 		cfgFile.close();
 	}
 
+	
 	config::config()
 	{
 		// stub after fs_dvars where registered

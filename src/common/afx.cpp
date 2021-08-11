@@ -75,5 +75,7 @@ namespace afx
 
 	CWnd_SetFocus_t CWnd_SetFocus = reinterpret_cast<CWnd_SetFocus_t>(0x58EAAC);
 	CWnd_FromHandle_t CWnd_FromHandle = reinterpret_cast<CWnd_FromHandle_t>(0x5871BD);
+
+	get_module_state_t get_module_state = reinterpret_cast<get_module_state_t>(0x59390E);
 	
 }

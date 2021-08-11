@@ -353,8 +353,10 @@ namespace components
 	
 	quick_patch::quick_patch()
 	{
+		// TODO! :: move this or rename quick_patch to main or something
 		init_threads();
-		
+
+		radiantapp::main();
 		cmainframe::main();
 		ccamwnd::main();
 		cxywnd::main();

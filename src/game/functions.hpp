@@ -22,7 +22,7 @@
 namespace ggui
 {
 	extern imgui_state_t state;
-	extern bool mainframe_menubar_visible;
+	extern bool mainframe_menubar_enabled;
 	
 }
 
@@ -77,6 +77,7 @@ namespace game
 	extern game::GfxCmdBufSourceState* gfx_cmd_buf_source_state;
 	
 	extern CPrefsDlg* g_PrefsDlg();
+	extern void CPrefsDlg_SavePrefs();
 	extern game::undo_s* g_lastundo();
 	extern game::undo_s* g_lastredo();
 
@@ -132,9 +133,15 @@ namespace game
 	static utils::function< void (game::dvar_s* dvar, float x, float y, float z)>				Dvar_SetVec3 = 0x4B3870;
 	static utils::function< void (game::dvar_s* dvar, float x, float y, float z, float w)>		Dvar_SetVec4 = 0x4B38A0;
 
-	static utils::function< game::dvar_s* (const char* dvarName, int value, int mins, int maxs, __int16 flags, const char* description)> Dvar_RegisterInt = 0x4B2660;
-	static utils::function< game::dvar_s* (const char* dvarName, char value, __int16 flags, const char* description)> Dvar_RegisterBool = 0x4B25F0;
-	static utils::function< game::dvar_s* (const char* dvarName, float value, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterFloat = 0x4B26D0;
+	static utils::function< game::dvar_s* (const char* dvar_name, char value, __int16 flags, const char* description)> Dvar_RegisterBool = 0x4B25F0;
+	static utils::function< game::dvar_s* (const char* dvar_name, int value, int mins, int maxs, __int16 flags, const char* description)> Dvar_RegisterInt = 0x4B2660;
+	static utils::function< game::dvar_s* (const char* dvar_name, float value, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterFloat = 0x4B26D0;
+	
+	static utils::function< game::dvar_s* (const char* dvar_name, float x, float y, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterVec2 = 0x4B2750;
+	static utils::function< game::dvar_s* (const char* dvar_name, float x, float y, float z, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterVec3 = 0x4B27D0;
+	//static utils::function< game::dvar_s* (const char* dvar_name, float x, float y, float z, float w, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterVec4 = 0x4B2860;
+	game::dvar_s* Dvar_RegisterVec4(const char* dvar_name /*ecx*/, float x, float y, float z, float w, float mins, float maxs, __int16 flags /*di/edi*/, const char* description);
+	
 	static utils::function< game::dvar_s* (const char *dvarName, const char *value, __int16 flags, const char *description)> Dvar_RegisterString = 0x4B28E0;
 
 	// ASM

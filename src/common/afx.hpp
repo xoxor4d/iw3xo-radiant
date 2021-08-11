@@ -1,6 +1,8 @@
 #pragma once
 //#include <afxwin.h>
 
+struct AFX_MODULE_STATE;
+
 struct IAccessibleProxy;
 typedef void(__thiscall * SetTextColor_t)(void *, COLORREF);
 typedef COLORREF(__thiscall * SetBkColor_t)(void *, COLORREF);
@@ -106,8 +108,6 @@ struct CCmdTarget__XConnPtContainer
 {
 	unsigned int m_vtbl;
 };
-
-struct AFX_MODULE_STATE;
 
 class CCmdTarget : public CObject
 {
@@ -1376,9 +1376,11 @@ struct CNoTrackObject
 	CNoTrackObject_vtbl* __vftable /*VFT*/;
 };
 
+struct CWinApp : CCmdTarget {};
+
 struct AFX_MODULE_STATE : CNoTrackObject
 {
-	void* m_pCurrentWinApp; // CWinApp
+	CWinApp* m_pCurrentWinApp;
 	HINSTANCE__* m_hCurrentInstanceHandle;
 	HINSTANCE__* m_hCurrentResourceHandle;
 	const char* m_lpszCurrentAppName;
@@ -1413,16 +1415,10 @@ namespace afx
 	// -------------------------------------- function typedefs -------------------------------------------
 	// *
 	
-	typedef CWnd* (__thiscall* CSplitterWnd__GetPane_t)(CSplitterWnd*, int row, int col);
-	extern CSplitterWnd__GetPane_t CSplitterWnd__GetPane;
-
-	typedef void(__thiscall* CSplitterWnd__SetRowInfo_t)(CSplitterWnd*, int row, int, int);
-	extern CSplitterWnd__SetRowInfo_t CSplitterWnd__SetRowInfo;
-
-	typedef void(__thiscall* CWnd_SetFocus_t)(CWnd*);
-	extern CWnd_SetFocus_t CWnd_SetFocus;
-
-	typedef void(__stdcall* CWnd_FromHandle_t)(HWND);
-	extern CWnd_FromHandle_t CWnd_FromHandle;
+	typedef CWnd* (__thiscall* CSplitterWnd__GetPane_t)(CSplitterWnd*, int row, int col); extern CSplitterWnd__GetPane_t CSplitterWnd__GetPane;
+	typedef void(__thiscall* CSplitterWnd__SetRowInfo_t)(CSplitterWnd*, int row, int, int); extern CSplitterWnd__SetRowInfo_t CSplitterWnd__SetRowInfo;
+	typedef void(__thiscall* CWnd_SetFocus_t)(CWnd*); extern CWnd_SetFocus_t CWnd_SetFocus;
+	typedef void(__stdcall* CWnd_FromHandle_t)(HWND); extern CWnd_FromHandle_t CWnd_FromHandle;
+	typedef AFX_MODULE_STATE* (__stdcall* get_module_state_t)();  extern get_module_state_t get_module_state;
 	
 }
