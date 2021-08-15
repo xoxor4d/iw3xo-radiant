@@ -12,6 +12,8 @@
 #define GGUI_ANY_MENUS_OPEN Game::Globals::gui.any_menus_open
 #define GGUI_MENU_COUNT 2
 
+#define IMGUI_DEFINE_MATH_OPERATORS
+
 #define IMGUI_CONTEXT_COUNT 2 // amount of imgui contexts
 #define IMGUI_CONTEXT_MENUS 1 // amount of menus per context
 
@@ -76,6 +78,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_dx9.h>
 #include <backends/imgui_impl_win32.h>
+#include <misc/cpp/imgui_stdlib.h>
 #pragma warning(pop)
 
 #include "common/imgui/imgui_addons.hpp"

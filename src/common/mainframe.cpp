@@ -189,11 +189,13 @@ void cmainframe::update_windows(int nBits)
 	if (nBits & W_CAMERA || ((nBits & W_CAMERA_IFON) && this->m_bCamPreview))
 	{
 		if (this->m_pCamWnd)
-		{	
-//#if !CCAMWND_REALTIME
-			// Redraw the camera view
-			//m_pCamWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
-//#endif
+		{
+			// redraw the camera when not running at realtime
+			if(!game::glob::ccamwindow_realtime)
+			{
+				// Redraw the camera view
+				m_pCamWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+			}
 			
 			game::glob::m_pCamWnd_ref = m_pCamWnd;
 

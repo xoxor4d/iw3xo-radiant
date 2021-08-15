@@ -70,11 +70,11 @@ void reposition_top_grid_hint(const char* text, game::Font_s* font, [[maybe_unus
 	const int nDim2 = (cmainframe::activewnd->m_pXYWnd->m_nViewType != XY) + 1;
 	const int nDim3 = 3 - nDim2 - nDim1;
 	
-	const float h = static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nHeight) / cmainframe::activewnd->m_pXYWnd->m_fScale;
+	const float h = static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nHeight - 24) / cmainframe::activewnd->m_pXYWnd->m_fScale;
 
 	float new_org[3];
 	new_org[nDim1] = origin[nDim1];
-	new_org[nDim2] = origin[nDim2] - h + 24.0f;
+	new_org[nDim2] = origin[nDim2] - h;
 	new_org[nDim3] = origin[nDim3];
 
 	// ----

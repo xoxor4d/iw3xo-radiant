@@ -736,6 +736,11 @@ namespace components
 	// Triggers on brush manipulation :: gather all selected brushes and call command construction functions
 	void remote_net::cmd_send_brush_select_deselect(bool select)
 	{
+		if (!game::glob::live_connected)
+		{
+			return;
+		}
+		
 		game::RadiantCommand cmd;
 
 		// selected_brushes array
@@ -827,172 +832,138 @@ namespace components
 	// --------
 	// Wrappers
 
-	// TODO! fix this
-	
 	__declspec(naked) void on_brush_select_stub()
 	{
 		const static uint32_t stockFuncAdr = 0x458590;
 		const static uint32_t retnPt = 0x47660F;
-		
-		__asm pushad
-		if (game::glob::live_connected)
+		__asm
 		{
-			__asm
-			{
-				push	1 // select = true
-				Call	remote_net::cmd_send_brush_select_deselect
-				add		esp, 4
-			}
-		}
-		__asm popad
+			pushad;
+			push	1; // select = true
+			call	remote_net::cmd_send_brush_select_deselect;
+			add		esp, 4;
+			popad;
 
-		__asm Call	stockFuncAdr
-		__asm jmp	retnPt
+			call	stockFuncAdr;
+			jmp		retnPt;
+		}
 	}
 
 	__declspec(naked) void on_brush_deselect_stub()
 	{
 		const static uint32_t stockFuncAdr = 0x458590;
 		const static uint32_t retnPt = 0x4766D0;
-		
-		__asm pushad
-		if (game::glob::live_connected)
+		__asm
 		{
-			__asm
-			{
-				push	0 // select = false
-				Call	remote_net::cmd_send_brush_select_deselect
-				add		esp, 4
-			}
-		}
-		__asm popad
+			pushad;
+			push	0; // select = false
+			call	remote_net::cmd_send_brush_select_deselect;
+			add		esp, 4;
+			popad;
 
-		__asm Call	stockFuncAdr
-		__asm jmp	retnPt
+			call	stockFuncAdr;
+			jmp		retnPt;
+		}
 	}
 
 	__declspec(naked) void on_brush_deselect_esc_stub()
 	{
 		const static uint32_t retnPt = 0x48E995;
-		
-		__asm pushad
-		if (game::glob::live_connected)
+		__asm
 		{
-			__asm
-			{
-				push	0 // select = false
-				Call	remote_net::cmd_send_brush_select_deselect
-				add		esp, 4
-			}
-		}
-		__asm popad
+			pushad;
+			push	0; // select = false
+			call	remote_net::cmd_send_brush_select_deselect;
+			add		esp, 4;
+			popad;
 
-		__asm mov	[game::g_nUpdateBitsPtr], -1
-		__asm jmp	retnPt
+			mov		[game::g_nUpdateBitsPtr], -1;
+			jmp		retnPt;
+		}
 	}
 
 	__declspec(naked) void on_brush_new_brush_drag_stub()
 	{
-		const static uint32_t stockFuncAdr = 0x40A480; //va
+		const static uint32_t stockFuncAdr = 0x40A480;
 		const static uint32_t retnPt = 0x4681EF;
-		
-		__asm pushad
-		if (game::glob::live_connected)
+		__asm
 		{
-			__asm
-			{
-				push	1 // select = true
-				Call	remote_net::cmd_send_brush_select_deselect
-				add		esp, 4
-			}
-		}
-		__asm popad
+			pushad;
+			push	1; // select = true
+			call	remote_net::cmd_send_brush_select_deselect;
+			add		esp, 4;
+			popad;
 
-		__asm Call	stockFuncAdr
-		__asm jmp	retnPt
+			call	stockFuncAdr;
+			jmp		retnPt;
+		}
 	}
 
 	__declspec(naked) void on_brush_move_selection_drag_and_edge_stub()
 	{
 		const static uint32_t retnPt = 0x47FEF2;
-		
-		__asm pushad
-		if (game::glob::live_connected)
+		__asm
 		{
-			__asm
-			{
-				push	1 // select = true
-				Call	remote_net::cmd_send_brush_select_deselect
-				add		esp, 4
-			}
-		}
-		__asm popad
+			pushad;
+			push	1; // select = true
+			call	remote_net::cmd_send_brush_select_deselect;
+			add		esp, 4;
+			popad;
 
-		__asm mov	[esp + 0C0h], ecx
-		__asm jmp	retnPt
+			mov		[esp + 0C0h], ecx;
+			jmp		retnPt;
+		}
 	}
 
 	__declspec(naked) void on_brush_move_selection_vertex_stub()
 	{
 		const static uint32_t stockFuncAdr = 0x402810;
 		const static uint32_t retnPt = 0x47F3FD;
-
-		__asm pushad
-		if (game::glob::live_connected)
+		__asm
 		{
-			__asm
-			{
-				push	1 // select = true
-				Call	remote_net::cmd_send_brush_select_deselect
-				add		esp, 4
-			}
-		}
-		__asm popad
+			pushad;
+			push	1; // select = true
+			call	remote_net::cmd_send_brush_select_deselect;
+			add		esp, 4;
+			popad;
 
-		__asm Call	stockFuncAdr
-		__asm jmp	retnPt
+			call	stockFuncAdr;
+			jmp		retnPt;
+		}
 	}
 
 	__declspec(naked) void on_brush_move_selection_rotation_stub()
 	{
-		const static uint32_t stockFuncAdr = 0x40A480; //va
+		const static uint32_t stockFuncAdr = 0x40A480;
 		const static uint32_t retnPt = 0x47FD16;
-
-		__asm pushad
-		if (game::glob::live_connected)
+		__asm
 		{
-			__asm
-			{
-				push	1 // select = true
-				Call	remote_net::cmd_send_brush_select_deselect
-				add		esp, 4
-			}
-		}
-		__asm popad
+			pushad;
+			push	1; // select = true
+			call	remote_net::cmd_send_brush_select_deselect;
+			add		esp, 4;
+			popad;
 
-		__asm Call	stockFuncAdr
-		__asm jmp	retnPt
+			call	stockFuncAdr;
+			jmp		retnPt;
+		}
 	}
 
 	__declspec(naked) void on_brush_hotkey_rotate_z_stub()
 	{
-		const static uint32_t stockFuncAdr = 0x45EA20; // what ever that is
-		const static uint32_t retnPt = 0x4252A5; // next op
-
-		__asm pushad
-		if (game::glob::live_connected)
+		const static uint32_t stockFuncAdr = 0x45EA20;
+		const static uint32_t retnPt = 0x4252A5;
+		__asm
 		{
-			__asm
-			{
-				push	1 // select = true
-				Call	remote_net::cmd_send_brush_select_deselect
-				add		esp, 4
-			}
-		}
-		__asm popad
+			pushad;
+			push	1; // select = true
+			call	remote_net::cmd_send_brush_select_deselect;
+			add		esp, 4;
+			popad;
 
-		__asm Call	stockFuncAdr
-		__asm jmp	retnPt
+			call	stockFuncAdr;
+			jmp		retnPt;
+		}
 	}
 
 

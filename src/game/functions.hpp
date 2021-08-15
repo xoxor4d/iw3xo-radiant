@@ -37,6 +37,7 @@ namespace game
 		extern bool radiant_initiated;
 		extern bool radiant_config_loaded;
 		extern bool radiant_config_not_found;
+		extern bool ccamwindow_realtime;
 
 		extern CWnd* m_pCamWnd_ref;
 
@@ -64,6 +65,8 @@ namespace game
 	extern double&	g_oldtime;
 	extern bool&	g_region_active;
 	extern bool&	g_bCrossHairs;
+	extern game::SCommandInfo* g_Commands;
+	extern int		g_nCommandCount;
 	
 	extern game::filter_material_t* filter_surfacetype_array;
 	extern game::filter_material_t* filter_locale_array;

@@ -14,6 +14,7 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 	int sys_timeBase = 0;
 	int com_frameTime = 0;
 	int com_lastFrameTime = 0;
+	int frametime_msec = 0;
 	
 	while(true)
 	{
@@ -42,14 +43,23 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 				
 				Sleep(0u);
 			}
-			
+
+			frametime_msec = com_frameTime - com_lastFrameTime;
 			com_lastFrameTime = com_frameTime;
 
 			// update cam window ~ 250fps
 			if  (const auto hwnd = cmainframe::activewnd->m_pCamWnd->GetWindow();
 				hwnd != nullptr)
 			{
-				SendMessageA(hwnd, WM_PAINT, 0, 0);
+				if(frametime_msec <= 100)
+				{
+					game::glob::ccamwindow_realtime = true;
+					SendMessageA(hwnd, WM_PAINT, 0, 0);
+				}
+				else
+				{
+					game::glob::ccamwindow_realtime = false;
+				}
 			}
 
 			// update xy window ~ 250fps
@@ -374,6 +384,10 @@ namespace components
 		// load raw materials progressbar
 		utils::hook::nop(0x45AF5F, 6);
 		utils::hook(0x45AF5F, load_raw_materials_progressbar_stub, HOOK_JUMP).install()->quick();
+
+		// silence "Could not connect to source control"
+		utils::hook::nop(0x420B59, 5);
+
 		
 #ifdef HIDE_MAINFRAME_TOOLBAR
 		utils::hook(0x4211C6, show_toolbar_stub, HOOK_JUMP).install()->quick();

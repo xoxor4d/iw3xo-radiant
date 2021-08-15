@@ -86,6 +86,19 @@ namespace ImGui
 		return ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
 	}
 
+	void HelpMarker(const char* desc)
+	{
+		ImGui::TextDisabled("(?)");
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::TextUnformatted(desc);
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
+	}
+
 	void StyleColorsDevgui(ImGuiStyle* dst)
 	{
 		ImGuiStyle* style = dst ? dst : &ImGui::GetStyle();
@@ -179,5 +192,4 @@ namespace ImGui
 		colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 		colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.34f);
 	}
-
 }

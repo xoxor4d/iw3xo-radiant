@@ -18,6 +18,7 @@ namespace game
 		bool radiant_initiated;
 		bool radiant_config_loaded;
 		bool radiant_config_not_found;
+		bool ccamwindow_realtime;
 
 		CWnd* m_pCamWnd_ref;
 
@@ -45,6 +46,9 @@ namespace game
 	double& g_oldtime = *reinterpret_cast<double*>(0x2665670);
 	bool&	g_region_active = *reinterpret_cast<bool*>(0x23F1744);
 	bool&	g_bCrossHairs = *reinterpret_cast<bool*>(0x25D5B06);
+	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
+	int		g_nCommandCount = 187;
+
 	
 	game::filter_material_t* filter_surfacetype_array = reinterpret_cast<game::filter_material_t*>(0x73AF80);
 	game::filter_material_t* filter_locale_array = reinterpret_cast<game::filter_material_t*>(0x73A780);

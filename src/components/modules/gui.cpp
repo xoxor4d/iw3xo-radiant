@@ -1,4 +1,5 @@
 #include "std_include.hpp"
+#include <iomanip>
 
 IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -16,10 +17,24 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
 	utils::hook::call<return_val(__cdecl)()>(addr)()
 
 
-#define IMGUI_REGISTER_TOGGLEABLE_MENU(menu, function) \
-    if(menu.menustate) {    \
-        function;           \
+#define IMGUI_REGISTER_TOGGLEABLE_MENU(menu, function, function_on_close) \
+    if(menu.menustate) {		\
+        function;				\
+        menu.was_open = true;	\
+    }							\
+    else if(menu.was_open) {	\
+		function_on_close;		\
+		menu.was_open = false;	\
     }
+
+// left label menu widget, eg. "dragfloat"
+#define IMGUI_MENU_WIDGET_SINGLE(label, func)                                                       \
+    ImGui::Text(label); ImGui::SameLine();                                                          \
+    const ImGuiMenuColumns* offsets = &ImGui::GetCurrentWindow()->DC.MenuColumns;                   \
+	ImGui::SetCursorPosX(static_cast<float>(offsets->OffsetShortcut + 5));                          \
+	ImGui::PushItemWidth(static_cast<float>(offsets->Widths[2] + offsets->Widths[3] + 5));          \
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, 0));   \
+	func; ImGui::PopItemWidth(); ImGui::PopStyleVar();
 
 // -------------------------------------------------------------------
 
@@ -34,16 +49,6 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
 
 // seperator with spacing
 #define SEPERATORV(spacing) SPACING(0.0f, spacing); ImGui::Separator(); SPACING(0.0f, spacing) 
-
-
-// left label menu widget, eg. "dragfloat"
-#define IMGUI_MENU_WIDGET_SINGLE(label, func)                                                       \
-    ImGui::Text(label); ImGui::SameLine();                                                          \
-    const ImGuiMenuColumns* offsets = &ImGui::GetCurrentWindow()->DC.MenuColumns;                   \
-	ImGui::SetCursorPosX(static_cast<float>(offsets->OffsetShortcut + 5));                          \
-	ImGui::PushItemWidth(static_cast<float>(offsets->Widths[2] + offsets->Widths[3] + 5));          \
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, 0));   \
-	func; ImGui::PopItemWidth(); ImGui::PopStyleVar();
 
 
 namespace components
@@ -138,7 +143,6 @@ namespace components
 	 *
 	 * auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
 	 * vtable->RecalcLayout(&cmainframe::activewnd->m_wndSplit);
-	 * 
 	 */
 
 	
@@ -218,10 +222,7 @@ namespace components
 
 	void color_menu(ggui::imgui_context_menu& menu)
 	{
-		//int _stylevars = 0;
-		//ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize, ImVec2(800, 300));	_stylevars++;
-		
-		ImGui::Begin("colors_xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		ImGui::Begin("Colors##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 
 		ImGui::ColorEdit4("Camera Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_CAMERABACK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Texture Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], ImGuiColorEditFlags_Float);
@@ -272,9 +273,668 @@ namespace components
 		ImGui::ColorEdit4("Gui Docked Bg", dvars::gui_dockedwindow_bg_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Undocked Bg", dvars::gui_window_bg_color->current.vector, ImGuiColorEditFlags_Float);
 
-		//ImGui::PopStyleVar(_stylevars);
 		ImGui::End();
 	}
+
+	// -----
+
+	struct commandbinds
+	{
+		std::string cmd_name;
+		std::string keys;
+		int modifier_alt;
+		int modifier_ctrl;
+		int modifier_shift;
+		std::string modifier_key;
+	};
+
+	std::vector<commandbinds> cmd_binds;
+
+	const char* radiant_modifier_alt[] =
+	{
+		"",
+		"ALT"
+	};
+
+	const char* radiant_modifier_ctrl[] =
+	{
+		"",
+		"CTRL"
+	};
+
+	const char* radiant_modifier_shift[] =
+	{
+		"",
+		"SHIFT"
+	};
+
+	const char* radiant_keybind_array[] =
+	{
+		"",
+		"Space",
+		"Backspace",
+		"Escape",
+		"End",
+		"Insert",
+		"Delete",
+		"PageUp",
+		"PageDown",
+		"Up",
+		"Down", // 10
+		"Left",
+		"Right",
+		"F1",
+		"F2",
+		"F3",
+		"F4",
+		"F5",
+		"F6",
+		"F7",
+		"F8", // 20
+		"F9",
+		"F10",
+		"F11",
+		"F12",
+		"Tab",
+		"Return",
+		"Comma",
+		"Period",
+		"Plus",
+		"Multiply", // 30
+		"Subtract",
+		"NumPad0",
+		"NumPad1",
+		"NumPad2",
+		"NumPad3",
+		"NumPad4",
+		"NumPad5",
+		"NumPad6",
+		"NumPad7",
+		"NumPad8", // 40
+		"NumPad9",
+		"Minus",
+		"[",
+		"]",
+		"\\",
+		"~",
+		"LWin", // 47
+		"0",
+		"1",
+		"2",
+		"3",
+		"4",
+		"5",
+		"6",
+		"7",
+		"8",
+		"9",
+		"A",
+		"B",
+		"C",
+		"D",
+		"E",
+		"F",
+		"G",
+		"H",
+		"I",
+		"J",
+		"K",
+		"L",
+		"M",
+		"N",
+		"O",
+		"P",
+		"Q",
+		"R",
+		"S",
+		"T",
+		"U",
+		"V",
+		"W",
+		"X",
+		"Y",
+		"Z",
+	};
+
+	// get ascii fror keybind key
+	int cmdbinds_key_to_ascii(std::string key)
+	{
+		if(key.length() > 1)
+		{
+			if (key == "Space"s)		return 0x20;
+			if (key == "Backspace"s)	return 0x8;
+			if (key == "Escape"s)		return 0x1B;
+			if (key == "End"s)			return 0x23;
+			if (key == "Insert"s)		return 0x2D;
+			if (key == "Delete"s)		return 0x2E;
+			if (key == "PageUp"s)		return 0x21;
+			if (key == "PageDown"s)		return 0x22;
+			if (key == "Up"s)			return 0x26;
+			if (key == "Down"s)			return 0x28;
+			if (key == "Left"s)			return 0x25;
+			if (key == "Right"s)		return 0x27;
+			if (key == "F1"s)			return 0x70;
+			if (key == "F2"s)			return 0x71;
+			if (key == "F3"s)			return 0x72;
+			if (key == "F4"s)			return 0x73;
+			if (key == "F5"s)			return 0x74;
+			if (key == "F6"s)			return 0x75;
+			if (key == "F7"s)			return 0x76;
+			if (key == "F8"s)			return 0x77;
+			if (key == "F9"s)			return 0x78;
+			if (key == "F10"s)			return 0x79;
+			if (key == "F11"s)			return 0x7A;
+			if (key == "F12"s)			return 0x7B;
+			if (key == "Tab"s)			return 0x9;
+			if (key == "Return"s)		return 0x0D;
+			if (key == "Comma"s)		return 0x0BC;
+			if (key == "Period"s)		return 0x0BE;
+			if (key == "Plus"s)			return 0x6B;
+			if (key == "Multiply"s)		return 0x6A;
+			if (key == "Subtract"s)		return 0x6D;
+			if (key == "NumPad0"s)		return 0x60;
+			if (key == "NumPad1"s)		return 0x61;
+			if (key == "NumPad2"s)		return 0x62;
+			if (key == "NumPad3"s)		return 0x63;
+			if (key == "NumPad4"s)		return 0x64;
+			if (key == "NumPad5"s)		return 0x65;
+			if (key == "NumPad6"s)		return 0x66;
+			if (key == "NumPad7"s)		return 0x67;
+			if (key == "NumPad8"s)		return 0x68;
+			if (key == "NumPad9"s)		return 0x69;
+			if (key == "Minus"s)		return 0x0BD;
+			if (key == "["s)			return 0x0DB;
+			if (key == "]"s)			return 0x0DD;
+			if (key == "\\"s)			return 0x0DC;
+			if (key == "~"s)			return 0x0C0;
+			if (key == "LWin"s)			return 0x5B;
+
+			printf("[Hotkeys] Unkown key '%s'", key.c_str());
+			return 0;
+		}
+
+		return key[0];
+	}
+
+	// get ascii fror keybind key
+	std::string cmdbinds_ascii_to_keystr(int key)
+	{
+		if (key == 0x20)  return "Space"s;
+		if (key == 0x8)   return "Backspace"s;
+		if (key == 0x1B)  return "Escape"s;
+		if (key == 0x23)  return "End"s;
+		if (key == 0x2D)  return "Insert"s;
+		if (key == 0x2E)  return "Delete"s;
+		if (key == 0x21)  return "PageUp"s;
+		if (key == 0x22)  return "PageDown"s;
+		if (key == 0x26)  return "Up"s;
+		if (key == 0x28)  return "Down"s;
+		if (key == 0x25)  return "Left"s;
+		if (key == 0x27)  return "Right"s;
+		if (key == 0x70)  return "F1"s;
+		if (key == 0x71)  return "F2"s;
+		if (key == 0x72)  return "F3"s;
+		if (key == 0x73)  return "F4"s;
+		if (key == 0x74)  return "F5"s;
+		if (key == 0x75)  return "F6"s;
+		if (key == 0x76)  return "F7"s;
+		if (key == 0x77)  return "F8"s;
+		if (key == 0x78)  return "F9"s;
+		if (key == 0x79)  return "F10"s;
+		if (key == 0x7A)  return "F11"s;
+		if (key == 0x7B)  return "F12"s;
+		if (key == 0x9)   return "Tab"s;
+		if (key == 0x0D)  return "Return"s;
+		if (key == 0x0BC) return "Comma"s;
+		if (key == 0x0BE) return "Period"s;
+		if (key == 0x6B)  return "Plus"s;
+		if (key == 0x6A)  return "Multiply"s;
+		if (key == 0x6D)  return "Subtract"s;
+		if (key == 0x60)  return "NumPad0"s;
+		if (key == 0x61)  return "NumPad1"s;
+		if (key == 0x62)  return "NumPad2"s;
+		if (key == 0x63)  return "NumPad3"s;
+		if (key == 0x64)  return "NumPad4"s;
+		if (key == 0x65)  return "NumPad5"s;
+		if (key == 0x66)  return "NumPad6"s;
+		if (key == 0x67)  return "NumPad7"s;
+		if (key == 0x68)  return "NumPad8"s;
+		if (key == 0x69)  return "NumPad9"s;
+		if (key == 0x0BD) return "Minus"s;
+		if (key == 0x0DB) return "["s;
+		if (key == 0x0DD) return "]"s;
+		if (key == 0x0DC) return "\\"s;
+		if (key == 0x0C0) return "~"s;
+		if (key == 0x5B)  return "LWin"s;
+
+		std::string out; out += (char)key;
+		return out;
+	}
+
+	
+	std::string get_hotkey_for_command(const char* command)
+	{
+		// find command in cmd_binds (ini)
+		for (const auto& bind : cmd_binds)
+		{
+			if (!_strcmpi(command, bind.cmd_name.c_str()))
+			{
+				return	(bind.modifier_shift == 1 ? "SHIFT-"s : "") +
+						(bind.modifier_alt	 == 1 ? "ALT-"s : "") +
+						(bind.modifier_ctrl  == 1 ? "CTRL-"s : "") +
+						 bind.modifier_key;
+			}
+		}
+
+		// get the hotkey from the default command list if there is no ini or the command is missing
+		// note: we overwrite g_Commands with our own hotkeys -> always check g_Commands?
+		for (auto i = 0; i < game::g_nCommandCount; i++)
+		{
+			if (!_strcmpi(game::g_Commands[i].m_strCommand, command))
+			{
+				const unsigned int o_key = game::g_Commands[i].m_nKey;
+				const unsigned int o_mod = game::g_Commands[i].m_nModifiers;
+
+				std::string mod;
+				mod += (o_mod & 1 ? "SHIFT-"s : "");
+				mod += (o_mod & 2 ? "ALT-"s : "");
+				mod += (o_mod & 4 ? "CTRL-"s : "");
+				mod += cmdbinds_ascii_to_keystr(o_key);
+
+				return mod;
+			}
+		}
+
+		return "";
+	}
+
+	
+	// populates std::vector<commandbinds> cmd_binds
+	bool cmdbinds_load_from_file(std::string file)
+	{
+		cmd_binds.clear();
+		std::string home_path;
+
+		const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
+		if(fs_homepath)
+		{
+			home_path = fs_homepath->current.string;
+		}
+		else
+		{
+			char buffer[512];
+			if(!GetModuleFileNameA(nullptr, buffer, 512))
+			{
+				printf("[Hotkeys] could not get the base directory.\n");
+				return false;
+			}
+
+			std::string path = buffer;
+			home_path = path.substr(0, path.find_last_of("\\/"));
+		}
+
+		std::ifstream ini;
+
+		std::string ini_path = home_path;
+					ini_path += "\\" + file;
+
+		ini.open(ini_path.c_str());
+
+		if (!ini.is_open())
+		{
+			printf("[Hotkeys] Could not find \"iw3r_hotkeys.ini\" in \"%s\"\n", home_path.c_str());
+			return false;
+		}
+
+		std::string input;
+		std::vector<std::string> args;
+
+		// read line by line
+		while (std::getline(ini, input))
+		{
+			if (input.find("[Commands]") != std::string::npos)
+			{
+				//printf("[Hotkeys] Ignored '%s'\n", input.c_str());
+				continue;
+			}
+
+			// ignore comments
+			if (input.find(';') != std::string::npos)
+			{
+				printf("[Hotkeys] Ignored '%s'\n", input.c_str());
+				continue;
+			}
+
+			// ignore lines not containing '='
+			if (input.find(" =") == std::string::npos)
+			{
+				printf("[Hotkeys] Ignored '%s' => missing '='\n", input.c_str());
+				continue;
+			}
+
+			// split the string on = (gets us 2 args)
+			args = utils::split(input, '=');
+
+			// remove the leftover space on the command name
+			utils::rtrim(args[0]);
+
+			// trim leading tabs and spaces on the key-bind
+			utils::ltrim(args[1]);
+
+			// split keys on space
+			std::vector<std::string> keys;
+			if (args[1].find(' ') != std::string::npos)
+			{
+				// multiple keys
+				keys = utils::split(args[1], ' ');
+			}
+			else
+			{
+				// single key
+				keys.push_back(args[1]);
+			}
+
+			cmd_binds.push_back(
+				commandbinds
+				{
+					args[0],
+					args[1],
+					input.find("+alt") != std::string::npos,
+					input.find("+ctrl") != std::string::npos,
+					input.find("+shift") != std::string::npos,
+					keys[keys.size() - 1]
+				});
+		}
+
+		return true;
+	}
+
+	
+	// g_commandmap m_nModifiers
+	// 1u = shift
+	// 2u = alt
+	// 4u = ctrl
+	// 8u = lwin
+
+	// overwrite hardcoded hotkeys with our own
+	void load_commandmap()
+	{
+		if (!cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
+		{
+			// update 'std::map' unkown commandmap (uses g_Commands)
+			cdeclcall(void, 0x420140); // the func that would normally be called
+			
+			return;
+		}
+
+		int commands_overwritten = 0;
+		printf("[Hotkeys] Loading '%d' hotkeys from 'iw3r_hotkeys.ini'\n", cmd_binds.size());
+		
+		for(auto i = 0; i < game::g_nCommandCount; i++)
+		{
+			for (commandbinds& bind : cmd_binds)
+			{
+				if(!_strcmpi(game::g_Commands[i].m_strCommand, bind.cmd_name.c_str()))
+				{
+					const unsigned int o_key = game::g_Commands[i].m_nKey;
+					const unsigned int o_mod = game::g_Commands[i].m_nModifiers;
+					
+					//printf("overwriting command '%s'\n", game::g_Commands[i].m_strCommand);
+					//printf("|-> m_nKey '%d' to ", game::g_Commands[i].m_nKey);
+
+					game::g_Commands[i].m_nKey = cmdbinds_key_to_ascii(bind.modifier_key);
+					
+					//printf("'%d'\n", game::g_Commands[i].m_nKey);
+					//printf("|-> m_nModifiers '%d' to ", game::g_Commands[i].m_nModifiers);
+
+					game::g_Commands[i].m_nModifiers = 
+						   bind.modifier_shift
+						| (bind.modifier_alt == 1 ? 2 : 0)
+						| (bind.modifier_ctrl == 1 ? 4 : 0);
+
+					//printf("'%d'\n\n", game::g_Commands[i].m_nModifiers);
+					
+					if(o_key != game::g_Commands[i].m_nKey || 
+						o_mod != game::g_Commands[i].m_nModifiers) 
+					{
+						printf("|-> modified hotkey '%s'\n", bind.cmd_name.c_str());
+						commands_overwritten++;
+					}
+
+					break;
+				}
+			}
+		}
+
+		printf("|-> modified '%d' commands\n\n", commands_overwritten);
+
+		// there is a second commandmap (vector/unsorted map) ... whatever
+		// clear ^ and set command count to 0
+		cdeclcall(void, 0x42C7A0);
+
+		// update 'std::map' unkown commandmap (uses g_Commands)
+		cdeclcall(void, 0x420140);
+	}
+
+	
+	// load the default commandmap if we did not load our own (ini)
+	void load_default_commandmap()
+	{
+		if(cmd_binds.empty())
+		{
+			cdeclcall(void, 0x421230); // CMainFrame::LoadCommandMap
+		}
+	}
+
+	
+	// triggered when the imgui hotkey menu gets closed
+	void cmdbinds_on_close()
+	{
+		if(cmd_binds.empty())
+		{
+			return;
+		}
+		
+		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
+			fs_homepath)
+		{
+			std::ofstream ini;
+
+			std::string ini_path = fs_homepath->current.string;
+						ini_path += "\\iw3r_hotkeys.ini";
+
+			ini.open(ini_path.c_str());
+			
+			if (!ini.is_open())
+			{
+				printf("[Hotkeys] Could not write to \"iw3r_hotkeys.ini\" in \"%s\"", fs_homepath->current.string);
+				return;
+			}
+
+			ini << "[Commands]" << std::endl;
+
+			for (commandbinds& bind : cmd_binds)
+			{
+				ini << std::left << std::setw(26) << bind.cmd_name << " = ";
+
+				ini << (bind.modifier_shift == 0 ? "" : "+shift ");
+				ini << (bind.modifier_alt	== 0 ? "" : "+alt ");
+				ini << (bind.modifier_ctrl	== 0 ? "" : "+ctrl ");
+				ini <<  bind.modifier_key << std::endl;
+			}
+
+			load_commandmap();
+		}
+	}
+
+	
+	// show help text in case there is no hotkeys file
+	void cmdbinds_helper_menu(ggui::imgui_context_menu& menu)
+	{
+		ImGui::SetNextWindowSizeConstraints(ImVec2(450, 160), ImVec2(450, 160));
+		ImGui::Begin("Hotkeys Helper##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+
+		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
+			fs_homepath)
+		{
+			const char* apply_hint = utils::va("Could not find file 'iw3r_hotkeys.ini' in\n'%s'.", fs_homepath->current.string);
+			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - ImGui::CalcTextSize(apply_hint).x) * 0.5f);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetWindowHeight() * 0.5f - ImGui::CalcTextSize(apply_hint).y);
+			ImGui::TextUnformatted(apply_hint);
+		}
+		
+		ImGui::End();
+	}
+
+	bool cmdbinds_check_dupe(commandbinds& bind, std::string& o_dupebind)
+	{
+		for (commandbinds& binds : cmd_binds)
+		{
+			// ignore "self"
+			if(bind.cmd_name == binds.cmd_name) {
+				continue;
+			}
+
+			// ignore non-assigned
+			if (!binds.modifier_shift && !binds.modifier_ctrl && !binds.modifier_alt
+				&& binds.modifier_key.empty())
+			{
+				continue;
+			}
+
+			if(		bind.modifier_shift == binds.modifier_shift
+				 && bind.modifier_ctrl	== binds.modifier_ctrl
+				 && bind.modifier_alt	== binds.modifier_alt
+				 && bind.modifier_key	== binds.modifier_key)
+			{
+				o_dupebind = binds.cmd_name;
+				return true;
+			}
+		}
+
+		return false;
+	}
+	
+	// hotkey menu
+	void cmdbinds_menu(ggui::imgui_context_menu& menu)
+	{
+		// on first open, load ini
+		if(!menu.was_open)
+		{
+			if(!cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
+			{
+				gui::toggle(ggui::state.cxywnd.m_cmdbinds_helper, 0, true);
+				menu.menustate = false;
+			}
+		}
+
+		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(1.0f, 4.0f));
+		ImGui::SetNextWindowSizeConstraints(ImVec2(450, 320), ImVec2(FLT_MAX, FLT_MAX));
+		ImGui::Begin("Hotkeys##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+
+		const char* apply_hint = "Changes will apply upon closing the window.";
+		ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(apply_hint).x) * 0.5f);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
+		ImGui::TextUnformatted(apply_hint);
+		
+		if (ImGui::BeginTable("bind_table", 5, 
+			ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
+		{
+			ImGui::TableSetupScrollFreeze(0, 1);
+			ImGui::TableSetupColumn("                  Command", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHide, 200.0f);
+			ImGui::TableSetupColumn("Shift", ImGuiTableColumnFlags_WidthFixed, 34.0f);
+			ImGui::TableSetupColumn("  Alt", ImGuiTableColumnFlags_WidthFixed, 34.0f);
+			ImGui::TableSetupColumn(" Ctrl", ImGuiTableColumnFlags_WidthFixed, 34.0f);
+			ImGui::TableSetupColumn(" Key", ImGuiTableColumnFlags_WidthStretch, 120.0f);
+			ImGui::TableHeadersRow();
+
+			int row = 0;
+			for (commandbinds& bind : cmd_binds)
+			{
+				std::string str_dupe_bind = bind.cmd_name;
+				bool found_dupe = cmdbinds_check_dupe(bind, str_dupe_bind);
+				
+				// unique widget id's for each row (we get collisions otherwise)
+				ImGui::PushID(row); row++;
+				ImGui::TableNextRow();
+				
+				for (int column = 0; column < 5; column++)
+				{
+					ImGui::PushID(column);
+					ImGui::TableNextColumn();
+					
+					switch (column)
+					{
+					case 0:
+						ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(bind.cmd_name.c_str()).x) * 0.5f);
+						ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
+
+						if (found_dupe)
+						{
+							ImGui::TextColored(ImVec4(0.9f, 0.1f, 0.1f, 1.0f), bind.cmd_name.c_str());
+							ImGui::SameLine();
+							ImGui::HelpMarker(utils::va("bind conflicts with '%s'", str_dupe_bind.c_str()));
+						}
+						else
+						{
+							ImGui::TextUnformatted(bind.cmd_name.c_str());
+						}
+
+						break;
+					case 1:
+						ImGui::Checkbox("##2", (bool*)&bind.modifier_shift);
+						break;
+					case 2:
+						ImGui::Checkbox("##0", (bool*)&bind.modifier_alt);
+						break;
+					case 3:
+						ImGui::Checkbox("##1", (bool*)&bind.modifier_ctrl);
+						break;
+					case 4:
+						float w = ImGui::GetColumnWidth();//ImGui::CalcItemWidth();
+						ImGui::PushItemWidth(w - 6.0f);
+						
+						if (ImGui::BeginCombo("##combokey", bind.modifier_key.c_str(), ImGuiComboFlags_NoArrowButton)) // The second parameter is the label previewed before opening the combo.
+						{
+							for (int n = 0; n < IM_ARRAYSIZE(radiant_keybind_array); n++)
+							{
+								const bool is_selected = !_stricmp(bind.modifier_key.c_str(), radiant_keybind_array[n]); // You can store your selection however you want, outside or inside your objects
+								if (is_selected)
+								{
+									ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+								}
+								
+								if (ImGui::Selectable(radiant_keybind_array[n], is_selected))
+								{
+									bind.modifier_key = radiant_keybind_array[n];
+									if (is_selected)
+									{
+										ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+									}	
+								}
+							}
+							ImGui::EndCombo();
+						}
+						
+						ImGui::PopItemWidth();
+						break;
+					}
+
+					// column
+					ImGui::PopID();
+				}
+
+				// row
+				ImGui::PopID();
+			}
+			
+			ImGui::EndTable();
+		}
+
+		ImGui::PopStyleVar(); // ImGuiStyleVar_CellPadding
+		ImGui::End();
+	}
+
 	
 	void cxywnd_gui(ggui::imgui_context_cxy& context)
 	{
@@ -315,7 +975,9 @@ namespace components
 		
 		// *
 		// menu bar within dockspace
-
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12, 6));
+		
 		if (ImGui::BeginMenuBar()) 
 		{
 			if (ImGui::BeginMenu("File"))
@@ -324,11 +986,11 @@ namespace components
 					mainframe_cdeclcall(void, 0x423AA0); //cmainframe::OnFileNew
 				}
 
-				if (ImGui::MenuItem("Open", "CTRL-O")) {
+				if (ImGui::MenuItem("Open", get_hotkey_for_command("FileOpen").c_str())) {
 					mainframe_cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
 				}
 
-				if (ImGui::MenuItem("Save", "CTRL-S")) {
+				if (ImGui::MenuItem("Save", get_hotkey_for_command("FileSave").c_str())) {
 					mainframe_cdeclcall(void, 0x423B80); //cmainframe::OnFileSave
 				}
 
@@ -399,7 +1061,7 @@ namespace components
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Exit"))
+				if (ImGui::MenuItem("Exit", get_hotkey_for_command("Quit").c_str()))
 				{
 					PostMessage(cmainframe::activewnd->GetWindow(), WM_CLOSE, 0, 0L);
 				}
@@ -411,31 +1073,31 @@ namespace components
 			
 			if (ImGui::BeginMenu("Edit"))
 			{
-				if (ImGui::MenuItem("Undo", "CTRL-Z", nullptr, game::g_lastundo() && game::g_lastundo()->done)) {
+				if (ImGui::MenuItem("Undo", get_hotkey_for_command("Undo").c_str(), nullptr, game::g_lastundo() && game::g_lastundo()->done)) {
 					cdeclcall(void, 0x428730); //cmainframe::OnEditUndo / OnUpdateEditUndo
 				}
 				
-				if (ImGui::MenuItem("Redo", "CTRL-Y", nullptr, game::g_lastredo())) {
+				if (ImGui::MenuItem("Redo", get_hotkey_for_command("Redo").c_str(), nullptr, game::g_lastredo())) {
 					cdeclcall(void, 0x428740); //cmainframe::OnEditRedo / OnUpdateEditRedo
 				}
 				
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Copy", "CTRL-C")) {
+				if (ImGui::MenuItem("Copy", get_hotkey_for_command("Copy").c_str())) {
 					mainframe_thiscall(void, 0x4286B0); //cmainframe::OnEditCopybrush
 				}
 
-				if (ImGui::MenuItem("Paste", "CTRL-V")) {
+				if (ImGui::MenuItem("Paste", get_hotkey_for_command("Paste").c_str())) {
 					mainframe_thiscall(void, 0x4286D0); //cmainframe::OnEditPastebrush
 				}
 				
-				if (ImGui::MenuItem("Delete", "Backspace")) {
+				if (ImGui::MenuItem("Delete", get_hotkey_for_command("DeleteSelection").c_str())) {
 					cdeclcall(void, 0x425690); //cmainframe::OnSelectionDelete
 				}
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Map Info", "M")) {
+				if (ImGui::MenuItem("Map Info", get_hotkey_for_command("MapInfo").c_str())) {
 					cdeclcall(void, 0x426C60); //cmainframe::OnEditMapinfo
 				}
 
@@ -445,17 +1107,17 @@ namespace components
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Enter Prefab")) {
+				if (ImGui::MenuItem("Enter Prefab", get_hotkey_for_command("EnterPrefab").c_str())) {
 					cdeclcall(void, 0x42BF70); //cmainframe::OnPrefabEnter
 				}
 
-				if (ImGui::MenuItem("Leave Prefab")) {
+				if (ImGui::MenuItem("Leave Prefab", get_hotkey_for_command("LeavePrefab").c_str())) {
 					cdeclcall(void, 0x42BF80); //cmainframe::OnPrefabLeave
 				}
 
 				SEPERATORV(0.0f);
 				
-				if (ImGui::MenuItem("Preferences", "P")) {
+				if (ImGui::MenuItem("Preferences", get_hotkey_for_command("Preferences").c_str())) {
 					mainframe_thiscall(void, 0x426950); //cmainframe::OnPrefs
 				}
 
@@ -466,31 +1128,43 @@ namespace components
 			{
 				if (ImGui::BeginMenu("Toggle"))
 				{
-					if (ImGui::MenuItem("Camera View", "SHIFT-CTRL-C", nullptr, cmainframe::is_combined_view())) {
+					if (ImGui::MenuItem("Camera View", get_hotkey_for_command("ToggleCamera").c_str(), nullptr, cmainframe::is_combined_view())) {
 						mainframe_thiscall(void, 0x426A40); // cmainframe::OnTogglecamera
 					}
 
-					if (ImGui::MenuItem("Console View", 0, nullptr, cmainframe::is_combined_view())) {
+					if (ImGui::MenuItem("Console View", get_hotkey_for_command("ViewConsole").c_str(), nullptr, cmainframe::is_combined_view())) {
 						mainframe_thiscall(void, 0x426A90); // cmainframe::OnToggleconsole
 					}
 
-					if (ImGui::MenuItem("Z View", "SHIFT-CTRL-Z", nullptr, cmainframe::is_combined_view())) {
+					if (ImGui::MenuItem("XY View", get_hotkey_for_command("ToggleView").c_str(), nullptr, cmainframe::is_combined_view())) {
+						mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
+					}
+					
+					if (ImGui::MenuItem("Z View", get_hotkey_for_command("ToggleZ").c_str(), nullptr, cmainframe::is_combined_view())) {
 						mainframe_thiscall(void, 0x426B30); // cmainframe::OnTogglez
 					}
 
-					if (ImGui::MenuItem("XY Crosshair", "SHIFT-X", game::g_bCrossHairs)) {
+					if (ImGui::MenuItem("XY Crosshair", get_hotkey_for_command("ToggleCrosshairs").c_str(), game::g_bCrossHairs)) {
 						game::g_bCrossHairs ^= 1;
 					}
 
-					if (ImGui::MenuItem("Entity View", "N")) {
+					if (ImGui::MenuItem("Selected Outlines", get_hotkey_for_command("ToggleOutlineDraw").c_str(), !game::g_qeglobals->dontDrawSelectedOutlines)) {
+						game::g_qeglobals->dontDrawSelectedOutlines ^= 1;
+					}
+
+					if (ImGui::MenuItem("Selected Tint", get_hotkey_for_command("ToggleTintDraw").c_str(), !game::g_qeglobals->dontDrawSelectedTint)) {
+						game::g_qeglobals->dontDrawSelectedTint ^= 1;
+					}
+
+					if (ImGui::MenuItem("Entity View", get_hotkey_for_command("ViewEntityInfo").c_str())) {
 						mainframe_thiscall(void, 0x423F00); // cmainframe::OnViewEntity
 					}
 
-					if (ImGui::MenuItem("Layers", "L")) {
+					if (ImGui::MenuItem("Layers", get_hotkey_for_command("ToggleLayers").c_str())) {
 						cdeclcall(void, 0x42BD10); // cmainframe::OnLayersDlg
 					}
 
-					if (ImGui::MenuItem("Filter Settings", "F")) {
+					if (ImGui::MenuItem("Filter Settings", get_hotkey_for_command("ViewFilters").c_str())) {
 						mainframe_thiscall(void, 0x42B7A0); // cmainframe::OnFilterDlg
 					}
 
@@ -499,21 +1173,25 @@ namespace components
 				
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Center", "END")) {
+				if (ImGui::MenuItem("Center", get_hotkey_for_command("CenterView").c_str())) {
 					mainframe_thiscall(void, 0x423C50); // cmainframe::OnViewCenter
 				}
 
-				if (ImGui::MenuItem("Up Floor", "PAGE-UP")) {
+				if (ImGui::MenuItem("Center 2D On Camera", get_hotkey_for_command("Center2DOnCamera").c_str())) {
+					cdeclcall(void, 0x42A2D0); // cmainframe::OnCenter2DOnCamera
+				}
+
+				if (ImGui::MenuItem("Up Floor", get_hotkey_for_command("UpFloor").c_str())) {
 					mainframe_thiscall(void, 0x424700); // cmainframe::OnViewUpfloor
 				} TT("move up one floor, if there is one");
 
-				if (ImGui::MenuItem("Down Floor", "PAGE-DOWN")) {
+				if (ImGui::MenuItem("Down Floor", get_hotkey_for_command("DownFloor").c_str())) {
 					mainframe_thiscall(void, 0x423ED0); // cmainframe::OnViewDownfloor
 				} TT("move down one floor, if there is one");
 
 				SEPERATORV(0.0f);
 				
-				if (ImGui::MenuItem("Next (XY, YZ, XZ)", "CTRL-TAB")) {
+				if (ImGui::MenuItem("Next (XY, YZ, XZ)", get_hotkey_for_command("NextView").c_str())) {
 					mainframe_thiscall(void, 0x426DB0); // cmainframe::OnViewNextview
 				}
 
@@ -558,19 +1236,19 @@ namespace components
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Hide Selected", "H")) {
+				if (ImGui::MenuItem("Hide Selected", get_hotkey_for_command("HideSelected").c_str())) {
 					cdeclcall(void, 0x42B6A0); // cmainframe::OnHideSelected
 				}
 
-				if (ImGui::MenuItem("Hide Unselected", "ALT-H")) {
+				if (ImGui::MenuItem("Hide Unselected", get_hotkey_for_command("HideUnSelected").c_str())) {
 					cdeclcall(void, 0x42B6C0); // cmainframe::OnHideUnselected
 				}
 
-				if (ImGui::MenuItem("Show Last Hidden", "SHIFT-CTRL-H")) {
+				if (ImGui::MenuItem("Show Last Hidden", get_hotkey_for_command("ShowLastHidden").c_str())) {
 					cdeclcall(void, 0x42B6E0); // cmainframe::OnHideUnselected
 				}
 
-				if (ImGui::MenuItem("Show Hidden", "SHIFT-H")) {
+				if (ImGui::MenuItem("Show Hidden", get_hotkey_for_command("ShowHidden").c_str())) {
 					cdeclcall(void, 0x42B6D0); // cmainframe::OnShowHidden
 				}
 				
@@ -607,35 +1285,35 @@ namespace components
 
 				if (ImGui::BeginMenu("Light Preview"))
 				{
-					if (ImGui::MenuItem("Enable Light Preview", "F8", game::g_PrefsDlg()->enable_light_preview)) {
+					if (ImGui::MenuItem("Enable Light Preview", get_hotkey_for_command("LightPreviewToggle").c_str(), game::g_PrefsDlg()->enable_light_preview)) {
 						mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
 					}
 
-					if (ImGui::MenuItem("Enable Sun Preview", "CTRL-F8", game::g_PrefsDlg()->preview_sun_aswell)) {
+					if (ImGui::MenuItem("Enable Sun Preview", get_hotkey_for_command("LightPreviewSun").c_str(), game::g_PrefsDlg()->preview_sun_aswell)) {
 						mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun
 					}
 
 					SEPERATORV(0.0f);
 					
-					if (ImGui::MenuItem("Start Previewing Selected", "SHIFT-F8")) {
+					if (ImGui::MenuItem("Start Previewing Selected", get_hotkey_for_command("LightPreviewStart").c_str())) {
 						mainframe_thiscall(void, 0x424120); // cmainframe::OnStartPreviewSelected
 					}
 
-					if (ImGui::MenuItem("Stop Previewing Selected", "SHIFT-ALT-F8")) {
+					if (ImGui::MenuItem("Stop Previewing Selected", get_hotkey_for_command("LightPreviewStop").c_str())) {
 						mainframe_thiscall(void, 0x424170); // cmainframe::OnStopPreviewSelected
 					}
 
-					if (ImGui::MenuItem("Clear Preview List", "ALT-F8")) {
+					if (ImGui::MenuItem("Clear Preview List", get_hotkey_for_command("LightPreviewClear").c_str())) {
 						mainframe_thiscall(void, 0x4241C0); // cmainframe::OnClearPreviewList
 					}
 
 					SEPERATORV(0.0f);
 					
-					if (ImGui::MenuItem("Preview At Max Intensity", "ALT-CTRL-F8", !game::g_qeglobals->preview_at_max_intensity)) {
+					if (ImGui::MenuItem("Preview At Max Intensity", get_hotkey_for_command("MaxLightIntensity").c_str(), !game::g_qeglobals->preview_at_max_intensity)) {
 						cdeclcall(void, 0x425670); // cmainframe::OnPreviewAtMaxIntensity
 					}
 
-					if (ImGui::MenuItem("Show Regions For Selected", "SHIFT-CTRL-F8")) {
+					if (ImGui::MenuItem("Show Regions For Selected", get_hotkey_for_command("LightPreviewRegions").c_str())) {
 						mainframe_thiscall(void, 0x4241E0); // cmainframe::OnShowRegionsForSelected
 					}
 
@@ -654,7 +1332,7 @@ namespace components
 
 				IMGUI_MENU_WIDGET_SINGLE("Cubic Scale", ImGui::DragInt("", &game::g_PrefsDlg()->m_nCubicScale, 1, 1, 220));
 
-				if (ImGui::MenuItem("Cubic Clipping", "CTRL-\\", game::g_PrefsDlg()->m_bCubicClipping)) {
+				if (ImGui::MenuItem("Cubic Clipping", get_hotkey_for_command("ToggleCubicClip").c_str(), game::g_PrefsDlg()->m_bCubicClipping)) {
 					mainframe_thiscall(void, 0x428F90); // cmainframe::OnViewCubicclipping
 				}
 
@@ -663,22 +1341,26 @@ namespace components
 
 			if (ImGui::BeginMenu("Selection"))
 			{
-				if (ImGui::MenuItem("Drag Edges", "E")) {
+				if (ImGui::MenuItem("Drag Edges", get_hotkey_for_command("DragEdges").c_str())) {
 					cdeclcall(void, 0x4257D0); // CMainFrame::OnSelectionDragedges
 				}
 
-				if (ImGui::MenuItem("Drag Vertices", "V")) {
+				if (ImGui::MenuItem("Drag Vertices", get_hotkey_for_command("DragVertices").c_str())) {
 					cdeclcall(void, 0x425840); // CMainFrame::OnSelectionDragVertices
 				}
 
 				SEPERATORV(0.0f);
 				
-				if (ImGui::MenuItem("Clone", "SPACE")) {
+				if (ImGui::MenuItem("Clone", get_hotkey_for_command("CloneSelection").c_str())) {
 					cdeclcall(void, 0x425480); // CMainFrame::OnSelectionClone
 				}
 
-				if (ImGui::MenuItem("Deselect", "ESCAPE")) {
+				if (ImGui::MenuItem("Deselect", get_hotkey_for_command("UnSelectSelection").c_str())) {
 					mainframe_thiscall(void, 0x425740); // CMainFrame::OnSelectionDeselect
+				}
+
+				if (ImGui::MenuItem("Invert", get_hotkey_for_command("InvertSelection").c_str())) {
+					cdeclcall(void, 0x42B6F0); // CMainFrame::OnSelectionInvert
 				}
 				
 				SEPERATORV(0.0f);
@@ -710,14 +1392,18 @@ namespace components
 						cdeclcall(void, 0x425190); // CMainFrame::OnBrushRotatey
 					}
 
-					if (ImGui::MenuItem("Rotate Z", "SHIFT-D")) {
+					if (ImGui::MenuItem("Rotate Z", get_hotkey_for_command("RotateZ").c_str())) {
 						cdeclcall(void, 0x425220); // CMainFrame::OnBrushRotatez
+					}
+
+					if (ImGui::MenuItem("Free Rotation", get_hotkey_for_command("MouseRotate").c_str())) {
+						mainframe_thiscall(void, 0x428570); // CMainFrame::OnSelectMouserotate
 					}
 
 					if (ImGui::MenuItem("Arbitrary Rotation")) {
 						cdeclcall(void, 0x425300); // CMainFrame::OnSelectionArbitraryrotation
 					}
-
+	
 					ImGui::EndMenu(); // Rotate
 				}
 
@@ -755,11 +1441,11 @@ namespace components
 						cdeclcall(void, 0x425570); // CMainFrame::OnSelectionMakehollow
 					}
 
-					if (ImGui::MenuItem("Merge", "CTRL-U")) {
+					if (ImGui::MenuItem("Merge", get_hotkey_for_command("CSGMerge").c_str())) {
 						cdeclcall(void, 0x4255D0); // CMainFrame::OnSelectionCsgmerge
 					}
 
-					if (ImGui::MenuItem("Auto Caulk", "ALT-C")) {
+					if (ImGui::MenuItem("Auto Caulk", get_hotkey_for_command("AutoCaulk").c_str())) {
 						cdeclcall(void, 0x425600); // CMainFrame::OnSelectionAutoCaulk
 					}
 
@@ -768,19 +1454,19 @@ namespace components
 
 				if (ImGui::BeginMenu("Clipper"))
 				{
-					if (ImGui::MenuItem("Toggle Clipper", "X")) {
+					if (ImGui::MenuItem("Toggle Clipper", get_hotkey_for_command("ToggleClipper").c_str())) {
 						mainframe_thiscall(void, 0x426510); // CMainFrame::OnViewClipper
 					}
 
-					if (ImGui::MenuItem("Clip Selected", "RETURN")) {
+					if (ImGui::MenuItem("Clip Selected", get_hotkey_for_command("ClipSelected").c_str())) {
 						mainframe_thiscall(void, 0x427170); // CMainFrame::OnClipSelected
 					}
 
-					if (ImGui::MenuItem("Split Selected", "SHIFT-RETURN")) {
+					if (ImGui::MenuItem("Split Selected", get_hotkey_for_command("SplitSelected").c_str())) {
 						mainframe_thiscall(void, 0x4271D0); // CMainFrame::OnSplitSelected
 					}
 
-					if (ImGui::MenuItem("Flip Clip Orientation", "CTRL-RETURN")) {
+					if (ImGui::MenuItem("Flip Clip Orientation", get_hotkey_for_command("FlipClip").c_str())) {
 						mainframe_thiscall(void, 0x427140); // CMainFrame::OnFlipClip
 					}
 
@@ -797,11 +1483,11 @@ namespace components
 					cdeclcall(void, 0x4263A0); // CMainFrame::OnSelectionClassname
 				}
 
-				if (ImGui::MenuItem("Select By Key/Value", "SHIFT-CTRL-F")) {
+				if (ImGui::MenuItem("Select By Key/Value", get_hotkey_for_command("SelectionKeyValue").c_str())) {
 					cdeclcall(void, 0x4263B0); // CMainFrame::OnSelectionKeyValue
 				}
 
-				if (ImGui::MenuItem("Select Connected", "ALT-CTRL-E")) {
+				if (ImGui::MenuItem("Select Connected", get_hotkey_for_command("SelectConnectedEntities").c_str())) {
 					cdeclcall(void, 0x425550); // CMainFrame::OnSelectConneted
 				}
 
@@ -828,29 +1514,37 @@ namespace components
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Connect Entities", "W")) {
+				if (ImGui::MenuItem("Connect Entities", get_hotkey_for_command("ConnectSelection").c_str())) {
 					cdeclcall(void, 0x425510); // CMainFrame::OnSelectionConnect
+				}
+
+				if (ImGui::MenuItem("Link Entities", get_hotkey_for_command("LinkSelected").c_str())) {
+					cdeclcall(void, 0x425500); // CMainFrame::OnLinkSelected
 				}
 
 				if (ImGui::MenuItem("Ungroup Entity")) {
 					cdeclcall(void, 0x426380); // CMainFrame::OnSelectionUngroupentity
 				}
 
+				if (ImGui::MenuItem("Cycle Group Selection", get_hotkey_for_command("Patch TAB").c_str())) {
+					cdeclcall(void, 0x42A9E0); // CMainFrame::OnPatchTab
+				} TT("Cycle between all brushes/patches of a selected group/brushmodel");
+
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Make Detail", "SHIFT-CTRL-D")) {
+				if (ImGui::MenuItem("Make Detail", get_hotkey_for_command("MakeDetail").c_str())) {
 					cdeclcall(void, 0x4261C0); // CMainFrame::OnSelectionMakeDetail
 				}
 
-				if (ImGui::MenuItem("Make Structural", "SHIFT-CTRL-S")) {
+				if (ImGui::MenuItem("Make Structural", get_hotkey_for_command("MakeStructural").c_str())) {
 					cdeclcall(void, 0x426200); // CMainFrame::OnSelectionMakeStructural
 				}
 				
-				if (ImGui::MenuItem("Make Weapon Clip", "SHIFT-CTRL-W")) {
+				if (ImGui::MenuItem("Make Weapon Clip", get_hotkey_for_command("MakeWeaponClip").c_str())) {
 					cdeclcall(void, 0x426240); // CMainFrame::OnSelectionMakeWeaponclip
 				}
 				
-				if (ImGui::MenuItem("Make Non-Colliding", "SHIFT-CTRL-MINUS")) {
+				if (ImGui::MenuItem("Make Non-Colliding", get_hotkey_for_command("MakeNonColliding").c_str())) {
 					cdeclcall(void, 0x426280); // CMainFrame::OnSelectionMakeNonColliding
 				}
 				
@@ -869,35 +1563,35 @@ namespace components
 
 			if (ImGui::BeginMenu("Grid"))
 			{
-				if (ImGui::MenuItem("Grid 0.5", "~", game::g_qeglobals->d_gridsize == GRID_05)) {
+				if (ImGui::MenuItem("Grid 0.5", get_hotkey_for_command("SetGridPointFive").c_str(), game::g_qeglobals->d_gridsize == GRID_05)) {
 					set_grid_size(GRID_05);
 				}
 
-				if (ImGui::MenuItem("Grid 1", "1", game::g_qeglobals->d_gridsize == GRID_1)) {
+				if (ImGui::MenuItem("Grid 1", get_hotkey_for_command("SetGrid1").c_str(), game::g_qeglobals->d_gridsize == GRID_1)) {
 					set_grid_size(GRID_1);
 				}
 
-				if (ImGui::MenuItem("Grid 2", "2", game::g_qeglobals->d_gridsize == GRID_2)) {
+				if (ImGui::MenuItem("Grid 2", get_hotkey_for_command("SetGrid2").c_str(), game::g_qeglobals->d_gridsize == GRID_2)) {
 					set_grid_size(GRID_2);
 				}
 
-				if (ImGui::MenuItem("Grid 4", "3", game::g_qeglobals->d_gridsize == GRID_4)) {
+				if (ImGui::MenuItem("Grid 4", get_hotkey_for_command("SetGrid4").c_str(), game::g_qeglobals->d_gridsize == GRID_4)) {
 					set_grid_size(GRID_4);
 				}
 
-				if (ImGui::MenuItem("Grid 8", "4", game::g_qeglobals->d_gridsize == GRID_8)) {
+				if (ImGui::MenuItem("Grid 8", get_hotkey_for_command("SetGrid8").c_str(), game::g_qeglobals->d_gridsize == GRID_8)) {
 					set_grid_size(GRID_8);
 				}
 
-				if (ImGui::MenuItem("Grid 16", "5", game::g_qeglobals->d_gridsize == GRID_16)) {
+				if (ImGui::MenuItem("Grid 16", get_hotkey_for_command("SetGrid16").c_str(), game::g_qeglobals->d_gridsize == GRID_16)) {
 					set_grid_size(GRID_16);
 				}
 
-				if (ImGui::MenuItem("Grid 32", "6", game::g_qeglobals->d_gridsize == GRID_32)) {
+				if (ImGui::MenuItem("Grid 32", get_hotkey_for_command("SetGrid32").c_str(), game::g_qeglobals->d_gridsize == GRID_32)) {
 					set_grid_size(GRID_32);
 				}
 
-				if (ImGui::MenuItem("Grid 64", "7", game::g_qeglobals->d_gridsize == GRID_64)) {
+				if (ImGui::MenuItem("Grid 64", get_hotkey_for_command("SetGrid64").c_str(), game::g_qeglobals->d_gridsize == GRID_64)) {
 					set_grid_size(GRID_64);
 				}
 
@@ -905,15 +1599,15 @@ namespace components
 					set_grid_size(GRID_128);
 				}
 
-				if (ImGui::MenuItem("Grid 256", "8", game::g_qeglobals->d_gridsize == GRID_256)) {
+				if (ImGui::MenuItem("Grid 256", get_hotkey_for_command("SetGrid256").c_str(), game::g_qeglobals->d_gridsize == GRID_256)) {
 					set_grid_size(GRID_256);
 				}
 
-				if (ImGui::MenuItem("Grid 512", "9", game::g_qeglobals->d_gridsize == GRID_512)) {
+				if (ImGui::MenuItem("Grid 512", get_hotkey_for_command("SetGrid512").c_str(), game::g_qeglobals->d_gridsize == GRID_512)) {
 					set_grid_size(GRID_512);
 				}
 
-				if (ImGui::MenuItem("Snap To Grid", "ALT-CTRL-G", !game::g_PrefsDlg()->m_bNoClamp)) {
+				if (ImGui::MenuItem("Snap To Grid", get_hotkey_for_command("ToggleSnapToGrid").c_str(), !game::g_PrefsDlg()->m_bNoClamp)) {
 					mainframe_thiscall(void, 0x428380); // CMainFrame::OnSnaptogrid
 				}
 
@@ -923,15 +1617,15 @@ namespace components
 
 			if (ImGui::BeginMenu("Textures"))
 			{
-				if (ImGui::MenuItem("Show All", "CTRL-A")) {
+				if (ImGui::MenuItem("Show All", get_hotkey_for_command("ShowAllTextures").c_str())) {
 					cdeclcall(void, 0x42B440); // CMainFrame::OnTexturesShowall
 				}
 
-				if (ImGui::MenuItem("Show In Use", "U")) {
+				if (ImGui::MenuItem("Show In Use", get_hotkey_for_command("ShowTexturesInUse").c_str())) {
 					mainframe_thiscall(void, 0x424B20); // CMainFrame::OnTexturesShowinuse
 				}
 
-				if (ImGui::MenuItem("Surface Inspector", "S")) {
+				if (ImGui::MenuItem("Surface Inspector", get_hotkey_for_command("SurfaceInspector").c_str())) {
 					cdeclcall(void, 0x424B60); // CMainFrame::OnTexturesInspector
 				}
 
@@ -1035,15 +1729,15 @@ namespace components
 
 				if (ImGui::BeginMenu("Texture Lock"))
 				{
-					if (ImGui::MenuItem("Moves", 0, game::g_PrefsDlg()->m_bTextureLock == 1)) {
+					if (ImGui::MenuItem("Moves", get_hotkey_for_command("ToggleTexMoveLock").c_str(), game::g_PrefsDlg()->m_bTextureLock == 1)) {
 						mainframe_thiscall(void, 0x426B80); // CMainFrame::OnToggleLockMoves
 					}
 
-					if (ImGui::MenuItem("Rotations", 0, game::g_PrefsDlg()->m_bRotateLock == 1)) {
+					if (ImGui::MenuItem("Rotations", get_hotkey_for_command("ToggleTexRotateLock").c_str(), game::g_PrefsDlg()->m_bRotateLock == 1)) {
 						mainframe_thiscall(void, 0x429230); // CMainFrame::OnToggleLockRotations
 					}
 
-					if (ImGui::MenuItem("Lightmaps", 0, game::g_PrefsDlg()->m_bLightmapLock == 1)) {
+					if (ImGui::MenuItem("Lightmaps", get_hotkey_for_command("ToggleLightmapLock").c_str(), game::g_PrefsDlg()->m_bLightmapLock == 1)) {
 						mainframe_thiscall(void, 0x426BF0); // CMainFrame::OnToggleLockLightmap
 					}
 					
@@ -1054,11 +1748,11 @@ namespace components
 
 				if (ImGui::BeginMenu("Layered Materials"))
 				{
-					if (ImGui::MenuItem("Toogle Tool Window", "F4")) {
+					if (ImGui::MenuItem("Toogle Tool Window", get_hotkey_for_command("ToggleLayeredMaterialWnd").c_str())) {
 						cdeclcall(void, 0x42BFE0); // CMainFrame::OnToggleLayeredMaterials
 					}
 
-					if (ImGui::MenuItem("Save")) {
+					if (ImGui::MenuItem("Save", get_hotkey_for_command("SaveLayeredMaterials").c_str())) {
 						cdeclcall(void, 0x42C020); // CMainFrame::OnSaveLayeredMaterials
 					}
 					
@@ -1067,17 +1761,17 @@ namespace components
 
 				if (ImGui::BeginMenu("Edit Layer"))
 				{
-					if (ImGui::MenuItem("Cycle", "SHIFT-L")) {
+					if (ImGui::MenuItem("Cycle", get_hotkey_for_command("TexLayerCycle").c_str())) {
 						cdeclcall(void, 0x424010); // CMainFrame::OnEditLayerCycle
 					}
 
 					SEPERATORV(0.0f);
 
-					if (ImGui::MenuItem("Material", 0, game::g_qeglobals->current_edit_layer == 0)) {
+					if (ImGui::MenuItem("Material", get_hotkey_for_command("TexLayerMaterial").c_str(), game::g_qeglobals->current_edit_layer == 0)) {
 						cdeclcall(void, 0x424030); // CMainFrame::OnEditLayerMaterial
 					}
 
-					if (ImGui::MenuItem("Lightmap", 0, game::g_qeglobals->current_edit_layer == 1)) {
+					if (ImGui::MenuItem("Lightmap", get_hotkey_for_command("TexLayerLightmap").c_str(), game::g_qeglobals->current_edit_layer == 1)) {
 						cdeclcall(void, 0x424040); // CMainFrame::OnEditLayerLightmap
 					}
 
@@ -1088,7 +1782,7 @@ namespace components
 					ImGui::EndMenu(); // Edit Layer
 				}
 
-				if (ImGui::MenuItem("Refresh Textures", "F5")) {
+				if (ImGui::MenuItem("Refresh Textures", get_hotkey_for_command("RefreshTextures").c_str())) {
 					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
 				}
 
@@ -1172,11 +1866,11 @@ namespace components
 					cdeclcall(void, 0x424BA0); // CMainFrame::OnMiscGoToPosition
 				}
 
-				if (ImGui::MenuItem("-> Leak Spot / Error", "SHIFT-CTRL-K")) {
+				if (ImGui::MenuItem("-> Leak Spot / Error", get_hotkey_for_command("NextLeakSpot").c_str())) {
 					cdeclcall(void, 0x424BC0); // CMainFrame::OnMiscNextleakspot
 				}
 
-				if (ImGui::MenuItem("<- Leak Spot / Error", "SHIFT-CTRL-L")) {
+				if (ImGui::MenuItem("<- Leak Spot / Error", get_hotkey_for_command("PrevLeakSpot").c_str())) {
 					cdeclcall(void, 0x424BE0); // CMainFrame::OnMiscPreviousleakspot
 				}
 
@@ -1184,7 +1878,7 @@ namespace components
 					cdeclcall(void, 0x424C00); // CMainFrame::OnMiscPrintxy
 				}
 
-				if (ImGui::MenuItem("Entity Color Dialog", "K")) {
+				if (ImGui::MenuItem("Entity Color Dialog", get_hotkey_for_command("EntityColor").c_str())) {
 					cdeclcall(void, 0x424C10); // CMainFrame::OnMiscSelectentitycolor
 				}
 
@@ -1196,11 +1890,11 @@ namespace components
 					cdeclcall(void, 0x424E30); // CMainFrame::OnDeleteExportables
 				}
 
-				if (ImGui::MenuItem("Vehicle Group Dialog", "SHIFT-V")) {
+				if (ImGui::MenuItem("Vehicle Group Dialog", get_hotkey_for_command("VehicleGroup").c_str())) {
 					cdeclcall(void, 0x42BD50); // CMainFrame::OnMiscVehicleGroup
 				}
 
-				if (ImGui::MenuItem("Dyn Entity Dialog")) {
+				if (ImGui::MenuItem("Dyn Entity Dialog", get_hotkey_for_command("DynEntities").c_str())) {
 					cdeclcall(void, 0x42BD90); // CMainFrame::OnMiscDynEntities
 				}
 				
@@ -1209,7 +1903,7 @@ namespace components
 				}
 
 				// no clue what that does
-				if (ImGui::MenuItem("Cycle Preview Models")) {
+				if (ImGui::MenuItem("Cycle Preview Models", get_hotkey_for_command("TogglePreviewModels").c_str())) {
 					mainframe_thiscall(void, 0x42BDD0); // CMainFrame::OnMiscCyclePreviewModels
 				}
 				
@@ -1339,7 +2033,7 @@ namespace components
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Advanced Edit Dialog", "Y")) {
+				if (ImGui::MenuItem("Advanced Edit Dialog", get_hotkey_for_command("AdvancedCurveEdit").c_str())) {
 					cdeclcall(void, 0x42BC90); // CMainFrame::OnAdvancedEditDlg
 				}
 
@@ -1353,16 +2047,20 @@ namespace components
 						cdeclcall(void, 0x42A790); // CMainFrame::OnCurveInsertInsertrow
 					}
 
-					if (ImGui::MenuItem("Add 2 Columns")) {
+					if (ImGui::MenuItem("Add 2 Columns", get_hotkey_for_command("IncPatchColumn").c_str())) {
 						cdeclcall(void, 0x42A6A0); // CMainFrame::OnCurveInsertAddcolumn
 					}
 
-					if (ImGui::MenuItem("Add 2 Rows")) {
+					if (ImGui::MenuItem("Add 2 Rows", get_hotkey_for_command("IncPatchRow").c_str())) {
 						cdeclcall(void, 0x42A6F0); // CMainFrame::OnCurveInsertAddrow
 					}
 
-					if (ImGui::MenuItem("Add Terrain Row / Column")) {
+					if (ImGui::MenuItem("Add Terrain Row / Column", get_hotkey_for_command("AddTerrainRow").c_str())) {
 						cdeclcall(void, 0x42B080); // CMainFrame::OnAddTerrainRowColumn
+					}
+
+					if (ImGui::MenuItem("Extrude Terrain Row", get_hotkey_for_command("ExtrudeTerrainRow").c_str())) {
+						cdeclcall(void, 0x42B0A0); // CMainFrame::ExtrudeTerrainRow
 					}
 					
 					ImGui::EndMenu(); // Insert
@@ -1370,11 +2068,11 @@ namespace components
 
 				if (ImGui::BeginMenu("Delete"))
 				{
-					if (ImGui::MenuItem("First 2 Columns")) {
+					if (ImGui::MenuItem("First 2 Columns", get_hotkey_for_command("DecPatchColumn").c_str())) {
 						cdeclcall(void, 0x42A810); // CMainFrame::OnCurveDeleteFirstcolumn
 					}
 
-					if (ImGui::MenuItem("First 2 Rows")) {
+					if (ImGui::MenuItem("First 2 Rows", get_hotkey_for_command("DecPatchRow").c_str())) {
 						cdeclcall(void, 0x42A860); // CMainFrame::OnCurveDeleteFirstrow
 					}
 
@@ -1386,7 +2084,7 @@ namespace components
 						cdeclcall(void, 0x42A900); // CMainFrame::OnCurveDeleteLastrow
 					}
 
-					if (ImGui::MenuItem("Remove Terrain Row / Column")) {
+					if (ImGui::MenuItem("Remove Terrain Row / Column", get_hotkey_for_command("RemoveTerrainRow").c_str())) {
 						cdeclcall(void, 0x42B0B0); // CMainFrame::OnRemoveTerrainRowColumn
 					}
 					
@@ -1395,34 +2093,39 @@ namespace components
 
 				if (ImGui::BeginMenu("Matrix"))
 				{
-					if (ImGui::MenuItem("Transpose")) {
+					if (ImGui::MenuItem("Transpose", get_hotkey_for_command("PatchMatrixTranspose").c_str())) {
 						cdeclcall(void, 0x42B1E0); // CMainFrame::OnCurveMatrixTranspose
 					}
-
-					if (ImGui::MenuItem("Re-disperse Columns")) {
+					
+					if (ImGui::MenuItem("Re-disperse Vertices", get_hotkey_for_command("RedisperseVertices").c_str())) {
+						cdeclcall(void, 0x42A270); // CMainFrame::OnRedistPatchPoints
+					}
+					
+					if (ImGui::MenuItem("Re-disperse Columns", get_hotkey_for_command("RedisperseCols").c_str())) {
 						cdeclcall(void, 0x42AD80); // CMainFrame::OnCurveRedisperseCols
 					}
 
-					if (ImGui::MenuItem("Re-disperse Rows")) {
+					if (ImGui::MenuItem("Re-disperse Rows", get_hotkey_for_command("RedisperseRows").c_str())) {
 						cdeclcall(void, 0x42AD90); // CMainFrame::OnCurveRedisperseRows
 					}
 
 					ImGui::EndMenu(); // Matrix
 				}
 
-				if (ImGui::MenuItem("Split", "SHIFT-CTRL-X")) {
+				if (ImGui::MenuItem("Split", get_hotkey_for_command("SplitPatch").c_str())) {
 					cdeclcall(void, 0x42B0C0); // CMainFrame::OnSplitPatch
 				}
 
-				if (ImGui::MenuItem("Invert", "CTRL-I")) {
+				// TODO: add 'InvertCurveTextureX' and 'InvertCurveTextureY'
+				if (ImGui::MenuItem("Invert", get_hotkey_for_command("InvertCurve").c_str())) {
 					cdeclcall(void, 0x42A7E0); // CMainFrame::OnCurveNegative
 				}
 
-				if (ImGui::MenuItem("Thicken", "SHIFT-CTRL-T")) {
+				if (ImGui::MenuItem("Thicken", get_hotkey_for_command("ThickenPatch").c_str())) {
 					cdeclcall(void, 0x42B0D0); // CMainFrame::OnCurveThicken
 				}
 
-				if (ImGui::MenuItem("Cap", "SHIFT-C")) {
+				if (ImGui::MenuItem("Cap", get_hotkey_for_command("CapCurrentCurve").c_str())) {
 					cdeclcall(void, 0x42AD40); // CMainFrame::OnCurveCap
 				}
 
@@ -1432,25 +2135,25 @@ namespace components
 					cdeclcall(void, 0x4294E0); // CMainFrame::OnTurnTerrainEdges
 				}
 
-				if (ImGui::MenuItem("Lock Vertices", "CTRL-PERIOD")) {
+				if (ImGui::MenuItem("Lock Vertices", get_hotkey_for_command("ToggleLockPatchVertices").c_str())) {
 					mainframe_thiscall(void, 0x42B4F0); // CMainFrame::ToggleLockPatchVertMode
 				}
 
-				if (ImGui::MenuItem("Unlock Vertices", "SHIFT-CTRL-PERIOD")) {
+				if (ImGui::MenuItem("Unlock Vertices", get_hotkey_for_command("ToggleUnlockPatchVertices").c_str())) {
 					mainframe_thiscall(void, 0x42B510); // CMainFrame::ToggleUnlockPatchVertMode
 				}
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Cycle Cap Texture", "SHIFT-CTRL-N")) {
+				if (ImGui::MenuItem("Cycle Cap Texture", get_hotkey_for_command("CycleCapTexturePatch").c_str())) {
 					cdeclcall(void, 0x42B1A0); // CMainFrame::OnCurveCyclecap
 				}
 				
-				if (ImGui::MenuItem("Vert Edit Dialog", "G")) {
+				if (ImGui::MenuItem("Vert Edit Dialog", get_hotkey_for_command("VertEdit").c_str())) {
 					cdeclcall(void, 0x42BCD0); // CMainFrame::OnVertexEditDlg
 				}
 
-				if (ImGui::MenuItem("Cap Texture", "SHIFT-CTRL-P")) {
+				if (ImGui::MenuItem("Cap Texture", get_hotkey_for_command("ApplyPatchCap").c_str())) {
 					cdeclcall(void, 0x42AE50); // CMainFrame::OnPatchCap
 				}
 				
@@ -1466,12 +2169,17 @@ namespace components
 					cdeclcall(void, 0x426E00); // CMainFrame::OnHelpCommandlist
 				}
 
+				if (ImGui::MenuItem("Command Binds")) {
+					gui::toggle(context.m_cmdbinds, 0, true);
+				}
+
 				// TODO! implement about
 				
 				
 				ImGui::EndMenu(); // Help
 			}
-			
+
+			ImGui::PopStyleVar(2); // ImGuiStyleVar_WindowPadding | ImGuiStyleVar_ItemSpacing
 			ImGui::EndMenuBar();
 		}
 
@@ -1479,9 +2187,6 @@ namespace components
 		// *
 		// create default docking layout
 
-		// TODO! create seperate dockspace for the toolbar - with ImGuiDockNodeFlags_AutoHideTabBar
-		// TODO! create another dockspace for all other windows - without ImGuiDockNodeFlags_AutoHideTabBar
-		
 		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 		{
 			ImGuiID dockspace_id = ImGui::GetID("cxywnd_dockspace_layout");
@@ -1498,12 +2203,12 @@ namespace components
 				ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
 
 				// create toolbar dockspace
-				auto dock_toolbar = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Up, 0.05f, nullptr, &dockspace_id);
-				ImGui::DockBuilderSetNodeSize(dock_toolbar, ImVec2(viewport->Size.x, 36));
+				auto dock_toolbar = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Up, 0.01f, nullptr, &dockspace_id);
+				ImGui::DockBuilderSetNodeSize(dock_toolbar, ImVec2(viewport->Size.x, 16)); // 36
 
 				// ^ undockable toolbar without tabbar
 				ImGuiDockNode* node = ImGui::DockBuilderGetNode(dock_toolbar);
-				node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe | ImGuiDockNodeFlags_NoDockingSplitMe;
+				node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe | ImGuiDockNodeFlags_NoDockingSplitMe | ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_NoResizeY;
 				
 				// split the resulting node (dockspace_id) -> dockspace_id will be everything to the right of the split
 				const float split_ratio_left = viewport->Size.x < 1000.0f ? 0.5f : (1.0f / viewport->Size.x) * 500.0f;
@@ -1511,39 +2216,30 @@ namespace components
 				
 				// we now dock our windows into the docking node we made above
 				ImGui::DockBuilderDockWindow("toolbar_xywnd", dock_toolbar);
-				ImGui::DockBuilderDockWindow("colors_xywnd", dock_id_left);
-				//ImGui::DockBuilderDockWindow("test_gui2", dockspace_id);
+				ImGui::DockBuilderDockWindow("Colors##xywnd", dock_id_left);
+				ImGui::DockBuilderDockWindow("Hotkeys##xywnd", dock_id_left);
 				
 				ImGui::DockBuilderFinish(dockspace_id);
 			}
 		}
-		
-		//ImGui::PopStyleColor(1);
+
 		ImGui::End();
 		
 		// ----------------------------
-
-		/*ImGui::Begin("test_gui1", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-		ImGui::Text("Hello, left!");
-		ImGui::End();
-
-		ImGui::Begin("test_gui2", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-		ImGui::Text("Hello, right!");
-		ImGui::End();*/
-
-		// ----------------------------
-
 
 		// *
 		// create toolbar window
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(1.0f, 4.0f));		_stylevars++;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));	_stylevars++;
 
-		ImGui::PushStyleColor(ImGuiCol_Border, (ImVec4)ImColor(1, 1, 1, 0));			_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_Border, (ImVec4)ImColor(1, 1, 1, 0));		_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(100, 100, 100, 70));	_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 70));		_stylecolors++;
 
+		//ImGui::SetNextWindowSizeConstraints(ImVec2(0.0f, 36.0f), ImVec2(FLT_MAX, 36.0f));
+		
 		ImGui::Begin("toolbar_xywnd", nullptr, 
 			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar
 		);
@@ -1559,8 +2255,8 @@ namespace components
 		toolbar_menu.size[0] = viewport->Size.x; //static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.width); //ImGui::GetWindowWidth();
 		toolbar_menu.size[1] = 40.0f;
 
-		ImGui::SetWindowPos(ImVec2(toolbar_menu.position[0], toolbar_menu.position[1]), ImGuiCond_FirstUseEver);
-		ImGui::SetWindowSize(ImVec2(toolbar_menu.size[0], toolbar_menu.size[1]), ImGuiCond_FirstUseEver);
+		//ImGui::SetWindowPos(ImVec2(toolbar_menu.position[0], toolbar_menu.position[1]), ImGuiCond_FirstUseEver);
+		//ImGui::SetWindowSize(ImVec2(toolbar_menu.size[0], toolbar_menu.size[1]), ImGuiCond_FirstUseEver);
 
 		
 		// *
@@ -1687,6 +2383,14 @@ namespace components
 			game::CPrefsDlg_SavePrefs();
 		}
 
+		// TODO! - do not show on the main toolbar
+		ImGui::SameLine();
+		if (ImGui::Button("Reload Commandmap"))
+		{
+			// CMainFrame::LoadCommandMap
+			cdeclcall(void, 0x421230);
+		}
+
 	END_GUI:
 		ImGui::PopStyleColor(_stylecolors);
 		ImGui::PopStyleVar(_stylevars);
@@ -1726,6 +2430,9 @@ namespace components
 
 			// TODO! always show demo window (for now)
 			//ImGui::ShowDemoWindow(nullptr);
+
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.ccamerawnd.m_demo,
+				ImGui::ShowDemoWindow(&ggui::state.ccamerawnd.m_demo.menustate), nullptr);
 			
 			// end the current context frame
 			goto END_FRAME;
@@ -1757,11 +2464,20 @@ namespace components
 			cxywnd_gui(ggui::state.cxywnd);
 
 			//color_menu(ggui::state.cxywnd.m_colors); // always open
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_colors, color_menu(ggui::state.cxywnd.m_colors));
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_colors, 
+				color_menu(ggui::state.cxywnd.m_colors), nullptr);
 
+			// toggleable command bind menu
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_cmdbinds, 
+				cmdbinds_menu(ggui::state.cxywnd.m_cmdbinds), cmdbinds_on_close());
+
+			// toggleable command bind helper menu
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_cmdbinds_helper,
+				cmdbinds_helper_menu(ggui::state.cxywnd.m_cmdbinds_helper), nullptr);
+			
 			// toggleable demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_demo,
-					ImGui::ShowDemoWindow(&ggui::state.cxywnd.m_demo.menustate));
+					ImGui::ShowDemoWindow(&ggui::state.cxywnd.m_demo.menustate), nullptr);
 
 			// end the current context frame
 			goto END_FRAME;
@@ -1910,11 +2626,22 @@ namespace components
 	// *
 	gui::gui()
 	{
-		command::register_command("demo"s, [](std::vector<std::string> args)
+		// replace hardcoded hotkeys with our own (ini)
+		utils::hook(0x420A4F, load_commandmap, HOOK_CALL).install()->quick();
+		
+		// load/skip the original commandmap (depends if iw3r_hotkeys.ini exists or not)
+		utils::hook(0x4210BF, load_default_commandmap, HOOK_CALL).install()->quick();
+
+		
+		command::register_command("xydemo"s, [](std::vector<std::string> args)
 		{
 			gui::toggle(ggui::state.cxywnd.m_demo, 0, true);
 		});
-		
+
+		command::register_command("camdemo"s, [](std::vector<std::string> args)
+		{
+			gui::toggle(ggui::state.ccamerawnd.m_demo, 0, true);
+		});
 
 		command::register_command("menubar_show"s, [](std::vector<std::string> args)
 		{

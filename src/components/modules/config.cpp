@@ -21,15 +21,14 @@ namespace components
 			std::ifstream cfgFile;
 
 			std::string filePath = dvars::fs_homepath->current.string;
-			filePath += "\\iw3r.cfg";
+						filePath += "\\iw3r_dvars.cfg";
 
-			printf("[CFG] Executing config \"bin/iw3r.cfg\"\n");
+			printf("[CFG] Executing config \"bin/iw3r_dvars.cfg\"\n");
 
 			cfgFile.open(filePath.c_str());
-
 			if (!cfgFile.is_open())
 			{
-				printf(utils::va("|-> Could not find \"iw3r.cfg\" in \"%s\". Loading defaults!\n", dvars::fs_homepath->current.string));
+				printf("|-> Could not find \"iw3r_dvars.cfg\" in \"%s\". Loading defaults!\n", dvars::fs_homepath->current.string);
 				
 				dvars::register_addon_dvars();
 				game::glob::radiant_config_not_found = true;
@@ -37,7 +36,7 @@ namespace components
 			}
 
 			std::string input;
-			std::vector < std::string > args;
+			std::vector<std::string> args;
 
 			// read line by line
 			while (std::getline(cfgFile, input))
@@ -48,31 +47,28 @@ namespace components
 					continue;
 				}
 
-				// meh but it works
-#pragma warning( disable : 4305 4309 )
-
-				if (input.find(' "') != std::string::npos)
+				// ignore lines not containing ' "'
+				if (input.find(" \"") == std::string::npos)
 				{
-					// split the string on the first space following a " (gets us 3 args)
-					args = utils::split(input, ' "');
-				}
-
-				else 
-				{
-					args.push_back(input);
-				}
-
-#pragma warning( default : 4305 4309)
-
-				// we should always get 3 args this way
-				if (args.size() != 3)
-				{
-					printf(utils::va("|-> skipping line: %s :: failed to parse args\n", input.c_str()));
 					continue;
 				}
 
+#pragma warning( disable : 4305 4309 )
+				// split the string on the first space following a " => 3 args (trash)
+				args = utils::split(input, ' "');
+#pragma warning( default : 4305 4309)
+
+				if (args.size() != 3)
+				{
+					printf("|-> skipping line: %s :: failed to parse args\n", input.c_str());
+					continue;
+				}
+
+				// remove trailing space on dvar name
+				utils::rtrim(args[0]);
+				
 				// remove the leftover space on the dvar name
-				utils::erase_substring(args[0], " ");
+				//utils::erase_substring(args[0], " ");
 
 				// Dvar_SetFromStringByNameFromSource
 				game::dvar_s* dvar = game::Dvar_FindVar(args[0].c_str());
@@ -97,7 +93,7 @@ namespace components
 			printf("|-> fs_homepath->current.string was NULL. Loading defaults!\n");
 		}
 
-		printf(utils::va("|-> loaded %d dvars from disk.\n", loadedDvarCount));
+		printf("|-> loaded %d dvars from disk.\n", loadedDvarCount);
 
 		// register all addon dvars
 		dvars::register_addon_dvars();
@@ -131,18 +127,18 @@ namespace components
 		// path to radiant
 		if (dvars::fs_homepath)
 		{
-			game::dvar_s*	dvar;
+			game::dvar_s* dvar;
 			
-			std::string		filePath = dvars::fs_homepath->current.string;
-							filePath += "\\iw3r.cfg";
+			std::string	filePath = dvars::fs_homepath->current.string;
+						filePath += "\\iw3r_dvars.cfg";
 
-			printf("[CFG] Writing config \"iw3r.cfg\"\n");
+			printf("[CFG] Writing config \"iw3r_dvars.cfg\"\n");
 
 			cfgFile.open(filePath.c_str());
 
 			if (!cfgFile.is_open())
 			{
-				game::Com_Error("Could not create iw3r.cfg. Aborting!\n");
+				game::Com_Error("Could not create iw3r_dvars.cfg. Aborting!\n");
 				return;
 			}
 

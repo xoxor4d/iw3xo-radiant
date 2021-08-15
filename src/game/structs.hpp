@@ -1293,6 +1293,14 @@ namespace game
 		undo_s* next;
 	};
 
+	struct SCommandInfo
+	{
+		char* m_strCommand;
+		unsigned int m_nKey;
+		unsigned int m_nModifiers;
+		unsigned int m_nCommand;
+	};
+	
 	enum ENTITY_DEFS
 	{
 		ENTITY_WIREFRAME		= 0x1,
@@ -1565,6 +1573,8 @@ namespace ggui
 		game::GfxWindowTarget* dx_window;
 		imgui_context_menu m_toolbar;
 		imgui_context_menu m_colors;
+		imgui_context_menu m_cmdbinds;
+		imgui_context_menu m_cmdbinds_helper;
 		imgui_context_menu m_demo;
 	};
 
