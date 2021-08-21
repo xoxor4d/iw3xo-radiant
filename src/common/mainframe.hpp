@@ -9,9 +9,6 @@
 
 class cmainframe : public CFrameWnd
 {
-	// why?? D:
-	//friend BOOL Init();
-
 private:
 	// Do not allow this class to be instanced
 	cmainframe() = delete;
@@ -22,7 +19,6 @@ public:
 	CLstToolBar m_wndToolBar;
 	CDialogBar m_wndHelpBar;
 	CTextureBar m_wndTextureBar;
-	//BYTE gap02[0x294]; //0x4F4 //0x598 //0x650 //1764 //1892 //1976
 	CSplitterWnd m_wndSplit;
 	CSplitterWnd m_wndSplit2;
 	CSplitterWnd m_wndSplit3;
@@ -41,20 +37,20 @@ public:
 
 	//
 	static cmainframe* activewnd;
-
-	static bool					is_combined_view() { return cmainframe::activewnd->m_nCurrentStyle; };
 	
 	static void					main();
+	static bool					is_combined_view() { return cmainframe::activewnd->m_nCurrentStyle; };
+	
 	static LRESULT __fastcall	windowproc(cmainframe* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static void __fastcall		on_mscroll(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point);
 	static void __fastcall		on_keydown(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags);
 	static void __stdcall		on_keyup(cmainframe* pThis, UINT nChar);
 
-	void						routine_processing(void);
 	void						update_windows(int nBits);
+	void						routine_processing(void);
+	static void					hk_routine_processing(void);
 
-	static void					hk_RoutineProcessing(void);
-	static void					hk_DefWindowProc(void);
+	static void					register_dvars();
 };
 STATIC_ASSERT_OFFSET(cmainframe, m_wndStatusBar, 0xD4);
 STATIC_ASSERT_OFFSET(cmainframe, m_wndToolBar, 0x16C);

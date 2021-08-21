@@ -993,6 +993,29 @@ namespace components
 		}
 	}
 
+	void remote_net::register_dvars()
+	{
+		dvars::radiant_live = dvars::register_bool(
+			/* name		*/ "radiant_live",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "enables radiant <-> game link.");
+
+		dvars::radiant_livePort = dvars::register_int(
+			/* name		*/	"radiant_livePort",
+			/* default	*/	3700,
+			/* mins		*/	0,
+			/* maxs		*/	99999,
+			/* flags	*/	game::dvar_flags::saved,
+			/* desc		*/	"port to be used for live-link.");
+
+		dvars::radiant_liveDebug = dvars::register_bool(
+			/* name		*/ "radiant_liveDebug",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "enables debug prints.");
+	}
+
 	remote_net::remote_net()
 	{
 		utils::hook(0x59E453, cframewnd_on_close_stub, HOOK_JUMP).install()->quick();

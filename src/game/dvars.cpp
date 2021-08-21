@@ -5,6 +5,12 @@ namespace dvars
 	game::dvar_s* gui_menubar_bg_color = nullptr;
 	game::dvar_s* gui_dockedwindow_bg_color = nullptr;
 	game::dvar_s* gui_window_bg_color = nullptr;
+
+	//
+	game::dvar_s* mainframe_show_console = nullptr;
+	game::dvar_s* mainframe_show_zview = nullptr;
+	game::dvar_s* mainframe_show_toolbar = nullptr;
+	game::dvar_s* mainframe_show_menubar = nullptr;
 	
 	// radiant-live
 	game::dvar_s* radiant_live = nullptr;
@@ -75,27 +81,9 @@ namespace dvars
 		printf("[dvars]: register_addon_dvars() start ...\n");
 
 		components::gui::register_dvars();
-
-		dvars::radiant_live = dvars::register_bool(
-			/* name		*/ "radiant_live",
-			/* default	*/ true,
-			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "enables radiant <-> game link.");
-
-		dvars::radiant_livePort = dvars::register_int(
-			/* name		*/	"radiant_livePort",
-			/* default	*/	3700,
-			/* mins		*/	0,
-			/* maxs		*/	99999,
-			/* flags	*/	game::dvar_flags::saved,
-			/* desc		*/	"port to be used for live-link.");
-
-		dvars::radiant_liveDebug = dvars::register_bool(
-			/* name		*/ "radiant_liveDebug",
-			/* default	*/ false,
-			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "enables debug prints.");
-
+		components::remote_net::register_dvars();
+		cmainframe::register_dvars();
+		
 		printf("\n");
 	}
 }

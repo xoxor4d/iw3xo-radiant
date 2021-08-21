@@ -52,23 +52,91 @@ void cmainframe::routine_processing()
 	}
 
 	game::glob::radiant_initiated = true;
+
+	// toggle toolbar by dvar
+	if (cmainframe::activewnd->m_wndToolBar.m_hWnd)
+	{
+		typedef void(__thiscall* CFrameWnd_ShowControlBar_t)(CFrameWnd*, CControlBar*, BOOL bShow, BOOL bDelay);
+					  const auto CFrameWnd_ShowControlBar = reinterpret_cast<CFrameWnd_ShowControlBar_t>(0x59E9DD);
+		
+		bool is_visible = reinterpret_cast<CToolBar_vtbl*>(cmainframe::activewnd->m_wndToolBar.__vftable)->IsVisible(&cmainframe::activewnd->m_wndToolBar);
+
+		if (dvars::mainframe_show_toolbar->current.enabled && !is_visible)
+		{
+			CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndToolBar, 1, 1);
+		}
+		else if(!dvars::mainframe_show_toolbar->current.enabled && is_visible)
+		{
+			CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndToolBar, 0, 1);
+		}
+	}
+
+	// toggle menubar by dvar
+	if (dvars::mainframe_show_menubar->current.enabled && !ggui::mainframe_menubar_enabled)
+	{
+		components::command::execute("menubar_show");
+		game::CPrefsDlg_SavePrefs();
+	}
+	else if(!dvars::mainframe_show_menubar->current.enabled && ggui::mainframe_menubar_enabled)
+	{
+		components::command::execute("menubar_hide");
+		game::CPrefsDlg_SavePrefs();
+	}
 }
 
-void __declspec(naked) cmainframe::hk_RoutineProcessing(void)
+void __declspec(naked) cmainframe::hk_routine_processing(void)
 {
 	__asm
 	{
 		push	ecx;
+		mov		ecx, eax; // eax = this :: ecx => this(__stdcall)
 
-		// eax = this :: ecx => this(__stdcall)
-		mov		ecx, eax; 
-
-		// update activewnd
-		mov		cmainframe::activewnd, ecx; 
+		mov		cmainframe::activewnd, ecx; // update activewnd
 
 		call	cmainframe::routine_processing;
 		pop		ecx;
 		retn;
+	}
+}
+
+void on_createclient()
+{
+	const auto prefs = game::g_PrefsDlg();
+
+	if (!prefs->m_nView || prefs->m_nView == 3)
+	{
+		if(!dvars::mainframe_show_console->current.enabled)
+		{
+			// disable the console pane
+			reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable)->DeleteRow(&cmainframe::activewnd->m_wndSplit, 1);
+		}
+		
+		if(!dvars::mainframe_show_zview->current.enabled)
+		{
+			if (!prefs->m_nView)
+			{
+				reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable)->DeleteColumn(&cmainframe::activewnd->m_wndSplit2, 0);
+			}
+			else
+			{
+				// if left <-> right switched (second mode / nView 3)
+				reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable)->DeleteColumn(&cmainframe::activewnd->m_wndSplit2, 2);
+			}
+		}
+	}
+}
+
+void __declspec(naked) hk_on_createclient()
+{
+	const static uint32_t retn_pt = 0x4232F3;
+	__asm
+	{
+		pushad;
+		call	on_createclient;
+		popad;
+
+		mov     eax, 1; // og
+		jmp		retn_pt;
 	}
 }
 
@@ -232,6 +300,9 @@ void cmainframe::update_windows(int nBits)
 		}
 	}
 }
+
+
+
 
 
 #define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
@@ -452,14 +523,44 @@ void __declspec(naked) sunlight_preview_arg_check()
 }
 
 
+void cmainframe::register_dvars()
+{
+	dvars::mainframe_show_console = dvars::register_bool(
+		/* name		*/ "mainframe_show_console",
+		/* default	*/ false,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "show the console splitter-pane");
+
+	dvars::mainframe_show_zview = dvars::register_bool(
+		/* name		*/ "mainframe_show_zview",
+		/* default	*/ false,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "show the z-view splitter-pane");
+
+	dvars::mainframe_show_toolbar = dvars::register_bool(
+		/* name		*/ "mainframe_show_toolbar",
+		/* default	*/ false,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "show the toolbar");
+
+	dvars::mainframe_show_menubar = dvars::register_bool(
+		/* name		*/ "mainframe_show_menubar",
+		/* default	*/ false,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "show the menubar");
+}
+
 void cmainframe::main()
 {
-	// hook MainFrameWnd continuous thread
-	utils::hook(0x421A90, cmainframe::hk_RoutineProcessing, HOOK_JUMP).install()->quick();
+	// hook continuous thread
+	utils::hook(0x421A90, cmainframe::hk_routine_processing, HOOK_JUMP).install()->quick();
 
-	// this might be needed later, not useful for the camera window tho
+	// handle wm_char events for non-focused subwindows
 	utils::hook(0x421A7B, cmainframe::windowproc, HOOK_CALL).install()->quick();
 
+	// hook end of createclient
+	utils::hook(0x4232EE, hk_on_createclient, HOOK_JUMP).install()->quick();
+	
 	// *
 	// detour cmainframe member functions to get imgui input
 	
@@ -470,4 +571,34 @@ void cmainframe::main()
 	// check for nullptr (world_entity) in a sunlight preview function. Only required with the ^ hook, see note there.
 	utils::hook::nop(0x4067C7, 6);
 		 utils::hook(0x4067C7, sunlight_preview_arg_check, HOOK_JUMP).install()->quick();
+
+	
+	// *
+	// | ------------------------ Commands ----------------------------
+	// *
+	
+	components::command::register_command("menubar_show"s, [](std::vector<std::string> args)
+	{
+		const auto menubar = LoadMenu(cmainframe::activewnd->m_pModuleState->m_hCurrentInstanceHandle, MAKEINTRESOURCE(0xD6)); // 0xD6 = IDR_MENU_QUAKE3
+
+		SetMenu(cmainframe::activewnd->GetWindow(), menubar);
+		
+		ggui::mainframe_menubar_enabled = true;
+		dvars::set_bool(dvars::mainframe_show_menubar, true);
+	});
+
+	components::command::register_command("menubar_hide"s, [](std::vector<std::string> args)
+	{
+		// destroy the menu or radiant crashes on shutdown when its trying to get the menubar style
+		if (const auto menu = utils::hook::call<CMenu * (__fastcall)(cmainframe*)>(0x42EE20)(cmainframe::activewnd); menu) // GetMenuFromHandle
+		{
+			// CMenu::DestroyMenu
+			utils::hook::call<void(__fastcall)(CMenu*)>(0x58A908)(menu);
+		}
+
+		SetMenu(cmainframe::activewnd->GetWindow(), nullptr);
+		
+		ggui::mainframe_menubar_enabled = false;
+		dvars::set_bool(dvars::mainframe_show_menubar, false);
+	});
 }

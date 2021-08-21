@@ -359,8 +359,15 @@ namespace components
 	//		jmp		retn_pt;
 	//	}
 	//}
-	
-	
+
+	int printf_stub_without_vastart(_In_z_ _Printf_format_string_ char const* const _Format, va_list _ArgList)
+	{
+		int _Result;
+		_Result = _vfprintf_l(stdout, _Format, NULL, _ArgList);
+		__crt_va_end(_ArgList);
+		return _Result;
+	}
+
 	quick_patch::quick_patch()
 	{
 		// TODO! :: move this or rename quick_patch to main or something
@@ -371,8 +378,29 @@ namespace components
 		ccamwnd::main();
 		cxywnd::main();
 
-		//utils::hook(0x465697, set2d_test_stub, HOOK_JUMP).install()->quick();
+		// redirect console prints
+		utils::hook::nop(0x420A54, 10); utils::hook::nop(0x40A9E0, 10);
+		utils::hook::set(0x25D5A54, printf_stub_without_vastart);
+		// ^
+		utils::hook::detour(0x499E90, printf, HK_JUMP);
 
+		
+//#define CONSOLE_TEST
+#ifdef CONSOLE_TEST
+		// disable bottom console (results in small scrollbar at xy top left?)
+		utils::hook::set<BYTE>(0x422CD4 + 1, 0x1);
+
+		// disable SetRowInfo for console pane
+		utils::hook::nop(0x422F8A, 39);
+		// disable SetRowInfo for console pane (LoadRegistryInfo)
+		utils::hook::nop(0x423185, 23);
+		// disable m_wndSplit.RecalcLayout
+		utils::hook::nop(0x42327D, 20);
+		// disable setting of g_pEdit
+		utils::hook::set<BYTE>(0x422D71, 0xEB);
+#endif
+
+		
 		// add iw3xradiant search path (imgui images)
 		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
 
@@ -447,16 +475,15 @@ namespace components
 		utils::hook::nop(0x406A11, 5);
 
 		// NOP startup console-spam
-		//utils::hook::nop(0x4818DF, 5); // ScanFile
-		//utils::hook::nop(0x48B8BE, 5); // ScanWeapon
+		utils::hook::nop(0x4818DF, 5); // ScanFile
+		utils::hook::nop(0x48B8BE, 5); // ScanWeapon
 
 		
 		// remove the statusbar (not the console!)
 		//utils::hook::nop(0x41F8E0, 5);
 		//utils::hook::nop(0x420B04, 63);
 
-		// disable bottom console
-		//utils::hook::set<BYTE>(0x422CD4 + 1, 0x1);
+		
 
 		// disable text in console
 		//utils::hook::nop(0x422D76, 5);
@@ -471,6 +498,8 @@ namespace components
 		
 		// d_hwndEdit == console
 		//utils::hook::nop(0x422D71, 10);
+
+		//utils::hook(0x465697, set2d_test_stub, HOOK_JUMP).install()->quick();
 
 
 		// --------

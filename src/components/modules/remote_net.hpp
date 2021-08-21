@@ -27,6 +27,8 @@ namespace components
 		static void		cmd_send_camera_update(float *Origin, float *Angles);
 		static bool		cmd_send_single_brush(game::brush_t *brush, int brushNum);
 		static void		cmd_send_brush_select_deselect(bool select);
+
+		static void		register_dvars();
 		
 	private:
 	};

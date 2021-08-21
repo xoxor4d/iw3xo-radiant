@@ -96,6 +96,12 @@
 #include "game/functions.hpp"
 #include "game/dvars.hpp"
 
+#include "ggui/_ggui.hpp"
+#include "ggui/hotkeys.hpp"
+#include "ggui/menubar.hpp"
+#include "ggui/colors.hpp"
+#include "ggui/toolbar.hpp"
+
 #include "common/camwnd.hpp"
 #include "common/mainframe.hpp"
 #include "common/radiantapp.hpp"

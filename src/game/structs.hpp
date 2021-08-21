@@ -1541,48 +1541,48 @@ namespace game
 	};
 }
 
-namespace ggui
-{
-	enum e_gfxwindow
-	{
-		CCAMERAWND = 0,
-		CXYWND = 1,
-	};
-
-	struct imgui_context_menu
-	{
-		bool menustate;
-		bool was_open;
-		bool one_time_init;
-		float position[2];
-		float size[2];
-	};
-
-	struct imgui_context_cam
-	{
-		bool context_initialized;
-		ImGuiContext* context;
-		game::GfxWindowTarget* dx_window;
-		imgui_context_menu m_demo;
-	};
-
-	struct imgui_context_cxy
-	{
-		bool context_initialized;
-		ImGuiContext* context;
-		game::GfxWindowTarget* dx_window;
-		imgui_context_menu m_toolbar;
-		imgui_context_menu m_colors;
-		imgui_context_menu m_cmdbinds;
-		imgui_context_menu m_cmdbinds_helper;
-		imgui_context_menu m_demo;
-	};
-
-	struct imgui_state_t
-	{
-		imgui_context_cam ccamerawnd;
-		imgui_context_cxy cxywnd;
-		//bool cxywnd_menubar_state;
-	};
-}
+//namespace ggui
+//{
+//	enum e_gfxwindow
+//	{
+//		CCAMERAWND = 0,
+//		CXYWND = 1,
+//	};
+//
+//	struct imgui_context_menu
+//	{
+//		bool menustate;
+//		bool was_open;
+//		bool one_time_init;
+//		float position[2];
+//		float size[2];
+//	};
+//
+//	struct imgui_context_cam
+//	{
+//		bool context_initialized;
+//		ImGuiContext* context;
+//		game::GfxWindowTarget* dx_window;
+//		imgui_context_menu m_demo;
+//	};
+//
+//	struct imgui_context_cxy
+//	{
+//		bool context_initialized;
+//		ImGuiContext* context;
+//		game::GfxWindowTarget* dx_window;
+//		imgui_context_menu m_toolbar;
+//		imgui_context_menu m_colors;
+//		imgui_context_menu m_cmdbinds;
+//		imgui_context_menu m_cmdbinds_helper;
+//		imgui_context_menu m_demo;
+//	};
+//
+//	struct imgui_state_t
+//	{
+//		imgui_context_cam ccamerawnd;
+//		imgui_context_cxy cxywnd;
+//		//bool cxywnd_menubar_state;
+//	};
+//}
 #pragma warning(pop)

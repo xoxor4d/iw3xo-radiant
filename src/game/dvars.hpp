@@ -5,6 +5,12 @@ namespace dvars
 	extern game::dvar_s* gui_menubar_bg_color;
 	extern game::dvar_s* gui_dockedwindow_bg_color;
 	extern game::dvar_s* gui_window_bg_color;
+
+	//
+	extern game::dvar_s* mainframe_show_console;
+	extern game::dvar_s* mainframe_show_zview;
+	extern game::dvar_s* mainframe_show_toolbar;
+	extern game::dvar_s* mainframe_show_menubar;
 	
 	// radiant-live
 	extern game::dvar_s* radiant_live;

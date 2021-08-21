@@ -19,12 +19,12 @@
 #define W_MEDIA			0x1000 
 #define W_ALL			0xFFFFFFFF
 
-namespace ggui
-{
-	extern imgui_state_t state;
-	extern bool mainframe_menubar_enabled;
-	
-}
+//namespace ggui
+//{
+//	extern imgui_state_t state;
+//	extern bool mainframe_menubar_enabled;
+//	
+//}
 
 namespace game
 {

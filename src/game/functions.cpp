@@ -1,11 +1,11 @@
 #include "std_include.hpp"
 
-namespace ggui
-{
-	imgui_state_t state = imgui_state_t();
-	bool mainframe_menubar_enabled = false;
-	
-}
+//namespace ggui
+//{
+//	imgui_state_t state = imgui_state_t();
+//	bool mainframe_menubar_enabled = false;
+//	
+//}
 
 namespace game
 {

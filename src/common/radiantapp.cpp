@@ -112,6 +112,8 @@ void radiantapp::main()
 	// registery loading stub :: CPrefsDlg::LoadPrefs
 	utils::hook(0x44E38C, registery_load_stub, HOOK_JUMP).install()->quick();
 
+	// note:
+	// we need to save the menubar state within the registery because dvars are not yet initialized when we need the menubar state
 	
 	// show/hide mainframe menubar on startup 01 :: CRadiantApp::InitInstance
 	utils::hook(0x4507CA, menubar_stub_01, HOOK_JUMP).install()->quick();
