@@ -82,6 +82,8 @@ namespace ggui::menubar
 	
 	void menu(ggui::imgui_context_cxy& context)
 	{
+		const auto prefs = game::g_PrefsDlg();
+		
 		// *
 		// menu bar within dockspace
 		
@@ -396,42 +398,65 @@ namespace ggui::menubar
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::BeginMenu("Draw Entities As"))
+				if (ImGui::BeginMenu("Show Patches As"))
 				{
-					if (ImGui::MenuItem("Bounding Box", 0, game::g_PrefsDlg()->m_nEntityShowState == game::ENTITY_BOXED)) {
+					if (ImGui::MenuItem("Textured", 0, !prefs->g_nPatchAsWireframe)) 
+					{
+						prefs->g_nPatchAsWireframe = 0;
+						game::CPrefsDlg_SavePrefs();
+					}
+
+					if (ImGui::MenuItem("Untextured", 0, prefs->g_nPatchAsWireframe == 1))
+					{
+						prefs->g_nPatchAsWireframe = 1;
+						game::CPrefsDlg_SavePrefs();
+					}
+
+					if (ImGui::MenuItem("Textured + Wireframe", 0, prefs->g_nPatchAsWireframe == 2))
+					{
+						prefs->g_nPatchAsWireframe = 2;
+						game::CPrefsDlg_SavePrefs();
+					}
+					
+					ImGui::EndMenu(); // Draw Patches As
+				}
+				
+				if (ImGui::BeginMenu("Show Entities As"))
+				{
+					if (ImGui::MenuItem("Bounding Box", 0, prefs->m_nEntityShowState == game::ENTITY_BOXED)) {
 						mainframe_thiscall(void, 0x42B320); // cmainframe::OnViewEntitiesasBoundingbox
 					}
 
-					if (ImGui::MenuItem("Wireframe", 0, game::g_PrefsDlg()->m_nEntityShowState == (game::ENTITY_SKINNED | game::ENTITY_WIREFRAME))) {
+					if (ImGui::MenuItem("Wireframe", 0, prefs->m_nEntityShowState == (game::ENTITY_SKINNED | game::ENTITY_WIREFRAME))) {
 						mainframe_thiscall(void, 0x42B410); // cmainframe::OnViewEntitiesasWireframe
 					}
 
-					if (ImGui::MenuItem("Selected Wireframe", 0, game::g_PrefsDlg()->m_nEntityShowState == (game::ENTITY_SELECTED_ONLY | game::ENTITY_WIREFRAME))) {
+					if (ImGui::MenuItem("Selected Wireframe", 0, prefs->m_nEntityShowState == (game::ENTITY_SELECTED_ONLY | game::ENTITY_WIREFRAME))) {
 						mainframe_thiscall(void, 0x42B380); // cmainframe::OnViewEntitiesasSelectedwireframe
 					}
 
-					if (ImGui::MenuItem("Selected Skinned", 0, game::g_PrefsDlg()->m_nEntityShowState == (game::ENTITY_SELECTED_ONLY | game::ENTITY_SKIN_MODEL))) {
+					if (ImGui::MenuItem("Selected Skinned", 0, prefs->m_nEntityShowState == (game::ENTITY_SELECTED_ONLY | game::ENTITY_SKIN_MODEL))) {
 						mainframe_thiscall(void, 0x42B350); // cmainframe::OnViewEntitiesasSelectedskinned
 					}
 
-					if (ImGui::MenuItem("Skinned", 0, game::g_PrefsDlg()->m_nEntityShowState == (game::ENTITY_SKINNED | game::ENTITY_SKIN_MODEL))) {
+					if (ImGui::MenuItem("Skinned", 0, prefs->m_nEntityShowState == (game::ENTITY_SKINNED | game::ENTITY_SKIN_MODEL))) {
 						mainframe_thiscall(void, 0x42B3B0); // cmainframe::OnViewEntitiesasSkinned
 					}
 
-					if (ImGui::MenuItem("Skinned And Boxed", 0, game::g_PrefsDlg()->m_nEntityShowState == (game::ENTITY_SKINNED | game::ENTITY_BOXED | game::ENTITY_SKIN_MODEL))) {
+					if (ImGui::MenuItem("Skinned And Boxed", 0, prefs->m_nEntityShowState == (game::ENTITY_SKINNED | game::ENTITY_BOXED | game::ENTITY_SKIN_MODEL))) {
 						mainframe_thiscall(void, 0x42B3E0); // cmainframe::OnViewEntitiesasSkinnedandboxed
 					}
 
-					ImGui::EndMenu(); // Draw Entities As
+					ImGui::EndMenu(); // Show Entities As
 				}
 
 				if (ImGui::BeginMenu("Light Preview"))
 				{
-					if (ImGui::MenuItem("Enable Light Preview", hotkeys::get_hotkey_for_command("LightPreviewToggle").c_str(), game::g_PrefsDlg()->enable_light_preview)) {
+					if (ImGui::MenuItem("Enable Light Preview", hotkeys::get_hotkey_for_command("LightPreviewToggle").c_str(), prefs->enable_light_preview)) {
 						mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
 					}
 
-					if (ImGui::MenuItem("Enable Sun Preview", hotkeys::get_hotkey_for_command("LightPreviewSun").c_str(), game::g_PrefsDlg()->preview_sun_aswell)) {
+					if (ImGui::MenuItem("Enable Sun Preview", hotkeys::get_hotkey_for_command("LightPreviewSun").c_str(), prefs->preview_sun_aswell)) {
 						mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun
 					}
 
@@ -472,9 +497,9 @@ namespace ggui::menubar
 				//	mainframe_thiscall(void, 0x428F50); // cmainframe::OnViewCubeout
 				//}
 
-				IMGUI_MENU_WIDGET_SINGLE("Cubic Scale", ImGui::DragInt("", &game::g_PrefsDlg()->m_nCubicScale, 1, 1, 220));
+				IMGUI_MENU_WIDGET_SINGLE("Cubic Scale", ImGui::DragInt("", &prefs->m_nCubicScale, 1, 1, 220));
 
-				if (ImGui::MenuItem("Cubic Clipping", hotkeys::get_hotkey_for_command("ToggleCubicClip").c_str(), game::g_PrefsDlg()->m_bCubicClipping)) {
+				if (ImGui::MenuItem("Cubic Clipping", hotkeys::get_hotkey_for_command("ToggleCubicClip").c_str(), prefs->m_bCubicClipping)) {
 					mainframe_thiscall(void, 0x428F90); // cmainframe::OnViewCubicclipping
 				}
 
@@ -493,14 +518,53 @@ namespace ggui::menubar
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Clone", hotkeys::get_hotkey_for_command("CloneSelection").c_str())) {
-					cdeclcall(void, 0x425480); // CMainFrame::OnSelectionClone
+				if (ImGui::BeginMenu("Select"))
+				{
+					if (ImGui::MenuItem("Select Targetname")) {
+						cdeclcall(void, 0x426390); // CMainFrame::OnSelectionTargetname
+					}
+
+					if (ImGui::MenuItem("Select Classname")) {
+						cdeclcall(void, 0x4263A0); // CMainFrame::OnSelectionClassname
+					}
+
+					if (ImGui::MenuItem("Select By Key/Value", hotkeys::get_hotkey_for_command("SelectionKeyValue").c_str())) {
+						cdeclcall(void, 0x4263B0); // CMainFrame::OnSelectionKeyValue
+					}
+
+					if (ImGui::MenuItem("Select Connected", hotkeys::get_hotkey_for_command("SelectConnectedEntities").c_str())) {
+						cdeclcall(void, 0x425550); // CMainFrame::OnSelectConneted
+					}
+
+					SEPERATORV(0.0f);
+
+					if (ImGui::MenuItem("Select Complete Tall")) {
+						cdeclcall(void, 0x426340); // CMainFrame::OnSelectionSelectcompletetall
+					}
+
+					if (ImGui::MenuItem("Select Partial Tall")) {
+						cdeclcall(void, 0x426360); // CMainFrame::OnSelectionSelectpartialtall
+					}
+
+					if (ImGui::MenuItem("Select Touching")) {
+						cdeclcall(void, 0x426370); // CMainFrame::OnSelectionSelecttouching
+					}
+
+					if (ImGui::MenuItem("Select Inside")) {
+						cdeclcall(void, 0x426350); // CMainFrame::OnSelectionSelectinside
+					}
+
+					ImGui::EndMenu(); // Select
 				}
 
 				if (ImGui::MenuItem("Deselect", hotkeys::get_hotkey_for_command("UnSelectSelection").c_str())) {
 					mainframe_thiscall(void, 0x425740); // CMainFrame::OnSelectionDeselect
 				}
 
+				if (ImGui::MenuItem("Clone", hotkeys::get_hotkey_for_command("CloneSelection").c_str())) {
+					cdeclcall(void, 0x425480); // CMainFrame::OnSelectionClone
+				}
+				
 				if (ImGui::MenuItem("Invert", hotkeys::get_hotkey_for_command("InvertSelection").c_str())) {
 					cdeclcall(void, 0x42B6F0); // CMainFrame::OnSelectionInvert
 				}
@@ -538,7 +602,7 @@ namespace ggui::menubar
 						cdeclcall(void, 0x425220); // CMainFrame::OnBrushRotatez
 					}
 
-					if (ImGui::MenuItem("Free Rotation", hotkeys::get_hotkey_for_command("MouseRotate").c_str())) {
+					if (ImGui::MenuItem("Free Rotation", hotkeys::get_hotkey_for_command("MouseRotate").c_str(), game::g_bRotateMode)) {
 						mainframe_thiscall(void, 0x428570); // CMainFrame::OnSelectMouserotate
 					}
 
@@ -561,6 +625,10 @@ namespace ggui::menubar
 
 					if (ImGui::MenuItem("Lock Z", 0, (game::g_nScaleHow > 0 && game::g_nScaleHow <= 3))) {
 						mainframe_thiscall(LRESULT, 0x428B90); // CMainFrame::OnScalelockZ
+					}
+
+					if (ImGui::MenuItem("Free Scaling", 0, game::g_bScaleMode)) {
+						mainframe_thiscall(LRESULT, 0x428D20); // CMainFrame::OnSelectMousescale
 					}
 
 					if (ImGui::MenuItem("Arbitrary Scale")) {
@@ -614,46 +682,7 @@ namespace ggui::menubar
 
 					ImGui::EndMenu(); // Clipper
 				}
-
-				SEPERATORV(0.0f);
-
-				if (ImGui::MenuItem("Select Targetname")) {
-					cdeclcall(void, 0x426390); // CMainFrame::OnSelectionTargetname
-				}
-
-				if (ImGui::MenuItem("Select Classname")) {
-					cdeclcall(void, 0x4263A0); // CMainFrame::OnSelectionClassname
-				}
-
-				if (ImGui::MenuItem("Select By Key/Value", hotkeys::get_hotkey_for_command("SelectionKeyValue").c_str())) {
-					cdeclcall(void, 0x4263B0); // CMainFrame::OnSelectionKeyValue
-				}
-
-				if (ImGui::MenuItem("Select Connected", hotkeys::get_hotkey_for_command("SelectConnectedEntities").c_str())) {
-					cdeclcall(void, 0x425550); // CMainFrame::OnSelectConneted
-				}
-
-				if (ImGui::BeginMenu("Select"))
-				{
-					if (ImGui::MenuItem("Select Complete Tall")) {
-						cdeclcall(void, 0x426340); // CMainFrame::OnSelectionSelectcompletetall
-					}
-
-					if (ImGui::MenuItem("Select Partial Tall")) {
-						cdeclcall(void, 0x426360); // CMainFrame::OnSelectionSelectpartialtall
-					}
-
-					if (ImGui::MenuItem("Select Touching")) {
-						cdeclcall(void, 0x426370); // CMainFrame::OnSelectionSelecttouching
-					}
-
-					if (ImGui::MenuItem("Select Inside")) {
-						cdeclcall(void, 0x426350); // CMainFrame::OnSelectionSelectinside
-					}
-
-					ImGui::EndMenu(); // Clipper
-				}
-
+				
 				SEPERATORV(0.0f);
 
 				if (ImGui::MenuItem("Connect Entities", hotkeys::get_hotkey_for_command("ConnectSelection").c_str())) {
@@ -749,7 +778,7 @@ namespace ggui::menubar
 					set_grid_size(GRID_512);
 				}
 
-				if (ImGui::MenuItem("Snap To Grid", hotkeys::get_hotkey_for_command("ToggleSnapToGrid").c_str(), !game::g_PrefsDlg()->m_bNoClamp)) {
+				if (ImGui::MenuItem("Snap To Grid", hotkeys::get_hotkey_for_command("ToggleSnapToGrid").c_str(), !prefs->m_bNoClamp)) {
 					mainframe_thiscall(void, 0x428380); // CMainFrame::OnSnaptogrid
 				}
 
@@ -799,6 +828,12 @@ namespace ggui::menubar
 						set_render_method(RM_CASETEXTURES);
 					}
 
+					SEPERATORV(0.0f);
+
+					if (ImGui::MenuItem("Alpha Rendering", 0, prefs->camera_masked)) {
+						mainframe_thiscall(void, 0x429F10); // CMainFrame::OnToggleTextureAlphaRendering
+					}
+
 					ImGui::EndMenu(); // Render Method
 				}
 
@@ -846,23 +881,23 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Texture Window Scale"))
 				{
-					if (ImGui::MenuItem("200%", 0, game::g_PrefsDlg()->m_nTextureWindowScale == 200)) {
+					if (ImGui::MenuItem("200%", 0, prefs->m_nTextureWindowScale == 200)) {
 						mainframe_thiscall(void, 0x42B020); // CMainFrame::OnTexturesTexturewindowscale200
 					}
 
-					if (ImGui::MenuItem("100%", 0, game::g_PrefsDlg()->m_nTextureWindowScale == 100)) {
+					if (ImGui::MenuItem("100%", 0, prefs->m_nTextureWindowScale == 100)) {
 						mainframe_thiscall(void, 0x42B000); // CMainFrame::OnTexturesTexturewindowscale100
 					}
 
-					if (ImGui::MenuItem("50%", 0, game::g_PrefsDlg()->m_nTextureWindowScale == 50)) {
+					if (ImGui::MenuItem("50%", 0, prefs->m_nTextureWindowScale == 50)) {
 						mainframe_thiscall(void, 0x42B060); // CMainFrame::OnTexturesTexturewindowscale50
 					}
 
-					if (ImGui::MenuItem("25%", 0, game::g_PrefsDlg()->m_nTextureWindowScale == 25)) {
+					if (ImGui::MenuItem("25%", 0, prefs->m_nTextureWindowScale == 25)) {
 						mainframe_thiscall(void, 0x42B040); // CMainFrame::OnTexturesTexturewindowscale25
 					}
 
-					if (ImGui::MenuItem("10%", 0, game::g_PrefsDlg()->m_nTextureWindowScale == 10)) {
+					if (ImGui::MenuItem("10%", 0, prefs->m_nTextureWindowScale == 10)) {
 						mainframe_thiscall(void, 0x42AFE0); // CMainFrame::OnTexturesTexturewindowscale10
 					}
 
@@ -871,15 +906,15 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Texture Lock"))
 				{
-					if (ImGui::MenuItem("Moves", hotkeys::get_hotkey_for_command("ToggleTexMoveLock").c_str(), game::g_PrefsDlg()->m_bTextureLock == 1)) {
+					if (ImGui::MenuItem("Moves", hotkeys::get_hotkey_for_command("ToggleTexMoveLock").c_str(), prefs->m_bTextureLock == 1)) {
 						mainframe_thiscall(void, 0x426B80); // CMainFrame::OnToggleLockMoves
 					}
 
-					if (ImGui::MenuItem("Rotations", hotkeys::get_hotkey_for_command("ToggleTexRotateLock").c_str(), game::g_PrefsDlg()->m_bRotateLock == 1)) {
+					if (ImGui::MenuItem("Rotations", hotkeys::get_hotkey_for_command("ToggleTexRotateLock").c_str(), prefs->m_bRotateLock == 1)) {
 						mainframe_thiscall(void, 0x429230); // CMainFrame::OnToggleLockRotations
 					}
 
-					if (ImGui::MenuItem("Lightmaps", hotkeys::get_hotkey_for_command("ToggleLightmapLock").c_str(), game::g_PrefsDlg()->m_bLightmapLock == 1)) {
+					if (ImGui::MenuItem("Lightmaps", hotkeys::get_hotkey_for_command("ToggleLightmapLock").c_str(), prefs->m_bLightmapLock == 1)) {
 						mainframe_thiscall(void, 0x426BF0); // CMainFrame::OnToggleLockLightmap
 					}
 
@@ -1252,6 +1287,29 @@ namespace ggui::menubar
 					}
 
 					ImGui::EndMenu(); // Matrix
+				}
+
+				if (ImGui::BeginMenu("Weld"))
+				{
+					if (ImGui::MenuItem("Connect Selection / Weld", hotkeys::get_hotkey_for_command("ConnectSelection").c_str())) {
+						cdeclcall(void, 0x425510); // CMainFrame::OnSelectionConnect
+					}
+
+					SEPERATORV(0.0f);
+
+					if (ImGui::MenuItem("Weld to Model Vertices", 0, prefs->m_bVertSnapModel)) {
+						mainframe_thiscall(void, 0x42A180); // CMainFrame::OnVertSnapModel
+					} TT("Allows welding of patch verts to model vertices");
+
+					if (ImGui::MenuItem("Weld to Brush Vertices", 0, prefs->m_bVertSnapBrush)) {
+						mainframe_thiscall(void, 0x42A1D0); // CMainFrame::OnVertSnapBrush
+					} TT("Allows welding of patch verts to brush vertices");
+
+					if (ImGui::MenuItem("Weld to Prefab Vertices", 0, prefs->m_bVertSnapPrefab)) {
+						mainframe_thiscall(void, 0x42A220); // CMainFrame::OnVertSnapPrefab
+					} TT("Allows welding of patch verts to prefab vertices");
+					
+					ImGui::EndMenu(); // Weld
 				}
 
 				if (ImGui::MenuItem("Split", hotkeys::get_hotkey_for_command("SplitPatch").c_str())) {

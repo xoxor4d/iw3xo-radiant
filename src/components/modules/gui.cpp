@@ -44,6 +44,15 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
 
 namespace components
 {
+	void imgui_init_fonts()
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_bold_compressed_data, fonts::opensans_bold_compressed_size, 18.0f);
+		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 12.0f);
+		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f);
+	}
+	
 	// *
 	// initialize the imgui camerawnd context
 	void imgui_init_ccamerawnd()
@@ -62,7 +71,8 @@ namespace components
 		ImGui::SetCurrentContext(ggui::state.ccamerawnd.context);
 		
         ImGuiIO& io = ImGui::GetIO();
-		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f);
+		imgui_init_fonts();
+		
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
 		
@@ -97,7 +107,8 @@ namespace components
 		ImGui::SetCurrentContext(ggui::state.cxywnd.context);
 
 		ImGuiIO& io = ImGui::GetIO();
-		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f);
+		imgui_init_fonts();
+		
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
 		

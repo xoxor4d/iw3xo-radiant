@@ -99,6 +99,20 @@ namespace ImGui
 		}
 	}
 
+	void PushFontFromIndex(int font)
+	{
+		ImGuiIO& io = ImGui::GetIO();
+
+		if(io.Fonts->Fonts[font])
+		{
+			ImGui::PushFont(io.Fonts->Fonts[font]);
+		}
+		else
+		{
+			ImGui::PushFont(ImGui::GetDefaultFont());
+		}
+	}
+
 	void StyleColorsDevgui(ImGuiStyle* dst)
 	{
 		ImGuiStyle* style = dst ? dst : &ImGui::GetStyle();

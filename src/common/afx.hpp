@@ -1344,8 +1344,9 @@ struct __declspec(align(4)) CPrefsDlg : public CDialog
 	char pad_0x0311[3];
 	bool preview_sun_aswell;
 	char pad_0x0315[3];
-	bool patch_wireframe;
-	char pad_0x0319[3];
+	//bool patch_wireframe;
+	//char pad_0x0319[3];
+	int g_nPatchAsWireframe;
 	bool g_bPatchWeld;
 	bool patch_drill_down;
 	char pad_0x031D[2];

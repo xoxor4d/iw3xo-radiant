@@ -65,6 +65,10 @@ namespace game
 	extern double&	g_oldtime;
 	extern bool&	g_region_active;
 	extern bool&	g_bCrossHairs;
+	extern bool&	g_bClipMode;
+	extern bool&	g_bRotateMode;
+	extern bool&	g_bScaleMode;
+	
 	extern game::SCommandInfo* g_Commands;
 	extern int		g_nCommandCount;
 	

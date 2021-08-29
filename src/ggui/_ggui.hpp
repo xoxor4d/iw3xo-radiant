@@ -2,6 +2,21 @@
 
 namespace ggui
 {
+	enum E_FONT
+	{
+		BOLD_18PX = 0,
+		REGULAR_12PX = 1,
+		REGULAR_18PX = 2,
+	};
+	
+	enum E_CALLTYPE
+	{
+		MAINFRAME_CDECL = 0,
+		MAINFRAME_THIS = 1,
+		MAINFRAME_STD = 2,
+		CDECLCALL = 3,
+	};
+	
 	#define mainframe_thiscall(return_val, addr)	\
 		utils::hook::call<return_val(__fastcall)(cmainframe*)>(addr)(cmainframe::activewnd)
 	

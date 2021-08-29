@@ -46,6 +46,10 @@ namespace game
 	double& g_oldtime = *reinterpret_cast<double*>(0x2665670);
 	bool&	g_region_active = *reinterpret_cast<bool*>(0x23F1744);
 	bool&	g_bCrossHairs = *reinterpret_cast<bool*>(0x25D5B06);
+	bool&	g_bClipMode = *reinterpret_cast<bool*>(0x23F16D8);
+	bool&	g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
+	bool&	g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
+	
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
 

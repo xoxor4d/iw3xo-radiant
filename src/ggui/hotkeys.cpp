@@ -258,7 +258,7 @@ namespace ggui::hotkeys
 			}
 		}
 
-		return "";
+		return "UNBOUND";
 	}
 
 
