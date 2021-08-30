@@ -122,6 +122,7 @@ namespace ImGui
 		style->AntiAliasedFill = true;
 
 		// Main
+		style->DisplaySafeAreaPadding.y = 18.0f; // fix child menus going out of view
 		style->WindowPadding.x = 5.0f;
 		style->WindowPadding.y = 5.0f;
 		style->PopupRounding = 2.0f;

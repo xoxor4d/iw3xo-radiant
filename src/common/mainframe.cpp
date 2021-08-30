@@ -349,13 +349,13 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 					const auto imgui_context_old = ImGui::GetCurrentContext();
 
 					IMGUI_BEGIN_CXYWND;
-					const auto ccontext = ImGui::GetCurrentContext();
+					const auto context = ImGui::GetCurrentContext();
 
-					// TODO! this might still close too much on heavy lag, preventing imgui io 
-					if (ccontext->OpenPopupStack.Size > 0)
+					// TODO! we might 'loose focus' on < 5 FPS, preventing imgui mouse input 
+					if (context->OpenPopupStack.Size > 0)
 					{
-						//printf("closing popup #%d\n", ccontext->OpenPopupStack.Size - 1);
-						ImGui::ClosePopupToLevel(ccontext->OpenPopupStack.Size - 1, false);
+						//printf("closing popup #%d\n", context->OpenPopupStack.Size - 1);
+						ImGui::ClosePopupToLevel(context->OpenPopupStack.Size - 1, false);
 					}
 
 					// restore context
