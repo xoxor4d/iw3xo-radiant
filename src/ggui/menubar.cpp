@@ -229,7 +229,19 @@ namespace ggui::menubar
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Preferences", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
+				if (ImGui::MenuItem("Edit Colors ...")) {
+					components::gui::toggle(context.m_colors, 0, true);
+				}
+				
+				if (ImGui::MenuItem("Edit Toolbar ...")) {
+					components::gui::toggle(context.m_toolbar_edit, 0, true);
+				}
+
+				if (ImGui::MenuItem("Edit Hotkeys ...")) {
+					components::gui::toggle(context.m_cmdbinds, 0, true);
+				}
+
+				if (ImGui::MenuItem("Preferences ...", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
 					mainframe_thiscall(void, 0x426950); //cmainframe::OnPrefs
 				}
 
@@ -270,8 +282,7 @@ namespace ggui::menubar
 							dvars::set_bool(dvars::mainframe_show_toolbar, false);
 						}
 					}
-					
-					
+
 					if (ImGui::MenuItem("Camera View", hotkeys::get_hotkey_for_command("ToggleCamera").c_str(), nullptr, cmainframe::is_combined_view())) {
 						mainframe_thiscall(void, 0x426A40); // cmainframe::OnTogglecamera
 					}
@@ -1031,10 +1042,6 @@ namespace ggui::menubar
 
 			if (ImGui::BeginMenu("Misc"))
 			{
-				if (ImGui::MenuItem("Colors")) {
-					components::gui::toggle(context.m_colors, 0, true);
-				}
-
 				if (ImGui::MenuItem("Find Brush")) {
 					cdeclcall(void, 0x424B80); // CMainFrame::OnMiscFindbrush
 				}
@@ -1367,10 +1374,6 @@ namespace ggui::menubar
 
 				if (ImGui::MenuItem("Command List")) {
 					cdeclcall(void, 0x426E00); // CMainFrame::OnHelpCommandlist
-				}
-
-				if (ImGui::MenuItem("Command Binds")) {
-					components::gui::toggle(context.m_cmdbinds, 0, true);
 				}
 
 				// TODO! implement about

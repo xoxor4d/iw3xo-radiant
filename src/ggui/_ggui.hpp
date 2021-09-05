@@ -86,6 +86,7 @@ namespace ggui
 		ImGuiContext* context;
 		game::GfxWindowTarget* dx_window;
 		imgui_context_menu m_toolbar;
+		imgui_context_menu m_toolbar_edit;
 		imgui_context_menu m_colors;
 		imgui_context_menu m_cmdbinds;
 		imgui_context_menu m_cmdbinds_helper;

@@ -203,10 +203,11 @@ namespace components
 				const auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, split_ratio_left, nullptr, &dockspace_id);
 				
 				// we now dock our windows into the docking node we made above
-				ImGui::DockBuilderDockWindow("toolbar_xywnd", dock_toolbar);
+				ImGui::DockBuilderDockWindow("toolbar##xywnd", dock_toolbar);
 				ImGui::DockBuilderDockWindow("Colors##xywnd", dock_id_left);
 				ImGui::DockBuilderDockWindow("Hotkeys##xywnd", dock_id_left);
-				
+				ImGui::DockBuilderDockWindow("Toolbar Elements##xywnd", dock_id_left);
+
 				ImGui::DockBuilderFinish(dockspace_id);
 			}
 		}
@@ -299,6 +300,10 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_colors, 
 				ggui::colors::menu(ggui::state.cxywnd.m_colors), nullptr);
 
+			// toggleable toolbar edit menu
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_toolbar_edit,
+				ggui::toolbar::menu_toolbar_edit(ggui::state.cxywnd.m_toolbar_edit), ggui::toolbar::save_settings_ini());
+			
 			// toggleable command bind menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_cmdbinds, 
 				ggui::hotkeys::menu(ggui::state.cxywnd.m_cmdbinds), ggui::hotkeys::on_close());

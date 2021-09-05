@@ -478,6 +478,9 @@ namespace components
 		utils::hook::nop(0x4818DF, 5); // ScanFile
 		utils::hook::nop(0x48B8BE, 5); // ScanWeapon
 
+
+		// do not load "_glow" fonts (qerfont_glow)
+		utils::hook::nop(0x552806, 5);
 		
 		// remove the statusbar (not the console!)
 		//utils::hook::nop(0x41F8E0, 5);
