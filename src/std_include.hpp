@@ -80,10 +80,9 @@
 #include <backends/imgui_impl_win32.h>
 #include <misc/cpp/imgui_stdlib.h>
 #pragma warning(pop)
-
 #include "common/imgui/imgui_addons.hpp"
-
 #include "detours/Detours.h"
+#include "fifo_map.hpp"
 
 #include "utils/utils.hpp"
 #include "utils/memory.hpp"

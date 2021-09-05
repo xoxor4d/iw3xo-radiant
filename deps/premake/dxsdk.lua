@@ -21,6 +21,18 @@ function dxsdk.includes()
 end
 
 function dxsdk.project()
+    project "dxsdk"
+		language "C++"
+
+		dxsdk.includes()
+
+		files {
+            path.join(dxsdk.source, "Include/*.h"),
+			path.join(dxsdk.source, "Include/*.inl"),
+		}
+
+		warnings "Off"
+		kind "None"
 
 end
 
