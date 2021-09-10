@@ -484,6 +484,12 @@ namespace ggui::hotkeys
 	// show help text in case there is no hotkeys file
 	void helper_menu(ggui::imgui_context_menu& menu)
 	{
+		const auto MIN_WINDOW_SIZE = ImVec2(450, 160);
+
+		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, MIN_WINDOW_SIZE);
+		ImGui::SetNextWindowSize(MIN_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+		
 		ImGui::SetNextWindowSizeConstraints(ImVec2(450, 160), ImVec2(450, 160));
 		ImGui::Begin("Hotkeys Helper##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 
@@ -541,8 +547,14 @@ namespace ggui::hotkeys
 			}
 		}
 
+		const auto MIN_WINDOW_SIZE		= ImVec2(450.0f, 342.0f);
+		const auto INITIAL_WINDOW_SIZE	= ImVec2(450.0f, 800.0f);
+		
 		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(1.0f, 4.0f));
-		ImGui::SetNextWindowSizeConstraints(ImVec2(450, 320), ImVec2(FLT_MAX, FLT_MAX));
+		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
+		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+		
 		ImGui::Begin("Hotkeys##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 
 		const char* apply_hint = "Changes will apply upon closing the window.";

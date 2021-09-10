@@ -3,6 +3,47 @@
 
 namespace ImGui
 {
+	ImGuiID FindNodeByID(ImGuiID id)
+	{
+		if(const auto node = (ImGuiDockNode*)GImGui->DockContext.Nodes.GetVoidPtr(id);
+					  node)
+		{
+			return node->ID;
+		}
+		
+		return 0;
+	}
+	
+	void DockBuilderDockWindow_FirstUseOrSaved(const char* window_name, ImGuiID node_id)
+	{
+		ImGuiID window_id = ImHashStr(window_name);
+		ImGuiWindowSettings* settings = FindWindowSettings(window_id);
+		
+		if (ImGuiWindow* window = FindWindowByID(window_id))
+		{
+			if(settings)
+			{
+				SetWindowDock(window, settings->DockId, ImGuiCond_FirstUseEver);
+				window->DockOrder = settings->DockOrder;
+			}
+			else
+			{
+				// Apply to created window
+				SetWindowDock(window, node_id, ImGuiCond_FirstUseEver);
+				window->DockOrder = -1;
+			}
+		}
+		else
+		{
+			if (settings == nullptr)
+			{
+				settings = CreateNewWindowSettings(window_name);
+				settings->DockId = node_id;
+				settings->DockOrder = -1;
+			}
+		}
+	}
+	
 	bool IsItemHoveredDelay(float delay_in_seconds)
 	{
 		ImGuiContext& g = *GImGui;

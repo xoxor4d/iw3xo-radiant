@@ -701,9 +701,9 @@ namespace ggui::toolbar
 		
 		register_element("debug_reload_images"s, []()
 			{
-				if (ImGui::Button("Reload Images")) {
+				if (ImGui::Button("RI", IMAGEBUTTON_SIZE)) {
 					game::R_ReloadImages();
-				}
+				} TT("Reload Images");
 			});
 #endif
 	}
@@ -745,7 +745,7 @@ namespace ggui::toolbar
 				if (input.find(';') != std::string::npos)
 				{
 					tbedit_ordered_list.emplace_back(
-						tb_order_element_s("; ------------", tb_element_id++, true, true));
+						tb_order_element_s("; ------------", tb_element_id++, true, true, false));
 					
 					continue;
 				}
@@ -855,8 +855,14 @@ namespace ggui::toolbar
 	
 	void menu_toolbar_edit(ggui::imgui_context_menu& menu)
 	{
-		ImGui::Begin("Toolbar Elements##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 200.0f);
+		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 800.0f);
 
+		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
+		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+		
+		ImGui::Begin("Toolbar Editor##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 		
 		if (ImGui::Button("Add Separator"))
 		{
@@ -1007,11 +1013,195 @@ namespace ggui::toolbar
 
 		ImGui::End();
 	}
+
+	void menu_new([[maybe_unused]] ggui::imgui_context_menu& toolbar, ggui::imgui_context_menu& toolbar_edit)
+	{
+		const bool TOOLBAR_AUTO_DIRECTION_WHEN_DOCKED = true;
+
+		int _stylevars = 0;
+		int _stylecolors = 0;
+
+		// request auto-sizing on one axis
+		const ImVec2 requested_size = (ggui::toolbar_axis == ImGuiAxis_X) ? ImVec2(-1.0f, 0.0f) : ImVec2(0.0f, -1.0f);
+
+		ImGui::SetNextWindowSize(requested_size);
+		ImGui::SetNextWindowPos(ImVec2( 5.0f, ggui::menubar_height + 5.0f), ImGuiCond_FirstUseEver);
+
+		if(ggui::toolbar_reset)
+		{
+			if(dvars::gui_floating_toolbar && !dvars::gui_floating_toolbar->current.enabled)
+			{
+				if (ggui::toolbar_axis == ImGuiAxis_X)
+				{
+					ImGui::SetNextWindowDockID(ggui::toolbar_dock_top);
+				}
+				else
+				{
+					ImGui::SetNextWindowDockID(ggui::toolbar_dock_left);
+				}
+			}
+
+			// reset to default floating state
+			else
+			{
+				ImGui::SetNextWindowPos(ImVec2(5.0f, ggui::menubar_height + 5.0f));
+			}
+
+			ggui::toolbar_reset = false;
+		}
+
+		ImGuiWindowClass window_class;
+		window_class.DockingAllowUnclassed = true;
+		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoCloseButton;
+		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_HiddenTabBar;
+		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingSplitMe;
+		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingOverMe;
+		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingOverOther;
+
+		if (ggui::toolbar_axis == ImGuiAxis_X)
+		{
+			window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoResizeY;
+		}
+		else
+		{
+			window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoResizeX;
+		}
+			
+		ImGui::SetNextWindowClass(&window_class);
+
+		
+		// *
+		// begin into the window
+
+		ImGui::Begin("toolbar##xywnd", nullptr, 
+			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+
+		// *
+		// overwrite node size
+		
+		ImGuiDockNode* node = ImGui::GetWindowDockNode();
+		if (node != nullptr)
+		{
+			// Overwrite size of the node
+			ImGuiStyle& style = ImGui::GetStyle();
+			
+			const ImGuiAxis toolbar_axis_perp = (ImGuiAxis)(ggui::toolbar_axis ^ 1);
+			const float TOOLBAR_SIZE_WHEN_DOCKED = style.WindowPadding[toolbar_axis_perp] * 2.0f + IMAGEBUTTON_SIZE[toolbar_axis_perp];
+			
+			node->WantLockSizeOnce = true;
+			node->Size[toolbar_axis_perp] = node->SizeRef[toolbar_axis_perp] = TOOLBAR_SIZE_WHEN_DOCKED;
+
+			if (TOOLBAR_AUTO_DIRECTION_WHEN_DOCKED)
+			{
+				if (node->ParentNode && node->ParentNode->SplitAxis != ImGuiAxis_None)
+				{
+					ggui::toolbar_axis = (ImGuiAxis)(node->ParentNode->SplitAxis ^ 1);
+				}
+			}	
+		}
+
+		
+		// *
+		// initialize toolbar elements
+		if (!toolbar_initiated)
+		{
+			toolbar_elements_init();
+			load_settings_ini();
+			
+			toolbar_initiated = true;
+		}
+		
+
+		// *
+		// populate toolbar
+		
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);							_stylevars++;
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3.0f, 4.0f));		_stylevars++;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));	_stylevars++;
+
+		ImGui::PushStyleColor(ImGuiCol_Border, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(70, 70, 70, 70));		_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 70));		_stylecolors++;
+
+		// loop amount of registered-sorted elements
+		for (uint32_t e = 0; e < tbedit_ordered_list.size(); e++)
+		{
+			if (tbedit_ordered_list[e].is_separator)
+			{
+				if (ggui::toolbar_axis == ImGuiAxis_X)
+				{
+					TB_SEPARATOR;
+				}
+				else
+				{
+					SPACING(0.0f, 2.0f);
+					ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
+					SPACING(0.0f, 2.0f);
+				}
+				
+				continue;
+			}
+
+			// check if the element was registered
+			if (auto element  = tbedit_elements.find(tbedit_ordered_list[e].name);
+					 element != tbedit_elements.end())
+			{
+				if (tbedit_ordered_list[e].visible)
+				{
+					element->second();
+
+					if (ggui::toolbar_axis == ImGuiAxis_X)
+					{
+						ImGui::SameLine();
+					}
+				}
+			}
+		}
+
+		ImGui::PopStyleColor(_stylecolors); _stylecolors = 0;
+		ImGui::PopStyleVar(_stylevars); _stylevars = 0;
+
+
+		ggui::toolbar_pos = ImGui::GetWindowPos();
+		ggui::toolbar_size = ImGui::GetWindowSize();
+
+		
+		// *
+		// context (right click) menu
+		
+		if (ImGui::BeginPopupContextWindow())
+		{
+			// only enable horz/vert options when undocked
+			if (   node == nullptr 
+				|| node && node->ParentNode == nullptr 
+				|| !TOOLBAR_AUTO_DIRECTION_WHEN_DOCKED)
+			{
+				if (ImGui::MenuItem("Horizontal", "", (ggui::toolbar_axis == ImGuiAxis_X)))
+				{
+					ggui::toolbar_axis = ImGuiAxis_X;
+				}
+					
+				if (ImGui::MenuItem("Vertical", "", (ggui::toolbar_axis == ImGuiAxis_Y)))
+				{
+					ggui::toolbar_axis = ImGuiAxis_Y;
+				}
+			}
+			
+			if (ImGui::MenuItem("Edit Toolbar ...")) 
+			{
+				components::gui::toggle(toolbar_edit, 0, true);
+			}
+			
+			ImGui::EndPopup();
+		}
+
+		ImGui::End();
+	}
 	
-	void menu(ggui::imgui_context_menu& menu)
+	void menu_old(ggui::imgui_context_menu& menu)
 	{
 		int _stylevars = 0; int _stylecolors = 0;
-		const auto prefs = game::g_PrefsDlg();
 
 		if(!toolbar_initiated)
 		{
@@ -1047,11 +1237,6 @@ namespace ggui::toolbar
 
 		// *
 		// gui elements
-
-		static bool hov_open, hov_save, hov_flipx, hov_flipy, hov_flipz, hov_rotx, hov_roty, hov_rotz,
-					hov_sel_compl_tall, hov_sel_touching, hov_sel_partial_tall, hov_sel_inside,
-					hov_csg_merge, hov_csg_hollow, hov_texflipx, hov_texflipy, hov_texflip90, hov_cycle_layer, hov_cycle_xyz,
-					hov_redisp_patch_pts, hov_drop_entities, hov_drop_entities_relative_z;
 
 		SPACING(2.0f, 0.0f);
 		ImGui::SameLine();
@@ -1154,5 +1339,10 @@ namespace ggui::toolbar
 		ImGui::PopStyleColor(_stylecolors);
 		ImGui::PopStyleVar(_stylevars);
 		ImGui::End();
+	}
+
+	void register_dvars()
+	{
+		
 	}
 }

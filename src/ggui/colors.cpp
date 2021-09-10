@@ -4,6 +4,13 @@ namespace ggui::colors
 {
 	void menu(ggui::imgui_context_menu& menu)
 	{
+		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 200.0f);
+		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 800.0f);
+
+		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
+		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+		
 		ImGui::Begin("Colors##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 
 		ImGui::ColorEdit4("Camera Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_CAMERABACK], ImGuiColorEditFlags_Float);

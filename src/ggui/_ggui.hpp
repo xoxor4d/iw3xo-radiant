@@ -110,14 +110,31 @@ namespace ggui
 		std::string modifier_key;
 	};
 
-
 	// *
 	// | -------------------- Variables ------------------------
 	// *
 
     extern imgui_state_t state;
-	extern bool mainframe_menubar_enabled;
-
+	
+	extern ImGuiID		dockspace_sidebar_id;
+	extern bool			reset_dockspace;
+	extern bool			mainframe_menubar_enabled;
+	extern float		menubar_height;
+	
+	extern ImVec2		toolbar_pos;
+	extern ImVec2		toolbar_size;
+	extern ImGuiAxis	toolbar_axis;
+	extern bool			toolbar_reset;
+	extern ImGuiID		toolbar_dock_top;
+	extern ImGuiID		toolbar_dock_left;
+	
 	extern std::vector<commandbinds> cmd_hotkeys;
+
+	
+	// *
+	// | -------------------- Functions ------------------------
+	// *
+
+	extern ImVec2 get_initial_window_pos();
 	
 }

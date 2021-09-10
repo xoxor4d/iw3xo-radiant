@@ -42,6 +42,15 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
 #define SEPERATORV(spacing) SPACING(0.0f, spacing); ImGui::Separator(); SPACING(0.0f, spacing) 
 
 
+	/* ---- ref -----
+	 * auto vtable = reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable);
+	 * reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable)->SetStatusText(&cmainframe::activewnd->m_wndStatusBar, 0x75);
+	 *
+	 * auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
+	 * vtable->RecalcLayout(&cmainframe::activewnd->m_wndSplit);
+	 */
+
+
 namespace components
 {
 	void imgui_init_fonts()
@@ -75,6 +84,8 @@ namespace components
 		
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+		io.ConfigWindowsResizeFromEdges = true;
+		io.IniFilename = "iw3r_ccam_imgui.ini";
 		
 		// implementation
 		ImGui_ImplWin32_Init(cmainframe::activewnd->m_pCamWnd->GetWindow());
@@ -111,6 +122,8 @@ namespace components
 		
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
+		io.ConfigWindowsResizeFromEdges = true;
+		io.IniFilename = "iw3r_cxy_imgui.ini";
 		
 		// implementation
 		ImGui_ImplWin32_Init(cmainframe::activewnd->m_pXYWnd->GetWindow());
@@ -124,21 +137,21 @@ namespace components
 		ggui::state.cxywnd.dx_window = &game::dx->windows[ggui::CXYWND];
 	}
 
-	
-	/*
-	 * auto vtable = reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable);
-	 * reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable)->SetStatusText(&cmainframe::activewnd->m_wndStatusBar, 0x75);
-	 *
-	 * auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
-	 * vtable->RecalcLayout(&cmainframe::activewnd->m_wndSplit);
-	 */
 
+	// *
+	// dockspace creation
+	// TODO! - rewrite when docking v3 is avail.
 	
 	void cxywnd_gui(ggui::imgui_context_cxy& context)
 	{
-		ImGuiIO& io = ImGui::GetIO();
+		int _stylevars = 0;
+		int _stylecolors = 0;
 
-		int _stylevars = 0; int _stylecolors = 0;
+		ImGuiIO& io = ImGui::GetIO();
+		
+		bool floating_toolbar = dvars::gui_floating_toolbar && dvars::gui_floating_toolbar->current.enabled;
+		bool floating_toolbar_resizes_dockspace = dvars::gui_resize_dockspace && dvars::gui_resize_dockspace->current.enabled;
+
 		
 		// *
 		// create main dockspace
@@ -150,26 +163,77 @@ namespace components
 		ImGui::SetNextWindowViewport(viewport->ID);
 		ImGui::SetNextWindowBgAlpha(0.0f);
 
-		ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_MenuBar;
-		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+		ImGuiWindowFlags
+		window_flags  = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar;
+		window_flags |= ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
+		window_flags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+		
 		ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));		_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::ToImVec4(dvars::gui_dockedwindow_bg_color->current.vector));	_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));							_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));					_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));										_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));									_stylecolors++;
 		
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+		// use padding to make room for the top / left floating toolbar
+		auto window_padding = ImVec2(0.0f, 0.0f);
+		if(floating_toolbar && floating_toolbar_resizes_dockspace)
+		{
+			window_padding = ImVec2(5.0f, 50.0f);
+			
+			if(ggui::toolbar_axis == ImGuiAxis_Y)
+			{
+				window_padding = ImVec2(50.0f, 5.0f);
+			}
+		}
+		
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, window_padding);
 		ImGui::Begin("dockspace", nullptr, window_flags);
 		ImGui::PopStyleVar(3);
 
 		
 		// *
 		// menubar
-		
+
+		auto saved_menubar_offset = ImVec2(0.0f, 0.0f);
+		const auto current_window = ImGui::GetCurrentWindow();
+
+		// dirty hack to remove horizontal window padding from the menubar (left -> first element)
+		if (ggui::toolbar_axis == ImGuiAxis_Y)
+		{
+			saved_menubar_offset = current_window->DC.MenuBarOffset;
+			current_window->DC.MenuBarOffset.x = 10.0f;
+		}
+
 		ggui::menubar::menu(context);
+		ggui::menubar_height = ImGui::GetCurrentWindow()->MenuBarHeight();
+
+		// restore window padding
+		if (ggui::toolbar_axis == ImGuiAxis_Y)
+		{
+			current_window->DC.MenuBarOffset = saved_menubar_offset;
+		}
+		
+		// re-check toolbar dvars in case they got modified from within the menubar
+		floating_toolbar = dvars::gui_floating_toolbar && dvars::gui_floating_toolbar->current.enabled;
+		floating_toolbar_resizes_dockspace = dvars::gui_resize_dockspace && dvars::gui_resize_dockspace->current.enabled;
+
+		// set toolbar axis once using saved settings
+		if(!context.m_toolbar.one_time_init)
+		{
+			const ImGuiID toolbar_id = ImHashStr("toolbar##xywnd");
+			if (const auto	settings = ImGui::FindWindowSettings(toolbar_id);
+				settings)
+			{
+				ggui::toolbar_axis =
+					settings->Size.y > settings->Size.x ? ImGuiAxis_Y : ImGuiAxis_X;
+
+				ggui::toolbar_dock_left = settings->DockId;
+				ggui::toolbar_dock_top = settings->DockId;
+			}
+		}
 
 		
 		// *
@@ -177,39 +241,87 @@ namespace components
 
 		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 		{
-			ImGuiID dockspace_id = ImGui::GetID("cxywnd_dockspace_layout");
-			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode); // | ImGuiDockNodeFlags_AutoHideTabBar | ImGuiDockNodeFlags_NoDockingInCentralNode);
-
-			// init dockspace once
-			if (!context.m_toolbar.one_time_init)
+			auto dockspace_size = ImVec2(0.0f, 0.0f);
+			if (floating_toolbar && floating_toolbar_resizes_dockspace)
 			{
-				context.m_toolbar.one_time_init = true;
+				dockspace_size = ImVec2(0.0f, viewport->Size.y - 85.0f);
 
-				// clear any previous layout
-				ImGui::DockBuilderRemoveNode(dockspace_id);
-				ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace);
-				ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
-
-				// create toolbar dockspace
-				const auto dock_toolbar = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Up, 0.01f, nullptr, &dockspace_id);
-				ImGui::DockBuilderSetNodeSize(dock_toolbar, ImVec2(viewport->Size.x, 16)); // 36
-
-				// ^ undockable toolbar without tabbar
-				ImGuiDockNode* node = ImGui::DockBuilderGetNode(dock_toolbar);
-				node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar | ImGuiDockNodeFlags_NoDockingOverMe | ImGuiDockNodeFlags_NoDockingSplitMe | ImGuiDockNodeFlags_NoResize | ImGuiDockNodeFlags_NoResizeY;
-				
-				// split the resulting node (dockspace_id) -> dockspace_id will be everything to the right of the split
-				const float split_ratio_left = viewport->Size.x < 1000.0f ? 0.5f : (1.0f / viewport->Size.x) * 500.0f;
-				const auto dock_id_left = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, split_ratio_left, nullptr, &dockspace_id);
-				
-				// we now dock our windows into the docking node we made above
-				ImGui::DockBuilderDockWindow("toolbar##xywnd", dock_toolbar);
-				ImGui::DockBuilderDockWindow("Colors##xywnd", dock_id_left);
-				ImGui::DockBuilderDockWindow("Hotkeys##xywnd", dock_id_left);
-				ImGui::DockBuilderDockWindow("Toolbar Elements##xywnd", dock_id_left);
-
-				ImGui::DockBuilderFinish(dockspace_id);
+				if (ggui::toolbar_axis == ImGuiAxis_Y)
+				{
+					//auto region_left = ImGui::GetContentRegionAvailWidth();
+					dockspace_size = ImVec2(viewport->Size.x - (2.0f * ggui::toolbar_size.x), 0.0f);
+				}
 			}
+
+			ImGuiID main_dock;
+			ImGuiID dockspace_id = ImGui::GetID("cxywnd_dockspace_layout");
+			ImGui::DockSpace(dockspace_id, dockspace_size, ImGuiDockNodeFlags_PassthruCentralNode);
+
+
+			// *
+			// main dockspace
+			// - init once on startup
+			// - uses "saved" user layout from the ini or creates a default layout
+			// - reset to the default layout at any time, respecting toolbar position
+			
+			if (!context.m_toolbar.one_time_init || ggui::reset_dockspace)
+			{
+				// get the root node (DockSpace)
+				const auto root = ImGui::DockBuilderGetNode(dockspace_id);
+
+				// check if there is a basic tree
+				if (  !ggui::reset_dockspace 
+					&& root
+					&& root->ChildNodes[0])
+					//&& root->ChildNodes[1] 
+					//&& root->ChildNodes[1]->ChildNodes[0] 
+					//&& root->ChildNodes[1]->ChildNodes[1]) 
+				{
+					// the way we create the initial layout results in the following ID's
+					ggui::toolbar_dock_top = ImGui::FindNodeByID(0x00000001);
+					ggui::toolbar_dock_left = ImGui::FindNodeByID(0x00000003);
+				}
+				else 
+				{
+					// clear existing layout
+					ImGui::DockBuilderRemoveNode(dockspace_id); 
+
+					// empty dockspace node
+					main_dock = ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace); 
+					ImGui::DockBuilderSetNodeSize(main_dock, viewport->Size);
+					
+					ggui::toolbar_dock_top = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Up, 0.01f, nullptr, &main_dock);
+					ImGui::DockBuilderSetNodeSize(ggui::toolbar_dock_top, ImVec2{ viewport->Size.x, 36 });
+
+					ggui::toolbar_dock_left = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.01f, nullptr, &main_dock);
+					ImGui::DockBuilderSetNodeSize(ggui::toolbar_dock_left, ImVec2(36, viewport->Size.y));
+					
+					ggui::dockspace_sidebar_id = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.35f, nullptr, &main_dock);
+
+					if (!floating_toolbar)
+					{
+						if (ggui::toolbar_axis == ImGuiAxis_X)
+						{
+							ImGui::DockBuilderDockWindow("toolbar##xywnd", ggui::toolbar_dock_top);
+						}
+						else
+						{
+							ImGui::DockBuilderDockWindow("toolbar##xywnd", ggui::toolbar_dock_left);
+						}
+					}
+
+					ImGui::DockBuilderDockWindow("Colors##xywnd", ggui::dockspace_sidebar_id);
+					ImGui::DockBuilderDockWindow("Hotkeys##xywnd", ggui::dockspace_sidebar_id);
+					ImGui::DockBuilderDockWindow("Hotkeys Helper##xywnd", ggui::dockspace_sidebar_id);
+					ImGui::DockBuilderDockWindow("Toolbar Editor##xywnd", ggui::dockspace_sidebar_id);
+
+					ImGui::DockBuilderFinish(dockspace_id);
+				}
+
+				context.m_toolbar.one_time_init = true;
+				ggui::reset_dockspace = false;
+			}
+			
 		}
 
 		ImGui::End();
@@ -218,7 +330,8 @@ namespace components
 		// *
 		// toolbar
 		
-		ggui::toolbar::menu(context.m_toolbar);
+		ggui::toolbar::menu_new(context.m_toolbar, context.m_toolbar_edit);
+		//ggui::toolbar::menu_old(context.m_toolbar);
 
 
 		// *
@@ -293,26 +406,26 @@ namespace components
 			// begin context frame
 			gui::begin_frame();
 
-			// create all dockable windows in cxywnd_gui
+			// docking, default layout ... 
 			cxywnd_gui(ggui::state.cxywnd);
 
-			//color_menu(ggui::state.cxywnd.m_colors); // always open
+			// color menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_colors, 
 				ggui::colors::menu(ggui::state.cxywnd.m_colors), nullptr);
 
-			// toggleable toolbar edit menu
+			// toolbar edit menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_toolbar_edit,
 				ggui::toolbar::menu_toolbar_edit(ggui::state.cxywnd.m_toolbar_edit), ggui::toolbar::save_settings_ini());
 			
-			// toggleable command bind menu
+			// command bind menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_cmdbinds, 
 				ggui::hotkeys::menu(ggui::state.cxywnd.m_cmdbinds), ggui::hotkeys::on_close());
 
-			// toggleable command bind helper menu
+			// command bind helper menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_cmdbinds_helper,
 				ggui::hotkeys::helper_menu(ggui::state.cxywnd.m_cmdbinds_helper), nullptr);
 			
-			// toggleable demo menu
+			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_demo,
 					ImGui::ShowDemoWindow(&ggui::state.cxywnd.m_demo.menustate), nullptr);
 
@@ -457,6 +570,18 @@ namespace components
 			/* maxVal	*/ 1.0f,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "gui background color");
+
+		dvars::gui_floating_toolbar = dvars::register_bool(
+			/* name		*/ "gui_floating_toolbar",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "enable floating toolbar (saved between restarts)");
+
+		dvars::gui_resize_dockspace = dvars::register_bool(
+			/* name		*/ "gui_resize_dockspace",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "resize dockspace if floating toolbar is enabled (for top-floating toolbar)");
 	}
 
 	

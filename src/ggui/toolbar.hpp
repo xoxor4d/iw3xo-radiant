@@ -3,8 +3,12 @@
 
 namespace ggui::toolbar
 {
-	void	menu(ggui::imgui_context_menu& menu);
+	void	menu_new(ggui::imgui_context_menu& toolbar, ggui::imgui_context_menu& toolbar_edit);
+	void	menu_old(ggui::imgui_context_menu& menu);
+	
 	void	menu_toolbar_edit(ggui::imgui_context_menu& menu);
 	void	save_settings_ini();
+
+	void	register_dvars();
 	
 }

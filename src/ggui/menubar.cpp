@@ -229,6 +229,31 @@ namespace ggui::menubar
 
 				SEPERATORV(0.0f);
 
+				if (ImGui::BeginMenu("Gui Settings"))
+				{
+					if(dvars::gui_floating_toolbar && dvars::gui_resize_dockspace)
+					{
+						if (ImGui::MenuItem("Floating Toolbar", 0, dvars::gui_floating_toolbar->current.enabled)) 
+						{
+							dvars::set_bool(dvars::gui_floating_toolbar, dvars::gui_floating_toolbar->current.enabled ? false : true);
+							ggui::toolbar_reset = true;
+							
+						} TT(dvars::gui_floating_toolbar->description);
+						
+						if (ImGui::MenuItem("^ Resize Dockspace", 0, dvars::gui_resize_dockspace->current.enabled))
+						{
+							dvars::set_bool(dvars::gui_resize_dockspace, dvars::gui_resize_dockspace->current.enabled ? false : true);
+						} TT(dvars::gui_resize_dockspace->description);
+
+						if(ImGui::MenuItem("Reset Dockspace"))
+						{
+							ggui::reset_dockspace = true; // used to trigger dockspace rebuilding (cxywnd_gui)
+						}
+					}
+					
+					ImGui::EndMenu(); // Gui Settings
+				}
+
 				if (ImGui::MenuItem("Edit Colors ...")) {
 					components::gui::toggle(context.m_colors, 0, true);
 				}

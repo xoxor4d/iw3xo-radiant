@@ -5,13 +5,15 @@ namespace dvars
 	game::dvar_s* gui_menubar_bg_color = nullptr;
 	game::dvar_s* gui_dockedwindow_bg_color = nullptr;
 	game::dvar_s* gui_window_bg_color = nullptr;
-
+	game::dvar_s* gui_floating_toolbar = nullptr;
+	game::dvar_s* gui_resize_dockspace = nullptr;
+	
 	//
 	game::dvar_s* mainframe_show_console = nullptr;
 	game::dvar_s* mainframe_show_zview = nullptr;
 	game::dvar_s* mainframe_show_toolbar = nullptr;
 	game::dvar_s* mainframe_show_menubar = nullptr;
-	
+
 	// radiant-live
 	game::dvar_s* radiant_live = nullptr;
 	game::dvar_s* radiant_livePort = nullptr;
@@ -83,6 +85,7 @@ namespace dvars
 		components::gui::register_dvars();
 		components::remote_net::register_dvars();
 		cmainframe::register_dvars();
+		ggui::toolbar::register_dvars();
 		
 		printf("\n");
 	}
