@@ -1275,6 +1275,77 @@ namespace game
 		void* d_filterGlobals_layerFilters;
 	};
 
+	struct GfxRenderTargetSurface
+	{
+		IDirect3DSurface9* color;
+		IDirect3DSurface9* depthStencil;
+	};
+
+	struct GfxRenderTarget
+	{
+		GfxImage* image;
+		GfxRenderTargetSurface surface;
+		unsigned int width;
+		unsigned int height;
+	};
+
+	struct r_global_permanent_t
+	{
+		Material* sortedMaterials[4096];
+		int needSortMaterials;
+		int materialCount;
+		GfxImage* whiteImage;
+		GfxImage* blackImage;
+		GfxImage* grayImage;
+		GfxImage* identityNormalMapImage;
+		GfxImage* specularityImage;
+		GfxImage* outdoorImage;
+		GfxImage* pixelCostColorCodeImage;
+		GfxLightDef* dlightDef;
+		Material* defaultMaterial;
+		Material* whiteMaterial;
+		Material* additiveMaterial;
+		Material* pointMaterial;
+		Material* lineMaterial;
+		Material* lineMaterialNoDepth;
+		Material* clearAlphaStencilMaterial;
+		Material* shadowClearMaterial;
+		Material* shadowCookieOverlayMaterial;
+		Material* shadowCookieBlurMaterial;
+		Material* shadowCasterMaterial;
+		Material* shadowOverlayMaterial;
+		Material* depthPrepassMaterial;
+		Material* glareBlindMaterial;
+		Material* pixelCostAddDepthAlwaysMaterial;
+		Material* pixelCostAddDepthDisableMaterial;
+		Material* pixelCostAddDepthEqualMaterial;
+		Material* pixelCostAddDepthLessMaterial;
+		Material* pixelCostAddDepthWriteMaterial;
+		Material* pixelCostAddNoDepthWriteMaterial;
+		Material* pixelCostColorCodeMaterial;
+		Material* stencilShadowMaterial;
+		Material* stencilDisplayMaterial;
+		Material* floatZDisplayMaterial;
+		Material* colorChannelMixerMaterial;
+		Material* frameColorDebugMaterial;
+		Material* frameAlphaDebugMaterial;
+		GfxImage* rawImage;
+		void* world; //GfxWorld*
+		int caseTextures_count;
+		GfxImage* caseTextures[64];
+		Material* feedbackReplaceMaterial;
+		Material* feedbackBlendMaterial;
+		Material* feedbackFilmBlendMaterial;
+		Material* postFxColorMaterial;
+		Material* postFxMaterial;
+		void* symmetricFilter_0;
+		Material* symmetricFilterMaterial[8];
+		Material* shellShockBlurredMaterial;
+		Material* shellShockFlashedMaterial;
+		Material* glowConsistentSetupMaterial;
+		Material* glowApplyBloomMaterial;
+	};
+
 	struct filter_material_t
 	{
 		const char* name;

@@ -51,6 +51,10 @@ namespace game
 		// Renderer
 		extern IDirect3DDevice9* d3d9_device;
 		
+		extern IDirect3DTexture9* scene_texture_ccam;
+		extern ImVec2 scene_texture_ccam_dest_size;
+		extern bool camera_in_xy_active;
+		
 	}
 	
 	// radiant globals
@@ -82,6 +86,8 @@ namespace game
 	extern int& texWndGlob_usageCount;
 
 	extern game::GfxCmdBufSourceState* gfx_cmd_buf_source_state;
+	extern game::r_global_permanent_t* rgp;
+	extern game::DxGlobals* dx;
 	
 	extern CPrefsDlg* g_PrefsDlg();
 	extern void CPrefsDlg_SavePrefs();
@@ -91,7 +97,7 @@ namespace game
 	//static DWORD* g_lastundo_ptr = (DWORD*)(0x23F162C);
 	//static DWORD* g_lastredo_ptr = (DWORD*)(0x23F15CC);
 	
-	extern game::DxGlobals* dx;
+	
 
 	extern int* dvarCount;
 	extern game::dvar_s* dvarPool;

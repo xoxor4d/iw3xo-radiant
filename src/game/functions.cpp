@@ -32,6 +32,9 @@ namespace game
 		// Renderer
 		IDirect3DDevice9* d3d9_device = nullptr;
 		
+		IDirect3DTexture9* scene_texture_ccam = nullptr;
+		ImVec2 scene_texture_ccam_dest_size = ImVec2(0, 0);
+		bool camera_in_xy_active = false;
 	}
 
 	// radiant globals
@@ -64,7 +67,9 @@ namespace game
 	int& texWndGlob_usageCount = *reinterpret_cast<int*>(0x25D7994); // amount of loaded usage filters
 
 	game::GfxCmdBufSourceState* gfx_cmd_buf_source_state = reinterpret_cast<game::GfxCmdBufSourceState*>(0x174D760);
-
+	game::r_global_permanent_t* rgp = reinterpret_cast<game::r_global_permanent_t*>(0x136C700);
+	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
+	
 	CPrefsDlg* g_PrefsDlg()
 	{
 		const auto prefs = reinterpret_cast<CPrefsDlg*>(*(DWORD*)0x73C704);
@@ -93,8 +98,6 @@ namespace game
 		const auto redo = reinterpret_cast<game::undo_s*>(*(DWORD*)0x23F15CC);
 		return redo;
 	}
-	
-	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
 
 	int* dvarCount = reinterpret_cast<int*>(0x242394C);
 	game::dvar_s* dvarPool = reinterpret_cast<game::dvar_s*>(0x2427DA4); // dvarpool + 1 dvar size

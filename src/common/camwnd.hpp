@@ -30,9 +30,25 @@ public:
 	camera_s camera;
 	int m_nCambuttonstate;
 	CPoint m_ptButton;
-	int unkown01;
+	int x32;
 	CPoint m_ptCursor;
 	CPoint m_ptLastCursor;
+	int x33;
+	int x34;
+	int x35;
+	int x36;
+	int x37;
+	int x38;
+	int x39;
+	int x40;
+	int x41;
+	int x42;
+	int x43;
+	int x44;
+	int x45;
+	int prob_some_cursor;
+	int x47;
+	int x48;
 
 	//
 	static ccamwnd *activewnd;
@@ -54,6 +70,6 @@ public:
 	static void __stdcall	on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	static void __stdcall	on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
-STATIC_ASSERT_OFFSET(ccamwnd, camera.origin, 0x64); // diff. offset then bo1
-STATIC_ASSERT_OFFSET(ccamwnd, camera.angles, 0x70); // ^
+STATIC_ASSERT_OFFSET(ccamwnd, camera.origin, 0x64);
+STATIC_ASSERT_OFFSET(ccamwnd, camera.angles, 0x70);
 STATIC_ASSERT_OFFSET(ccamwnd, m_nCambuttonstate, 0xD4);

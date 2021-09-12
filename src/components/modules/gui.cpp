@@ -341,6 +341,125 @@ namespace components
 		ImGui::PopStyleVar(_stylevars);
 	}
 
+	void copy_scene_to_texture(ggui::e_gfxwindow wnd, IDirect3DTexture9*& dest, [[maybe_unused]] ImVec2 dest_size = ImVec2(0, 0))
+	{
+		//IDirect3DTexture9* dest = *dest_d;
+		
+		// get the backbuffer surface
+		IDirect3DSurface9* surf_backbuffer = nullptr;
+		game::dx->windows[wnd].swapChain->lpVtbl->GetBackBuffer((IDirect3DSwapChain9*)game::dx->windows[wnd].swapChain, 0, D3DBACKBUFFER_TYPE_MONO, &surf_backbuffer);
+
+		// write surface to file (test)
+		//D3DXSaveSurfaceToFileA("surface_to_file.png", D3DXIFF_PNG, surf_backbuffer, NULL, NULL);
+
+		// check if window size was changed -> release and recreate the texture surface
+		if (dest)
+		{
+			D3DSURFACE_DESC desc;
+			dest->GetLevelDesc(0, &desc);
+
+			if (desc.Width != static_cast<unsigned int>(game::dx->windows[wnd].width) || desc.Height != static_cast<unsigned int>(game::dx->windows[wnd].height))
+			{
+				dest->Release();
+				dest = nullptr;
+			}
+		}
+
+		// create or re-create ^ the texture surface
+		if (!dest)
+		{
+			/*if(dest_size.x != 0.0f && dest_size.y != 0.0f)
+			{
+				D3DXCreateTexture(game::dx->device, dest_size.x, dest_size.y, D3DX_DEFAULT, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &dest);
+			}
+			else
+			{*/ // D3DFMT_A8R8G8B8
+				D3DXCreateTexture(game::dx->device, game::dx->windows[wnd].width, game::dx->windows[wnd].height, D3DX_DEFAULT, D3DUSAGE_RENDERTARGET, D3DFMT_R8G8B8, D3DPOOL_DEFAULT, &dest);
+			//}
+		}
+
+		// "bind" texture to surface
+		IDirect3DSurface9* surf_texture;
+		dest->GetSurfaceLevel(0, &surf_texture);
+
+		// "copy" backbuffer to our texture surface
+		game::dx->device->StretchRect(surf_backbuffer, NULL, surf_texture, NULL, D3DTEXF_NONE);
+
+		// release the backbuffer surface or we'll leak memory
+		surf_backbuffer->Release();
+
+		// write texture to file (test)
+		//D3DXSaveTextureToFileA("texture_to_file.png", D3DXIFF_PNG, dest, NULL);
+	}
+
+	void debug_table_entry_vec3(const char* label, const float* vec3)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(label);
+		
+		for (auto i = 0; i < 3; i++) 
+		{
+			ImGui::TableNextColumn();
+			ImGui::Text("%.2f", vec3[i]);
+		}
+	}
+
+	void debug_table_entry_float(const char* label, const float* val)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(label);
+		
+		ImGui::TableNextColumn();
+		ImGui::Text("%.2f", val);
+	}
+
+	void debug_table_entry_int(const char* label, const int val)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(label);
+		
+		ImGui::TableNextColumn();
+		ImGui::Text("%d", val);
+	}
+
+	void debug_table_entry_int2(const char* label, const int* val)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(label);
+		
+		for (auto i = 0; i < 2; i++) 
+		{
+			ImGui::TableNextColumn();
+			ImGui::Text("%d", val[i]);
+		}
+	}
+
+	ImVec2 pt_last_cursor = ImVec2(0,  0);
+	ImVec2 pt_button = ImVec2(0, 0);
+	int imgui_cam_mousestate = 0;
+	bool imgui_cam_mouse1_was_down = false;
+	bool imgui_cam_mouse2_was_down = false;
+	
+	void cam_mousemoved(ccamwnd* wnd, int buttons, int x, int y)
+	{
+		const static uint32_t CCamWnd__Cam_MouseMoved_Func = 0x404FC0;
+		__asm
+		{
+			pushad;
+
+			mov		eax, buttons;
+			push	y;
+			push	x;
+			mov		ecx, wnd;
+			call	CCamWnd__Cam_MouseMoved_Func; // cleans the stack
+
+			popad;
+		}
+	}
 	
 	// *
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
@@ -370,6 +489,71 @@ namespace components
 
 			// begin context frame
 			gui::begin_frame();
+
+			// copy scene to texture
+			copy_scene_to_texture(ggui::CCAMERAWND, game::glob::scene_texture_ccam, game::glob::scene_texture_ccam_dest_size);
+
+			ImGui::SetNextWindowSizeConstraints(ImVec2(200, 400), ImVec2(FLT_MAX, FLT_MAX));
+			ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Appearing);
+			ImGui::Begin("Camera Debug", nullptr, ImGuiWindowFlags_NoCollapse);
+
+			const auto ccam = cmainframe::activewnd->m_pCamWnd;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
+			if (ImGui::TreeNodeEx("Camera Struct", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5, 5));
+				if (ImGui::BeginTable("camera_struct_table", 4, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
+				{
+					ImGui::TableSetupScrollFreeze(0, 1);
+					ImGui::TableSetupColumn(" Camera Struct", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 120.0f);
+					ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+					ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+					ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+					ImGui::TableHeadersRow();
+
+					debug_table_entry_vec3("Origin", ccam->camera.origin);
+					debug_table_entry_vec3("Angles", ccam->camera.angles);
+					debug_table_entry_vec3("Forward", ccam->camera.forward);
+					debug_table_entry_vec3("Right", ccam->camera.right);
+					debug_table_entry_int("Viewport Width", ccam->camera.width);
+					debug_table_entry_int("Viewport Height", ccam->camera.height);
+
+					ImGui::EndTable();
+				}
+				ImGui::PopStyleVar();
+				ImGui::TreePop();
+			}
+			
+			if (ImGui::TreeNodeEx("CPoints", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5, 5));
+				if (ImGui::BeginTable("cpoints_table", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
+				{
+					ImGui::TableSetupScrollFreeze(0, 1);
+					ImGui::TableSetupColumn(" CPoints", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 120.0f);
+					ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+					ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+					ImGui::TableHeadersRow();
+
+					debug_table_entry_int2("PT Cursor", reinterpret_cast<int*>(&ccam->m_ptCursor));
+					debug_table_entry_int2("PT Last Cursor", reinterpret_cast<int*>(&ccam->m_ptLastCursor));
+					debug_table_entry_int2("PT Button", reinterpret_cast<int*>(&ccam->m_ptButton));
+					
+					ImGui::EndTable();
+				}
+				ImGui::PopStyleVar();
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNodeEx("Misc", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::Text("Button State: \t < %d >", ccam->m_nCambuttonstate);
+				ImGui::TreePop();
+			}
+			
+			ImGui::PopStyleVar();
+			ImGui::End();
 
 			// TODO! always show demo window (for now)
 			//ImGui::ShowDemoWindow(nullptr);
@@ -409,6 +593,170 @@ namespace components
 			// docking, default layout ... 
 			cxywnd_gui(ggui::state.cxywnd);
 
+			auto camera_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.width), static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.height));
+
+			//game::glob::camera_in_xy_active = true;
+			//ImGui::SetNextWindowSize(camera_size + ImVec2(8, 8));
+			
+			ImGui::Begin("camera to texture", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize/*| ImGuiWindowFlags_NoResize*/);
+			if (game::glob::scene_texture_ccam)
+			{
+				const auto IO = ImGui::GetIO();
+				const auto ccam = cmainframe::activewnd->m_pCamWnd;
+				bool is_camera_preview_hovered = false;
+				
+				// hack to disable left mouse window movement
+				ImGui::BeginChild("scene_child", camera_size, false, ImGuiWindowFlags_NoMove);
+				{
+					const auto pre_image_cursor = ImGui::GetCursorPos();
+					//game::glob::scene_texture_ccam_dest_size = ImGui::GetContentRegionAvail();
+					//ImGui::Image(game::glob::scene_texture_ccam, game::glob::scene_texture_ccam_dest_size);
+					ImGui::Image(game::glob::scene_texture_ccam, camera_size);
+
+					if (ImGui::IsItemHovered(ImGuiHoveredFlags_None))
+					{
+						is_camera_preview_hovered = true;
+					}
+
+					ImGui::SetCursorPos(pre_image_cursor);
+					const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
+
+					ImGui::Indent(4.0f);
+
+					ImGui::Text("Cursor Screen Pos:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
+					ImGui::Text("< %.2f, %.2f >", cursor_screen_pos.x, cursor_screen_pos.y);
+
+					ImGui::Text("Mouse Pos:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
+					ImGui::Text("< %.2f, %.2f >", IO.MousePos.x, IO.MousePos.y);
+
+					auto internal_last_cursor = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
+					CPoint internal_last_cursor_point = CPoint(internal_last_cursor.x, internal_last_cursor.y);
+					ImGui::Text("PT Last Cursor:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
+					ImGui::Text("< %.2f, %.2f >", internal_last_cursor.x, internal_last_cursor.y);
+
+					imgui_cam_mousestate |= (IO.KeyShift ? 4 : 0);
+					imgui_cam_mousestate |= (IO.KeyCtrl  ? 8 : 0);
+
+					// left mouse down
+					if (is_camera_preview_hovered && IO.MouseClicked[0])
+					{
+						typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
+						const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
+
+						ccam->m_ptLastCursor = internal_last_cursor_point;
+						imgui_cam_mousestate |= 1;
+
+						CamWnd__DropModelsToPlane(ccam, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1, imgui_cam_mousestate);
+					}
+					
+					// right mouse down
+					if (is_camera_preview_hovered && IO.MouseClicked[1])
+					{
+						typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
+						const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
+
+						imgui_cam_mousestate |= 2;
+						
+						CamWnd__DropModelsToPlane(ccam, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1, imgui_cam_mousestate);
+					}
+					
+					//if (is_camera_preview_hovered && ImGui::IsAnyMouseDown())
+					//{
+					//	pt_button = ImVec2(internal_last_cursor.x, (internal_last_cursor.y - ccam->camera.height) * -1);
+
+					//	imgui_cam_mousestate |= (IO.MouseDown[0] ? 1 : 0);
+					//	imgui_cam_mousestate |= (IO.MouseDown[1] ? 2 : 0);
+
+					//	// TODO! - no mouse 3/4/5 input
+					//	imgui_cam_mousestate |= (IO.MouseDown[2] ? 16 : 0);
+					//	imgui_cam_mousestate |= (IO.MouseDown[3] ? 32 : 0);
+					//	imgui_cam_mousestate |= (IO.MouseDown[4] ? 64 : 0);
+
+					//	
+
+					//	//typedef  void(__thiscall* CCamWnd__OnMouseMove_t)(ccamwnd*, int buttons, CPoint pos);
+					//	//const auto CCamWnd__OnMouseMove = reinterpret_cast<CCamWnd__OnMouseMove_t>(0x403100);
+
+					//	//CCamWnd__OnMouseMove(ccam, imgui_cam_mousestate, new_pos);
+					//	CPoint point = CPoint(internal_last_cursor.x, internal_last_cursor.y);
+					//	
+					//	if(pt_last_cursor.x != internal_last_cursor.x || pt_last_cursor.y != internal_last_cursor.y)
+					//	{
+					//		cam_mousemoved(ccam, imgui_cam_mousestate, point.x, ccam->camera.height - point.y - 1);
+
+					//		pt_last_cursor.x = internal_last_cursor.x;
+					//		pt_last_cursor.y = internal_last_cursor.y;
+					//		ccam->m_ptLastCursor.x = internal_last_cursor.x;
+					//		ccam->m_ptLastCursor.y = internal_last_cursor.y;
+					//	}
+					//}
+
+					if(is_camera_preview_hovered)
+					{
+						if(IO.MouseDown[0] && !imgui_cam_mouse1_was_down)
+						{
+							imgui_cam_mouse1_was_down = true;
+						}
+
+						if (IO.MouseDown[1] && !imgui_cam_mouse2_was_down)
+						{
+							imgui_cam_mouse2_was_down = true;
+						}
+					}
+
+					if (!IO.MouseDown[0] && imgui_cam_mouse1_was_down)
+					{
+						// on mouse up
+						ccam->m_nCambuttonstate = 0;
+						ccam->prob_some_cursor = 0;
+						ccam->x47 = 0;
+
+						int result;
+						
+						do
+						{
+							result = ShowCursor(1);
+						} while (result < 0);
+						
+						imgui_cam_mouse1_was_down = false;
+					}
+
+					if (!IO.MouseDown[1] && imgui_cam_mouse2_was_down)
+					{
+						// on mouse up
+						ccam->m_nCambuttonstate = 0;
+						ccam->prob_some_cursor = 0;
+						ccam->x47 = 0;
+
+						int result;
+
+						do
+						{
+							result = ShowCursor(1);
+						} while (result < 0);
+						
+						imgui_cam_mouse2_was_down = false;
+					}
+    
+					ImGui::Text("PT Button:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
+					ImGui::Text("< %.2f, %.2f >", pt_button.x, pt_button.y);
+
+					ImGui::Text("Mouse State:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
+					ImGui::Text("< %d >", imgui_cam_mousestate);
+
+					/*ccam->m_nCambuttonstate = imgui_cam_mousestate;
+					ccam->m_ptButton.x = pt_button.x;
+					ccam->m_ptButton.y = pt_button.y;
+					ccam->m_ptLastCursor.x = pt_last_cursor.x;
+					ccam->m_ptLastCursor.y = pt_last_cursor.y;*/
+					
+					imgui_cam_mousestate = 0;
+					
+					ImGui::EndChild();
+				}
+			}
+			ImGui::End();
+			
 			// color menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.cxywnd.m_colors, 
 				ggui::colors::menu(ggui::state.cxywnd.m_colors), nullptr);
