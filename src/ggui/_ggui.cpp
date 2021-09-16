@@ -22,6 +22,7 @@ namespace ggui
 	
 	std::vector<commandbinds> cmd_hotkeys;
 
+	cxy_camera_window_s cxy_camerawnd = cxy_camera_window_s();
 
 	// *
 	// | -------------------- Functions ------------------------

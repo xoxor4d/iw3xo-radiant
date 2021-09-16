@@ -32,9 +32,6 @@ namespace game
 		// Renderer
 		IDirect3DDevice9* d3d9_device = nullptr;
 		
-		IDirect3DTexture9* scene_texture_ccam = nullptr;
-		ImVec2 scene_texture_ccam_dest_size = ImVec2(0, 0);
-		bool camera_in_xy_active = false;
 	}
 
 	// radiant globals

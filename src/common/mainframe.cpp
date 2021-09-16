@@ -403,29 +403,25 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 // | -------------------- MSG typedefs ------------------------
 // *
 
-
-typedef void(__thiscall* on_cmainframe_scroll)(cmainframe*, UINT, SHORT, CPoint);
-	on_cmainframe_scroll __on_mscroll;
-
-
-typedef void(__thiscall* on_cmainframe_keydown)(cmainframe*, UINT, UINT, UINT);
-	on_cmainframe_keydown __on_keydown;
-
-typedef void(__stdcall* on_cmainframe_keyup)(cmainframe*, UINT);
-	on_cmainframe_keyup __on_keyup;
-
+namespace mainframe
+{
+	on_cmainframe_scroll	__on_mscroll;
+	on_cmainframe_keydown	__on_keydown;
+	on_cmainframe_keyup		__on_keyup;
+	
+}
 
 // *
 // | -------------------- Mouse Scroll ------------------------
 // *
 
-void __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
+BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
 {
 	IMGUI_BEGIN_CCAMERAWND;
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
 		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
-		return;
+		return 1;
 	}
 
 	
@@ -433,10 +429,10 @@ void __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
 		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
-		return;
+		return 1;
 	}
 
-	return __on_mscroll(pThis, nFlags, zDelta, point);
+	return mainframe::__on_mscroll(pThis, nFlags, zDelta, point);
 }
 
 // *
@@ -459,18 +455,31 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 
 
 	IMGUI_BEGIN_CXYWND;
+
+	// handle imgui-camera window
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		// calls the original on_keydown function
+		mainframe::__on_keydown(cmainframe::activewnd, nChar, nRepCnt, nFlags);
+		return;
+	}
+
+	
+	// if mouse cursor above any cxy imgui window
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
 		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
 		return;
 	}
-	else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
+
+	// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
+	else 
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		memset(io.KeysDown, 0, sizeof(io.KeysDown));
 	}
 	
-	return __on_keydown(pThis, nChar, nRepCnt, nFlags);
+	return mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 }
 
 
@@ -485,13 +494,23 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 
 	
 	IMGUI_BEGIN_CXYWND;
+	
+	// handle imgui-camera window
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		// calls the original on_keyup function
+		return mainframe::__on_keyup(cmainframe::activewnd, nChar);
+	}
+
+
+	// if mouse cursor above any cxy imgui window
 	if (ImGui::GetIO().WantCaptureMouse)
 	{
 		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYUP, 0, nChar);
 		return;
 	}
 
-	return __on_keyup(pThis, nChar);
+	return mainframe::__on_keyup(pThis, nChar);
 }
 
 // *
@@ -563,10 +582,10 @@ void cmainframe::main()
 	
 	// *
 	// detour cmainframe member functions to get imgui input
-	
-	__on_mscroll	= reinterpret_cast<on_cmainframe_scroll> (utils::hook::detour(0x42B850, cmainframe::on_mscroll, HK_JUMP));
-	__on_keydown	= reinterpret_cast<on_cmainframe_keydown>(utils::hook::detour(0x422370, cmainframe::on_keydown, HK_JUMP));
-	__on_keyup		= reinterpret_cast<on_cmainframe_keyup>  (utils::hook::detour(0x422270, cmainframe::on_keyup, HK_JUMP));
+
+	mainframe::__on_mscroll	= reinterpret_cast<mainframe::on_cmainframe_scroll> (utils::hook::detour(0x42B850, cmainframe::on_mscroll, HK_JUMP));
+	mainframe::__on_keydown	= reinterpret_cast<mainframe::on_cmainframe_keydown>(utils::hook::detour(0x422370, cmainframe::on_keydown, HK_JUMP));
+	mainframe::__on_keyup	= reinterpret_cast<mainframe::on_cmainframe_keyup>  (utils::hook::detour(0x422270, cmainframe::on_keyup, HK_JUMP));
 
 	// check for nullptr (world_entity) in a sunlight preview function. Only required with the ^ hook, see note there.
 	utils::hook::nop(0x4067C7, 6);

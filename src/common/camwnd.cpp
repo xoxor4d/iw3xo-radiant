@@ -19,6 +19,20 @@ void ccamwnd::mouse_control(float dtime)
 	return;
 }
 
+void ccamwnd::mouse_up(ccamwnd* cam, int flags)
+{
+	cam->m_nCambuttonstate = 0;
+	game::Drag_MouseUp(flags);
+	cam->prob_some_cursor = 0;
+	cam->x47 = 0;
+	cam->x48 = 1; // prob. int16
+
+	int sw_cur;
+	do {
+		sw_cur = ShowCursor(1);
+	} while (sw_cur < 0);
+}
+
 
 // *
 // | -------------------- MSG typedefs ------------------------

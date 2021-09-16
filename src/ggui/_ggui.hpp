@@ -110,6 +110,14 @@ namespace ggui
 		std::string modifier_key;
 	};
 
+	struct cxy_camera_window_s
+	{
+		IDirect3DTexture9* scene_texture;
+		ImVec2 cursor_pos;
+		CPoint cursor_pos_pt;
+		bool window_hovered;
+	};
+
 	// *
 	// | -------------------- Variables ------------------------
 	// *
@@ -130,6 +138,8 @@ namespace ggui
 	
 	extern std::vector<commandbinds> cmd_hotkeys;
 
+	extern cxy_camera_window_s cxy_camerawnd;
+	
 	
 	// *
 	// | -------------------- Functions ------------------------

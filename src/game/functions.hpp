@@ -51,10 +51,6 @@ namespace game
 		// Renderer
 		extern IDirect3DDevice9* d3d9_device;
 		
-		extern IDirect3DTexture9* scene_texture_ccam;
-		extern ImVec2 scene_texture_ccam_dest_size;
-		extern bool camera_in_xy_active;
-		
 	}
 	
 	// radiant globals
@@ -123,7 +119,7 @@ namespace game
 	static utils::function<void(game::DebugGlobals *debugGlobalsEntry, const float *mins, const float *maxs, const float *color)> R_AddDebugBox = 0x528710;
 
 	//bool IsBrushSelected(game::brush_t* bSel);
-
+	static utils::function<void(unsigned int flags)> Drag_MouseUp = 0x4802A0;
 	
 	// *
 	// renderer

@@ -491,7 +491,7 @@ namespace components
 			gui::begin_frame();
 
 			// copy scene to texture
-			copy_scene_to_texture(ggui::CCAMERAWND, game::glob::scene_texture_ccam, game::glob::scene_texture_ccam_dest_size);
+			copy_scene_to_texture(ggui::CCAMERAWND, ggui::cxy_camerawnd.scene_texture, ImVec2(0.0f, 0.0f));
 
 			ImGui::SetNextWindowSizeConstraints(ImVec2(200, 400), ImVec2(FLT_MAX, FLT_MAX));
 			ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Appearing);
@@ -599,7 +599,7 @@ namespace components
 			//ImGui::SetNextWindowSize(camera_size + ImVec2(8, 8));
 			
 			ImGui::Begin("camera to texture", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize/*| ImGuiWindowFlags_NoResize*/);
-			if (game::glob::scene_texture_ccam)
+			if (ggui::cxy_camerawnd.scene_texture)
 			{
 				const auto IO = ImGui::GetIO();
 				const auto ccam = cmainframe::activewnd->m_pCamWnd;
@@ -611,11 +611,16 @@ namespace components
 					const auto pre_image_cursor = ImGui::GetCursorPos();
 					//game::glob::scene_texture_ccam_dest_size = ImGui::GetContentRegionAvail();
 					//ImGui::Image(game::glob::scene_texture_ccam, game::glob::scene_texture_ccam_dest_size);
-					ImGui::Image(game::glob::scene_texture_ccam, camera_size);
+					ImGui::Image(ggui::cxy_camerawnd.scene_texture, camera_size);
 
 					if (ImGui::IsItemHovered(ImGuiHoveredFlags_None))
 					{
+						ggui::cxy_camerawnd.window_hovered = true;
 						is_camera_preview_hovered = true;
+					}
+					else
+					{
+						ggui::cxy_camerawnd.window_hovered = false;
 					}
 
 					ImGui::SetCursorPos(pre_image_cursor);
@@ -630,35 +635,72 @@ namespace components
 					ImGui::Text("< %.2f, %.2f >", IO.MousePos.x, IO.MousePos.y);
 
 					auto internal_last_cursor = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
+					ggui::cxy_camerawnd.cursor_pos = internal_last_cursor;
+
 					CPoint internal_last_cursor_point = CPoint(internal_last_cursor.x, internal_last_cursor.y);
+					ggui::cxy_camerawnd.cursor_pos_pt = internal_last_cursor_point;
+					
 					ImGui::Text("PT Last Cursor:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
 					ImGui::Text("< %.2f, %.2f >", internal_last_cursor.x, internal_last_cursor.y);
 
-					imgui_cam_mousestate |= (IO.KeyShift ? 4 : 0);
-					imgui_cam_mousestate |= (IO.KeyCtrl  ? 8 : 0);
 
-					// left mouse down
-					if (is_camera_preview_hovered && IO.MouseClicked[0])
-					{
-						typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
-						const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
 
-						ccam->m_ptLastCursor = internal_last_cursor_point;
-						imgui_cam_mousestate |= 1;
-
-						CamWnd__DropModelsToPlane(ccam, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1, imgui_cam_mousestate);
-					}
+				
+					// do not handle here, much rather inside xywnd inputs?
 					
-					// right mouse down
-					if (is_camera_preview_hovered && IO.MouseClicked[1])
-					{
-						typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
-						const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
+					//imgui_cam_mousestate |= (IO.KeyShift ? 4 : 0);
+					//imgui_cam_mousestate |= (IO.KeyCtrl  ? 8 : 0);
 
-						imgui_cam_mousestate |= 2;
-						
-						CamWnd__DropModelsToPlane(ccam, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1, imgui_cam_mousestate);
-					}
+					//// left mouse down
+					//if (is_camera_preview_hovered && IO.MouseClicked[0])
+					//{
+					//	typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
+					//	const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
+
+					//	ccam->m_ptLastCursor = internal_last_cursor_point;
+					//	imgui_cam_mousestate |= 1;
+
+					//	CamWnd__DropModelsToPlane(ccam, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1, imgui_cam_mousestate);
+					//}
+					//
+					//// right mouse down
+					//if (is_camera_preview_hovered && IO.MouseClicked[1])
+					//{
+					//	typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
+					//	const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
+
+					//	imgui_cam_mousestate |= 2;
+					//	
+					//	CamWnd__DropModelsToPlane(ccam, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1, imgui_cam_mousestate);
+					//}
+
+					//// middle mouse down
+					//if (is_camera_preview_hovered && IO.MouseClicked[2])
+					//{
+					//	typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
+					//	const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
+
+					//	imgui_cam_mousestate |= 16;
+
+					//	CamWnd__DropModelsToPlane(ccam, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1, imgui_cam_mousestate);
+					//}
+
+					//if (is_camera_preview_hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Right, 0.0f))//&& IO.MouseDown[1] && (IO.MouseDelta.x > 0.0f || IO.MouseDelta.y > 0.0f))
+					//{
+					//	imgui_cam_mousestate |= 2;
+
+					//	if (ccam->m_ptLastCursor.x != internal_last_cursor.x || ccam->m_ptLastCursor.y != internal_last_cursor.y)
+					//	{
+					//		cam_mousemoved(ccam, imgui_cam_mousestate, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1);
+					//	}
+
+					//	ccam->m_ptLastCursor.x = internal_last_cursor.x;
+					//	ccam->m_ptLastCursor.y = internal_last_cursor.y;
+					//}
+
+
+
+
 					
 					//if (is_camera_preview_hovered && ImGui::IsAnyMouseDown())
 					//{
@@ -691,58 +733,69 @@ namespace components
 					//	}
 					//}
 
-					if(is_camera_preview_hovered)
-					{
-						if(IO.MouseDown[0] && !imgui_cam_mouse1_was_down)
-						{
-							imgui_cam_mouse1_was_down = true;
-						}
 
-						if (IO.MouseDown[1] && !imgui_cam_mouse2_was_down)
-						{
-							imgui_cam_mouse2_was_down = true;
-						}
-					}
 
-					if (!IO.MouseDown[0] && imgui_cam_mouse1_was_down)
-					{
-						// on mouse up
-						ccam->m_nCambuttonstate = 0;
-						ccam->prob_some_cursor = 0;
-						ccam->x47 = 0;
 
-						int result;
-						
-						do
-						{
-							result = ShowCursor(1);
-						} while (result < 0);
-						
-						imgui_cam_mouse1_was_down = false;
-					}
+					
 
-					if (!IO.MouseDown[1] && imgui_cam_mouse2_was_down)
-					{
-						// on mouse up
-						ccam->m_nCambuttonstate = 0;
-						ccam->prob_some_cursor = 0;
-						ccam->x47 = 0;
+					//if(is_camera_preview_hovered)
+					//{
+					//	if(IO.MouseDown[0] && !imgui_cam_mouse1_was_down)
+					//	{
+					//		imgui_cam_mouse1_was_down = true;
+					//	}
 
-						int result;
+					//	if (IO.MouseDown[1] && !imgui_cam_mouse2_was_down)
+					//	{
+					//		imgui_cam_mouse2_was_down = true;
+					//	}
+					//}
 
-						do
-						{
-							result = ShowCursor(1);
-						} while (result < 0);
-						
-						imgui_cam_mouse2_was_down = false;
-					}
-    
+					//if (!IO.MouseDown[0] && imgui_cam_mouse1_was_down)
+					//{
+					//	// on mouse up
+					//	ccam->m_nCambuttonstate = 0;
+					//	ccam->prob_some_cursor = 0;
+					//	ccam->x47 = 0;
+
+					//	int result;
+					//	
+					//	do
+					//	{
+					//		result = ShowCursor(1);
+					//	} while (result < 0);
+					//	
+					//	imgui_cam_mouse1_was_down = false;
+					//}
+
+					//if (!IO.MouseDown[1] && imgui_cam_mouse2_was_down)
+					//{
+					//	// on mouse up
+					//	ccam->m_nCambuttonstate = 0;
+					//	ccam->prob_some_cursor = 0;
+					//	ccam->x47 = 0;
+
+					//	int result;
+
+					//	do
+					//	{
+					//		result = ShowCursor(1);
+					//	} while (result < 0);
+					//	
+					//	imgui_cam_mouse2_was_down = false;
+					//}
+
+
+					
 					ImGui::Text("PT Button:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
 					ImGui::Text("< %.2f, %.2f >", pt_button.x, pt_button.y);
 
-					ImGui::Text("Mouse State:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
-					ImGui::Text("< %d >", imgui_cam_mousestate);
+					//ImGui::Text("Mouse State:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
+					//ImGui::Text("< %d >", imgui_cam_mousestate);
+
+
+					ImGui::Text("ImGui Mouse Delta:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
+					ImGui::Text("< %.2f, %.2f >", IO.MouseDelta.x, IO.MouseDelta.y);
 
 					/*ccam->m_nCambuttonstate = imgui_cam_mousestate;
 					ccam->m_ptButton.x = pt_button.x;

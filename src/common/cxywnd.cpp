@@ -248,12 +248,19 @@ typedef void(__thiscall* on_cxywnd_msg)(cxywnd*, UINT, CPoint);
 	on_cxywnd_msg __on_lbutton_up;
 	on_cxywnd_msg __on_rbutton_down;
 	on_cxywnd_msg __on_rbutton_up;
+	on_cxywnd_msg __on_mbutton_down;
+	on_cxywnd_msg __on_mbutton_up;
 	on_cxywnd_msg __on_mouse_move;
 
 
 typedef void(__stdcall* on_cxywnd_key)(UINT nChar, UINT nRepCnt, UINT nFlags);
 	on_cxywnd_key __on_keydown;
 	on_cxywnd_key __on_keyup;
+
+
+typedef BOOL(__stdcall* on_cxywnd_scroll)(UINT nFlags, std::int16_t zDelta, CPoint point);
+	on_cxywnd_scroll __on_scroll;
+
 
 
 // *
@@ -265,13 +272,29 @@ void __fastcall cxywnd::on_lbutton_down(cxywnd* pThis, [[maybe_unused]] void* ed
 	// set cxy context
 	IMGUI_BEGIN_CXYWND;
 
-	// check if mouse cursor is above any cxy imgui window
-	if (ImGui::GetIO().WantCaptureMouse)
+	// if mouse is inside imgui-camera window
+	if(ggui::cxy_camerawnd.window_hovered)
+	{
+		typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
+		const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
+
+		const auto ccam = cmainframe::activewnd->m_pCamWnd;
+		
+		// ------
+
+		ccam->m_ptLastCursor = ggui::cxy_camerawnd.cursor_pos_pt;
+		CamWnd__DropModelsToPlane(ccam, ccam->m_ptLastCursor.x, ccam->camera.height - ccam->m_ptLastCursor.y - 1, nFlags);
+	}
+	
+	// if mouse cursor above any cxy imgui window
+	else if (ImGui::GetIO().WantCaptureMouse)
 	{
 		// handle input, don't pass input to the xywindow
 		ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
 	}
-	else // pass input to the xywindow
+
+	// pass input to the xywindow
+	else 
     {
         return __on_lbutton_down(pThis, nFlags, point);
     }
@@ -280,16 +303,26 @@ void __fastcall cxywnd::on_lbutton_down(cxywnd* pThis, [[maybe_unused]] void* ed
 void __fastcall cxywnd::on_lbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	IMGUI_BEGIN_CXYWND;
-	
-	if (ImGui::GetIO().WantCaptureMouse)
+
+	// if mouse is inside imgui-camera window
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		ccamwnd::mouse_up(cmainframe::activewnd->m_pCamWnd, nFlags);
+	}
+
+	// if mouse cursor above any cxy imgui window
+	else if (ImGui::GetIO().WantCaptureMouse)
 	{
 		ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
 	}
+
+	// pass input to the xywindow
 	else
     {
         return __on_lbutton_up(pThis, nFlags, point);
     }
 }
+
 
 
 // *
@@ -299,11 +332,24 @@ void __fastcall cxywnd::on_lbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx,
 void __fastcall cxywnd::on_rbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	IMGUI_BEGIN_CXYWND;
-	
-	if (ImGui::GetIO().WantCaptureMouse)
+
+	// if mouse is inside imgui-camera window
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
+		const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
+
+		const auto ccam = cmainframe::activewnd->m_pCamWnd;
+		CamWnd__DropModelsToPlane(ccam, ggui::cxy_camerawnd.cursor_pos_pt.x, ccam->camera.height - ggui::cxy_camerawnd.cursor_pos_pt.y - 1, nFlags);
+	}
+
+	// if mouse cursor above any cxy imgui window
+	else if (ImGui::GetIO().WantCaptureMouse)
 	{
 		ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONDOWN);
 	}
+	
+	// pass input to the xywindow
 	else
     {
         return __on_rbutton_down(pThis, nFlags, point);
@@ -313,15 +359,97 @@ void __fastcall cxywnd::on_rbutton_down(cxywnd* pThis, [[maybe_unused]] void* ed
 void __fastcall cxywnd::on_rbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	IMGUI_BEGIN_CXYWND;
-	
-	if (ImGui::GetIO().WantCaptureMouse)
+
+	// if mouse is inside imgui-camera window
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		const auto ccam = cmainframe::activewnd->m_pCamWnd;
+		const int cursor_point_y = ccam->camera.height - ggui::cxy_camerawnd.cursor_pos_pt.y - 1;
+
+		// context menu
+		const static uint32_t CCamWnd__ContextMenu_Func = 0x404D40;
+		__asm
+		{
+			pushad;
+			
+			push	cursor_point_y;
+			push	ggui::cxy_camerawnd.cursor_pos_pt.x;
+			mov     ebx, ccam;
+			call	CCamWnd__ContextMenu_Func; // cleans the stack
+			
+			popad;
+		}
+
+		ccamwnd::mouse_up(cmainframe::activewnd->m_pCamWnd, nFlags);
+	}
+
+	// if mouse cursor above any cxy imgui window
+	else if (ImGui::GetIO().WantCaptureMouse)
 	{
 		ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONUP);
 	}
+
+	// pass input to the xywindow
 	else
     {
         return __on_rbutton_up(pThis, nFlags, point);
     }
+}
+
+
+
+// *
+// | ----------------- Middle Mouse Button ---------------------
+// *
+
+void __fastcall cxywnd::on_mbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+{
+	IMGUI_BEGIN_CXYWND;
+
+	// if mouse is inside imgui-camera window
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
+		const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
+
+		const auto ccam = cmainframe::activewnd->m_pCamWnd;
+		CamWnd__DropModelsToPlane(ccam, ggui::cxy_camerawnd.cursor_pos_pt.x, ccam->camera.height - ggui::cxy_camerawnd.cursor_pos_pt.y - 1, nFlags);
+	}
+
+	// if mouse cursor above any cxy imgui window
+	else if (ImGui::GetIO().WantCaptureMouse)
+	{
+		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MBUTTONDOWN);
+	}
+
+	// pass input to the xywindow
+	else
+	{
+		return __on_mbutton_down(pThis, nFlags, point);
+	}
+}
+
+void __fastcall cxywnd::on_mbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+{
+	IMGUI_BEGIN_CXYWND;
+
+	// if mouse is inside imgui-camera window
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		ccamwnd::mouse_up(cmainframe::activewnd->m_pCamWnd, nFlags);
+	}
+
+	// if mouse cursor above any cxy imgui window
+	else if (ImGui::GetIO().WantCaptureMouse)
+	{
+		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MBUTTONUP);
+	}
+
+	// pass input to the xywindow
+	else
+	{
+		return __on_mbutton_up(pThis, nFlags, point);
+	}
 }
 
 
@@ -334,8 +462,29 @@ void __fastcall cxywnd::on_mouse_move(cxywnd* pThis, [[maybe_unused]] void* edx,
 {
 	IMGUI_BEGIN_CXYWND;
 
+	// if mouse is inside imgui-camera window
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		const auto ccam = cmainframe::activewnd->m_pCamWnd;
+		const int cursor_point_y = ccam->camera.height - ggui::cxy_camerawnd.cursor_pos_pt.y - 1;
+		
+		const static uint32_t CCamWnd__Cam_MouseMoved_Func = 0x404FC0;
+		__asm
+		{
+			pushad;
+
+			mov		eax, nFlags;
+			push	cursor_point_y;
+			push	ggui::cxy_camerawnd.cursor_pos_pt.x;
+			mov		ecx, ccam;
+			call	CCamWnd__Cam_MouseMoved_Func; // cleans the stack
+
+			popad;
+		}
+	}
+
 	// block xywindow input if mouse cursor is above any cxy imgui window
-	if (!ImGui::GetIO().WantCaptureMouse)
+	else if (!ImGui::GetIO().WantCaptureMouse)
 	{
 		return __on_mouse_move(pThis, nFlags, point);
 	}
@@ -350,14 +499,25 @@ void __fastcall cxywnd::on_mouse_move(cxywnd* pThis, [[maybe_unused]] void* edx,
 void __stdcall cxywnd::on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	IMGUI_BEGIN_CXYWND;
-	
-	if (ImGui::GetIO().WantCaptureMouse)
+
+	// handle imgui-camera window (only triggers when xywnd is focused)
+	// cmainframe::on_keydown handles input if imgui-camera window is focused 
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		// calls the original on_keydown function
+		mainframe::__on_keydown(cmainframe::activewnd, nChar, nRepCnt, nFlags);
+	}
+
+	// if mouse cursor above any cxy imgui window
+	else if (ImGui::GetIO().WantCaptureMouse)
 	{
 		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
 	}
+
+	// pass input to the xywindow
 	else
 	{
-		// cmainframe::OnKeyDown
+		// cmainframe::OnKeyDown (detoured)
 		return __on_keydown(nChar, nRepCnt, nFlags);
 	}
 }
@@ -365,16 +525,61 @@ void __stdcall cxywnd::on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags)
 void __stdcall cxywnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	IMGUI_BEGIN_CXYWND;
-	
-	if (ImGui::GetIO().WantCaptureMouse)
+
+	// handle imgui-camera window (only triggers when xywnd is focused)
+	// cmainframe::on_keyup handles input if imgui-camera window is focused 
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		// calls the original on_keyup function
+		mainframe::__on_keyup(cmainframe::activewnd, nChar);
+	}
+
+	// if mouse cursor above any cxy imgui window
+	else if (ImGui::GetIO().WantCaptureMouse)
 	{
 		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYUP, 0, nChar);
 	}
+
+	// pass input to the xywindow
 	else
 	{
-		// cmainframe::OnKeyUp
+		// cmainframe::OnKeyUp (detoured)
 		return __on_keyup(nChar, nRepCnt, nFlags);
 	}
+}
+
+
+
+// *
+// | ----------------- Mouse Scrolling ---------------------
+// *
+
+BOOL __stdcall cxywnd::on_scroll(UINT nFlags, std::int16_t zDelta, [[maybe_unused]] CPoint point)
+{
+	// if mouse is inside imgui-camera window
+	if (ggui::cxy_camerawnd.window_hovered)
+	{
+		float scroll_dir = zDelta <= 0 ? 1.0f : -1.0f;
+		
+		const static uint32_t CCamWnd__Scroll_Func = 0x4248A0;
+		__asm
+		{
+			pushad;
+
+			mov		edi, cmainframe::activewnd; // yes .. :r
+			push	cmainframe::activewnd;		// ^
+			fld		scroll_dir;
+			fstp    dword ptr[esp];
+			call	CCamWnd__Scroll_Func; // cleans the stack
+
+			popad;
+		}
+
+		return 1;
+	}
+
+	// original non-detoured scroll function
+	return mainframe::__on_mscroll(cmainframe::activewnd, nFlags, zDelta, point); //__on_scroll(nFlags, zDelta, point);
 }
 
 
@@ -459,8 +664,13 @@ void cxywnd::main()
 	__on_rbutton_down	= reinterpret_cast<on_cxywnd_msg>(utils::hook::detour(0x4647B0, cxywnd::on_rbutton_down, HK_JUMP));
 	__on_rbutton_up		= reinterpret_cast<on_cxywnd_msg>(utils::hook::detour(0x464990, cxywnd::on_rbutton_up, HK_JUMP));
 
+	__on_mbutton_down	= reinterpret_cast<on_cxywnd_msg>(utils::hook::detour(0x463FF0, cxywnd::on_mbutton_down, HK_JUMP));
+	__on_mbutton_up		= reinterpret_cast<on_cxywnd_msg>(utils::hook::detour(0x464950, cxywnd::on_mbutton_up, HK_JUMP));
+	
 	__on_mouse_move		= reinterpret_cast<on_cxywnd_msg>(utils::hook::detour(0x464B10, cxywnd::on_mouse_move, HK_JUMP));
 
 	__on_keydown		= reinterpret_cast<on_cxywnd_key>(utils::hook::detour(0x465C90, cxywnd::on_keydown, HK_JUMP));
 	__on_keyup			= reinterpret_cast<on_cxywnd_key>(utils::hook::detour(0x46E510, cxywnd::on_keyup, HK_JUMP));
+
+	__on_scroll			= reinterpret_cast<on_cxywnd_scroll>(utils::hook::detour(0x46E5C0, cxywnd::on_scroll, HK_JUMP));
 }

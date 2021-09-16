@@ -79,8 +79,13 @@ public:
 	static void __fastcall	on_rbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 	static void __fastcall	on_rbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 
+	static void __fastcall	on_mbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	static void __fastcall	on_mbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+	
 	static void __fastcall	on_mouse_move(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 
 	static void __stdcall	on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	static void __stdcall	on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags);
+
+	static BOOL __stdcall	on_scroll(UINT nFlags, std::int16_t zDelta, CPoint point);
 };

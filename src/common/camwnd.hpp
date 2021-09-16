@@ -54,7 +54,8 @@ public:
 	static ccamwnd *activewnd;
 
 	void					mouse_control(float dtime);
-
+	static void				mouse_up(ccamwnd* cam, int flags);
+	
 	static void				main();
 	static BOOL WINAPI		windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	//static void			on_endframe();
