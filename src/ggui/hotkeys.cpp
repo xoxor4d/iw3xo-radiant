@@ -542,7 +542,7 @@ namespace ggui::hotkeys
 		{
 			if (!cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
 			{
-				components::gui::toggle(ggui::state.cxywnd.m_cmdbinds_helper, 0, true);
+				components::gui::toggle(ggui::state.czwnd.m_cmdbinds_helper, 0, true);
 				menu.menustate = false;
 			}
 		}

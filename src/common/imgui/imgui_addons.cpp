@@ -154,6 +154,54 @@ namespace ImGui
 		}
 	}
 
+	
+	void debug_table_entry_vec3(const char* label, const float* vec3)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(label);
+
+		for (auto i = 0; i < 3; i++)
+		{
+			ImGui::TableNextColumn();
+			ImGui::Text("%.2f", vec3[i]);
+		}
+	}
+
+	void debug_table_entry_float(const char* label, const float* val)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(label);
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%.2f", val);
+	}
+
+	void debug_table_entry_int(const char* label, const int val)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(label);
+
+		ImGui::TableNextColumn();
+		ImGui::Text("%d", val);
+	}
+
+	void debug_table_entry_int2(const char* label, const int* val)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted(label);
+
+		for (auto i = 0; i < 2; i++)
+		{
+			ImGui::TableNextColumn();
+			ImGui::Text("%d", val[i]);
+		}
+	}
+
+	
 	void StyleColorsDevgui(ImGuiStyle* dst)
 	{
 		ImGuiStyle* style = dst ? dst : &ImGui::GetStyle();

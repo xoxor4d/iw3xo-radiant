@@ -62,85 +62,6 @@ namespace components
 		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f);
 	}
 
-#if 0
-	// *
-	// initialize the imgui camerawnd context
-	void imgui_init_ccamerawnd()
-	{
-		// get the device from d3d9ex::_d3d9/Ex::CreateDevice
-		IDirect3DDevice9* device = game::glob::d3d9_device;
-		ASSERT_MSG(device, "IDirect3DDevice9 == nullptr");
-		
-		if (!cmainframe::activewnd->m_pCamWnd)
-		{
-			return;
-		}
-
-		// create/set context
-		ggui::state.ccamerawnd.context = ImGui::CreateContext();
-		ImGui::SetCurrentContext(ggui::state.ccamerawnd.context);
-		
-        ImGuiIO& io = ImGui::GetIO();
-		imgui_init_fonts();
-		
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
-		io.ConfigWindowsResizeFromEdges = true;
-		io.IniFilename = "iw3r_ccam_imgui.ini";
-		
-		// implementation
-		ImGui_ImplWin32_Init(cmainframe::activewnd->m_pCamWnd->GetWindow());
-		ImGui_ImplDX9_Init(device);
-
-		// style
-		ImGui::StyleColorsDevgui();
-
-		// fully initialized
-		ggui::state.ccamerawnd.context_initialized = true;
-		ggui::state.ccamerawnd.dx_window = &game::dx->windows[ggui::CCAMERAWND];
-	}
-#endif
-
-
-#if 0
-	// *
-	// initialize the imgui xywnd context
-	void imgui_init_cxywnd()
-	{
-		// get the device from d3d9ex::_d3d9/Ex::CreateDevice
-		IDirect3DDevice9* device = game::glob::d3d9_device;
-		ASSERT_MSG(device, "IDirect3DDevice9 == nullptr");
-
-		if(!cmainframe::activewnd->m_pXYWnd)
-		{
-			return;
-		}
-
-		// create/set context
-		ggui::state.cxywnd.context = ImGui::CreateContext();
-		ImGui::SetCurrentContext(ggui::state.cxywnd.context);
-
-		ImGuiIO& io = ImGui::GetIO();
-		imgui_init_fonts();
-		
-		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
-		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;       // Enable Multi-Viewport / Platform Windows
-		io.ConfigWindowsResizeFromEdges = true;
-		io.IniFilename = "iw3r_cxy_imgui.ini";
-		
-		// implementation
-		ImGui_ImplWin32_Init(cmainframe::activewnd->m_pXYWnd->GetWindow());
-		ImGui_ImplDX9_Init(device);
-
-		// style
-		ImGui::StyleColorsDevgui();
-
-		// fully initialized
-		ggui::state.cxywnd.context_initialized = true;
-		ggui::state.cxywnd.dx_window = &game::dx->windows[ggui::CXYWND];
-	}
-#endif
-
 #if USE_LAYERED_AS_BACKGROUND
 	// *
 	// initialize imgui context
@@ -180,6 +101,7 @@ namespace components
 	}
 #endif
 
+	
 	// *
 	// initialize imgui context
 	void imgui_init_czwnd()
@@ -217,11 +139,12 @@ namespace components
 		ggui::state.czwnd.dx_window = &game::dx->windows[ggui::CZWND];
 	}
 
+	
 	// *
 	// dockspace creation
 	// TODO! - rewrite when docking v3 is avail.
 	
-	void cxywnd_gui(ggui::imgui_context_cz& context)
+	void czwnd_gui(ggui::imgui_context_cz& context)
 	{
 		int _stylevars = 0;
 		int _stylecolors = 0;
@@ -356,6 +279,10 @@ namespace components
 		ggui::menubar::menu(context);
 		ggui::menubar_height = ImGui::GetCurrentWindow()->MenuBarHeight();
 
+
+		// *
+		// toolbar settings
+		
 		// restore window padding
 		if (ggui::toolbar_axis == ImGuiAxis_Y)
 		{
@@ -479,19 +406,7 @@ namespace components
 		ggui::toolbar::menu_new(context.m_toolbar, context.m_toolbar_edit);
 		//ggui::toolbar::menu_old(context.m_toolbar);
 
-		/*ImGui::Begin("Debug");
-		ImGui::Text("WantCaptureMouse: %d", io.WantCaptureMouse);
-		ImGui::Text("WantCaptureKeyboard: %d", io.WantCaptureKeyboard);
-		ImGui::Text("WantTextInput: %d", io.WantTextInput);
-		ImGui::Text("WantSetMousePos: %d", io.WantSetMousePos);
-
-		SPACING(0.0f, 4.0f);
 		
-		ImGui::Text("Mouse delta: (%g, %g)", io.MouseDelta.x, io.MouseDelta.y);
-		ImGui::Text("Mouse down:");     for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); i++) if (ImGui::IsMouseDown(i)) { ImGui::SameLine(); ImGui::Text("b%d (%.02f secs)", i, io.MouseDownDuration[i]); }
-		ImGui::End();*/
-		
-
 		// *
 		// clean-up
 		
@@ -499,6 +414,7 @@ namespace components
 		ImGui::PopStyleVar(_stylevars);
 	}
 
+	
 	void copy_scene_to_texture(ggui::e_gfxwindow wnd, IDirect3DTexture9*& dest)
 	{
 		// get the backbuffer surface
@@ -541,76 +457,9 @@ namespace components
 		// write texture to file (test)
 		//D3DXSaveTextureToFileA("texture_to_file.png", D3DXIFF_PNG, dest, NULL);
 	}
-
-	void debug_table_entry_vec3(const char* label, const float* vec3)
-	{
-		ImGui::TableNextRow();
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(label);
-		
-		for (auto i = 0; i < 3; i++) 
-		{
-			ImGui::TableNextColumn();
-			ImGui::Text("%.2f", vec3[i]);
-		}
-	}
-
-	void debug_table_entry_float(const char* label, const float* val)
-	{
-		ImGui::TableNextRow();
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(label);
-		
-		ImGui::TableNextColumn();
-		ImGui::Text("%.2f", val);
-	}
-
-	void debug_table_entry_int(const char* label, const int val)
-	{
-		ImGui::TableNextRow();
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(label);
-		
-		ImGui::TableNextColumn();
-		ImGui::Text("%d", val);
-	}
-
-	void debug_table_entry_int2(const char* label, const int* val)
-	{
-		ImGui::TableNextRow();
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted(label);
-		
-		for (auto i = 0; i < 2; i++) 
-		{
-			ImGui::TableNextColumn();
-			ImGui::Text("%d", val[i]);
-		}
-	}
-
-	ImVec2 pt_last_cursor = ImVec2(0,  0);
-	ImVec2 pt_button = ImVec2(0, 0);
-	int imgui_cam_mousestate = 0;
-	bool imgui_cam_mouse1_was_down = false;
-	bool imgui_cam_mouse2_was_down = false;
 	
-	void cam_mousemoved(ccamwnd* wnd, int buttons, int x, int y)
-	{
-		const static uint32_t CCamWnd__Cam_MouseMoved_Func = 0x404FC0;
-		__asm
-		{
-			pushad;
 
-			mov		eax, buttons;
-			push	y;
-			push	x;
-			mov		ecx, wnd;
-			call	CCamWnd__Cam_MouseMoved_Func; // cleans the stack
-
-			popad;
-		}
-	}
-
+	// render to texture - grid window
 	void rtt_grid_window()
 	{
 		int p_styles = 0;
@@ -677,6 +526,8 @@ namespace components
 		ImGui::End();
 	}
 
+	
+	// render to texture - camera window
 	void rtt_camera_window()
 	{
 		int p_styles = 0;
@@ -745,6 +596,7 @@ namespace components
 		ImGui::PopStyleVar(p_styles);
 		ImGui::End();
 	}
+
 	
 	// *
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
@@ -759,104 +611,12 @@ namespace components
 		 // | -------------------- Camera Window ------------------------
 		 // *
 
-#if 0
-		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
-		{
-			if(!ggui::state.ccamerawnd.context_initialized)
-			{
-				imgui_init_ccamerawnd();
-
-				// allow 1 frame to pass
-				return;
-			}
-
-			// set context
-			IMGUI_BEGIN_CCAMERAWND;
-
-			// begin context frame
-			gui::begin_frame();
-
-			// copy scene to texture
-			copy_scene_to_texture(ggui::CCAMERAWND, ggui::rtt_camerawnd.scene_texture, ImVec2(0.0f, 0.0f));
-
-			ImGui::SetNextWindowSizeConstraints(ImVec2(200, 400), ImVec2(FLT_MAX, FLT_MAX));
-			ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Appearing);
-			ImGui::Begin("Camera Debug", nullptr, ImGuiWindowFlags_NoCollapse);
-
-			const auto ccam = cmainframe::activewnd->m_pCamWnd;
-
-			ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
-			if (ImGui::TreeNodeEx("Camera Struct", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5, 5));
-				if (ImGui::BeginTable("camera_struct_table", 4, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
-				{
-					ImGui::TableSetupScrollFreeze(0, 1);
-					ImGui::TableSetupColumn(" Camera Struct", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 120.0f);
-					ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 38.0f);
-					ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 38.0f);
-					ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, 38.0f);
-					ImGui::TableHeadersRow();
-
-					debug_table_entry_vec3("Origin", ccam->camera.origin);
-					debug_table_entry_vec3("Angles", ccam->camera.angles);
-					debug_table_entry_vec3("Forward", ccam->camera.forward);
-					debug_table_entry_vec3("Right", ccam->camera.right);
-					debug_table_entry_int("Viewport Width", ccam->camera.width);
-					debug_table_entry_int("Viewport Height", ccam->camera.height);
-
-					ImGui::EndTable();
-				}
-				ImGui::PopStyleVar();
-				ImGui::TreePop();
-			}
-			
-			if (ImGui::TreeNodeEx("CPoints", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5, 5));
-				if (ImGui::BeginTable("cpoints_table", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
-				{
-					ImGui::TableSetupScrollFreeze(0, 1);
-					ImGui::TableSetupColumn(" CPoints", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 120.0f);
-					ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 38.0f);
-					ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 38.0f);
-					ImGui::TableHeadersRow();
-
-					debug_table_entry_int2("PT Cursor", reinterpret_cast<int*>(&ccam->m_ptCursor));
-					debug_table_entry_int2("PT Last Cursor", reinterpret_cast<int*>(&ccam->m_ptLastCursor));
-					debug_table_entry_int2("PT Button", reinterpret_cast<int*>(&ccam->m_ptButton));
-					
-					ImGui::EndTable();
-				}
-				ImGui::PopStyleVar();
-				ImGui::TreePop();
-			}
-
-			if (ImGui::TreeNodeEx("Misc", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::Text("Button State: \t < %d >", ccam->m_nCambuttonstate);
-				ImGui::TreePop();
-			}
-			
-			ImGui::PopStyleVar();
-			ImGui::End();
-
-			// TODO! always show demo window (for now)
-			//ImGui::ShowDemoWindow(nullptr);
-
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.ccamerawnd.m_demo,
-				ImGui::ShowDemoWindow(&ggui::state.ccamerawnd.m_demo.menustate), nullptr);
-			
-			// end the current context frame
-			goto END_FRAME;
-		}
-#endif
-
 		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
 		{
 			// copy scene to texture
 			copy_scene_to_texture(ggui::CCAMERAWND, ggui::rtt_camerawnd.scene_texture);
 		}
+
 		
 		// *
 		// | -------------------- XY Window ------------------------
@@ -867,310 +627,12 @@ namespace components
 			// copy scene to texture
 			copy_scene_to_texture(ggui::CXYWND, ggui::rtt_gridwnd.scene_texture);
 		}
+
+
+		// *
+		// | ------------- Layered Materials Window -----------------
+		// *
 		
-#if 0
-			if (!ggui::state.cxywnd.context_initialized)
-			{
-				imgui_init_cxywnd();
-
-				// allow 1 frame to pass
-				return;
-			}
-
-			IMGUI_BEGIN_CXYWND;
-
-			// global style vars for current context
-			ImGuiStyle& style = ImGui::GetStyle();
-			style.FrameBorderSize = 0.0f;
-			style.Colors[ImGuiCol_WindowBg] = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector);
-
-			// begin context frame
-			gui::begin_frame();
-
-			// copy scene to texture
-			copy_scene_to_texture(ggui::CXYWND, ggui::rtt_gridwnd.scene_texture);
-
-			// docking, default layout ... 
-			cxywnd_gui(ggui::state.cxywnd);
-#endif
-
-#if 0
-			if (game::g_PrefsDlg()->m_nView == 1)
-			{
-				auto camera_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.width), static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.height));
-
-				//game::glob::camera_in_xy_active = true;
-				//ImGui::SetNextWindowSize(camera_size + ImVec2(8, 8));
-				ImGui::SetNextWindowSizeConstraints(ImVec2(320.0f, 320.0f), ImVec2(FLT_MAX, FLT_MAX));
-
-				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(7.0f, 4.0f));
-				ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0);
-				ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0);
-				ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0);
-
-				ImGui::Begin("camera to texture", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar /*| ImGuiWindowFlags_AlwaysAutoResize /*| ImGuiWindowFlags_NoResize*/);
-				if (ggui::rtt_camerawnd.scene_texture)
-				{
-					const auto IO = ImGui::GetIO();
-					const auto ccam = cmainframe::activewnd->m_pCamWnd;
-					bool is_camera_preview_hovered = false;
-
-					const auto curr_window_size = ImGui::GetWindowSize();
-					SetWindowPos(cmainframe::activewnd->m_pCamWnd->m_hWnd, HWND_BOTTOM, 0, 0, (int)curr_window_size.x, (int)curr_window_size.y, SWP_NOZORDER);
-
-					// hack to disable left mouse window movement
-					ImGui::BeginChild("scene_child", camera_size, false, ImGuiWindowFlags_NoMove);
-					{
-						const auto pre_image_cursor = ImGui::GetCursorPos();
-						//game::glob::scene_texture_ccam_dest_size = ImGui::GetContentRegionAvail();
-						//ImGui::Image(game::glob::scene_texture_ccam, game::glob::scene_texture_ccam_dest_size);
-						ImGui::Image(ggui::rtt_camerawnd.scene_texture, camera_size);
-
-						if (ImGui::IsItemHovered(ImGuiHoveredFlags_None))
-						{
-							ggui::rtt_camerawnd.window_hovered = true;
-							is_camera_preview_hovered = true;
-						}
-						else
-						{
-							ggui::rtt_camerawnd.window_hovered = false;
-						}
-
-						ImGui::SetCursorPos(pre_image_cursor);
-						const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
-
-						ImGui::Indent(4.0f);
-
-						ImGui::Text("Cursor Screen Pos:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
-						ImGui::Text("< %.2f, %.2f >", cursor_screen_pos.x, cursor_screen_pos.y);
-
-						ImGui::Text("Mouse Pos:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
-						ImGui::Text("< %.2f, %.2f >", IO.MousePos.x, IO.MousePos.y);
-
-						auto internal_last_cursor = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
-						ggui::rtt_camerawnd.cursor_pos = internal_last_cursor;
-
-						CPoint internal_last_cursor_point = CPoint(internal_last_cursor.x, internal_last_cursor.y);
-						ggui::rtt_camerawnd.cursor_pos_pt = internal_last_cursor_point;
-
-						ImGui::Text("PT Last Cursor:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
-						ImGui::Text("< %.2f, %.2f >", internal_last_cursor.x, internal_last_cursor.y);
-
-
-
-
-						// do not handle here, much rather inside xywnd inputs?
-
-						//imgui_cam_mousestate |= (IO.KeyShift ? 4 : 0);
-						//imgui_cam_mousestate |= (IO.KeyCtrl  ? 8 : 0);
-
-						//// left mouse down
-						//if (is_camera_preview_hovered && IO.MouseClicked[0])
-						//{
-						//	typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
-						//	const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
-
-						//	ccam->m_ptLastCursor = internal_last_cursor_point;
-						//	imgui_cam_mousestate |= 1;
-
-						//	CamWnd__DropModelsToPlane(ccam, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1, imgui_cam_mousestate);
-						//}
-						//
-						//// right mouse down
-						//if (is_camera_preview_hovered && IO.MouseClicked[1])
-						//{
-						//	typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
-						//	const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
-
-						//	imgui_cam_mousestate |= 2;
-						//	
-						//	CamWnd__DropModelsToPlane(ccam, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1, imgui_cam_mousestate);
-						//}
-
-						//// middle mouse down
-						//if (is_camera_preview_hovered && IO.MouseClicked[2])
-						//{
-						//	typedef  void(__thiscall* CamWnd__DropModelsToPlane_t)(ccamwnd*, int x, int y, int buttons);
-						//	const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlane_t>(0x403D30);
-
-						//	imgui_cam_mousestate |= 16;
-
-						//	CamWnd__DropModelsToPlane(ccam, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1, imgui_cam_mousestate);
-						//}
-
-						//if (is_camera_preview_hovered && ImGui::IsMouseDragging(ImGuiMouseButton_Right, 0.0f))//&& IO.MouseDown[1] && (IO.MouseDelta.x > 0.0f || IO.MouseDelta.y > 0.0f))
-						//{
-						//	imgui_cam_mousestate |= 2;
-
-						//	if (ccam->m_ptLastCursor.x != internal_last_cursor.x || ccam->m_ptLastCursor.y != internal_last_cursor.y)
-						//	{
-						//		cam_mousemoved(ccam, imgui_cam_mousestate, internal_last_cursor_point.x, ccam->camera.height - internal_last_cursor_point.y - 1);
-						//	}
-
-						//	ccam->m_ptLastCursor.x = internal_last_cursor.x;
-						//	ccam->m_ptLastCursor.y = internal_last_cursor.y;
-						//}
-
-
-
-
-
-						//if (is_camera_preview_hovered && ImGui::IsAnyMouseDown())
-						//{
-						//	pt_button = ImVec2(internal_last_cursor.x, (internal_last_cursor.y - ccam->camera.height) * -1);
-
-						//	imgui_cam_mousestate |= (IO.MouseDown[0] ? 1 : 0);
-						//	imgui_cam_mousestate |= (IO.MouseDown[1] ? 2 : 0);
-
-						//	// TODO! - no mouse 3/4/5 input
-						//	imgui_cam_mousestate |= (IO.MouseDown[2] ? 16 : 0);
-						//	imgui_cam_mousestate |= (IO.MouseDown[3] ? 32 : 0);
-						//	imgui_cam_mousestate |= (IO.MouseDown[4] ? 64 : 0);
-
-						//	
-
-						//	//typedef  void(__thiscall* CCamWnd__OnMouseMove_t)(ccamwnd*, int buttons, CPoint pos);
-						//	//const auto CCamWnd__OnMouseMove = reinterpret_cast<CCamWnd__OnMouseMove_t>(0x403100);
-
-						//	//CCamWnd__OnMouseMove(ccam, imgui_cam_mousestate, new_pos);
-						//	CPoint point = CPoint(internal_last_cursor.x, internal_last_cursor.y);
-						//	
-						//	if(pt_last_cursor.x != internal_last_cursor.x || pt_last_cursor.y != internal_last_cursor.y)
-						//	{
-						//		cam_mousemoved(ccam, imgui_cam_mousestate, point.x, ccam->camera.height - point.y - 1);
-
-						//		pt_last_cursor.x = internal_last_cursor.x;
-						//		pt_last_cursor.y = internal_last_cursor.y;
-						//		ccam->m_ptLastCursor.x = internal_last_cursor.x;
-						//		ccam->m_ptLastCursor.y = internal_last_cursor.y;
-						//	}
-						//}
-
-
-
-
-
-
-						//if(is_camera_preview_hovered)
-						//{
-						//	if(IO.MouseDown[0] && !imgui_cam_mouse1_was_down)
-						//	{
-						//		imgui_cam_mouse1_was_down = true;
-						//	}
-
-						//	if (IO.MouseDown[1] && !imgui_cam_mouse2_was_down)
-						//	{
-						//		imgui_cam_mouse2_was_down = true;
-						//	}
-						//}
-
-						//if (!IO.MouseDown[0] && imgui_cam_mouse1_was_down)
-						//{
-						//	// on mouse up
-						//	ccam->m_nCambuttonstate = 0;
-						//	ccam->prob_some_cursor = 0;
-						//	ccam->x47 = 0;
-
-						//	int result;
-						//	
-						//	do
-						//	{
-						//		result = ShowCursor(1);
-						//	} while (result < 0);
-						//	
-						//	imgui_cam_mouse1_was_down = false;
-						//}
-
-						//if (!IO.MouseDown[1] && imgui_cam_mouse2_was_down)
-						//{
-						//	// on mouse up
-						//	ccam->m_nCambuttonstate = 0;
-						//	ccam->prob_some_cursor = 0;
-						//	ccam->x47 = 0;
-
-						//	int result;
-
-						//	do
-						//	{
-						//		result = ShowCursor(1);
-						//	} while (result < 0);
-						//	
-						//	imgui_cam_mouse2_was_down = false;
-						//}
-
-
-
-						ImGui::Text("PT Button:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
-						ImGui::Text("< %.2f, %.2f >", pt_button.x, pt_button.y);
-
-						//ImGui::Text("Mouse State:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
-						//ImGui::Text("< %d >", imgui_cam_mousestate);
-
-
-						ImGui::Text("ImGui Mouse Delta:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
-						ImGui::Text("< %.2f, %.2f >", IO.MouseDelta.x, IO.MouseDelta.y);
-
-						/*ccam->m_nCambuttonstate = imgui_cam_mousestate;
-						ccam->m_ptButton.x = pt_button.x;
-						ccam->m_ptButton.y = pt_button.y;
-						ccam->m_ptLastCursor.x = pt_last_cursor.x;
-						ccam->m_ptLastCursor.y = pt_last_cursor.y;*/
-
-						imgui_cam_mousestate = 0;
-
-						ImGui::EndChild();
-					}
-				}
-				ImGui::PopStyleColor(3);
-				ImGui::PopStyleVar();
-				ImGui::End();
-			}
-#endif
-
-#if 0	
-			auto cxy_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nWidth), static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nHeight));
-			ImGui::SetNextWindowSizeConstraints(ImVec2(320.0f, 320.0f), ImVec2(FLT_MAX, FLT_MAX));
-
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(7.0f, 4.0f));
-			ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0);
-			ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0);
-			ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0);
-			
-			ImGui::Begin("cxy to texture", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
-			if (ggui::rtt_gridwnd.scene_texture)
-			{
-				const auto IO = ImGui::GetIO();
-				const auto curr_window_size = ImGui::GetWindowSize();
-				ggui::rtt_gridwnd.scene_size_imgui = curr_window_size;
-				//SetWindowPos(cmainframe::activewnd->m_pXYWnd->m_hWnd, HWND_BOTTOM, 0, 0, (int)curr_window_size.x, (int)curr_window_size.y, SWP_NOZORDER);
-
-				//R_Hwnd_Resize(cmainframe::activewnd->m_pXYWnd->m_hWnd, 
-				//	(int)curr_window_size.x, 
-				//	(int)curr_window_size.y, 
-				//	cmainframe::activewnd->m_pXYWnd->m_nWidth,
-				//	cmainframe::activewnd->m_pXYWnd->m_nHeight);
-				
-				// hack to disable left mouse window movement
-				ImGui::BeginChild("scene_child_cxy", cxy_size, false, ImGuiWindowFlags_NoMove);
-				{
-					const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
-					ImGui::Image(ggui::rtt_gridwnd.scene_texture, cxy_size);
-					ggui::rtt_gridwnd.window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_None);
-
-					auto internal_last_cursor = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
-					ggui::rtt_gridwnd.cursor_pos = internal_last_cursor;
-
-					CPoint internal_last_cursor_point = CPoint(internal_last_cursor.x, internal_last_cursor.y);
-					ggui::rtt_gridwnd.cursor_pos_pt = internal_last_cursor_point;
-					
-					ImGui::EndChild();
-				}
-			}
-			ImGui::PopStyleColor(3);
-			ImGui::PopStyleVar();
-			ImGui::End();
-#endif
-
 #if USE_LAYERED_AS_BACKGROUND
 		if (game::dx->targetWindowIndex == ggui::LAYERED)
 		{
@@ -1193,7 +655,7 @@ namespace components
 			gui::begin_frame();
 
 			// docking, default layout ... 
-			cxywnd_gui(ggui::state.clayeredwnd);
+			czwnd_gui(ggui::state.clayeredwnd);
 
 			// color menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.clayeredwnd.m_colors,
@@ -1220,6 +682,11 @@ namespace components
 		}
 #endif
 
+
+		// *
+		// | --------------------- Z Window ------------------------
+		// *
+		
 		if (game::dx->targetWindowIndex == ggui::CZWND)
 		{
 			if (!ggui::state.czwnd.context_initialized)
@@ -1241,15 +708,14 @@ namespace components
 			gui::begin_frame();
 
 			// docking, default layout ... 
-			cxywnd_gui(ggui::state.czwnd);
+			czwnd_gui(ggui::state.czwnd);
 
-			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 1)
-			{
+			// background
+			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 1) {
 				rtt_grid_window();
 			}
 
-			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 2)
-			{
+			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 2) {
 				rtt_camera_window();
 			}
 			
@@ -1273,6 +739,72 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
 				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
 
+			
+#ifdef DEBUG
+			ImGui::SetNextWindowSizeConstraints(ImVec2(200, 400), ImVec2(FLT_MAX, FLT_MAX));
+			ImGui::SetNextWindowPos(ImVec2(6, 76), ImGuiCond_Appearing);
+			ImGui::Begin("Camera Debug", nullptr, ImGuiWindowFlags_NoCollapse);
+
+			const auto ccam = cmainframe::activewnd->m_pCamWnd;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
+			if (ImGui::TreeNodeEx("Camera Struct", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5, 5));
+				if (ImGui::BeginTable("camera_struct_table", 4, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
+				{
+					ImGui::TableSetupScrollFreeze(0, 1);
+					ImGui::TableSetupColumn(" Camera Struct", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 120.0f);
+					ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+					ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+					ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+					ImGui::TableHeadersRow();
+
+					ImGui::debug_table_entry_vec3("Origin", ccam->camera.origin);
+					ImGui::debug_table_entry_vec3("Angles", ccam->camera.angles);
+					ImGui::debug_table_entry_vec3("Forward", ccam->camera.forward);
+					ImGui::debug_table_entry_vec3("Right", ccam->camera.right);
+					ImGui::debug_table_entry_int("Viewport Width", ccam->camera.width);
+					ImGui::debug_table_entry_int("Viewport Height", ccam->camera.height);
+
+					ImGui::EndTable();
+				}
+				ImGui::PopStyleVar();
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNodeEx("CPoints", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5, 5));
+				if (ImGui::BeginTable("cpoints_table", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
+				{
+					ImGui::TableSetupScrollFreeze(0, 1);
+					ImGui::TableSetupColumn(" CPoints", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 120.0f);
+					ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+					ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+					ImGui::TableHeadersRow();
+
+					ImGui::debug_table_entry_int2("PT Cursor", reinterpret_cast<int*>(&ccam->m_ptCursor));
+					ImGui::debug_table_entry_int2("PT Last Cursor", reinterpret_cast<int*>(&ccam->m_ptLastCursor));
+					ImGui::debug_table_entry_int2("PT Button", reinterpret_cast<int*>(&ccam->m_ptButton));
+
+					ImGui::EndTable();
+				}
+				ImGui::PopStyleVar();
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNodeEx("Misc", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::Text("Button State: \t < %d >", ccam->m_nCambuttonstate);
+				ImGui::TreePop();
+			}
+
+			ImGui::PopStyleVar();
+			ImGui::End();
+#endif
+			
+			
 			// end the current context frame
 			goto END_FRAME;
 		}
@@ -1298,6 +830,19 @@ namespace components
 	// shutdown imgui (d3d9ex::d3d9device::Release)
 	void gui::shutdown()
 	{
+		if (ggui::state.czwnd.context_initialized)
+		{
+			IMGUI_BEGIN_CZWND;
+			// Shutdown calls d3dDevice->Release D:
+			// ImGui_ImplDX9_Shutdown();
+
+			ImGui::DestroyPlatformWindows();
+			ImGui_ImplDX9_InvalidateDeviceObjects();
+
+			ImGui_ImplWin32_Shutdown();
+			ImGui::DestroyContext();
+		}
+		
 #if USE_LAYERED_AS_BACKGROUND
 		if (ggui::state.clayeredwnd.context_initialized)
 		{
@@ -1312,32 +857,6 @@ namespace components
 			ImGui::DestroyContext();
 		}
 #endif
-	
-		if(ggui::state.ccamerawnd.context_initialized)
-		{
-			IMGUI_BEGIN_CCAMERAWND;
-			// Shutdown calls d3dDevice->Release D:
-			// ImGui_ImplDX9_Shutdown();
-			
-			ImGui::DestroyPlatformWindows();
-			ImGui_ImplDX9_InvalidateDeviceObjects();
-
-			ImGui_ImplWin32_Shutdown();
-			ImGui::DestroyContext();
-		}
-
-		if (ggui::state.cxywnd.context_initialized)
-		{
-			IMGUI_BEGIN_CXYWND;
-			// Shutdown calls d3dDevice->Release D:
-			// ImGui_ImplDX9_Shutdown();
-
-			ImGui::DestroyPlatformWindows();
-			ImGui_ImplDX9_InvalidateDeviceObjects();
-			
-			ImGui_ImplWin32_Shutdown();
-			ImGui::DestroyContext();
-		}
 
 		memset(&ggui::state, 0, sizeof(ggui::imgui_state_t));
 	}
@@ -1346,10 +865,10 @@ namespace components
 	// toggle a imgui menu by command (or key (scheduler))
 	void gui::toggle(ggui::imgui_context_menu& menu, [[maybe_unused]] int keycatcher, bool onCommand = false)
 	{
-		//if(!ggui::all_contexts_ready())
-		//{
-		//	return;
-		//}
+		if(!ggui::cz_context_ready())
+		{
+			return;
+		}
 
 		// TODO! fix me
 		// toggle menu by key or command
@@ -1439,57 +958,6 @@ namespace components
 			/* desc		*/ "Window to use as the main background. 0 = None, 1 = Grid, 2 = Camera");
 	}
 
-	//int saved_height;
-	//int saved_width;
-
-	//int saved_height2;
-	//int saved_width2;
-	//
-	//void xy_reso01()
-	//{
-	//	saved_height = cmainframe::activewnd->m_pXYWnd->m_nWidth;
-	//	saved_width = cmainframe::activewnd->m_pXYWnd->m_nHeight;
-
-	//	saved_height2 = game::dx->windows[ggui::CXYWND].height;
-	//	saved_width2 = game::dx->windows[ggui::CXYWND].width;
-
-	//	if(ggui::rtt_gridwnd.scene_size_imgui.x > 0.0f && ggui::rtt_gridwnd.scene_size_imgui.y > 0.0f)
-	//	{
-	//		cmainframe::activewnd->m_pXYWnd->m_nWidth = (int)ggui::rtt_gridwnd.scene_size_imgui.x;
-	//		cmainframe::activewnd->m_pXYWnd->m_nHeight = (int)ggui::rtt_gridwnd.scene_size_imgui.y;
-	//		
-	//		game::dx->windows[ggui::CXYWND].height = (int)ggui::rtt_gridwnd.scene_size_imgui.x;
-	//		game::dx->windows[ggui::CXYWND].width = (int)ggui::rtt_gridwnd.scene_size_imgui.y;
-	//	}
-	//}
-	//
-	//void __declspec(naked) xy_reso_stub01()
-	//{
-	//	const static uint32_t retn_pt = 0x465BD7;
-	//	__asm
-	//	{
-	//		fld1;
-	//		push    0;
-	//		push    ecx;
-
-	//		pushad;
-	//		call	xy_reso01;
-	//		popad;
-
-	//		jmp retn_pt;
-	//	}
-	//}
-
-	//void on_endframe()
-	//{
-	//	game::R_EndFrame();
-
-	//	cmainframe::activewnd->m_pXYWnd->m_nWidth = saved_height;
-	//	cmainframe::activewnd->m_pXYWnd->m_nHeight = saved_width;
-	//	
-	//	game::dx->windows[ggui::CXYWND].height = saved_height2;
-	//	game::dx->windows[ggui::CXYWND].width = saved_width2;
-	//}
 	
 	// *
 	gui::gui()
@@ -1497,21 +965,10 @@ namespace components
 		// hotkey hooks
 		ggui::hotkeys::init();
 
-		
-		//utils::hook(0x465BD2, xy_reso_stub01, HOOK_JUMP).install()->quick();
-
-		//// endframe hook
-		//utils::hook(0x465C0E, on_endframe, HOOK_CALL).install()->quick();
-		
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{
 			gui::toggle(ggui::state.czwnd.m_demo, 0, true);
 		});
-
-		/*command::register_command("camdemo"s, [](std::vector<std::string> args)
-		{
-			gui::toggle(ggui::state.ccamerawnd.m_demo, 0, true);
-		});*/
 	}
 
 	gui::~gui()

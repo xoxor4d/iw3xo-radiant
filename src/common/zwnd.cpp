@@ -314,20 +314,7 @@ void __fastcall czwnd::on_mouse_move([[maybe_unused]] czwnd* pThis, [[maybe_unus
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
 			const int cursor_point_y = ccam->camera.height - ggui::rtt_camerawnd.cursor_pos_pt.y - 1;
 
-			const static uint32_t CCamWnd__Cam_MouseMoved_Func = 0x404FC0;
-			__asm
-			{
-				pushad;
-
-				mov		eax, nFlags;
-				push	cursor_point_y;
-				push	ggui::rtt_camerawnd.cursor_pos_pt.x;
-				mov		ecx, ccam;
-				call	CCamWnd__Cam_MouseMoved_Func; // cleans the stack
-
-				popad;
-			}
-
+			ccamwnd::mouse_moved(ccam, nFlags, ggui::rtt_camerawnd.cursor_pos_pt.x, ccam->camera.height - ggui::rtt_camerawnd.cursor_pos_pt.y - 1);
 			return;
 		}
 

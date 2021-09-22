@@ -10,6 +10,12 @@ namespace ImGui
 	ImVec4	ToImVec4(const float* in);
 	void	HelpMarker(const char* desc);
 	void	PushFontFromIndex(int font);
+
+	void	debug_table_entry_vec3(const char* label, const float* vec3);
+	void	debug_table_entry_float(const char* label, const float* val);
+	void	debug_table_entry_int(const char* label, const int val);
+	void	debug_table_entry_int2(const char* label, const int* val);
+	
 	void	StyleColorsDevgui(ImGuiStyle* = NULL);
 	
 }

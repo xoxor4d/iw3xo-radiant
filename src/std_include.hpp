@@ -6,22 +6,18 @@
 
 // *
 // gui
+#define IMGUI_DEFINE_MATH_OPERATORS
+
 #define GET_GGUI Game::Globals::gui
 #define GGUI_READY Game::Globals::gui.imgui_initialized
 #define GGUI_READY_DVARS Game::Globals::gui.dvars_initialized
 #define GGUI_ANY_MENUS_OPEN Game::Globals::gui.any_menus_open
 #define GGUI_MENU_COUNT 2
 
-#define IMGUI_DEFINE_MATH_OPERATORS
-
-#define IMGUI_CONTEXT_COUNT 2 // amount of imgui contexts
-#define IMGUI_CONTEXT_MENUS 1 // amount of menus per context
-
-#define IMGUI_BEGIN_CCAMERAWND if(ggui::camera_context_ready()) ImGui::SetCurrentContext(ggui::state.ccamerawnd.context)
-#define IMGUI_BEGIN_CXYWND if(ggui::cxy_context_ready()) ImGui::SetCurrentContext(ggui::state.cxywnd.context)
 #define IMGUI_BEGIN_LAYERED if(ggui::layered_context_ready()) ImGui::SetCurrentContext(ggui::state.clayeredwnd.context)
 #define IMGUI_BEGIN_CZWND if(ggui::cz_context_ready()) ImGui::SetCurrentContext(ggui::state.czwnd.context)
 
+// use layeredmaterials window as main imgui background (not really implemented)
 #define USE_LAYERED_AS_BACKGROUND false
 
 #include <windows.h>
@@ -105,8 +101,8 @@
 #include "ggui/colors.hpp"
 #include "ggui/toolbar.hpp"
 
-#include "common/camwnd.hpp"
 #include "common/mainframe.hpp"
+#include "common/camwnd.hpp"
 #include "common/radiantapp.hpp"
 #include "common/layermatwnd.hpp"
 #include "common/zwnd.hpp"

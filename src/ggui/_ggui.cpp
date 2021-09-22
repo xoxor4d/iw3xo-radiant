@@ -34,16 +34,6 @@ namespace ggui
 		return ImVec2(5.0f, ggui::toolbar_pos.y + ggui::toolbar_size.y + 5.0f);
 	}
 
-	bool camera_context_ready()
-	{
-		return ggui::state.ccamerawnd.context_initialized;
-	}
-	
-	bool cxy_context_ready()
-	{
-		return ggui::state.cxywnd.context_initialized;
-	}
-
 	bool layered_context_ready()
 	{
 		return ggui::state.clayeredwnd.context_initialized;
@@ -52,17 +42,6 @@ namespace ggui
 	bool cz_context_ready()
 	{
 		return ggui::state.czwnd.context_initialized;
-	}
-	
-	bool all_contexts_ready()
-	{
-		if (ggui::state.ccamerawnd.context_initialized
-			 && ggui::state.cxywnd.context_initialized)
-		{
-			return true;
-		}
-
-		return false;
 	}
 	
 }
