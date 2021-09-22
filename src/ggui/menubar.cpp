@@ -80,7 +80,7 @@ namespace ggui::menubar
 	}
 
 	
-	void menu(ggui::imgui_context_cxy& context)
+	void menu(ggui::imgui_context_cz& context)
 	{
 		const auto prefs = game::g_PrefsDlg();
 		
@@ -308,21 +308,22 @@ namespace ggui::menubar
 						}
 					}
 
-					if (ImGui::MenuItem("Camera View", hotkeys::get_hotkey_for_command("ToggleCamera").c_str(), nullptr, cmainframe::is_combined_view())) {
+					if (ImGui::MenuItem("Camera View (Original)", hotkeys::get_hotkey_for_command("ToggleCamera").c_str(), nullptr, cmainframe::is_combined_view())) {
 						mainframe_thiscall(void, 0x426A40); // cmainframe::OnTogglecamera
+					}
+
+					if (ImGui::MenuItem("XY View (Original)", hotkeys::get_hotkey_for_command("ToggleView").c_str(), nullptr, cmainframe::is_combined_view())) {
+						mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
 					}
 
 					if (ImGui::MenuItem("Console View", hotkeys::get_hotkey_for_command("ViewConsole").c_str(), nullptr, cmainframe::is_combined_view())) {
 						mainframe_thiscall(void, 0x426A90); // cmainframe::OnToggleconsole
 					}
 
-					if (ImGui::MenuItem("XY View", hotkeys::get_hotkey_for_command("ToggleView").c_str(), nullptr, cmainframe::is_combined_view())) {
-						mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
-					}
-
-					if (ImGui::MenuItem("Z View", hotkeys::get_hotkey_for_command("ToggleZ").c_str(), nullptr, cmainframe::is_combined_view())) {
-						mainframe_thiscall(void, 0x426B30); // cmainframe::OnTogglez
-					}
+					// this would be stupid
+					//if (ImGui::MenuItem("Z View", hotkeys::get_hotkey_for_command("ToggleZ").c_str(), nullptr, cmainframe::is_combined_view())) {
+					//	mainframe_thiscall(void, 0x426B30); // cmainframe::OnTogglez
+					//}
 
 					if (ImGui::MenuItem("XY Crosshair", hotkeys::get_hotkey_for_command("ToggleCrosshairs").c_str(), game::g_bCrossHairs)) {
 						game::g_bCrossHairs ^= 1;
@@ -349,6 +350,23 @@ namespace ggui::menubar
 					}
 
 					ImGui::EndMenu(); // Toggle
+				}
+
+				if (ImGui::BeginMenu("Background"))
+				{
+					if (ImGui::MenuItem("None", 0, dvars::gui_mainframe_background->current.integer == 0)) {
+						dvars::set_int(dvars::gui_mainframe_background, 0);
+					}
+
+					if (ImGui::MenuItem("Grid", 0, dvars::gui_mainframe_background->current.integer == 1)) {
+						dvars::set_int(dvars::gui_mainframe_background, 1);
+					}
+
+					if (ImGui::MenuItem("Camera", 0, dvars::gui_mainframe_background->current.integer == 2)) {
+						dvars::set_int(dvars::gui_mainframe_background, 2);
+					}
+					
+					ImGui::EndMenu(); // Background
 				}
 
 				SEPERATORV(0.0f);
@@ -961,8 +979,18 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Layered Materials"))
 				{
-					if (ImGui::MenuItem("Toogle Tool Window", hotkeys::get_hotkey_for_command("ToggleLayeredMaterialWnd").c_str())) {
+					if (ImGui::MenuItem("Toogle Tool Window", hotkeys::get_hotkey_for_command("ToggleLayeredMaterialWnd").c_str()))
+					{
+#if USE_LAYERED_AS_BACKGROUND
+						
+						ShowWindow(layermatwnd_struct->m_hWnd,
+							IsWindowVisible(layermatwnd_struct->m_hWnd) ? SW_HIDE : SW_SHOW);
+						
+#else
+						
 						cdeclcall(void, 0x42BFE0); // CMainFrame::OnToggleLayeredMaterials
+						
+#endif
 					}
 
 					if (ImGui::MenuItem("Save", hotkeys::get_hotkey_for_command("SaveLayeredMaterials").c_str())) {

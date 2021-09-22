@@ -68,6 +68,22 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 			{
 				SendMessageA(hwnd, WM_PAINT, 0, 0);
 			}
+
+#if USE_LAYERED_AS_BACKGROUND
+			// update layered window ~ 250fps
+			if (const auto hwnd = layermatwnd_struct->m_hWnd;
+				hwnd != nullptr)
+			{
+				SendMessageA(hwnd, WM_PAINT, 0, 0);
+			}
+#endif
+
+			// update czwnd window ~ 250fps
+			if (const auto hwnd = cmainframe::activewnd->m_pZWnd->GetWindow();
+				hwnd != nullptr)
+			{
+				SendMessageA(hwnd, WM_PAINT, 0, 0);
+			}
 		}
 	}
 
@@ -368,45 +384,32 @@ namespace components
 		return _Result;
 	}
 
-	//void test_func()
-	//{
-	//	IDirect3DSurface9* surf = nullptr;
-	//	game::dx->windows[ggui::CCAMERAWND].swapChain->lpVtbl->GetBackBuffer((IDirect3DSwapChain9*)game::dx->windows[ggui::CCAMERAWND].swapChain, 0, D3DBACKBUFFER_TYPE_MONO, &surf);
+	void force_preferences_on_init()
+	{
+		const auto prefs = game::g_PrefsDlg();
 
-	//	// works
-	//	//D3DXSaveSurfaceToFileA("surface_to_file.png", D3DXIFF_PNG, surf, NULL, NULL);
+		// force split view (for now)
+		prefs->m_nView = 1;
 
-	//	//LPDIRECT3DTEXTURE9 scene_texture_ccam;
-	//	if(!game::glob::scene_texture_ccam)
-	//	{
-	//		D3DXCreateTexture(game::dx->device, game::dx->windows[ggui::CCAMERAWND].width, game::dx->windows[ggui::CCAMERAWND].height, D3DX_DEFAULT, D3DUSAGE_RENDERTARGET, D3DFMT_A8R8G8B8, D3DPOOL_DEFAULT, &game::glob::scene_texture_ccam);
-	//	}
+		// disable detatched windows (for now)
+		prefs->detatch_windows = false;
+	}
+	
+	__declspec(naked) void force_preferences_on_init_stub()
+	{
+		const static uint32_t retn_pt = 0x450735;
+		__asm
+		{
+			push    ecx; // og
+			lea     ecx, [esp + 1Ch]; // og
+			
+			pushad;
+			call	force_preferences_on_init;
+			popad;
 
-	//	LPDIRECT3DSURFACE9 pTexSurface;
-	//	game::glob::scene_texture_ccam->GetSurfaceLevel(0, &pTexSurface);
-
-	//	game::dx->device->StretchRect(surf, NULL, pTexSurface, NULL, D3DTEXF_NONE);
-	//	surf->Release();
-	//	
-	//	// works
-	//	//D3DXSaveTextureToFileA("texture_to_file.png", D3DXIFF_PNG, scene_texture_ccam, NULL);
-	//}
-
-	//void __declspec(naked) test_stub()
-	//{
-	//	const static uint32_t org_call = 0x530B30;
-	//	const static uint32_t retn_pt = 0x5357CB;
-	//	__asm
-	//	{
-	//		call	org_call;
-
-	//		pushad;
-	//		call	test_func;
-	//		popad;
-
-	//		jmp retn_pt;
-	//	}
-	//}
+			jmp retn_pt;
+		}
+	}
 
 	quick_patch::quick_patch()
 	{
@@ -417,10 +420,11 @@ namespace components
 		cmainframe::main();
 		ccamwnd::main();
 		cxywnd::main();
+		clayermatwnd::main();
+		czwnd::main();
 
-
-		//utils::hook(0x5357C6, test_stub, HOOK_JUMP).install()->quick();
-		
+		// force global preferences on init
+		utils::hook(0x450730, force_preferences_on_init_stub, HOOK_JUMP).install()->quick();
 
 		// redirect console prints
 		utils::hook::nop(0x420A54, 10); utils::hook::nop(0x40A9E0, 10);
@@ -428,7 +432,6 @@ namespace components
 		// ^
 		utils::hook::detour(0x499E90, printf, HK_JUMP);
 
-		
 //#define CONSOLE_TEST
 #ifdef CONSOLE_TEST
 		// disable bottom console (results in small scrollbar at xy top left?)

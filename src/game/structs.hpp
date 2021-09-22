@@ -859,7 +859,7 @@ namespace game
 		int drawType;
 	};
 
-	struct IDirect3DSwapChain9Vtbl
+	/*struct IDirect3DSwapChain9Vtbl
 	{
 		HRESULT(__stdcall* QueryInterface)(IDirect3DSwapChain9* This, const IID* const riid, void** ppvObj);
 		ULONG(__stdcall* AddRef)(IDirect3DSwapChain9* This);
@@ -878,7 +878,7 @@ namespace game
 	struct IDirect3DSwapChain9
 	{
 		IDirect3DSwapChain9Vtbl* lpVtbl;
-	};
+	};*/
 
 	struct GfxWindowTarget
 	{

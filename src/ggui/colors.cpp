@@ -53,8 +53,8 @@ namespace ggui::colors
 		ImGui::ColorEdit4("Entity", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITY], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Entity Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Togglesurfs", game::g_qeglobals->d_savedinfo.colors[game::COLOR_DRAW_TOGGLESUFS], ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN2], ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Unkown##1", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN2], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Unkown##2", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], ImGuiColorEditFlags_Float);
 
 		SEPERATORV(0.0f);
 

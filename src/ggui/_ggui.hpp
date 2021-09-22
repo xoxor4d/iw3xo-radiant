@@ -61,6 +61,9 @@ namespace ggui
 	{
 		CCAMERAWND = 0,
 		CXYWND = 1,
+    	CZWND = 2,
+    	CTEXWND = 3,
+    	LAYERED = 4,
 	};
 
 	struct imgui_context_menu
@@ -93,10 +96,38 @@ namespace ggui
 		imgui_context_menu m_demo;
 	};
 
+	struct imgui_context_layer
+	{
+		bool context_initialized;
+		ImGuiContext* context;
+		game::GfxWindowTarget* dx_window;
+		imgui_context_menu m_toolbar;
+		imgui_context_menu m_toolbar_edit;
+		imgui_context_menu m_colors;
+		imgui_context_menu m_cmdbinds;
+		imgui_context_menu m_cmdbinds_helper;
+		imgui_context_menu m_demo;
+	};
+
+	struct imgui_context_cz
+	{
+		bool context_initialized;
+		ImGuiContext* context;
+		game::GfxWindowTarget* dx_window;
+		imgui_context_menu m_toolbar;
+		imgui_context_menu m_toolbar_edit;
+		imgui_context_menu m_colors;
+		imgui_context_menu m_cmdbinds;
+		imgui_context_menu m_cmdbinds_helper;
+		imgui_context_menu m_demo;
+	};
+
 	struct imgui_state_t
 	{
 		imgui_context_cam ccamerawnd;
 		imgui_context_cxy cxywnd;
+		imgui_context_layer clayeredwnd;
+		imgui_context_cz czwnd;
 		//bool cxywnd_menubar_state;
 	};
 
@@ -110,9 +141,19 @@ namespace ggui
 		std::string modifier_key;
 	};
 
-	struct cxy_camera_window_s
+	struct rtt_camera_window_s
 	{
 		IDirect3DTexture9* scene_texture;
+		ImVec2 scene_size_imgui;
+		ImVec2 cursor_pos;
+		CPoint cursor_pos_pt;
+		bool window_hovered;
+	};
+
+	struct rtt_grid_window_s
+	{
+		IDirect3DTexture9* scene_texture;
+		ImVec2 scene_size_imgui;
 		ImVec2 cursor_pos;
 		CPoint cursor_pos_pt;
 		bool window_hovered;
@@ -138,7 +179,8 @@ namespace ggui
 	
 	extern std::vector<commandbinds> cmd_hotkeys;
 
-	extern cxy_camera_window_s cxy_camerawnd;
+	extern rtt_camera_window_s rtt_camerawnd;
+	extern rtt_grid_window_s rtt_gridwnd;
 	
 	
 	// *
@@ -146,5 +188,11 @@ namespace ggui
 	// *
 
 	extern ImVec2 get_initial_window_pos();
+
+	extern bool camera_context_ready();
+	extern bool cxy_context_ready();
+	extern bool layered_context_ready();
+	extern bool cz_context_ready();
+	extern bool all_contexts_ready();
 	
 }

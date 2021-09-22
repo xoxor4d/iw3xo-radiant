@@ -12,7 +12,6 @@ namespace components
 
 		//static void imgui_init_ccamerawnd();
 		static void shutdown();
-		static bool all_contexts_ready();
 		
 		static void begin_frame();
 		static void end_frame(); 

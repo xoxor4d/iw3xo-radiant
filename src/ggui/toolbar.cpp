@@ -703,7 +703,7 @@ namespace ggui::toolbar
 			{
 				if (ImGui::Button("RI", IMAGEBUTTON_SIZE)) {
 					game::R_ReloadImages();
-				} TT("Reload Images");
+				} TT("DBG: Reload Images");
 			});
 #endif
 	}
@@ -922,7 +922,7 @@ namespace ggui::toolbar
 						{
 
 						case 0:
-							if (!element.is_separator)
+							if (!element.is_separator && !element.debug)
 							{
 								if (const auto image = game::Image_RegisterHandle(element.name.c_str());
 									image && image->texture.data)

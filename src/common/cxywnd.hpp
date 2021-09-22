@@ -89,3 +89,25 @@ public:
 
 	static BOOL __stdcall	on_scroll(UINT nFlags, std::int16_t zDelta, CPoint point);
 };
+
+namespace xywnd
+{
+	typedef void(__thiscall* on_cxywnd_msg)(cxywnd*, UINT, CPoint);
+	extern on_cxywnd_msg __on_lbutton_down;
+	extern on_cxywnd_msg __on_lbutton_up;
+	extern on_cxywnd_msg __on_rbutton_down;
+	extern on_cxywnd_msg __on_rbutton_up;
+	extern on_cxywnd_msg __on_mbutton_down;
+	extern on_cxywnd_msg __on_mbutton_up;
+
+	typedef void(__thiscall* on_cxywnd_msg)(cxywnd*, UINT, CPoint);
+	extern on_cxywnd_msg __on_mouse_move;
+
+	typedef void(__stdcall* on_cxywnd_key)(UINT nChar, UINT nRepCnt, UINT nFlags);
+	extern on_cxywnd_key __on_keydown;
+	extern on_cxywnd_key __on_keyup;
+
+	typedef BOOL(__stdcall* on_cxywnd_scroll)(UINT nFlags, std::int16_t zDelta, CPoint point);
+	extern on_cxywnd_scroll __on_scroll;
+	
+}

@@ -1,12 +1,5 @@
 #include "std_include.hpp"
 
-//namespace ggui
-//{
-//	imgui_state_t state = imgui_state_t();
-//	bool mainframe_menubar_enabled = false;
-//	
-//}
-
 namespace game
 {
 	namespace glob
@@ -260,6 +253,96 @@ namespace game
 			mov		ebx, bytes;
 			mov		edi, render_cmd;
 			call	R_RenderBufferCmdCheck_Func;
+		}
+	}
+
+	void R_SetD3DPresentParameters(_D3DPRESENT_PARAMETERS_* d3dpp, game::GfxWindowParms* wnd, [[maybe_unused]] int window_count)
+	{
+		ASSERT_MSG(d3dpp, "invalid D3DPRESENT_PARAMETERS d3dpp");
+		ASSERT_MSG(wnd, "invalid GfxWindowParms wnd");
+		ASSERT_MSG(wnd->hwnd, "invalid HWND wnd->hwnd");
+
+		//R_SetupAntiAliasing(wnd, window_count);
+		memset(d3dpp, 0, sizeof(_D3DPRESENT_PARAMETERS_));
+		d3dpp->BackBufferWidth = wnd->displayWidth;
+		d3dpp->BackBufferHeight = wnd->displayHeight;
+		d3dpp->BackBufferFormat = D3DFMT_A8R8G8B8;
+		d3dpp->BackBufferCount = 1;
+		d3dpp->MultiSampleType = _D3DMULTISAMPLE_TYPE::D3DMULTISAMPLE_NONE; // (D3DMULTISAMPLE_TYPE)game::dx->multiSampleType;
+		d3dpp->MultiSampleQuality = 0; // game::dx->multiSampleQuality
+		d3dpp->SwapEffect = D3DSWAPEFFECT_DISCARD;
+		d3dpp->EnableAutoDepthStencil = 0;
+		d3dpp->AutoDepthStencilFormat = static_cast<D3DFORMAT>(game::dx->depthStencilFormat);
+		d3dpp->PresentationInterval = 1; //r_vsync->current.enabled ? 1 : 0x80000000;
+		d3dpp->hDeviceWindow = wnd->hwnd;
+		d3dpp->Flags = 0;
+
+		if (wnd->fullscreen)
+		{
+			d3dpp->Windowed = 0;
+			d3dpp->FullScreen_RefreshRateInHz = wnd->hz;
+		}
+		else
+		{
+			d3dpp->FullScreen_RefreshRateInHz = 0;
+			d3dpp->Windowed = 1;
+		}
+	}
+
+	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height)
+	{
+		ASSERT_MSG(hwnd, "invalid hwnd");
+
+		_D3DPRESENT_PARAMETERS_ d3dpp{};
+		game::GfxWindowParms wnd{};
+
+		if (display_width && display_height)
+		{
+			if (game::dx->windowCount > 0)
+			{
+				int wnd_count = 0;
+				for (auto i = game::dx->windows; i->hwnd != hwnd; ++i)
+				{
+					if (++wnd_count >= game::dx->windowCount)
+					{
+						return;
+					}
+				}
+
+				wnd.hwnd = hwnd;
+				wnd.fullscreen = false;
+				wnd.displayWidth = display_width;
+				wnd.displayHeight = display_height;
+				wnd.sceneWidth = display_width;
+				wnd.sceneHeight = display_height;
+				wnd.aaSamples = 1;
+
+				R_SetD3DPresentParameters(&d3dpp, &wnd, game::dx->windowCount);
+
+				auto swapchain = &game::dx->windows[wnd_count].swapChain;
+				auto old_swapchain = *swapchain;
+				if (*swapchain == nullptr)
+				{
+					ASSERT_MSG(1, "var");
+				}
+				
+				*swapchain = nullptr;
+
+				if (old_swapchain->Release())
+				{
+					ASSERT_MSG(0, "release failed, leaks ...");
+				}
+
+				if (auto hr = game::dx->device->CreateAdditionalSwapChain(&d3dpp, (IDirect3DSwapChain9**)swapchain);
+					hr < 0)
+				{
+					// g_disableRendering;
+					ASSERT_MSG(0, "CreateAdditionalSwapChain failed ...");
+				}
+
+				game::dx->windows[wnd_count].width = display_width;
+				game::dx->windows[wnd_count].height = display_height;
+			}
 		}
 	}
 	

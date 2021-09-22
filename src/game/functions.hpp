@@ -19,13 +19,6 @@
 #define W_MEDIA			0x1000 
 #define W_ALL			0xFFFFFFFF
 
-//namespace ggui
-//{
-//	extern imgui_state_t state;
-//	extern bool mainframe_menubar_enabled;
-//	
-//}
-
 namespace game
 {
 	namespace glob
@@ -166,5 +159,7 @@ namespace game
 	game::GfxImage* Image_RegisterHandle(const char* name);
 
 	game::GfxCmdHeader* R_RenderBufferCmdCheck(int bytes /*ebx*/, int render_cmd /*edi*/);
+
+	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
 	
 }

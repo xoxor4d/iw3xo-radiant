@@ -60,28 +60,38 @@ typedef void(__stdcall* on_ccamwnd_key)(UINT nChar, UINT nRepCnt, UINT nFlags);
 
 void __fastcall ccamwnd::on_lbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
-	IMGUI_BEGIN_CCAMERAWND;
-	
-    ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
+	if(ggui::camera_context_ready())
+	{
+		IMGUI_BEGIN_CCAMERAWND;
+		ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
 
-    // do not pass the msg if mouse is inside an imgui window
-    if (!ImGui::GetIO().WantCaptureMouse)
-    {
-        return __on_lbutton_down(pThis, nFlags, point);
-    }
+		// block input if mouse is inside an imgui window
+		if(ImGui::GetIO().WantCaptureMouse)
+		{
+			return;
+		}
+	}
+
+	// original function
+	__on_lbutton_down(pThis, nFlags, point);
 }
 
 void __fastcall ccamwnd::on_lbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
-	IMGUI_BEGIN_CCAMERAWND;
-	
-    ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
+	if (ggui::camera_context_ready())
+	{
+		IMGUI_BEGIN_CCAMERAWND;
+		ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
 
-    // do not pass the msg if mouse is inside an imgui window
-    if (!ImGui::GetIO().WantCaptureMouse)
-    {
-        return __on_lbutton_up(pThis, nFlags, point);
-    }
+		// block input if mouse is inside an imgui window
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			return;
+		}
+	}
+
+	// original function
+	__on_lbutton_up(pThis, nFlags, point);
 }
 
 // *
@@ -90,69 +100,93 @@ void __fastcall ccamwnd::on_lbutton_up(ccamwnd* pThis, [[maybe_unused]] void* ed
 
 void __fastcall ccamwnd::on_rbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
-	IMGUI_BEGIN_CCAMERAWND;
-	
-    ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONDOWN);
+	if (ggui::camera_context_ready())
+	{
+		IMGUI_BEGIN_CCAMERAWND;
+		ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONDOWN);
 
-    // do not pass the msg if mouse is inside an imgui window
-    if (!ImGui::GetIO().WantCaptureMouse)
-    {
-        return __on_rbutton_down(pThis, nFlags, point);
-    }
+		// block input if mouse is inside an imgui window
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			return;
+		}
+	}
+	
+	// original function
+	__on_rbutton_down(pThis, nFlags, point);
 }
 
 void __fastcall ccamwnd::on_rbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
-	IMGUI_BEGIN_CCAMERAWND;
-	
-    ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONUP);
+	if (ggui::camera_context_ready())
+	{
+		IMGUI_BEGIN_CCAMERAWND;
+		ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONUP);
 
-    // do not pass the msg if mouse is inside an imgui window
-    if (!ImGui::GetIO().WantCaptureMouse)
-    {
-        return __on_rbutton_up(pThis, nFlags, point);
-    }
+		// block input if mouse is inside an imgui window
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			return;
+		}
+	}
+	
+	// original function
+	__on_rbutton_up(pThis, nFlags, point);
 }
 
 void __fastcall ccamwnd::on_mouse_move(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
-	IMGUI_BEGIN_CCAMERAWND;
-
-	if (!ImGui::GetIO().WantCaptureMouse)
+	if (ggui::camera_context_ready())
 	{
-		return __on_mouse_move(pThis, nFlags, point);
+		IMGUI_BEGIN_CCAMERAWND;
+		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEMOVE);
+
+		// block input if mouse is inside an imgui window
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			return;
+		}
 	}
+
+	// original function
+	__on_mouse_move(pThis, nFlags, point);
 }
 
 
 void __stdcall ccamwnd::on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	IMGUI_BEGIN_CCAMERAWND;
+	if (ggui::camera_context_ready())
+	{
+		IMGUI_BEGIN_CCAMERAWND;
 
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
+		// block input if mouse is inside an imgui window
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
+			return;
+		}
 	}
-	else
-	{
-		// cmainframe::OnKeyDown
-		return __on_keydown_cam(nChar, nRepCnt, nFlags);
-	}
+
+	// original function :: CMainFrame::OnKeyDown
+	__on_keydown_cam(nChar, nRepCnt, nFlags);
 }
 
 void __stdcall ccamwnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	IMGUI_BEGIN_CCAMERAWND;
+	if (ggui::camera_context_ready())
+	{
+		IMGUI_BEGIN_CCAMERAWND;
 
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYUP, 0, nChar);
+		// block input if mouse is inside an imgui window
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYUP, 0, nChar);
+			return;
+		}
 	}
-	else
-	{
-		// cmainframe::OnKeyUp
-		return __on_keyup_cam(nChar, nRepCnt, nFlags);
-	}
+
+	// original function :: CMainFrame::OnKeyUp
+	__on_keyup_cam(nChar, nRepCnt, nFlags);
 }
 
 // *
@@ -169,47 +203,47 @@ void __stdcall ccamwnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 BOOL WINAPI ccamwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if (components::gui::all_contexts_ready())
+	// fix mouse cursor for imgui windows
+	if (ggui::camera_context_ready())
 	{
-		// fix mouse cursor for imgui windows
-		//if (Msg == WM_NCHITTEST)
+		// save current context
+		const auto imgui_context_old = ImGui::GetCurrentContext();
+
+		IMGUI_BEGIN_CCAMERAWND;
+		ImGuiIO& io = ImGui::GetIO();
+		
+		// disable win32 cursor if we hover imgui windows
+		if (ImGui::GetIO().WantCaptureMouse) 
 		{
-			// save current context
-			const auto imgui_context_old = ImGui::GetCurrentContext();
-
-			IMGUI_BEGIN_CCAMERAWND;
-			ImGuiIO& io = ImGui::GetIO();
-			
-			// disable win32 cursor if we hover imgui windows
-			if (ImGui::GetIO().WantCaptureMouse) 
+			// get info for current cursor
+			CURSORINFO ci = { sizeof(CURSORINFO) };
+			if (GetCursorInfo(&ci))
 			{
-				// get info for current cursor
-				CURSORINFO ci = { sizeof(CURSORINFO) };
-				if (GetCursorInfo(&ci))
-				{
-					auto size_ns = LoadCursor(0, IDC_SIZENS);
-					auto size_we = LoadCursor(0, IDC_SIZEWE);
+				auto size_ns = LoadCursor(0, IDC_SIZENS);
+				auto size_we = LoadCursor(0, IDC_SIZEWE);
 
-					// do not hide the size arrow when moving splitters across imgui windows
-					if(ci.hCursor != size_ns && ci.hCursor != size_we)
-					{
-						io.MouseDrawCursor = true;
-						SetCursor(nullptr);
-					}
+				// do not hide the size arrow when moving splitters across imgui windows
+				if(ci.hCursor != size_ns && ci.hCursor != size_we)
+				{
+					io.MouseDrawCursor = true;
+					SetCursor(nullptr);
 				}
 			}
-			else
-			{
-				io.MouseDrawCursor = false;
-			}
-
-			// restore context
-			ImGui::SetCurrentContext(imgui_context_old);
+		}
+		else
+		{
+			io.MouseDrawCursor = false;
 		}
 
-		
-		// only process the char event, else we get odd multi context behaviour
-		if (Msg == WM_CHAR)
+		// restore context
+		ImGui::SetCurrentContext(imgui_context_old);
+	}
+
+	
+	// only process the char event, else we get odd multi context behaviour
+	if (Msg == WM_CHAR)
+	{
+		if (ggui::camera_context_ready())
 		{
 			// handle char inputs if camera window is focused
 			IMGUI_BEGIN_CCAMERAWND;
@@ -218,7 +252,10 @@ BOOL WINAPI ccamwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
 				return true;
 			}
-
+		}
+		
+		if(ggui::cxy_context_ready())
+		{
 			// handle char inputs if camera window is focused but cursor is within the xy window, over an imgui menu
 			IMGUI_BEGIN_CXYWND;
 			if (ImGui::GetIO().WantCaptureMouse)
@@ -228,9 +265,29 @@ BOOL WINAPI ccamwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			}
 		}
 	}
-
+	
 	// => og CamWndProc
     return utils::hook::call<BOOL(__stdcall)(HWND, UINT, WPARAM, LPARAM)>(0x402D90)(hWnd, Msg, wParam, lParam);
+}
+
+void __declspec(naked) camwnd_set_child_window_style()
+{
+	const static uint32_t retn_pt = 0x402EF7;
+	__asm
+	{
+		mov		dword ptr[eax + 20h], WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_CHILD; //WS_VISIBLE;
+		jmp		retn_pt;
+	}
+}
+
+void __declspec(naked) camwnd_set_detatched_child_window_style()
+{
+	const static uint32_t retn_pt = 0x402ED1;
+	__asm
+	{
+		mov		dword ptr[eax + 20h], WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_CHILD | WS_POPUP;
+		jmp		retn_pt;
+	}
 }
 
 // *
@@ -240,6 +297,17 @@ void ccamwnd::main()
 {
 	// hook ccamwnd message handler
     utils::hook::set(0x402E86 + 4, ccamwnd::windowproc);
+
+#if 1
+	// ccamwnd::precreatewindow -> change window style for child windows (split view, not detatched)
+	utils::hook::nop(0x402EEE, 2);
+	utils::hook::nop(0x402EF0, 7);
+		 utils::hook(0x402EF0, camwnd_set_child_window_style, HOOK_JUMP).install()->quick();
+
+	// ccamwnd::precreatewindow -> change window style for detatched windows (split view, detatched)
+	utils::hook::nop(0x402ECA, 7);
+		 utils::hook(0x402ECA, camwnd_set_detatched_child_window_style, HOOK_JUMP).install()->quick();
+#endif
 	
 	// endframe hook
     //utils::hook(0x40305C, ccamwnd::on_endframe, HOOK_CALL).install()->quick();

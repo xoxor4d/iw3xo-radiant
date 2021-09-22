@@ -22,8 +22,9 @@ namespace ggui
 	
 	std::vector<commandbinds> cmd_hotkeys;
 
-	cxy_camera_window_s cxy_camerawnd = cxy_camera_window_s();
-
+	rtt_camera_window_s rtt_camerawnd = rtt_camera_window_s();
+	rtt_grid_window_s rtt_gridwnd = rtt_grid_window_s();
+	
 	// *
 	// | -------------------- Functions ------------------------
 	// *
@@ -31,6 +32,37 @@ namespace ggui
 	ImVec2 get_initial_window_pos()
 	{
 		return ImVec2(5.0f, ggui::toolbar_pos.y + ggui::toolbar_size.y + 5.0f);
+	}
+
+	bool camera_context_ready()
+	{
+		return ggui::state.ccamerawnd.context_initialized;
+	}
+	
+	bool cxy_context_ready()
+	{
+		return ggui::state.cxywnd.context_initialized;
+	}
+
+	bool layered_context_ready()
+	{
+		return ggui::state.clayeredwnd.context_initialized;
+	}
+
+	bool cz_context_ready()
+	{
+		return ggui::state.czwnd.context_initialized;
+	}
+	
+	bool all_contexts_ready()
+	{
+		if (ggui::state.ccamerawnd.context_initialized
+			 && ggui::state.cxywnd.context_initialized)
+		{
+			return true;
+		}
+
+		return false;
 	}
 	
 }
