@@ -90,8 +90,9 @@ public:
 	static void __stdcall	on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags);
 
 	static BOOL __stdcall	on_scroll(UINT nFlags, std::int16_t zDelta, CPoint point);
-	static void __fastcall	on_view_zoomin(cmainframe* pThis);
-	static void __fastcall	on_view_zoomout(cmainframe* pThis);
+	
+	static void on_view_zoomin(cmainframe* pThis, CPoint point);
+	static void on_view_zoomout(cmainframe* pThis, CPoint point);
 };
 
 namespace xywnd

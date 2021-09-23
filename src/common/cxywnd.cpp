@@ -213,41 +213,189 @@ BOOL __stdcall cxywnd::on_scroll(UINT nFlags, std::int16_t zDelta, [[maybe_unuse
 }
 
 
-typedef void(__thiscall* on_cxywnd_zoom)(cmainframe*);
-	on_cxywnd_zoom __on_zoomin;
-	on_cxywnd_zoom __on_zoomout;
-
-
-void __fastcall cxywnd::on_view_zoomin(cmainframe* pThis)
+void xy_to_point(cxywnd* wnd, float* origin_out, CPoint point)
 {
-	if (pThis->m_pXYWnd)
-	{
-		if (pThis->m_pXYWnd->m_bActive)
-		{
-			pThis->m_pXYWnd->m_fScale = pThis->m_pXYWnd->m_fScale * 1.25f;
-
-			if (pThis->m_pXYWnd->m_fScale > 160.0f) {
-				pThis->m_pXYWnd->m_fScale = 160.0f;
-			}
-			
-			// huh
-			//flt_25D5A90 = this->m_pXYWnd->m_fScale;
-		}
-	}
-	game::g_nUpdateBits |= W_XY_OVERLAY | W_XY;
-	game::g_nUpdateBits |= W_Z_OVERLAY | W_Z;
+	const auto zoom_center_x = ((float)point.x - (float)wnd->m_nWidth * 0.5f) / wnd->m_fScale;
+	const auto zoom_center_y = ((float)point.y - (float)wnd->m_nHeight * 0.5f) / wnd->m_fScale;
 	
+	switch(wnd->m_nViewType)
+	{
+	case XY:
+		origin_out[0] = (zoom_center_x + wnd->m_vOrigin[0]);
+		origin_out[1] = (zoom_center_y + wnd->m_vOrigin[1]);
+		origin_out[2] = 131072.0;
+		break;
+		
+	case XZ:
+		origin_out[0] = (zoom_center_x + wnd->m_vOrigin[0]);
+		origin_out[1] = 131072.0;
+		origin_out[2] = (zoom_center_y + wnd->m_vOrigin[2]);
+		break;
+
+	case YZ:
+		origin_out[0] = 131072.0;
+		origin_out[1] = (zoom_center_x + wnd->m_vOrigin[1]);
+		origin_out[2] = (zoom_center_y + wnd->m_vOrigin[2]);
+		break;
+	}
+}
+
+void cxywnd::on_view_zoomin(cmainframe* pThis, CPoint point)
+{
+	float origin_from_point_oldzoom[3] = { 0.0f };
+	float origin_from_point_newzoom[3] = { 0.0f };
+
+	xy_to_point(pThis->m_pXYWnd, origin_from_point_oldzoom, point);
+	
+	if (pThis->m_pXYWnd && pThis->m_pXYWnd->m_bActive)
+	{
+
+		pThis->m_pXYWnd->m_fScale = pThis->m_pXYWnd->m_fScale * 1.25f;
+		
+		if (pThis->m_pXYWnd->m_fScale > 160.0f) {
+			pThis->m_pXYWnd->m_fScale = 160.0f;
+		}
+
+		xy_to_point(pThis->m_pXYWnd, origin_from_point_newzoom, point);
+
+		float delta_x = 0.0f, delta_y = 0.0f, delta_z = 0.0f;
+		
+		switch (pThis->m_pXYWnd->m_nViewType)
+		{
+		case XY:
+			delta_x =  (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+			delta_y = -(origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+			
+			break;
+
+		case XZ:
+			delta_x =  (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+			delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+			break;
+
+		case YZ:
+			delta_y =  (origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+			delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+			break;
+		}
+		
+		pThis->m_pXYWnd->m_vOrigin[0] -= delta_x;
+		pThis->m_pXYWnd->m_vOrigin[1] -= delta_y;
+		pThis->m_pXYWnd->m_vOrigin[2] -= delta_z;
+
+		// TODO: set this float
+		// flt_25D5A90
+	}
+	
+	game::g_nUpdateBits |= W_XY_OVERLAY | W_XY;
+	game::g_nUpdateBits |= W_Z_OVERLAY  | W_Z;
+
 	zwnd->scale = 1.25f * zwnd->scale;
 	if (zwnd->scale > 160.0f) {
 		zwnd->scale = 160.0f;
 	}
-	
-	//__on_zoomin(pThis);
 }
 
-void __fastcall cxywnd::on_view_zoomout(cmainframe* pThis)
+__declspec(naked) void on_view_zoomin_stub()
 {
-	__on_zoomout(pThis);
+	const static uint32_t retn_pt = 0x42B9F0;
+	__asm
+	{
+		pushad;
+		push	ebx; // point.y
+		push	esi; // point.x
+		push	ecx; // cmainframe*
+
+		call	cxywnd::on_view_zoomin;
+		add		esp, 12;
+		popad;
+		
+		jmp		retn_pt;
+	}
+}
+
+
+void cxywnd::on_view_zoomout(cmainframe* pThis, CPoint point)
+{
+	float origin_from_point_oldzoom[3] = { 0.0f };
+	float origin_from_point_newzoom[3] = { 0.0f };
+
+	xy_to_point(pThis->m_pXYWnd, origin_from_point_oldzoom, point);
+	
+	if (pThis->m_pXYWnd && pThis->m_pXYWnd->m_bActive)
+	{
+		pThis->m_pXYWnd->m_fScale *= 0.8f;
+		if (pThis->m_pXYWnd->m_fScale < 0.003125f) {
+			pThis->m_pXYWnd->m_fScale = 0.003125f;
+		}
+
+		
+		xy_to_point(pThis->m_pXYWnd, origin_from_point_newzoom, point);
+
+		float delta_x = 0.0f, delta_y = 0.0f, delta_z = 0.0f;
+
+		switch (pThis->m_pXYWnd->m_nViewType)
+		{
+		case XY:
+			delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+			delta_y = -(origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+
+			break;
+
+		case XZ:
+			delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+			delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+			break;
+
+		case YZ:
+			delta_y = (origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+			delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+			break;
+		}
+
+		pThis->m_pXYWnd->m_vOrigin[0] -= delta_x;
+		pThis->m_pXYWnd->m_vOrigin[1] -= delta_y;
+		pThis->m_pXYWnd->m_vOrigin[2] -= delta_z;
+		
+
+		// TODO: set this float
+		// flt_25D5A90 = pThis->m_pXYWnd->m_fScale
+
+		if (pThis->m_pXYWnd->m_fScale != 0.0f)
+		{
+			game::g_nUpdateBits |= W_XY_OVERLAY | W_XY;
+			game::g_nUpdateBits |= W_Z_OVERLAY | W_Z;
+			
+			zwnd->scale = pThis->m_pXYWnd->m_fScale;
+			return;
+		}
+	}
+
+	game::g_nUpdateBits |= W_XY_OVERLAY | W_XY;
+	game::g_nUpdateBits |= W_Z_OVERLAY | W_Z;
+	
+	zwnd->scale *= 0.8f;
+	if (zwnd->scale < 0.003125f) {
+		zwnd->scale = 0.003125f;
+	}
+}
+
+__declspec(naked) void on_view_zoomout_stub()
+{
+	const static uint32_t retn_pt = 0x42BA03;
+	__asm
+	{
+		pushad;
+		push	ebx; // point.y
+		push	esi; // point.x
+		push	ecx; // cmainframe*
+
+		call	cxywnd::on_view_zoomout;
+		add		esp, 12;
+		popad;
+
+		jmp		retn_pt;
+	}
 }
 
 // *
@@ -341,6 +489,6 @@ void cxywnd::main()
 
 	xywnd::__on_scroll			= reinterpret_cast<xywnd::on_cxywnd_scroll>(utils::hook::detour(0x46E5C0, cxywnd::on_scroll, HK_JUMP));
 
-	__on_zoomin					= reinterpret_cast<on_cxywnd_zoom>(utils::hook::detour(0x424750, cxywnd::on_view_zoomin, HK_JUMP));
-	__on_zoomout				= reinterpret_cast<on_cxywnd_zoom>(utils::hook::detour(0x4247E0, cxywnd::on_view_zoomout, HK_JUMP));
+	utils::hook(0x42B9EB, on_view_zoomin_stub, HOOK_JUMP).install()->quick();
+	utils::hook(0x42B9FE, on_view_zoomout_stub, HOOK_JUMP).install()->quick();
 }
