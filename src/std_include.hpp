@@ -100,6 +100,7 @@
 #include "ggui/menubar.hpp"
 #include "ggui/colors.hpp"
 #include "ggui/toolbar.hpp"
+#include "ggui/console.hpp"
 
 #include "common/mainframe.hpp"
 #include "common/camwnd.hpp"

@@ -1,4 +1,5 @@
 #include "std_include.hpp"
+//#include <stdarg.h>
 
 // tests
 //#define SPLITTER_TEST
@@ -14,7 +15,6 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 	int sys_timeBase = 0;
 	int com_frameTime = 0;
 	int com_lastFrameTime = 0;
-	int frametime_msec = 0;
 	
 	while(true)
 	{
@@ -44,14 +44,14 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 				Sleep(0u);
 			}
 
-			frametime_msec = com_frameTime - com_lastFrameTime;
+			game::glob::frametime_ms = com_frameTime - com_lastFrameTime;
 			com_lastFrameTime = com_frameTime;
 
 			// update cam window ~ 250fps
 			if  (const auto hwnd = cmainframe::activewnd->m_pCamWnd->GetWindow();
 				hwnd != nullptr)
 			{
-				if(frametime_msec <= 100)
+				if(game::glob::frametime_ms <= 100)
 				{
 					game::glob::ccamwindow_realtime = true;
 					SendMessageA(hwnd, WM_PAINT, 0, 0);
@@ -101,6 +101,13 @@ BOOL init_threads()
 	// Create LiveRadiant thread (receiving commands from the server)
 	CreateThread(nullptr, 0, remote_net_receive_packet_thread, nullptr, 0, nullptr);
 
+	
+	game::glob::command_thread_running = false;
+
+	if (CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(components::command::command_thread), nullptr, 0, nullptr))
+	{
+		game::glob::command_thread_running = true;
+	}
 
 	// -----------
 	// I/O Console
@@ -121,7 +128,14 @@ BOOL init_threads()
 
 	// command Thread
 	//CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(command_thread), nullptr, 0, nullptr);
-	CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(components::command::command_thread), nullptr, 0, nullptr);
+	
+	/*game::glob::command_thread_running = false;
+	
+	if(CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(components::command::command_thread), nullptr, 0, nullptr))
+	{
+		game::glob::command_thread_running = true;
+	}*/
+	
 	return TRUE;
 }
 
@@ -376,13 +390,40 @@ namespace components
 	//	}
 	//}
 
-	int printf_stub_without_vastart(_In_z_ _Printf_format_string_ char const* const _Format, va_list _ArgList)
+	/*int printf_stub_without_vastart(_In_z_ _Printf_format_string_ char const* const _Format, va_list _ArgList)
 	{
-		int _Result;
-		_Result = _vfprintf_l(stdout, _Format, NULL, _ArgList);
+		const int _Result = _vfprintf_l(stdout, _Format, NULL, _ArgList);
 		__crt_va_end(_ArgList);
 		return _Result;
-	}
+	}*/
+
+	/*int quick_patch::printf_to_console(_In_z_ _Printf_format_string_ char const* const _format, ...)
+	{
+		int _result;
+		va_list _arglist;
+		char text_out[1024];
+		
+		__crt_va_start(_arglist, _format);
+		vsprintf(text_out, _format, _arglist);
+		_result = _vfprintf_l(stdout, _format, NULL, _arglist);
+		__crt_va_end(_arglist);
+
+		ggui::_console->addline_no_format(text_out);
+		return _result;
+	}*/
+
+	/*void com_print_hk(int channel, const char* _format, ...)
+	{
+		va_list _arglist;
+		char text_out[1024];
+
+		__crt_va_start(_arglist, _format);
+		vsprintf(text_out, _format, _arglist);
+		_vfprintf_l(stdout, _format, NULL, _arglist);
+		__crt_va_end(_arglist);
+
+		ggui::_console->addline_no_format(text_out);
+	}*/
 
 	void force_preferences_on_init()
 	{
@@ -416,6 +457,8 @@ namespace components
 		// TODO! :: move this or rename quick_patch to main or something
 		init_threads();
 
+		static ggui::console console;
+		
 		radiantapp::main();
 		cmainframe::main();
 		ccamwnd::main();
@@ -427,10 +470,13 @@ namespace components
 		utils::hook(0x450730, force_preferences_on_init_stub, HOOK_JUMP).install()->quick();
 
 		// redirect console prints
-		utils::hook::nop(0x420A54, 10); utils::hook::nop(0x40A9E0, 10);
-		utils::hook::set(0x25D5A54, printf_stub_without_vastart);
+		utils::hook::nop(0x420A54, 10);
+		utils::hook::nop(0x40A9E0, 10);
+		utils::hook::set(0x25D5A54, game::printf_to_console); // console window printing
 		// ^
-		utils::hook::detour(0x499E90, printf, HK_JUMP);
+		utils::hook::detour(0x499E90, game::printf_to_console, HK_JUMP); // sys_printf
+		utils::hook::detour(0x40B5D0, game::com_printf_to_console, HK_JUMP); // com_printf
+		utils::hook::detour(0x5BE383, game::printf_to_console, HK_JUMP); // printf
 
 //#define CONSOLE_TEST
 #ifdef CONSOLE_TEST
@@ -462,6 +508,9 @@ namespace components
 
 		// silence "Could not connect to source control"
 		utils::hook::nop(0x420B59, 5);
+
+		// remove "\n" infront of "\nFile Handles:\n"
+		utils::hook::set<BYTE>(0x4A182D + 1, 0x7D);
 
 		
 #ifdef HIDE_MAINFRAME_TOOLBAR
@@ -631,8 +680,8 @@ namespace components
 					dvar_description = dvar_dummy->description;
 				}
 
-				printf(utils::va(dvarType.c_str(), dvar_dummy->name, game::Dvar_DisplayableValue(dvar_dummy)));
-				printf("|-> %s\n", dvar_description.c_str());
+				game::printf_to_console(utils::va(dvarType.c_str(), dvar_dummy->name, game::Dvar_DisplayableValue(dvar_dummy)));
+				game::printf_to_console("|-> %s\n", dvar_description.c_str());
 			}
 
 			else

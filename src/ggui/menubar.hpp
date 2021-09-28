@@ -1,5 +1,5 @@
 #pragma once
-#include "ggui/_ggui.hpp"
+#include "_ggui.hpp"
 
 namespace ggui::menubar
 {

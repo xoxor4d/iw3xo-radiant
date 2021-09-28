@@ -19,7 +19,7 @@ void cmainframe::routine_processing()
 	{
 		return;
 	}
-
+	
 	if (0.0 == game::g_time)
 	{
 		game::g_time = 0.0;
@@ -410,51 +410,6 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 			}
 		}
 #endif
-		
-#if 0
-		if (prefs->m_nView == 1 && cmainframe::activewnd && cmainframe::activewnd->m_pXYWnd)
-		{
-			RECT _rect;
-			GetClientRect(pThis->m_hWnd, &_rect);
-
-			const int width = _rect.right - _rect.left;
-			const int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
-
-			POINT _point = { 0,0 };
-			ClientToScreen(pThis->m_hWnd, &_point);
-
-			if (prefs->detatch_windows)
-			{
-				SetWindowPos(cmainframe::activewnd->m_pXYWnd->m_hWnd, HWND_BOTTOM, _point.x, _point.y, width, height, SWP_FRAMECHANGED | SWP_NOZORDER);
-			}
-			else
-			{
-				SetWindowPos(cmainframe::activewnd->m_pXYWnd->m_hWnd, HWND_BOTTOM, 0, 0, width, height, SWP_NOZORDER);
-			}
-		}
-
-		// keep split-view camera window maximized within the mainframe
-		if (prefs->m_nView == 1 && cmainframe::activewnd && cmainframe::activewnd->m_pCamWnd)
-		{
-			RECT _rect;
-			GetClientRect(pThis->m_hWnd, &_rect);
-
-			const int width = _rect.right - _rect.left;
-			const int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
-
-			POINT _point = { 0,0 };
-			ClientToScreen(pThis->m_hWnd, &_point);
-
-			if (prefs->detatch_windows)
-			{
-				SetWindowPos(cmainframe::activewnd->m_pCamWnd->m_hWnd, HWND_BOTTOM, _point.x, _point.y, width, height, SWP_FRAMECHANGED | SWP_NOZORDER);
-			}
-			else
-			{
-				SetWindowPos(cmainframe::activewnd->m_pCamWnd->m_hWnd, HWND_BOTTOM, 0, 0, width, height, SWP_NOZORDER);
-			}
-		}
-#endif
 	}
 
 	// ! do not set imgui context for every msg
@@ -463,53 +418,37 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 	{
 		if (ggui::cz_context_ready())
 		{
-			// auto close mainframe menubar popups when the mouse leaves the cxy window
-			if (cmainframe::activewnd && cmainframe::activewnd->m_pZWnd)
+			// only above 10 fps (we might 'loose focus' on < 5 FPS, preventing imgui mouse input )
+			if(game::glob::frametime_ms <= 100)
 			{
-				if (is_mouse_outside_window(cmainframe::activewnd->m_pZWnd->GetWindow()))
+				// auto close mainframe menubar popups when the mouse leaves the cxy window
+				if (cmainframe::activewnd && cmainframe::activewnd->m_pZWnd)
 				{
-					const auto imgui_context_old = ImGui::GetCurrentContext();
-
-					IMGUI_BEGIN_CZWND;
-					const auto context = ImGui::GetCurrentContext();
-
-					// TODO! we might 'loose focus' on < 5 FPS, preventing imgui mouse input 
-					if (context->OpenPopupStack.Size > 0)
+					if (is_mouse_outside_window(cmainframe::activewnd->m_pZWnd->GetWindow()))
 					{
-						//printf("closing popup #%d\n", context->OpenPopupStack.Size - 1);
-						ImGui::ClosePopupToLevel(context->OpenPopupStack.Size - 1, false);
-					}
+						const auto imgui_context_old = ImGui::GetCurrentContext();
 
-					// restore context
-					ImGui::SetCurrentContext(imgui_context_old);
+						IMGUI_BEGIN_CZWND;
+						const auto context = ImGui::GetCurrentContext();
+
+						if (context->OpenPopupStack.Size > 0)
+						{
+							//printf("closing popup #%d\n", context->OpenPopupStack.Size - 1);
+							ImGui::ClosePopupToLevel(context->OpenPopupStack.Size - 1, false);
+						}
+
+						// restore context
+						ImGui::SetCurrentContext(imgui_context_old);
+					}
 				}
 			}
+
+			// fix mouse cursors
+			if(ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam))
+			{
+				return true;
+			}
 		}
-		
-		//if(ggui::cxy_context_ready())
-		//{
-		//	// auto close mainframe menubar popups when the mouse leaves the cxy window
-		//	if (cmainframe::activewnd && cmainframe::activewnd->m_pXYWnd)
-		//	{
-		//		if (is_mouse_outside_window(cmainframe::activewnd->m_pXYWnd->GetWindow()))
-		//		{
-		//			const auto imgui_context_old = ImGui::GetCurrentContext();
-
-		//			IMGUI_BEGIN_CXYWND;
-		//			const auto context = ImGui::GetCurrentContext();
-
-		//			// TODO! we might 'loose focus' on < 5 FPS, preventing imgui mouse input 
-		//			if (context->OpenPopupStack.Size > 0)
-		//			{
-		//				//printf("closing popup #%d\n", context->OpenPopupStack.Size - 1);
-		//				ImGui::ClosePopupToLevel(context->OpenPopupStack.Size - 1, false);
-		//			}
-
-		//			// restore context
-		//			ImGui::SetCurrentContext(imgui_context_old);
-		//		}
-		//	}
-		//}
 	}
 
 	
@@ -548,43 +487,6 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 				memset(io.KeysDown, 0, sizeof(io.KeysDown));
 			}
 		}
-		
-		//if (ggui::camera_context_ready())
-		//{
-		//	IMGUI_BEGIN_CCAMERAWND;
-		//	if (ImGui::GetIO().WantCaptureMouse)
-		//	{
-		//		ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam);
-		//		return true;
-		//	}
-		//	
-		//	// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
-		//	{
-		//		ImGuiIO& io = ImGui::GetIO();
-		//		memset(io.KeysDown, 0, sizeof(io.KeysDown));
-		//	}
-		//}
-		//
-		//if (ggui::cxy_context_ready())
-		//{
-		//	// if mouse is inside imgui-cxy window
-		//	if (ggui::rtt_gridwnd.window_hovered)
-		//	{
-		//		// => CFrameWnd::DefWindowProc
-		//		return o_wndproc(pThis, Msg, wParam, lParam);
-		//	}
-		//	
-		//	IMGUI_BEGIN_CXYWND;
-		//	if (ImGui::GetIO().WantCaptureMouse)
-		//	{
-		//		ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam);
-		//		return true;
-		//	}
-		//	
-		//	// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
-		//	ImGuiIO& io = ImGui::GetIO();
-		//	memset(io.KeysDown, 0, sizeof(io.KeysDown));
-		//}
 	}
 	
 	// => CFrameWnd::DefWindowProc
@@ -669,34 +571,6 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 	}
 #endif
 	
-	//if (ggui::camera_context_ready())
-	//{
-	//	IMGUI_BEGIN_CCAMERAWND;
-	//	if (ImGui::GetIO().WantCaptureMouse)
-	//	{
-	//		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
-	//		return 1;
-	//	}
-	//}
-	//
-	//if (ggui::cxy_context_ready())
-	//{
-	//	IMGUI_BEGIN_CXYWND;
-	//	
-	//	// if mouse is inside imgui-cxy window
-	//	if (ggui::rtt_gridwnd.window_hovered)
-	//	{
-	//		return mainframe::__on_mscroll(pThis, nFlags, zDelta, ggui::rtt_gridwnd.cursor_pos_pt);
-	//	}
-	//	
-	//	
-	//	if (ImGui::GetIO().WantCaptureMouse)
-	//	{
-	//		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
-	//		return 1;
-	//	}
-	//}
-
 	return mainframe::__on_mscroll(pThis, nFlags, zDelta, point);
 }
 
@@ -754,52 +628,6 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 	}
 #endif
 	
-	//if (ggui::camera_context_ready())
-	//{
-	//	IMGUI_BEGIN_CCAMERAWND;
-	//	if (ImGui::GetIO().WantCaptureMouse)
-	//	{
-	//		ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
-	//		return;
-	//	}
-
-	//	// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
-	//	ImGuiIO& io = ImGui::GetIO();
-	//	memset(io.KeysDown, 0, sizeof(io.KeysDown));
-	//}
-	
-	
-	//if (ggui::cxy_context_ready())
-	//{
-	//	IMGUI_BEGIN_CXYWND;
-
-	//	// if mouse is inside imgui-cxy window
-	//	if (ggui::rtt_gridwnd.window_hovered)
-	//	{
-	//		mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
-	//		return;
-	//	}
-	//	
-	//	// handle imgui-camera window
-	//	if (ggui::rtt_camerawnd.window_hovered)
-	//	{
-	//		// calls the original on_keydown function
-	//		mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
-	//		return;
-	//	}
-
-	//	// if mouse cursor above any cxy imgui window
-	//	if (ImGui::GetIO().WantCaptureMouse)
-	//	{
-	//		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
-	//		return;
-	//	}
-
-	//	// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
-	//	ImGuiIO& io = ImGui::GetIO();
-	//	memset(io.KeysDown, 0, sizeof(io.KeysDown));
-	//}
-	
 	mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 }
 
@@ -847,44 +675,6 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 		}
 	}
 #endif
-	
-	//if (ggui::camera_context_ready())
-	//{
-	//	IMGUI_BEGIN_CCAMERAWND;
-	//	if (ImGui::GetIO().WantCaptureMouse)
-	//	{
-	//		ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYUP, 0, nChar);
-	//		return;
-	//	}
-	//}
-
-	//if (ggui::cxy_context_ready())
-	//{
-	//	IMGUI_BEGIN_CXYWND;
-
-	//	// if mouse is inside imgui-cxy window
-	//	if (ggui::rtt_gridwnd.window_hovered)
-	//	{
-	//		mainframe::__on_keyup(pThis, nChar);
-	//		return;
-	//	}
-
-	//	// handle imgui-camera window
-	//	if (ggui::rtt_camerawnd.window_hovered)
-	//	{
-	//		// calls the original on_keyup function
-	//		mainframe::__on_keyup(pThis, nChar);
-	//		return;
-	//	}
-
-	//	
-	//	// if mouse cursor above any cxy imgui window
-	//	if (ImGui::GetIO().WantCaptureMouse)
-	//	{
-	//		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYUP, 0, nChar);
-	//		return;
-	//	}
-	//}
 
 	mainframe::__on_keyup(pThis, nChar);
 }
@@ -960,77 +750,6 @@ void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* ed
 			}
 
 			LAYERWND_POS_ONCE_ON_STARTUP = true;
-		}
-	}
-#endif
-
-#if 0
-	// set floating xywindow position and size once on startup 
-	if(!CXYWND_POS_ONCE_ON_STARTUP)
-	{
-		const auto prefs = game::g_PrefsDlg();
-		if(prefs->m_nView != 1)
-		{
-			// no need to set pos/size when not using split view
-			CXYWND_POS_ONCE_ON_STARTUP = true;
-		}
-		
-		if (prefs->m_nView == 1 && cmainframe::activewnd && cmainframe::activewnd->m_pXYWnd)
-		{
-			RECT _rect;
-			GetClientRect(pThis->m_hWnd, &_rect);
-
-			const int width = _rect.right - _rect.left;
-			const int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
-
-			POINT _point = { 0,0 };
-			ClientToScreen(pThis->m_hWnd, &_point);
-
-			if (prefs->detatch_windows)
-			{
-				SetWindowPos(cmainframe::activewnd->m_pXYWnd->m_hWnd, HWND_BOTTOM, _point.x, _point.y, width, height, SWP_FRAMECHANGED | SWP_NOZORDER);
-			}
-			else
-			{
-				SetWindowPos(cmainframe::activewnd->m_pXYWnd->m_hWnd, HWND_BOTTOM, 0, 0, width, height, SWP_NOZORDER);
-			}
-
-			CXYWND_POS_ONCE_ON_STARTUP = true;
-		}
-	}
-#endif
-
-#if 0
-	if (!CAMERAWND_POS_ONCE_ON_STARTUP)
-	{
-		const auto prefs = game::g_PrefsDlg();
-		if (prefs->m_nView != 1)
-		{
-			// no need to set pos/size when not using split view
-			CAMERAWND_POS_ONCE_ON_STARTUP = true;
-		}
-
-		if (prefs->m_nView == 1 && cmainframe::activewnd && cmainframe::activewnd->m_pCamWnd)
-		{
-			RECT _rect;
-			GetClientRect(pThis->m_hWnd, &_rect);
-
-			const int width = _rect.right - _rect.left;
-			const int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
-
-			POINT _point = { 0,0 };
-			ClientToScreen(pThis->m_hWnd, &_point);
-
-			if (prefs->detatch_windows)
-			{
-				SetWindowPos(cmainframe::activewnd->m_pCamWnd->m_hWnd, HWND_BOTTOM, _point.x, _point.y, width, height, SWP_FRAMECHANGED | SWP_NOZORDER);
-			}
-			else
-			{
-				SetWindowPos(cmainframe::activewnd->m_pCamWnd->m_hWnd, HWND_BOTTOM, 0, 0, width, height, SWP_NOZORDER);
-			}
-
-			CAMERAWND_POS_ONCE_ON_STARTUP = true;
 		}
 	}
 #endif

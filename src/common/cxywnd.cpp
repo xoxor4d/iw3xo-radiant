@@ -1,5 +1,7 @@
 #include "std_include.hpp"
 
+IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 enum VIEWTYPE
 {
 	YZ = 0x0,
@@ -32,32 +34,7 @@ void reposition_viewtype_hint(const char* text, game::Font_s* font, [[maybe_unus
 	new_org[nDim2] = (cmainframe::activewnd->m_pXYWnd->m_vOrigin[nDim2] - h + 28.0f / cmainframe::activewnd->m_pXYWnd->m_fScale) + hd;
 	new_org[nDim3] = 0.0f;
 
-	// ----
-
-	if (text && *text)
-	{
-		const size_t t_size = strlen(text);
-		auto cmd = reinterpret_cast<game::GfxCmdDrawText3D*>(game::R_RenderBufferCmdCheck((t_size + 0x34) & 0xFFFFFFFC, 16));
-		if (cmd)
-		{
-			cmd->org[0] = new_org[0];
-			cmd->org[1] = new_org[1];
-			cmd->org[2] = new_org[2];
-			cmd->font = font;
-			cmd->xPixelStep[0] = pixel_step_x[0];
-			cmd->xPixelStep[1] = pixel_step_x[1];
-			cmd->xPixelStep[2] = pixel_step_x[2];
-			cmd->yPixelStep[0] = pixel_step_y[0];
-			cmd->yPixelStep[1] = pixel_step_y[1];
-			cmd->yPixelStep[2] = pixel_step_y[2];
-
-			// R_ConvertColorToBytes
-			utils::function<void(float*, game::GfxColor*)>(0x528EA0)(color, &cmd->color);
-
-			memcpy(cmd->text, text, t_size);
-			cmd->text[t_size] = 0;
-		}
-	}
+	components::renderer::R_AddCmdDrawTextAtPosition(text, font, new_org, pixel_step_x, pixel_step_y, color);
 }
 
 
@@ -74,33 +51,16 @@ void reposition_top_grid_hint(const char* text, game::Font_s* font, [[maybe_unus
 	new_org[nDim2] = origin[nDim2] - h;
 	new_org[nDim3] = origin[nDim3];
 
-	// ----
-
-	if (text && *text)
-	{
-		const size_t t_size = strlen(text);
-		auto cmd = reinterpret_cast<game::GfxCmdDrawText3D*>(game::R_RenderBufferCmdCheck((t_size + 0x34) & 0xFFFFFFFC, 16));
-		if (cmd)
-		{
-			cmd->org[0] = new_org[0];
-			cmd->org[1] = new_org[1];
-			cmd->org[2] = new_org[2];
-			cmd->font = font;
-			cmd->xPixelStep[0] = pixel_step_x[0];
-			cmd->xPixelStep[1] = pixel_step_x[1];
-			cmd->xPixelStep[2] = pixel_step_x[2];
-			cmd->yPixelStep[0] = pixel_step_y[0];
-			cmd->yPixelStep[1] = pixel_step_y[1];
-			cmd->yPixelStep[2] = pixel_step_y[2];
-
-			// R_ConvertColorToBytes
-			utils::function<void(float*, game::GfxColor*)>(0x528EA0)(color, &cmd->color);
-
-			memcpy(cmd->text, text, t_size);
-			cmd->text[t_size] = 0;
-		}
-	}
+	components::renderer::R_AddCmdDrawTextAtPosition(text, font, new_org, pixel_step_x, pixel_step_y, color);
 }
+
+// fix entity name drawing
+void draw_entity_names_hk(const char* text, game::Font_s* font, float* origin, float* pixel_step_x, float* pixel_step_y, [[maybe_unused]] float* color)
+{
+	components::renderer::R_AddCmdDrawTextAtPosition(text, font, origin, pixel_step_x, pixel_step_y, game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK]);
+}
+
+
 
 namespace xywnd
 {
@@ -240,6 +200,7 @@ void xy_to_point(cxywnd* wnd, float* origin_out, CPoint point)
 	}
 }
 
+// zoom to cursor
 void cxywnd::on_view_zoomin(cmainframe* pThis, CPoint point)
 {
 	float origin_from_point_oldzoom[3] = { 0.0f };
@@ -255,6 +216,9 @@ void cxywnd::on_view_zoomin(cmainframe* pThis, CPoint point)
 		if (pThis->m_pXYWnd->m_fScale > 160.0f) {
 			pThis->m_pXYWnd->m_fScale = 160.0f;
 		}
+
+		// needed?
+		game::g_zoomLevel = pThis->m_pXYWnd->m_fScale;
 
 		xy_to_point(pThis->m_pXYWnd, origin_from_point_newzoom, point);
 
@@ -282,9 +246,6 @@ void cxywnd::on_view_zoomin(cmainframe* pThis, CPoint point)
 		pThis->m_pXYWnd->m_vOrigin[0] -= delta_x;
 		pThis->m_pXYWnd->m_vOrigin[1] -= delta_y;
 		pThis->m_pXYWnd->m_vOrigin[2] -= delta_z;
-
-		// TODO: set this float
-		// flt_25D5A90
 	}
 	
 	game::g_nUpdateBits |= W_XY_OVERLAY | W_XY;
@@ -314,7 +275,7 @@ __declspec(naked) void on_view_zoomin_stub()
 	}
 }
 
-
+// zoom to cursor
 void cxywnd::on_view_zoomout(cmainframe* pThis, CPoint point)
 {
 	float origin_from_point_oldzoom[3] = { 0.0f };
@@ -329,6 +290,8 @@ void cxywnd::on_view_zoomout(cmainframe* pThis, CPoint point)
 			pThis->m_pXYWnd->m_fScale = 0.003125f;
 		}
 
+		// needed?
+		game::g_zoomLevel = pThis->m_pXYWnd->m_fScale;
 		
 		xy_to_point(pThis->m_pXYWnd, origin_from_point_newzoom, point);
 
@@ -357,10 +320,6 @@ void cxywnd::on_view_zoomout(cmainframe* pThis, CPoint point)
 		pThis->m_pXYWnd->m_vOrigin[1] -= delta_y;
 		pThis->m_pXYWnd->m_vOrigin[2] -= delta_z;
 		
-
-		// TODO: set this float
-		// flt_25D5A90 = pThis->m_pXYWnd->m_fScale
-
 		if (pThis->m_pXYWnd->m_fScale != 0.0f)
 		{
 			game::g_nUpdateBits |= W_XY_OVERLAY | W_XY;
@@ -398,16 +357,28 @@ __declspec(naked) void on_view_zoomout_stub()
 	}
 }
 
+
 // *
 // | ----------------- Windowproc ---------------------
 // *
 
 LRESULT WINAPI cxywnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	// we only need the char event
-	if (Msg == WM_CHAR)
+	// handle text input when the imgui grid window is active (selected) 
+	// but the user is within a textbox in some other imgui window
+	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 	{
-		// temp
+		if (ggui::cz_context_ready())
+		{
+			// set cz context (in-case we use multiple imgui context's)
+			IMGUI_BEGIN_CZWND;
+
+			if (!ggui::rtt_gridwnd.window_hovered && ImGui::GetIO().WantCaptureMouse)
+			{
+				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
+				return true;
+			}
+		}
 	}
 	
 	return DefWindowProcA(hWnd, Msg, wParam, lParam);
@@ -457,6 +428,9 @@ void cxywnd::main()
 	// reposition top grid -> bottom
 	utils::hook(0x468E50, reposition_top_grid_hint, HOOK_CALL).install()->quick();
 
+	// fix entity name drawing
+	utils::hook(0x46CA02, draw_entity_names_hk, HOOK_CALL).install()->quick();
+
 #if 1
 	// cxywnd::precreatewindow -> change window style for child windows (split view, not detatched)
 	utils::hook::nop(0x463A64, 2);
@@ -489,6 +463,7 @@ void cxywnd::main()
 
 	xywnd::__on_scroll			= reinterpret_cast<xywnd::on_cxywnd_scroll>(utils::hook::detour(0x46E5C0, cxywnd::on_scroll, HK_JUMP));
 
+	// zoom to cursor
 	utils::hook(0x42B9EB, on_view_zoomin_stub, HOOK_JUMP).install()->quick();
 	utils::hook(0x42B9FE, on_view_zoomout_stub, HOOK_JUMP).install()->quick();
 }

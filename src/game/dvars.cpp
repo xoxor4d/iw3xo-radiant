@@ -22,13 +22,13 @@ namespace dvars
 
 	// stock dvars (not registered but ptr assigned)
 	game::dvar_s* fs_homepath = nullptr;
-
+	
 	// ---------------------------------------------
 
 	game::dvar_s* register_int(const char* dvar_name, int value, int mins, int maxs, __int16 flags, const char* description)
 	{
 		game::dvar_s* dvar = game::Dvar_RegisterInt(dvar_name, value, mins, maxs, flags, description);
-		printf(utils::va("|-> %s <int>\n", dvar_name));
+		game::printf_to_console(utils::va("|-> %s <int>\n", dvar_name));
 
 		// return a pointer to our dvar
 		return dvar;
@@ -37,7 +37,7 @@ namespace dvars
 	game::dvar_s* register_bool(const char* dvar_name, char value, __int16 flags, const char* description)
 	{
 		game::dvar_s* dvar = game::Dvar_RegisterBool(dvar_name, value, flags, description);
-		printf(utils::va("|-> %s <bool>\n", dvar_name));
+		game::printf_to_console(utils::va("|-> %s <bool>\n", dvar_name));
 
 		// return a pointer to our dvar
 		return dvar;
@@ -46,7 +46,7 @@ namespace dvars
 	game::dvar_s* register_float(const char* dvar_name, float value, float mins, float maxs, __int16 flags, const char* description)
 	{
 		game::dvar_s*  dvar = game::Dvar_RegisterFloat(dvar_name, value, mins, maxs, flags, description);
-		printf(utils::va("|-> %s <float>\n", dvar_name));
+		game::printf_to_console(utils::va("|-> %s <float>\n", dvar_name));
 
 		// return a pointer to our dvar
 		return dvar;
@@ -55,7 +55,7 @@ namespace dvars
 	game::dvar_s* register_vec4(const char* dvar_name, float x, float y, float z, float w, float mins, float maxs, __int16 flags, const char* description)
 	{
 		game::dvar_s* dvar = game::Dvar_RegisterVec4(dvar_name, x, y, z, w, mins, maxs, flags, description);
-		printf(utils::va("|-> %s <vec4>\n", dvar_name));
+		game::printf_to_console(utils::va("|-> %s <vec4>\n", dvar_name));
 
 		// return a pointer to our dvar
 		return dvar;
@@ -81,13 +81,14 @@ namespace dvars
 	// register all new dvars here (exec. after config was loaded)
 	void register_addon_dvars()
 	{
-		printf("[dvars]: register_addon_dvars() start ...\n");
+		game::printf_to_console("[Dvars]: register_addon_dvars() start ...\n");
 
 		components::gui::register_dvars();
 		components::remote_net::register_dvars();
 		cmainframe::register_dvars();
 		ggui::toolbar::register_dvars();
+
 		
-		printf("\n");
+		game::printf_to_console("\n");
 	}
 }

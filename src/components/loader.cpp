@@ -9,12 +9,30 @@ namespace components
 	{
 		loader::mem_allocator_.clear();
 
-		loader::Register(new command());
-		loader::Register(new d3d9ex());
-		loader::Register(new gui());
-		loader::Register(new quick_patch());
-		loader::Register(new remote_net());
-		loader::Register(new config());
+		loader::_register(new command());
+		loader::_register(new d3d9ex());
+		loader::_register(new renderer());
+		loader::_register(new gui());
+		loader::_register(new remote_net());
+		loader::_register(new config());
+		loader::_register(new quick_patch());
+
+		if(ggui::_console)
+		{
+			// print to external and internal console
+			printf("[Modules] ---------------------\n");
+			ggui::_console->addline_no_format("[Modules] ---------------------\n");
+			
+			for (const auto& str : game::glob::loadedModules)
+			{
+				printf(str.c_str());
+				ggui::_console->addline_no_format(str.c_str());
+			}
+
+			// print to external and internal console
+			printf("\n");
+			ggui::_console->addline_no_format("\n");
+		}
 	}
 
 	void loader::uninitialize()
@@ -31,16 +49,17 @@ namespace components
 		fflush(stderr);
 	}
 
-	void loader::Register(component* component)
+	void loader::_register(component* component)
 	{
 		if (component)
 		{
-			game::glob::loadedModules.append(utils::va("component registered: %s\n", component->get_name()));
+			//game::glob::loadedModules.append(utils::va("component registered: %s\n", component->get_name()));
+			game::glob::loadedModules.push_back("component registered: "s + component->get_name() + "\n");
 			loader::components_.push_back(component);
 		}
 	}
 
-	utils::memory::allocator* loader::GetAlloctor()
+	utils::memory::allocator* loader::get_alloctor()
 	{
 		return &loader::mem_allocator_;
 	}

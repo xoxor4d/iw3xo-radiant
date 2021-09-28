@@ -5,12 +5,14 @@ namespace game
 	namespace glob
 	{
 		// Init
-		std::string loadedModules;
+		bool command_thread_running;
+		std::vector<std::string> loadedModules;
 
 		bool radiant_floatingWindows;
 		bool radiant_initiated;
 		bool radiant_config_loaded;
 		bool radiant_config_not_found;
+		int  frametime_ms;
 		bool ccamwindow_realtime;
 
 		CWnd* m_pCamWnd_ref;
@@ -31,7 +33,8 @@ namespace game
 	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
 	//CPrefsDlg*	g_PrefsDlg = reinterpret_cast<CPrefsDlg*>(0x73C704);
 	game::qeglobals_t* g_qeglobals = reinterpret_cast<game::qeglobals_t*>(0x25F39C0);
-	
+
+	float&	g_zoomLevel = *reinterpret_cast<float*>(0x25D5A90);
 	int*	g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
 	int&	g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
 	bool&	g_bScreenUpdates = *reinterpret_cast<bool*>(0x739B0F);
@@ -166,6 +169,23 @@ namespace game
 		}
 	}
 
+	const char* Dvar_DomainToString_Internal(signed int buffer_len /*eax*/, const char* buffer_out /*ebx*/, int dvar_type, int* enum_lines_count, float mins, float maxs) //DvarLimits limit)
+	{
+		const static uint32_t Dvar_DomainToString_Internal_Func = 0x4B0220;
+		__asm
+		{
+			push	maxs;
+			push	mins;
+			
+			push	enum_lines_count;
+			push	dvar_type;
+			mov		ebx, buffer_out;
+			mov		eax, buffer_len;
+			call	Dvar_DomainToString_Internal_Func;
+			add		esp, 16;
+		}
+	}
+
 	game::dvar_s * Dvar_SetFromStringFromSource(const char *string /*ecx*/, game::dvar_s *dvar /*esi*/, int source)
 	{
 		const static uint32_t Dvar_SetFromStringFromSource_Func = 0x4B3910;
@@ -199,10 +219,50 @@ namespace game
 		}
 	}
 
+	int printf_to_console(_In_z_ _Printf_format_string_ char const* const _format, ...)
+	{
+		int _result;
+		va_list _arglist;
+		char text_out[1024];
+
+		__crt_va_start(_arglist, _format);
+		vsprintf(text_out, _format, _arglist);
+		_result = _vfprintf_l(stdout, _format, NULL, _arglist);
+		__crt_va_end(_arglist);
+
+		if(ggui::_console)
+		{
+			ggui::_console->addline_no_format(text_out);
+		}
+		
+		return _result;
+	}
+
+	void com_printf_to_console([[maybe_unused]] int channel, const char* _format, ...)
+	{
+		va_list _arglist;
+		char text_out[1024];
+
+		__crt_va_start(_arglist, _format);
+		vsprintf(text_out, _format, _arglist);
+		_vfprintf_l(stdout, _format, NULL, _arglist);
+		__crt_va_end(_arglist);
+
+		if (ggui::_console)
+		{
+			ggui::_console->addline_no_format(text_out);
+		}
+	}
+
 	void console_error(const std::string &msg)
 	{
 		std::string err = "[!] " + msg + "\n";
 		printf(err.c_str());
+
+		if (ggui::_console)
+		{
+			ggui::_console->addline_no_format(err.c_str());
+		}
 	}
 
 	void FS_ScanForDir(const char* directory, const char* search_path, int localized)

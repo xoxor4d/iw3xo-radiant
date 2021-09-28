@@ -56,6 +56,21 @@ namespace ImGui
 		return false;
 	}
 
+	bool IsResizing()
+	{
+		switch (ImGui::GetMouseCursor())
+		{
+		case ImGuiMouseCursor_ResizeAll:
+		case ImGuiMouseCursor_ResizeNS:
+		case ImGuiMouseCursor_ResizeEW:
+		case ImGuiMouseCursor_ResizeNESW:
+		case ImGuiMouseCursor_ResizeNWSE:
+			return true;
+		}
+
+		return false;
+	}
+
 	// "custom" ImGui_ImplWin32_WndProcHandler
 	// * hook a wndclass::function handling input and call this function with the corrosponding WM_ msg
 	void HandleKeyIO(HWND hwnd, UINT key, SHORT zDelta, UINT nChar)

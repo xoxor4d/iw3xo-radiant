@@ -474,6 +474,12 @@ namespace components
 		ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); p_colors++;
 		ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); p_colors++;
 
+		if (ggui::rtt_gridwnd.should_set_focus)
+		{
+			ImGui::SetNextWindowFocus();
+			ggui::rtt_gridwnd.should_set_focus = false;
+		}
+		
 		ImGui::Begin("cxy to texture", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 		if (ggui::rtt_gridwnd.scene_texture)
 		{
@@ -542,6 +548,12 @@ namespace components
 		ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); p_colors++;
 		ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); p_colors++;
 
+		if (ggui::rtt_camerawnd.should_set_focus)
+		{
+			ImGui::SetNextWindowFocus();
+			ggui::rtt_camerawnd.should_set_focus = false;
+		}
+		
 		ImGui::Begin("camera to texture", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 		if (ggui::rtt_camerawnd.scene_texture)
 		{
@@ -735,74 +747,90 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_cmdbinds_helper,
 				ggui::hotkeys::helper_menu(ggui::state.czwnd.m_cmdbinds_helper), nullptr);
 
+			// console
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_console,
+				ggui::console::menu(ggui::state.czwnd.m_console), nullptr);
+
+			// ^ open on startup for now
+			if(!ggui::state.czwnd.m_console.one_time_init)
+			{
+				components::gui::toggle(ggui::state.czwnd.m_console, 0, true);
+				ggui::state.czwnd.m_console.one_time_init = true;
+
+				//game::glob::command_thread_running = false;
+				//FreeConsole();
+
+				PostMessage(GetConsoleWindow(), WM_QUIT, 0, 0);
+			}
+			
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
 				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
 
 			
-#ifdef DEBUG
-			ImGui::SetNextWindowSizeConstraints(ImVec2(200, 400), ImVec2(FLT_MAX, FLT_MAX));
-			ImGui::SetNextWindowPos(ImVec2(6, 76), ImGuiCond_Appearing);
-			ImGui::Begin("Camera Debug", nullptr, ImGuiWindowFlags_NoCollapse);
-
-			const auto ccam = cmainframe::activewnd->m_pCamWnd;
-
-			ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
-			if (ImGui::TreeNodeEx("Camera Struct", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5, 5));
-				if (ImGui::BeginTable("camera_struct_table", 4, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
-				{
-					ImGui::TableSetupScrollFreeze(0, 1);
-					ImGui::TableSetupColumn(" Camera Struct", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 120.0f);
-					ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 38.0f);
-					ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 38.0f);
-					ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, 38.0f);
-					ImGui::TableHeadersRow();
-
-					ImGui::debug_table_entry_vec3("Origin", ccam->camera.origin);
-					ImGui::debug_table_entry_vec3("Angles", ccam->camera.angles);
-					ImGui::debug_table_entry_vec3("Forward", ccam->camera.forward);
-					ImGui::debug_table_entry_vec3("Right", ccam->camera.right);
-					ImGui::debug_table_entry_int("Viewport Width", ccam->camera.width);
-					ImGui::debug_table_entry_int("Viewport Height", ccam->camera.height);
-
-					ImGui::EndTable();
-				}
-				ImGui::PopStyleVar();
-				ImGui::TreePop();
-			}
-
-			if (ImGui::TreeNodeEx("CPoints", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5, 5));
-				if (ImGui::BeginTable("cpoints_table", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
-				{
-					ImGui::TableSetupScrollFreeze(0, 1);
-					ImGui::TableSetupColumn(" CPoints", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 120.0f);
-					ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 38.0f);
-					ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 38.0f);
-					ImGui::TableHeadersRow();
-
-					ImGui::debug_table_entry_int2("PT Cursor", reinterpret_cast<int*>(&ccam->m_ptCursor));
-					ImGui::debug_table_entry_int2("PT Last Cursor", reinterpret_cast<int*>(&ccam->m_ptLastCursor));
-					ImGui::debug_table_entry_int2("PT Button", reinterpret_cast<int*>(&ccam->m_ptButton));
-
-					ImGui::EndTable();
-				}
-				ImGui::PopStyleVar();
-				ImGui::TreePop();
-			}
-
-			if (ImGui::TreeNodeEx("Misc", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::Text("Button State: \t < %d >", ccam->m_nCambuttonstate);
-				ImGui::TreePop();
-			}
-
-			ImGui::PopStyleVar();
-			ImGui::End();
-#endif
+//#ifdef DEBUG
+//			ImGui::SetNextWindowSizeConstraints(ImVec2(200, 400), ImVec2(FLT_MAX, FLT_MAX));
+//			ImGui::SetNextWindowPos(ImVec2(6, 76), ImGuiCond_Appearing);
+//			ImGui::Begin("Camera Debug", nullptr, ImGuiWindowFlags_NoCollapse);
+//
+//			const auto ccam = cmainframe::activewnd->m_pCamWnd;
+//
+//			ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
+//			if (ImGui::TreeNodeEx("Camera Struct", ImGuiTreeNodeFlags_DefaultOpen))
+//			{
+//				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5, 5));
+//				if (ImGui::BeginTable("camera_struct_table", 4, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
+//				{
+//					ImGui::TableSetupScrollFreeze(0, 1);
+//					ImGui::TableSetupColumn(" Camera Struct", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 120.0f);
+//					ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+//					ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+//					ImGui::TableSetupColumn("Z", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+//					ImGui::TableHeadersRow();
+//
+//					ImGui::debug_table_entry_vec3("Origin", ccam->camera.origin);
+//					ImGui::debug_table_entry_vec3("Angles", ccam->camera.angles);
+//					ImGui::debug_table_entry_vec3("Forward", ccam->camera.forward);
+//					ImGui::debug_table_entry_vec3("Right", ccam->camera.right);
+//					ImGui::debug_table_entry_int("Viewport Width", ccam->camera.width);
+//					ImGui::debug_table_entry_int("Viewport Height", ccam->camera.height);
+//
+//					ImGui::EndTable();
+//				}
+//				ImGui::PopStyleVar();
+//				ImGui::TreePop();
+//			}
+//
+//			if (ImGui::TreeNodeEx("CPoints", ImGuiTreeNodeFlags_DefaultOpen))
+//			{
+//				ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(5, 5));
+//				if (ImGui::BeginTable("cpoints_table", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
+//				{
+//					ImGui::TableSetupScrollFreeze(0, 1);
+//					ImGui::TableSetupColumn(" CPoints", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 120.0f);
+//					ImGui::TableSetupColumn("X", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+//					ImGui::TableSetupColumn("Y", ImGuiTableColumnFlags_WidthFixed, 38.0f);
+//					ImGui::TableHeadersRow();
+//
+//					ImGui::debug_table_entry_int2("PT Cursor", reinterpret_cast<int*>(&ccam->m_ptCursor));
+//					ImGui::debug_table_entry_int2("PT Last Cursor", reinterpret_cast<int*>(&ccam->m_ptLastCursor));
+//					ImGui::debug_table_entry_int2("PT Button", reinterpret_cast<int*>(&ccam->m_ptButton));
+//
+//					ImGui::EndTable();
+//				}
+//				ImGui::PopStyleVar();
+//				ImGui::TreePop();
+//			}
+//
+//			if (ImGui::TreeNodeEx("Misc", ImGuiTreeNodeFlags_DefaultOpen))
+//			{
+//				ImGui::Text("Button State: \t < %d >", ccam->m_nCambuttonstate);
+//				ImGui::TreePop();
+//			}
+//
+//			ImGui::PopStyleVar();
+//			ImGui::End();
+//#endif
 			
 			
 			// end the current context frame

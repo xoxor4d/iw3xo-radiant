@@ -1,6 +1,7 @@
 #include "std_include.hpp"
 
 ccamwnd* ccamwnd::activewnd;
+IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void ccamwnd::mouse_control(float dtime)
 {
@@ -138,39 +139,21 @@ void __stdcall ccamwnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 BOOL WINAPI ccamwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	/* // maybe useful later
-	// fix mouse cursor for imgui windows
-	// disable win32 cursor if we hover imgui windows
-	if (ImGui::GetIO().WantCaptureMouse) 
+	// handle text input when the imgui camera window is active (selected) 
+	// but the user is within a textbox in some other imgui window
+	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 	{
-		// get info for current cursor
-		CURSORINFO ci = { sizeof(CURSORINFO) };
-		if (GetCursorInfo(&ci))
+		if (ggui::cz_context_ready())
 		{
-			auto size_ns = LoadCursor(0, IDC_SIZENS);
-			auto size_we = LoadCursor(0, IDC_SIZEWE);
+			// set cz context (in-case we use multiple imgui context's)
+			IMGUI_BEGIN_CZWND;
 
-			// do not hide the size arrow when moving splitters across imgui windows
-			if(ci.hCursor != size_ns && ci.hCursor != size_we)
+			if (!ggui::rtt_camerawnd.window_hovered && ImGui::GetIO().WantCaptureMouse)
 			{
-				io.MouseDrawCursor = true;
-				SetCursor(nullptr);
+				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
+				return true;
 			}
 		}
-	}
-	else
-	{
-		io.MouseDrawCursor = false;
-	}
-
-	// restore context
-	ImGui::SetCurrentContext(imgui_context_old);
-	*/
-	
-	// only process the char event, else we get odd multi context behaviour
-	if (Msg == WM_CHAR)
-	{
-		// temp
 	}
 	
 	// => og CamWndProc

@@ -8,7 +8,7 @@ namespace components
 		quick_patch();
 		~quick_patch();
 		const char* get_name() override { return "quick_patch"; };
-
+	
 	private:
 	};
 }

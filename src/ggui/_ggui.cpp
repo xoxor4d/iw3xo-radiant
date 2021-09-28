@@ -19,7 +19,7 @@ namespace ggui
 	bool		toolbar_reset = false;
 	ImGuiID		toolbar_dock_top;
 	ImGuiID		toolbar_dock_left;
-	
+
 	std::vector<commandbinds> cmd_hotkeys;
 
 	rtt_camera_window_s rtt_camerawnd = rtt_camera_window_s();

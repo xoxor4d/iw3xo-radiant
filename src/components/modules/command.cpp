@@ -38,21 +38,33 @@ namespace components
     {
     	while (true)
     	{
+    		if(!game::glob::command_thread_running)
+    		{
+				break;
+    		}
+    		
     		std::string input;
     		std::getline(std::cin, input);
 
-    		std::vector<std::string> args;
-
-    		if (input.find(' ') != std::string::npos) 
+    		if(input != "")
     		{
-    			args = utils::split(input, ' ');
-    		}
-    		else 
-    		{
-    			args.push_back(input);
-    		}
+				std::vector<std::string> args;
+    			
+				if (input.find(' ') != std::string::npos)
+				{
+					args = utils::split(input, ' ');
+				}
+				else
+				{
+					args.push_back(input);
+				}
 
-            command::execute_command(args);
+				command::execute_command(args);
+    		}
+			else
+			{
+				Sleep(100);
+			}
     	}
     }
 

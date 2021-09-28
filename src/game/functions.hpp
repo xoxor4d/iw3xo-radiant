@@ -24,12 +24,14 @@ namespace game
 	namespace glob
 	{
 		// Init
-		extern std::string loadedModules;
-
+		extern bool command_thread_running;
+		extern std::vector<std::string> loadedModules;
+		
 		extern bool radiant_floatingWindows;
 		extern bool radiant_initiated;
 		extern bool radiant_config_loaded;
 		extern bool radiant_config_not_found;
+		extern int  frametime_ms;
 		extern bool ccamwindow_realtime;
 
 		extern CWnd* m_pCamWnd_ref;
@@ -51,6 +53,7 @@ namespace game
 	//extern CPrefsDlg*	g_PrefsDlg;
 	extern game::qeglobals_t* g_qeglobals;
 
+	extern float&	g_zoomLevel;
 	extern int*		g_nUpdateBitsPtr;
 	extern int&		g_nUpdateBits;
 	extern bool&	g_bScreenUpdates;
@@ -118,6 +121,7 @@ namespace game
 	// renderer
 	static utils::function<void()> R_EndFrame = 0x4FCBC0;
 	static utils::function<void()> R_ReloadImages = 0x513D70;
+	static utils::function<void(float* from, game::GfxColor* to)> Byte4PackPixelColor = 0x402AC0;
 	
 	// no error but doesnt reload everything
 	static utils::function< void()>	DX_ResetDevice = 0x5015F0;
@@ -148,10 +152,13 @@ namespace game
 
 	// ASM
 	const char* Dvar_DisplayableValue(game::dvar_s* dvar);
+	const char* Dvar_DomainToString_Internal(signed int buffer_len /*eax*/, const char* buffer_out /*ebx*/, int dvar_type, int* enum_lines_count, float mins, float maxs);
 	void Dvar_SetString(game::dvar_s *dvar /*esi*/, const char *string /*ebx*/);
 	game::dvar_s* Dvar_FindVar(const char* dvar);
 	game::dvar_s* Dvar_SetFromStringFromSource(const char *string /*ecx*/, game::dvar_s *dvar /*esi*/, int source);
 
+	int printf_to_console(_In_z_ _Printf_format_string_ char const* const _format, ...);
+	void com_printf_to_console(int channel, const char* _format, ...);
 	void console_error(const std::string& msg);
 
 	void FS_ScanForDir(const char* directory, const char* search_path, int localized);

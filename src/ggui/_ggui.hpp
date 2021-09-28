@@ -98,6 +98,7 @@ namespace ggui
 		imgui_context_menu m_colors;
 		imgui_context_menu m_cmdbinds;
 		imgui_context_menu m_cmdbinds_helper;
+		imgui_context_menu m_console;
 		imgui_context_menu m_demo;
 	};
 
@@ -124,6 +125,7 @@ namespace ggui
 		ImVec2 cursor_pos;
 		CPoint cursor_pos_pt;
 		bool window_hovered;
+		bool should_set_focus;
 	};
 
 	struct rtt_grid_window_s
@@ -133,6 +135,7 @@ namespace ggui
 		ImVec2 cursor_pos;
 		CPoint cursor_pos_pt;
 		bool window_hovered;
+		bool should_set_focus;
 	};
 
 	// *
@@ -152,7 +155,9 @@ namespace ggui
 	extern bool			toolbar_reset;
 	extern ImGuiID		toolbar_dock_top;
 	extern ImGuiID		toolbar_dock_left;
-	
+
+	//extern	console* _console;
+
 	extern std::vector<commandbinds> cmd_hotkeys;
 
 	extern rtt_camera_window_s rtt_camerawnd;

@@ -162,7 +162,7 @@ namespace ggui::hotkeys
 			if (key == "~"s)			return 0x0C0;
 			if (key == "LWin"s)			return 0x5B;
 
-			printf("[Hotkeys] Unkown key '%s'", key.c_str());
+			game::printf_to_console("[Hotkeys] Unkown key '%s'", key.c_str());
 			return 0;
 		}
 
@@ -278,7 +278,7 @@ namespace ggui::hotkeys
 			char buffer[512];
 			if (!GetModuleFileNameA(nullptr, buffer, 512))
 			{
-				printf("[Hotkeys] could not get the base directory.\n");
+				game::printf_to_console("[Hotkeys] could not get the base directory.\n");
 				return false;
 			}
 
@@ -295,7 +295,7 @@ namespace ggui::hotkeys
 
 		if (!ini.is_open())
 		{
-			printf("[Hotkeys] Could not find \"iw3r_hotkeys.ini\" in \"%s\"\n", home_path.c_str());
+			game::printf_to_console("[Hotkeys] Could not find \"iw3r_hotkeys.ini\" in \"%s\"\n", home_path.c_str());
 			return false;
 		}
 
@@ -314,14 +314,14 @@ namespace ggui::hotkeys
 			// ignore comments
 			if (input.find(';') != std::string::npos)
 			{
-				printf("[Hotkeys] Ignored '%s'\n", input.c_str());
+				game::printf_to_console("[Hotkeys] Ignored '%s'\n", input.c_str());
 				continue;
 			}
 
 			// ignore lines not containing '='
 			if (input.find(" =") == std::string::npos)
 			{
-				printf("[Hotkeys] Ignored '%s' => missing '='\n", input.c_str());
+				game::printf_to_console("[Hotkeys] Ignored '%s' => missing '='\n", input.c_str());
 				continue;
 			}
 
@@ -381,7 +381,7 @@ namespace ggui::hotkeys
 		}
 
 		int commands_overwritten = 0;
-		printf("[Hotkeys] Loading '%d' hotkeys from 'iw3r_hotkeys.ini'\n", cmd_hotkeys.size());
+		game::printf_to_console("[Hotkeys] Loading '%d' hotkeys from 'iw3r_hotkeys.ini'\n", cmd_hotkeys.size());
 
 		for (auto i = 0; i < game::g_nCommandCount; i++)
 		{
@@ -410,7 +410,7 @@ namespace ggui::hotkeys
 					if (o_key != game::g_Commands[i].m_nKey ||
 						o_mod != game::g_Commands[i].m_nModifiers)
 					{
-						printf("|-> modified hotkey '%s'\n", bind.cmd_name.c_str());
+						game::printf_to_console("|-> modified hotkey '%s'\n", bind.cmd_name.c_str());
 						commands_overwritten++;
 					}
 
@@ -419,7 +419,8 @@ namespace ggui::hotkeys
 			}
 		}
 
-		printf("|-> modified '%d' commands\n\n", commands_overwritten);
+		game::printf_to_console("|-> modified '%d' commands\n", commands_overwritten);
+		game::printf_to_console("\n");
 
 		// there is a second commandmap (vector/unsorted map) ... whatever
 		// clear ^ and set command count to 0
@@ -454,7 +455,7 @@ namespace ggui::hotkeys
 			std::ofstream ini;
 
 			std::string ini_path = fs_homepath->current.string;
-			ini_path += "\\iw3r_hotkeys.ini";
+						ini_path += "\\iw3r_hotkeys.ini";
 
 			ini.open(ini_path.c_str());
 
