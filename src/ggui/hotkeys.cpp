@@ -492,7 +492,7 @@ namespace ggui::hotkeys
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		
 		ImGui::SetNextWindowSizeConstraints(ImVec2(450, 160), ImVec2(450, 160));
-		ImGui::Begin("Hotkeys Helper##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		ImGui::Begin("Hotkeys Helper##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 
 		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
 			fs_homepath)
@@ -556,7 +556,7 @@ namespace ggui::hotkeys
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		
-		ImGui::Begin("Hotkeys##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		ImGui::Begin("Hotkeys##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 
 		const char* apply_hint = "Changes will apply upon closing the window.";
 		ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(apply_hint).x) * 0.5f);

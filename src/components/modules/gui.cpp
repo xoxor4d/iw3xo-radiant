@@ -353,6 +353,7 @@ namespace components
 					// the way we create the initial layout results in the following ID's
 					ggui::toolbar_dock_top = ImGui::FindNodeByID(0x00000001);
 					ggui::toolbar_dock_left = ImGui::FindNodeByID(0x00000003);
+					ggui::dockspace_outer_left_node = ImGui::FindNodeByID(0x00000005);
 				}
 				else 
 				{
@@ -369,8 +370,10 @@ namespace components
 					ggui::toolbar_dock_left = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.01f, nullptr, &main_dock);
 					ImGui::DockBuilderSetNodeSize(ggui::toolbar_dock_left, ImVec2(36, viewport->Size.y));
 					
-					ggui::dockspace_sidebar_id = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.35f, nullptr, &main_dock);
-
+					ggui::dockspace_outer_left_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.5f, nullptr, &main_dock);
+					const auto dockspace_inner_left_node = ImGui::DockBuilderSplitNode(ggui::dockspace_outer_left_node, ImGuiDir_Left, 0.5f, nullptr, &ggui::dockspace_outer_left_node);
+					const auto dockspace_right_top_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Up, 0.6f, nullptr, &main_dock);
+					
 					if (!floating_toolbar)
 					{
 						if (ggui::toolbar_axis == ImGuiAxis_X)
@@ -383,12 +386,23 @@ namespace components
 						}
 					}
 
-					ImGui::DockBuilderDockWindow("Colors##xywnd", ggui::dockspace_sidebar_id);
-					ImGui::DockBuilderDockWindow("Hotkeys##xywnd", ggui::dockspace_sidebar_id);
-					ImGui::DockBuilderDockWindow("Hotkeys Helper##xywnd", ggui::dockspace_sidebar_id);
-					ImGui::DockBuilderDockWindow("Toolbar Editor##xywnd", ggui::dockspace_sidebar_id);
-
+					ImGui::DockBuilderDockWindow("Colors##window", dockspace_inner_left_node);
+					ImGui::DockBuilderDockWindow("Hotkeys##window", dockspace_inner_left_node);
+					ImGui::DockBuilderDockWindow("Hotkeys Helper##window", dockspace_inner_left_node);
+					ImGui::DockBuilderDockWindow("Toolbar Editor##window", dockspace_inner_left_node);
+					ImGui::DockBuilderDockWindow("Grid Window##rtt", ggui::dockspace_outer_left_node);
+					ImGui::DockBuilderDockWindow("Camera Window##rtt", dockspace_right_top_node);
+					ImGui::DockBuilderDockWindow("Textures##rtt", main_dock);
+					ImGui::DockBuilderDockWindow("Console##window", main_dock);
+					
 					ImGui::DockBuilderFinish(dockspace_id);
+
+					// ^ open console on initial startup
+					if (!ggui::state.czwnd.m_console.one_time_init)
+					{
+						components::gui::toggle(ggui::state.czwnd.m_console, 0, true);
+						ggui::state.czwnd.m_console.one_time_init = true;
+					}
 				}
 
 				context.m_toolbar.one_time_init = true;
@@ -404,7 +418,6 @@ namespace components
 		// toolbar
 		
 		ggui::toolbar::menu_new(context.m_toolbar, context.m_toolbar_edit);
-		//ggui::toolbar::menu_old(context.m_toolbar);
 
 		
 		// *
@@ -464,7 +477,7 @@ namespace components
 	{
 		int p_styles = 0;
 		int p_colors = 0;
-		
+
 		const auto cxy_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nWidth), static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nHeight));
 		ImGui::SetNextWindowSizeConstraints(ImVec2(320.0f, 320.0f), ImVec2(FLT_MAX, FLT_MAX));
 
@@ -479,8 +492,8 @@ namespace components
 			ImGui::SetNextWindowFocus();
 			ggui::rtt_gridwnd.should_set_focus = false;
 		}
-		
-		ImGui::Begin("cxy to texture", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+
+		ImGui::Begin("Grid Window##rtt", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 		if (ggui::rtt_gridwnd.scene_texture)
 		{
 			const auto IO = ImGui::GetIO();
@@ -553,8 +566,8 @@ namespace components
 			ImGui::SetNextWindowFocus();
 			ggui::rtt_camerawnd.should_set_focus = false;
 		}
-		
-		ImGui::Begin("camera to texture", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+
+		ImGui::Begin("Camera Window##rtt", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 		if (ggui::rtt_camerawnd.scene_texture)
 		{
 			const auto IO = ImGui::GetIO();
@@ -609,6 +622,107 @@ namespace components
 		ImGui::End();
 	}
 
+	// render to texture - texture window
+	void rtt_texture_window()
+	{
+		int p_styles = 0;
+		int p_colors = 0;
+
+		const auto prefs = game::g_PrefsDlg();
+		const auto texture_size = ImVec2(static_cast<float>(g_texwnd->m_nWidth), static_cast<float>(g_texwnd->m_nHeight));
+
+		if(prefs->m_bTextureScrollbar)
+		{
+			const auto tex_hwnd = cmainframe::activewnd->m_pTexWnd->GetWindow();
+			prefs->m_bTextureScrollbar = false;
+			ShowScrollBar(tex_hwnd, 1, 0);
+			InvalidateRect(tex_hwnd, 0, 1);
+			UpdateWindow(tex_hwnd);
+			//scrollbar_width = GetSystemMetrics(SM_CXVSCROLL);
+		}
+		
+		ImGui::SetNextWindowSizeConstraints(ImVec2(320.0f, 320.0f), ImVec2(FLT_MAX, FLT_MAX));
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f)); p_styles++;
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f)); p_styles++;
+		ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); p_colors++;
+		ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); p_colors++;
+		ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); p_colors++;
+
+		if (ggui::rtt_texwnd.should_set_focus)
+		{
+			ImGui::SetNextWindowFocus();
+			ggui::rtt_texwnd.should_set_focus = false;
+		}
+
+		ImGui::Begin("Textures##rtt", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+		if (ggui::rtt_texwnd.scene_texture)
+		{
+			const auto IO = ImGui::GetIO();
+			ggui::rtt_texwnd.scene_size_imgui = ImGui::GetWindowSize() - ImVec2(0.0f, ImGui::GetFrameHeightWithSpacing());
+
+			// hack to disable left mouse window movement
+			ImGui::BeginChild("scene_child", ImVec2(texture_size.x, texture_size.y + ImGui::GetFrameHeightWithSpacing()), false, ImGuiWindowFlags_NoMove);
+			{
+				const auto screenpos = ImGui::GetCursorScreenPos();
+				SetWindowPos(cmainframe::activewnd->m_pTexWnd->GetWindow(), HWND_BOTTOM, (int)screenpos.x, (int)screenpos.y, (int)ggui::rtt_texwnd.scene_size_imgui.x, (int)ggui::rtt_texwnd.scene_size_imgui.y, SWP_NOZORDER);
+				const auto pre_image_cursor = ImGui::GetCursorPos();
+
+				ImGui::Image(ggui::rtt_texwnd.scene_texture, texture_size);
+				ggui::rtt_texwnd.window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_None);
+
+				// pop ItemSpacing
+				ImGui::PopStyleVar(); p_styles--;
+
+				ImGui::SetCursorPos(pre_image_cursor);
+				const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
+
+				ggui::rtt_texwnd.cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
+				ggui::rtt_texwnd.cursor_pos_pt = CPoint((LONG)ggui::rtt_texwnd.cursor_pos.x, (LONG)ggui::rtt_texwnd.cursor_pos.y);
+
+
+				/*ImGui::Indent(4.0f);
+				
+				ImGui::Text("Pt Button Down:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
+				ImGui::Text("< %d, %d >", (int)g_texwnd->m_ptDown.x, (int)g_texwnd->m_ptDown.y);
+
+				ImGui::Text("Buttonstate:"); ImGui::SameLine(); ImGui::SetCursorPosX(pre_image_cursor.x + 140.0f);
+				ImGui::Text("< %d, %d >", g_texwnd->lastButtonDown, g_texwnd->m_mbuttondown_state);*/
+
+				
+				ImGui::EndChild();
+			}
+		}
+		ImGui::PopStyleColor(p_colors);
+		ImGui::PopStyleVar(p_styles);
+		ImGui::End();
+	}
+
+	
+	// *
+	// handles opened/closed states of windows via dvars
+	void gui::saved_windowstates()
+	{
+		// startup only
+		if(!ggui::saved_states_init)
+		{
+			if(dvars::gui_saved_state_console) {
+				ggui::state.czwnd.m_console.menustate = dvars::gui_saved_state_console->current.enabled;
+			}
+
+			ggui::saved_states_init = true;
+		}
+
+		// *
+		// every frame
+		
+		if(dvars::gui_saved_state_console
+			&& ggui::state.czwnd.m_console.menustate != dvars::gui_saved_state_console->current.enabled)
+		{
+			dvars::set_bool(dvars::gui_saved_state_console, ggui::state.czwnd.m_console.menustate);
+		}
+	}
+
 	
 	// *
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
@@ -631,13 +745,23 @@ namespace components
 
 		
 		// *
-		// | -------------------- XY Window ------------------------
+		// | -------------------- Grid Window ------------------------
 		// *
 		
 		if (game::dx->targetWindowIndex == ggui::CXYWND) //if (game::glob::gui_present.cxywnd)
 		{
 			// copy scene to texture
 			copy_scene_to_texture(ggui::CXYWND, ggui::rtt_gridwnd.scene_texture);
+		}
+
+		
+		// *
+		// | -------------------- Texture Window ------------------------
+		// *
+
+		if(game::dx->targetWindowIndex == ggui::CTEXWND)
+		{
+			copy_scene_to_texture(ggui::CTEXWND, ggui::rtt_texwnd.scene_texture);
 		}
 
 
@@ -719,17 +843,23 @@ namespace components
 			// begin context frame
 			gui::begin_frame();
 
+			// load/save window states
+			gui::saved_windowstates();
+
 			// docking, default layout ... 
 			czwnd_gui(ggui::state.czwnd);
 
-			// background
+			// seperate windows for grid/camera if not used as background
 			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 1) {
 				rtt_grid_window();
 			}
 
+			// ^
 			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 2) {
 				rtt_camera_window();
 			}
+
+			rtt_texture_window();
 			
 			// color menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_colors,
@@ -750,23 +880,13 @@ namespace components
 			// console
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_console,
 				ggui::console::menu(ggui::state.czwnd.m_console), nullptr);
-
-			// ^ open on startup for now
-			if(!ggui::state.czwnd.m_console.one_time_init)
-			{
-				components::gui::toggle(ggui::state.czwnd.m_console, 0, true);
-				ggui::state.czwnd.m_console.one_time_init = true;
-
-				//game::glob::command_thread_running = false;
-				//FreeConsole();
-
-				PostMessage(GetConsoleWindow(), WM_QUIT, 0, 0);
-			}
 			
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
 				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
 
+			// close external console
+			PostMessage(GetConsoleWindow(), WM_QUIT, 0, 0);
 			
 //#ifdef DEBUG
 //			ImGui::SetNextWindowSizeConstraints(ImVec2(200, 400), ImVec2(FLT_MAX, FLT_MAX));
@@ -984,6 +1104,13 @@ namespace components
 			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "Window to use as the main background. 0 = None, 1 = Grid, 2 = Camera");
+
+
+		dvars::gui_saved_state_console = dvars::register_bool(
+			/* name		*/ "gui_saved_state_console",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved opened/closed state of console window");
 	}
 
 	

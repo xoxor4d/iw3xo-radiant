@@ -64,8 +64,16 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			
 			return;
 		}
-		
 
+		// if mouse is inside imgui texture window & cursor not at window border (resizing)
+		if (ggui::rtt_texwnd.window_hovered && !ImGui::IsResizing())
+		{
+			ggui::rtt_texwnd.should_set_focus = true;
+			ctexwnd::on_mousebutton_down(nFlags);
+			return;
+		}
+
+		
 		// if mouse cursor above any cz-imgui window
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
@@ -104,6 +112,13 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 				ReleaseCapture();
 			}
 			
+			return;
+		}
+
+		// if mouse is inside imgui texture window
+		if (ggui::rtt_texwnd.window_hovered)
+		{
+			ctexwnd::on_mousebutton_up(nFlags);
 			return;
 		}
 		
@@ -145,7 +160,6 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			return;
 		}
 
-		
 		// if mouse is inside imgui camera window
 		if (ggui::rtt_camerawnd.window_hovered)
 		{
@@ -157,6 +171,14 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			SetCapture(ccam->GetWindow());
 			CamWnd__DropModelsToPlane(ccam, ggui::rtt_camerawnd.cursor_pos_pt.x, ccam->camera.height - ggui::rtt_camerawnd.cursor_pos_pt.y - 1, nFlags);
 
+			return;
+		}
+
+		// if mouse is inside imgui texture window
+		if (ggui::rtt_texwnd.window_hovered)
+		{
+			ggui::rtt_texwnd.should_set_focus = true;
+			ctexwnd::on_mousebutton_down(nFlags);
 			return;
 		}
 		
@@ -190,7 +212,6 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 			return;
 		}
 
-		
 		// if mouse is inside imgui camera window
 		if (ggui::rtt_camerawnd.window_hovered)
 		{
@@ -217,6 +238,13 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 				ReleaseCapture();
 			}
 			
+			return;
+		}
+
+		// if mouse is inside imgui texture window
+		if (ggui::rtt_texwnd.window_hovered)
+		{
+			ctexwnd::on_mousebutton_up(nFlags);
 			return;
 		}
 		
@@ -271,6 +299,14 @@ void __fastcall czwnd::on_mbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 
 			return;
 		}
+
+		// if mouse is inside imgui texture window
+		if (ggui::rtt_texwnd.window_hovered)
+		{
+			ggui::rtt_texwnd.should_set_focus = true;
+			ctexwnd::on_mousebutton_down(nFlags);
+			return;
+		}
 		
 
 		// if mouse cursor above any cz-imgui window
@@ -313,6 +349,13 @@ void __fastcall czwnd::on_mbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 				ReleaseCapture();
 			}
 			
+			return;
+		}
+
+		// if mouse is inside imgui texture window
+		if (ggui::rtt_texwnd.window_hovered)
+		{
+			ctexwnd::on_mousebutton_up(nFlags);
 			return;
 		}
 		
@@ -359,6 +402,12 @@ void __fastcall czwnd::on_mouse_move([[maybe_unused]] czwnd* pThis, [[maybe_unus
 			const int cursor_point_y = ccam->camera.height - ggui::rtt_camerawnd.cursor_pos_pt.y - 1;
 
 			ccamwnd::mouse_moved(ccam, nFlags, ggui::rtt_camerawnd.cursor_pos_pt.x, ccam->camera.height - ggui::rtt_camerawnd.cursor_pos_pt.y - 1);
+			return;
+		}
+
+		if(ggui::rtt_texwnd.window_hovered)
+		{
+			ctexwnd::on_mousemove(nFlags);
 			return;
 		}
 

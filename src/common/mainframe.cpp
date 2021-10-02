@@ -134,6 +134,14 @@ void on_createclient()
 		}
 	}
 
+	if(game::g_qeglobals->d_hwndEntity)
+	{
+		//ShowWindow(game::g_qeglobals->d_hwndTexture, SW_SHOW);
+		//ShowWindow(game::g_qeglobals->d_hwndEntity, SW_HIDE);
+		//RedrawWindow(game::g_qeglobals->d_hwndEntity, 0, 0, RDW_ERASENOW | RDW_UPDATENOW | RDW_ALLCHILDREN | RDW_ERASE | RDW_INVALIDATE);
+		SendMessageA(game::g_qeglobals->d_hwndEntity, WM_PAINT, 0, 0);
+	}
+
 	if(cmainframe::activewnd)
 	{
 		if(cmainframe::activewnd->m_pXYWnd)
@@ -149,6 +157,11 @@ void on_createclient()
 		if (cmainframe::activewnd->m_pZWnd)
 		{
 			ShowWindow(cmainframe::activewnd->m_pZWnd->GetWindow(), SW_SHOW);
+		}
+
+		if (cmainframe::activewnd->m_pTexWnd)
+		{
+			ShowWindow(cmainframe::activewnd->m_pTexWnd->GetWindow(), SW_HIDE);
 		}
 	}
 }
@@ -548,6 +561,13 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 			}
 
 			return 1;
+		}
+
+		// if mouse is inside texture window
+		if (ggui::rtt_texwnd.window_hovered)
+		{
+			// CTexWnd::Scroll
+			utils::hook::call<void(__cdecl)(std::int16_t _zDelta)>(0x45DD80)(zDelta);
 		}
 		
 		

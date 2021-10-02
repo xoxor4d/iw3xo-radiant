@@ -7,8 +7,9 @@ namespace ggui
 	// *
 
     imgui_state_t state = imgui_state_t();
-
-	ImGuiID		dockspace_sidebar_id;
+	bool		saved_states_init = false;
+	
+	ImGuiID		dockspace_outer_left_node;
 	bool		reset_dockspace = false;
 	bool		mainframe_menubar_enabled = false;
 	float		menubar_height;
@@ -22,8 +23,9 @@ namespace ggui
 
 	std::vector<commandbinds> cmd_hotkeys;
 
-	rtt_camera_window_s rtt_camerawnd = rtt_camera_window_s();
-	rtt_grid_window_s rtt_gridwnd = rtt_grid_window_s();
+	render_to_texture_window_s rtt_camerawnd = render_to_texture_window_s();
+	render_to_texture_window_s rtt_gridwnd = render_to_texture_window_s();
+	render_to_texture_window_s rtt_texwnd = render_to_texture_window_s();
 	
 	// *
 	// | -------------------- Functions ------------------------

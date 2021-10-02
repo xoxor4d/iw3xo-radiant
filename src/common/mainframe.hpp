@@ -27,7 +27,7 @@ public:
 	ctexwnd *m_pTexWnd;
 	czwnd *m_pZWnd;
 	CGroupDlg* m_pFilterWnd;
-	void* m_pEditWnd;
+	CWnd* m_pEditWnd;
 	int m_nCurrentStyle;
 	char* m_strStatus[15];
 	cxywnd* m_pActiveXY;

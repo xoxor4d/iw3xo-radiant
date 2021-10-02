@@ -8,6 +8,8 @@ namespace dvars
 	extern game::dvar_s* gui_floating_toolbar;
 	extern game::dvar_s* gui_resize_dockspace;
 	extern game::dvar_s* gui_mainframe_background;
+
+	extern game::dvar_s* gui_saved_state_console;
 	
 	//
 	extern game::dvar_s* mainframe_show_console;

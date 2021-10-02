@@ -15,6 +15,8 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 	int sys_timeBase = 0;
 	int com_frameTime = 0;
 	int com_lastFrameTime = 0;
+
+	int quater_update = 0;
 	
 	while(true)
 	{
@@ -47,7 +49,15 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 			game::glob::frametime_ms = com_frameTime - com_lastFrameTime;
 			com_lastFrameTime = com_frameTime;
 
-			// update cam window ~ 250fps
+			if(quater_update >= 4)
+			{
+				quater_update = 0;
+			}
+
+			quater_update++;
+
+
+			// update camera window ~ 250fps
 			if  (const auto hwnd = cmainframe::activewnd->m_pCamWnd->GetWindow();
 				hwnd != nullptr)
 			{
@@ -62,13 +72,15 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 				}
 			}
 
-			// update xy window ~ 250fps
+			
+			// update grid window ~ 250fps
 			if (const auto hwnd = cmainframe::activewnd->m_pXYWnd->GetWindow();
 				hwnd != nullptr)
 			{
 				SendMessageA(hwnd, WM_PAINT, 0, 0);
 			}
 
+			
 #if USE_LAYERED_AS_BACKGROUND
 			// update layered window ~ 250fps
 			if (const auto hwnd = layermatwnd_struct->m_hWnd;
@@ -78,11 +90,22 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 			}
 #endif
 
-			// update czwnd window ~ 250fps
+			
+			// update z window ~ 250fps
 			if (const auto hwnd = cmainframe::activewnd->m_pZWnd->GetWindow();
 				hwnd != nullptr)
 			{
 				SendMessageA(hwnd, WM_PAINT, 0, 0);
+			}
+
+			//if(quater_update == 3)
+			{
+				// update texture window ~ 250fps
+				if (const auto hwnd = cmainframe::activewnd->m_pTexWnd->GetWindow();
+					hwnd != nullptr)
+				{
+					SendMessageA(hwnd, WM_PAINT, 0, 0);
+				}
 			}
 		}
 	}
@@ -457,6 +480,7 @@ namespace components
 		// TODO! :: move this or rename quick_patch to main or something
 		init_threads();
 
+		// init internal console class
 		static ggui::console console;
 		
 		radiantapp::main();
@@ -464,6 +488,7 @@ namespace components
 		ccamwnd::main();
 		cxywnd::main();
 		clayermatwnd::main();
+		ctexwnd::main();
 		czwnd::main();
 
 		// force global preferences on init
@@ -472,12 +497,59 @@ namespace components
 		// redirect console prints
 		utils::hook::nop(0x420A54, 10);
 		utils::hook::nop(0x40A9E0, 10);
-		utils::hook::set(0x25D5A54, game::printf_to_console); // console window printing
-		// ^
+		utils::hook::set(0x25D5A54, game::printf_to_console); // redirect internal radiant console prints
 		utils::hook::detour(0x499E90, game::printf_to_console, HK_JUMP); // sys_printf
 		utils::hook::detour(0x40B5D0, game::com_printf_to_console, HK_JUMP); // com_printf
 		utils::hook::detour(0x5BE383, game::printf_to_console, HK_JUMP); // printf
 
+		
+		// disable console tab insertion in entitywnd :: CTabCtrl::InsertItem(&g_wndTabsEntWnd, 1u, 2u, "C&onsole", 0, 0);
+		utils::hook::nop(0x496713, 23);
+		utils::hook::detour(0x496A2B, (void*)0x496AE6, HK_JUMP);
+		utils::hook::detour(0x423D2F, (void*)0x423EBC, HK_JUMP);
+		utils::hook::detour(0x423E02, (void*)0x423EBC, HK_JUMP);
+		utils::hook::detour(0x496B5F, (void*)0x496C68, HK_JUMP);
+		utils::hook::detour(0x498457, (void*)0x498ACA, HK_JUMP);
+
+		// do not hide the entitywnd on launch
+		//utils::hook::set<BYTE>(0x496A06 + 1, 0x1);
+
+		// no parent filterwnd
+		//utils::hook::nop(0x422583, 2);
+		//utils::hook::nop(0x42258A, 6);
+		
+		// NOP startup console-spam
+		utils::hook::nop(0x4818DF, 5); // ScanFile
+		utils::hook::nop(0x48B8BE, 5); // ScanWeapon
+
+		// silence "Could not connect to source control"
+		utils::hook::nop(0x420B59, 5);
+
+		// remove "\n" infront of "\nFile Handles:\n"
+		utils::hook::set<BYTE>(0x4A182D + 1, 0x7D);
+
+		// add iw3xradiant search path (imgui images)
+		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
+
+		// disable top-most mode for inspector/entity window
+		utils::hook::nop(0x496CB6, 13); // clear instructions
+		utils::hook::set<BYTE>(0x496CB6, 0xB9); // mov ecx,00000000 (0xB9 00 00 00 00)
+		utils::hook::set<DWORD>(0x496CB6 + 1, 0x0); // mov ecx,00000000 (0xB9 00 00 00 00)
+
+		// load raw materials progressbar
+		utils::hook::nop(0x45AF5F, 6);
+		utils::hook(0x45AF5F, load_raw_materials_progressbar_stub, HOOK_JUMP).install()->quick();
+
+		// do not load "_glow" fonts (qerfont_glow)
+		utils::hook::nop(0x552806, 5);
+
+		// hook / Grab CameraWnd object (only when using floating windows) :: (cmainframe::update_windows sets cmainframe::activewnd otherwise)
+		utils::hook(0x42270C, ccam_init_stub, HOOK_JUMP).install()->quick();
+
+		// disable black world on selecting a brush with sun preview enabled -> still disables active sun preview .. no black world tho
+		utils::hook::nop(0x406A11, 5);
+
+		
 //#define CONSOLE_TEST
 #ifdef CONSOLE_TEST
 		// disable bottom console (results in small scrollbar at xy top left?)
@@ -492,25 +564,6 @@ namespace components
 		// disable setting of g_pEdit
 		utils::hook::set<BYTE>(0x422D71, 0xEB);
 #endif
-
-		
-		// add iw3xradiant search path (imgui images)
-		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
-
-		// disable top-most mode for inspector/entity window
-		utils::hook::nop(0x496CB6, 13); // clear instructions
-		utils::hook::set<BYTE>(0x496CB6, 0xB9); // mov ecx,00000000 (0xB9 00 00 00 00)
-		utils::hook::set<DWORD>(0x496CB6 + 1, 0x0); // mov ecx,00000000 (0xB9 00 00 00 00)
-
-		// load raw materials progressbar
-		utils::hook::nop(0x45AF5F, 6);
-		utils::hook(0x45AF5F, load_raw_materials_progressbar_stub, HOOK_JUMP).install()->quick();
-
-		// silence "Could not connect to source control"
-		utils::hook::nop(0x420B59, 5);
-
-		// remove "\n" infront of "\nFile Handles:\n"
-		utils::hook::set<BYTE>(0x4A182D + 1, 0x7D);
 
 		
 #ifdef HIDE_MAINFRAME_TOOLBAR
@@ -560,29 +613,13 @@ namespace components
 		// -----------------------------------------------------------------------------------------------------------------------------
 #endif
 
-
-		// hook / Grab CameraWnd object (only when using floating windows) :: (cmainframe::update_windows sets cmainframe::activewnd otherwise)
-		utils::hook(0x42270C, ccam_init_stub, HOOK_JUMP).install()->quick();
 		
 		// disable black world on selecting a brush with sun preview enabled -> no longer able to clone brushes ...
 		//utils::hook::set<BYTE>(0x484904, 0xEB);
 
-		// disable black world on selecting a brush with sun preview enabled -> still disables active sun preview .. no black world tho
-		utils::hook::nop(0x406A11, 5);
-
-		// NOP startup console-spam
-		utils::hook::nop(0x4818DF, 5); // ScanFile
-		utils::hook::nop(0x48B8BE, 5); // ScanWeapon
-
-
-		// do not load "_glow" fonts (qerfont_glow)
-		utils::hook::nop(0x552806, 5);
-		
 		// remove the statusbar (not the console!)
 		//utils::hook::nop(0x41F8E0, 5);
 		//utils::hook::nop(0x420B04, 63);
-
-		
 
 		// disable text in console
 		//utils::hook::nop(0x422D76, 5);
@@ -590,8 +627,6 @@ namespace components
 		// no console + textures tab on entity window if split view
 		//utils::hook::set<BYTE>(0x4966CA, 0xEB);
 
-
-		
 		//utils::hook::set<BYTE>(0x422D42 + 1, 0x0);
 		//utils::hook::set<BYTE>(0x422D58 + 1, 0x0);
 		

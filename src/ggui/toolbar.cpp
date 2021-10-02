@@ -862,7 +862,7 @@ namespace ggui::toolbar
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		
-		ImGui::Begin("Toolbar Editor##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		ImGui::Begin("Toolbar Editor##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 		
 		if (ImGui::Button("Add Separator"))
 		{
@@ -1073,7 +1073,7 @@ namespace ggui::toolbar
 		// *
 		// begin into the window
 
-		ImGui::Begin("toolbar##xywnd", nullptr, 
+		ImGui::Begin("toolbar##window", nullptr, 
 			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
 
 		// *
@@ -1196,148 +1196,6 @@ namespace ggui::toolbar
 			ImGui::EndPopup();
 		}
 
-		ImGui::End();
-	}
-	
-	void menu_old(ggui::imgui_context_menu& menu)
-	{
-		int _stylevars = 0; int _stylecolors = 0;
-
-		if(!toolbar_initiated)
-		{
-			toolbar_elements_init();
-			load_settings_ini();
-			toolbar_initiated = true;
-		}
-
-		// *
-		// create toolbar window
-
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(1.0f, 4.0f));		_stylevars++;
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));	_stylevars++;
-
-		ImGui::PushStyleColor(ImGuiCol_Border, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(100, 100, 100, 70));	_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 70));		_stylecolors++;
-
-		ImGui::Begin("toolbar##xywnd", nullptr,
-			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar
-		);
-
-
-		// *
-		// sizes (save current window position and size)
-
-		menu.position[0] = ImGui::GetWindowPos().x;
-		menu.position[1] = ImGui::GetWindowPos().y;
-		menu.size[0] = ImGui::GetWindowSize().x;
-		menu.size[1] = ImGui::GetWindowSize().y;
-
-
-		// *
-		// gui elements
-
-		SPACING(2.0f, 0.0f);
-		ImGui::SameLine();
-
-		// loop amount of registered-sorted elements
-		for (uint32_t e = 0; e < tbedit_ordered_list.size(); e++)
-		{
-			if(tbedit_ordered_list[e].is_separator)
-			{
-				TB_SEPARATOR;
-				continue;
-			}
-			
-			// check if the element was registered
-			if (auto element  = tbedit_elements.find(tbedit_ordered_list[e].name);
-					 element != tbedit_elements.end())
-			{
-				if (tbedit_ordered_list[e].visible)
-				{
-					element->second();
-					ImGui::SameLine();
-				}
-			}
-		}
-
-		// TODO! - remove me
-		/*ImGui::SameLine();
-		if (ImGui::Button("Switch Console <-> Splitter"))
-		{
-			const auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
-
-			const auto pTop = afx::CSplitterWnd__GetPane(&cmainframe::activewnd->m_wndSplit, 0, 0);
-			const auto pBottom = afx::CSplitterWnd__GetPane(&cmainframe::activewnd->m_wndSplit, 1, 0);
-
-			if (!pTop || !pBottom)
-			{
-				goto END_GUI;
-			}
-
-			const auto _top = pTop->m_hWnd;
-			const auto idTop = GetWindowLongA(_top, GWL_ID);
-
-			const auto _bottom = pBottom->m_hWnd;
-			const auto idBottom = GetWindowLongA(_bottom, GWL_ID);
-
-			SetWindowLongA(_top, GWL_ID, idBottom);
-			SetWindowLongA(_bottom, GWL_ID, idTop);
-
-			vtable->RecalcLayout(&cmainframe::activewnd->m_wndSplit);
-		}
-
-		ImGui::SameLine();
-		if (ImGui::Button("Hide Console"))
-		{
-			const auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
-			vtable->DeleteRow(&cmainframe::activewnd->m_wndSplit, 1);
-		}*/
-
-		// TODO! - remove me
-		/*ImGui::SameLine();
-		if (ImGui::Button("Set Statustext"))
-		{
-			const auto vtable = reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable);
-			vtable->SetStatusText(&cmainframe::activewnd->m_wndStatusBar, 0x75);
-		}*/
-
-		/*ImGui::SameLine();
-		if (ImGui::Button("Toggle Toolbar"))
-		{
-			typedef void(__thiscall* CFrameWnd_ShowControlBar_t)(CFrameWnd*, CControlBar*, BOOL bShow, BOOL bDelay);
-			CFrameWnd_ShowControlBar_t CFrameWnd_ShowControlBar = reinterpret_cast<CFrameWnd_ShowControlBar_t>(0x59E9DD);
-
-			auto vtable = reinterpret_cast<CToolBar_vtbl*>(cmainframe::activewnd->m_wndToolBar.__vftable);
-			CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndToolBar, vtable->IsVisible(&cmainframe::activewnd->m_wndToolBar) ? 0 : 1, 1);
-		}*/
-
-		/*ImGui::SameLine();
-		if (ImGui::Button("Toggle Menubar"))
-		{
-			if (!ggui::mainframe_menubar_enabled)
-			{
-				components::command::execute("menubar_show");
-			}
-			else
-			{
-				components::command::execute("menubar_hide");
-			}
-
-			game::CPrefsDlg_SavePrefs();
-		}*/
-
-		//ImGui::SameLine();
-		//if (ImGui::Button("Reload Commandmap"))
-		//{
-		//	// CMainFrame::LoadCommandMap
-		//	cdeclcall(void, 0x421230);
-		//}
-
-	//END_GUI:
-		ImGui::PopStyleColor(_stylecolors);
-		ImGui::PopStyleVar(_stylevars);
 		ImGui::End();
 	}
 

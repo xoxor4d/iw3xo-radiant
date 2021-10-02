@@ -118,7 +118,7 @@ namespace ggui
 		std::string modifier_key;
 	};
 
-	struct rtt_camera_window_s
+	/*struct rtt_camera_window_s
 	{
 		IDirect3DTexture9* scene_texture;
 		ImVec2 scene_size_imgui;
@@ -138,13 +138,35 @@ namespace ggui
 		bool should_set_focus;
 	};
 
+	struct rtt_tex_window_s
+	{
+		IDirect3DTexture9* scene_texture;
+		ImVec2 scene_size_imgui;
+		ImVec2 cursor_pos;
+		CPoint cursor_pos_pt;
+		bool window_hovered;
+		bool should_set_focus;
+	};*/
+
+	struct render_to_texture_window_s
+	{
+		IDirect3DTexture9* scene_texture;
+		ImVec2 scene_size_imgui;
+		ImVec2 cursor_pos;
+		CPoint cursor_pos_pt;
+		const char* window_name;
+		bool window_hovered;
+		bool should_set_focus;
+	};
+
 	// *
 	// | -------------------- Variables ------------------------
 	// *
 
     extern imgui_state_t state;
+	extern bool			saved_states_init;
 	
-	extern ImGuiID		dockspace_sidebar_id;
+	extern ImGuiID		dockspace_outer_left_node;
 	extern bool			reset_dockspace;
 	extern bool			mainframe_menubar_enabled;
 	extern float		menubar_height;
@@ -160,8 +182,9 @@ namespace ggui
 
 	extern std::vector<commandbinds> cmd_hotkeys;
 
-	extern rtt_camera_window_s rtt_camerawnd;
-	extern rtt_grid_window_s rtt_gridwnd;
+	extern render_to_texture_window_s rtt_camerawnd;
+	extern render_to_texture_window_s rtt_gridwnd;
+	extern render_to_texture_window_s rtt_texwnd;
 	
 	
 	// *

@@ -1177,6 +1177,59 @@ namespace game
 		char text[4];
 	}; STATIC_ASSERT_SIZE(GfxCmdDrawText3D, 0x34);
 
+	enum FILTER_TYPE1
+	{
+		CONTENTS = 0,
+		SURFACE_PROPERTY = 1, // info-> contents_ptr == texture pointer (union)
+		SPECIFIC_MATERIAL = 4, // material_ptr = Material or MaterialInfo struct at offs 0x8
+	};
+
+	enum FILTER_TYPE2
+	{
+		NONE = 0,
+		FDHIDE = 1,
+		FDSHOW = 2,
+		FACE = 4,
+	};
+
+	union filter_contents_s0
+	{
+		int contents;
+		const char* name;
+		const char* key;
+	};
+
+	union filter_contents_s1
+	{
+		int contents;
+		const char* name;
+		const char* value;
+	};
+
+	struct filter_contents_s
+	{
+		filter_contents_s0 u0;
+		filter_contents_s1 u1;
+	};
+
+	struct filter_info_s
+	{
+		int surfaceFlags; //0x0000 
+		char z_pad_0x0004[0x4]; //0x0004
+		filter_contents_s* contents_ptr; //0x0008 
+	}; //Size=0x0010
+
+	struct filter_entry_s
+	{
+		FILTER_TYPE2 filter_type_enum; //0x0000 
+		bool isShown; // enabled //0x0004 
+		char z_pad_0x0005[0x3]; //0x0005
+		MaterialInfo* material_ptr; //0x0008 
+		const char* name; //0x000C 
+		filter_info_s* info; //0x0010 
+		filter_entry_s* next_filter; //0x0014 
+	};
+	
 	struct __declspec(align(8)) qeglobals_t
 	{
 		bool d_showgrid;
@@ -1268,11 +1321,11 @@ namespace game
 		int g_layerCount_maybe;
 		__int16 w_cyclePreviewMode;
 		char pad_cyclePreviewMode[2];
-		void* d_filterGlobals_geometryFilters;
-		void* d_filterGlobals_entityFilters;
-		void* d_filterGlobals_triggerFilters;
-		void* d_filterGlobals_otherFilters;
-		void* d_filterGlobals_layerFilters;
+		filter_entry_s* d_filterGlobals_geometryFilters;
+		filter_entry_s* d_filterGlobals_entityFilters;
+		filter_entry_s* d_filterGlobals_triggerFilters;
+		filter_entry_s* d_filterGlobals_otherFilters;
+		filter_entry_s* d_filterGlobals_layerFilters;
 	};
 
 	struct GfxRenderTargetSurface
@@ -1380,7 +1433,7 @@ namespace game
 		ENTITY_BOXED			= 0x1000,
 		ENTITY_SKINNED			= 0x10000,
 	};
-
+	
 	enum WindowMessages : UINT
 	{
 		_WM_CREATE = 0x1,
@@ -1612,48 +1665,4 @@ namespace game
 	};
 }
 
-//namespace ggui
-//{
-//	enum e_gfxwindow
-//	{
-//		CCAMERAWND = 0,
-//		CXYWND = 1,
-//	};
-//
-//	struct imgui_context_menu
-//	{
-//		bool menustate;
-//		bool was_open;
-//		bool one_time_init;
-//		float position[2];
-//		float size[2];
-//	};
-//
-//	struct imgui_context_cam
-//	{
-//		bool context_initialized;
-//		ImGuiContext* context;
-//		game::GfxWindowTarget* dx_window;
-//		imgui_context_menu m_demo;
-//	};
-//
-//	struct imgui_context_cxy
-//	{
-//		bool context_initialized;
-//		ImGuiContext* context;
-//		game::GfxWindowTarget* dx_window;
-//		imgui_context_menu m_toolbar;
-//		imgui_context_menu m_colors;
-//		imgui_context_menu m_cmdbinds;
-//		imgui_context_menu m_cmdbinds_helper;
-//		imgui_context_menu m_demo;
-//	};
-//
-//	struct imgui_state_t
-//	{
-//		imgui_context_cam ccamerawnd;
-//		imgui_context_cxy cxywnd;
-//		//bool cxywnd_menubar_state;
-//	};
-//}
 #pragma warning(pop)

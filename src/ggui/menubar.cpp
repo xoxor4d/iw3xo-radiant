@@ -320,6 +320,10 @@ namespace ggui::menubar
 						mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
 					}
 
+					if (ImGui::MenuItem("Textures (Original)", 0, false, cmainframe::is_combined_view())) {
+						ShowWindow(cmainframe::activewnd->m_pTexWnd->GetWindow(), SW_HIDE);
+					}
+
 					if (ImGui::MenuItem("Console View", hotkeys::get_hotkey_for_command("ViewConsole").c_str(), nullptr, cmainframe::is_combined_view())) {
 						mainframe_thiscall(void, 0x426A90); // cmainframe::OnToggleconsole
 					}

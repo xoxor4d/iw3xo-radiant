@@ -176,7 +176,7 @@ namespace components
 				}
 
 				dvarString = utils::va(dvarString, dvar->name, dvarValue);
-				game::printf_to_console(dvarString);
+				//game::printf_to_console(dvarString);
 
 				cfgFile << dvarString;
 
