@@ -64,6 +64,7 @@ namespace game
 	extern bool&	g_bClipMode;
 	extern bool&	g_bRotateMode;
 	extern bool&	g_bScaleMode;
+	extern int&		g_nLastLen;
 	
 	extern game::SCommandInfo* g_Commands;
 	extern int		g_nCommandCount;
@@ -157,6 +158,7 @@ namespace game
 	game::dvar_s* Dvar_FindVar(const char* dvar);
 	game::dvar_s* Dvar_SetFromStringFromSource(const char *string /*ecx*/, game::dvar_s *dvar /*esi*/, int source);
 
+	int printf_to_console_internal(const char* _format, va_list va);
 	int printf_to_console(_In_z_ _Printf_format_string_ char const* const _format, ...);
 	void com_printf_to_console(int channel, const char* _format, ...);
 	void console_error(const std::string& msg);

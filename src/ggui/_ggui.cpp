@@ -23,9 +23,9 @@ namespace ggui
 
 	std::vector<commandbinds> cmd_hotkeys;
 
-	render_to_texture_window_s rtt_camerawnd = render_to_texture_window_s();
-	render_to_texture_window_s rtt_gridwnd = render_to_texture_window_s();
-	render_to_texture_window_s rtt_texwnd = render_to_texture_window_s();
+	//render_to_texture_window_s rtt_camerawnd = render_to_texture_window_s();
+	//render_to_texture_window_s rtt_gridwnd = render_to_texture_window_s();
+	//render_to_texture_window_s rtt_texwnd = render_to_texture_window_s();
 	
 	// *
 	// | -------------------- Functions ------------------------

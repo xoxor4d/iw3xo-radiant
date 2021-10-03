@@ -139,7 +139,7 @@ void on_createclient()
 		//ShowWindow(game::g_qeglobals->d_hwndTexture, SW_SHOW);
 		//ShowWindow(game::g_qeglobals->d_hwndEntity, SW_HIDE);
 		//RedrawWindow(game::g_qeglobals->d_hwndEntity, 0, 0, RDW_ERASENOW | RDW_UPDATENOW | RDW_ALLCHILDREN | RDW_ERASE | RDW_INVALIDATE);
-		SendMessageA(game::g_qeglobals->d_hwndEntity, WM_PAINT, 0, 0);
+		//SendMessageA(game::g_qeglobals->d_hwndEntity, WM_PAINT, 0, 0);
 	}
 
 	if(cmainframe::activewnd)
@@ -162,6 +162,11 @@ void on_createclient()
 		if (cmainframe::activewnd->m_pTexWnd)
 		{
 			ShowWindow(cmainframe::activewnd->m_pTexWnd->GetWindow(), SW_HIDE);
+		}
+
+		if (cmainframe::activewnd->m_pFilterWnd)
+		{
+			ShowWindow(cmainframe::activewnd->m_pFilterWnd->GetWindow(), SW_HIDE);
 		}
 	}
 }
@@ -397,32 +402,6 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 				SetWindowPos(cmainframe::activewnd->m_pZWnd->GetWindow(), HWND_BOTTOM, 0, 0, width, height, 0); // SWP_NOACTIVATE SWP_NOZORDER |
 			}
 		}
-		
-#if USE_LAYERED_AS_BACKGROUND
-		// keep split-view cxy window maximized within the mainframe
-		const auto prefs = game::g_PrefsDlg();
-
-		if (prefs->m_nView == 1 && cmainframe::activewnd && layermatwnd_struct->m_hWnd)
-		{
-			RECT _rect;
-			GetClientRect(pThis->m_hWnd, &_rect);
-
-			const int width = _rect.right - _rect.left;
-			const int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
-
-			POINT _point = { 0,0 };
-			ClientToScreen(pThis->m_hWnd, &_point);
-
-			if (prefs->detatch_windows)
-			{
-				SetWindowPos(layermatwnd_struct->m_hWnd, HWND_BOTTOM, _point.x, _point.y, width, height, SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
-			}
-			else
-			{
-				SetWindowPos(layermatwnd_struct->m_hWnd, HWND_BOTTOM, 0, 0, width, height,  0); // SWP_NOACTIVATE SWP_NOZORDER |
-			}
-		}
-#endif
 	}
 
 	// ! do not set imgui context for every msg
@@ -467,24 +446,6 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 	
 	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 	{
-#if USE_LAYERED_AS_BACKGROUND
-		if (ggui::layered_context_ready())
-		{
-			IMGUI_BEGIN_LAYERED;
-			if (ImGui::GetIO().WantCaptureMouse)
-			{
-				ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam);
-				return true;
-			}
-
-			// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
-			{
-				ImGuiIO& io = ImGui::GetIO();
-				memset(io.KeysDown, 0, sizeof(io.KeysDown));
-			}
-		}
-#endif
-
 		if (ggui::cz_context_ready())
 		{
 			IMGUI_BEGIN_CZWND;
@@ -536,13 +497,15 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 
 
 		// if mouse is inside imgui-cxy window
-		if (ggui::rtt_gridwnd.window_hovered)
+		if (auto gridwnd = ggui::get_rtt_gridwnd();
+				 gridwnd->window_hovered)
 		{
-			return mainframe::__on_mscroll(pThis, nFlags, zDelta, ggui::rtt_gridwnd.cursor_pos_pt);
+			return mainframe::__on_mscroll(pThis, nFlags, zDelta, gridwnd->cursor_pos_pt);
 		}
 
 		// if mouse is inside imgui-camera window
-		if (ggui::rtt_camerawnd.window_hovered)
+		if (auto camerawnd = ggui::get_rtt_camerawnd();
+				 camerawnd->window_hovered)
 		{
 			float scroll_dir = zDelta <= 0 ? 1.0f : -1.0f;
 
@@ -564,7 +527,8 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 		}
 
 		// if mouse is inside texture window
-		if (ggui::rtt_texwnd.window_hovered)
+		if (auto texwnd = ggui::get_rtt_texturewnd();
+				 texwnd->window_hovered)
 		{
 			// CTexWnd::Scroll
 			utils::hook::call<void(__cdecl)(std::int16_t _zDelta)>(0x45DD80)(zDelta);
@@ -577,19 +541,6 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 			return 1;
 		}
 	}
-
-#if USE_LAYERED_AS_BACKGROUND
-	if (ggui::layered_context_ready())
-	{
-		IMGUI_BEGIN_LAYERED;
-
-		if (ImGui::GetIO().WantCaptureMouse)
-		{
-			ImGui::HandleKeyIO(layermatwnd_struct->m_hWnd, WM_MOUSEWHEEL, zDelta);
-			return 1;
-		}
-	}
-#endif
 	
 	return mainframe::__on_mscroll(pThis, nFlags, zDelta, point);
 }
@@ -606,9 +557,15 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
+		if (ImGui::GetIO().WantTextInput)
+		{
+			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
+			return;
+		}
 
 		// if mouse is inside imgui-cxy window
-		if (ggui::rtt_gridwnd.window_hovered)
+		if (auto gridwnd = ggui::get_rtt_gridwnd();
+				 gridwnd->window_hovered)
 		{
 			mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 			return;
@@ -616,37 +573,24 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 
 		// handle imgui-camera window (only triggers when czwnd is focused)
 		// cmainframe::on_keydown handles input if imgui-camera window is focused 
-		if (ggui::rtt_camerawnd.window_hovered)
+		if (auto camerawnd = ggui::get_rtt_camerawnd();
+				 camerawnd->window_hovered)
 		{
 			// calls the original on_keydown function
 			mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 			return;
 		}
-		
-		
+
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
 			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
-			return;
+			//return;
 		}
 
 		// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
 		ImGuiIO& io = ImGui::GetIO();
 		memset(io.KeysDown, 0, sizeof(io.KeysDown));
 	}
-
-#if USE_LAYERED_AS_BACKGROUND
-	if (ggui::layered_context_ready())
-	{
-		IMGUI_BEGIN_LAYERED;
-
-		if (ImGui::GetIO().WantCaptureMouse)
-		{
-			ImGui::HandleKeyIO(layermatwnd_struct->m_hWnd, WM_KEYDOWN, 0, nChar);
-			return;
-		}
-	}
-#endif
 	
 	mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 }
@@ -659,9 +603,15 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
+		if (ImGui::GetIO().WantTextInput)
+		{
+			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYUP, 0, nChar);
+			return;
+		}
 		
 		// if mouse is inside imgui-cxy window
-		if (ggui::rtt_gridwnd.window_hovered)
+		if (auto gridwnd = ggui::get_rtt_gridwnd();
+				 gridwnd->window_hovered)
 		{
 			mainframe::__on_keyup(cmainframe::activewnd, nChar);
 			return;
@@ -669,7 +619,8 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 
 		// handle imgui-camera window (only triggers when xywnd is focused)
 		// cmainframe::on_keyup handles input if imgui-camera window is focused 
-		if (ggui::rtt_camerawnd.window_hovered)
+		if (auto camerawnd = ggui::get_rtt_camerawnd();
+				 camerawnd->window_hovered)
 		{
 			mainframe::__on_keyup(cmainframe::activewnd, nChar);
 			return;
@@ -679,22 +630,9 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
 			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYUP, 0, nChar);
-			return;
+			//return;
 		}
 	}
-
-#if USE_LAYERED_AS_BACKGROUND
-	if (ggui::layered_context_ready())
-	{
-		IMGUI_BEGIN_LAYERED;
-
-		if (ImGui::GetIO().WantCaptureMouse)
-		{
-			ImGui::HandleKeyIO(layermatwnd_struct->m_hWnd, WM_KEYUP, 0, nChar);
-			return;
-		}
-	}
-#endif
 
 	mainframe::__on_keyup(pThis, nChar);
 }
@@ -738,41 +676,6 @@ void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* ed
 			CZWND_POS_ONCE_ON_STARTUP = true;
 		}
 	}
-	
-#if USE_LAYERED_AS_BACKGROUND
-	if(!LAYERWND_POS_ONCE_ON_STARTUP)
-	{
-		const auto prefs = game::g_PrefsDlg();
-		if(prefs->m_nView != 1)
-		{
-			// no need to set pos/size when not using split view
-			LAYERWND_POS_ONCE_ON_STARTUP = true;
-		}
-		
-		if (prefs->m_nView == 1 && cmainframe::activewnd && cmainframe::activewnd->m_pXYWnd)
-		{
-			RECT _rect;
-			GetClientRect(pThis->m_hWnd, &_rect);
-
-			const int width = _rect.right - _rect.left;
-			const int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
-
-			POINT _point = { 0,0 };
-			ClientToScreen(pThis->m_hWnd, &_point);
-
-			if (prefs->detatch_windows)
-			{
-				SetWindowPos(layermatwnd_struct->m_hWnd, HWND_BOTTOM, _point.x, _point.y, width, height, SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
-			}
-			else
-			{
-				SetWindowPos(layermatwnd_struct->m_hWnd, HWND_BOTTOM, 0, 0, width, height,  0); //  SWP_NOACTIVATE SWP_NOZORDER |
-			}
-
-			LAYERWND_POS_ONCE_ON_STARTUP = true;
-		}
-	}
-#endif
 	
 	__on_size(pThis, nFlags, x, y);
 }
@@ -833,7 +736,7 @@ void cmainframe::register_dvars()
 		/* desc		*/ "show the menubar");
 }
 
-void cmainframe::main()
+void cmainframe::hooks()
 {
 	// hook continuous thread
 	utils::hook(0x421A90, cmainframe::hk_routine_processing, HOOK_JUMP).install()->quick();

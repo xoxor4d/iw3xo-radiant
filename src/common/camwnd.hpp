@@ -57,7 +57,7 @@ public:
 	static void				mouse_up(ccamwnd* cam, int flags);
 	static void				mouse_moved(ccamwnd* wnd, int buttons, int x, int y);
 	
-	static void				main();
+	static void				hooks();
 	static BOOL WINAPI		windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
 	static void __fastcall	on_lbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);

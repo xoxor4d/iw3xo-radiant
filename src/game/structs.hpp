@@ -1317,7 +1317,7 @@ namespace game
 		char pad3[6];
 		double g_oldtime;
 		double g_time;
-		int g_filterCount_maybe;
+		int g_filtersUpdated;
 		int g_layerCount_maybe;
 		__int16 w_cyclePreviewMode;
 		char pad_cyclePreviewMode[2];

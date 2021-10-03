@@ -31,10 +31,11 @@ namespace ggui
 		void	draw(const char* title, bool* p_open);
 		void	exec_command(const char* command_line);
 
-		static int		text_edit_callback_stub(ImGuiInputTextCallbackData* data);
-		int				text_edit_callback(ImGuiInputTextCallbackData* data);
+		static int	text_edit_callback_stub(ImGuiInputTextCallbackData* data);
+		int			text_edit_callback(ImGuiInputTextCallbackData* data);
 
 		static void menu(ggui::imgui_context_menu& menu);
+		static void	hooks();
 	};
 
 	extern	console* _console;

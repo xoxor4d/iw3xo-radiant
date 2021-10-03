@@ -20,7 +20,7 @@ private:
 	~clayermatwnd() = delete;
 
 public:
-    static void     main();
+    static void     hooks();
 	static void		create_layermatwnd();
 	static void		create_layerlist();
 	static void		precreate_window();

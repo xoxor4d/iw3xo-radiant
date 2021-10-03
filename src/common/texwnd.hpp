@@ -8,8 +8,8 @@ struct texwnd_s
 	bool usageFilter; //0x000C 
 	bool localeFilter; //0x000D 
 	bool surfaceTypeFilter; //0x000E 
-	bool unkownfilter; //0x000F 
-	void* unk_ptr; //0x0010 
+	bool searchbar_filter; //0x000F 
+	const char* searchbar_buffer; //0x0010 
 	int materialCount; //0x0014 
 	game::Material* sorted_materials[16384]; //0x0018 
 	void* qtextures; //0x10018 
@@ -36,9 +36,11 @@ private:
 	~ctexwnd() = delete;
 
 public:
-    static void				main();
+    static void				hooks();
 	static void				on_mousebutton_down(UINT nFlags);
 	static void				on_mousebutton_up(UINT nFlags);
 	static void				on_mousemove(UINT nFlags);
 	static BOOL __fastcall	on_paint(ctexwnd* pThis);
+
+	static void				rtt_texture_window();
 };

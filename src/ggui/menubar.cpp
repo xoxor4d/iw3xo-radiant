@@ -270,6 +270,10 @@ namespace ggui::menubar
 					components::gui::toggle(context.m_console, 0, true);
 				}
 
+				if (ImGui::MenuItem("Filter")) {
+					components::gui::toggle(context.m_filter, 0, true);
+				}
+
 				if (ImGui::MenuItem("Preferences ...", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
 					mainframe_thiscall(void, 0x426950); //cmainframe::OnPrefs
 				}
@@ -989,16 +993,7 @@ namespace ggui::menubar
 				{
 					if (ImGui::MenuItem("Toogle Tool Window", hotkeys::get_hotkey_for_command("ToggleLayeredMaterialWnd").c_str()))
 					{
-#if USE_LAYERED_AS_BACKGROUND
-						
-						ShowWindow(layermatwnd_struct->m_hWnd,
-							IsWindowVisible(layermatwnd_struct->m_hWnd) ? SW_HIDE : SW_SHOW);
-						
-#else
-						
 						cdeclcall(void, 0x42BFE0); // CMainFrame::OnToggleLayeredMaterials
-						
-#endif
 					}
 
 					if (ImGui::MenuItem("Save", hotkeys::get_hotkey_for_command("SaveLayeredMaterials").c_str())) {

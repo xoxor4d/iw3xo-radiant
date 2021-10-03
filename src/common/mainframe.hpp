@@ -26,7 +26,7 @@ public:
 	ccamwnd *m_pCamWnd;
 	ctexwnd *m_pTexWnd;
 	czwnd *m_pZWnd;
-	CGroupDlg* m_pFilterWnd;
+	CFilterWnd* m_pFilterWnd;
 	CWnd* m_pEditWnd;
 	int m_nCurrentStyle;
 	char* m_strStatus[15];
@@ -38,7 +38,7 @@ public:
 	//
 	static cmainframe* activewnd;
 	
-	static void					main();
+	static void					hooks();
 	static bool					is_combined_view() { return cmainframe::activewnd->m_nCurrentStyle; };
 	
 	static LRESULT __fastcall	windowproc(cmainframe* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam);

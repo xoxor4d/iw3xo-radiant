@@ -148,7 +148,7 @@ BOOL WINAPI ccamwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			// set cz context (in-case we use multiple imgui context's)
 			IMGUI_BEGIN_CZWND;
 
-			if (!ggui::rtt_camerawnd.window_hovered && ImGui::GetIO().WantCaptureMouse)
+			if (!ggui::get_rtt_camerawnd()->window_hovered && ImGui::GetIO().WantCaptureMouse)
 			{
 				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
 				return true;
@@ -185,7 +185,7 @@ void __declspec(naked) camwnd_set_detatched_child_window_style()
 // *
 // *
 
-void ccamwnd::main()
+void ccamwnd::hooks()
 {
 	// hook ccamwnd message handler
     utils::hook::set(0x402E86 + 4, ccamwnd::windowproc);

@@ -9,5 +9,5 @@ private:
 	~radiantapp() = delete;
 
 public:
-    static void     main();
+    static void     hooks();
 };

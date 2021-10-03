@@ -10,6 +10,8 @@ namespace dvars
 	extern game::dvar_s* gui_mainframe_background;
 
 	extern game::dvar_s* gui_saved_state_console;
+	extern game::dvar_s* gui_saved_state_filter;
+	extern game::dvar_s* gui_saved_state_textures;
 	
 	//
 	extern game::dvar_s* mainframe_show_console;

@@ -1242,7 +1242,7 @@ struct __declspec(align(4)) CPrefsDlg : public CDialog
 	int part_of_autosave;
 	bool m_bLoadLastMap;
 	char pad_0x020D[3];
-	bool m_bTextureWindow;
+	bool m_bTextureWindowSearch;
 	char pad_0x0211[3];
 	bool m_bSnapShots;
 	char pad_0x0215[3];
@@ -1363,6 +1363,23 @@ struct __declspec(align(4)) CPrefsDlg : public CDialog
 	int xxx4;
 	int xxx5;
 	int xxx6;
+};
+
+struct CListBox : public CWnd
+{};
+
+struct CCheckListBox : public CListBox
+{
+	int m_cyText;
+	unsigned int m_nStyle;
+};
+
+struct CFilterWnd : public CDialog
+{
+	CCheckListBox geometry_filters;
+	CCheckListBox entity_filters;
+	CCheckListBox trigger_filters;
+	CCheckListBox other_filters;
 };
 
 struct CNoTrackObject;

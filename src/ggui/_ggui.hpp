@@ -75,6 +75,20 @@ namespace ggui
 		float size[2];
 	};
 
+	struct render_to_texture_window_s
+	{
+		IDirect3DTexture9* scene_texture;
+		ImVec2 scene_size_imgui;
+		ImVec2 cursor_pos;
+		CPoint cursor_pos_pt;
+		const char* window_name;
+		bool window_hovered;
+		bool should_set_focus;
+		bool menustate;
+		bool was_open;
+		bool one_time_init;
+	};
+	
 	struct imgui_context_layer
 	{
 		bool context_initialized;
@@ -99,7 +113,11 @@ namespace ggui
 		imgui_context_menu m_cmdbinds;
 		imgui_context_menu m_cmdbinds_helper;
 		imgui_context_menu m_console;
+		imgui_context_menu m_filter;
 		imgui_context_menu m_demo;
+		render_to_texture_window_s rtt_camerawnd;
+		render_to_texture_window_s rtt_gridwnd;
+		render_to_texture_window_s rtt_texwnd;
 	};
 
 	struct imgui_state_t
@@ -148,17 +166,6 @@ namespace ggui
 		bool should_set_focus;
 	};*/
 
-	struct render_to_texture_window_s
-	{
-		IDirect3DTexture9* scene_texture;
-		ImVec2 scene_size_imgui;
-		ImVec2 cursor_pos;
-		CPoint cursor_pos_pt;
-		const char* window_name;
-		bool window_hovered;
-		bool should_set_focus;
-	};
-
 	// *
 	// | -------------------- Variables ------------------------
 	// *
@@ -182,9 +189,9 @@ namespace ggui
 
 	extern std::vector<commandbinds> cmd_hotkeys;
 
-	extern render_to_texture_window_s rtt_camerawnd;
-	extern render_to_texture_window_s rtt_gridwnd;
-	extern render_to_texture_window_s rtt_texwnd;
+	//extern render_to_texture_window_s rtt_camerawnd;
+	//extern render_to_texture_window_s rtt_gridwnd;
+	//extern render_to_texture_window_s rtt_texwnd;
 	
 	
 	// *
@@ -195,5 +202,19 @@ namespace ggui
 
 	extern bool layered_context_ready();
 	extern bool cz_context_ready();
+
+	inline render_to_texture_window_s* get_rtt_gridwnd()
+	{
+		return &state.czwnd.rtt_gridwnd;
+	}
 	
+	inline render_to_texture_window_s* get_rtt_camerawnd()
+	{
+		return &state.czwnd.rtt_camerawnd;
+	}
+
+	inline render_to_texture_window_s* get_rtt_texturewnd()
+	{
+		return &state.czwnd.rtt_texwnd;
+	}
 }

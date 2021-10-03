@@ -45,6 +45,7 @@ namespace game
 	bool&	g_bClipMode = *reinterpret_cast<bool*>(0x23F16D8);
 	bool&	g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
 	bool&	g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
+	int&	g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
 	
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
@@ -219,6 +220,23 @@ namespace game
 		}
 	}
 
+	// do not call manually :x
+	int printf_to_console_internal(const char* _format, va_list va)
+	{
+		int _result;
+		char text_out[32772];
+
+		vsprintf(text_out, _format, va);
+		_result = _vfprintf_l(stdout, _format, NULL, va);
+
+		if (ggui::_console)
+		{
+			ggui::_console->addline_no_format(text_out);
+		}
+
+		return _result;
+	}
+	
 	int printf_to_console(_In_z_ _Printf_format_string_ char const* const _format, ...)
 	{
 		int _result;

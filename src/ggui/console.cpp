@@ -580,4 +580,82 @@ namespace ggui
 			ggui::_console->draw("Console##window", &menu.menustate);
 		}
 	}
+
+	
+	// *
+	// * 
+	
+	void load_raw_materials_progressbar(int index, int material_total_count)
+	{
+		const int    idx = index + 1;
+		const double percentage = ((double)idx / (double)material_total_count);
+
+		const int val = static_cast<int>(percentage * 100);
+		const int lpad = static_cast<int>(percentage * 60);
+		const int rpad = 60 - lpad;
+
+		printf("\rLoading raw materials: %3d%% [%.*s%*s] %d/%d", val, lpad, "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||", rpad, "", idx, material_total_count);
+
+		if (val == 100)
+		{
+			printf("\n");
+		}
+
+		fflush(stdout);
+	}
+
+	__declspec(naked) void load_raw_materials_progressbar_stub()
+	{
+		const static uint32_t retn_pt = 0x45AF65;
+		__asm
+		{
+			pushad;
+			mov		eax, [ebp - 54h];
+			push	eax;
+			push	ecx;
+			call	load_raw_materials_progressbar;
+			add		esp, 8;
+			popad;
+
+			add     ecx, 1; // og
+			cmp     ecx, [ebp - 54h]; // ebp - 54 = total amount of materials
+
+			jmp		retn_pt;
+		}
+	}
+
+	void console::hooks()
+	{
+		// load raw materials progressbar
+		utils::hook::nop(0x45AF5F, 6);
+		utils::hook(0x45AF5F, load_raw_materials_progressbar_stub, HOOK_JUMP).install()->quick();
+		
+		// NOP startup console-spam
+		utils::hook::nop(0x4818DF, 5); // ScanFile
+		utils::hook::nop(0x48B8BE, 5); // ScanWeapon
+
+		// silence "Could not connect to source control"
+		utils::hook::nop(0x420B59, 5);
+
+		// remove "\n" infront of "\nFile Handles:\n"
+		utils::hook::set<BYTE>(0x4A182D + 1, 0x7D);
+		
+		// redirect console prints
+		utils::hook::nop(0x420A54, 10);
+		utils::hook::nop(0x40A9E0, 10);
+		utils::hook::set(0x25D5A54, game::printf_to_console_internal); // redirect internal radiant console prints
+		//utils::hook::detour(0x499E90, game::printf_to_console, HK_JUMP); // sys_printf
+		utils::hook::detour(0x40B5D0, game::com_printf_to_console, HK_JUMP); // com_printf
+		utils::hook::detour(0x5BE383, game::printf_to_console, HK_JUMP); // printf
+
+
+		// disable console tab insertion in entitywnd :: CTabCtrl::InsertItem(&g_wndTabsEntWnd, 1u, 2u, "C&onsole", 0, 0);
+		utils::hook::nop(0x496713, 23);
+		
+		utils::hook::detour(0x496A2B, (void*)0x496AE6, HK_JUMP);
+		utils::hook::detour(0x423D2F, (void*)0x423EBC, HK_JUMP);
+		utils::hook::detour(0x423E02, (void*)0x423EBC, HK_JUMP);
+		utils::hook::detour(0x496B5F, (void*)0x496C68, HK_JUMP);
+		utils::hook::detour(0x498457, (void*)0x498ACA, HK_JUMP);
+	}
 };

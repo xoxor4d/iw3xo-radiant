@@ -67,18 +67,6 @@ LRESULT __stdcall clayermatwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, L
 	{
 		IMGUI_BEGIN_LAYERED;
 
-		/*if (Msg == WM_MOUSEMOVE)
-		{
-			int x = 0;
-		}*/
-
-		//if (ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam))
-		//{
-		//	//ImGui::GetIO().MouseDrawCursor = 1;
-		//	return true;
-		//}
-
-
 		switch(Msg)
 		{
 		case WM_LBUTTONDOWN:
@@ -181,12 +169,10 @@ void clayermatwnd::create_layermatwnd()
 // *
 // *
 
-void clayermatwnd::main()
+void clayermatwnd::hooks()
 {
-#if USE_LAYERED_AS_BACKGROUND
-	utils::hook(0x422694, clayermatwnd::create_layermatwnd, HOOK_CALL).install()->quick();
+	//utils::hook(0x422694, clayermatwnd::create_layermatwnd, HOOK_CALL).install()->quick();
 
 	// disable layer render stuff in on_paint
-	utils::hook::nop(0x417FC6, 5);
-#endif
+	//utils::hook::nop(0x417FC6, 5);
 }

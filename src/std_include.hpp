@@ -101,6 +101,7 @@
 #include "ggui/colors.hpp"
 #include "ggui/toolbar.hpp"
 #include "ggui/console.hpp"
+#include "ggui/filter.hpp"
 
 #include "common/mainframe.hpp"
 #include "common/camwnd.hpp"

@@ -10,6 +10,8 @@ namespace dvars
 	game::dvar_s* gui_mainframe_background = nullptr;
 
 	game::dvar_s* gui_saved_state_console = nullptr;
+	game::dvar_s* gui_saved_state_filter = nullptr;
+	game::dvar_s* gui_saved_state_textures = nullptr;
 	
 	//
 	game::dvar_s* mainframe_show_console = nullptr;

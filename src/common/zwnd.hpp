@@ -21,7 +21,7 @@ private:
 
 public:
 
-	static void				main();
+	static void				hooks();
 	static LRESULT WINAPI	windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
 	static void __fastcall	on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);

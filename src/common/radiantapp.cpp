@@ -104,7 +104,7 @@ __declspec(naked) void menubar_stub_03()
 	}
 }
 
-void radiantapp::main()
+void radiantapp::hooks()
 {
 	// registery saving stub :: CPrefsDlg::SavePrefs
 	utils::hook(0x44F294, registery_save_stub, HOOK_JUMP).install()->quick();

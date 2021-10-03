@@ -70,7 +70,7 @@ public:
 	CPoint m_ptDown;
 
 	//
-	static void				main();
+	static void				hooks();
 	static LRESULT WINAPI	windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	//static void __cdecl		on_resize(HWND__* hwnd, int width, int height);
 	//static void			on_endframe();
