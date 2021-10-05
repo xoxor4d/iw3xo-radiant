@@ -13,11 +13,11 @@ Current goals:
 ![image](https://user-images.githubusercontent.com/45299104/136065983-e049e9c6-eb5f-43bf-83a0-7c51f6394a16.jpg)
 ![image](https://user-images.githubusercontent.com/45299104/136064749-f4dcde48-5e08-4d1e-8c9d-5ffc3e9e54cc.jpg)
 
-<center>^ build the layout you've always wanted</center>
+<p align="center">
+	<b>^ build the layout you've always wanted</b><br>
+</p>
 
 ___
-
-<br>
 
 ### Pre-build binaries
 https://github.com/xoxor4d/iw3xo-radiant/releases
@@ -32,8 +32,6 @@ https://github.com/xoxor4d/iw3xo-radiant/releases
    - Debugging: working directory -> "path-to-cod4-root\bin\"
 3. Build -> Build Solution
 4. Copy everything within the assets folder into your cod4-root
-
-<br>
 
 ___
 
