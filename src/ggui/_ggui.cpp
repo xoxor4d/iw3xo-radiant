@@ -71,9 +71,21 @@ namespace ggui
 			ImGui::InvisibleButton("##unhide_hack", ImVec2(unhide_sz_hit, unhide_sz_hit));
 
 			const bool hovered = ggui::rtt_handle_windowfocus_overlaywidget(rtt);
-			const auto col = ImGui::GetColorU32(hovered ? ImGuiCol_ButtonActive : ImGuiCol_Button);
+			
 
-			ImGui::GetForegroundDrawList()->AddTriangleFilled(p, p + ImVec2(unhide_sz_draw, 0.0f), p + ImVec2(0.0f, unhide_sz_draw), col);
+			if(dvars::gui_rtt_padding_enabled && !dvars::gui_rtt_padding_enabled->current.enabled)
+			{
+				const auto col_hover = ImGui::GetColorU32(ImGuiCol_ButtonActive);
+				const auto col_bg = ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));
+
+				ImGui::GetWindowDrawList()->AddTriangleFilled(p, p + ImVec2(unhide_sz_draw, 0.0f), p + ImVec2(0.0f, unhide_sz_draw), hovered ? col_hover : col_bg);
+
+				// wnd is not actually the window we want to draw the triangle on, its the childwindow where we draw the rtt image ..
+				// wnd->DrawList->AddTriangleFilled(p, p + ImVec2(unhide_sz_draw, 0.0f), p + ImVec2(0.0f, unhide_sz_draw), col);
+
+				// always on top
+				// ImGui::GetForegroundDrawList()->AddTriangleFilled(p, p + ImVec2(unhide_sz_draw, 0.0f), p + ImVec2(0.0f, unhide_sz_draw), col);
+			}
 
 			//ImGui::Indent(8.0f);
 			//ImGui::Text("Hovered Triangle? %d", hovered);

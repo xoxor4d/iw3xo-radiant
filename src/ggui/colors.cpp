@@ -59,10 +59,10 @@ namespace ggui::colors
 
 		SEPERATORV(0.0f);
 
-		ImGui::ColorEdit4("Gui Menubar Bg", dvars::gui_menubar_bg_color->current.vector, ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Gui Toolbar Bg", dvars::gui_toolbar_bg_color->current.vector, ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Gui Bg", dvars::gui_window_bg_color->current.vector, ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Gui Child Bg", dvars::gui_window_child_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Menubar Bg##1", dvars::gui_menubar_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Toolbar Bg##2", dvars::gui_toolbar_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Bg##3", dvars::gui_window_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Child Bg##4", dvars::gui_window_child_bg_color->current.vector, ImGuiColorEditFlags_Float);
 
 		ImGui::ColorEdit4("Gui Toolbar Button", dvars::gui_toolbar_button_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Toolbar Button Hovered", dvars::gui_toolbar_button_hovered_color->current.vector, ImGuiColorEditFlags_Float);
