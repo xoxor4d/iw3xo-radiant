@@ -3,6 +3,86 @@
 ccamwnd* ccamwnd::activewnd;
 IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+#define RTT_CAMERA_USE_PADDING
+
+// render to texture - camera window
+void ccamwnd::rtt_camera_window()
+{
+	int p_styles = 0;
+	int p_colors = 0;
+
+	const auto IO = ImGui::GetIO();
+	const auto camera_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.width), static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.height));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(320.0f, 320.0f), ImVec2(FLT_MAX, FLT_MAX));
+
+	float	window_padding = 0.0f;
+	if(dvars::gui_rtt_padding_enabled && dvars::gui_rtt_padding_enabled->current.enabled) {
+			window_padding = dvars::gui_rtt_padding_size ? dvars::gui_rtt_padding_size->current.integer : 6.0f;
+	}
+	
+	const ImVec2 window_padding_both = ImVec2(window_padding * 2.0f, window_padding * 2.0f);
+	
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(window_padding, window_padding)); p_styles++;
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f)); p_styles++;
+	ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); p_colors++;
+	ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); p_colors++;
+	ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); p_colors++;
+	//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_TabUnfocusedActive)); p_colors++;
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_rtt_padding_color->current.vector)); p_colors++;
+	
+	auto camerawnd = ggui::get_rtt_camerawnd();
+	if (camerawnd->should_set_focus)
+	{
+		ImGui::SetNextWindowFocus();
+		camerawnd->should_set_focus = false;
+	}
+
+	ImGui::Begin("Camera Window##rtt", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+	if (camerawnd->scene_texture)
+	{
+		bool tabbar_visible = true;
+		const auto wnd = ImGui::GetCurrentWindow();
+
+		if(ImGui::IsWindowDocked() && wnd)
+		{
+			if(wnd->DockNode && wnd->DockNode->IsHiddenTabBar())
+			{
+				tabbar_visible = false;
+			}
+		}
+
+		const float frame_height = tabbar_visible ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
+		camerawnd->scene_size_imgui = ImGui::GetWindowSize() - ImVec2(0.0f, frame_height) - window_padding_both;
+
+		// hack to disable left mouse window movement
+		ImGui::BeginChild("scene_child", ImVec2(camera_size.x, camera_size.y + frame_height) + window_padding_both, false, ImGuiWindowFlags_NoMove);
+		{
+			const auto screenpos = ImGui::GetCursorScreenPos();
+			SetWindowPos(cmainframe::activewnd->m_pCamWnd->GetWindow(), HWND_BOTTOM, (int)screenpos.x, (int)screenpos.y, (int)camerawnd->scene_size_imgui.x, (int)camerawnd->scene_size_imgui.y, SWP_NOZORDER);
+
+			const auto pre_image_cursor = ImGui::GetCursorPos();
+
+			ImGui::Image(camerawnd->scene_texture, camera_size);
+			camerawnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_None);
+
+			// pop ItemSpacing
+			ImGui::PopStyleVar(); p_styles--;
+
+			ImGui::SetCursorPos(pre_image_cursor);
+			const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
+
+			camerawnd->cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
+			camerawnd->cursor_pos_pt = CPoint((LONG)camerawnd->cursor_pos.x, (LONG)camerawnd->cursor_pos.y);
+
+			ggui::FixDockingTabbarTriangle(wnd, camerawnd);
+			ImGui::EndChild();
+		}
+	}
+	ImGui::PopStyleColor(p_colors);
+	ImGui::PopStyleVar(p_styles);
+	ImGui::End();
+}
+
 void ccamwnd::mouse_control(float dtime)
 {
 	const static uint32_t Cam_MouseControl_Func = 0x403950;

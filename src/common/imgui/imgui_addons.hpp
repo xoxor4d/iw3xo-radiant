@@ -18,7 +18,6 @@ namespace ImGui
 	void	debug_table_entry_float(const char* label, const float* val);
 	void	debug_table_entry_int(const char* label, const int val);
 	void	debug_table_entry_int2(const char* label, const int* val);
-	
 	void	StyleColorsDevgui(ImGuiStyle* = NULL);
 	
 }

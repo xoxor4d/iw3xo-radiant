@@ -23,7 +23,7 @@ namespace ggui::colors
 		ImGui::ColorEdit4("Grid Major", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMAJOR], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Grid Block", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBLOCK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Grid Text", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDTEXT], ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Grid Entity ´Classname", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Grid Entity Classname", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float);
 		
 		SEPERATORV(0.0f);
 
@@ -60,9 +60,23 @@ namespace ggui::colors
 		SEPERATORV(0.0f);
 
 		ImGui::ColorEdit4("Gui Menubar Bg", dvars::gui_menubar_bg_color->current.vector, ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Gui Docked Bg", dvars::gui_dockedwindow_bg_color->current.vector, ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Gui Undocked Bg", dvars::gui_window_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Toolbar Bg", dvars::gui_toolbar_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Bg", dvars::gui_window_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Child Bg", dvars::gui_window_child_bg_color->current.vector, ImGuiColorEditFlags_Float);
 
+		ImGui::ColorEdit4("Gui Toolbar Button", dvars::gui_toolbar_button_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Toolbar Button Hovered", dvars::gui_toolbar_button_hovered_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Toolbar Button Active", dvars::gui_toolbar_button_active_color->current.vector, ImGuiColorEditFlags_Float);
+		const auto col_edit4_size = ImGui::GetItemRectSize();
+		
+		ImGui::Checkbox("Gui RTT Border", &dvars::gui_rtt_padding_enabled->current.enabled);
+		const auto checkbox_size = ImGui::GetItemRectSize();
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(col_edit4_size.x - checkbox_size.x - 178.0f);
+		ImGui::SliderInt("Gui RTT Bordersize", &dvars::gui_rtt_padding_size->current.integer, dvars::gui_rtt_padding_size->domain.integer.min, dvars::gui_rtt_padding_size->domain.integer.max);
+
+		ImGui::ColorEdit4("Gui RTT Border", dvars::gui_rtt_padding_color->current.vector, ImGuiColorEditFlags_Float);
+		
 		ImGui::End();
 	}
 }

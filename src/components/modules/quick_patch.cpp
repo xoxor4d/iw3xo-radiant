@@ -448,11 +448,6 @@ namespace components
 		// force global preferences on init
 		utils::hook(0x450730, force_preferences_on_init_stub, HOOK_JUMP).install()->quick();
 
-		// do not hide the entitywnd on launch
-		//utils::hook::set<BYTE>(0x496A06 + 1, 0x1);
-
-		
-		
 		// add iw3xradiant search path (imgui images)
 		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
 

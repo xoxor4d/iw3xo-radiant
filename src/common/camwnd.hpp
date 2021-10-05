@@ -53,6 +53,8 @@ public:
 	//
 	static ccamwnd *activewnd;
 
+	static void				rtt_camera_window();
+	
 	void					mouse_control(float dtime);
 	static void				mouse_up(ccamwnd* cam, int flags);
 	static void				mouse_moved(ccamwnd* wnd, int buttons, int x, int y);

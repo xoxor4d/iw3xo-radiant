@@ -203,6 +203,9 @@ namespace ggui
 	extern bool layered_context_ready();
 	extern bool cz_context_ready();
 
+	extern bool rtt_handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd);
+	extern void	FixDockingTabbarTriangle(ImGuiWindow* wnd, ggui::render_to_texture_window_s* rtt);
+	
 	inline render_to_texture_window_s* get_rtt_gridwnd()
 	{
 		return &state.czwnd.rtt_gridwnd;

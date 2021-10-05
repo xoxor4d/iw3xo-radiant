@@ -20,7 +20,10 @@ namespace ggui::toolbar
 			const ImVec2 uv0 = hovered_state ? ImVec2(0.5f, 0.0f) : ImVec2(0.0f, 0.0f);
 			const ImVec2 uv1 = hovered_state ? ImVec2(1.0f, 1.0f) : ImVec2(0.5f, 1.0f);
 
-			if (ImGui::ImageButton(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1, 0))
+			const ImVec4 bg_col = hovered_state ?
+				ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector) : ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+			
+			if (ImGui::ImageButton(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1, 0, bg_col))
 			{
 				switch(calltype)
 				{
@@ -80,18 +83,25 @@ namespace ggui::toolbar
 		}
 	}
 
-	bool image_togglebutton(const char* image_name, bool toggle_state, const char* tooltip)
+	bool image_togglebutton(const char* image_name, bool& hovered_state, bool toggle_state, const char* tooltip)
 	{
 		bool ret_state = false;
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(25, 25, 25, 50));
-		
+		//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector));
+		//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(25, 25, 25, 50));
+
 		if (const auto	image = game::Image_RegisterHandle(image_name);
 						image && image->texture.data)
 		{
 			const ImVec2 uv0 = toggle_state ? ImVec2(0.5f, 0.0f) : ImVec2(0.0f, 0.0f);
 			const ImVec2 uv1 = toggle_state ? ImVec2(1.0f, 1.0f) : ImVec2(0.5f, 1.0f);
 
-			if (ImGui::ImageButton(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1, 0)) 
+			ImVec4 bg_col = hovered_state ? ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector) : ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+			if(toggle_state)
+			{
+				bg_col = ImGui::ToImVec4(dvars::gui_toolbar_button_active_color->current.vector);
+			}
+
+			if (ImGui::ImageButton(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1, 0, bg_col))
 			{
 				ret_state = true;
 			}
@@ -100,6 +110,8 @@ namespace ggui::toolbar
 			{
 				TT(tooltip);
 			}
+
+			hovered_state = ImGui::IsItemHovered();
 		}
 		else
 		{
@@ -114,7 +126,7 @@ namespace ggui::toolbar
 			}
 		}
 
-		ImGui::PopStyleColor();
+		//ImGui::PopStyleColor();
 		return ret_state;
 	}
 
@@ -289,8 +301,10 @@ namespace ggui::toolbar
 
 		register_element("clipper"s, []()
 			{
+				static bool hov_clipper;
+			
 				// CMainFrame::OnViewClipper
-				if (image_togglebutton("clipper", game::g_bClipMode, "Toggle Clipper")) {
+				if (image_togglebutton("clipper", hov_clipper, game::g_bClipMode, "Toggle Clipper")) {
 					mainframe_thiscall(LRESULT, 0x426510);
 				}
 			});
@@ -347,6 +361,7 @@ namespace ggui::toolbar
 
 		register_element("camera_movement"s, []()
 			{
+				static bool hov_camera_movement;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnToggleCameraMovementMode
@@ -354,7 +369,7 @@ namespace ggui::toolbar
 				{
 					ImVec2 prebutton_cursor = ImGui::GetCursorScreenPos();
 
-					if (image_togglebutton("camera_movement", prefs->camera_mode,
+					if (image_togglebutton("camera_movement", hov_camera_movement, prefs->camera_mode,
 						"Toggle Camera Movement Mode"))
 					{
 						mainframe_thiscall(LRESULT, 0x429EB0);
@@ -376,10 +391,11 @@ namespace ggui::toolbar
 
 		register_element("cubic_clip"s, []()
 			{
+				static bool hov_cubicclip;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnViewCubicclipping
-				if (image_togglebutton("cubic_clip", prefs->m_bCubicClipping, 
+				if (image_togglebutton("cubic_clip", hov_cubicclip, prefs->m_bCubicClipping,
 					std::string("Cubic Clipping [" + hotkeys::get_hotkey_for_command("ToggleCubicClip") + "]").c_str()))
 				{
 					mainframe_thiscall(LRESULT, 0x428F90);
@@ -414,10 +430,11 @@ namespace ggui::toolbar
 
 		register_element("plant_models"s, []()
 			{
+				static bool hov_plantmodel;
 				const auto prefs = game::g_PrefsDlg();
 
 				// CMainFrame::OnPlantModel
-				if (image_togglebutton("plant_models", prefs->m_bDropModel,
+				if (image_togglebutton("plant_models", hov_plantmodel, prefs->m_bDropModel,
 					"Plant models and apply random scale and rotation"))
 				{
 					mainframe_thiscall(LRESULT, 0x42A0E0);
@@ -426,10 +443,11 @@ namespace ggui::toolbar
 
 		register_element("plant_orient_to_floor"s, []()
 			{
+				static bool hov_plantorient;
 				const auto prefs = game::g_PrefsDlg();
 
 				// CMainFrame::OnPlantModel
-				if (image_togglebutton("plant_orient_to_floor", prefs->m_bOrientModel,
+				if (image_togglebutton("plant_orient_to_floor", hov_plantorient, prefs->m_bOrientModel,
 					"Orient dropped selection to the floor"))
 				{
 					mainframe_thiscall(LRESULT, 0x4258F0);
@@ -438,10 +456,11 @@ namespace ggui::toolbar
 
 		register_element("plant_force_drop_height"s, []()
 			{
+				static bool hov_plantdrop;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnForceZeroDropHeight
-				if (image_togglebutton("plant_force_drop_height", prefs->m_bForceZeroDropHeight,
+				if (image_togglebutton("plant_force_drop_height", hov_plantdrop, prefs->m_bForceZeroDropHeight,
 					"Force drop height to 0"))
 				{
 					mainframe_thiscall(LRESULT, 0x42A000);
@@ -466,8 +485,10 @@ namespace ggui::toolbar
 
 		register_element("free_rotate"s, []()
 			{
+				static bool hov_freerotate;
+			
 				// CMainFrame::OnSelectMouserotate
-				if (image_togglebutton("free_rotate", game::g_bRotateMode,
+				if (image_togglebutton("free_rotate", hov_freerotate, game::g_bRotateMode,
 					std::string("Free rotation [" + hotkeys::get_hotkey_for_command("MouseRotate") + "]").c_str()))
 				{
 					mainframe_thiscall(LRESULT, 0x428570);
@@ -476,8 +497,10 @@ namespace ggui::toolbar
 
 		register_element("free_scale"s, []()
 			{
+				static bool hov_freescale;
+			
 				// CMainFrame::OnSelectMousescale
-				if (image_togglebutton("free_scale", game::g_bScaleMode,
+				if (image_togglebutton("free_scale", hov_freescale, game::g_bScaleMode,
 					"Free scaling"))
 				{
 					mainframe_thiscall(LRESULT, 0x428D20);
@@ -486,8 +509,10 @@ namespace ggui::toolbar
 
 		register_element("lock_x"s, []()
 			{
+				static bool hov_lockx;
+			
 				// CMainFrame::OnScalelockX
-				if (image_togglebutton("lock_x",
+				if (image_togglebutton("lock_x", hov_lockx,
 					(game::g_nScaleHow == 2 || game::g_nScaleHow == 4 || game::g_nScaleHow == 6),
 					"Lock grid along the x-axis"))
 				{
@@ -497,8 +522,10 @@ namespace ggui::toolbar
 
 		register_element("lock_y"s, []()
 			{
+				static bool hov_locky;
+			
 				// CMainFrame::OnScalelockY
-				if (image_togglebutton("lock_y",
+				if (image_togglebutton("lock_y", hov_locky,
 					(game::g_nScaleHow == 1 || game::g_nScaleHow == 4 || game::g_nScaleHow == 5),
 					"Lock grid along the y-axis"))
 				{
@@ -508,8 +535,10 @@ namespace ggui::toolbar
 
 		register_element("lock_z"s, []()
 			{
+				static bool hov_lockz;
+			
 				// CMainFrame::OnScalelockZ
-				if (image_togglebutton("lock_z",
+				if (image_togglebutton("lock_z", hov_lockz,
 					(game::g_nScaleHow > 0 && game::g_nScaleHow <= 3),
 					"Lock grid along the z-axis"))
 				{
@@ -521,6 +550,7 @@ namespace ggui::toolbar
 
 		register_element("show_patches_as"s, []()
 			{
+				static bool hov_patches_as;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnPatchWireframe
@@ -528,7 +558,7 @@ namespace ggui::toolbar
 				{
 					ImVec2 prebutton_cursor = ImGui::GetCursorScreenPos();
 
-					if (image_togglebutton("show_patches_as", prefs->g_nPatchAsWireframe,
+					if (image_togglebutton("show_patches_as", hov_patches_as, prefs->g_nPatchAsWireframe,
 						"Show patches as wireframe"))
 					{
 						mainframe_thiscall(LRESULT, 0x42A300);
@@ -559,10 +589,11 @@ namespace ggui::toolbar
 
 		register_element("weld_equal_patches_move"s, []()
 			{
+				static bool hov_weld_patches_move;
 				const auto prefs = game::g_PrefsDlg();
 
 				// CMainFrame::OnPatchWeld
-				if (image_togglebutton("weld_equal_patches_move", 
+				if (image_togglebutton("weld_equal_patches_move", hov_weld_patches_move,
 					prefs->g_bPatchWeld,
 					"Weld equal patch points during moves"))
 				{
@@ -572,10 +603,11 @@ namespace ggui::toolbar
 
 		register_element("select_drill_down_vertices"s, []()
 			{
+				static bool hov_drill_down;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnPatchDrilldown
-				if (image_togglebutton("select_drill_down_vertices", 
+				if (image_togglebutton("select_drill_down_vertices", hov_drill_down,
 					prefs->patch_drill_down,
 					"Select invisible vertices (drill down rows/columns)"))
 				{
@@ -585,8 +617,10 @@ namespace ggui::toolbar
 		
 		register_element("toggle_lock_vertices_mode"s, []()
 			{
+				static bool hov_lock_vertices;
+			
 				// CMainFrame::ToggleLockPatchVertMode
-				if (image_togglebutton("toggle_lock_vertices_mode", 
+				if (image_togglebutton("toggle_lock_vertices_mode", hov_lock_vertices,
 					game::g_qeglobals->bLockPatchVerts,
 					"Toggle lock-vertex mode"))
 				{
@@ -596,8 +630,10 @@ namespace ggui::toolbar
 
 		register_element("toggle_unlock_vertices_mode"s, []()
 			{
+				static bool hov_unlock_vertices;
+			
 				// CMainFrame::ToggleUnlockPatchVertMode
-				if (image_togglebutton("toggle_unlock_vertices_mode", 
+				if (image_togglebutton("toggle_unlock_vertices_mode", hov_unlock_vertices,
 					game::g_qeglobals->bUnlockPatchVerts,
 					"Toggle unlock-vertex mode"))
 				{
@@ -607,8 +643,10 @@ namespace ggui::toolbar
 
 		register_element("cycle_patch_edge_direction"s, []()
 			{
+				static bool hov_cycle_edges;
+			
 				// CMainFrame::OnCycleTerrainEdge
-				if (image_togglebutton("cycle_patch_edge_direction",
+				if (image_togglebutton("cycle_patch_edge_direction", hov_cycle_edges,
 					game::g_qeglobals->d_select_mode == 9,
 					"Toggle terrain-quad edge cycle mode"))
 				{
@@ -618,10 +656,11 @@ namespace ggui::toolbar
 
 		register_element("tolerant_weld"s, []()
 			{
+				static bool hov_tolerant_weld;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnTolerantWeld
-				if (image_togglebutton("tolerant_weld",
+				if (image_togglebutton("tolerant_weld", hov_tolerant_weld,
 					prefs->m_bTolerantWeld,
 					"Toggle tolerant weld / Draw tolerant weld lines"))
 				{
@@ -633,10 +672,11 @@ namespace ggui::toolbar
 
 		register_element("toggle_draw_surfs_portal"s, []()
 			{
+				static bool hov_drawsurfs_portal;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnToggleDrawSurfs
-				if (image_togglebutton("toggle_draw_surfs_portal",
+				if (image_togglebutton("toggle_draw_surfs_portal", hov_drawsurfs_portal,
 					prefs->draw_toggle,
 					"Toggle drawing of portal no-draw surfaces"))
 				{
@@ -646,10 +686,11 @@ namespace ggui::toolbar
 
 		register_element("dont_select_curve"s, []()
 			{
+				static bool hov_select_curve;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnDontselectcurve
-				if (image_togglebutton("dont_select_curve",
+				if (image_togglebutton("dont_select_curve", hov_select_curve,
 					!prefs->m_bSelectCurves,
 					"Disable selection of patches"))
 				{
@@ -659,10 +700,11 @@ namespace ggui::toolbar
 
 		register_element("dont_select_entities"s, []()
 			{
+				static bool hov_select_entities;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnDisableSelectionOfEntities
-				if (image_togglebutton("dont_select_entities",
+				if (image_togglebutton("dont_select_entities", hov_select_entities,
 					prefs->entities_off,
 					"Disable selection of entities"))
 				{
@@ -672,10 +714,11 @@ namespace ggui::toolbar
 
 		register_element("dont_select_sky"s, []()
 			{
+				static bool hov_dont_sel_sky;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnDisableSelectionOfSky
-				if (image_togglebutton("dont_select_sky",
+				if (image_togglebutton("dont_select_sky", hov_dont_sel_sky,
 					prefs->sky_brush_off,
 					"Disable selection of sky brushes"))
 				{
@@ -685,10 +728,11 @@ namespace ggui::toolbar
 
 		register_element("dont_select_models"s, []()
 			{
+				static bool hov_dont_sel_models;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnSelectableModels
-				if (image_togglebutton("dont_select_models",
+				if (image_togglebutton("dont_select_models", hov_dont_sel_models,
 					prefs->m_bSelectableModels,
 					"Disable selection of static models"))
 				{
@@ -1072,6 +1116,9 @@ namespace ggui::toolbar
 		
 		// *
 		// begin into the window
+
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_toolbar_bg_color->current.vector));	 _stylecolors++;
+		//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_TabUnfocusedActive)); _stylecolors++;
 
 		ImGui::Begin("toolbar##window", nullptr, 
 			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);

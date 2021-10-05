@@ -1,7 +1,9 @@
 #include "std_include.hpp"
 
 texwnd_s* g_texwnd = reinterpret_cast<texwnd_s*>(0x25D7990);
+
 ImGuiTextFilter	imgui_filter;
+int				imgui_filter_last_len = 0;
 
 void ctexwnd::on_mousebutton_down(UINT nFlags)
 {
@@ -96,7 +98,242 @@ BOOL __fastcall ctexwnd::on_paint(ctexwnd* pThis)
 // *
 // *
 
-// render to texture - texture window
+//void handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd)
+//{
+//	if (ImGui::IsItemHovered(ImGuiHoveredFlags_None))
+//	{
+//		wnd->window_hovered = false;
+//	}
+//}
+
+void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
+{
+	auto texwnd = ggui::get_rtt_texturewnd();
+	//ImGui::SetCursorScreenPos(ImVec2(cursor_pos.x, cursor_pos.y + 40.0f)); // no effect with sameline below
+
+	// right side alignment
+	static float toolbar_line1_width = 580.0f; // used as first frame estimate
+	ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line1_width + 8.0f));
+
+	// offset toolbar vertically
+	ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 8.0f);
+
+	// group all so we can get the actual toolbar width for the next frame
+	ImGui::BeginGroup();
+	{
+		//ImGui::SameLine();
+		ImGui::PushStyleCompact();
+		ImGui::TextUnformatted("Usage:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(140.0f);
+
+		if (ImGui::BeginCombo("##combo_usage", game::filter_usage_array[game::texWndGlob_usageFilter].name, ImGuiComboFlags_HeightLarge))
+		{
+			for (std::uint8_t i = 0; i < game::texWndGlob_usageCount; i++)
+			{
+				const char* name = game::filter_usage_array[i].name;
+				if (name)
+				{
+					if (ImGui::Selectable(name, game::texWndGlob_usageFilter == i))
+					{
+						game::texWndGlob_usageFilter = i;
+						game::g_nUpdateBits |= W_TEXTURE;
+						g_texwnd->nPos = 0; // scroll to top
+
+					} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+
+					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+					if (game::texWndGlob_usageFilter == i)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				else if (game::filter_usage_array[i].index == -1)
+				{
+					SEPERATORV(0.0f);
+				}
+			}
+
+			ImGui::EndCombo();
+		} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+		ImGui::PopStyleCompact();
+
+#if 0 // who needs this filter anyway
+		ImGui::SameLine();
+		ImGui::TextUnformatted("Locale:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(140.0f);
+		if (ImGui::BeginCombo("##combo_locale", game::filter_locale_array[game::texWndGlob_localeFilter].name, ImGuiComboFlags_HeightLarge))
+		{
+			for (std::uint8_t i = 0; i < game::texWndGlob_localeCount; i++)
+			{
+				const char* name = game::filter_locale_array[i].name;
+				if (name)
+				{
+					if (ImGui::Selectable(name, game::texWndGlob_localeFilter == i))
+					{
+						game::texWndGlob_localeFilter = i;
+						game::g_nUpdateBits |= W_TEXTURE;
+						g_texwnd->nPos = 0; // scroll to top
+
+					} handle_windowfocus_overlaywidget(texwnd);
+
+					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+					if (game::texWndGlob_localeFilter == i)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				else if (game::filter_locale_array[i].index == -1)
+				{
+					SEPERATORV(0.0f);
+				}
+			}
+
+			ImGui::EndCombo();
+		} handle_windowfocus_overlaywidget(texwnd);
+		ImGui::PopStyleCompact();
+#endif
+
+		// ---------
+
+		ImGui::SameLine();
+		ImGui::PushStyleCompact();
+		ImGui::TextUnformatted("Surface:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(140.0f);
+
+		if (ImGui::BeginCombo("##combo_surface", game::filter_surfacetype_array[game::texWndGlob_surfaceTypeFilter].name, ImGuiComboFlags_HeightLarge))
+		{
+			for (std::uint8_t i = 0; i < 29; i++) // hardcoded value
+			{
+				const char* name = game::filter_surfacetype_array[i].name;
+				if (name)
+				{
+					if (ImGui::Selectable(name, game::texWndGlob_surfaceTypeFilter == i))
+					{
+						game::texWndGlob_surfaceTypeFilter = i;
+						game::g_nUpdateBits |= W_TEXTURE;
+						g_texwnd->nPos = 0; // scroll to top
+
+					} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+
+					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+					if (game::texWndGlob_surfaceTypeFilter == i)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				else if (game::filter_surfacetype_array[i].index == -1)
+				{
+					SEPERATORV(0.0f);
+				}
+			}
+
+			ImGui::EndCombo();
+		} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+		ImGui::PopStyleCompact();
+
+		// ---------
+
+		ImGui::SameLine();
+		ImGui::PushStyleCompact();
+		ImGui::SetNextItemWidth(80.0f);
+		const auto prefs = game::g_PrefsDlg();
+
+		const std::string combo_zoom_preview = std::to_string(prefs->m_nTextureWindowScale) + "%";
+		if (ImGui::BeginCombo("##combo_zoom", combo_zoom_preview.c_str(), ImGuiComboFlags_HeightLarge))
+		{
+			if (ImGui::Selectable("10%", prefs->m_nTextureWindowScale == 10)) {
+				mainframe_thiscall(void, 0x42AFE0); // CMainFrame::OnTexturesTexturewindowscale10
+			}
+
+			if (ImGui::Selectable("25%", prefs->m_nTextureWindowScale == 25)) {
+				mainframe_thiscall(void, 0x42B040); // CMainFrame::OnTexturesTexturewindowscale25
+			}
+
+			if (ImGui::Selectable("50%", prefs->m_nTextureWindowScale == 50)) {
+				mainframe_thiscall(void, 0x42B060); // CMainFrame::OnTexturesTexturewindowscale50
+			}
+
+			if (ImGui::Selectable("100%", prefs->m_nTextureWindowScale == 100)) {
+				mainframe_thiscall(void, 0x42B000); // CMainFrame::OnTexturesTexturewindowscale100
+			}
+
+			if (ImGui::Selectable("200%", prefs->m_nTextureWindowScale == 200)) {
+				mainframe_thiscall(void, 0x42B020); // CMainFrame::OnTexturesTexturewindowscale200
+			}
+
+			ImGui::EndCombo();
+		} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+		ImGui::PopStyleCompact();
+
+#if 0
+		ImGui::Text("Texwnd hovered? %d", texwnd->window_hovered);
+		ImGui::Text("nPos: %d", g_texwnd->nPos);
+		ImGui::Text("needRange: %d", g_texwnd->m_bNeedRange);
+		ImGui::Text("textureoffset: %d", g_texwnd->textureOffset);
+#endif
+
+		ImGui::EndGroup();
+	}
+	
+	toolbar_line1_width = ImGui::GetItemRectSize().x; // save width for the next frame
+
+	
+	// *
+	// line 2
+	
+	static float toolbar_line2_width = 220.0f; // used as first frame estimate
+	ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line2_width + 8.0f));
+
+	// offset toolbar vertically
+	ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 28.0f);
+
+	ImGui::BeginGroup();
+	{
+		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
+
+		ImGui::PushStyleCompact();
+		imgui_filter.Draw("##texture_filter", 230.0f);
+
+		if (!imgui_filter.IsActive())
+		{
+			ImGui::SetCursorScreenPos(ImVec2(pre_filter_pos.x + 12.0f, pre_filter_pos.y + 2.0f));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
+			ImGui::TextUnformatted("Search ..");
+			ImGui::PopStyleColor();
+
+			g_texwnd->searchbar_filter = false;
+			g_texwnd->searchbar_buffer = "";
+			imgui_filter_last_len = 0;
+		}
+		else
+		{
+			const int curr_len = strlen(imgui_filter.InputBuf);
+			if (imgui_filter_last_len != curr_len)
+			{
+				g_texwnd->nPos = 0; // scroll to top
+			}
+
+			g_texwnd->searchbar_filter = true;
+			g_texwnd->searchbar_buffer = imgui_filter.InputBuf;
+
+			// buffer length is located -12bytes from searchbar_buffer
+			*(int*)(g_texwnd->searchbar_buffer - 3 * sizeof(int)) = curr_len;
+			imgui_filter_last_len = curr_len;
+		}
+
+		ImGui::EndGroup();
+	} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+
+	toolbar_line2_width = ImGui::GetItemRectSize().x; // save width for the next frame
+	ImGui::PopStyleCompact();
+}
+
+
+// gui::render_loop()
+// render to texture - imgui texture window
 void ctexwnd::rtt_texture_window()
 {
 	int p_styles = 0;
@@ -141,39 +378,26 @@ void ctexwnd::rtt_texture_window()
 	
 	if (texwnd->scene_texture)
 	{
+		bool tabbar_visible = true;
+		const auto wnd = ImGui::GetCurrentWindow();
+
+		if (ImGui::IsWindowDocked() && wnd)
+		{
+			if (wnd->DockNode && wnd->DockNode->IsHiddenTabBar())
+			{
+				tabbar_visible = false;
+			}
+		}
+
+		const float frame_height = tabbar_visible ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
+		
 		const auto IO = ImGui::GetIO();
-		texwnd->scene_size_imgui = ImGui::GetWindowSize() - ImVec2(0.0f, ImGui::GetFrameHeightWithSpacing());
+		texwnd->scene_size_imgui = ImGui::GetWindowSize() - ImVec2(0.0f, frame_height);
 
-		//ImGui::BeginChild("#texture_toolbar", ImVec2(0, 36.0f));
-		//{
-			const auto pre_filter_pos = ImGui::GetCursorScreenPos();
-			imgui_filter.Draw("#texture_filter", ImGui::GetContentRegionAvailWidth());
-			const auto post_filter_pos = ImGui::GetCursorScreenPos();
-
-			if (!imgui_filter.IsActive())
-			{
-				ImGui::SetCursorScreenPos(ImVec2(pre_filter_pos.x + (ImGui::GetContentRegionAvailWidth() * 0.48f), pre_filter_pos.y + 4.0f));
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
-				ImGui::TextUnformatted("Filter");
-				ImGui::PopStyleColor();
-				ImGui::SetCursorScreenPos(post_filter_pos);
-
-				g_texwnd->searchbar_filter = false;
-				g_texwnd->searchbar_buffer = "";
-			}
-			else
-			{
-				g_texwnd->searchbar_filter = true;
-				g_texwnd->searchbar_buffer = imgui_filter.InputBuf;
-				int buff_len = strlen(imgui_filter.InputBuf);
-				*(int*)(g_texwnd->searchbar_buffer - 3 * sizeof(int)) = buff_len;
-			}
-			
-			//ImGui::EndChild();
-		//}
+		const auto pre_child_pos = ImGui::GetCursorScreenPos();
 
 		// hack to disable left mouse window movement
-		ImGui::BeginChild("scene_child", ImVec2(texture_size.x, texture_size.y + ImGui::GetFrameHeightWithSpacing()), false, ImGuiWindowFlags_NoMove);
+		ImGui::BeginChild("scene_child", ImVec2(texture_size.x, texture_size.y + frame_height), false, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		{
 			const auto screenpos = ImGui::GetCursorScreenPos();
 			SetWindowPos(cmainframe::activewnd->m_pTexWnd->GetWindow(), HWND_BOTTOM, (int)screenpos.x, (int)screenpos.y, (int)texwnd->scene_size_imgui.x, (int)texwnd->scene_size_imgui.y, SWP_NOZORDER);
@@ -191,6 +415,13 @@ void ctexwnd::rtt_texture_window()
 			texwnd->cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
 			texwnd->cursor_pos_pt = CPoint((LONG)texwnd->cursor_pos.x, (LONG)texwnd->cursor_pos.y);
 
+			// overlay toolbar
+			rtt_texture_window_toolbar(pre_child_pos);
+
+			// reset cursorpos and fix tabbar triangle
+			ImGui::SetCursorScreenPos(pre_child_pos);
+			ggui::FixDockingTabbarTriangle(wnd, texwnd);
+			
 			ImGui::EndChild();
 		}
 	}

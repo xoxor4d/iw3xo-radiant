@@ -3,8 +3,19 @@
 namespace dvars
 {
 	extern game::dvar_s* gui_menubar_bg_color;
-	extern game::dvar_s* gui_dockedwindow_bg_color;
+	extern game::dvar_s* gui_window_child_bg_color;
 	extern game::dvar_s* gui_window_bg_color;
+	extern game::dvar_s* gui_toolbar_bg_color;
+
+	extern game::dvar_s* gui_toolbar_button_color;
+	extern game::dvar_s* gui_toolbar_button_hovered_color;
+	extern game::dvar_s* gui_toolbar_button_active_color;
+
+	extern game::dvar_s* gui_rtt_padding_enabled;
+	extern game::dvar_s* gui_rtt_padding_size;
+	extern game::dvar_s* gui_rtt_padding_color;
+	
+	
 	extern game::dvar_s* gui_floating_toolbar;
 	extern game::dvar_s* gui_resize_dockspace;
 	extern game::dvar_s* gui_mainframe_background;

@@ -45,5 +45,39 @@ namespace ggui
 	{
 		return ggui::state.czwnd.context_initialized;
 	}
+
+	// handles "window_hovered" for widgets drawn over rtt windows
+	// needs to be called after every widget
+	bool rtt_handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd)
+	{
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_None))
+		{
+			wnd->window_hovered = false;
+			return true;
+		}
+
+		return false;
+	}
+
+	// redraw tabbar triangle -> blocking mouse input for that area so one can actually use the triangle to unhide the tabbar
+	void FixDockingTabbarTriangle(ImGuiWindow* wnd, ggui::render_to_texture_window_s* rtt)
+	{
+		if (wnd->DockIsActive && wnd->DockNode->IsHiddenTabBar() && !wnd->DockNode->IsNoTabBar())
+		{
+			const float unhide_sz_draw = ImFloor(ImGui::GetFontSize() * 0.70f);
+			const float unhide_sz_hit = ImFloor(ImGui::GetFontSize() * 0.55f);
+			const ImVec2 p = wnd->DockNode->Pos;
+
+			ImGui::InvisibleButton("##unhide_hack", ImVec2(unhide_sz_hit, unhide_sz_hit));
+
+			const bool hovered = ggui::rtt_handle_windowfocus_overlaywidget(rtt);
+			const auto col = ImGui::GetColorU32(hovered ? ImGuiCol_ButtonActive : ImGuiCol_Button);
+
+			ImGui::GetForegroundDrawList()->AddTriangleFilled(p, p + ImVec2(unhide_sz_draw, 0.0f), p + ImVec2(0.0f, unhide_sz_draw), col);
+
+			//ImGui::Indent(8.0f);
+			//ImGui::Text("Hovered Triangle? %d", hovered);
+		}
+	}
 	
 }

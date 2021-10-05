@@ -73,6 +73,9 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		{
 			texwnd->should_set_focus = true;
 			ctexwnd::on_mousebutton_down(nFlags);
+
+			// handle IO because we have an overlay toolbar within the texture window
+			ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
 			return;
 		}
 
@@ -125,6 +128,9 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 				 texwnd->window_hovered)
 		{
 			ctexwnd::on_mousebutton_up(nFlags);
+
+			// handle IO because we have an overlay toolbar within the texture window
+			ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
 			return;
 		}
 		
@@ -188,6 +194,9 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		{
 			texwnd->should_set_focus = true;
 			ctexwnd::on_mousebutton_down(nFlags);
+
+			// fake left click to unfocus inputtext widgets
+			ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
 			return;
 		}
 		
@@ -259,6 +268,9 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 				 texwnd->window_hovered)
 		{
 			ctexwnd::on_mousebutton_up(nFlags);
+
+			// fake left click to unfocus inputtext widgets
+			ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
 			return;
 		}
 		
