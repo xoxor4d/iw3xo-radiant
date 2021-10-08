@@ -38,21 +38,6 @@ namespace utils
 			std::vector<container> signatures;
 		};
 
-		class interceptor
-		{
-		public:
-			static void install(void* place, void(*stub)());
-			static void install(void** place, void(*stub)());
-
-		private:
-			static std::map<void*, void*> i_return_;
-			static std::map<void*, void(*)()> i_callbacks_;
-
-			static void interception_stub();
-			static void run_callback(void* place);
-			static void* pop_return(void* place);
-		};
-
 		hook() : initialized(false), installed(false), place(nullptr), stub(nullptr), original(nullptr), useJump(false), protection(0) { ZeroMemory(this->buffer, sizeof(this->buffer)); }
 
 		hook(void* place, void* stub, bool useJump = true) : hook() { this->initialize(place, stub, useJump); }

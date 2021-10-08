@@ -292,9 +292,17 @@ void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 
 	ImGui::BeginGroup();
 	{
-		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
-
 		ImGui::PushStyleCompact();
+
+		// TODO! :: scrollbar
+		const int scroll_percent = (int)((float)(g_texwnd->nPos) / (float)(g_texwnd->nPosMax - g_texwnd->m_nHeight) * 100);
+		if(scroll_percent == 100 || g_texwnd->nPos < g_texwnd->nPosMax - g_texwnd->m_nHeight)
+		{
+			ImGui::Text("%d/100%%", scroll_percent);
+			ImGui::SameLine();
+		}
+		
+		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
 		imgui_filter.Draw("##texture_filter", 230.0f);
 
 		if (!imgui_filter.IsActive())

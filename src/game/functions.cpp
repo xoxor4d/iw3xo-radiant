@@ -47,6 +47,7 @@ namespace game
 	bool&	g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
 	int&	g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
 	
+	//game::eclass_t*		g_eclass = reinterpret_cast<game::eclass_t*>(0x25D5B20);
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
 
@@ -63,6 +64,34 @@ namespace game
 	game::GfxCmdBufSourceState* gfx_cmd_buf_source_state = reinterpret_cast<game::GfxCmdBufSourceState*>(0x174D760);
 	game::r_global_permanent_t* rgp = reinterpret_cast<game::r_global_permanent_t*>(0x136C700);
 	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
+
+	HWND* entitywnd_hwnds = reinterpret_cast<HWND*>(0x240A118);
+
+	game::selbrush_t* g_selected_brushes()
+	{
+		const auto brush = reinterpret_cast<game::selbrush_t*>(*game::currSelectedBrushes);
+		return brush;
+	}
+
+	game::selbrush_t* g_selected_brushes_next()
+	{
+		const auto brush = reinterpret_cast<game::selbrush_t*>(*(DWORD*)0x23F1868);
+		return brush;
+	}
+	
+	game::entity_s_def* g_edit_entity()
+	{
+		const auto ent = reinterpret_cast<game::entity_s_def*>(*(DWORD*)0x240A108);
+		return ent;
+	}
+
+	int& multiple_edit_entities = *reinterpret_cast<int*>(0x240A10C);
+	
+	game::eclass_t* g_eclass()
+	{
+		const auto eclass = reinterpret_cast<game::eclass_t*>(*(DWORD*)0x25D5B20);
+		return eclass;
+	}
 	
 	CPrefsDlg* g_PrefsDlg()
 	{
@@ -92,6 +121,61 @@ namespace game
 		const auto redo = reinterpret_cast<game::undo_s*>(*(DWORD*)0x23F15CC);
 		return redo;
 	}
+
+	void Undo_GeneralStart(const char* operation /*eax*/)
+	{
+		const static uint32_t func_addr = 0x45E3F0;
+		__asm
+		{
+			mov		eax, operation;
+			call	func_addr;
+		}
+	}
+
+	void Undo_AddEntity_W(game::entity_s* ent /*eax*/)
+	{
+		const static uint32_t func_addr = 0x45E990;
+		__asm
+		{
+			mov		eax, ent;
+			call	func_addr;
+		}
+	}
+
+	void DeleteKey(game::epair_t* epair /*eax*/, const char* key /*ebx*/)
+	{
+		const static uint32_t func_addr = 0x483720;
+		__asm
+		{
+			mov		ebx, key;
+			mov		eax, epair;
+			call	func_addr;
+		}
+	}
+
+	void Checkkey_Model(entity_s* ent /*esi*/, const char* key)
+	{
+		const static uint32_t func_addr = 0x482F70;
+		__asm
+		{
+			push	key;
+			mov		esi, ent;
+			call	func_addr;
+			add     esp, 4;
+		}
+	}
+
+	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/)
+	{
+		const static uint32_t func_addr = 0x483210;
+		__asm
+		{
+			mov		ebx, key;
+			mov		eax, ent;
+			call	func_addr;
+		}
+	}
+	
 
 	int* dvarCount = reinterpret_cast<int*>(0x242394C);
 	game::dvar_s* dvarPool = reinterpret_cast<game::dvar_s*>(0x2427DA4); // dvarpool + 1 dvar size

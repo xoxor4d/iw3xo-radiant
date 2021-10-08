@@ -89,19 +89,6 @@ namespace ggui
 		bool one_time_init;
 	};
 	
-	struct imgui_context_layer
-	{
-		bool context_initialized;
-		ImGuiContext* context;
-		game::GfxWindowTarget* dx_window;
-		imgui_context_menu m_toolbar;
-		imgui_context_menu m_toolbar_edit;
-		imgui_context_menu m_colors;
-		imgui_context_menu m_cmdbinds;
-		imgui_context_menu m_cmdbinds_helper;
-		imgui_context_menu m_demo;
-	};
-
 	struct imgui_context_cz
 	{
 		bool context_initialized;
@@ -114,6 +101,7 @@ namespace ggui
 		imgui_context_menu m_cmdbinds_helper;
 		imgui_context_menu m_console;
 		imgui_context_menu m_filter;
+		imgui_context_menu m_entity;
 		imgui_context_menu m_demo;
 		render_to_texture_window_s rtt_camerawnd;
 		render_to_texture_window_s rtt_gridwnd;
@@ -122,7 +110,6 @@ namespace ggui
 
 	struct imgui_state_t
 	{
-		imgui_context_layer clayeredwnd;
 		imgui_context_cz czwnd;
 	};
 
@@ -135,36 +122,6 @@ namespace ggui
 		int modifier_shift;
 		std::string modifier_key;
 	};
-
-	/*struct rtt_camera_window_s
-	{
-		IDirect3DTexture9* scene_texture;
-		ImVec2 scene_size_imgui;
-		ImVec2 cursor_pos;
-		CPoint cursor_pos_pt;
-		bool window_hovered;
-		bool should_set_focus;
-	};
-
-	struct rtt_grid_window_s
-	{
-		IDirect3DTexture9* scene_texture;
-		ImVec2 scene_size_imgui;
-		ImVec2 cursor_pos;
-		CPoint cursor_pos_pt;
-		bool window_hovered;
-		bool should_set_focus;
-	};
-
-	struct rtt_tex_window_s
-	{
-		IDirect3DTexture9* scene_texture;
-		ImVec2 scene_size_imgui;
-		ImVec2 cursor_pos;
-		CPoint cursor_pos_pt;
-		bool window_hovered;
-		bool should_set_focus;
-	};*/
 
 	// *
 	// | -------------------- Variables ------------------------
@@ -185,22 +142,13 @@ namespace ggui
 	extern ImGuiID		toolbar_dock_top;
 	extern ImGuiID		toolbar_dock_left;
 
-	//extern	console* _console;
-
 	extern std::vector<commandbinds> cmd_hotkeys;
-
-	//extern render_to_texture_window_s rtt_camerawnd;
-	//extern render_to_texture_window_s rtt_gridwnd;
-	//extern render_to_texture_window_s rtt_texwnd;
-	
 	
 	// *
 	// | -------------------- Functions ------------------------
 	// *
 
 	extern ImVec2 get_initial_window_pos();
-
-	extern bool layered_context_ready();
 	extern bool cz_context_ready();
 
 	extern bool rtt_handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd);

@@ -151,7 +151,7 @@ namespace ggui::filter
 			ImGui::SetCursorScreenPos(post_filter_pos);
 		}
 		
-		static ImGuiTableFlags flags = ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ContextMenuInBody;
+		static ImGuiTableFlags flags = ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_BordersOuter;
 	
 		const float column_width = 140.0f;
 		int column_count = static_cast<int>(ImGui::GetWindowContentRegionMax().x / column_width);

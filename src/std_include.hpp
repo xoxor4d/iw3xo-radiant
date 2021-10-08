@@ -14,11 +14,7 @@
 #define GGUI_ANY_MENUS_OPEN Game::Globals::gui.any_menus_open
 #define GGUI_MENU_COUNT 2
 
-#define IMGUI_BEGIN_LAYERED if(ggui::layered_context_ready()) ImGui::SetCurrentContext(ggui::state.clayeredwnd.context)
 #define IMGUI_BEGIN_CZWND if(ggui::cz_context_ready()) ImGui::SetCurrentContext(ggui::state.czwnd.context)
-
-// use layeredmaterials window as main imgui background (not really implemented)
-#define USE_LAYERED_AS_BACKGROUND false
 
 #include <windows.h>
 #include <stdio.h>
@@ -102,6 +98,7 @@
 #include "ggui/toolbar.hpp"
 #include "ggui/console.hpp"
 #include "ggui/filter.hpp"
+#include "ggui/entity.hpp"
 
 #include "common/mainframe.hpp"
 #include "common/camwnd.hpp"

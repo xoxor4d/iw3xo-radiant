@@ -65,8 +65,9 @@ namespace game
 	extern bool&	g_bRotateMode;
 	extern bool&	g_bScaleMode;
 	extern int&		g_nLastLen;
-	
-	extern game::SCommandInfo* g_Commands;
+
+	//extern game::eclass_t*		g_eclass;
+	extern game::SCommandInfo*	g_Commands;
 	extern int		g_nCommandCount;
 	
 	extern game::filter_material_t* filter_surfacetype_array;
@@ -81,17 +82,31 @@ namespace game
 	extern game::GfxCmdBufSourceState* gfx_cmd_buf_source_state;
 	extern game::r_global_permanent_t* rgp;
 	extern game::DxGlobals* dx;
+
+	extern game::selbrush_t* g_selected_brushes();
+	extern game::selbrush_t* g_selected_brushes_next();
+	extern game::entity_s_def* g_edit_entity();
+	extern int& multiple_edit_entities;
+	extern HWND* entitywnd_hwnds;
 	
+	extern game::eclass_t* g_eclass();
 	extern CPrefsDlg* g_PrefsDlg();
 	extern void CPrefsDlg_SavePrefs();
+
 	extern game::undo_s* g_lastundo();
 	extern game::undo_s* g_lastredo();
+	static utils::function<void()> Undo_ClearRedo = 0x45DF20;
+	void Undo_GeneralStart(const char* operation /*eax*/);
+	void Undo_AddEntity_W(game::entity_s* ent /*eax*/);
+	static utils::function<void()> Undo_End = 0x45EA20;
 
-	//static DWORD* g_lastundo_ptr = (DWORD*)(0x23F162C);
-	//static DWORD* g_lastredo_ptr = (DWORD*)(0x23F15CC);
+	void DeleteKey(game::epair_t * epair /*eax*/, const char* key /*ebx*/);
+	void Checkkey_Model(entity_s* ent /*esi*/, const char* key);
+	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/);
 	
+	static utils::function<void(game::entity_s* ent, const char* key, const char* value)> SetKeyValue = 0x483690;
+	static utils::function<void()> SetKeyValuePairs = 0x496CF0;
 	
-
 	extern int* dvarCount;
 	extern game::dvar_s* dvarPool;
 	extern game::dvar_s* dvarPool_FirstEmpty;
@@ -168,7 +183,6 @@ namespace game
 	game::GfxImage* Image_RegisterHandle(const char* name);
 
 	game::GfxCmdHeader* R_RenderBufferCmdCheck(int bytes /*ebx*/, int render_cmd /*edi*/);
-
 	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
 	
 }

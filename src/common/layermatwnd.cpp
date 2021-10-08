@@ -1,6 +1,5 @@
 #include "std_include.hpp"
 
-IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 layermatwnd_s* layermatwnd_struct = reinterpret_cast<layermatwnd_s*>(0x181F500);
 
 void clayermatwnd::on_paint()
@@ -61,45 +60,6 @@ LRESULT __stdcall clayermatwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, L
 	{
 		clayermatwnd::on_paint();
 		return 0;
-	}
-
-	if (ggui::layered_context_ready())
-	{
-		IMGUI_BEGIN_LAYERED;
-
-		switch(Msg)
-		{
-		case WM_LBUTTONDOWN:
-			ImGui::HandleKeyIO(layermatwnd_struct->m_hWnd, WM_LBUTTONDOWN);
-			break;
-
-		case WM_LBUTTONUP:
-			ImGui::HandleKeyIO(layermatwnd_struct->m_hWnd, WM_LBUTTONUP);
-			break;
-
-			
-		case WM_RBUTTONDOWN:
-			ImGui::HandleKeyIO(layermatwnd_struct->m_hWnd, WM_RBUTTONDOWN);
-			break;
-			
-		case WM_RBUTTONUP:
-			ImGui::HandleKeyIO(layermatwnd_struct->m_hWnd, WM_RBUTTONUP);
-			break;
-
-
-		case WM_MBUTTONDOWN:
-			ImGui::HandleKeyIO(layermatwnd_struct->m_hWnd, WM_MBUTTONDOWN);
-			break;
-			
-		case WM_MBUTTONUP:
-			ImGui::HandleKeyIO(layermatwnd_struct->m_hWnd, WM_MBUTTONUP);
-			break;
-		}
-
-		if (ImGui::GetIO().WantCaptureMouse)
-		{
-			return 0;
-		}
 	}
 
 	return DefWindowProcA(hWnd, Msg, wParam, lParam);

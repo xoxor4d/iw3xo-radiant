@@ -22,10 +22,6 @@ namespace ggui
 	ImGuiID		toolbar_dock_left;
 
 	std::vector<commandbinds> cmd_hotkeys;
-
-	//render_to_texture_window_s rtt_camerawnd = render_to_texture_window_s();
-	//render_to_texture_window_s rtt_gridwnd = render_to_texture_window_s();
-	//render_to_texture_window_s rtt_texwnd = render_to_texture_window_s();
 	
 	// *
 	// | -------------------- Functions ------------------------
@@ -34,11 +30,6 @@ namespace ggui
 	ImVec2 get_initial_window_pos()
 	{
 		return ImVec2(5.0f, ggui::toolbar_pos.y + ggui::toolbar_size.y + 5.0f);
-	}
-
-	bool layered_context_ready()
-	{
-		return ggui::state.clayeredwnd.context_initialized;
 	}
 
 	bool cz_context_ready()

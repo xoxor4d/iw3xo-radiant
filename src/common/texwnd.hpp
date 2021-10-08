@@ -24,6 +24,7 @@ struct texwnd_s
 	bool unk_bool; //0x10039 
 	char z_pad_0x1003A[0x2]; //0x1003A
 	int nPos; //0x1003C 
+	int nPosMax; // (nPos + height < nPos to scroll)
 };
 
 extern texwnd_s* g_texwnd;

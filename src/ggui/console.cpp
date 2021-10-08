@@ -178,9 +178,9 @@ namespace ggui
 			
 		m_scroll_to_bottom = false;
 
-		
 		ImGui::EndChild();
-		ImGui::Separator();
+
+		SPACING(0.0f, 0.1f);
 
 		// Command-line
 		const ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackAlways;
@@ -210,12 +210,19 @@ namespace ggui
 			m_input_reclaim_focus = false;
 			ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
 		}
-
-		ImGui::SameLine(0, 20.0f);
-		ImGui::TextUnformatted("Filter");
-		ImGui::SameLine();
-		m_filter.Draw("#console_filter", ImGui::GetContentRegionAvailWidth());
 		
+		ImGui::SameLine(0, 6.0f);
+		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
+		m_filter.Draw("#console_filter", ImGui::GetContentRegionAvailWidth());
+
+		if (!m_filter.IsActive())
+		{
+			ImGui::SetCursorScreenPos(ImVec2(pre_filter_pos.x + 12.0f, pre_filter_pos.y + 4.0f));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
+			ImGui::TextUnformatted("Filter ..");
+			ImGui::PopStyleColor();
+		}
+
 		if (ImGui::IsWindowFocused() && m_autocomplete_candidates.Size != 0 && ggui::_console->m_old_input_but_len > 0)
 		{
 			ImGui::SetNextWindowPos(m_post_inputbox_cursor);

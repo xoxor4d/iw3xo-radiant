@@ -535,6 +535,10 @@ namespace components
 			// filter menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_filter,
 				ggui::filter::menu(ggui::state.czwnd.m_filter), nullptr);
+
+			// entity menu
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_entity,
+				ggui::entity::menu(ggui::state.czwnd.m_entity), nullptr);
 			
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
@@ -589,6 +593,20 @@ namespace components
 		memset(&ggui::state, 0, sizeof(ggui::imgui_state_t));
 	}
 
+#define SAVED_STATE_INIT(menu, dvar) \
+	if (dvar) ggui::state.czwnd.menu.menustate = dvar->current.enabled
+
+#define SAVED_STATE_INIT_RTT(menu, dvar) \
+	if (dvar) menu->menustate = dvar->current.enabled
+
+#define SAVED_STATE_UPDATE(menu, dvar) \
+	if (dvar && ggui::state.czwnd.menu.menustate != dvar->current.enabled) \
+		dvars::set_bool(dvar, ggui::state.czwnd.menu.menustate)
+
+#define SAVED_STATE_UPDATE_RTT(menu, dvar) \
+	if (dvar && menu->menustate != dvar->current.enabled) \
+		dvars::set_bool(dvar, menu->menustate)
+	
 	// *
 	// handles opened/closed states of windows via dvars
 	void gui::saved_windowstates()
@@ -596,7 +614,12 @@ namespace components
 		// startup only
 		if (!ggui::saved_states_init)
 		{
-			if (dvars::gui_saved_state_console) {
+			SAVED_STATE_INIT(m_console, dvars::gui_saved_state_console);
+			SAVED_STATE_INIT(m_filter,	dvars::gui_saved_state_filter);
+			SAVED_STATE_INIT(m_entity,	dvars::gui_saved_state_entity);
+			SAVED_STATE_INIT_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
+			
+			/*if (dvars::gui_saved_state_console) {
 				ggui::state.czwnd.m_console.menustate = dvars::gui_saved_state_console->current.enabled;
 			}
 
@@ -604,9 +627,13 @@ namespace components
 				ggui::state.czwnd.m_filter.menustate = dvars::gui_saved_state_filter->current.enabled;
 			}
 
+			if(dvars::gui_saved_state_entity) {
+				ggui::state.czwnd.m_entity.menustate = dvars::gui_saved_state_entity->current.enabled;
+			}
+			
 			if (dvars::gui_saved_state_textures) {
 				ggui::get_rtt_texturewnd()->menustate = dvars::gui_saved_state_textures->current.enabled;
-			}
+			}*/
 
 			ggui::saved_states_init = true;
 		}
@@ -614,7 +641,12 @@ namespace components
 		// *
 		// every frame
 
-		if (dvars::gui_saved_state_console
+		SAVED_STATE_UPDATE(m_console,	dvars::gui_saved_state_console);
+		SAVED_STATE_UPDATE(m_filter,	dvars::gui_saved_state_filter);
+		SAVED_STATE_UPDATE(m_entity,	dvars::gui_saved_state_entity);
+		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
+		
+		/*if (dvars::gui_saved_state_console
 			&& ggui::state.czwnd.m_console.menustate != dvars::gui_saved_state_console->current.enabled)
 		{
 			dvars::set_bool(dvars::gui_saved_state_console, ggui::state.czwnd.m_console.menustate);
@@ -626,11 +658,17 @@ namespace components
 			dvars::set_bool(dvars::gui_saved_state_filter, ggui::state.czwnd.m_filter.menustate);
 		}
 
-		if (auto texwnd = ggui::get_rtt_texturewnd();
+		if (dvars::gui_saved_state_entity
+			&& ggui::state.czwnd.m_entity.menustate != dvars::gui_saved_state_entity->current.enabled)
+		{
+			dvars::set_bool(dvars::gui_saved_state_entity, ggui::state.czwnd.m_entity.menustate);
+		}
+
+		if (const auto texwnd = ggui::get_rtt_texturewnd();
 			dvars::gui_saved_state_textures && texwnd->menustate != dvars::gui_saved_state_textures->current.enabled)
 		{
 			dvars::set_bool(dvars::gui_saved_state_textures, texwnd->menustate);
-		}
+		}*/
 	}
 
 	// *
@@ -838,6 +876,12 @@ namespace components
 			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "saved opened/closed state of filter window");
+
+		dvars::gui_saved_state_entity = dvars::register_bool(
+			/* name		*/ "gui_saved_state_entity",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved opened/closed state of entity window");
 
 		dvars::gui_saved_state_textures = dvars::register_bool(
 			/* name		*/ "gui_saved_state_textures",

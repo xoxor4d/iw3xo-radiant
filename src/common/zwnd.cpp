@@ -87,6 +87,10 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
 			return;
 		}
+
+		// fixes stuck keys
+		ImGuiIO& io = ImGui::GetIO();
+		memset(io.MouseDown, 0, sizeof(io.MouseDown));
 	}
 
 	// we dont need the original functionality

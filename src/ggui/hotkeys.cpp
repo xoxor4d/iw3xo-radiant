@@ -575,85 +575,94 @@ namespace ggui::hotkeys
 			ImGui::TableHeadersRow();
 
 			int row = 0;
-			for (commandbinds& bind : cmd_hotkeys)
+
+			ImGuiListClipper clipper;
+			clipper.Begin(cmd_hotkeys.size());
+			while (clipper.Step())
 			{
-				std::string str_dupe_bind = bind.cmd_name;
-				bool found_dupe = cmdbinds_check_dupe(bind, str_dupe_bind);
-
-				// unique widget id's for each row (we get collisions otherwise)
-				ImGui::PushID(row); row++;
-				ImGui::TableNextRow();
-
-				for (int column = 0; column < 5; column++)
+				// for (commandbinds& bind : cmd_hotkeys)
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) 
 				{
-					ImGui::PushID(column);
-					ImGui::TableNextColumn();
+					commandbinds& bind = cmd_hotkeys[i];
 
-					switch (column)
+					std::string str_dupe_bind = bind.cmd_name;
+					bool found_dupe = cmdbinds_check_dupe(bind, str_dupe_bind);
+
+					// unique widget id's for each row (we get collisions otherwise)
+					ImGui::PushID(row); row++;
+					ImGui::TableNextRow();
+
+					for (int column = 0; column < 5; column++)
 					{
-					case 0:
-						ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(bind.cmd_name.c_str()).x) * 0.5f);
-						ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
+						ImGui::PushID(column);
+						ImGui::TableNextColumn();
 
-						if (found_dupe)
+						switch (column)
 						{
-							ImGui::TextColored(ImVec4(0.9f, 0.1f, 0.1f, 1.0f), bind.cmd_name.c_str());
-							ImGui::SameLine();
-							ImGui::HelpMarker(utils::va("bind conflicts with '%s'", str_dupe_bind.c_str()));
-						}
-						else
-						{
-							ImGui::TextUnformatted(bind.cmd_name.c_str());
-						}
+						case 0:
+							ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(bind.cmd_name.c_str()).x) * 0.5f);
+							ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
 
-						break;
-					case 1:
-						ImGui::Checkbox("##2", (bool*)&bind.modifier_shift);
-						break;
-					case 2:
-						ImGui::Checkbox("##0", (bool*)&bind.modifier_alt);
-						break;
-					case 3:
-						ImGui::Checkbox("##1", (bool*)&bind.modifier_ctrl);
-						break;
-					case 4:
-						float w = ImGui::GetColumnWidth();//ImGui::CalcItemWidth();
-						ImGui::PushItemWidth(w - 6.0f);
-
-						if (ImGui::BeginCombo("##combokey", bind.modifier_key.c_str(), ImGuiComboFlags_NoArrowButton)) // The second parameter is the label previewed before opening the combo.
-						{
-							for (int n = 0; n < IM_ARRAYSIZE(radiant_keybind_array); n++)
+							if (found_dupe)
 							{
-								const bool is_selected = !_stricmp(bind.modifier_key.c_str(), radiant_keybind_array[n]); // You can store your selection however you want, outside or inside your objects
-								if (is_selected)
-								{
-									ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-								}
+								ImGui::TextColored(ImVec4(0.9f, 0.1f, 0.1f, 1.0f), bind.cmd_name.c_str());
+								ImGui::SameLine();
+								ImGui::HelpMarker(utils::va("bind conflicts with '%s'", str_dupe_bind.c_str()));
+							}
+							else
+							{
+								ImGui::TextUnformatted(bind.cmd_name.c_str());
+							}
 
-								if (ImGui::Selectable(radiant_keybind_array[n], is_selected))
+							break;
+						case 1:
+							ImGui::Checkbox("##2", (bool*)&bind.modifier_shift);
+							break;
+						case 2:
+							ImGui::Checkbox("##0", (bool*)&bind.modifier_alt);
+							break;
+						case 3:
+							ImGui::Checkbox("##1", (bool*)&bind.modifier_ctrl);
+							break;
+						case 4:
+							float w = ImGui::GetColumnWidth();//ImGui::CalcItemWidth();
+							ImGui::PushItemWidth(w - 6.0f);
+
+							if (ImGui::BeginCombo("##combokey", bind.modifier_key.c_str(), ImGuiComboFlags_NoArrowButton)) // The second parameter is the label previewed before opening the combo.
+							{
+								for (int n = 0; n < IM_ARRAYSIZE(radiant_keybind_array); n++)
 								{
-									bind.modifier_key = radiant_keybind_array[n];
+									const bool is_selected = !_stricmp(bind.modifier_key.c_str(), radiant_keybind_array[n]); // You can store your selection however you want, outside or inside your objects
 									if (is_selected)
 									{
 										ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
 									}
+
+									if (ImGui::Selectable(radiant_keybind_array[n], is_selected))
+									{
+										bind.modifier_key = radiant_keybind_array[n];
+										if (is_selected)
+										{
+											ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+										}
+									}
 								}
+								ImGui::EndCombo();
 							}
-							ImGui::EndCombo();
+
+							ImGui::PopItemWidth();
+							break;
 						}
 
-						ImGui::PopItemWidth();
-						break;
+						// column
+						ImGui::PopID();
 					}
 
-					// column
+					// row
 					ImGui::PopID();
 				}
-
-				// row
-				ImGui::PopID();
-			}
-
+			} clipper.End();
+			
 			ImGui::EndTable();
 		}
 

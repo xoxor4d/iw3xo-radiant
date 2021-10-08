@@ -7,9 +7,6 @@ namespace utils
 		return Detours::X86::DetourFunction(offset, reinterpret_cast<uintptr_t>(stub), option);
 	}
 	
-	std::map<void*, void*> hook::interceptor::i_return_;
-	std::map<void*, void(*)()> hook::interceptor::i_callbacks_;
-
 	void hook::signature::process()
 	{
 		if (this->signatures.empty()) return;
@@ -47,64 +44,6 @@ namespace utils
 	void hook::signature::add(hook::signature::container& container)
 	{
 		hook::signature::signatures.push_back(container);
-	}
-
-	void hook::interceptor::install(void* place, void(*stub)())
-	{
-		return hook::interceptor::install(reinterpret_cast<void**>(place), stub);
-	}
-
-	void hook::interceptor::install(void** place, void(*stub)())
-	{
-		hook::interceptor::i_return_[place] = *place;
-		hook::interceptor::i_callbacks_[place] = stub;
-		*place = hook::interceptor::interception_stub;
-	}
-
-	__declspec(naked) void hook::interceptor::interception_stub()
-	{
-		__asm
-		{
-			sub esp, 4h                             // Reserve space on the stack for the return address
-			pushad                                  // Store registers
-
-			lea eax, [esp + 20h]                    // Load initial stack pointer
-			push eax                                // Push it onto the stack
-
-			call hook::interceptor::run_callback     // Run the callback based on the given stack pointer
-			call hook::interceptor::pop_return       // get the initial return address according to the stack pointer
-
-			add esp, 4h                             // Clear the stack
-
-			mov [esp + 20h], eax                    // Store the return address at the reserved space
-			popad                                   // Restore the registers
-
-			retn                                    // Return (jump to our return address)
-		}
-	}
-
-	void hook::interceptor::run_callback(void* place)
-	{
-		auto i_callback = hook::interceptor::i_callbacks_.find(place);
-		if (i_callback != hook::interceptor::i_callbacks_.end())
-		{
-			i_callback->second();
-			hook::interceptor::i_callbacks_.erase(i_callback);
-		}
-	}
-
-	void* hook::interceptor::pop_return(void* _place)
-	{
-		void* retVal = nullptr;
-
-		auto i_return = hook::interceptor::i_return_.find(_place);
-		if (i_return != hook::interceptor::i_return_.end())
-		{
-			retVal = i_return->second;
-			hook::interceptor::i_return_.erase(i_return);
-		}
-
-		return retVal;
 	}
 
 	hook::~hook()

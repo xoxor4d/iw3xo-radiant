@@ -232,19 +232,24 @@ namespace game
 		float unk;
 		char pad_0x0034[4];
 		void *textureTableOrSth;
-		char *entityDesc;
-		char flagname0[32];
-		char flagname1[32];
-		char flagname2[32];
-		char flagname3[32];
-		char flagname4[32];
-		char flagname5[32];
-		char flagname6[32];
-		char flagname7[32];
-		char flagname8[32];
-		char pad_0x0160[48];
+		char *comments;
+		char flagnames[8][32];
+		char xx0_pad[32];
+		int xx1;
+		const char* default_model_name;
+		int xx3;
+		int xx4;
+		int xx5;
+		int xx6;
+		int xx7;
+		int xx8;
+		int classtype;
+		int xx10;
+		int xx11;
+		int xx12;
 		char *commands;
 	};
+	STATIC_ASSERT_OFFSET(eclass_t, commands, 0x190);
 
 	struct epair_t
 	{
@@ -328,8 +333,8 @@ namespace game
 		face_t *brush_faces;
 		char *mapLayer;
 		char pad_0x004C[16];
-	};
-
+	}; // brush_t is missing 8*4 bytes, see undo_s
+	
 	struct entity_s
 	{
 		entity_s *prev;
@@ -347,6 +352,50 @@ namespace game
 		int refCount;
 		char pad_0x008C[4];
 	};
+
+	struct brush_t_def
+	{
+		brush_t* oprev;
+		brush_t* onext;
+		entity_s* owner;
+		entity_s* ownerNext;
+		entity_s* ownerPrev;
+		brush_t* def;
+		int unk1;
+		int refCount;
+		vec3_t mins;
+		vec3_t maxs;
+	}; // brush_t is missing 8*4 bytes, see undo_s
+
+	struct entity_s_def
+	{
+		entity_s* prev;
+		entity_s* next;
+		entity_s* def;
+		brush_t_def brushes;
+		int modelInst;
+		int prefab;
+		face_t* brush_faces;
+		char* mapLayer;
+		int someCount;
+		bool bModelFailed;
+		bool patchBrush;
+		bool hiddenBrush;
+		bool terrainBrush;
+		char pPatch[4];
+		eclass_t* eclass;
+		void* modelClass;
+		vec3_t origin;
+		epair_t* epairs;
+		int version;
+		int epairEdits;
+		char pad_0x0080[8];
+		int refCount;
+		char pad_0x008C[4];
+	};
+	STATIC_ASSERT_OFFSET(entity_s_def, modelInst, 0x44);
+	STATIC_ASSERT_OFFSET(entity_s_def, epairs, 0x74);
+
 
 	struct __declspec(align(4)) BrushPt_t
 	{
@@ -1433,7 +1482,80 @@ namespace game
 		ENTITY_BOXED			= 0x1000,
 		ENTITY_SKINNED			= 0x10000,
 	};
+
+	enum E_ENTITYWND_HWNDS
+	{
+		ENTWND_LIST,
+		ENTWND_COMMENT,
+		ENTWND_CHECK1,
+		ENTWND_CHECK2,
+		ENTWND_CHECK3,
+		ENTWND_CHECK4,
+		ENTWND_CHECK5,
+		ENTWND_CHECK6,
+		ENTWND_CHECK7,
+		ENTWND_CHECK8,
+		ENTWND_CHECK_EASY,
+		ENTWND_CHECK_MEDIUM,
+		ENTWND_CHECK_HARD,
+		ENTWND_CHECK_DEATHMATCH,
+		ENTWND_PROBS_VALUEPAIR,
+		ENTWND_DIR_0,
+		ENTWND_DIR_45,
+		ENTWND_DIR_90,
+		ENTWND_DIR_135,
+		ENTWND_DIR_180,
+		ENTWND_DIR_225,
+		ENTWND_DIR_270,
+		ENTWND_DIR_315,
+		ENTWND_DIR_UP,
+		ENTWND_DIR_DOWN,
+		ENTWND_DELETE,
+		ENTWND_KEYLABEL,
+		ENTWND_KEYFIELD,
+		ENTWND_VALUELABEL,
+		ENTWND_VALUEFIELD,
+		ENTWND_ASSIGNMODEL,
+		ENTWND_TAB,
+	};
 	
+	/*
+	struct entitywnd_hwnd_list_s
+	{
+		HWND entlist_listbox;
+		HWND comment;
+		HWND entcheck_1;
+		HWND entcheck_2;
+		HWND entcheck_3;
+		HWND entcheck_4;
+		HWND entcheck_5;
+		HWND entcheck_6;
+		HWND entcheck_7;
+		HWND entcheck_8;
+		HWND autocheckbox_easy;
+		HWND autocheckbox_medium;
+		HWND autocheckbox_hard;
+		HWND autocheckbox_deathmatch;
+		HWND entprobs_valuepair;
+		HWND entdir0;
+		HWND entdir45;
+		HWND entdir90;
+		HWND entdir135;
+		HWND entdir180;
+		HWND entdir225;
+		HWND entdir270;
+		HWND entdir315;
+		HWND entdirup;
+		HWND entdirdown;
+		HWND entdelete;
+		HWND entkeylabel;
+		HWND entkeyfield;
+		HWND entvaluelabel;
+		HWND entvaluefield;
+		HWND entassignmodel;
+		HWND enttab;
+	};*/
+
 	enum WindowMessages : UINT
 	{
 		_WM_CREATE = 0x1,
