@@ -278,6 +278,10 @@ namespace ggui::menubar
 					components::gui::toggle(context.m_entity, 0, true);
 				}
 
+				if (ImGui::MenuItem("Demo")) {
+					components::gui::toggle(context.m_demo, 0, true);
+				}
+
 				if (ImGui::MenuItem("Preferences ...", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
 					mainframe_thiscall(void, 0x426950); //cmainframe::OnPrefs
 				}

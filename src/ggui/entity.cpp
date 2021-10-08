@@ -37,7 +37,7 @@ namespace ggui::entity
 		}
 	}
 
-	void Brush_Move(const float* delta, game::brush_t* def, bool snap)
+	void Brush_Move(const float* delta, game::brush_t* def, int snap)
 	{
 		const static uint32_t func_addr = 0x47BA40;
 		__asm
