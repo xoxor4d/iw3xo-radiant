@@ -1,7 +1,7 @@
 [submodule "deps/imgui"]
 	path = deps/imgui
 	url = https://github.com/xoxor4d/imgui.git
-	branch = docking-old
+	branch = docking-shift
 [submodule "deps/fifo_map"]
 	path = deps/fifo_map
 	url = https://github.com/nlohmann/fifo_map.git
