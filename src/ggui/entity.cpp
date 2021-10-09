@@ -555,6 +555,10 @@ namespace ggui::entity
 	{
 		char vec3_str_buf[64] = {};
 		bool dirty = false;
+
+		if (game::multiple_edit_entities) {
+			ImGui::BeginDisabled(true);
+		}
 		
 		ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
@@ -601,9 +605,14 @@ namespace ggui::entity
 			dirty = true;
 		}
 		ImGui::PopItemWidth();
-
 		ImGui::PopStyleVar();
 
+		if (game::multiple_edit_entities) 
+		{
+			ImGui::EndDisabled();
+			return;
+		}
+		
 		if(dirty)
 		{
 			if (sprintf_s(vec3_str_buf, "%.3f %.3f %.3f", vec3[0], vec3[1], vec3[2])) {
