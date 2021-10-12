@@ -53,7 +53,14 @@ namespace ggui
 
 	void console::addline_no_format(const char* text)
 	{
-		m_items.push_back(Strdup(text));
+		// check for multiline prints (the current imgui clipper only works with widgets of the same height, so 1 line in this case)
+		auto lines = utils::explode(text, '\n');
+		for(auto& line : lines)
+		{
+			m_items.push_back(Strdup(line.c_str()));
+		}
+		
+		//m_items.push_back(Strdup(text));
 	}
 	
 	void console::addline(const char* fmt, ...) IM_FMTARGS(2)
@@ -65,11 +72,18 @@ namespace ggui
 		vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
 		buf[IM_ARRAYSIZE(buf) - 1] = 0;
 		va_end(args);
+
+		// check for multiline prints (the current imgui clipper only works with widgets of the same height, so 1 line in this case)
+		auto lines = utils::explode(buf, '\n');
+		for (auto& line : lines)
+		{
+			m_items.push_back(Strdup(line.c_str()));
+		}
 		
-		m_items.push_back(Strdup(buf));
+		//m_items.push_back(Strdup(buf));
 	}
 
-	void console::addtext_with_color(const char* text)
+	void console::draw_text_with_color(const char* text)
 	{
 		ImVec4 color;
 		bool has_color = false;
@@ -149,7 +163,7 @@ namespace ggui
 					continue;
 				}
 
-				addtext_with_color(item);
+				draw_text_with_color(item);
 			}
 		}
 		else
@@ -160,7 +174,7 @@ namespace ggui
 			while (clipper.Step())
 			{
 				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
-					addtext_with_color(m_items[i]);
+					draw_text_with_color(m_items[i]);
 				}
 			}
 			clipper.End();
@@ -517,6 +531,14 @@ namespace ggui
 					}
 				}
 
+				for(auto& cmd : components::command::cmd_names_autocomplete)
+				{
+					if(utils::starts_with(cmd, input))
+					{
+						m_autocomplete_candidates.push_back(cmd.c_str());
+					}
+				}
+
 				if(m_autocomplete_candidates.Size == 1 && m_should_search_candidates)
 				{
 					if (const auto dvar = game::Dvar_FindVar(m_autocomplete_candidates[0]);
@@ -651,7 +673,7 @@ namespace ggui
 		utils::hook::nop(0x420A54, 10);
 		utils::hook::nop(0x40A9E0, 10);
 		utils::hook::set(0x25D5A54, game::printf_to_console_internal); // redirect internal radiant console prints
-		//utils::hook::detour(0x499E90, game::printf_to_console, HK_JUMP); // sys_printf
+		utils::hook::detour(0x499E90, game::printf_to_console, HK_JUMP); // sys_printf
 		utils::hook::detour(0x40B5D0, game::com_printf_to_console, HK_JUMP); // com_printf
 		utils::hook::detour(0x5BE383, game::printf_to_console, HK_JUMP); // printf
 
@@ -664,5 +686,10 @@ namespace ggui
 		utils::hook::detour(0x423E02, (void*)0x423EBC, HK_JUMP);
 		utils::hook::detour(0x496B5F, (void*)0x496C68, HK_JUMP);
 		utils::hook::detour(0x498457, (void*)0x498ACA, HK_JUMP);
+
+		components::command::register_command("console_test_multiline_print"s, [](auto)
+			{
+				game::printf_to_console("I'm\na multiline\nprint ...\n\nDo I work?");
+			});
 	}
 };

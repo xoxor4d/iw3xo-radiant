@@ -124,7 +124,7 @@ void cxywnd::rtt_grid_window()
 			const auto pre_image_cursor = ImGui::GetCursorPos();
 
 			ImGui::Image(gridwnd->scene_texture, cxy_size);
-			gridwnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_None);
+			gridwnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
 			// pop ItemSpacing
 			ImGui::PopStyleVar(); p_styles--;

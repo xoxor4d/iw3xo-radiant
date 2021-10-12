@@ -83,6 +83,7 @@ namespace game
 	extern game::r_global_permanent_t* rgp;
 	extern game::DxGlobals* dx;
 
+	extern game::entity_s* g_world_entity();
 	extern game::selbrush_t* g_selected_brushes();
 	extern game::selbrush_t* g_selected_brushes_next();
 	extern game::entity_s_def* g_edit_entity();
@@ -100,12 +101,17 @@ namespace game
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/);
 	static utils::function<void()> Undo_End = 0x45EA20;
 
-	void DeleteKey(game::epair_t * epair /*eax*/, const char* key /*ebx*/);
+	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/);
 	void Checkkey_Model(entity_s* ent /*esi*/, const char* key);
 	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/);
+
+	void SetSpawnFlags(int flag);
+	void UpdateSel(int wParam, game::eclass_t* e_class);
+	void Brush_Move(const float* delta, game::brush_t* def, int snap);
 	
 	static utils::function<void(game::entity_s* ent, const char* key, const char* value)> SetKeyValue = 0x483690;
 	static utils::function<void()> SetKeyValuePairs = 0x496CF0;
+	static utils::function<void()> CreateEntity = 0x497300;
 	
 	extern int* dvarCount;
 	extern game::dvar_s* dvarPool;
@@ -121,6 +127,8 @@ namespace game
 
 	// -----------------------------------------------------------
 
+	typedef void(__cdecl* cdecl_no_args_t)();
+	
 	typedef void(*Com_Error_t)(const char *error, ...);
 		extern Com_Error_t Com_Error;
 

@@ -6,7 +6,9 @@ namespace dvars
 	game::dvar_s* gui_window_child_bg_color = nullptr;
 	game::dvar_s* gui_window_bg_color = nullptr;
 	game::dvar_s* gui_toolbar_bg_color = nullptr;
-
+	game::dvar_s* gui_border_color = nullptr;
+	game::dvar_s* gui_dockingpreview_color = nullptr;
+	
 	game::dvar_s* gui_toolbar_button_color = nullptr;
 	game::dvar_s* gui_toolbar_button_hovered_color = nullptr;
 	game::dvar_s* gui_toolbar_button_active_color = nullptr;

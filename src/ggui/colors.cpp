@@ -63,7 +63,9 @@ namespace ggui::colors
 		ImGui::ColorEdit4("Gui Toolbar Bg##2", dvars::gui_toolbar_bg_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Bg##3", dvars::gui_window_bg_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Child Bg##4", dvars::gui_window_child_bg_color->current.vector, ImGuiColorEditFlags_Float);
-
+		ImGui::ColorEdit4("Gui Border##5", dvars::gui_border_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Docking Preview##6", dvars::gui_dockingpreview_color->current.vector, ImGuiColorEditFlags_Float);
+		
 		ImGui::ColorEdit4("Gui Toolbar Button", dvars::gui_toolbar_button_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Toolbar Button Hovered", dvars::gui_toolbar_button_hovered_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Toolbar Button Active", dvars::gui_toolbar_button_active_color->current.vector, ImGuiColorEditFlags_Float);

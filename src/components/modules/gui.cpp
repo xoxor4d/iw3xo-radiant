@@ -490,6 +490,9 @@ namespace components
 			style.FrameBorderSize = 0.0f;
 			style.Colors[ImGuiCol_WindowBg] = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector);
 			style.Colors[ImGuiCol_ChildBg] = ImGui::ToImVec4(dvars::gui_window_child_bg_color->current.vector);
+			style.Colors[ImGuiCol_Border] = ImGui::ToImVec4(dvars::gui_border_color->current.vector);
+			style.Colors[ImGuiCol_DockingPreview] = ImGui::ToImVec4(dvars::gui_dockingpreview_color->current.vector);
+			
 			style.WindowMenuButtonPosition = 1;
 			//style.TabBorderSize = 0.0f;
 
@@ -765,6 +768,31 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "backgroundcolor of gui child windows");
 
+		dvars::gui_border_color = dvars::register_vec4(
+			/* name		*/ "gui_border_color",
+			/* x		*/ 1.0f,
+			/* y		*/ 0.2f,
+			/* z		*/ 0.2f,
+			/* w		*/ 0.55f,
+			/* minVal	*/ 0.0f,
+			/* maxVal	*/ 1.0f,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "color of undocked gui windowborders");
+
+		dvars::gui_dockingpreview_color = dvars::register_vec4(
+			/* name		*/ "gui_dockingpreview_color",
+			/* x		*/ 0.49f,
+			/* y		*/ 0.2f,
+			/* z		*/ 0.2f,
+			/* w		*/ 1.0f,
+			/* minVal	*/ 0.0f,
+			/* maxVal	*/ 1.0f,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "backgroundcolor of docking preview");
+		
+		// *
+		// *
+		
 		dvars::gui_toolbar_bg_color = dvars::register_vec4(
 			/* name		*/ "gui_toolbar_bg_color",
 			/* x		*/ 0.30f,
@@ -810,6 +838,8 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "color of active toolbar button");
 
+		// *
+		// *
 		
 		dvars::gui_rtt_padding_enabled = dvars::register_bool(
 			/* name		*/ "gui_rtt_padding_enabled",
@@ -836,11 +866,9 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "bordercolor of render to texture windows (grid/camera)");
 
-
+		// *
+		// *
 		
-		
-		
-
 		dvars::gui_floating_toolbar = dvars::register_bool(
 			/* name		*/ "gui_floating_toolbar",
 			/* default	*/ false,

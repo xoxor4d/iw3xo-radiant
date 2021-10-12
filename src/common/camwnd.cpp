@@ -63,8 +63,8 @@ void ccamwnd::rtt_camera_window()
 			const auto pre_image_cursor = ImGui::GetCursorPos();
 
 			ImGui::Image(camerawnd->scene_texture, camera_size);
-			camerawnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_None);
-
+			camerawnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+			
 			// pop ItemSpacing
 			ImGui::PopStyleVar(); p_styles--;
 

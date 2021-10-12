@@ -14,6 +14,8 @@ namespace components
 		static void execute(std::string cmd_name);
 		static void execute_command(std::vector<std::string> args);
 
+		static std::vector<std::string> cmd_names_autocomplete;
+	
 	private:
         static std::map<std::string, std::function<void(std::vector<std::string>)>> cmd;
 	};

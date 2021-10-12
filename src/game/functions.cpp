@@ -67,6 +67,12 @@ namespace game
 
 	HWND* entitywnd_hwnds = reinterpret_cast<HWND*>(0x240A118);
 
+	game::entity_s* g_world_entity()
+	{
+		const auto ent = reinterpret_cast<game::entity_s*>(*game::worldEntity_ptr);
+		return ent;
+	}
+	
 	game::selbrush_t* g_selected_brushes()
 	{
 		const auto brush = reinterpret_cast<game::selbrush_t*>(*game::currSelectedBrushes);
@@ -127,8 +133,10 @@ namespace game
 		const static uint32_t func_addr = 0x45E3F0;
 		__asm
 		{
+			pushad;
 			mov		eax, operation;
 			call	func_addr;
+			popad;
 		}
 	}
 
@@ -137,19 +145,24 @@ namespace game
 		const static uint32_t func_addr = 0x45E990;
 		__asm
 		{
+			pushad;
 			mov		eax, ent;
 			call	func_addr;
+			popad;
 		}
 	}
 
-	void DeleteKey(game::epair_t* epair /*eax*/, const char* key /*ebx*/)
+	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/)
 	{
 		const static uint32_t func_addr = 0x483720;
 		__asm
 		{
+			pushad;
+			mov		esi, epair;
+			lea		eax, [esi];
 			mov		ebx, key;
-			mov		eax, epair;
 			call	func_addr;
+			popad;
 		}
 	}
 
@@ -158,10 +171,12 @@ namespace game
 		const static uint32_t func_addr = 0x482F70;
 		__asm
 		{
+			pushad;
 			push	key;
 			mov		esi, ent;
 			call	func_addr;
 			add     esp, 4;
+			popad;
 		}
 	}
 
@@ -170,9 +185,51 @@ namespace game
 		const static uint32_t func_addr = 0x483210;
 		__asm
 		{
+			pushad;
 			mov		ebx, key;
 			mov		eax, ent;
 			call	func_addr;
+			popad;
+		}
+	}
+
+	void SetSpawnFlags(int flag)
+	{
+		const static uint32_t func_addr = 0x496F00;
+		__asm
+		{
+			pushad;
+			mov		ebx, flag;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void UpdateSel(int wParam, game::eclass_t* e_class)
+	{
+		const static uint32_t func_addr = 0x497180;
+		__asm
+		{
+			pushad;
+			mov		ecx, wParam;
+			mov		eax, e_class;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void Brush_Move(const float* delta, game::brush_t* def, int snap)
+	{
+		const static uint32_t func_addr = 0x47BA40;
+		__asm
+		{
+			pushad;
+			push	snap;
+			push	def;
+			mov		ebx, delta;
+			call	func_addr;
+			add     esp, 8;
+			popad;
 		}
 	}
 	

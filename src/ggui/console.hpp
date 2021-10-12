@@ -25,7 +25,7 @@ namespace ggui
 		~console();
 
 		void    clear_log();
-		void	addtext_with_color(const char* text);
+		void	draw_text_with_color(const char* text);
 		void	addline_no_format(const char* text);
 		void	addline(const char* fmt, ...) IM_FMTARGS(2);
 		void	draw(const char* title, bool* p_open);

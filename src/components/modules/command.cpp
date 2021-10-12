@@ -3,10 +3,12 @@
 namespace components
 {
     std::map<std::string, std::function<void(std::vector<std::string>)>> command::cmd;
-
+	std::vector<std::string> command::cmd_names_autocomplete;
+	
     void command::register_command(const std::string &name, std::function<void(std::vector<std::string>)> cb)
     {
         command::cmd[name] = cb;
+		command::cmd_names_autocomplete.push_back(name);
     }
 
 	void command::execute(std::string cmd_name)

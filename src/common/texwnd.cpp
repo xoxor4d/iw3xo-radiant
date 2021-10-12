@@ -412,7 +412,7 @@ void ctexwnd::rtt_texture_window()
 			const auto pre_image_cursor = ImGui::GetCursorPos();
 
 			ImGui::Image(texwnd->scene_texture, texture_size);
-			texwnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_None);
+			texwnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
 			// pop ItemSpacing
 			ImGui::PopStyleVar(); p_styles--;
