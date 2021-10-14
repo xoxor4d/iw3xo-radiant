@@ -12,6 +12,7 @@ namespace ggui::entity
 		COLOR = 2,
 		ORIGIN = 3,
 		ANGLES = 4,
+		MODEL = 5,
 	};
 
 	struct epair_wrapper
@@ -272,7 +273,7 @@ namespace ggui::entity
 	// *
 	// Intercepted original functions
 	
-	void on_map_free_intercept()
+	void on_mapload_intercept()
 	{
 		sel_list_ent = nullptr;
 		edit_entity_class = nullptr;
@@ -1018,6 +1019,11 @@ namespace ggui::entity
 							// *
 							// everything else is text
 
+							if (key == "model") {
+								eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::MODEL));
+								continue;
+							}
+
 							eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::TEXT));
 						}
 
@@ -1060,6 +1066,7 @@ namespace ggui::entity
 									break;
 
 								default:
+								case EPAIR_VALUETYPE::MODEL:
 								case EPAIR_VALUETYPE::TEXT:
 									gui_entprop_add_value_text(ep, row);
 									break;
@@ -1181,26 +1188,13 @@ namespace ggui::entity
 		}
 	}
 
-	/*__declspec(naked) void on_map_free_stub()
-	{
-		__asm
-		{
-			pushad;
-			call	on_map_free_intercept;
-			popad;
-
-			pop     ecx;
-			retn;
-		}
-	}*/
-
-	__declspec(naked) void on_map_free_stub()
+	__declspec(naked) void on_mapload_stub()
 	{
 		const static uint32_t retn_pt = 0x418814;
 		__asm
 		{
 			pushad;
-			call	on_map_free_intercept;
+			call	on_mapload_intercept;
 			popad;
 
 			push    0x1101;
@@ -1208,15 +1202,35 @@ namespace ggui::entity
 		}
 	}
 
+	// CMainFrame::OnViewEntity
+	void on_viewentity_command()
+	{
+		components::gui::toggle(ggui::state.czwnd.m_entity, 0, true);
+	}
+
 	void hooks()
 	{
+		// init classlist on startup
 		utils::hook(0x496811, init_classlist_stub, HOOK_JUMP).install()->quick();
 
 		// update edit_entity with radiant routines
 		utils::hook(0x497220, on_update_selection_stub, HOOK_JUMP).install()->quick();
 
-		//utils::hook(0x485EA2, on_map_free_stub, HOOK_JUMP).install()->quick();
+		// reset classlist on map re/load
+		utils::hook(0x41880F, on_mapload_stub, HOOK_JUMP).install()->quick();
 
-		utils::hook(0x41880F, on_map_free_stub, HOOK_JUMP).install()->quick();
+		// make entity-view hotkey open the imgui variant :: CMainFrame::OnFilterDlg
+		utils::hook::detour(0x423F00, on_viewentity_command, HK_JUMP);
+
+		// do not show original entity window
+		utils::hook::set<BYTE>(0x423D0A + 1, 0x0);
+		utils::hook::set<BYTE>(0x423DCF + 1, 0x0);
+		utils::hook::set<BYTE>(0x423DDD + 1, 0x0);
+		
+		// (can be disabled once the imgui-entity window is done and the original hidden)
+		// disable top-most mode for inspector/entity window
+		//utils::hook::nop(0x496CB6, 13); // clear instructions
+		//utils::hook::set<BYTE>(0x496CB6, 0xB9); // mov ecx,00000000 (0xB9 00 00 00 00)
+		//utils::hook::set<DWORD>(0x496CB6 + 1, 0x0); // mov ecx,00000000 (0xB9 00 00 00 00)
 	}
 }

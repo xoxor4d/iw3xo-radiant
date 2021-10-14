@@ -134,14 +134,6 @@ void on_createclient()
 		}
 	}
 
-	if(game::g_qeglobals->d_hwndEntity)
-	{
-		//ShowWindow(game::g_qeglobals->d_hwndTexture, SW_SHOW);
-		//ShowWindow(game::g_qeglobals->d_hwndEntity, SW_HIDE);
-		//RedrawWindow(game::g_qeglobals->d_hwndEntity, 0, 0, RDW_ERASENOW | RDW_UPDATENOW | RDW_ALLCHILDREN | RDW_ERASE | RDW_INVALIDATE);
-		//SendMessageA(game::g_qeglobals->d_hwndEntity, WM_PAINT, 0, 0);
-	}
-
 	if(cmainframe::activewnd)
 	{
 		if(cmainframe::activewnd->m_pXYWnd)

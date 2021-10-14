@@ -452,11 +452,6 @@ namespace components
 		// add iw3xradiant search path (imgui images)
 		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
 
-		// disable top-most mode for inspector/entity window
-		utils::hook::nop(0x496CB6, 13); // clear instructions
-		utils::hook::set<BYTE>(0x496CB6, 0xB9); // mov ecx,00000000 (0xB9 00 00 00 00)
-		utils::hook::set<DWORD>(0x496CB6 + 1, 0x0); // mov ecx,00000000 (0xB9 00 00 00 00)
-
 		// do not load "_glow" fonts (qerfont_glow)
 		utils::hook::nop(0x552806, 5);
 
