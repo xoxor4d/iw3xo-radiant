@@ -1069,11 +1069,17 @@ namespace ggui::toolbar
 		const ImVec2 requested_size = (ggui::toolbar_axis == ImGuiAxis_X) ? ImVec2(-1.0f, 0.0f) : ImVec2(0.0f, -1.0f);
 
 		ImGui::SetNextWindowSize(requested_size);
-		ImGui::SetNextWindowPos(ImVec2( 5.0f, ggui::menubar_height + 5.0f), ImGuiCond_FirstUseEver);
+
+		const bool is_floating_toolbar = dvars::gui_floating_toolbar && dvars::gui_floating_toolbar->current.enabled;
+		
+		if(is_floating_toolbar)
+		{
+			ImGui::SetNextWindowPos(ImVec2(5.0f, ggui::menubar_height + 5.0f), ImGuiCond_FirstUseEver);
+		}
 
 		if(ggui::toolbar_reset)
 		{
-			if(dvars::gui_floating_toolbar && !dvars::gui_floating_toolbar->current.enabled)
+			if(!is_floating_toolbar)
 			{
 				if (ggui::toolbar_axis == ImGuiAxis_X)
 				{

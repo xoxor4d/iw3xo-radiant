@@ -362,6 +362,7 @@ struct CRuntimeClass
 	const AFX_CLASSINIT* m_pClassInit;
 };
 
+
 struct __declspec(align(4)) CFrameWnd : CWnd
 {
 	int m_bAutoMenuEnable;
@@ -389,6 +390,103 @@ struct __declspec(align(4)) CFrameWnd : CWnd
 	unsigned int m_nIdleFlags;
 };
 STATIC_ASSERT_SIZE(CFrameWnd, 0xD4);
+
+struct /*VFT*/ CFrameWnd_vtbl
+{
+	CRuntimeClass* (__thiscall* GetRuntimeClass)(CObject*);
+	void(__thiscall* CObject_Destructor)(CObject*);
+	void(__thiscall* Dump)(CObject*, CDumpContext*);
+	int(__thiscall* OnCmdMsg)(CCmdTarget*, unsigned int, int, void*, AFX_CMDHANDLERINFO*);
+	void(__thiscall* OnFinalRelease)(CCmdTarget*);
+	int(__thiscall* IsInvokeAllowed)(CCmdTarget*, int);
+	int(__thiscall* GetDispatchIID)(CCmdTarget*, _GUID*);
+	unsigned int(__thiscall* GetTypeInfoCount)(CCmdTarget*);
+	CTypeLibCache* (__thiscall* GetTypeLibCache)(CCmdTarget*);
+	HRESULT(__thiscall* GetTypeLib)(CCmdTarget*, unsigned int, ITypeLib**);
+	const AFX_MSGMAP* (__thiscall* GetMessageMap)(CCmdTarget*);
+	const AFX_OLECMDMAP* (__thiscall* GetCommandMap)(CCmdTarget*);
+	const AFX_DISPMAP* (__thiscall* GetDispatchMap)(CCmdTarget*);
+	const AFX_CONNECTIONMAP* (__thiscall* GetConnectionMap)(CCmdTarget*);
+	const AFX_INTERFACEMAP* (__thiscall* GetInterfaceMap)(CCmdTarget*);
+	const AFX_EVENTSINKMAP* (__thiscall* GetEventSinkMap)(CCmdTarget*);
+	int(__thiscall* OnCreateAggregates)(CCmdTarget*);
+	IUnknown* (__thiscall* GetInterfaceHook)(CCmdTarget*, const void*);
+	int(__thiscall* GetExtraConnectionPoints)(CCmdTarget*, CPtrArray*);
+	IConnectionPoint* (__thiscall* GetConnectionHook)(CCmdTarget*, const _GUID*);
+	void(__thiscall* PreSubclassWindow)(CWnd*);
+	int(__thiscall* Create)(CWnd*, const char*, const char*, unsigned int, const tagRECT*, CWnd*, unsigned int, CCreateContext*);
+	int gap01;
+	int(__thiscall* CreateEx)(CWnd*, unsigned int, const char*, const char*, unsigned int, int, int, int, int, HWND__*, HMENU__*, void*);
+	int(__thiscall* DestroyWindow)(CWnd*);
+	int(__thiscall* PreCreateWindow)(CWnd*, tagCREATESTRUCTA*);
+	void(__thiscall* CalcWindowRect)(CWnd*, tagRECT*, unsigned int);
+	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA*);
+	CScrollBar* (__thiscall* GetScrollBarCtrl)(CWnd*, int);
+	void(__thiscall* WinHelpA)(CWnd*, unsigned int, unsigned int);
+	void(__thiscall* HtmlHelpA)(CWnd*, unsigned int, unsigned int);
+	void(__thiscall* WinHelpInternal)(CWnd*, unsigned int, unsigned int);
+	int(__thiscall* ContinueModal)(CWnd*);
+	void(__thiscall* EndModalLoop)(CWnd*, int);
+	HRESULT(__thiscall* EnsureStdObj)(CWnd*);
+	HRESULT(__thiscall* get_accParent)(CWnd*, IDispatch**);
+	HRESULT(__thiscall* get_accChildCount)(CWnd*, int*);
+	HRESULT(__thiscall* get_accChild)(CWnd*, tagVARIANT, IDispatch**);
+	HRESULT(__thiscall* get_accName)(CWnd*, tagVARIANT, wchar_t**);
+	HRESULT(__thiscall* get_accValue)(CWnd*, tagVARIANT, wchar_t**);
+	HRESULT(__thiscall* get_accDescription)(CWnd*, tagVARIANT, wchar_t**);
+	HRESULT(__thiscall* get_accRole)(CWnd*, tagVARIANT, tagVARIANT*);
+	HRESULT(__thiscall* get_accState)(CWnd*, tagVARIANT, tagVARIANT*);
+	HRESULT(__thiscall* get_accHelp)(CWnd*, tagVARIANT, wchar_t**);
+	HRESULT(__thiscall* get_accHelpTopic)(CWnd*, wchar_t**, tagVARIANT, int*);
+	HRESULT(__thiscall* get_accKeyboardShortcut)(CWnd*, tagVARIANT, wchar_t**);
+	HRESULT(__thiscall* get_accFocus)(CWnd*, tagVARIANT*);
+	HRESULT(__thiscall* get_accSelection)(CWnd*, tagVARIANT*);
+	HRESULT(__thiscall* get_accDefaultAction)(CWnd*, tagVARIANT, wchar_t**);
+	HRESULT(__thiscall* accSelect)(CWnd*, int, tagVARIANT);
+	HRESULT(__thiscall* accLocation)(CWnd*, int*, int*, int*, int*, tagVARIANT);
+	HRESULT(__thiscall* accNavigate)(CWnd*, int, tagVARIANT, tagVARIANT*);
+	HRESULT(__thiscall* accHitTest)(CWnd*, int, int, tagVARIANT*);
+	HRESULT(__thiscall* accDoDefaultAction)(CWnd*, tagVARIANT);
+	HRESULT(__thiscall* put_accName)(CWnd*, tagVARIANT, wchar_t*);
+	HRESULT(__thiscall* put_accValue)(CWnd*, tagVARIANT, wchar_t*);
+	HRESULT(__thiscall* SetProxy)(CWnd*, IAccessibleProxy*);
+	HRESULT(__thiscall* CreateAccessibleProxy)(CWnd*, unsigned int, int, int*);
+	int(__thiscall* OnCommand)(CWnd*, unsigned int, int);
+	int(__thiscall* OnNotify)(CWnd*, unsigned int, int, int*);
+	int(__stdcall** (__thiscall* GetSuperWndProcAddr)(CWnd*))(HWND__*, unsigned int, unsigned int, int);
+	void(__thiscall* DoDataExchange)(CWnd*, CDataExchange*);
+	void(__thiscall* BeginModalState)(CWnd*);
+	void(__thiscall* EndModalState)(CWnd*);
+	int(__thiscall* PreTranslateMessage)(CWnd*, tagMSG*);
+	int(__thiscall* OnAmbientProperty)(CWnd*, COleControlSite*, int, tagVARIANT*);
+	int(__thiscall* WindowProc)(CWnd*, unsigned int, unsigned int, int);
+	int(__thiscall* OnWndMsg)(CWnd*, unsigned int, unsigned int, int, int*);
+	int(__thiscall* DefWindowProcA)(CWnd*, unsigned int, unsigned int, int);
+	void(__thiscall* PostNcDestroy)(CWnd*);
+	int(__thiscall* OnChildNotify)(CWnd*, unsigned int, unsigned int, int, int*);
+	int(__thiscall* CheckAutoCenter)(CWnd*);
+	int(__thiscall* IsFrameWnd)(CWnd*);
+	int(__thiscall* CreateControlContainer)(CWnd*, COleControlContainer**);
+	int(__thiscall* CreateControlSite)(CWnd*, COleControlContainer*, COleControlSite**, unsigned int, const _GUID*);
+	int(__thiscall* SetOccDialogInfo)(CWnd*, _AFX_OCC_DIALOG_INFO*);
+	int gap02;
+	int(__thiscall* Create_02)(CFrameWnd*, const char*, const char*, unsigned int, const tagRECT*, CWnd*, const char*, unsigned int, CCreateContext*);
+	int(__thiscall* LoadFrame)(CFrameWnd*, unsigned int, unsigned int, CWnd*, CCreateContext*);
+	void* (__thiscall* GetActiveDocument)(CFrameWnd*); // CDocument*
+	CFrameWnd* (__thiscall* GetActiveFrame)(CFrameWnd*);
+	void(__thiscall* GetMessageString)(CFrameWnd*, unsigned int, void* missing_arg);
+	void(__thiscall* RecalcLayout)(CFrameWnd*, int);
+	void(__thiscall* ActivateFrame)(CFrameWnd*, int);
+	void(__thiscall* OnSetPreviewMode)(CFrameWnd*, int, void*); // CPrintPreviewState*
+	CWnd* (__thiscall* GetMessageBar)(CFrameWnd*);
+	int(__thiscall* NegotiateBorderSpace)(CFrameWnd*, unsigned int, tagRECT*);
+	int(__thiscall* OnCreateClient)(CFrameWnd*, tagCREATESTRUCTA*, CCreateContext*);
+	void(__thiscall* OnUpdateFrameTitle)(CFrameWnd*, int);
+	void(__thiscall* OnUpdateFrameMenu)(CFrameWnd*, HMENU__*);
+	HACCEL__* (__thiscall* GetDefaultAccelerator)(CFrameWnd*);
+	void(__thiscall* DelayUpdateFrameMenu)(CFrameWnd*, HMENU__*);
+	void(__thiscall* ExitHelpMode)(CFrameWnd*);
+};
 
 /* -------------------------------- */
 

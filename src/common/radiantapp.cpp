@@ -52,6 +52,129 @@ __declspec(naked) void registery_load_stub()
 	}
 }
 
+BOOL LoadRegistryInfo(const char* pszName, void* pvBuf, long* plSize)
+{
+	HKEY  hKey;
+	long lType, lSize;
+
+	if (plSize == nullptr)
+	{
+		plSize = &lSize;
+	}
+
+	if (game::g_qeglobals->use_ini)
+	{
+		RegOpenKeyExA(HKEY_CURRENT_USER, game::g_qeglobals->use_ini_registry, 0, KEY_READ, &hKey);
+	}
+	else
+	{
+		RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\iw\\CoD4Radiant\\CoD4Radiant", 0, KEY_READ, &hKey);
+	}
+
+	RegQueryValueExA(hKey, pszName, NULL, (unsigned long*)&lType, (unsigned char*)pvBuf, (unsigned long*)plSize);
+	RegCloseKey(hKey);
+	
+	return TRUE;
+}
+
+enum XY_SHOW_FLAGS
+{
+	ANGLES = 0x2,
+	CONNECTIONS = 0x4,
+	NAMES = 0x8,
+	BLOCKS = 0x10,
+	COORDINATES = 0x20,
+	REVERSE_FILTER = 0x40,
+};
+
+
+void MFCCreate()
+{
+	long savedinfo_size = sizeof(game::g_qeglobals->d_savedinfo);
+	LoadRegistryInfo("SavedInfo", &game::g_qeglobals->d_savedinfo, &savedinfo_size);
+
+	int old_size = game::g_qeglobals->d_savedinfo.iSize;
+	if (game::g_qeglobals->d_savedinfo.iSize != sizeof(game::g_qeglobals->d_savedinfo))
+	{
+		game::g_qeglobals->d_savedinfo.iSize = sizeof(game::g_qeglobals->d_savedinfo);
+		game::g_qeglobals->d_savedinfo.iTextMenu = 32993;
+		game::g_qeglobals->d_savedinfo.d_gridsize_float = 1;
+		game::g_qeglobals->d_savedinfo.d_picmip = 0;
+		
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], 0.169f, 0.169f, 0.169f, 1.0f); // 0
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBACK], 0.25f, 0.25f, 0.25f, 1.0f); // 1
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMINOR], 0.233f, 0.233f, 0.233f, 1.0f); // 2
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMAJOR], 0.209f, 0.209f, 0.209f, 1.0f); // 3
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_CAMERABACK], 0.169f, 0.169f, 0.169f, 1.0f); // 4
+		
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITY], 0.0f, 0.5f, 0.0f, 1.0f); // 5 - not used org
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], 1.0f, 0.1f, 0.0f, 0.4f); // 6 - not used org - now grid entity classname
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBLOCK], 0.165f, 0.165f, 0.165f, 1.0f); // 7
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDTEXT], 0.0f, 0.0f, 0.0f, 1.0f); // 8
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_BRUSHES], 0.25f, 0.25f, 0.25f, 1.0f); // 9
+
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELBRUSHES], 1.0f, 0.125f, 0.0f, 1.0f); // 10
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELBRUSHES_CAMERA], 1.0f, 0.0f, 0.0f, 0.35f); // 11
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_CLIPPER], 1.0f, 0.0f, 0.0f, 1.0f); // 12
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_VIEWNAME], 1.0f, 0.35f, 0.0f, 0.6f); // 13
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_DETAIL_BRUSH], 0.0f, 0.525f, 0.18f, 1.0f); // 14
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_DRAW_TOGGLESUFS], 0.0f, 0.0f, 0.0f, 1.0f); // 15 - not used org
+
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELFACE_CAMERA], 1.0f, 0.25f, 0.25f, 0.25f); // 16
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_GROUP], 0.0f, 0.5f, 0.65f, 1.0f); // 17
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_CULLGROUP], 0.0f, 0.0f, 1.0f, 1.0f); // 18
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_WEAPON_CLIP], 0.5f, 0.6f, 0.0f, 1.0f); // 19
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SIZE_INFO], 0.72f, 0.72f, 0.72f, 1.0f); // 20
+
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_MODEL], 0.05f, 0.1f, 0.15f, 1.0f); // 21
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_NONCOLLIDING], 1.0f, 0.365f, 0.16f, 1.0f); // 22
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_WIREFRAME], 0.0f, 0.0f, 0.0f, 1.0f); // 23 - not used org
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_FROZEN_LAYERS], 0.4f, 0.4f, 0.8f, 0.5f); // 24 - not used org
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN2], 0.0f, 0.0f, 0.0f, 1.0f); // 25 - not used org
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], 0.0f, 0.0f, 0.0f, 1.0f); // 26 - not used org
+
+		if(old_size < sizeof(game::g_qeglobals->d_savedinfo))
+		{
+			savedinfo_size = old_size;
+			LoadRegistryInfo("SavedInfo", &game::g_qeglobals->d_savedinfo, &savedinfo_size);
+		}
+	}
+
+	if (HMENU hMenu = GetMenu(game::g_qeglobals->d_hwndMain); 
+			  hMenu)
+	{
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & CONNECTIONS) != 0)
+		{
+			CheckMenuItem(hMenu, 0x84B6, 0);
+		}
+		
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & NAMES) != 0)
+		{
+			CheckMenuItem(hMenu, 0x84B3, 0);
+		}
+		
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & BLOCKS) != 0)
+		{
+			CheckMenuItem(hMenu, 0x84B5, 0);
+		}
+		
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & COORDINATES) != 0)
+		{
+			CheckMenuItem(hMenu, 0x84B7, 0);
+		}
+		
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & ANGLES) != 0)
+		{
+			CheckMenuItem(hMenu, 0x84B4, 0);
+		}
+		
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & REVERSE_FILTER) != 0)
+		{
+			CheckMenuItem(hMenu, 0x8D1F, 0);
+		}
+	}
+}
+
 
 __declspec(naked) void menubar_stub_01()
 {
@@ -112,6 +235,9 @@ void radiantapp::hooks()
 	// registery loading stub :: CPrefsDlg::LoadPrefs
 	utils::hook(0x44E38C, registery_load_stub, HOOK_JUMP).install()->quick();
 
+	// default savedinfo values, mainly colors
+	utils::hook(0x420A39, MFCCreate, HOOK_CALL).install()->quick();
+	
 	// note:
 	// we need to save the menubar state within the registery because dvars are not yet initialized when we need the menubar state
 	

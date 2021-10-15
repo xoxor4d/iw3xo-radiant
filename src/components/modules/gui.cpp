@@ -363,11 +363,11 @@ namespace components
 					{
 						if (ggui::toolbar_axis == ImGuiAxis_X)
 						{
-							ImGui::DockBuilderDockWindow("toolbar##xywnd", ggui::toolbar_dock_top);
+							ImGui::DockBuilderDockWindow("toolbar##window", ggui::toolbar_dock_top);
 						}
 						else
 						{
-							ImGui::DockBuilderDockWindow("toolbar##xywnd", ggui::toolbar_dock_left);
+							ImGui::DockBuilderDockWindow("toolbar##window", ggui::toolbar_dock_left);
 						}
 					}
 
@@ -487,12 +487,13 @@ namespace components
 
 			// global style vars for current context
 			ImGuiStyle& style = ImGui::GetStyle();
-			style.FrameBorderSize = 0.0f;
+
 			style.Colors[ImGuiCol_WindowBg] = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector);
 			style.Colors[ImGuiCol_ChildBg] = ImGui::ToImVec4(dvars::gui_window_child_bg_color->current.vector);
 			style.Colors[ImGuiCol_Border] = ImGui::ToImVec4(dvars::gui_border_color->current.vector);
 			style.Colors[ImGuiCol_DockingPreview] = ImGui::ToImVec4(dvars::gui_dockingpreview_color->current.vector);
-			
+
+			style.FrameBorderSize = 0.0f;
 			style.WindowMenuButtonPosition = 1;
 			//style.TabBorderSize = 0.0f;
 
@@ -737,10 +738,10 @@ namespace components
 	{
 		dvars::gui_menubar_bg_color = dvars::register_vec4(
 			/* name		*/ "gui_menubar_bg_color",
-			/* x		*/ 0.30f,
-			/* y		*/ 0.01f,
-			/* z		*/ 0.02f,
-			/* w		*/ 0.6f,
+			/* x		*/ 0.11f,
+			/* y		*/ 0.11f,
+			/* z		*/ 0.11f,
+			/* w		*/ 1.0f,
 			/* minVal	*/ 0.0f,
 			/* maxVal	*/ 1.0f,
 			/* flags	*/ game::dvar_flags::saved,
@@ -748,9 +749,9 @@ namespace components
 
 		dvars::gui_window_bg_color = dvars::register_vec4(
 			/* name		*/ "gui_window_bg_color",
-			/* x		*/ 0.17f,
-			/* y		*/ 0.17f,
-			/* z		*/ 0.17f,
+			/* x		*/ 0.172f,
+			/* y		*/ 0.172f,
+			/* z		*/ 0.172f,
 			/* w		*/ 1.0f,
 			/* minVal	*/ 0.0f,
 			/* maxVal	*/ 1.0f,
@@ -795,10 +796,10 @@ namespace components
 		
 		dvars::gui_toolbar_bg_color = dvars::register_vec4(
 			/* name		*/ "gui_toolbar_bg_color",
-			/* x		*/ 0.30f,
-			/* y		*/ 0.01f,
-			/* z		*/ 0.02f,
-			/* w		*/ 0.6f,
+			/* x		*/ 0.11f,
+			/* y		*/ 0.11f,
+			/* z		*/ 0.11f,
+			/* w		*/ 1.0f,
 			/* minVal	*/ 0.0f,
 			/* maxVal	*/ 1.0f,
 			/* flags	*/ game::dvar_flags::saved,
@@ -843,7 +844,7 @@ namespace components
 		
 		dvars::gui_rtt_padding_enabled = dvars::register_bool(
 			/* name		*/ "gui_rtt_padding_enabled",
-			/* default	*/ true,
+			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "draw a border around render to texture windows (grid/camera)");
 

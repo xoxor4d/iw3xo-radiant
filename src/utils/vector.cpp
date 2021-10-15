@@ -65,6 +65,21 @@ namespace utils
 			v1[2] = 0.0f;
 		}
 
+		void set_vec3(vec3_t v, float x, float y, float z)
+		{
+			v[0] = x;
+			v[1] = y;
+			v[2] = z;
+		}
+		
+		void set_vec4(vec4_t v, float x, float y, float z, float w)
+		{
+			v[0] = x;
+			v[1] = y;
+			v[2] = z;
+			v[3] = w;
+		}
+
 		// inverse input vector
 		void inverse(vec3_t v)
 		{

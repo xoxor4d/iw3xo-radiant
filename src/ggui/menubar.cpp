@@ -26,7 +26,7 @@ namespace ggui::menubar
 		game::g_qeglobals->d_gridsize = size;
 		if (game::g_PrefsDlg()->m_bSnapTToGrid)
 		{
-			game::g_qeglobals->d_gridsize_float = GRID_SIZE[size];
+			game::g_qeglobals->d_savedinfo.d_gridsize_float = GRID_SIZE[size];
 		}
 
 		mainframe_thiscall(void, 0x428A00); // CMainFrame::SetGridStatus
@@ -65,7 +65,7 @@ namespace ggui::menubar
 	
 	void set_texture_resolution(int picmip)
 	{
-		game::g_qeglobals->d_picmip = picmip;
+		game::g_qeglobals->d_savedinfo.d_picmip = picmip;
 
 		// CMainFrame::PicMip
 		mainframe_stdcall(void, 0x420860); // sets the stock menu ..
@@ -92,6 +92,8 @@ namespace ggui::menubar
 
 		if (ImGui::BeginMenuBar())
 		{
+			ImGui::BeginGroup();
+			
 			if (ImGui::BeginMenu("File"))
 			{
 				if (ImGui::MenuItem("New Map")) {
@@ -429,23 +431,23 @@ namespace ggui::menubar
 
 					SEPERATORV(0.0f);
 
-					if (ImGui::MenuItem("Show Names", 0, (game::g_qeglobals->d_xyShowFlags & 8) == 0)) {
+					if (ImGui::MenuItem("Show Names", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 8) == 0)) {
 						mainframe_thiscall(void, 0x42BA40); // cmainframe::OnSelectNames
 					}
 
-					if (ImGui::MenuItem("Show Angles", 0, (game::g_qeglobals->d_xyShowFlags & 2) == 0)) {
+					if (ImGui::MenuItem("Show Angles", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 2) == 0)) {
 						mainframe_thiscall(void, 0x42BAA0); // cmainframe::OnSelectAngles
 					}
 
-					if (ImGui::MenuItem("Show Grid Blocks", 0, (game::g_qeglobals->d_xyShowFlags & 16) == 0)) {
+					if (ImGui::MenuItem("Show Grid Blocks", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 16) == 0)) {
 						mainframe_thiscall(void, 0x42BB00); // cmainframe::OnSelectBlocks
 					}
 
-					if (ImGui::MenuItem("Show Connections", 0, (game::g_qeglobals->d_xyShowFlags & 4) == 0)) {
+					if (ImGui::MenuItem("Show Connections", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 4) == 0)) {
 						mainframe_thiscall(void, 0x42BBC0); // cmainframe::OnSelectConnections
 					}
 
-					if (ImGui::MenuItem("Show Coordinates", 0, (game::g_qeglobals->d_xyShowFlags & 32) == 0)) {
+					if (ImGui::MenuItem("Show Coordinates", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 32) == 0)) {
 						mainframe_thiscall(void, 0x42BB60); // cmainframe::OnSelectCoordinates
 					}
 
@@ -934,19 +936,19 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Texture Resolution"))
 				{
-					if (ImGui::MenuItem("Maximum", 0, game::g_qeglobals->d_picmip == 0)) {
+					if (ImGui::MenuItem("Maximum", 0, game::g_qeglobals->d_savedinfo.d_picmip == 0)) {
 						set_texture_resolution(0);
 					}
 
-					if (ImGui::MenuItem("High", 0, game::g_qeglobals->d_picmip == 1)) {
+					if (ImGui::MenuItem("High", 0, game::g_qeglobals->d_savedinfo.d_picmip == 1)) {
 						set_texture_resolution(1);
 					}
 
-					if (ImGui::MenuItem("Normal", 0, game::g_qeglobals->d_picmip == 2)) {
+					if (ImGui::MenuItem("Normal", 0, game::g_qeglobals->d_savedinfo.d_picmip == 2)) {
 						set_texture_resolution(2);
 					}
 
-					if (ImGui::MenuItem("Low", 0, game::g_qeglobals->d_picmip == 3)) {
+					if (ImGui::MenuItem("Low", 0, game::g_qeglobals->d_savedinfo.d_picmip == 3)) {
 						set_texture_resolution(3);
 					}
 
@@ -1444,9 +1446,24 @@ namespace ggui::menubar
 				}
 
 				// TODO! implement about
-
-
 				ImGui::EndMenu(); // Help
+			}
+			ImGui::EndGroup();
+
+			const auto menubar_width = ImGui::GetItemRectSize().x + 24.0f;
+			const auto gridpos_text_width = ImGui::CalcTextSize(cmainframe::activewnd->m_strStatus[1]).x;
+			
+			RECT _rect;
+			GetClientRect(cmainframe::activewnd->GetWindow(), &_rect);
+			const int mainframe_width = _rect.right - _rect.left;
+
+			if(mainframe_width >= menubar_width + gridpos_text_width + 8.0f)
+			{
+				if (cmainframe::activewnd->m_strStatus[1])
+				{
+					ImGui::SameLine(ImGui::GetWindowWidth() - gridpos_text_width - 8.0f);
+					ImGui::TextUnformatted(cmainframe::activewnd->m_strStatus[1]);
+				}
 			}
 
 			ImGui::PopStyleVar(2); // ImGuiStyleVar_WindowPadding | ImGuiStyleVar_ItemSpacing

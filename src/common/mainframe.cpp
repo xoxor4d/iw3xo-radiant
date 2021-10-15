@@ -1,11 +1,15 @@
 #include "std_include.hpp"
 
-IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#define HIDE_STATUSBAR
 
+IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 cmainframe* cmainframe::activewnd;
 
-// bottom statusbar height
-const static int WNDSTATUSBAR_HEIGHT = 20;
+#ifdef HIDE_STATUSBAR
+	const static int WNDSTATUSBAR_HEIGHT = 0; // bottom statusbar height
+#else
+	const static int WNDSTATUSBAR_HEIGHT = 20; // bottom statusbar height
+#endif
 
 // set cxywnd pos/size once on startup (if split view with detatched or attached child windows) 
 bool CZWND_POS_ONCE_ON_STARTUP = false;
@@ -78,6 +82,18 @@ void cmainframe::routine_processing()
 		{
 			CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndToolBar, 0, 1);
 		}
+
+		if(cmainframe::activewnd->m_wndStatusBar.m_hWnd)
+		{
+			//CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndStatusBar, 0, 1);
+
+			//auto vtable = reinterpret_cast<CFrameWnd_vtbl*>(cmainframe::activewnd->__vftable);
+			//vtable->RecalcLayout(cmainframe::activewnd, 1);
+
+			//auto prefs = game::g_PrefsDlg();
+			//prefs->m_nStatusSize = 20;
+		}
+			
 	}
 
 	// toggle menubar by dvar
@@ -134,6 +150,13 @@ void on_createclient()
 		}
 	}
 
+	// disable r_vsync
+	if (const auto& r_vsync = game::Dvar_FindVar("r_vsync");
+					r_vsync && r_vsync->current.enabled)
+	{
+		dvars::set_bool(r_vsync, false);
+	}
+
 	if(cmainframe::activewnd)
 	{
 		if(cmainframe::activewnd->m_pXYWnd)
@@ -160,6 +183,8 @@ void on_createclient()
 		{
 			ShowWindow(cmainframe::activewnd->m_pFilterWnd->GetWindow(), SW_HIDE);
 		}
+
+		ShowWindow(cmainframe::activewnd->m_wndStatusBar.m_hWnd, SW_HIDE);
 	}
 }
 
@@ -738,6 +763,12 @@ void cmainframe::hooks()
 
 	// hook end of createclient
 	utils::hook(0x4232EE, hk_on_createclient, HOOK_JUMP).install()->quick();
+
+#ifdef HIDE_STATUSBAR
+	utils::hook::nop(0x41F8E0, 5); // class init
+	utils::hook::nop(0x420B04, 12 + 29 + 22); // create
+	utils::hook::nop(0x4210ED, 59); // font stuff
+#endif
 	
 	// *
 	// detour cmainframe member functions to get imgui input

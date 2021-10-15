@@ -1062,7 +1062,10 @@ namespace game
 		int iTextMenu;
 		char szProject[256];
 		vec4_t colors[27];
-	};
+		int d_xyShowFlags;
+		float d_gridsize_float;
+		int d_picmip;
+	}; STATIC_ASSERT_SIZE(SavedInfo_t, 0x2C4);
 
 	enum select_t
 	{
@@ -1325,9 +1328,6 @@ namespace game
 		char random_texture_stuff[6300];
 		LPMRUMENU* d_lpMruMenu;
 		SavedInfo_t d_savedinfo;
-		int d_xyShowFlags;
-		float d_gridsize_float;
-		int d_picmip;
 		int d_workcount;
 		int d_select_count;
 		brush_t* d_select_order[2];

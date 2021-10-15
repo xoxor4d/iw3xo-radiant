@@ -82,6 +82,8 @@ namespace components
 	
 	renderer::renderer()
 	{
+		// set default value for r_vsync to false
+		utils::hook::set<BYTE>(0x51FB1A + 1, 0x0);
 	}
 
 	renderer::~renderer()

@@ -33,6 +33,8 @@ namespace utils
 		vec_t	normalize2(const vec3_t v, vec3_t out);
 		void	normalize_fast(vec3_t v);
 		void	zero(vec3_t v1);
+		void	set_vec3(vec3_t v, float x, float y, float z);
+		void	set_vec4(vec4_t v, float x, float y, float z, float w);
 		void	subtract(const vec3_t veca, const vec3_t vecb, vec3_t out);
 		void	add(const vec3_t veca, const vec3_t vecb, vec3_t out);
 		void	copy(const vec3_t in, vec3_t out);
