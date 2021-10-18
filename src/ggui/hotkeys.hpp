@@ -7,6 +7,6 @@ namespace ggui::hotkeys
 	void			helper_menu(ggui::imgui_context_menu& menu);
 	std::string		get_hotkey_for_command(const char* command);
 	void			on_close();
-	void			init();
+	void			hooks();
 	
 }

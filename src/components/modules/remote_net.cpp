@@ -23,12 +23,14 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 {
 	WSADATA wsaData;
 
+	game::printf_to_console("[LiveRadiant]: Initiating ...");
+	
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR)
 	{
-		printf("[LiveRadiant]: WSAStartup ERROR!\n");
+		game::printf_to_console("[LiveRadiant]: WSAStartup ERROR!\n");
 		return false;
 	}
-		
+
 	while (true)
 	{
 		// wait for config to load
@@ -55,6 +57,8 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 
 		
 	INIT_DEFAULT:
+		game::printf_to_console("[LiveRadiant]: Listening for game server on localhost:%d ...\n", dvars::radiant_livePort ? dvars::radiant_livePort->current.integer : 3700);
+		
 		Sleep(200);
 
 		// connect to the remote game TCP server (doing this in the while loop too if radiant is running and the server is not )
@@ -62,19 +66,9 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 
 		if (g_RemoteSocket == INVALID_SOCKET)
 		{
-			printf("[LiveRadiant]: Failed to initialize client TCP socket!\n");
+			game::printf_to_console("[LiveRadiant]: Failed to initialize client TCP socket!\n");
 			return 0;
 		}
-
-		if (dvars::radiant_livePort)
-		{
-			printf(utils::va("[LiveRadiant]: Listening for game server on 127.0.0.1:%d ...\n", dvars::radiant_livePort->current.integer));
-		}	
-		else
-		{
-			printf("[LiveRadiant]: Listening for game server on 127.0.0.1:3700 ...\n");
-		}
-			
 
 		// Loop indefinitely until we successfully connect
 		while (true)
@@ -111,7 +105,7 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 		}
 
 		// Send updates until the game exits/connection is terminated
-		printf("[LiveRadiant]: game connected!\n");
+		game::printf_to_console("[LiveRadiant]: Game connected!\n");
 		g_RemoteSocketStatus = 1;
 
 		game::glob::live_connected = true;
@@ -153,7 +147,7 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 		closesocket(g_RemoteSocket);
 		g_RemoteSocketStatus = INVALID_SOCKET;
 
-		printf("[LiveRadiant]: game disconnected!\n");
+		game::printf_to_console("[LiveRadiant]: Game disconnected!\n");
 	}
 
 	return 0;

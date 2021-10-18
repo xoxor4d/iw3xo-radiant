@@ -29,7 +29,27 @@ namespace ggui
 
 	ImVec2 get_initial_window_pos()
 	{
-		return ImVec2(5.0f, ggui::toolbar_pos.y + ggui::toolbar_size.y + 5.0f);
+		if(ggui::toolbar_axis == ImGuiAxis_X)
+		{
+			return ImVec2(5.0f, 33.0f + ggui::toolbar_size.y + 5.0f);
+		}
+
+		return ImVec2(ggui::toolbar_size.x + 10.0f, 33.0f);
+	}
+
+	void set_next_window_initial_pos_and_constraints(ImVec2 mins, ImVec2 initial_size, ImVec2 overwrite_pos)
+	{
+		ImGui::SetNextWindowSizeConstraints(mins, ImVec2(FLT_MAX, FLT_MAX));
+		ImGui::SetNextWindowSize(initial_size, ImGuiCond_FirstUseEver);
+
+		if(overwrite_pos.x == 0 && overwrite_pos.y == 0)
+		{
+			ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+		}
+		else
+		{
+			ImGui::SetNextWindowPos(overwrite_pos, ImGuiCond_FirstUseEver);
+		}
 	}
 
 	bool cz_context_ready()

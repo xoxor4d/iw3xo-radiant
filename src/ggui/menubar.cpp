@@ -284,6 +284,10 @@ namespace ggui::menubar
 					components::gui::toggle(context.m_demo, 0, true);
 				}
 
+				if (ImGui::MenuItem("Preferences ImGui")) {
+					components::gui::toggle(context.m_preferences, 0, true);
+				}
+				
 				if (ImGui::MenuItem("Preferences ...", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
 					mainframe_thiscall(void, 0x426950); //cmainframe::OnPrefs
 				}
@@ -1450,19 +1454,22 @@ namespace ggui::menubar
 			}
 			ImGui::EndGroup();
 
-			const auto menubar_width = ImGui::GetItemRectSize().x + 24.0f;
-			const auto gridpos_text_width = ImGui::CalcTextSize(cmainframe::activewnd->m_strStatus[1]).x;
-			
-			RECT _rect;
-			GetClientRect(cmainframe::activewnd->GetWindow(), &_rect);
-			const int mainframe_width = _rect.right - _rect.left;
-
-			if(mainframe_width >= menubar_width + gridpos_text_width + 8.0f)
+			if(dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
 			{
-				if (cmainframe::activewnd->m_strStatus[1])
+				const auto menubar_width = ImGui::GetItemRectSize().x + 24.0f;
+				const auto gridpos_text_width = ImGui::CalcTextSize(cmainframe::activewnd->m_strStatus[1]).x;
+
+				RECT _rect;
+				GetClientRect(cmainframe::activewnd->GetWindow(), &_rect);
+				const int mainframe_width = _rect.right - _rect.left;
+
+				if (mainframe_width >= menubar_width + gridpos_text_width + 8.0f)
 				{
-					ImGui::SameLine(ImGui::GetWindowWidth() - gridpos_text_width - 8.0f);
-					ImGui::TextUnformatted(cmainframe::activewnd->m_strStatus[1]);
+					if (cmainframe::activewnd->m_strStatus[1])
+					{
+						ImGui::SameLine(ImGui::GetWindowWidth() - gridpos_text_width - 8.0f);
+						ImGui::TextUnformatted(cmainframe::activewnd->m_strStatus[1]);
+					}
 				}
 			}
 

@@ -71,10 +71,11 @@ public:
 
 	//
 	static void				hooks();
+	static void				register_dvars();
 	static LRESULT WINAPI	windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static void				rtt_grid_window();
 	
-	//static void __cdecl		on_resize(HWND__* hwnd, int width, int height);
+	//static void __cdecl	on_resize(HWND__* hwnd, int width, int height);
 	//static void			on_endframe();
 
 	static void __fastcall	on_lbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
@@ -93,8 +94,8 @@ public:
 
 	static BOOL __stdcall	on_scroll(UINT nFlags, std::int16_t zDelta, CPoint point);
 	
-	static void on_view_zoomin(cmainframe* pThis, CPoint point);
-	static void on_view_zoomout(cmainframe* pThis, CPoint point);
+	static void				on_view_zoomin(cmainframe* pThis, CPoint point);
+	static void				on_view_zoomout(cmainframe* pThis, CPoint point);
 };
 
 namespace xywnd

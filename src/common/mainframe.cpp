@@ -54,7 +54,7 @@ void cmainframe::routine_processing()
 	if (this->m_pCamWnd)
 	{
 		const auto delta = static_cast<float>(oldtime);
-		this->m_pCamWnd->mouse_control(delta);
+		this->m_pCamWnd->mouse_control(delta); // this is used for the q3 camera mode (0)
 	}
 
 	if (game::g_nUpdateBits)

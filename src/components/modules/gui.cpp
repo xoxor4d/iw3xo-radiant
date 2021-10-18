@@ -315,9 +315,10 @@ namespace components
 #endif
 
 			//ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 10));
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(3, 4));
+
+			//ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(3, 4)); // close and menubutton are too close
 			ImGui::DockSpace(dockspace_id, dockspace_size, dockspace_flags);
-			ImGui::PopStyleVar(1);
+			//ImGui::PopStyleVar(1);
 
 			// *
 			// main dockspace
@@ -371,12 +372,16 @@ namespace components
 						}
 					}
 
-					ImGui::DockBuilderDockWindow("Colors##window", dockspace_inner_left_node);
-					ImGui::DockBuilderDockWindow("Hotkeys##window", dockspace_inner_left_node);
-					ImGui::DockBuilderDockWindow("Hotkeys Helper##window", dockspace_inner_left_node);
-					ImGui::DockBuilderDockWindow("Toolbar Editor##window", dockspace_inner_left_node);
+					//ImGui::DockBuilderDockWindow("Colors##window", dockspace_inner_left_node);
+					//ImGui::DockBuilderDockWindow("Hotkeys##window", dockspace_inner_left_node);
+					//ImGui::DockBuilderDockWindow("Hotkeys Helper##window", dockspace_inner_left_node);
+					//ImGui::DockBuilderDockWindow("Toolbar Editor##window", dockspace_inner_left_node);
+					//ImGui::DockBuilderDockWindow("Filters##window", dockspace_inner_left_node);
+					//ImGui::DockBuilderDockWindow("Entity##window", dockspace_inner_left_node);
+					
 					ImGui::DockBuilderDockWindow("Grid Window##rtt", ggui::dockspace_outer_left_node);
 					ImGui::DockBuilderDockWindow("Camera Window##rtt", dockspace_right_top_node);
+
 					ImGui::DockBuilderDockWindow("Textures##rtt", main_dock);
 					ImGui::DockBuilderDockWindow("Console##window", main_dock);
 					
@@ -401,7 +406,6 @@ namespace components
 				context.m_toolbar.one_time_init = true;
 				ggui::reset_dockspace = false;
 			}
-			
 		}
 
 		ImGui::End();
@@ -543,6 +547,12 @@ namespace components
 			// entity menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_entity,
 				ggui::entity::menu(ggui::state.czwnd.m_entity), nullptr);
+
+			// preferences menu
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_preferences,
+				ggui::preferences::menu(ggui::state.czwnd.m_preferences), nullptr);
+
+			ggui::state.czwnd.m_preferences.menustate = true;
 			
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
@@ -890,6 +900,12 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "Window to use as the main background. 0 = None, 1 = Grid, 2 = Camera");
 
+		dvars::gui_menubar_show_mouseorigin = dvars::register_bool(
+			/* name		*/ "gui_menubar_show_mouseorigin",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "draw the mouse cursor origin within the menubar (old statusbar text)");
+
 
 		// *
 		// gui::saved_windowstates()
@@ -924,7 +940,7 @@ namespace components
 	gui::gui()
 	{
 		// hotkey hooks
-		ggui::hotkeys::init();
+		ggui::hotkeys::hooks();
 
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{

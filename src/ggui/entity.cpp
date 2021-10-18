@@ -1226,6 +1226,9 @@ namespace ggui::entity
 		utils::hook::set<BYTE>(0x423D0A + 1, 0x0);
 		utils::hook::set<BYTE>(0x423DCF + 1, 0x0);
 		utils::hook::set<BYTE>(0x423DDD + 1, 0x0);
+
+		// do not show original entity window when opening the misc_model dialog from the context menu
+		utils::hook::nop(0x46624A, 5);
 		
 		// (can be disabled once the imgui-entity window is done and the original hidden)
 		// disable top-most mode for inspector/entity window

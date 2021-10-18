@@ -50,7 +50,6 @@ namespace game
 	
 	// radiant globals
 	extern int&			g_nScaleHow;
-	//extern CPrefsDlg*	g_PrefsDlg;
 	extern game::qeglobals_t* g_qeglobals;
 
 	extern float&	g_zoomLevel;
@@ -65,8 +64,8 @@ namespace game
 	extern bool&	g_bRotateMode;
 	extern bool&	g_bScaleMode;
 	extern int&		g_nLastLen;
+	extern int&		g_undoMaxSize;
 
-	//extern game::eclass_t*		g_eclass;
 	extern game::SCommandInfo*	g_Commands;
 	extern int		g_nCommandCount;
 	

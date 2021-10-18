@@ -672,7 +672,7 @@ namespace ggui::hotkeys
 
 	// -------------
 
-	void init()
+	void hooks()
 	{
 		// replace hardcoded hotkeys with our own (ini)
 		utils::hook(0x420A4F, load_commandmap, HOOK_CALL).install()->quick();

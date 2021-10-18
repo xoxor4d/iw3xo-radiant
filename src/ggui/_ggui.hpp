@@ -102,6 +102,7 @@ namespace ggui
 		imgui_context_menu m_console;
 		imgui_context_menu m_filter;
 		imgui_context_menu m_entity;
+		imgui_context_menu m_preferences;
 		imgui_context_menu m_demo;
 		render_to_texture_window_s rtt_camerawnd;
 		render_to_texture_window_s rtt_gridwnd;
@@ -149,6 +150,7 @@ namespace ggui
 	// *
 
 	extern ImVec2 get_initial_window_pos();
+	extern void set_next_window_initial_pos_and_constraints(ImVec2 mins, ImVec2 initial_size, ImVec2 overwrite_pos = ImVec2(0.0f, 0.0f));
 	extern bool cz_context_ready();
 
 	extern bool rtt_handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd);

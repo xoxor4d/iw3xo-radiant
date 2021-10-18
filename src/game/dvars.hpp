@@ -21,7 +21,8 @@ namespace dvars
 	extern game::dvar_s* gui_floating_toolbar;
 	extern game::dvar_s* gui_resize_dockspace;
 	extern game::dvar_s* gui_mainframe_background;
-
+	extern game::dvar_s* gui_menubar_show_mouseorigin;
+	
 	extern game::dvar_s* gui_saved_state_console;
 	extern game::dvar_s* gui_saved_state_filter;
 	extern game::dvar_s* gui_saved_state_entity;
@@ -33,6 +34,9 @@ namespace dvars
 	extern game::dvar_s* mainframe_show_toolbar;
 	extern game::dvar_s* mainframe_show_menubar;
 
+	//
+	extern game::dvar_s* grid_zoom_to_cursor;
+	
 	// radiant-live
 	extern game::dvar_s* radiant_live;
 	extern game::dvar_s* radiant_livePort;

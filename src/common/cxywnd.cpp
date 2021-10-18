@@ -309,30 +309,33 @@ void cxywnd::on_view_zoomin(cmainframe* pThis, CPoint point)
 
 		xy_to_point(pThis->m_pXYWnd, origin_from_point_newzoom, point);
 
-		float delta_x = 0.0f, delta_y = 0.0f, delta_z = 0.0f;
-		
-		switch (pThis->m_pXYWnd->m_nViewType)
+		if(dvars::grid_zoom_to_cursor && dvars::grid_zoom_to_cursor->current.enabled)
 		{
-		case XY:
-			delta_x =  (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
-			delta_y = -(origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
-			
-			break;
+			float delta_x = 0.0f, delta_y = 0.0f, delta_z = 0.0f;
 
-		case XZ:
-			delta_x =  (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
-			delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
-			break;
+			switch (pThis->m_pXYWnd->m_nViewType)
+			{
+			case XY:
+				delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+				delta_y = -(origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
 
-		case YZ:
-			delta_y =  (origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
-			delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
-			break;
+				break;
+
+			case XZ:
+				delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+				delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+				break;
+
+			case YZ:
+				delta_y = (origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+				delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+				break;
+			}
+
+			pThis->m_pXYWnd->m_vOrigin[0] -= delta_x;
+			pThis->m_pXYWnd->m_vOrigin[1] -= delta_y;
+			pThis->m_pXYWnd->m_vOrigin[2] -= delta_z;
 		}
-		
-		pThis->m_pXYWnd->m_vOrigin[0] -= delta_x;
-		pThis->m_pXYWnd->m_vOrigin[1] -= delta_y;
-		pThis->m_pXYWnd->m_vOrigin[2] -= delta_z;
 	}
 	
 	game::g_nUpdateBits |= W_XY_OVERLAY | W_XY;
@@ -379,33 +382,36 @@ void cxywnd::on_view_zoomout(cmainframe* pThis, CPoint point)
 
 		// needed?
 		game::g_zoomLevel = pThis->m_pXYWnd->m_fScale;
-		
-		xy_to_point(pThis->m_pXYWnd, origin_from_point_newzoom, point);
 
-		float delta_x = 0.0f, delta_y = 0.0f, delta_z = 0.0f;
-
-		switch (pThis->m_pXYWnd->m_nViewType)
+		if (dvars::grid_zoom_to_cursor && dvars::grid_zoom_to_cursor->current.enabled)
 		{
-		case XY:
-			delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
-			delta_y = -(origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+			xy_to_point(pThis->m_pXYWnd, origin_from_point_newzoom, point);
 
-			break;
+			float delta_x = 0.0f, delta_y = 0.0f, delta_z = 0.0f;
 
-		case XZ:
-			delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
-			delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
-			break;
+			switch (pThis->m_pXYWnd->m_nViewType)
+			{
+			case XY:
+				delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+				delta_y = -(origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
 
-		case YZ:
-			delta_y = (origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
-			delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
-			break;
+				break;
+
+			case XZ:
+				delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+				delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+				break;
+
+			case YZ:
+				delta_y = (origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+				delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+				break;
+			}
+
+			pThis->m_pXYWnd->m_vOrigin[0] -= delta_x;
+			pThis->m_pXYWnd->m_vOrigin[1] -= delta_y;
+			pThis->m_pXYWnd->m_vOrigin[2] -= delta_z;
 		}
-
-		pThis->m_pXYWnd->m_vOrigin[0] -= delta_x;
-		pThis->m_pXYWnd->m_vOrigin[1] -= delta_y;
-		pThis->m_pXYWnd->m_vOrigin[2] -= delta_z;
 		
 		if (pThis->m_pXYWnd->m_fScale != 0.0f)
 		{
@@ -506,6 +512,16 @@ void __declspec(naked) set_detatched_child_window_style()
 
 // *
 // *
+
+// dvars::register_addon_dvars()
+void cxywnd::register_dvars()
+{
+	dvars::grid_zoom_to_cursor = dvars::register_bool(
+		/* name		*/ "grid_zoom_to_cursor",
+		/* default	*/ true,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "grid-view: zoom towards the mouse cursor");
+}
 
 void cxywnd::hooks()
 {

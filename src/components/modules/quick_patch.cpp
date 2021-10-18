@@ -87,9 +87,8 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 				SendMessageA(hwnd, WM_PAINT, 0, 0);
 			}
 
-			if(quater_update == 3)
+			//if(quater_update == 3) // update texture window ~ 60fps
 			{
-				// update texture window ~ 60fps
 				if (const auto hwnd = cmainframe::activewnd->m_pTexWnd->GetWindow();
 					hwnd != nullptr)
 				{
@@ -409,6 +408,9 @@ namespace components
 
 		// disable detatched windows (for now)
 		prefs->detatch_windows = false;
+
+		// this can really kill performance without the user knowing why
+		prefs->preview_sun_aswell = false;
 	}
 	
 	__declspec(naked) void force_preferences_on_init_stub()
@@ -463,6 +465,12 @@ namespace components
 
 		// nop com_math.cpp "det" line:1775 assert (MatrixInverse44)
 		utils::hook::nop(0x4A6BC9, 5);
+
+		// set max undos
+		//utils::hook::set<int32_t>(0x739F6C, 512);
+
+		// set max undo memory
+		utils::hook::set<int32_t>(0x739F70, 0x01000000); // default 2mb, now 16mb
 
 		
 //#define CONSOLE_TEST

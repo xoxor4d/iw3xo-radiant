@@ -11,6 +11,7 @@ void registery_save([[maybe_unused]] CPrefsDlg* prefs)
 {
 	const auto state = afx::get_module_state();
 	CWinApp_WriteProfileInt(state->m_pCurrentWinApp, "Prefs", "iw3x_mainframe_menubar_enabled", ggui::mainframe_menubar_enabled);
+	CWinApp_WriteProfileInt(state->m_pCurrentWinApp, "Prefs", "lights_max_intensity", game::g_qeglobals->preview_at_max_intensity);
 }
 
 __declspec(naked) void registery_save_stub()
@@ -35,6 +36,12 @@ void registery_load()
 {
 	const auto state = afx::get_module_state();
 	ggui::mainframe_menubar_enabled = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "iw3x_mainframe_menubar_enabled", 0);
+
+	// put the undo levels variable to use (g_undoMaxSize always defaults to 64 otherwise)
+	game::g_undoMaxSize = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "UndoLevels", 0);
+
+	// always bothered me ..
+	game::g_qeglobals->preview_at_max_intensity = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "lights_max_intensity", 0);
 }
 
 __declspec(naked) void registery_load_stub()
@@ -111,7 +118,7 @@ void MFCCreate()
 		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], 1.0f, 0.1f, 0.0f, 0.4f); // 6 - not used org - now grid entity classname
 		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBLOCK], 0.165f, 0.165f, 0.165f, 1.0f); // 7
 		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDTEXT], 0.0f, 0.0f, 0.0f, 1.0f); // 8
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_BRUSHES], 0.25f, 0.25f, 0.25f, 1.0f); // 9
+		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_BRUSHES], 0.54f, 0.54f, 0.54f, 1.0f); // 9
 
 		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELBRUSHES], 1.0f, 0.125f, 0.0f, 1.0f); // 10
 		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELBRUSHES_CAMERA], 1.0f, 0.0f, 0.0f, 0.35f); // 11
@@ -231,6 +238,9 @@ void radiantapp::hooks()
 {
 	// registery saving stub :: CPrefsDlg::SavePrefs
 	utils::hook(0x44F294, registery_save_stub, HOOK_JUMP).install()->quick();
+
+	// always save preferences (even if loaded map = unnamed.map)
+	utils::hook::nop(0x422115, 2);
 
 	// registery loading stub :: CPrefsDlg::LoadPrefs
 	utils::hook(0x44E38C, registery_load_stub, HOOK_JUMP).install()->quick();

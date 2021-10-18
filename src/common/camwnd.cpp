@@ -83,6 +83,62 @@ void ccamwnd::rtt_camera_window()
 	ImGui::End();
 }
 
+// CTRL + SHIFT + RMButton
+void cam_rotate()
+{
+	auto cam = cmainframe::activewnd->m_pCamWnd;
+	auto prefs = game::g_PrefsDlg();
+	
+	CPoint point;
+	GetCursorPos(&point);
+
+	if (point.x != cam->m_ptCursor.x || point.y != cam->m_ptCursor.y)
+	{
+		// use anglespeed
+		cam->camera.angles[1] = cam->camera.angles[1] - static_cast<float>(prefs->m_nAngleSpeed) / 500.0f * static_cast<float>(point.x - cam->m_ptCursor.x);
+		cam->camera.angles[0] = cam->camera.angles[0] - static_cast<float>(prefs->m_nAngleSpeed) / 500.0f * static_cast<float>(point.y - cam->m_ptCursor.y);
+
+		// org
+		//cam->camera.angles[1] = cam->camera.angles[1] - prefs->m_nMoveSpeed / 500.0 * (point.x - cam->m_ptCursor.x);
+		//cam->camera.angles[0] = cam->camera.angles[0] - prefs->m_nMoveSpeed / 500.0 * (point.y - cam->m_ptCursor.y);
+
+		SetCursorPos(cam->m_ptCursor.x, cam->m_ptCursor.y);
+		cam->x48 = 0;
+
+		ShowCursor(0);
+	}
+}
+
+void cam_positiondrag()
+{
+	auto cam = cmainframe::activewnd->m_pCamWnd;
+	auto prefs = game::g_PrefsDlg();
+
+	CPoint point;
+	GetCursorPos(&point);
+	
+	if (point.x != cam->m_ptCursor.x || point.y != cam->m_ptCursor.y)
+	{
+		// use anglespeed
+		cam->camera.angles[1] = cam->camera.angles[1] - static_cast<float>(prefs->m_nAngleSpeed) / 500.0f * static_cast<float>(point.x - cam->m_ptCursor.x);
+		
+		// org
+		//cam->camera.angles[1] = cam->camera.angles[1] - prefs->m_nMoveSpeed / 500.0 * (point.x - cam->m_ptCursor.x);
+
+		const float delta = static_cast<float>(prefs->m_nMoveSpeed) / -250.0f * static_cast<float>(point.y - cam->m_ptCursor.y);
+		utils::vector::normalize(cam->camera.vpn);
+		
+		cam->camera.origin[0] = cam->camera.vpn[0] * delta + cam->camera.origin[0];
+		cam->camera.origin[1] = cam->camera.vpn[1] * delta + cam->camera.origin[1];
+		//cam->camera.origin[2] = cam->camera.origin[2];
+
+		SetCursorPos(cam->m_ptCursor.x, cam->m_ptCursor.y);
+		cam->x48 = 0;
+		
+		ShowCursor(0);
+	}
+}
+
 void ccamwnd::mouse_control(float dtime)
 {
 	const static uint32_t Cam_MouseControl_Func = 0x403950;
@@ -280,6 +336,11 @@ void ccamwnd::hooks()
 	utils::hook::nop(0x402ECA, 7);
 		 utils::hook(0x402ECA, camwnd_set_detatched_child_window_style, HOOK_JUMP).install()->quick();
 #endif
+
+	utils::hook(0x405346, cam_rotate, HOOK_CALL).install()->quick();
+	utils::hook(0x405321, cam_positiondrag, HOOK_CALL).install()->quick();
+
+	//utils::hook::nop(0x404AD1, 23);
 	
 	__on_lbutton_down   = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x403160, ccamwnd::on_lbutton_down, HK_JUMP));
     __on_lbutton_up     = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x4031D0, ccamwnd::on_lbutton_up, HK_JUMP));

@@ -31,7 +31,6 @@ namespace game
 
 	// radiant globals
 	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
-	//CPrefsDlg*	g_PrefsDlg = reinterpret_cast<CPrefsDlg*>(0x73C704);
 	game::qeglobals_t* g_qeglobals = reinterpret_cast<game::qeglobals_t*>(0x25F39C0);
 
 	float&	g_zoomLevel = *reinterpret_cast<float*>(0x25D5A90);
@@ -46,8 +45,8 @@ namespace game
 	bool&	g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
 	bool&	g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
 	int&	g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
+	int&	g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
 	
-	//game::eclass_t*		g_eclass = reinterpret_cast<game::eclass_t*>(0x25D5B20);
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
 
