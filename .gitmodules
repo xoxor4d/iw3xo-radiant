@@ -5,6 +5,3 @@
 [submodule "deps/fifo_map"]
 	path = deps/fifo_map
 	url = https://github.com/nlohmann/fifo_map.git
-[submodule "deps/ImGuizmo"]
-	path = deps/ImGuizmo
-	url = https://github.com/CedricGuillemet/ImGuizmo.git
