@@ -17,11 +17,14 @@ namespace ggui::entity
 
 	struct epair_wrapper
 	{
+		game::entity_s_def* entity;
+		game::eclass_t* eclass;
 		game::epair_t* epair;
 		EPAIR_VALUETYPE type;
 		float v_speed = 0.1f;
 		float v_min = 0.0f;
 		float v_max = FLT_MAX;
+		bool  is_fixedsize;
 	};
 
 	std::vector<epair_wrapper> eprop_sorted;
@@ -93,16 +96,16 @@ namespace ggui::entity
 	}
 
 	
-	struct addprop_helper_s
+	/*struct addprop_helper_s
 	{
 		bool is_origin;
 		bool is_angle;
 		bool is_generic_slider;
 		bool is_color;
 		bool add_undo;
-	};
+	};*/
 
-	void AddProp(const char* key, const char* value, addprop_helper_s* helper = nullptr)
+	void AddProp(const char* key, const char* value, addprop_helper_s* helper)
 	{
 		// undo if no helper defined or helper wants to add an undo
 		const bool should_add_undo = !helper || helper && helper->add_undo;
@@ -779,15 +782,40 @@ namespace ggui::entity
 		}
 	}
 
-	void gui_entprop_add_value_vec3(const epair_wrapper& epw, float* vec3)
+	void Brush_Center(game::brush_t* b, game::vec3_t vNewCenter)
+	{
+		game::vec3_t vMid;
+		// get center of the brush
+		for (int j = 0; j < 3; j++)
+		{
+			vMid[j] = b->mins[j] + abs((b->maxs[j] - b->mins[j]) * 0.5);
+		}
+		// calc distance between centers
+		VectorSubtract(vNewCenter, vMid, vMid);
+		game::Brush_Move(vMid, b, true);
+	}
+
+	void gui_entprop_add_value_vec3(const epair_wrapper& epw, float* vec_in, int row = 0)
 	{
 		bool dirty = false;
-		
 		char vec3_str_buf[64] = {};
-		addprop_helper_s helper = {};
 		
-		helper.is_origin = epw.type && epw.type == ORIGIN;
-		helper.is_angle = epw.type && epw.type == ANGLES;
+		float* vec3 = vec_in;
+		float temp_origin[] = { vec_in[0], vec_in[1], vec_in[2] };
+
+		// do not edit the input vec directly if we modify an entity thats build using brushes (eg. lights, script_origins etc)
+		// Brush_Move updates the key
+		if(epw.is_fixedsize)
+		{
+			vec3 = temp_origin;
+		}
+
+		// avoid hashe collisions
+		ImGui::PushID(row);
+
+		addprop_helper_s helper = {};
+		helper.is_origin = epw.type == ORIGIN;
+		helper.is_angle = epw.type == ANGLES;
 		
 		if (game::multiple_edit_entities) {
 			ImGui::BeginDisabled(true);
@@ -839,7 +867,8 @@ namespace ggui::entity
 		}
 
 		ImGui::PopStyleVar();
-
+		ImGui::PopID();
+		
 		if (game::multiple_edit_entities) 
 		{
 			ImGui::EndDisabled();
@@ -848,7 +877,18 @@ namespace ggui::entity
 		
 		if(dirty)
 		{
-			if (sprintf_s(vec3_str_buf, "%.3f %.3f %.3f", vec3[0], vec3[1], vec3[2])) {
+			// use brush center / brush move to move the entity
+			if(epw.is_fixedsize && epw.type == ORIGIN)
+			{
+				auto sb = game::g_selected_brushes();
+				Brush_Center(sb->currSelection, vec3);
+
+				if (sprintf_s(vec3_str_buf, "%.3f %.3f %.3f", vec3[0], vec3[1], vec3[2])) {
+					AddProp(epw.epair->key, vec3_str_buf, &helper);
+				}
+			}
+			
+			else if (sprintf_s(vec3_str_buf, "%.3f %.3f %.3f", vec3[0], vec3[1], vec3[2])) {
 				AddProp(epw.epair->key, vec3_str_buf, &helper);
 			}
 		}
@@ -863,7 +903,7 @@ namespace ggui::entity
 			if(const auto edit_entity = game::g_edit_entity(); 
 						  edit_entity)
 			{
-				gui_entprop_add_value_vec3(epw, edit_entity->origin);
+				gui_entprop_add_value_vec3(epw, edit_entity->origin, row);
 				return;
 			}
 			
@@ -872,7 +912,7 @@ namespace ggui::entity
 			float angles[3] = { 0.0f, 0.0f, 0.0f };
 			if (sscanf(epw.epair->value, "%f %f %f", &angles[0], &angles[1], &angles[2]) == 3)
 			{
-				gui_entprop_add_value_vec3(epw, angles);
+				gui_entprop_add_value_vec3(epw, angles, row);
 				return;
 			}
 		}
@@ -913,39 +953,63 @@ namespace ggui::entity
 						for (auto epair = edit_entity->epairs; epair; epair = epair->next)
 						{
 							std::string key = utils::str_to_lower(epair->key);
-							 
+
+							epair_wrapper eprop = {};
+							eprop.entity	= edit_entity;
+							eprop.eclass	= edit_entity->eclass;
+							eprop.epair		= epair;
+							eprop.type		= EPAIR_VALUETYPE::TEXT;
+							eprop.v_speed	=  1.0f;
+							eprop.v_min		= -FLT_MAX;
+							eprop.v_max		=  FLT_MAX;
+							eprop.is_fixedsize = edit_entity->eclass->fixedsize;
+							
 							if(!is_worldspawn)
 							{
-								if (key == "origin") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::ORIGIN, 1.0f, -FLT_MAX, FLT_MAX));
+								if (key == "origin") 
+								{
+									eprop.type = EPAIR_VALUETYPE::ORIGIN;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "angles") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::ANGLES, 0.1f, -FLT_MAX, FLT_MAX));
+								if (key == "angles") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::ANGLES;
+									eprop.v_speed	= 0.1f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 							}
 							else
 							{
-								if (key == "suncolor") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::COLOR));
+								if (key == "suncolor") 
+								{
+									eprop.type = EPAIR_VALUETYPE::COLOR;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "sundiffusecolor") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::COLOR));
+								if (key == "sundiffusecolor") 
+								{
+									eprop.type = EPAIR_VALUETYPE::COLOR;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "sundirection") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::ANGLES, 0.1f, -FLT_MAX, FLT_MAX));
+								if (key == "sundirection") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::ANGLES;
+									eprop.v_speed	= 0.1f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 							}
 
-							if (key == "_color") {
-								eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::COLOR));
+							if (key == "_color") 
+							{
+								eprop.type = EPAIR_VALUETYPE::COLOR;
+								eprop_sorted.push_back(eprop);
 								continue;
 							}
 
@@ -956,75 +1020,123 @@ namespace ggui::entity
 
 							if(!is_worldspawn)
 							{
-								if (key == "radius") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 1.0f));
+								if (key == "radius") 
+								{
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "exponent") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 0.01f, 0.0f, 100.0f));
+								if (key == "exponent") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed	= 0.01f;
+									eprop.v_min		= 0.0f;
+									eprop.v_max		= 100.0f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "fov_inner") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 0.1f, 1.0f, 136.0f));
+								if (key == "fov_inner") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed	= 0.1f;
+									eprop.v_min		= 1.0f;
+									eprop.v_max		= 136.0f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "fov_outer") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 0.1f, 1.0f, 136.0f));
+								if (key == "fov_outer") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed	= 0.1f;
+									eprop.v_min		= 1.0f;
+									eprop.v_max		= 136.0f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
 								if (key == "intensity")
 								{
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 0.01f));
+									eprop.type		= EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed	= 0.01f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 							}
 							else
 							{
-								if (key == "ambient") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 0.01f, 0.0f, 2.0f));
+								if (key == "ambient") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed	= 0.01f;
+									eprop.v_min		= 0.0f;
+									eprop.v_max		= 2.0f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "sunlight") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 0.01f, 0.0f, 8.0f));
+								if (key == "sunlight") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed	= 0.01f;
+									eprop.v_min		= 0.0f;
+									eprop.v_max		= 8.0f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "sunradiosity") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 0.01f, 0.0f, 100.0f));
+								if (key == "sunradiosity") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed	= 0.01f;
+									eprop.v_min		= 0.0f;
+									eprop.v_max		= 100.0f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "diffusefraction") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 0.01f, 0.0f, 1.0f));
+								if (key == "diffusefraction") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed	= 0.01f;
+									eprop.v_min		= 0.0f;
+									eprop.v_max		= 1.0f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "radiosityscale") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 0.01f, 0.0f, 100.0f));
+								if (key == "radiosityscale") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed	= 0.01f;
+									eprop.v_min		= 0.0f;
+									eprop.v_max		= 100.0f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "contrastgain") {
-									eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::FLOAT, 0.01f, 0.0f, 1.0f));
+								if (key == "contrastgain") 
+								{
+									eprop.type		= EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed	= 0.01f;
+									eprop.v_min		= 0.0f;
+									eprop.v_max		= 1.0f;
+									eprop_sorted.push_back(eprop);
 									continue;
 								}
 							}
-							
 
-							// *
-							// everything else is text
-
-							if (key == "model") {
-								eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::MODEL));
+							if (key == "model") 
+							{
+								eprop.type = EPAIR_VALUETYPE::MODEL;
+								eprop_sorted.push_back(eprop);
 								continue;
 							}
 
-							eprop_sorted.push_back(epair_wrapper(epair, EPAIR_VALUETYPE::TEXT));
+							// everything else is text
+							eprop_sorted.push_back(eprop);
 						}
 
 
@@ -1058,7 +1170,7 @@ namespace ggui::entity
 									break;
 
 								case EPAIR_VALUETYPE::ORIGIN:
-									gui_entprop_add_value_vec3(ep, edit_entity->origin);
+									gui_entprop_add_value_vec3(ep, row);
 									break;
 
 								case EPAIR_VALUETYPE::ANGLES:

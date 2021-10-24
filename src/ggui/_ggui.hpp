@@ -84,6 +84,7 @@ namespace ggui
 		const char* window_name;
 		bool window_hovered;
 		bool should_set_focus;
+		bool capture_left_mousebutton;
 		bool menustate;
 		bool was_open;
 		bool one_time_init;

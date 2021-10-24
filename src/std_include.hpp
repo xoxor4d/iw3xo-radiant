@@ -79,6 +79,7 @@
 #include "common/imgui/imgui_addons.hpp"
 #include "detours/Detours.h"
 #include "fifo_map.hpp"
+#include "ImGuizmo.h"
 
 #include "utils/utils.hpp"
 #include "utils/memory.hpp"

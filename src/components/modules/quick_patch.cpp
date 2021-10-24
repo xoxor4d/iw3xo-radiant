@@ -472,6 +472,11 @@ namespace components
 		// set max undo memory
 		utils::hook::set<int32_t>(0x739F70, 0x01000000); // default 2mb, now 16mb
 
+		// disable entity dragging with mouse in camerawnd
+		utils::hook::set<BYTE>(0x40539D, 0xEB);
+
+		//utils::hook::nop(0x53D141, 5);
+		//utils::hook::nop(0x53D194, 5);
 		
 //#define CONSOLE_TEST
 #ifdef CONSOLE_TEST

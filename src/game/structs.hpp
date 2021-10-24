@@ -1391,6 +1391,20 @@ namespace game
 		unsigned int height;
 	};
 
+	struct __declspec(align(8)) r_globals_t
+	{
+		GfxViewParms identityViewParms;
+		bool inFrame;
+		bool registered;
+		bool forbidDelayLoadImages;
+		bool ignorePrecacheErrors;
+		float viewOrg[3];
+		float viewDir[3];
+		unsigned int frontEndFrameCount;
+		int totalImageMemory;
+		void* Material_materialHashTable[4096];
+	};
+
 	struct r_global_permanent_t
 	{
 		Material* sortedMaterials[4096];

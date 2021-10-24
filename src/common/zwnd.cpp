@@ -63,6 +63,12 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			SetFocus(ccam->GetWindow());
 			SetCapture(ccam->GetWindow());
 			CamWnd__DropModelsToPlane(ccam, ccam->m_ptLastCursor.x, ccam->camera.height - ccam->m_ptLastCursor.y - 1, nFlags);
+
+			if(camerawnd->capture_left_mousebutton)
+			{
+				ImGui::HandleKeyIO(ccam->GetWindow(), WM_LBUTTONDOWN);
+				//camerawnd->capture_left_mousebutton = false;
+			}
 			
 			return;
 		}
@@ -122,6 +128,12 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 			if ((nFlags & (MK_MBUTTON | MK_RBUTTON | MK_LBUTTON)) == 0)
 			{
 				ReleaseCapture();
+			}
+
+			if (camerawnd->capture_left_mousebutton)
+			{
+				ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_LBUTTONUP);
+				camerawnd->capture_left_mousebutton = false;
 			}
 			
 			return;

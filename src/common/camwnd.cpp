@@ -5,6 +5,26 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
 
 #define RTT_CAMERA_USE_PADDING
 
+void mtx4x4_mul(game::GfxMatrix* mtx_out, game::GfxMatrix* a, game::GfxMatrix* b)
+{
+	mtx_out->m[0][0] = a->m[0][0] * b->m[0][0] + a->m[0][1] * b->m[1][0] + b->m[2][0] * a->m[0][2] + b->m[3][0] * a->m[0][3];
+	mtx_out->m[0][1] = b->m[1][1] * a->m[0][1] + a->m[0][0] * b->m[0][1] + b->m[2][1] * a->m[0][2] + a->m[0][3] * b->m[3][1];
+	mtx_out->m[0][2] = b->m[1][2] * a->m[0][1] + b->m[0][2] * a->m[0][0] + a->m[0][2] * b->m[2][2] + a->m[0][3] * b->m[3][2];
+	mtx_out->m[0][3] = b->m[1][3] * a->m[0][1] + a->m[0][0] * b->m[0][3] + b->m[2][3] * a->m[0][2] + a->m[0][3] * b->m[3][3];
+	mtx_out->m[1][0] = a->m[1][1] * b->m[1][0] + a->m[1][0] * b->m[0][0] + b->m[2][0] * a->m[1][2] + b->m[3][0] * a->m[1][3];
+	mtx_out->m[1][1] = a->m[1][0] * b->m[0][1] + b->m[1][1] * a->m[1][1] + b->m[2][1] * a->m[1][2] + a->m[1][3] * b->m[3][1];
+	mtx_out->m[1][2] = a->m[1][1] * b->m[1][2] + a->m[1][0] * b->m[0][2] + a->m[1][2] * b->m[2][2] + b->m[3][2] * a->m[1][3];
+	mtx_out->m[1][3] = a->m[1][0] * b->m[0][3] + b->m[1][3] * a->m[1][1] + b->m[2][3] * a->m[1][2] + a->m[1][3] * b->m[3][3];
+	mtx_out->m[2][0] = a->m[2][1] * b->m[1][0] + a->m[2][0] * b->m[0][0] + b->m[2][0] * a->m[2][2] + b->m[3][0] * a->m[2][3];
+	mtx_out->m[2][1] = a->m[2][0] * b->m[0][1] + b->m[1][1] * a->m[2][1] + b->m[2][1] * a->m[2][2] + a->m[2][3] * b->m[3][1];
+	mtx_out->m[2][2] = a->m[2][1] * b->m[1][2] + a->m[2][0] * b->m[0][2] + a->m[2][2] * b->m[2][2] + b->m[3][2] * a->m[2][3];
+	mtx_out->m[2][3] = a->m[2][0] * b->m[0][3] + b->m[1][3] * a->m[2][1] + b->m[2][3] * a->m[2][2] + a->m[2][3] * b->m[3][3];
+	mtx_out->m[3][0] = b->m[0][0] * a->m[3][0] + a->m[3][1] * b->m[1][0] + a->m[3][2] * b->m[2][0] + b->m[3][0] * a->m[3][3];
+	mtx_out->m[3][1] = b->m[1][1] * a->m[3][1] + a->m[3][0] * b->m[0][1] + a->m[3][2] * b->m[2][1] + a->m[3][3] * b->m[3][1];
+	mtx_out->m[3][2] = b->m[0][2] * a->m[3][0] + b->m[1][2] * a->m[3][1] + a->m[3][2] * b->m[2][2] + b->m[3][2] * a->m[3][3];
+	mtx_out->m[3][3] = b->m[1][3] * a->m[3][1] + a->m[3][0] * b->m[0][3] + a->m[3][2] * b->m[2][3] + a->m[3][3] * b->m[3][3];
+}
+
 // render to texture - camera window
 void ccamwnd::rtt_camera_window()
 {
@@ -75,6 +95,150 @@ void ccamwnd::rtt_camera_window()
 			camerawnd->cursor_pos_pt = CPoint((LONG)camerawnd->cursor_pos.x, (LONG)camerawnd->cursor_pos.y);
 
 			ggui::FixDockingTabbarTriangle(wnd, camerawnd);
+
+			
+			// *
+			// ImGuizmo
+
+			ImGui::Indent(8.0f);
+
+			// setup the view and projection matrices
+			
+			float axis[9];
+			axis[0] = cmainframe::activewnd->m_pCamWnd->camera.vpn[0];
+			axis[1] = cmainframe::activewnd->m_pCamWnd->camera.vpn[1];
+			axis[2] = cmainframe::activewnd->m_pCamWnd->camera.vpn[2];
+			axis[3] = -cmainframe::activewnd->m_pCamWnd->camera.vright[0];
+			axis[4] = -cmainframe::activewnd->m_pCamWnd->camera.vright[1];
+			axis[5] = -cmainframe::activewnd->m_pCamWnd->camera.vright[2];
+			axis[6] = cmainframe::activewnd->m_pCamWnd->camera.vup[0];
+			axis[7] = cmainframe::activewnd->m_pCamWnd->camera.vup[1];
+			axis[8] = cmainframe::activewnd->m_pCamWnd->camera.vup[2];
+
+			//MatrixForViewer
+			game::GfxMatrix view = {};
+			utils::hook::call<void(__cdecl)(float(*mtx)[4], const float* origin, const float*)>(0x4A7A70)(view.m, cmainframe::activewnd->m_pCamWnd->camera.origin, axis);
+
+			
+			float tanHalfFovY = tan(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
+			float tanHalfFovX = tanHalfFovY * ((float)cmainframe::activewnd->m_pCamWnd->camera.width / (float)cmainframe::activewnd->m_pCamWnd->camera.height);
+
+			// R_SetupProjection
+			game::GfxMatrix projection = {};
+			utils::hook::call<void(__cdecl)(game::GfxMatrix*, float halfx, float halfy, float znear)>(0x4A78E0)(&projection, tanHalfFovX, tanHalfFovY, 0.0099999998f);
+			
+			// ----------
+			
+			// LH to RH conversion (not sure what I've done here .. but it works :e)
+
+			game::GfxMatrix inv_view_mtx = {
+				-1.f, 0.f, 0.f, 0.f,
+				0.f, -1.f, 0.f, 0.f,
+				0.f, 0.f, 1.f, 0.f,
+				0.f, 0.f, 0.f, 1.f };
+
+			mtx4x4_mul(&view, &inv_view_mtx, &view);
+			mtx4x4_mul(&view, &view, &inv_view_mtx);
+
+			view.m[0][0] *= -1;
+			view.m[0][1] *= -1;
+			view.m[0][2] *= -1;
+			view.m[1][0] *= -1;
+			view.m[1][1] *= -1;
+			view.m[1][2] *= -1;
+
+			// ----------
+			
+			game::GfxMatrix inv_proj_mtx = {
+				1.f, 0.f, 0.f, 0.f,
+				0.f, 1.f, 0.f, 0.f,
+				0.f, 0.f, -1.f, 0.f,
+				0.f, 0.f, 0.f, 1.f };
+			
+			mtx4x4_mul(&projection, &inv_proj_mtx, &projection);
+			mtx4x4_mul(&projection, &projection, &inv_proj_mtx);
+			
+			// ----------
+			
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::SetDrawlist();
+			ImGuizmo::SetRect(screenpos.x, screenpos.y, camera_size.x, camera_size.y);
+
+			/*if (ImGuizmo::IsOver())
+			{
+				if(ImGuizmo::IsUsing())
+				{
+					game::printf_to_console("is using guizmo");
+				}
+				
+				camerawnd->window_hovered = false;
+			}*/
+
+			float mtx_scale[3] = { 1.0f, 1.0f, 1.0f };
+			float angles[3] = { 0.0f, 0.0f, 0.0f };
+			
+			if (const auto edit_entity = game::g_edit_entity();
+				edit_entity && edit_entity->epairs)
+			{
+				if(_stricmp(edit_entity->eclass->name, "worldspawn"))
+				{
+					// pass mouse input to imgui if guizmo is hovered (TODO: only pass left click)
+					if (ImGuizmo::IsOver()) 
+					{
+						//camerawnd->window_hovered = false;
+						camerawnd->capture_left_mousebutton = true;
+					}
+
+					for (auto epair = edit_entity->epairs; epair; epair = epair->next)
+					{
+						std::string key = utils::str_to_lower(epair->key);
+						if (key == "angles")
+						{
+							// switch axis
+							if (sscanf(epair->value, "%f %f %f", &angles[1], &angles[2], &angles[0]) == 3)
+							{ }
+
+							break;
+						}
+					}
+
+					float tmp_matrix[16];
+					ImGuizmo::RecomposeMatrixFromComponents(edit_entity->origin, angles, mtx_scale, tmp_matrix);
+
+					const auto guizmo_mode = game::g_bRotateMode ? ImGuizmo::OPERATION::ROTATE : ImGuizmo::OPERATION::TRANSLATE;
+					if(ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix))
+					{
+						//ImGui::TextUnformatted("Manipulating ...");
+
+						if (ImGuizmo::IsOver())
+						{
+							float t_origin[3], t_angles[3];
+							ImGuizmo::DecomposeMatrixToComponents(tmp_matrix, t_origin, t_angles, mtx_scale);
+
+							char org_str[64] = {};
+							ggui::entity::addprop_helper_s helper = {};
+
+							
+							helper.add_undo = false; // needs logic for on first edit
+							
+							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_origin[0], t_origin[1], t_origin[2])) {
+								helper.is_origin = true;
+								ggui::entity::AddProp("origin", org_str, &helper);
+							}
+
+							// switch axis
+							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_angles[1], t_angles[2], t_angles[0])) {
+								helper.is_angle = true;
+								ggui::entity::AddProp("angles", org_str, &helper);
+							}
+
+							//ImGui::TextUnformatted(org_str);
+						}
+						
+					}
+				}
+			}
+			
 			ImGui::EndChild();
 		}
 	}
@@ -214,13 +378,15 @@ typedef void(__stdcall* on_ccamwnd_key)(UINT nChar, UINT nRepCnt, UINT nFlags);
 void __fastcall ccamwnd::on_lbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	// original function
-	__on_lbutton_down(pThis, nFlags, point);
+	__on_lbutton_down(pThis, nFlags, point); // not in use?
 }
 
 void __fastcall ccamwnd::on_lbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	// original function
-	__on_lbutton_up(pThis, nFlags, point);
+	//__on_lbutton_up(pThis, nFlags, point);
+
+	czwnd::on_lbutton_up(cmainframe::activewnd->m_pZWnd, nullptr, nFlags, point); // redirect
 }
 
 
@@ -231,13 +397,15 @@ void __fastcall ccamwnd::on_lbutton_up(ccamwnd* pThis, [[maybe_unused]] void* ed
 void __fastcall ccamwnd::on_rbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	// original function
-	__on_rbutton_down(pThis, nFlags, point);
+	__on_rbutton_down(pThis, nFlags, point); // not in use?
 }
 
 void __fastcall ccamwnd::on_rbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	// original function
-	__on_rbutton_up(pThis, nFlags, point);
+	//__on_rbutton_up(pThis, nFlags, point);
+
+	czwnd::on_rbutton_up(cmainframe::activewnd->m_pZWnd, nullptr, nFlags, point); // redirect
 }
 
 
