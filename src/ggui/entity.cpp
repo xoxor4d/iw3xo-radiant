@@ -788,7 +788,7 @@ namespace ggui::entity
 		// get center of the brush
 		for (int j = 0; j < 3; j++)
 		{
-			vMid[j] = b->mins[j] + abs((b->maxs[j] - b->mins[j]) * 0.5);
+			vMid[j] = b->mins[j] + abs((b->maxs[j] - b->mins[j]) * 0.5f);
 		}
 		// calc distance between centers
 		VectorSubtract(vNewCenter, vMid, vMid);

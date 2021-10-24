@@ -7,13 +7,6 @@
 // *
 // gui
 #define IMGUI_DEFINE_MATH_OPERATORS
-
-#define GET_GGUI Game::Globals::gui
-#define GGUI_READY Game::Globals::gui.imgui_initialized
-#define GGUI_READY_DVARS Game::Globals::gui.dvars_initialized
-#define GGUI_ANY_MENUS_OPEN Game::Globals::gui.any_menus_open
-#define GGUI_MENU_COUNT 2
-
 #define IMGUI_BEGIN_CZWND if(ggui::cz_context_ready()) ImGui::SetCurrentContext(ggui::state.czwnd.context)
 
 #include <windows.h>
@@ -76,10 +69,14 @@
 #include <backends/imgui_impl_win32.h>
 #include <misc/cpp/imgui_stdlib.h>
 #pragma warning(pop)
+
 #include "common/imgui/imgui_addons.hpp"
 #include "detours/Detours.h"
 #include "fifo_map.hpp"
+
+#pragma warning(push, 0)  
 #include "ImGuizmo.h"
+#pragma warning(pop)
 
 #include "utils/utils.hpp"
 #include "utils/memory.hpp"

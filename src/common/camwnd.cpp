@@ -381,7 +381,7 @@ void __fastcall ccamwnd::on_lbutton_down(ccamwnd* pThis, [[maybe_unused]] void* 
 	__on_lbutton_down(pThis, nFlags, point); // not in use?
 }
 
-void __fastcall ccamwnd::on_lbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+void __fastcall ccamwnd::on_lbutton_up([[maybe_unused]] ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	// original function
 	//__on_lbutton_up(pThis, nFlags, point);
@@ -400,7 +400,7 @@ void __fastcall ccamwnd::on_rbutton_down(ccamwnd* pThis, [[maybe_unused]] void* 
 	__on_rbutton_down(pThis, nFlags, point); // not in use?
 }
 
-void __fastcall ccamwnd::on_rbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+void __fastcall ccamwnd::on_rbutton_up([[maybe_unused]] ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	// original function
 	//__on_rbutton_up(pThis, nFlags, point);
