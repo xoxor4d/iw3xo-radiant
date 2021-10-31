@@ -237,11 +237,26 @@ namespace ggui
 			ImGui::PopStyleColor();
 		}
 
+		static float matchwindow_height = 0;
+		ImGui::SetNextWindowPos(m_post_inputbox_cursor);
+		
+		if(ImGui::IsWindowDocked())
+		{
+			RECT _rect;
+			GetClientRect(cmainframe::activewnd->GetWindow(), &_rect);
+			const int mainframe_height = _rect.bottom - _rect.top;
+
+			if (matchwindow_height > mainframe_height - m_post_inputbox_cursor.y)
+			{
+				ImGui::SetNextWindowPos(ImVec2(m_post_inputbox_cursor.x, m_post_inputbox_cursor.y - matchwindow_height - 40.0f));
+			}
+		}
+
 		if (ImGui::IsWindowFocused() && m_autocomplete_candidates.Size != 0 && ggui::_console->m_old_input_but_len > 0)
 		{
-			ImGui::SetNextWindowPos(m_post_inputbox_cursor);
+			//ImGui::SetNextWindowPos(m_post_inputbox_cursor);
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.15f, 0.15f, 0.15f, 0.85f));
-			ImGui::Begin("##console_autocomplete", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Begin("##console_autocomplete", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
 
 			if (m_matched_dvar)
 			{
@@ -343,8 +358,14 @@ namespace ggui
 				}
 			}
 
+			matchwindow_height = ImGui::GetWindowSize().y;
+			
 			ImGui::PopStyleColor();
 			ImGui::End(); // autocomplete
+
+			//ImGui::GetWindowSize()
+			// save height for the next frame
+			//matchwindow_height = ImGui::GetItemRectSize().y;
 		}
 		
 		ImGui::End(); // console
@@ -653,6 +674,12 @@ namespace ggui
 		}
 	}
 
+	// CMainFrame::OnViewConsole
+	void on_viewconsole_command()
+	{
+		components::gui::toggle(ggui::state.czwnd.m_console, 0, true);
+	}
+
 	void console::hooks()
 	{
 		// load raw materials progressbar
@@ -686,6 +713,9 @@ namespace ggui
 		utils::hook::detour(0x423E02, (void*)0x423EBC, HK_JUMP);
 		utils::hook::detour(0x496B5F, (void*)0x496C68, HK_JUMP);
 		utils::hook::detour(0x498457, (void*)0x498ACA, HK_JUMP);
+
+		// make console-view hotkey open the imgui variant :: CMainFrame::OnViewConsole
+		utils::hook::detour(0x423CB0, on_viewconsole_command, HK_JUMP);
 
 		components::command::register_command("console_test_multiline_print"s, [](auto)
 			{

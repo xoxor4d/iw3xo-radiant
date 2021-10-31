@@ -552,7 +552,7 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_preferences,
 				ggui::preferences::menu(ggui::state.czwnd.m_preferences), nullptr);
 
-			ggui::state.czwnd.m_preferences.menustate = true;
+			//ggui::state.czwnd.m_preferences.menustate = true;
 			
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,

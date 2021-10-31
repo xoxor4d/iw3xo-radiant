@@ -22,6 +22,13 @@ namespace ggui
 	ImGuiID		toolbar_dock_left;
 
 	std::vector<commandbinds> cmd_hotkeys;
+
+	std::vector<game::SCommandInfo> cmd_addon_hotkeys
+	{
+		{ "LockX", 0, 0, 0x802E },
+		{ "LockY", 0, 0, 0x802F },
+		{ "LockZ", 0, 0, 0x8030 },
+	};
 	
 	// *
 	// | -------------------- Functions ------------------------

@@ -567,6 +567,58 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 // | ------------------------ Key ----------------------------
 // *
 
+void on_keydown_intercept(cmainframe* pThis, UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	for(const auto& hotkey : ggui::cmd_addon_hotkeys)
+	{
+		if(hotkey.m_nKey == nChar)
+		{
+			//bool valid = true;
+			//const auto modifiers = hotkey.m_nModifiers;
+
+			//if(modifiers) // are there modifiers present?
+			//{
+			//	if (modifiers & 1) { // SHIFT
+			//		if (!(GetKeyState(VK_SHIFT) < 0)) valid = false;
+			//	}
+			//	
+			//	if (modifiers & 2) { // ALT
+			//		if (!(GetKeyState(VK_MENU) < 0)) valid = false;
+			//	}
+
+			//	if (modifiers & 4) { // CTRL
+			//		if (!(GetKeyState(VK_CONTROL) < 0)) valid = false;
+			//	}
+			//}
+			//else // hotkey has no modifiers make sure none of those keys are pressed
+			//{
+			//	if (GetKeyState(VK_MENU) < 0)	 valid = false;
+			//	if (GetKeyState(VK_CONTROL) < 0) valid = false;
+			//	if (GetKeyState(VK_SHIFT) < 0)   valid = false;
+			//}
+
+			//if(valid)
+			//{
+			//	SendMessageA(pThis->GetWindow(), WM_COMMAND, hotkey.m_nCommand, 0);
+			//	return;
+			//}
+
+			unsigned int modifiers = 0;
+			if (GetKeyState(VK_MENU) < 0)	 modifiers |= 2;
+			if (GetKeyState(VK_CONTROL) < 0) modifiers |= 4;
+			if (GetKeyState(VK_SHIFT) < 0)   modifiers |= 1;
+
+			if ((hotkey.m_nModifiers & 0x7) == modifiers)
+			{
+				SendMessageA(pThis->GetWindow(), WM_COMMAND, hotkey.m_nCommand, 0);
+				return;
+			}
+		}
+	}
+	
+	mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
+}
+
 void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	if (ggui::cz_context_ready())
@@ -584,7 +636,8 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		if (auto gridwnd = ggui::get_rtt_gridwnd();
 				 gridwnd->window_hovered)
 		{
-			mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
+			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
+			//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 			return;
 		}
 
@@ -594,7 +647,8 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 				 camerawnd->window_hovered)
 		{
 			// calls the original on_keydown function
-			mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
+			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
+			//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 			return;
 		}
 
@@ -608,8 +662,9 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		ImGuiIO& io = ImGui::GetIO();
 		memset(io.KeysDown, 0, sizeof(io.KeysDown));
 	}
-	
-	mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
+
+	on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
+	//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 }
 
 

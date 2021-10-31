@@ -14,8 +14,8 @@ namespace ggui::preferences
 	void init_categories()
 	{
 		// order
-		_pref_categories.emplace_back(CAT_GUI);
 		_pref_categories.emplace_back(CAT_GENERAL);
+		_pref_categories.emplace_back(CAT_GUI);
 		_pref_categories.emplace_back(CAT_GRID);
 		_pref_categories.emplace_back(CAT_CAMERA);
 		_pref_categories.emplace_back(CAT_LIVELINK);
@@ -25,7 +25,7 @@ namespace ggui::preferences
 	{
 		if (_pref_categories[_pref_current] == CAT_GUI)
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), true);
+			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
 			{
 				ImGui::Checkbox("Show mousecursor origin within the menubar", &dvars::gui_menubar_show_mouseorigin->current.enabled);
 
@@ -51,7 +51,7 @@ namespace ggui::preferences
 	{
 		if (_pref_categories[_pref_current] == CAT_GENERAL)
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), true);
+			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
 			{
 				auto prefs = game::g_PrefsDlg();
 				
@@ -116,7 +116,7 @@ namespace ggui::preferences
 	{
 		if (_pref_categories[_pref_current] == CAT_GRID)
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), true);
+			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
 			{
 				auto prefs = game::g_PrefsDlg();
 
@@ -141,7 +141,7 @@ namespace ggui::preferences
 	{
 		if (_pref_categories[_pref_current] == CAT_CAMERA)
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), true);
+			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
 			{
 				auto prefs = game::g_PrefsDlg();
 
@@ -162,7 +162,7 @@ namespace ggui::preferences
 	{
 		if (_pref_categories[_pref_current] == CAT_LIVELINK)
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), true);
+			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
 			{
 				ImGui::Checkbox("Enable live-link", &dvars::radiant_live->current.enabled);
 				ImGui::Checkbox("Enable debug prints", &dvars::radiant_liveDebug->current.enabled);

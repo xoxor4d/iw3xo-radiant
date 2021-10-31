@@ -101,13 +101,15 @@ void get_selection_center(float* center_point)
 bool	_rttcam_toolbar_state = false;
 
 // create dvars for these
+bool	guizmo_enable = true;
 bool	guizmo_enable_snapping = true;
 bool	guizmo_enable_brush_mode = true;
 
 void rtt_camera_window_toolbar()
 {
-	auto camwnd = ggui::get_rtt_camerawnd();
-
+	const auto camwnd = ggui::get_rtt_camerawnd();
+	const auto prefs = game::g_PrefsDlg();
+	
 	ImVec2 toolbar_button_open_size = ImVec2(22.0f, 22.0f);
 	ImVec2 toolbar_button_size = ImVec2(28.0f, 28.0f);
 	ImVec4 toolbar_button_background = ImVec4(0.1f, 0.1f, 0.1f, 0.55f);
@@ -121,7 +123,7 @@ void rtt_camera_window_toolbar()
 	ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line_width + 8.0f - offs));
 
 	// offset toolbar vertically
-	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 8.0f);
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6.0f);
 
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(70, 70, 70, 0));
@@ -149,36 +151,102 @@ void rtt_camera_window_toolbar()
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 			{
-				static bool hov_grid_snapping;
-				if (ggui::toolbar::image_togglebutton("guizmo_grid_snapping"
-					, hov_grid_snapping
-					, guizmo_enable_snapping
-					, "Guizmo: Enable grid-snapping"
+				static bool hov_guizmo_enable;
+				if (ggui::toolbar::image_togglebutton("guizmo_enable"
+					, hov_guizmo_enable
+					, guizmo_enable
+					, "Enable guizmo"
 					, &toolbar_button_background
 					, &toolbar_button_background_hovered
 					, &toolbar_button_background_active
 					, &toolbar_button_size))
 				{
-					guizmo_enable_snapping = guizmo_enable_snapping ? false : true;
+					guizmo_enable = guizmo_enable ? false : true;
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 
-
-				static bool hov_guizmo_brush_mode;
-				if (ggui::toolbar::image_togglebutton("guizmo_brush_mode"
-					, hov_guizmo_brush_mode
-					, guizmo_enable_brush_mode
-					, "Guizmo: Enable brush mode"
-					, &toolbar_button_background
-					, &toolbar_button_background_hovered
-					, &toolbar_button_background_active
-					, &toolbar_button_size))
+				if(guizmo_enable)
 				{
-					guizmo_enable_brush_mode = guizmo_enable_brush_mode ? false : true;
-				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+					static bool hov_guizmo_grid_snapping;
+					if (ggui::toolbar::image_togglebutton("guizmo_grid_snapping"
+						, hov_guizmo_grid_snapping
+						, guizmo_enable_snapping
+						, "Guizmo: Enable grid-snapping"
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						guizmo_enable_snapping = guizmo_enable_snapping ? false : true;
+					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+
+					static bool hov_guizmo_brush_mode;
+					if (ggui::toolbar::image_togglebutton("guizmo_brush_mode"
+						, hov_guizmo_brush_mode
+						, guizmo_enable_brush_mode
+						, "Guizmo: Enable brush mode"
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						guizmo_enable_brush_mode = guizmo_enable_brush_mode ? false : true;
+					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+				}
 
 				ImGui::PopStyleVar();
 			}
-			
+
+			SPACING(0.0f, 0.0f);
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
+			{
+				static bool hov_cubicclip;
+				if (ggui::toolbar::image_togglebutton("cubic_clip"
+					, hov_cubicclip
+					, prefs->m_bCubicClipping
+					, std::string("Cubic Clipping [" + ggui::hotkeys::get_hotkey_for_command("ToggleCubicClip") + "]").c_str()
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					mainframe_thiscall(LRESULT, 0x428F90); // CMainFrame::OnViewCubicclipping
+				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+				
+				static bool hov_camera_movement;
+				ImGui::BeginGroup();
+				{
+					ImVec2 prebutton_cursor = ImGui::GetCursorScreenPos();
+
+					if (ggui::toolbar::image_togglebutton("camera_movement"
+						, hov_camera_movement
+						, prefs->camera_mode
+						, "Toggle Camera Movement Mode"
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						mainframe_thiscall(LRESULT, 0x429EB0); // CMainFrame::OnToggleCameraMovementMode
+					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+					if (prefs->camera_mode)
+					{
+						prebutton_cursor.x += (toolbar_button_size.x * 0.45f);
+						prebutton_cursor.y += (toolbar_button_size.y * 0.4f);
+
+						ImGui::PushFontFromIndex(ggui::REGULAR_12PX);
+						ImGui::SetCursorScreenPos(prebutton_cursor);
+						ImGui::Text("%d/2", prefs->camera_mode);
+						ImGui::PopFont();
+					}
+				}
+				ImGui::EndGroup();
+				
+				ImGui::PopStyleVar();
+			}
 		}
 	
 		ImGui::EndGroup();
@@ -308,231 +376,237 @@ void ccamwnd::rtt_camera_window()
 			// *
 			// ImGuizmo
 
-			game::GfxMatrix view = {};
-			game::GfxMatrix projection = {};
-			
-			// setup the view and projection matrices
-			get_matrices_for_guizmo(&view, &projection);
-			
-			// imguizmo settings
-			ImGuizmo::SetOrthographic(false);
-			ImGuizmo::SetDrawlist();
-			ImGuizmo::SetRect(screenpos.x, screenpos.y, camera_size.x, camera_size.y);
-
-			const auto guizmo_mode = game::g_bRotateMode ? ImGuizmo::OPERATION::ROTATE : ImGuizmo::OPERATION::TRANSLATE;
-			
-			float mtx_scale[3]	= { 1.0f, 1.0f, 1.0f };
-			float angles[3]		= { 0.0f, 0.0f, 0.0f };
-			float snap[3]		= { 0.0f, 0.0f, 0.0f };
-
-			if (guizmo_enable_snapping)
+			if(guizmo_enable)
 			{
-				// default case
-				float snap_size = xywnd::GRID_SIZES[game::g_qeglobals->d_gridsize];
+				game::GfxMatrix view = {};
+				game::GfxMatrix projection = {};
 
-				// snap to 1 2 5 10 15 30 60 90 when rotation mode is enabled 
-				if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
+				// setup the view and projection matrices
+				get_matrices_for_guizmo(&view, &projection);
+
+				// imguizmo settings
+				ImGuizmo::SetOrthographic(false);
+				ImGuizmo::SetDrawlist();
+				ImGuizmo::SetRect(screenpos.x, screenpos.y, camera_size.x, camera_size.y);
+
+				const auto guizmo_mode = game::g_bRotateMode ? ImGuizmo::OPERATION::ROTATE : ImGuizmo::OPERATION::TRANSLATE;
+
+				float mtx_scale[3] = { 1.0f, 1.0f, 1.0f };
+				float angles[3] = { 0.0f, 0.0f, 0.0f };
+				float snap[3] = { 0.0f, 0.0f, 0.0f };
+
+				if (guizmo_enable_snapping)
 				{
-					switch(game::g_qeglobals->d_gridsize)
-					{
-					case 3: snap_size = 5.0f; break;
-					case 4: snap_size = 10.0f; break;
-					case 5: snap_size = 15.0f; break;
-					case 6: snap_size = 30.0f; break;
-					case 7: snap_size = 60.0f; break;
-					case 9: snap_size = 90.0f; break;
-					}
-				}
+					// default case
+					float snap_size = xywnd::GRID_SIZES[game::g_qeglobals->d_gridsize];
 
-				utils::vector::set_vec3(snap, snap_size);
-			}
-
-			// TODO: auto detect? + dvar
-			if (guizmo_enable_brush_mode)
-			{
-				
-				if (const auto b = game::g_selected_brushes()->currSelection; b)
-				{
-					// pass mouse input to ImGui
-					if (ImGuizmo::IsOver())
-					{
-						camerawnd->capture_left_mousebutton = true;
-					}
-
-					// guizmo position
-					game::vec3_t selection_center = {};
-
-					
+					// snap to 1 2 5 10 15 30 60 90 when rotation mode is enabled 
 					if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
 					{
-						// use radiants rotate origin
-						utils::vector::copy(game::g_vRotateOrigin, selection_center);
+						switch (game::g_qeglobals->d_gridsize)
+						{
+						case 3: snap_size = 5.0f; break;
+						case 4: snap_size = 10.0f; break;
+						case 5: snap_size = 15.0f; break;
+						case 6: snap_size = 30.0f; break;
+						case 7: snap_size = 60.0f; break;
+						case 9: snap_size = 90.0f; break;
+						}
 					}
-					else
+
+					utils::vector::set_vec3(snap, snap_size);
+				}
+
+				// TODO: auto detect? + dvar
+				if (guizmo_enable_brush_mode)
+				{
+
+					if (const auto b = game::g_selected_brushes()->currSelection; b)
 					{
-						// calculate center of brush/es
-						get_selection_center(selection_center);
-					}
-
-					float tmp_matrix[16];
-					float delta_matrix[16];
-
-					// build guizmo matrix from components
-					ImGuizmo::RecomposeMatrixFromComponents(selection_center, angles, mtx_scale, tmp_matrix);
-
-					// draw guizmo / manipulate
-					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap))
-					{
+						// pass mouse input to ImGui
 						if (ImGuizmo::IsOver())
 						{
-							float delta_origin[3], delta_angles[3];
+							camerawnd->capture_left_mousebutton = true;
+						}
 
-							// seperate manupulated matrix into components
-							ImGuizmo::DecomposeMatrixToComponents(delta_matrix, delta_origin, delta_angles, mtx_scale);
+						// guizmo position
+						game::vec3_t selection_center = {};
 
-							if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
+
+						if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
+						{
+							// use radiants rotate origin
+							utils::vector::copy(game::g_vRotateOrigin, selection_center);
+						}
+						else
+						{
+							// calculate center of brush/es
+							get_selection_center(selection_center);
+						}
+
+						float tmp_matrix[16];
+						float delta_matrix[16];
+
+						// build guizmo matrix from components
+						ImGuizmo::RecomposeMatrixFromComponents(selection_center, angles, mtx_scale, tmp_matrix);
+
+						// draw guizmo / manipulate
+						if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap))
+						{
+							if (ImGuizmo::IsOver())
 							{
-#if 0							// original way of getting the rotation matrix (here to stay to check against the one below)
-								float rotate_axis_org[4][4] = {};
-								rotate_axis_org[0][0] = game::g_vRotateOrigin[0];
-								rotate_axis_org[0][1] = game::g_vRotateOrigin[1];
-								rotate_axis_org[0][2] = game::g_vRotateOrigin[2];
-								Select_RotateAxis(cmainframe::activewnd->m_pXYWnd->m_nViewType, delta_angles[cmainframe::activewnd->m_pXYWnd->m_nViewType], &rotate_axis_org[0][0]);
-#endif
-								float rotate_axis[4][4];
+								float delta_origin[3], delta_angles[3];
 
-								// inverse angles
-								utils::vector::inverse(delta_angles);
-								
-								// build a rotation matrix
-								ImGuizmo::RecomposeMatrixFromComponents(game::g_vRotateOrigin, delta_angles, mtx_scale, &rotate_axis[0][0]);
+								// seperate manupulated matrix into components
+								ImGuizmo::DecomposeMatrixToComponents(delta_matrix, delta_origin, delta_angles, mtx_scale);
 
-								float rotate_axis_for_radiant[4][4] = {};
-
-								// bring it into the format radiant expects
-								rotate_axis_for_radiant[0][0] = rotate_axis[3][0];
-								rotate_axis_for_radiant[0][1] = rotate_axis[3][1];
-								rotate_axis_for_radiant[0][2] = rotate_axis[3][2];
-								rotate_axis_for_radiant[0][3] = rotate_axis[0][0];
-
-								rotate_axis_for_radiant[1][0] = rotate_axis[1][0];
-								rotate_axis_for_radiant[1][1] = rotate_axis[2][0];
-								rotate_axis_for_radiant[1][2] = rotate_axis[0][1];
-								rotate_axis_for_radiant[1][3] = rotate_axis[1][1];
-
-								rotate_axis_for_radiant[2][0] = rotate_axis[2][1];
-								rotate_axis_for_radiant[2][1] = rotate_axis[0][2];
-								rotate_axis_for_radiant[2][2] = rotate_axis[1][2];
-								rotate_axis_for_radiant[2][3] = rotate_axis[2][2];
-
-								// apply rotation to all selected brushes
-								for (auto   sb = game::g_selected_brushes_next();
-									(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
-											sb = sb->next)
+								if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
 								{
-									if (const auto brush = sb->currSelection; brush)
+#if 0								// original way of getting the rotation matrix (here to stay to check against the one below)
+									float rotate_axis_org[4][4] = {};
+									rotate_axis_org[0][0] = game::g_vRotateOrigin[0];
+									rotate_axis_org[0][1] = game::g_vRotateOrigin[1];
+									rotate_axis_org[0][2] = game::g_vRotateOrigin[2];
+									Select_RotateAxis(cmainframe::activewnd->m_pXYWnd->m_nViewType, delta_angles[cmainframe::activewnd->m_pXYWnd->m_nViewType], &rotate_axis_org[0][0]);
+#endif
+									float rotate_axis[4][4];
+
+									// inverse angles
+									utils::vector::inverse(delta_angles);
+
+									// build a rotation matrix
+									ImGuizmo::RecomposeMatrixFromComponents(game::g_vRotateOrigin, delta_angles, mtx_scale, &rotate_axis[0][0]);
+
+									float rotate_axis_for_radiant[4][4] = {};
+
+									// bring it into the format radiant expects
+									rotate_axis_for_radiant[0][0] = rotate_axis[3][0];
+									rotate_axis_for_radiant[0][1] = rotate_axis[3][1];
+									rotate_axis_for_radiant[0][2] = rotate_axis[3][2];
+									rotate_axis_for_radiant[0][3] = rotate_axis[0][0];
+
+									rotate_axis_for_radiant[1][0] = rotate_axis[1][0];
+									rotate_axis_for_radiant[1][1] = rotate_axis[2][0];
+									rotate_axis_for_radiant[1][2] = rotate_axis[0][1];
+									rotate_axis_for_radiant[1][3] = rotate_axis[1][1];
+
+									rotate_axis_for_radiant[2][0] = rotate_axis[2][1];
+									rotate_axis_for_radiant[2][1] = rotate_axis[0][2];
+									rotate_axis_for_radiant[2][2] = rotate_axis[1][2];
+									rotate_axis_for_radiant[2][3] = rotate_axis[2][2];
+
+									// apply rotation to all selected brushes
+									for (auto   sb = game::g_selected_brushes_next();
+										(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
+												sb = sb->next)
 									{
-										Select_ApplyMatrix(&rotate_axis_for_radiant[0][0], sb, false, 0.0f, false);
+										if (const auto brush = sb->currSelection; brush)
+										{
+											// degree is handled like a boolean, 0.0 will not rotate fixed size brushes / entities
+											Select_ApplyMatrix(&rotate_axis_for_radiant[0][0], sb, false, 1.0f, false);
+										}
 									}
 								}
-							}
-							
-							else if(guizmo_mode == ImGuizmo::OPERATION::TRANSLATE)
-							{
-								// move all selected brushes using the delta
-								for (auto	sb = game::g_selected_brushes_next();
-									(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
-											sb = sb->next)
+
+								else if (guizmo_mode == ImGuizmo::OPERATION::TRANSLATE)
 								{
-									if (const auto brushes = sb->currSelection; brushes)
+									// move all selected brushes using the delta
+									for (auto	sb = game::g_selected_brushes_next();
+										(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
+												sb = sb->next)
 									{
-										game::Brush_Move(delta_origin, brushes, true);
+										if (const auto brushes = sb->currSelection; brushes)
+										{
+											game::Brush_Move(delta_origin, brushes, true);
+										}
 									}
 								}
 							}
 						}
 					}
 				}
-			}
 
 #if 0 // bounds
 
-			game::vec3_t local_mins;
-			game::vec3_t local_maxs;
+				game::vec3_t local_mins;
+				game::vec3_t local_maxs;
 
-			utils::vector::subtract(b->currSelection->mins, v_mid, local_mins);
-			utils::vector::subtract(b->currSelection->maxs, v_mid, local_maxs);
+				utils::vector::subtract(b->currSelection->mins, v_mid, local_mins);
+				utils::vector::subtract(b->currSelection->maxs, v_mid, local_maxs);
 
-			float bounds[] =
-			{
-				local_mins[0], local_mins[1], local_mins[2],
-				local_maxs[0], local_maxs[1], local_maxs[2]
-			};
+				float bounds[] =
+				{
+					local_mins[0], local_mins[1], local_mins[2],
+					local_maxs[0], local_maxs[1], local_maxs[2]
+				};
 
-			float tmp_matrix[16];
-			ImGuizmo::RecomposeMatrixFromComponents(v_mid, angles, mtx_scale, tmp_matrix);
+				float tmp_matrix[16];
+				ImGuizmo::RecomposeMatrixFromComponents(v_mid, angles, mtx_scale, tmp_matrix);
 
-			if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], ImGuizmo::OPERATION::BOUNDS, ImGuizmo::MODE::WORLD, tmp_matrix, nullptr, nullptr, bounds))
-			{
+				if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], ImGuizmo::OPERATION::BOUNDS, ImGuizmo::MODE::WORLD, tmp_matrix, nullptr, nullptr, bounds))
+				{
 
 			}
 #endif
 
-			// ----------------------
-			// entities (static models / lights / spawns etc)
-			
-			else if (const auto edit_entity = game::g_edit_entity();
-				edit_entity && edit_entity->epairs)
-			{
-				if(_stricmp(edit_entity->eclass->name, "worldspawn"))
+				// ----------------------
+				// entities (static models / lights / spawns etc)
+				// actually handled pretty good via "Select_ApplyMatrix" above .. will still keep it for now
+
+				else if (const auto edit_entity = game::g_edit_entity();
+					edit_entity && edit_entity->epairs)
 				{
-					// pass mouse input to imgui if guizmo is hovered (TODO: only pass left click)
-					if (ImGuizmo::IsOver()) 
+					if (_stricmp(edit_entity->eclass->name, "worldspawn"))
 					{
-						//camerawnd->window_hovered = false;
-						camerawnd->capture_left_mousebutton = true;
-					}
-
-					for (auto epair = edit_entity->epairs; epair; epair = epair->next)
-					{
-						std::string key = utils::str_to_lower(epair->key);
-						if (key == "angles")
-						{
-							// switch axis
-							if (sscanf(epair->value, "%f %f %f", &angles[1], &angles[2], &angles[0]) == 3)
-							{ }
-
-							break;
-						}
-					}
-
-					float tmp_matrix[16];
-					ImGuizmo::RecomposeMatrixFromComponents(edit_entity->origin, angles, mtx_scale, tmp_matrix);
-					
-					if(ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, nullptr, snap))
-					{
+						// pass mouse input to imgui if guizmo is hovered (TODO: only pass left click)
 						if (ImGuizmo::IsOver())
 						{
-							float t_origin[3], t_angles[3];
-							ImGuizmo::DecomposeMatrixToComponents(tmp_matrix, t_origin, t_angles, mtx_scale);
+							//camerawnd->window_hovered = false;
+							camerawnd->capture_left_mousebutton = true;
+						}
 
-							char org_str[64] = {};
-							ggui::entity::addprop_helper_s helper = {};
+						for (auto epair = edit_entity->epairs; epair; epair = epair->next)
+						{
+							std::string key = utils::str_to_lower(epair->key);
+							if (key == "angles")
+							{
+								// switch axis
+								if (sscanf(epair->value, "%f %f %f", &angles[1], &angles[2], &angles[0]) == 3)
+								{
+								}
 
-							helper.add_undo = false;
-							
-							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_origin[0], t_origin[1], t_origin[2])) {
-								helper.is_origin = true;
-								ggui::entity::AddProp("origin", org_str, &helper);
-							}
-
-							// switch axis
-							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_angles[1], t_angles[2], t_angles[0])) {
-								helper.is_angle = true;
-								ggui::entity::AddProp("angles", org_str, &helper);
+								break;
 							}
 						}
-						
+
+						float tmp_matrix[16];
+						ImGuizmo::RecomposeMatrixFromComponents(edit_entity->origin, angles, mtx_scale, tmp_matrix);
+
+						if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, nullptr, snap))
+						{
+							if (ImGuizmo::IsOver())
+							{
+								float t_origin[3], t_angles[3];
+								ImGuizmo::DecomposeMatrixToComponents(tmp_matrix, t_origin, t_angles, mtx_scale);
+
+								char org_str[64] = {};
+								ggui::entity::addprop_helper_s helper = {};
+
+								helper.add_undo = false;
+
+								if (sprintf_s(org_str, "%.5f %.5f %.5f", t_origin[0], t_origin[1], t_origin[2])) {
+									helper.is_origin = true;
+									ggui::entity::AddProp("origin", org_str, &helper);
+								}
+
+								// switch axis
+								if (sprintf_s(org_str, "%.5f %.5f %.5f", t_angles[1], t_angles[2], t_angles[0])) {
+									helper.is_angle = true;
+									ggui::entity::AddProp("angles", org_str, &helper);
+								}
+							}
+
+						}
 					}
 				}
 			}

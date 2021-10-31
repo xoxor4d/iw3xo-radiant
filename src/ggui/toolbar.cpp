@@ -159,6 +159,40 @@ namespace ggui::toolbar
 	tb_selection_s tbedit_selection = {};
 
 
+	void register_element(const std::string& name, bool default_visible, std::function<void()> callback)
+	{
+		bool is_debug = false;
+		tbedit_elements[name] = callback;
+
+		// if separator
+		if (utils::starts_with(name, ";"s))
+		{
+			// insert before selection
+			if (tbedit_selection.is_selected)
+			{
+				tbedit_ordered_list.insert(
+					tbedit_ordered_list.begin() + tbedit_selection.element_pos,
+					tb_order_element_s("; ------------", tb_element_id++, default_visible, true, is_debug));
+			}
+			// emplace back if nothing is selected
+			else
+			{
+				tbedit_ordered_list.emplace_back(
+					tb_order_element_s("; ------------", tb_element_id++, default_visible, true, is_debug));
+			}
+
+			return;
+		}
+
+		if (utils::starts_with(name, "debug_"s))
+		{
+			is_debug = true;
+		}
+
+		tbedit_ordered_list.emplace_back(
+			tb_order_element_s(name, tb_element_id++, default_visible, false, is_debug));
+	}
+	
 	void register_element(const std::string& name, std::function<void()> callback)
 	{
 		bool is_debug = false;
@@ -360,7 +394,7 @@ namespace ggui::toolbar
 		
 		register_element(";"s, nullptr);
 
-		register_element("camera_movement"s, []()
+		register_element("camera_movement"s, false, []()
 			{
 				static bool hov_camera_movement;
 				const auto prefs = game::g_PrefsDlg();
@@ -390,7 +424,7 @@ namespace ggui::toolbar
 				ImGui::EndGroup();
 			});
 
-		register_element("cubic_clip"s, []()
+		register_element("cubic_clip"s, false, []()
 			{
 				static bool hov_cubicclip;
 				const auto prefs = game::g_PrefsDlg();

@@ -224,7 +224,6 @@ namespace ggui::hotkeys
 		return out;
 	}
 
-
 	std::string get_hotkey_for_command(const char* command)
 	{
 		// find command in cmd_hotkeys (ini)
@@ -233,9 +232,9 @@ namespace ggui::hotkeys
 			if (!_strcmpi(command, bind.cmd_name.c_str()))
 			{
 				return	(bind.modifier_shift == 1 ? "SHIFT-"s : "") +
-					(bind.modifier_alt == 1 ? "ALT-"s : "") +
-					(bind.modifier_ctrl == 1 ? "CTRL-"s : "") +
-					bind.modifier_key;
+						(bind.modifier_alt   == 1 ? "ALT-"s : "") +
+						(bind.modifier_ctrl  == 1 ? "CTRL-"s : "") +
+						 bind.modifier_key;
 			}
 		}
 
@@ -287,9 +286,8 @@ namespace ggui::hotkeys
 		}
 
 		std::ifstream ini;
-
 		std::string ini_path = home_path;
-		ini_path += "\\" + file;
+					ini_path += "\\" + file;
 
 		ini.open(ini_path.c_str());
 
@@ -385,9 +383,9 @@ namespace ggui::hotkeys
 
 		for (auto i = 0; i < game::g_nCommandCount; i++)
 		{
-			for (commandbinds& bind : cmd_hotkeys)
+			for (commandbinds& hotkey : cmd_hotkeys)
 			{
-				if (!_strcmpi(game::g_Commands[i].m_strCommand, bind.cmd_name.c_str()))
+				if (!_strcmpi(game::g_Commands[i].m_strCommand, hotkey.cmd_name.c_str()))
 				{
 					const unsigned int o_key = game::g_Commands[i].m_nKey;
 					const unsigned int o_mod = game::g_Commands[i].m_nModifiers;
@@ -395,26 +393,39 @@ namespace ggui::hotkeys
 					//printf("overwriting command '%s'\n", game::g_Commands[i].m_strCommand);
 					//printf("|-> m_nKey '%d' to ", game::g_Commands[i].m_nKey);
 
-					game::g_Commands[i].m_nKey = cmdbinds_key_to_ascii(bind.modifier_key);
+					game::g_Commands[i].m_nKey = cmdbinds_key_to_ascii(hotkey.modifier_key);
 
 					//printf("'%d'\n", game::g_Commands[i].m_nKey);
 					//printf("|-> m_nModifiers '%d' to ", game::g_Commands[i].m_nModifiers);
 
-					game::g_Commands[i].m_nModifiers =
-						bind.modifier_shift
-						| (bind.modifier_alt == 1 ? 2 : 0)
-						| (bind.modifier_ctrl == 1 ? 4 : 0);
+					game::g_Commands[i].m_nModifiers = hotkey.modifier_shift
+													| (hotkey.modifier_alt  == 1 ? 2 : 0)
+													| (hotkey.modifier_ctrl == 1 ? 4 : 0);
 
 					//printf("'%d'\n\n", game::g_Commands[i].m_nModifiers);
 
 					if (o_key != game::g_Commands[i].m_nKey ||
 						o_mod != game::g_Commands[i].m_nModifiers)
 					{
-						game::printf_to_console("|-> modified hotkey '%s'\n", bind.cmd_name.c_str());
+						game::printf_to_console("|-> modified hotkey '%s'\n", hotkey.cmd_name.c_str());
 						commands_overwritten++;
 					}
 
 					break;
+				}
+			}
+		}
+
+		for(auto& addon_bind : ggui::cmd_addon_hotkeys)
+		{
+			for (commandbinds& hotkey : cmd_hotkeys)
+			{
+				if (!_strcmpi(addon_bind.m_strCommand, hotkey.cmd_name.c_str()))
+				{
+					addon_bind.m_nKey = cmdbinds_key_to_ascii(hotkey.modifier_key);
+					addon_bind.m_nModifiers =  hotkey.modifier_shift
+											| (hotkey.modifier_alt  == 1 ? 2 : 0)
+											| (hotkey.modifier_ctrl == 1 ? 4 : 0);
 				}
 			}
 		}
@@ -450,10 +461,9 @@ namespace ggui::hotkeys
 		}
 
 		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
-			fs_homepath)
+						fs_homepath)
 		{
 			std::ofstream ini;
-
 			std::string ini_path = fs_homepath->current.string;
 						ini_path += "\\iw3r_hotkeys.ini";
 
@@ -474,7 +484,7 @@ namespace ggui::hotkeys
 				ini << (bind.modifier_shift == 0 ? "" : "+shift ");
 				ini << (bind.modifier_alt == 0 ? "" : "+alt ");
 				ini << (bind.modifier_ctrl == 0 ? "" : "+ctrl ");
-				ini << bind.modifier_key << std::endl;
+				ini <<  bind.modifier_key << std::endl;
 			}
 
 			load_commandmap();
