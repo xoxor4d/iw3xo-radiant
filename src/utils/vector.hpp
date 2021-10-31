@@ -24,6 +24,7 @@ namespace utils
 
 		// just in case you do't want to use the macros
 		int		compare(const vec3_t v1, const vec3_t v2);
+		void	clamp_vec3(const vec3_t a, const vec3_t b, vec3_t o1, vec3_t o2);
 		vec_t	dot(const vec3_t v1, const vec3_t v2);
 		vec_t	length(const vec3_t v);
 		vec_t	length_squared(const vec3_t v);
@@ -33,7 +34,9 @@ namespace utils
 		vec_t	normalize2(const vec3_t v, vec3_t out);
 		void	normalize_fast(vec3_t v);
 		void	zero(vec3_t v1);
+		void	set_vec3(vec3_t v, float val);
 		void	set_vec3(vec3_t v, float x, float y, float z);
+		void	set_vec4(vec4_t v, float val);
 		void	set_vec4(vec4_t v, float x, float y, float z, float w);
 		void	subtract(const vec3_t veca, const vec3_t vecb, vec3_t out);
 		void	add(const vec3_t veca, const vec3_t vecb, vec3_t out);

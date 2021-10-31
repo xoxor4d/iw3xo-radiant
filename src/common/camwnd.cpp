@@ -3,8 +3,6 @@
 ccamwnd* ccamwnd::activewnd;
 IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define RTT_CAMERA_USE_PADDING
-
 void mtx4x4_mul(game::GfxMatrix* mtx_out, game::GfxMatrix* a, game::GfxMatrix* b)
 {
 	mtx_out->m[0][0] = a->m[0][0] * b->m[0][0] + a->m[0][1] * b->m[1][0] + b->m[2][0] * a->m[0][2] + b->m[3][0] * a->m[0][3];
@@ -23,6 +21,216 @@ void mtx4x4_mul(game::GfxMatrix* mtx_out, game::GfxMatrix* a, game::GfxMatrix* b
 	mtx_out->m[3][1] = b->m[1][1] * a->m[3][1] + a->m[3][0] * b->m[0][1] + a->m[3][2] * b->m[2][1] + a->m[3][3] * b->m[3][1];
 	mtx_out->m[3][2] = b->m[0][2] * a->m[3][0] + b->m[1][2] * a->m[3][1] + a->m[3][2] * b->m[2][2] + b->m[3][2] * a->m[3][3];
 	mtx_out->m[3][3] = b->m[1][3] * a->m[3][1] + a->m[3][0] * b->m[0][3] + a->m[3][2] * b->m[2][3] + a->m[3][3] * b->m[3][3];
+}
+
+void get_matrices_for_guizmo(game::GfxMatrix* view, game::GfxMatrix* projection)
+{
+	float axis[9];
+	axis[0] = cmainframe::activewnd->m_pCamWnd->camera.vpn[0];
+	axis[1] = cmainframe::activewnd->m_pCamWnd->camera.vpn[1];
+	axis[2] = cmainframe::activewnd->m_pCamWnd->camera.vpn[2];
+	axis[3] = -cmainframe::activewnd->m_pCamWnd->camera.vright[0];
+	axis[4] = -cmainframe::activewnd->m_pCamWnd->camera.vright[1];
+	axis[5] = -cmainframe::activewnd->m_pCamWnd->camera.vright[2];
+	axis[6] = cmainframe::activewnd->m_pCamWnd->camera.vup[0];
+	axis[7] = cmainframe::activewnd->m_pCamWnd->camera.vup[1];
+	axis[8] = cmainframe::activewnd->m_pCamWnd->camera.vup[2];
+
+	//MatrixForViewer
+	utils::hook::call<void(__cdecl)(float(*mtx)[4], const float* origin, const float*)>(0x4A7A70)(view->m, cmainframe::activewnd->m_pCamWnd->camera.origin, axis);
+
+	const float tanHalfFovY = tan(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
+	const float tanHalfFovX = tanHalfFovY * ((float)cmainframe::activewnd->m_pCamWnd->camera.width / (float)cmainframe::activewnd->m_pCamWnd->camera.height);
+
+	// R_SetupProjection
+	utils::hook::call<void(__cdecl)(game::GfxMatrix*, float halfx, float halfy, float znear)>(0x4A78E0)(projection, tanHalfFovX, tanHalfFovY, 0.0099999998f);
+
+	// ----------
+
+	// LH to RH conversion (not sure what I've done here .. but it works :e)
+
+	game::GfxMatrix inv_view_mtx = {
+		-1.f, 0.f, 0.f, 0.f,
+		0.f, -1.f, 0.f, 0.f,
+		0.f, 0.f, 1.f, 0.f,
+		0.f, 0.f, 0.f, 1.f };
+
+	mtx4x4_mul(view, &inv_view_mtx, view);
+	mtx4x4_mul(view, view, &inv_view_mtx);
+
+	view->m[0][0] *= -1;
+	view->m[0][1] *= -1;
+	view->m[0][2] *= -1;
+	view->m[1][0] *= -1;
+	view->m[1][1] *= -1;
+	view->m[1][2] *= -1;
+
+	// ----------
+
+	game::GfxMatrix inv_proj_mtx = {
+		1.f, 0.f, 0.f, 0.f,
+		0.f, 1.f, 0.f, 0.f,
+		0.f, 0.f, -1.f, 0.f,
+		0.f, 0.f, 0.f, 1.f };
+
+	mtx4x4_mul(projection, &inv_proj_mtx, projection);
+	mtx4x4_mul(projection, projection, &inv_proj_mtx);
+}
+
+void get_selection_center(float* center_point)
+{
+	// get bounds of selection
+	game::vec3_t mins, maxs;
+	utils::vector::set_vec3(mins,  131072.0f);
+	utils::vector::set_vec3(maxs, -131072.0f);
+
+	for (auto   sb = game::g_selected_brushes_next();
+		(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
+				sb = sb->next)
+	{
+		if(sb->currSelection)
+		{
+			utils::vector::clamp_vec3(sb->currSelection->mins, sb->currSelection->maxs, mins, maxs);
+		}
+	}
+
+	utils::vector::add(mins, maxs, center_point);
+	utils::vector::scale(center_point, 0.5f, center_point);
+}
+
+bool	_rttcam_toolbar_state = false;
+
+// create dvars for these
+bool	guizmo_enable_snapping = true;
+bool	guizmo_enable_brush_mode = true;
+
+void rtt_camera_window_toolbar()
+{
+	auto camwnd = ggui::get_rtt_camerawnd();
+
+	ImVec2 toolbar_button_open_size = ImVec2(22.0f, 22.0f);
+	ImVec2 toolbar_button_size = ImVec2(28.0f, 28.0f);
+	ImVec4 toolbar_button_background = ImVec4(0.1f, 0.1f, 0.1f, 0.55f);
+	ImVec4 toolbar_button_background_hovered = ImVec4(0.05f, 0.05f, 0.05f, 0.65f);
+	ImVec4 toolbar_button_background_active = ImVec4(0.1f, 0.1f, 0.1f, 0.55f);
+	
+	// right side alignment
+	static float toolbar_line_width = toolbar_button_size.x + 8.0f; // used as first frame estimate
+	const float  collapse_button_offset = (toolbar_button_size.x - toolbar_button_open_size.x) * 0.5f;
+	const float  offs = _rttcam_toolbar_state ? collapse_button_offset : 0.0f;
+	ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line_width + 8.0f - offs));
+
+	// offset toolbar vertically
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 8.0f);
+
+	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(70, 70, 70, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 0));
+	
+	// group all so we can get the actual toolbar width for the next frame
+	ImGui::BeginGroup();
+	{
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + collapse_button_offset);
+
+		static bool hov_open_toolbar;
+		if (ggui::toolbar::image_togglebutton("arrow_down"
+			, hov_open_toolbar
+			, _rttcam_toolbar_state
+			, "Collapse/Expand camera toolbar"
+			, &toolbar_button_background
+			, &toolbar_button_background_hovered
+			, &toolbar_button_background_active
+			, &toolbar_button_open_size))
+		{
+			_rttcam_toolbar_state = _rttcam_toolbar_state ? false : true;
+		} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+		if(_rttcam_toolbar_state)
+		{
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
+			{
+				static bool hov_grid_snapping;
+				if (ggui::toolbar::image_togglebutton("guizmo_grid_snapping"
+					, hov_grid_snapping
+					, guizmo_enable_snapping
+					, "Guizmo: Enable grid-snapping"
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					guizmo_enable_snapping = guizmo_enable_snapping ? false : true;
+				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+
+				static bool hov_guizmo_brush_mode;
+				if (ggui::toolbar::image_togglebutton("guizmo_brush_mode"
+					, hov_guizmo_brush_mode
+					, guizmo_enable_brush_mode
+					, "Guizmo: Enable brush mode"
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					guizmo_enable_brush_mode = guizmo_enable_brush_mode ? false : true;
+				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+				ImGui::PopStyleVar();
+			}
+			
+		}
+	
+		ImGui::EndGroup();
+	}
+
+	ImGui::PopStyleColor(3);
+	
+	// save width for the next frame
+	toolbar_line_width = ImGui::GetItemRectSize().x; 
+}
+
+void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/)
+{
+	const static uint32_t func_addr = 0x47CDE0;
+	__asm
+	{
+		pushad;
+		push	unk;
+		push	0; // ecx?
+		
+		fld		degree;
+		fstp    dword ptr[esp];
+		
+		push	snap;
+		push	brush;
+		
+		mov		eax, rotate_axis; // lea
+		
+		call	func_addr;
+		add		esp, 16;
+		popad;
+	}
+}
+
+void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis)
+{
+	const static uint32_t func_addr = 0x48FF40;
+	__asm
+	{
+		pushad;
+		push	rotate_axis;
+		push	0; // ecx?
+
+		mov		eax, axis;
+
+		fld		degree;
+		fstp    dword ptr[esp];
+		
+		call	func_addr;
+		add		esp, 8;
+		popad;
+	}
 }
 
 // render to texture - camera window
@@ -100,84 +308,180 @@ void ccamwnd::rtt_camera_window()
 			// *
 			// ImGuizmo
 
-			ImGui::Indent(8.0f);
-
-			// setup the view and projection matrices
-			
-			float axis[9];
-			axis[0] = cmainframe::activewnd->m_pCamWnd->camera.vpn[0];
-			axis[1] = cmainframe::activewnd->m_pCamWnd->camera.vpn[1];
-			axis[2] = cmainframe::activewnd->m_pCamWnd->camera.vpn[2];
-			axis[3] = -cmainframe::activewnd->m_pCamWnd->camera.vright[0];
-			axis[4] = -cmainframe::activewnd->m_pCamWnd->camera.vright[1];
-			axis[5] = -cmainframe::activewnd->m_pCamWnd->camera.vright[2];
-			axis[6] = cmainframe::activewnd->m_pCamWnd->camera.vup[0];
-			axis[7] = cmainframe::activewnd->m_pCamWnd->camera.vup[1];
-			axis[8] = cmainframe::activewnd->m_pCamWnd->camera.vup[2];
-
-			//MatrixForViewer
 			game::GfxMatrix view = {};
-			utils::hook::call<void(__cdecl)(float(*mtx)[4], const float* origin, const float*)>(0x4A7A70)(view.m, cmainframe::activewnd->m_pCamWnd->camera.origin, axis);
-
-			
-			float tanHalfFovY = tan(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
-			float tanHalfFovX = tanHalfFovY * ((float)cmainframe::activewnd->m_pCamWnd->camera.width / (float)cmainframe::activewnd->m_pCamWnd->camera.height);
-
-			// R_SetupProjection
 			game::GfxMatrix projection = {};
-			utils::hook::call<void(__cdecl)(game::GfxMatrix*, float halfx, float halfy, float znear)>(0x4A78E0)(&projection, tanHalfFovX, tanHalfFovY, 0.0099999998f);
 			
-			// ----------
+			// setup the view and projection matrices
+			get_matrices_for_guizmo(&view, &projection);
 			
-			// LH to RH conversion (not sure what I've done here .. but it works :e)
-
-			game::GfxMatrix inv_view_mtx = {
-				-1.f, 0.f, 0.f, 0.f,
-				0.f, -1.f, 0.f, 0.f,
-				0.f, 0.f, 1.f, 0.f,
-				0.f, 0.f, 0.f, 1.f };
-
-			mtx4x4_mul(&view, &inv_view_mtx, &view);
-			mtx4x4_mul(&view, &view, &inv_view_mtx);
-
-			view.m[0][0] *= -1;
-			view.m[0][1] *= -1;
-			view.m[0][2] *= -1;
-			view.m[1][0] *= -1;
-			view.m[1][1] *= -1;
-			view.m[1][2] *= -1;
-
-			// ----------
-			
-			game::GfxMatrix inv_proj_mtx = {
-				1.f, 0.f, 0.f, 0.f,
-				0.f, 1.f, 0.f, 0.f,
-				0.f, 0.f, -1.f, 0.f,
-				0.f, 0.f, 0.f, 1.f };
-			
-			mtx4x4_mul(&projection, &inv_proj_mtx, &projection);
-			mtx4x4_mul(&projection, &projection, &inv_proj_mtx);
-			
-			// ----------
-			
+			// imguizmo settings
 			ImGuizmo::SetOrthographic(false);
 			ImGuizmo::SetDrawlist();
 			ImGuizmo::SetRect(screenpos.x, screenpos.y, camera_size.x, camera_size.y);
 
-			/*if (ImGuizmo::IsOver())
-			{
-				if(ImGuizmo::IsUsing())
-				{
-					game::printf_to_console("is using guizmo");
-				}
-				
-				camerawnd->window_hovered = false;
-			}*/
-
-			float mtx_scale[3] = { 1.0f, 1.0f, 1.0f };
-			float angles[3] = { 0.0f, 0.0f, 0.0f };
+			const auto guizmo_mode = game::g_bRotateMode ? ImGuizmo::OPERATION::ROTATE : ImGuizmo::OPERATION::TRANSLATE;
 			
-			if (const auto edit_entity = game::g_edit_entity();
+			float mtx_scale[3]	= { 1.0f, 1.0f, 1.0f };
+			float angles[3]		= { 0.0f, 0.0f, 0.0f };
+			float snap[3]		= { 0.0f, 0.0f, 0.0f };
+
+			if (guizmo_enable_snapping)
+			{
+				// default case
+				float snap_size = xywnd::GRID_SIZES[game::g_qeglobals->d_gridsize];
+
+				// snap to 1 2 5 10 15 30 60 90 when rotation mode is enabled 
+				if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
+				{
+					switch(game::g_qeglobals->d_gridsize)
+					{
+					case 3: snap_size = 5.0f; break;
+					case 4: snap_size = 10.0f; break;
+					case 5: snap_size = 15.0f; break;
+					case 6: snap_size = 30.0f; break;
+					case 7: snap_size = 60.0f; break;
+					case 9: snap_size = 90.0f; break;
+					}
+				}
+
+				utils::vector::set_vec3(snap, snap_size);
+			}
+
+			// TODO: auto detect? + dvar
+			if (guizmo_enable_brush_mode)
+			{
+				
+				if (const auto b = game::g_selected_brushes()->currSelection; b)
+				{
+					// pass mouse input to ImGui
+					if (ImGuizmo::IsOver())
+					{
+						camerawnd->capture_left_mousebutton = true;
+					}
+
+					// guizmo position
+					game::vec3_t selection_center = {};
+
+					
+					if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
+					{
+						// use radiants rotate origin
+						utils::vector::copy(game::g_vRotateOrigin, selection_center);
+					}
+					else
+					{
+						// calculate center of brush/es
+						get_selection_center(selection_center);
+					}
+
+					float tmp_matrix[16];
+					float delta_matrix[16];
+
+					// build guizmo matrix from components
+					ImGuizmo::RecomposeMatrixFromComponents(selection_center, angles, mtx_scale, tmp_matrix);
+
+					// draw guizmo / manipulate
+					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap))
+					{
+						if (ImGuizmo::IsOver())
+						{
+							float delta_origin[3], delta_angles[3];
+
+							// seperate manupulated matrix into components
+							ImGuizmo::DecomposeMatrixToComponents(delta_matrix, delta_origin, delta_angles, mtx_scale);
+
+							if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
+							{
+#if 0							// original way of getting the rotation matrix (here to stay to check against the one below)
+								float rotate_axis_org[4][4] = {};
+								rotate_axis_org[0][0] = game::g_vRotateOrigin[0];
+								rotate_axis_org[0][1] = game::g_vRotateOrigin[1];
+								rotate_axis_org[0][2] = game::g_vRotateOrigin[2];
+								Select_RotateAxis(cmainframe::activewnd->m_pXYWnd->m_nViewType, delta_angles[cmainframe::activewnd->m_pXYWnd->m_nViewType], &rotate_axis_org[0][0]);
+#endif
+								float rotate_axis[4][4];
+
+								// inverse angles
+								utils::vector::inverse(delta_angles);
+								
+								// build a rotation matrix
+								ImGuizmo::RecomposeMatrixFromComponents(game::g_vRotateOrigin, delta_angles, mtx_scale, &rotate_axis[0][0]);
+
+								float rotate_axis_for_radiant[4][4] = {};
+
+								// bring it into the format radiant expects
+								rotate_axis_for_radiant[0][0] = rotate_axis[3][0];
+								rotate_axis_for_radiant[0][1] = rotate_axis[3][1];
+								rotate_axis_for_radiant[0][2] = rotate_axis[3][2];
+								rotate_axis_for_radiant[0][3] = rotate_axis[0][0];
+
+								rotate_axis_for_radiant[1][0] = rotate_axis[1][0];
+								rotate_axis_for_radiant[1][1] = rotate_axis[2][0];
+								rotate_axis_for_radiant[1][2] = rotate_axis[0][1];
+								rotate_axis_for_radiant[1][3] = rotate_axis[1][1];
+
+								rotate_axis_for_radiant[2][0] = rotate_axis[2][1];
+								rotate_axis_for_radiant[2][1] = rotate_axis[0][2];
+								rotate_axis_for_radiant[2][2] = rotate_axis[1][2];
+								rotate_axis_for_radiant[2][3] = rotate_axis[2][2];
+
+								// apply rotation to all selected brushes
+								for (auto   sb = game::g_selected_brushes_next();
+									(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
+											sb = sb->next)
+								{
+									if (const auto brush = sb->currSelection; brush)
+									{
+										Select_ApplyMatrix(&rotate_axis_for_radiant[0][0], sb, false, 0.0f, false);
+									}
+								}
+							}
+							
+							else if(guizmo_mode == ImGuizmo::OPERATION::TRANSLATE)
+							{
+								// move all selected brushes using the delta
+								for (auto	sb = game::g_selected_brushes_next();
+									(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
+											sb = sb->next)
+								{
+									if (const auto brushes = sb->currSelection; brushes)
+									{
+										game::Brush_Move(delta_origin, brushes, true);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+
+#if 0 // bounds
+
+			game::vec3_t local_mins;
+			game::vec3_t local_maxs;
+
+			utils::vector::subtract(b->currSelection->mins, v_mid, local_mins);
+			utils::vector::subtract(b->currSelection->maxs, v_mid, local_maxs);
+
+			float bounds[] =
+			{
+				local_mins[0], local_mins[1], local_mins[2],
+				local_maxs[0], local_maxs[1], local_maxs[2]
+			};
+
+			float tmp_matrix[16];
+			ImGuizmo::RecomposeMatrixFromComponents(v_mid, angles, mtx_scale, tmp_matrix);
+
+			if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], ImGuizmo::OPERATION::BOUNDS, ImGuizmo::MODE::WORLD, tmp_matrix, nullptr, nullptr, bounds))
+			{
+
+			}
+#endif
+
+			// ----------------------
+			// entities (static models / lights / spawns etc)
+			
+			else if (const auto edit_entity = game::g_edit_entity();
 				edit_entity && edit_entity->epairs)
 			{
 				if(_stricmp(edit_entity->eclass->name, "worldspawn"))
@@ -204,12 +508,9 @@ void ccamwnd::rtt_camera_window()
 
 					float tmp_matrix[16];
 					ImGuizmo::RecomposeMatrixFromComponents(edit_entity->origin, angles, mtx_scale, tmp_matrix);
-
-					const auto guizmo_mode = game::g_bRotateMode ? ImGuizmo::OPERATION::ROTATE : ImGuizmo::OPERATION::TRANSLATE;
-					if(ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix))
+					
+					if(ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, nullptr, snap))
 					{
-						//ImGui::TextUnformatted("Manipulating ...");
-
 						if (ImGuizmo::IsOver())
 						{
 							float t_origin[3], t_angles[3];
@@ -218,8 +519,7 @@ void ccamwnd::rtt_camera_window()
 							char org_str[64] = {};
 							ggui::entity::addprop_helper_s helper = {};
 
-							
-							helper.add_undo = false; // needs logic for on first edit
+							helper.add_undo = false;
 							
 							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_origin[0], t_origin[1], t_origin[2])) {
 								helper.is_origin = true;
@@ -231,13 +531,13 @@ void ccamwnd::rtt_camera_window()
 								helper.is_angle = true;
 								ggui::entity::AddProp("angles", org_str, &helper);
 							}
-
-							//ImGui::TextUnformatted(org_str);
 						}
 						
 					}
 				}
 			}
+
+			rtt_camera_window_toolbar();
 			
 			ImGui::EndChild();
 		}
@@ -485,6 +785,33 @@ void __declspec(naked) camwnd_set_detatched_child_window_style()
 	}
 }
 
+bool should_move_selection()
+{
+	// disable brush dragging within the camera window
+    if(ggui::get_rtt_camerawnd()->window_hovered && game::g_qeglobals->d_select_mode == game::select_t::sel_brush)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+void __declspec(naked) move_selection_stub()
+{
+    const static uint32_t move_selection_func = 0x47F0C0;
+    const static uint32_t retn_pt = 0x48023D;
+    __asm
+    {
+        call    should_move_selection;
+        test    al, al;
+        
+        je      SKIP_MOVE;
+        call    move_selection_func;
+
+    SKIP_MOVE:
+        jmp		retn_pt;
+    }
+}
 
 // *
 // *
@@ -508,6 +835,10 @@ void ccamwnd::hooks()
 	utils::hook(0x405346, cam_rotate, HOOK_CALL).install()->quick();
 	utils::hook(0x405321, cam_positiondrag, HOOK_CALL).install()->quick();
 
+	// disable entity dragging with mouse in camerawnd
+	//utils::hook::set<BYTE>(0x40539D, 0xEB);
+	utils::hook(0x480238, move_selection_stub, HOOK_JUMP).install()->quick();
+	
 	//utils::hook::nop(0x404AD1, 23);
 	
 	__on_lbutton_down   = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x403160, ccamwnd::on_lbutton_down, HK_JUMP));

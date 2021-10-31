@@ -2,10 +2,10 @@
 
 namespace ggui::menubar
 {
-	const float GRID_SIZE[11] =
+	/*const float GRID_SIZES[11] =
 	{ 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f, 128.0f, 256.0f, 512.0f };
 
-	enum GRID_E : int
+	enum E_GRID_SIZES : int
 	{
 		GRID_05,
 		GRID_1,
@@ -18,15 +18,15 @@ namespace ggui::menubar
 		GRID_128,
 		GRID_256,
 		GRID_512,
-	};
+	};*/
 
 	
-	void set_grid_size(const GRID_E size)
+	void set_grid_size(const xywnd::E_GRID_SIZES size)
 	{
 		game::g_qeglobals->d_gridsize = size;
 		if (game::g_PrefsDlg()->m_bSnapTToGrid)
 		{
-			game::g_qeglobals->d_savedinfo.d_gridsize_float = GRID_SIZE[size];
+			game::g_qeglobals->d_savedinfo.d_gridsize_float = xywnd::GRID_SIZES[size];
 		}
 
 		mainframe_thiscall(void, 0x428A00); // CMainFrame::SetGridStatus
@@ -814,48 +814,48 @@ namespace ggui::menubar
 
 			if (ImGui::BeginMenu("Grid"))
 			{
-				if (ImGui::MenuItem("Grid 0.5", hotkeys::get_hotkey_for_command("SetGridPointFive").c_str(), game::g_qeglobals->d_gridsize == GRID_05)) {
-					set_grid_size(GRID_05);
+				if (ImGui::MenuItem("Grid 0.5", hotkeys::get_hotkey_for_command("SetGridPointFive").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_05)) {
+					set_grid_size(xywnd::GRID_05);
 				}
 
-				if (ImGui::MenuItem("Grid 1", hotkeys::get_hotkey_for_command("SetGrid1").c_str(), game::g_qeglobals->d_gridsize == GRID_1)) {
-					set_grid_size(GRID_1);
+				if (ImGui::MenuItem("Grid 1", hotkeys::get_hotkey_for_command("SetGrid1").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_1)) {
+					set_grid_size(xywnd::GRID_1);
 				}
 
-				if (ImGui::MenuItem("Grid 2", hotkeys::get_hotkey_for_command("SetGrid2").c_str(), game::g_qeglobals->d_gridsize == GRID_2)) {
-					set_grid_size(GRID_2);
+				if (ImGui::MenuItem("Grid 2", hotkeys::get_hotkey_for_command("SetGrid2").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_2)) {
+					set_grid_size(xywnd::GRID_2);
 				}
 
-				if (ImGui::MenuItem("Grid 4", hotkeys::get_hotkey_for_command("SetGrid4").c_str(), game::g_qeglobals->d_gridsize == GRID_4)) {
-					set_grid_size(GRID_4);
+				if (ImGui::MenuItem("Grid 4", hotkeys::get_hotkey_for_command("SetGrid4").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_4)) {
+					set_grid_size(xywnd::GRID_4);
 				}
 
-				if (ImGui::MenuItem("Grid 8", hotkeys::get_hotkey_for_command("SetGrid8").c_str(), game::g_qeglobals->d_gridsize == GRID_8)) {
-					set_grid_size(GRID_8);
+				if (ImGui::MenuItem("Grid 8", hotkeys::get_hotkey_for_command("SetGrid8").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_8)) {
+					set_grid_size(xywnd::GRID_8);
 				}
 
-				if (ImGui::MenuItem("Grid 16", hotkeys::get_hotkey_for_command("SetGrid16").c_str(), game::g_qeglobals->d_gridsize == GRID_16)) {
-					set_grid_size(GRID_16);
+				if (ImGui::MenuItem("Grid 16", hotkeys::get_hotkey_for_command("SetGrid16").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_16)) {
+					set_grid_size(xywnd::GRID_16);
 				}
 
-				if (ImGui::MenuItem("Grid 32", hotkeys::get_hotkey_for_command("SetGrid32").c_str(), game::g_qeglobals->d_gridsize == GRID_32)) {
-					set_grid_size(GRID_32);
+				if (ImGui::MenuItem("Grid 32", hotkeys::get_hotkey_for_command("SetGrid32").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_32)) {
+					set_grid_size(xywnd::GRID_32);
 				}
 
-				if (ImGui::MenuItem("Grid 64", hotkeys::get_hotkey_for_command("SetGrid64").c_str(), game::g_qeglobals->d_gridsize == GRID_64)) {
-					set_grid_size(GRID_64);
+				if (ImGui::MenuItem("Grid 64", hotkeys::get_hotkey_for_command("SetGrid64").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_64)) {
+					set_grid_size(xywnd::GRID_64);
 				}
 
-				if (ImGui::MenuItem("Grid 128", 0, game::g_qeglobals->d_gridsize == GRID_128)) {
-					set_grid_size(GRID_128);
+				if (ImGui::MenuItem("Grid 128", 0, game::g_qeglobals->d_gridsize == xywnd::GRID_128)) {
+					set_grid_size(xywnd::GRID_128);
 				}
 
-				if (ImGui::MenuItem("Grid 256", hotkeys::get_hotkey_for_command("SetGrid256").c_str(), game::g_qeglobals->d_gridsize == GRID_256)) {
-					set_grid_size(GRID_256);
+				if (ImGui::MenuItem("Grid 256", hotkeys::get_hotkey_for_command("SetGrid256").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_256)) {
+					set_grid_size(xywnd::GRID_256);
 				}
 
-				if (ImGui::MenuItem("Grid 512", hotkeys::get_hotkey_for_command("SetGrid512").c_str(), game::g_qeglobals->d_gridsize == GRID_512)) {
-					set_grid_size(GRID_512);
+				if (ImGui::MenuItem("Grid 512", hotkeys::get_hotkey_for_command("SetGrid512").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_512)) {
+					set_grid_size(xywnd::GRID_512);
 				}
 
 				if (ImGui::MenuItem("Snap To Grid", hotkeys::get_hotkey_for_command("ToggleSnapToGrid").c_str(), !prefs->m_bNoClamp)) {

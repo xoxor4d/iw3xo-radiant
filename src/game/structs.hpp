@@ -220,6 +220,19 @@ namespace game
 		char pad_0x001C[20];
 	};
 
+	enum E_PROP_CLASSTYPE
+	{
+		ECLASS_RADIANT_NODE = 0x2,
+		ECLASS_LIGHT = 0x3,
+		ECLASS_UNK = 0x10,
+		ECLASS_MISC_MODEL = 0xA,
+		ECLASS_PREFAB = 0x12,
+		ECLASS_NODE = 0x22,
+		ECLASS_TRIGGER_RADIUS = 0x42,
+		ECLASS_TRIGGER_DISC = 0x82,
+		ECLASS_REFLECTION_PROBE = 0x102,
+	};
+	
 	struct __declspec(align(4)) eclass_t
 	{
 		eclass_t *next;
@@ -243,7 +256,7 @@ namespace game
 		int xx6;
 		int xx7;
 		int xx8;
-		int classtype;
+		E_PROP_CLASSTYPE classtype;
 		int xx10;
 		int xx11;
 		int xx12;

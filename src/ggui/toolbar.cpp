@@ -83,11 +83,20 @@ namespace ggui::toolbar
 		}
 	}
 
-	bool image_togglebutton(const char* image_name, bool& hovered_state, bool toggle_state, const char* tooltip)
+	bool image_togglebutton(const char* image_name, bool& hovered_state, bool toggle_state, const char* tooltip, ImVec4* bg_col, ImVec4* bg_col_hovered, ImVec4* bg_col_active, ImVec2* btn_size)
 	{
+		ImVec2 button_size				= IMAGEBUTTON_SIZE;
+		ImVec4 background_color			= ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+		ImVec4 background_color_hovered = ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector);
+		ImVec4 background_color_active	= ImGui::ToImVec4(dvars::gui_toolbar_button_active_color->current.vector);
+
+		if (btn_size)		button_size					= *btn_size;
+		
+		if (bg_col)			background_color			= *bg_col;
+		if (bg_col_hovered) background_color_hovered	= *bg_col_hovered;
+		if (bg_col_active)	background_color_active		= *bg_col_active;
+
 		bool ret_state = false;
-		//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector));
-		//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(25, 25, 25, 50));
 
 		if (const auto	image = game::Image_RegisterHandle(image_name);
 						image && image->texture.data)
@@ -95,19 +104,14 @@ namespace ggui::toolbar
 			const ImVec2 uv0 = toggle_state ? ImVec2(0.5f, 0.0f) : ImVec2(0.0f, 0.0f);
 			const ImVec2 uv1 = toggle_state ? ImVec2(1.0f, 1.0f) : ImVec2(0.5f, 1.0f);
 
-			ImVec4 bg_col = hovered_state ? ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector) : ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
-			if(toggle_state)
-			{
-				bg_col = ImGui::ToImVec4(dvars::gui_toolbar_button_active_color->current.vector);
-			}
-
-			if (ImGui::ImageButton(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1, 0, bg_col))
-			{
+			ImVec4 color = hovered_state ? background_color_hovered
+						: toggle_state ? background_color_active : background_color;
+			
+			if (ImGui::ImageButton(image->texture.data, button_size, uv0, uv1, 0, color)) {
 				ret_state = true;
 			}
 
-			if (tooltip) 
-			{
+			if (tooltip) {
 				TT(tooltip);
 			}
 
@@ -115,18 +119,15 @@ namespace ggui::toolbar
 		}
 		else
 		{
-			if (ImGui::Button(image_name))
-			{
+			if (ImGui::Button(image_name)) {
 				ret_state = true;
 			}
 
-			if (tooltip)
-			{
+			if (tooltip) {
 				TT(tooltip);
 			}
 		}
-
-		//ImGui::PopStyleColor();
+		
 		return ret_state;
 	}
 

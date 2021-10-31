@@ -66,6 +66,8 @@ namespace game
 	extern int&		g_nLastLen;
 	extern int&		g_undoMaxSize;
 
+	extern float*	g_vRotateOrigin;
+	
 	extern game::SCommandInfo*	g_Commands;
 	extern int		g_nCommandCount;
 	

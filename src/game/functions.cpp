@@ -46,6 +46,8 @@ namespace game
 	bool&	g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
 	int&	g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
 	int&	g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
+
+	float*	g_vRotateOrigin = reinterpret_cast<float*>(0x23F1658);
 	
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;

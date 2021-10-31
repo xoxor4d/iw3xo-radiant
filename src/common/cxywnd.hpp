@@ -117,5 +117,23 @@ namespace xywnd
 
 	typedef BOOL(__stdcall* on_cxywnd_scroll)(UINT nFlags, std::int16_t zDelta, CPoint point);
 	extern on_cxywnd_scroll __on_scroll;
+
+	const float GRID_SIZES[11] =
+	{ 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f, 128.0f, 256.0f, 512.0f };
+
+	enum E_GRID_SIZES : int
+	{
+		GRID_05,
+		GRID_1,
+		GRID_2,
+		GRID_4,
+		GRID_8,
+		GRID_16,
+		GRID_32,
+		GRID_64,
+		GRID_128,
+		GRID_256,
+		GRID_512,
+	};
 	
 }

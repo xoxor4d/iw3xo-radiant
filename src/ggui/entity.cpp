@@ -782,17 +782,31 @@ namespace ggui::entity
 		}
 	}
 
-	void Brush_Center(game::brush_t* b, game::vec3_t vNewCenter)
+	// move object to new point (does not change "local" object origin)
+	void brush_moveto(game::brush_t* b, const float* new_origin, const float* old_origin, bool snap = true)
 	{
-		game::vec3_t vMid;
-		// get center of the brush
-		for (int j = 0; j < 3; j++)
-		{
-			vMid[j] = b->mins[j] + abs((b->maxs[j] - b->mins[j]) * 0.5f);
-		}
+		game::vec3_t delta;
+
 		// calc distance between centers
-		VectorSubtract(vNewCenter, vMid, vMid);
-		game::Brush_Move(vMid, b, true);
+		VectorSubtract(new_origin, old_origin, delta);
+		
+		game::Brush_Move(delta, b, snap);
+	}
+
+	// move and center object (using bounds) around new point (changes "local" object origin)
+	void brush_moveto_center(game::brush_t* b, const float* new_origin, bool snap = true)
+	{
+		game::vec3_t v_mid;
+		
+		// get center of the brush
+		for (int j = 0; j < 3; j++) {
+			v_mid[j] = b->mins[j] + abs((b->maxs[j] - b->mins[j]) * 0.5f);
+		}
+		
+		// calc distance between centers
+		VectorSubtract(new_origin, v_mid, v_mid);
+		
+		game::Brush_Move(v_mid, b, snap);
 	}
 
 	void gui_entprop_add_value_vec3(const epair_wrapper& epw, float* vec_in, int row = 0)
@@ -877,11 +891,13 @@ namespace ggui::entity
 		
 		if(dirty)
 		{
-			// use brush center / brush move to move the entity
-			if(epw.is_fixedsize && epw.type == ORIGIN)
+			if(const auto ctype = epw.eclass->classtype; 
+				epw.type == ORIGIN && (ctype == game::ECLASS_LIGHT || ctype == game::ECLASS_NODE || ctype == game::ECLASS_RADIANT_NODE))
 			{
+				//game::printf_to_console("Inspector: moving entity/brush using Brush_Move");
+				
 				auto sb = game::g_selected_brushes();
-				Brush_Center(sb->currSelection, vec3);
+				brush_moveto(sb->currSelection, vec3, vec_in);
 
 				if (sprintf_s(vec3_str_buf, "%.3f %.3f %.3f", vec3[0], vec3[1], vec3[2])) {
 					AddProp(epw.epair->key, vec3_str_buf, &helper);
