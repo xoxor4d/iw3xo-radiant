@@ -286,14 +286,31 @@ namespace ggui::entity
 	
 	void on_update_selection_intercept()
 	{
-		// update our selected entity (also updates on escape)
 		if (const auto	g_edit_ent = game::g_edit_entity();
-			g_edit_ent && edit_entity_class != g_edit_ent->eclass)
+						g_edit_ent)
 		{
-			sel_list_ent = g_edit_ent->eclass;
-			edit_entity_class = g_edit_ent->eclass;
-			edit_entity_changed = true;
-			edit_entity_changed_should_scroll = true;
+			// update our selected entity (also updates on escape)
+			if (edit_entity_class != g_edit_ent->eclass)
+			{
+				sel_list_ent = g_edit_ent->eclass;
+				edit_entity_class = g_edit_ent->eclass;
+				edit_entity_changed = true;
+				edit_entity_changed_should_scroll = true;
+			}
+
+			// update / set initial origin on selection (freshly spawned prefabs wont have an origin key otherwise)
+			// og. radiant does this aswell by writing into the key/value field and "simulating" the enter key
+			if (0.0f != g_edit_ent->origin[0] || 0.0f != g_edit_ent->origin[1] || 0.0f != g_edit_ent->origin[2])
+			{
+				addprop_helper_s helper = {};
+				helper.add_undo = false;
+				helper.is_origin = true;
+				
+				char origin_str_buf[64] = {};
+				if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", g_edit_ent->origin[0], g_edit_ent->origin[1], g_edit_ent->origin[2])) {
+					AddProp("origin", origin_str_buf, &helper);
+				}
+			}
 		}
 	}
 

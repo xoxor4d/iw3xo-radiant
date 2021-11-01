@@ -375,6 +375,10 @@ namespace ggui::menubar
 						mainframe_thiscall(void, 0x42B7A0); // cmainframe::OnFilterDlg
 					}
 
+					if (ImGui::MenuItem("Textures", hotkeys::get_hotkey_for_command("ViewTextures").c_str())) {
+						components::gui::toggle(ggui::get_rtt_texturewnd(), 0, true);
+					}
+
 					ImGui::EndMenu(); // Toggle
 				}
 

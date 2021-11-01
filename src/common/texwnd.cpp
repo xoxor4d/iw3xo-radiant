@@ -360,7 +360,12 @@ void ctexwnd::rtt_texture_window()
 		//scrollbar_width = GetSystemMetrics(SM_CXVSCROLL);
 	}
 
-	ImGui::SetNextWindowSizeConstraints(ImVec2(320.0f, 320.0f), ImVec2(FLT_MAX, FLT_MAX));
+	const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 320.0f);
+	const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 800.0f);
+
+	ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f)); p_styles++;
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f)); p_styles++;
