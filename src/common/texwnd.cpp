@@ -301,7 +301,7 @@ void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 			ImGui::Text("%d/100%%", scroll_percent);
 			ImGui::SameLine();
 		}
-		
+
 		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
 		imgui_filter.Draw("##texture_filter", 230.0f);
 
@@ -313,7 +313,7 @@ void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 			ImGui::PopStyleColor();
 
 			g_texwnd->searchbar_filter = false;
-			g_texwnd->searchbar_buffer = "";
+			//g_texwnd->searchbar_buffer = "";
 			imgui_filter_last_len = 0;
 		}
 		else
@@ -325,18 +325,63 @@ void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 			}
 
 			g_texwnd->searchbar_filter = true;
-			g_texwnd->searchbar_buffer = imgui_filter.InputBuf;
-
-			// buffer length is located -12bytes from searchbar_buffer
-			*(int*)(g_texwnd->searchbar_buffer - 3 * sizeof(int)) = curr_len;
 			imgui_filter_last_len = curr_len;
 		}
+		
 
 		ImGui::EndGroup();
 	} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
 
 	toolbar_line2_width = ImGui::GetItemRectSize().x; // save width for the next frame
 	ImGui::PopStyleCompact();
+}
+
+bool texwnd_textfilter(const char* iter_material_name)
+{
+	if (imgui_filter_last_len)
+	{
+		if (std::string(iter_material_name).find(imgui_filter.InputBuf) != std::string::npos) {
+			return true;
+		}
+
+		// og radiant
+		/*if (!_strnicmp(imgui_filter.InputBuf, iter_material_name, imgui_filter_last_len))
+		{
+			return true;
+		}*/
+	}
+
+	return false;
+}
+
+void __declspec(naked) texwnd_listmaterials_intercept()
+{
+	const static uint32_t no_filter_pt = 0x45BD89;
+	const static uint32_t break_pt = 0x45BD11;
+	const static uint32_t goto_pt = 0x45BD8F;
+	__asm
+	{
+		// test if textbox filter is enabled (textlen > 0)
+		mov		eax, imgui_filter_last_len;
+		test	eax, eax;
+		jz		NO_FILTER;
+
+		// filter active
+		mov     eax, [ebp - 28h]; // iter_material_name
+		push	eax;
+		call	texwnd_textfilter;
+		add		esp, 4;
+
+		test	al, al;
+		jnz		BREAK_F;
+		jmp		goto_pt;
+
+	BREAK_F:
+		jmp		break_pt;
+
+	NO_FILTER:
+		jmp		no_filter_pt;
+	}
 }
 
 
@@ -462,6 +507,9 @@ void ctexwnd::hooks()
 	// ignore crashing texture searchbar destructor :x
 	utils::hook::nop(0x627990, 5);
 	utils::hook::set<BYTE>(0x627990, 0xC3);
+
+	utils::hook::nop(0x45BCDD, 8);
+	utils::hook(0x45BCDD, texwnd_listmaterials_intercept, HOOK_JUMP).install()->quick();
 
 	// disable texture tab insertion in entitywnd :: CTabCtrl::InsertItem(&g_wndTabsEntWnd, 1u, 1u, "&Textures", 0, 0);
 	utils::hook::nop(0x49672A, 23);
