@@ -139,6 +139,8 @@ namespace components
 		// toggle off
 		if(!state)
 		{
+			dvars::set_bool(dvars::radiant_gameview, false);
+			
 			if(!_gameview.enabled)
 			{
 				return;
@@ -206,12 +208,14 @@ namespace components
 			{
 				if (_gameview.s_filter_opt_ladder)		ggui::filter::toggle_by_name("ladder", ggui::filter::OTHER, true);
 			}
-			
+
 			memset(&_gameview, 0, sizeof(gameview_helper_s));
 		}
 		// toggle on
 		else
 		{
+			dvars::set_bool(dvars::radiant_gameview, true);
+			
 			if (!_gameview.enabled)
 			{
 				_gameview.s_xyflags = game::g_qeglobals->d_savedinfo.d_xyShowFlags;
@@ -319,7 +323,7 @@ namespace components
 		dvars::radiant_gameview = dvars::register_bool(
 			/* name		*/ "radiant_gameview",
 			/* default	*/ false,
-			/* flags	*/ game::dvar_flags::saved,
+			/* flags	*/ game::dvar_flags::none,
 			/* desc		*/ "hides everything thats not visible in-game");
 	}
 	
@@ -333,7 +337,6 @@ namespace components
 		command::register_command_with_hotkey("xo_gameview"s, [](auto)
 			{
 				components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
-				dvars::set_bool(dvars::radiant_gameview, !dvars::radiant_gameview->current.enabled);
 			});
 	}
 

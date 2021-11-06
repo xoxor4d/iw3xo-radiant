@@ -500,6 +500,9 @@ namespace mainframe
 typedef void(__thiscall* on_cmainframe_size)(cmainframe*, UINT, int, int);
 	on_cmainframe_size		__on_size;
 
+typedef void(__thiscall* on_cmainframe_on_destroy)(cmainframe*);
+	on_cmainframe_on_destroy	__on_destroy;
+
 
 // *
 // | -------------------- Mouse Scroll ------------------------
@@ -739,6 +742,20 @@ void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* ed
 	__on_size(pThis, nFlags, x, y);
 }
 
+void __fastcall cmainframe::on_destroy(cmainframe* pThis)
+{
+	if (dvars::radiant_gameview->current.enabled)
+	{
+		components::renderer::game_view(false);
+	}
+	
+	components::remote_net::on_shutdown();
+
+	components::config::write_dvars();
+	
+	__on_destroy(pThis);
+}
+
 // *
 // | ----------------------------------------------------------
 // *
@@ -819,7 +836,8 @@ void cmainframe::hooks()
 	mainframe::__on_keydown	= reinterpret_cast<mainframe::on_cmainframe_keydown>(utils::hook::detour(0x422370, cmainframe::on_keydown, HK_JUMP));
 	mainframe::__on_keyup	= reinterpret_cast<mainframe::on_cmainframe_keyup>  (utils::hook::detour(0x422270, cmainframe::on_keyup, HK_JUMP));
 			   __on_size	= reinterpret_cast<on_cmainframe_size>				(utils::hook::detour(0x423310, cmainframe::on_size, HK_JUMP));
-	
+			   __on_destroy = reinterpret_cast<on_cmainframe_on_destroy>		(utils::hook::detour(0x421C60, cmainframe::on_destroy, HK_JUMP));
+
 	// check for nullptr (world_entity) in a sunlight preview function. Only required with the ^ hook, see note there.
 	utils::hook::nop(0x4067C7, 6);
 		 utils::hook(0x4067C7, sunlight_preview_arg_check, HOOK_JUMP).install()->quick();

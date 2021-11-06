@@ -80,6 +80,7 @@ namespace game
 	extern int& texWndGlob_localeCount;
 	extern int& texWndGlob_usageCount;
 
+	extern bool& r_initiated;
 	extern game::GfxBackEndData* gfx_backend_data;
 	extern game::GfxCmdBufSourceState* gfx_cmd_buf_source_state;
 	extern game::r_globals_t* rg;

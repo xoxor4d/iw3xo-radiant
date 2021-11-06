@@ -6,6 +6,8 @@
 // maximum amount of selected brushes to send to the game
 #define REMOTE_MAX_SEL_BRUSHES 16
 
+//#define CFRAMEWND_ONCLOSE
+
 SOCKET g_RemoteSocket;
 int g_RemoteSocketStatus = -1;
 
@@ -960,9 +962,13 @@ namespace components
 		}
 	}
 
+	void remote_net::on_shutdown()
+	{
+		closesocket(g_RemoteSocket);
+		g_RemoteSocketStatus = INVALID_SOCKET;
+	}
 
-	// *
-	// Function that gets called right before radiant closes
+#ifdef CFRAMEWND_ONCLOSE
 	void cframewnd_on_close()
 	{
 		closesocket(g_RemoteSocket);
@@ -986,7 +992,8 @@ namespace components
 			jmp		retn_pt;
 		}
 	}
-
+#endif
+	
 	void remote_net::register_dvars()
 	{
 		dvars::radiant_live = dvars::register_bool(
@@ -1012,8 +1019,10 @@ namespace components
 
 	remote_net::remote_net()
 	{
+#ifdef CFRAMEWND_ONCLOSE
 		utils::hook(0x59E453, cframewnd_on_close_stub, HOOK_JUMP).install()->quick();
-
+#endif
+		
 		// selected_brushes includes reflectionProbes and all sorts of helper boxes so always check currSelection->owner->eclass->name = "worldspawn" 
 		// if not selected any brush :: selected_brushes->currSelection == null
 		// selected_brushes->currSelection = always the latest selection

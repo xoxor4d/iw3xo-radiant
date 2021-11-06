@@ -182,6 +182,35 @@ void MFCCreate()
 	}
 }
 
+bool on_exit_instance()
+{
+	// no logic referencing any win32 ui because the mainframe is already destroyed
+	// > use cmainframe::on_destroy() instead
+	
+	// asm stub logic
+	return game::r_initiated;
+}
+
+__declspec(naked) void on_exit_instance_stub()
+{
+	const static uint32_t retn_pt_renderer_initiated = 0x450A2C;
+	const static uint32_t retn_pt = 0x450A42;
+	__asm
+	{
+		pushad;
+		call	on_exit_instance;
+		test	al, al;
+		popad;
+
+		push    esi;
+		mov     esi, ecx;
+		je      LOC_450A42;
+		jmp		retn_pt_renderer_initiated;
+		
+		LOC_450A42:
+		jmp		retn_pt;
+	}
+}
 
 __declspec(naked) void menubar_stub_01()
 {
@@ -260,6 +289,7 @@ void radiantapp::hooks()
 	// show/hide mainframe menubar on startup 03 :: CMainFrame::OnCreate
 	utils::hook(0x421057, menubar_stub_03, HOOK_JUMP).install()->quick();
 
+	utils::hook(0x450A27, on_exit_instance_stub, HOOK_JUMP).install()->quick();
 	
 #ifdef HIDE_MAINFRAME_MENUBAR
 	// -----------------------------------------------------------------------

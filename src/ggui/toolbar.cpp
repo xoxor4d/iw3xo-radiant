@@ -444,7 +444,6 @@ namespace ggui::toolbar
 					std::string("Gameview [" + hotkeys::get_hotkey_for_command("xo_gameview") + "]").c_str()))
 				{
 					components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
-					dvars::set_bool(dvars::radiant_gameview, !dvars::radiant_gameview->current.enabled);
 				}
 			});
 

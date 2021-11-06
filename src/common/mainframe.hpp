@@ -46,7 +46,8 @@ public:
 	static void __fastcall		on_keydown(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags);
 	static void __stdcall		on_keyup(cmainframe* pThis, UINT nChar);
 	static void __fastcall		on_size(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nFlags, int x, int y);
-
+	static void __fastcall		on_destroy(cmainframe* pThis);
+	
 	void						update_windows(int nBits);
 	void						routine_processing(void);
 	static void					hk_routine_processing(void);

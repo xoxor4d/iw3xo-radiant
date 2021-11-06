@@ -264,7 +264,6 @@ void rtt_camera_window_toolbar()
 					, &toolbar_button_size))
 				{
 					components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
-					dvars::set_bool(dvars::radiant_gameview, !dvars::radiant_gameview->current.enabled);
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 				
 				ImGui::PopStyleVar();
@@ -526,6 +525,7 @@ void ccamwnd::rtt_camera_window()
 										{
 											// degree is handled like a boolean, 0.0 will not rotate fixed size brushes / entities
 											Select_ApplyMatrix(&rotate_axis_for_radiant[0][0], sb, false, 1.0f, false);
+											components::remote_net::cmd_send_brush_select_deselect(true);
 										}
 									}
 								}
@@ -540,6 +540,7 @@ void ccamwnd::rtt_camera_window()
 										if (const auto brushes = sb->currSelection; brushes)
 										{
 											game::Brush_Move(delta_origin, brushes, true);
+											components::remote_net::cmd_send_brush_select_deselect(true);
 										}
 									}
 								}
@@ -882,11 +883,14 @@ void __declspec(naked) camwnd_set_detatched_child_window_style()
 
 bool should_move_selection()
 {
-	// disable brush dragging within the camera window
-    if(ggui::get_rtt_camerawnd()->window_hovered && game::g_qeglobals->d_select_mode == game::select_t::sel_brush)
-    {
-        return false;
-    }
+	if(dvars::guizmo_enable->current.enabled)
+	{
+		// disable brush dragging within the camera window
+		if (ggui::get_rtt_camerawnd()->window_hovered && game::g_qeglobals->d_select_mode == game::select_t::sel_brush)
+		{
+			return false;
+		}
+	}
 
     return true;
 }
