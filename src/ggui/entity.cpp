@@ -1060,6 +1060,13 @@ namespace ggui::entity
 									continue;
 								}
 
+								if (key == "height")
+								{
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop_sorted.push_back(eprop);
+									continue;
+								}
+
 								if (key == "exponent") 
 								{
 									eprop.type		= EPAIR_VALUETYPE::FLOAT;

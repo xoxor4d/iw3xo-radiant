@@ -122,7 +122,109 @@ namespace ggui::filter
 		}
 	}
 
+	// retuns original enabled/disabled state before the filter was toggled either way
+	bool toggle_by_name(const char* name, E_FILTERS filter_type, bool on_off)
+	{
+		build_radiant_filterlists();
 
+		bool return_val = false;
+
+		CCheckListBox* checklistbox;
+		size_t filter_list_count = 0;
+		
+		std::string filter_name = name;
+					filter_name = utils::str_to_lower(filter_name);
+		
+		switch(filter_type)
+		{
+		case GEOMETRY:
+			checklistbox = &cmainframe::activewnd->m_pFilterWnd->geometry_filters;
+			filter_list_count = ggui::filter::_geofilters.size();
+			break;
+			
+		case ENTITY:
+			checklistbox = &cmainframe::activewnd->m_pFilterWnd->entity_filters;
+			filter_list_count = ggui::filter::_entityfilters.size();
+			break;
+			
+		case TRIGGER:
+			checklistbox = &cmainframe::activewnd->m_pFilterWnd->trigger_filters;
+			filter_list_count = ggui::filter::_triggerfilters.size();
+			break;
+
+		case OTHER:
+			checklistbox = &cmainframe::activewnd->m_pFilterWnd->other_filters;
+			filter_list_count = ggui::filter::_otherfilters.size();
+			break;
+			
+		default:
+			return false;
+		}
+
+		for (size_t i = 0; i < filter_list_count; i++)
+		{
+			game::filter_entry_s* filter = nullptr;
+
+			switch (filter_type)
+			{
+			case GEOMETRY:
+				filter = ggui::filter::_geofilters[i];
+				break;
+
+			case ENTITY:
+				filter = ggui::filter::_entityfilters[i];
+				break;
+
+			case TRIGGER:
+				filter = ggui::filter::_triggerfilters[i];
+				break;
+
+			case OTHER:
+				filter = ggui::filter::_otherfilters[i];
+				break;
+
+			default:
+				return false;
+			}
+			
+			if (filter && filter->name)
+			{
+				
+				if(utils::str_to_lower(filter->name) == filter_name)
+				{
+					return_val = filter->isShown;
+					
+					if (!on_off && filter->isShown)
+					{
+						CCheckListBox__SetCheck(checklistbox, i, 0);
+						filter->isShown = false;
+
+						if (!((filter->filter_type_enum & game::FILTER_TYPE2::FACE) == 0))
+						{
+							// RadiantFilters05_large
+							utils::hook::call<void(__cdecl)(game::filter_entry_s*)>(0x411BE0)(filter);
+						}
+					}
+					else if(on_off && !filter->isShown)
+					{
+						CCheckListBox__SetCheck(checklistbox, i, 1);
+						filter->isShown = true;
+
+						if (!((filter->filter_type_enum & game::FILTER_TYPE2::FACE) == 0))
+						{
+							// RadiantFilters06_large
+							utils::hook::call<void(__cdecl)(game::filter_entry_s*)>(0x411E30)(filter);
+						}
+					}
+
+					game::g_qeglobals->g_filtersUpdated++;
+				}
+			}
+		}
+
+		return return_val;
+	}
+	
 	// *
 	// imgui filter window
 	void menu(ggui::imgui_context_menu& menu)

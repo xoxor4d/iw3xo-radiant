@@ -404,7 +404,9 @@ namespace ggui
 			if (const auto dvar = game::Dvar_FindVar(dvar_str.c_str());
 						   dvar)
 			{
-				const auto value_string = command_s.substr(space_pos);
+				auto value_string = command_s.substr(space_pos);
+				utils::trim(value_string);
+				
 				game::Dvar_SetFromStringFromSource(value_string.c_str(), dvar, 0);
 				was_dvar = true;
 			}

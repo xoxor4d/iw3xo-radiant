@@ -101,9 +101,9 @@ void get_selection_center(float* center_point)
 bool	_rttcam_toolbar_state = false;
 
 // create dvars for these
-bool	guizmo_enable = true;
-bool	guizmo_enable_snapping = true;
-bool	guizmo_enable_brush_mode = true;
+//bool	guizmo_enable = true;
+//bool	guizmo_enable_snapping = true;
+//bool	guizmo_enable_brush_mode = true;
 
 void rtt_camera_window_toolbar()
 {
@@ -111,11 +111,11 @@ void rtt_camera_window_toolbar()
 	const auto prefs = game::g_PrefsDlg();
 	
 	ImVec2 toolbar_button_open_size = ImVec2(22.0f, 22.0f);
-	ImVec2 toolbar_button_size = ImVec2(28.0f, 28.0f);
+	ImVec2 toolbar_button_size = ImVec2(32.0f, 32.0f);
 	ImVec4 toolbar_button_background = ImVec4(0.1f, 0.1f, 0.1f, 0.55f);
 	ImVec4 toolbar_button_background_hovered = ImVec4(0.05f, 0.05f, 0.05f, 0.65f);
 	ImVec4 toolbar_button_background_active = ImVec4(0.1f, 0.1f, 0.1f, 0.55f);
-	
+
 	// right side alignment
 	static float toolbar_line_width = toolbar_button_size.x + 8.0f; // used as first frame estimate
 	const float  collapse_button_offset = (toolbar_button_size.x - toolbar_button_open_size.x) * 0.5f;
@@ -128,6 +128,14 @@ void rtt_camera_window_toolbar()
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(70, 70, 70, 0));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 0));
+
+	if(dvars::gui_draw_fps && dvars::gui_draw_fps->current.enabled)
+	{
+		const auto cursor_pos = ImGui::GetCursorPos();
+		ImGui::SetCursorPosX(cursor_pos.x - 180.0f);
+		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::SetCursorPos(cursor_pos);
+	}
 	
 	// group all so we can get the actual toolbar width for the next frame
 	ImGui::BeginGroup();
@@ -154,43 +162,43 @@ void rtt_camera_window_toolbar()
 				static bool hov_guizmo_enable;
 				if (ggui::toolbar::image_togglebutton("guizmo_enable"
 					, hov_guizmo_enable
-					, guizmo_enable
+					, dvars::guizmo_enable->current.enabled
 					, "Enable guizmo"
 					, &toolbar_button_background
 					, &toolbar_button_background_hovered
 					, &toolbar_button_background_active
 					, &toolbar_button_size))
 				{
-					guizmo_enable = guizmo_enable ? false : true;
+					dvars::set_bool(dvars::guizmo_enable, !dvars::guizmo_enable->current.enabled);
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 
-				if(guizmo_enable)
+				if(dvars::guizmo_enable->current.enabled)
 				{
 					static bool hov_guizmo_grid_snapping;
 					if (ggui::toolbar::image_togglebutton("guizmo_grid_snapping"
 						, hov_guizmo_grid_snapping
-						, guizmo_enable_snapping
+						, dvars::guizmo_snapping->current.enabled
 						, "Guizmo: Enable grid-snapping"
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
 						, &toolbar_button_size))
 					{
-						guizmo_enable_snapping = guizmo_enable_snapping ? false : true;
+						dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
 					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 
 
 					static bool hov_guizmo_brush_mode;
 					if (ggui::toolbar::image_togglebutton("guizmo_brush_mode"
 						, hov_guizmo_brush_mode
-						, guizmo_enable_brush_mode
+						, dvars::guizmo_brush_mode->current.enabled
 						, "Guizmo: Enable brush mode"
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
 						, &toolbar_button_size))
 					{
-						guizmo_enable_brush_mode = guizmo_enable_brush_mode ? false : true;
+						dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
 					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 				}
 
@@ -244,6 +252,20 @@ void rtt_camera_window_toolbar()
 					}
 				}
 				ImGui::EndGroup();
+
+				static bool hov_gameview;
+				if (ggui::toolbar::image_togglebutton("gameview"
+					, hov_gameview
+					, dvars::radiant_gameview->current.enabled
+					, std::string("Gameview [" + ggui::hotkeys::get_hotkey_for_command("xo_gameview") + "]").c_str()
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
+					dvars::set_bool(dvars::radiant_gameview, !dvars::radiant_gameview->current.enabled);
+				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 				
 				ImGui::PopStyleVar();
 			}
@@ -376,7 +398,7 @@ void ccamwnd::rtt_camera_window()
 			// *
 			// ImGuizmo
 
-			if(guizmo_enable)
+			if(dvars::guizmo_enable->current.enabled)
 			{
 				game::GfxMatrix view = {};
 				game::GfxMatrix projection = {};
@@ -395,7 +417,7 @@ void ccamwnd::rtt_camera_window()
 				float angles[3] = { 0.0f, 0.0f, 0.0f };
 				float snap[3] = { 0.0f, 0.0f, 0.0f };
 
-				if (guizmo_enable_snapping)
+				if (dvars::guizmo_snapping->current.enabled)
 				{
 					// default case
 					float snap_size = xywnd::GRID_SIZES[game::g_qeglobals->d_gridsize];
@@ -418,7 +440,7 @@ void ccamwnd::rtt_camera_window()
 				}
 
 				// TODO: auto detect? + dvar
-				if (guizmo_enable_brush_mode)
+				if (dvars::guizmo_brush_mode->current.enabled)
 				{
 
 					if (const auto b = game::g_selected_brushes()->currSelection; b)
@@ -723,7 +745,6 @@ void ccamwnd::mouse_moved(ccamwnd* wnd, int buttons, int x, int y)
 	}
 }
 
-
 // *
 // | -------------------- MSG typedefs ------------------------
 // *
@@ -876,8 +897,10 @@ void __declspec(naked) move_selection_stub()
     const static uint32_t retn_pt = 0x48023D;
     __asm
     {
+		pushad; // new
         call    should_move_selection;
         test    al, al;
+		popad;	// new
         
         je      SKIP_MOVE;
         call    move_selection_func;
@@ -889,6 +912,27 @@ void __declspec(naked) move_selection_stub()
 
 // *
 // *
+
+void ccamwnd::register_dvars()
+{
+	dvars::guizmo_enable = dvars::register_bool(
+		/* name		*/ "guizmo_enable",
+		/* default	*/ true,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "Enable guizmo");
+
+	dvars::guizmo_snapping = dvars::register_bool(
+		/* name		*/ "guizmo_snapping",
+		/* default	*/ true,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "Guizmo: Enable grid-snapping");
+
+	dvars::guizmo_brush_mode = dvars::register_bool(
+		/* name		*/ "guizmo_brush_mode",
+		/* default	*/ true,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "Guizmo: Enable brush mode");
+}
 
 void ccamwnd::hooks()
 {

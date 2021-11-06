@@ -3,24 +3,6 @@
 
 namespace ggui::hotkeys
 {
-	const char* radiant_modifier_alt[] =
-	{
-		"",
-		"ALT"
-	};
-
-	const char* radiant_modifier_ctrl[] =
-	{
-		"",
-		"CTRL"
-	};
-
-	const char* radiant_modifier_shift[] =
-	{
-		"",
-		"SHIFT"
-	};
-
 	const char* radiant_keybind_array[] =
 	{
 		"",
@@ -416,7 +398,8 @@ namespace ggui::hotkeys
 			}
 		}
 
-		for(auto& addon_bind : ggui::cmd_addon_hotkeys)
+		// exec cmainframe::on_keydown()
+		for(auto& addon_bind : ggui::cmd_addon_hotkeys_builtin)
 		{
 			for (commandbinds& hotkey : cmd_hotkeys)
 			{
@@ -425,6 +408,20 @@ namespace ggui::hotkeys
 					addon_bind.m_nKey = cmdbinds_key_to_ascii(hotkey.modifier_key);
 					addon_bind.m_nModifiers =  hotkey.modifier_shift
 											| (hotkey.modifier_alt  == 1 ? 2 : 0)
+											| (hotkey.modifier_ctrl == 1 ? 4 : 0);
+				}
+			}
+		}
+
+		for (auto& addon_bind : ggui::cmd_addon_hotkeys)
+		{
+			for (commandbinds& hotkey : cmd_hotkeys)
+			{
+				if (addon_bind.m_strCommand == hotkey.cmd_name)
+				{
+					addon_bind.m_nKey = cmdbinds_key_to_ascii(hotkey.modifier_key);
+					addon_bind.m_nModifiers =  hotkey.modifier_shift
+											| (hotkey.modifier_alt == 1 ? 2 : 0)
 											| (hotkey.modifier_ctrl == 1 ? 4 : 0);
 				}
 			}

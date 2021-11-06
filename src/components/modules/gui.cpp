@@ -745,6 +745,7 @@ namespace components
 
 	
 	// *
+	// register_addon_dvars()
 	void gui::register_dvars()
 	{
 		dvars::gui_menubar_bg_color = dvars::register_vec4(
@@ -907,6 +908,11 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "draw the mouse cursor origin within the menubar (old statusbar text)");
 
+		dvars::gui_draw_fps = dvars::register_bool(
+			/* name		*/ "gui_draw_fps",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "draw gui fps within the camera window");
 
 		// *
 		// gui::saved_windowstates()

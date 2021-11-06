@@ -11,6 +11,13 @@ namespace components
 		command::cmd_names_autocomplete.push_back(name);
     }
 
+	void command::register_command_with_hotkey(const std::string& name, std::function<void(std::vector<std::string>)> cb)
+	{
+		command::cmd[name] = cb;
+		command::cmd_names_autocomplete.push_back(name);
+		ggui::cmd_addon_hotkeys.emplace_back(game::SCommandInfoHotkey { name, 0, 0 });
+	}
+
 	void command::execute(std::string cmd_name)
 	{
 		if (command::cmd.find(cmd_name) != command::cmd.end())

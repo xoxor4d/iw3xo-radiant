@@ -23,12 +23,18 @@ namespace ggui
 
 	std::vector<commandbinds> cmd_hotkeys;
 
-	std::vector<game::SCommandInfo> cmd_addon_hotkeys
+	// * cmainframe::on_keydown()
+	// * ggui::hotkeys::load_commandmap()
+	// add additional radiant-builtins
+	std::vector<game::SCommandInfo> cmd_addon_hotkeys_builtin
 	{
 		{ "LockX", 0, 0, 0x802E },
 		{ "LockY", 0, 0, 0x802F },
 		{ "LockZ", 0, 0, 0x8030 },
 	};
+
+	// bind commands to keys (components::command::execute())
+	std::vector<game::SCommandInfoHotkey> cmd_addon_hotkeys;
 	
 	// *
 	// | -------------------- Functions ------------------------

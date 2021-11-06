@@ -16,12 +16,12 @@ namespace dvars
 	extern game::dvar_s* gui_rtt_padding_enabled;
 	extern game::dvar_s* gui_rtt_padding_size;
 	extern game::dvar_s* gui_rtt_padding_color;
-	
-	
+		
 	extern game::dvar_s* gui_floating_toolbar;
 	extern game::dvar_s* gui_resize_dockspace;
 	extern game::dvar_s* gui_mainframe_background;
 	extern game::dvar_s* gui_menubar_show_mouseorigin;
+	extern game::dvar_s* gui_draw_fps;
 	
 	extern game::dvar_s* gui_saved_state_console;
 	extern game::dvar_s* gui_saved_state_filter;
@@ -36,6 +36,13 @@ namespace dvars
 
 	//
 	extern game::dvar_s* grid_zoom_to_cursor;
+	extern game::dvar_s* r_draw_model_origin;
+
+	extern game::dvar_s* guizmo_enable;
+	extern game::dvar_s* guizmo_snapping;
+	extern game::dvar_s* guizmo_brush_mode;
+	
+	extern game::dvar_s* radiant_gameview;
 	
 	// radiant-live
 	extern game::dvar_s* radiant_live;

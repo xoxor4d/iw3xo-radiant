@@ -455,8 +455,14 @@ namespace ggui::menubar
 						mainframe_thiscall(void, 0x42BBC0); // cmainframe::OnSelectConnections
 					}
 
-					if (ImGui::MenuItem("Show Coordinates", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 32) == 0)) {
-						mainframe_thiscall(void, 0x42BB60); // cmainframe::OnSelectCoordinates
+					if (ImGui::MenuItem("Draw Model Origins", 0, dvars::r_draw_model_origin->current.enabled)) {
+						dvars::set_bool(dvars::r_draw_model_origin, !dvars::r_draw_model_origin->current.enabled);
+					}
+
+					if (ImGui::MenuItem("Game View", 0, dvars::radiant_gameview->current.enabled)) 
+					{
+						components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
+						dvars::set_bool(dvars::radiant_gameview, !dvars::radiant_gameview->current.enabled);
 					}
 
 					ImGui::EndMenu(); // XY Window

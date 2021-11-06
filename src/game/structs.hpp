@@ -1500,6 +1500,13 @@ namespace game
 		unsigned int m_nModifiers;
 		unsigned int m_nCommand;
 	};
+
+	struct SCommandInfoHotkey
+	{
+		std::string m_strCommand;
+		unsigned int m_nKey;
+		unsigned int m_nModifiers;
+	};
 	
 	enum ENTITY_DEFS
 	{

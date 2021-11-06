@@ -17,12 +17,11 @@ namespace dvars
 	game::dvar_s* gui_rtt_padding_size = nullptr;
 	game::dvar_s* gui_rtt_padding_color = nullptr;
 	
-	
 	game::dvar_s* gui_floating_toolbar = nullptr;
 	game::dvar_s* gui_resize_dockspace = nullptr;
 	game::dvar_s* gui_mainframe_background = nullptr;
 	game::dvar_s* gui_menubar_show_mouseorigin = nullptr;
-
+	game::dvar_s* gui_draw_fps = nullptr;
 	
 	game::dvar_s* gui_saved_state_console = nullptr;
 	game::dvar_s* gui_saved_state_filter = nullptr;
@@ -37,6 +36,13 @@ namespace dvars
 
 	//
 	game::dvar_s* grid_zoom_to_cursor = nullptr;
+	game::dvar_s* r_draw_model_origin = nullptr;
+
+	game::dvar_s* guizmo_enable = nullptr;
+	game::dvar_s* guizmo_snapping = nullptr;
+	game::dvar_s* guizmo_brush_mode = nullptr;
+	
+	game::dvar_s* radiant_gameview = nullptr;
 	
 	// radiant-live
 	game::dvar_s* radiant_live = nullptr;
@@ -110,7 +116,9 @@ namespace dvars
 		components::remote_net::register_dvars();
 		cmainframe::register_dvars();
 		cxywnd::register_dvars();
+		ccamwnd::register_dvars();
 		ggui::toolbar::register_dvars();
+		components::renderer::register_dvars();
 		
 		game::printf_to_console("\n");
 	}

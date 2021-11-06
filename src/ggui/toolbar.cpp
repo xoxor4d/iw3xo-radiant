@@ -437,6 +437,17 @@ namespace ggui::toolbar
 				}
 			});
 
+		register_element("gameview"s, false, []()
+			{
+				static bool hov_gameview;
+				if (image_togglebutton("gameview", hov_gameview, dvars::radiant_gameview->current.enabled,
+					std::string("Gameview [" + hotkeys::get_hotkey_for_command("xo_gameview") + "]").c_str()))
+				{
+					components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
+					dvars::set_bool(dvars::radiant_gameview, !dvars::radiant_gameview->current.enabled);
+				}
+			});
+
 		register_element("cycle_xyz"s, []()
 			{
 				static bool hov_cycle_xyz;
@@ -516,6 +527,41 @@ namespace ggui::toolbar
 
 				// CMainFrame::OnDropSelectedRelativeZ
 				image_button("drop_entities_floor_relative", hov_drop_entities_relative_z, MAINFRAME_THIS, 0x425940, "Drop selection to the floor with relative Z heights");
+			});
+
+		register_element("guizmo_enable"s, false, []()
+			{
+				static bool hov_guizmo_enable;
+				if (image_togglebutton("guizmo_enable", hov_guizmo_enable, dvars::guizmo_enable->current.enabled, dvars::guizmo_enable->description))
+				{
+					dvars::set_bool(dvars::guizmo_enable, !dvars::guizmo_enable->current.enabled);
+				}
+			});
+
+		register_element("guizmo_grid_snapping"s, false, []()
+			{
+				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
+				{
+					static bool hov_guizmo_grid_snapping;
+					if (image_togglebutton("guizmo_grid_snapping", hov_guizmo_grid_snapping, dvars::guizmo_snapping->current.enabled, dvars::guizmo_snapping->description))
+					{
+						dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
+					}
+				}
+				ImGui::EndDisabled();
+			});
+
+		register_element("guizmo_brush_mode"s, false, []()
+			{
+				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
+				{
+					static bool hov_guizmo_brush_mode;
+					if (image_togglebutton("guizmo_brush_mode", hov_guizmo_brush_mode, dvars::guizmo_brush_mode->current.enabled, dvars::guizmo_brush_mode->description))
+					{
+						dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
+					}
+				}
+				ImGui::EndDisabled();
 			});
 
 		register_element("free_rotate"s, []()

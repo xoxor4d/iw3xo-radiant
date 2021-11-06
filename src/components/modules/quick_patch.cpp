@@ -79,7 +79,7 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 			{
 				SendMessageA(hwnd, WM_PAINT, 0, 0);
 			}
-			
+
 			// update z window ~ 250fps
 			if (const auto hwnd = cmainframe::activewnd->m_pZWnd->GetWindow();
 				hwnd != nullptr)
@@ -136,16 +136,6 @@ BOOL init_threads()
 
 		SetConsoleTitleA("IW3R Console");
 	}
-
-	// command Thread
-	//CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(command_thread), nullptr, 0, nullptr);
-	
-	/*game::glob::command_thread_running = false;
-	
-	if(CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(components::command::command_thread), nullptr, 0, nullptr))
-	{
-		game::glob::command_thread_running = true;
-	}*/
 	
 	return TRUE;
 }

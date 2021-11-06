@@ -28,7 +28,7 @@ namespace ggui::preferences
 			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
 			{
 				ImGui::Checkbox("Show mousecursor origin within the menubar", &dvars::gui_menubar_show_mouseorigin->current.enabled);
-
+				
 				if(ImGui::Checkbox("Floating Toolbar", &dvars::gui_floating_toolbar->current.enabled)) {
 					ggui::toolbar_reset = true;
 				}
@@ -151,6 +151,8 @@ namespace ggui::preferences
 				ImGui::DragFloat("Field of view", &prefs->camera_fov, 0.1f, 1.0f, 180.0f, "%.1f");
 				ImGui::Checkbox("Cull sky when using cubic clipping", &prefs->b_mCullSky);
 				ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
+
+				ImGui::Checkbox("Draw FPS within the camera window", &dvars::gui_draw_fps->current.enabled);
 			}
 			ImGui::EndChild();
 		}
@@ -180,8 +182,8 @@ namespace ggui::preferences
 			menu.one_time_init = true;
 		}
 		
-		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 400.0f);
-		const auto INITIAL_WINDOW_SIZE = ImVec2(600.0f, 800.0f);
+		const auto MIN_WINDOW_SIZE = ImVec2(800.0f, 400.0f);
+		const auto INITIAL_WINDOW_SIZE = ImVec2(800.0f, 600.0f);
         ggui::set_next_window_initial_pos_and_constraints(MIN_WINDOW_SIZE, INITIAL_WINDOW_SIZE);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));

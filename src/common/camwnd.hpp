@@ -58,7 +58,8 @@ public:
 	void					mouse_control(float dtime);
 	static void				mouse_up(ccamwnd* cam, int flags);
 	static void				mouse_moved(ccamwnd* wnd, int buttons, int x, int y);
-	
+
+	static void				register_dvars();
 	static void				hooks();
 	static BOOL WINAPI		windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 

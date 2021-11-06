@@ -145,7 +145,8 @@ namespace ggui
 	extern ImGuiID		toolbar_dock_left;
 
 	extern std::vector<commandbinds> cmd_hotkeys;
-	extern std::vector<game::SCommandInfo> cmd_addon_hotkeys;
+	extern std::vector<game::SCommandInfo> cmd_addon_hotkeys_builtin;
+	extern std::vector<game::SCommandInfoHotkey> cmd_addon_hotkeys; //std::vector<game::SCommandInfo> cmd_addon_hotkeys;
 	
 	// *
 	// | -------------------- Functions ------------------------
