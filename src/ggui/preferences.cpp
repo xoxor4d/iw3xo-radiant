@@ -110,6 +110,16 @@ namespace ggui::preferences
 				{
 					game::printf_to_console(aaa.c_str());
 				}*/
+
+				ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
+
+				ImGui::PushFontFromIndex(BOLD_18PX);
+				ImGui::TextUnformatted("Property Editor:");
+				ImGui::PopFont();
+				
+				ImGui::Checkbox("Default Open - Classlist", &dvars::gui_props_classlist_defaultopen->current.enabled); TT(dvars::gui_props_classlist_defaultopen->description);
+				ImGui::Checkbox("Default Open - Spawnflags", &dvars::gui_props_spawnflags_defaultopen->current.enabled); TT(dvars::gui_props_spawnflags_defaultopen->description);
+				ImGui::Checkbox("Default Open - Comments", &dvars::gui_props_comments_defaultopen->current.enabled); TT(dvars::gui_props_comments_defaultopen->description);
 			}
 			ImGui::EndChild();
 		}

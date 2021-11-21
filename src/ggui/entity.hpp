@@ -3,10 +3,6 @@
 
 namespace ggui::entity
 {
-	
-	void	menu(ggui::imgui_context_menu& menu);
-	void	hooks();
-
 	struct addprop_helper_s
 	{
 		bool is_origin;
@@ -18,4 +14,8 @@ namespace ggui::entity
 	
 	void	AddProp(const char* key, const char* value, addprop_helper_s* helper = nullptr);
 	bool	Entity_GetVec3ForKey(game::entity_s* ent, float* vec3, const char* keyname);
+
+	void	menu(ggui::imgui_context_menu& menu);
+	void	register_dvars();
+	void	hooks();
 }

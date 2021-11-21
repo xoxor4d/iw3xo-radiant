@@ -22,6 +22,10 @@ namespace dvars
 	game::dvar_s* gui_mainframe_background = nullptr;
 	game::dvar_s* gui_menubar_show_mouseorigin = nullptr;
 	game::dvar_s* gui_draw_fps = nullptr;
+
+	game::dvar_s* gui_props_classlist_defaultopen = nullptr;
+	game::dvar_s* gui_props_comments_defaultopen = nullptr;
+	game::dvar_s* gui_props_spawnflags_defaultopen = nullptr;
 	
 	game::dvar_s* gui_saved_state_console = nullptr;
 	game::dvar_s* gui_saved_state_filter = nullptr;
@@ -120,6 +124,7 @@ namespace dvars
 		ccamwnd::register_dvars();
 		ggui::toolbar::register_dvars();
 		components::renderer::register_dvars();
+		ggui::entity::register_dvars();
 		
 		game::printf_to_console("\n");
 	}

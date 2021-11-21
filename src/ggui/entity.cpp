@@ -354,7 +354,7 @@ namespace ggui::entity
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
 
-		if (ImGui::TreeNodeEx("Classlist", ImGuiTreeNodeFlags_DefaultOpen))
+		if (ImGui::TreeNodeEx("Classlist", dvars::gui_props_classlist_defaultopen->current.enabled ? ImGuiTreeNodeFlags_DefaultOpen : 0))
 		{
 			SPACING(0.0f, 0.01f);
 
@@ -406,7 +406,7 @@ namespace ggui::entity
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
 
-		if (ImGui::TreeNodeEx("Class Comments", ImGuiTreeNodeFlags_DefaultOpen))
+		if (ImGui::TreeNodeEx("Class Comments", dvars::gui_props_comments_defaultopen->current.enabled ? ImGuiTreeNodeFlags_DefaultOpen : 0))
 		{
 			SPACING(0.0f, 0.01f);
 
@@ -461,7 +461,7 @@ namespace ggui::entity
 		const auto wnd_size = ImGui::GetWindowSize();
 		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
 		
-		if (ImGui::TreeNodeEx("Spawnflags", ImGuiTreeNodeFlags_DefaultOpen))
+		if (ImGui::TreeNodeEx("Spawnflags", dvars::gui_props_spawnflags_defaultopen->current.enabled ? ImGuiTreeNodeFlags_DefaultOpen : 0))
 		{
 			SPACING(0.0f, 0.01f);
 			ImGui::PushStyleCompact();
@@ -1379,6 +1379,27 @@ namespace ggui::entity
 	void on_viewentity_command()
 	{
 		components::gui::toggle(ggui::state.czwnd.m_entity, 0, true);
+	}
+
+	void register_dvars()
+	{
+		dvars::gui_props_classlist_defaultopen = dvars::register_bool(
+			/* name		*/ "gui_props_classlist_defaultopen",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "property editor - default state for treenode classlist");
+		
+		dvars::gui_props_comments_defaultopen = dvars::register_bool(
+			/* name		*/ "gui_props_comments_defaultopen",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "property editor - default state for treenode comments");
+
+		dvars::gui_props_spawnflags_defaultopen = dvars::register_bool(
+			/* name		*/ "gui_props_spawnflags_defaultopen",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "property editor - default state for treenode spawnflags");
 	}
 
 	void hooks()

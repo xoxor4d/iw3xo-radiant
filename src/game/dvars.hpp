@@ -22,6 +22,10 @@ namespace dvars
 	extern game::dvar_s* gui_mainframe_background;
 	extern game::dvar_s* gui_menubar_show_mouseorigin;
 	extern game::dvar_s* gui_draw_fps;
+
+	extern game::dvar_s* gui_props_classlist_defaultopen;
+	extern game::dvar_s* gui_props_comments_defaultopen;
+	extern game::dvar_s* gui_props_spawnflags_defaultopen;
 	
 	extern game::dvar_s* gui_saved_state_console;
 	extern game::dvar_s* gui_saved_state_filter;
