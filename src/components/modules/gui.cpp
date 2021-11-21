@@ -424,6 +424,115 @@ namespace components
 		ImGui::PopStyleVar(_stylevars);
 	}
 
+	void model_selector(ggui::model_preview_s& menu)
+	{
+		if (!ggui::rtt_model_preview.one_time_init)
+		{
+			ggui::rtt_model_preview.xmodel_filelist = game::FS_ListFilteredFilesWrapper("xmodel", nullptr, &ggui::rtt_model_preview.xmodel_filecount);
+			ggui::rtt_model_preview.one_time_init = true;
+		}
+
+		const auto MIN_WINDOW_SIZE = ImVec2(500.0f, 400.0f);
+		const auto INITIAL_WINDOW_SIZE = ImVec2(550.0f, 600.0f);
+
+		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
+
+		ImGui::Begin("model rtt test", nullptr, ImGuiWindowFlags_NoCollapse);
+
+		const auto window_size = ImGui::GetWindowSize();
+
+		if (ImGui::BeginListBox("##model_list", ImVec2(ImClamp(window_size.x * 0.25f, 200.0f, FLT_MAX), ImGui::GetContentRegionAvail().y)))
+		{
+			ImGuiListClipper clipper;
+			clipper.Begin(ggui::rtt_model_preview.xmodel_filecount);
+
+			while (clipper.Step())
+			{
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) 
+				{
+					const bool is_selected = (ggui::rtt_model_preview.xmodel_selection == i);
+					if (ImGui::Selectable(ggui::rtt_model_preview.xmodel_filelist[i], is_selected))
+					{
+						ggui::rtt_model_preview.xmodel_selection = i;
+						ggui::rtt_model_preview.model_name = ggui::rtt_model_preview.xmodel_filelist[i];
+					}
+
+					if (is_selected) {
+						ImGui::SetItemDefaultFocus();
+					}
+
+					// target => cxywnd::rtt_grid_window()
+					if(ImGui::BeginDragDropSource())
+					{
+						ImGui::SetDragDropPayload("MODEL_SELECTOR_ITEM", nullptr, 0, ImGuiCond_Once);
+
+						ggui::rtt_model_preview.xmodel_selection = i;
+						ggui::rtt_model_preview.model_name = ggui::rtt_model_preview.xmodel_filelist[i];
+						
+						ImGui::Text("Model: %s", ggui::rtt_model_preview.xmodel_filelist[i]);
+						ImGui::EndDragDropSource();
+					}
+				}
+			}
+			clipper.End();
+
+			/*for (auto i = 0; i < ggui::rtt_model_preview.xmodel_filecount; i++)
+			{
+				const bool is_selected = (ggui::rtt_model_preview.xmodel_selection == i);
+				if (ImGui::Selectable(ggui::rtt_model_preview.xmodel_filelist[i], is_selected))
+				{
+					ggui::rtt_model_preview.xmodel_selection = i;
+					ggui::rtt_model_preview.model_name = ggui::rtt_model_preview.xmodel_filelist[i];
+				}
+
+				if (is_selected) {
+					ImGui::SetItemDefaultFocus();
+				}
+			}*/
+
+			ImGui::EndListBox();
+		}
+
+		ImGui::SameLine();
+
+		ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
+		{
+			const auto child_size = ImGui::GetContentRegionAvail();
+			SetWindowPos(layermatwnd_struct->m_content_hwnd, HWND_BOTTOM, 0, 0, (int)child_size.x, (int)child_size.y, SWP_NOZORDER);
+			ggui::rtt_model_preview.scene_size_imgui = child_size;
+
+			if (ggui::rtt_model_preview.scene_texture)
+			{
+				ImGui::Image(ggui::rtt_model_preview.scene_texture, child_size);
+				ggui::rtt_model_preview.window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+
+				if(ggui::rtt_model_preview.window_hovered)
+				{
+					const auto io = ImGui::GetIO();
+					
+					if(io.MouseWheel != 0.0f)
+					{
+						ggui::rtt_model_preview.fov -= (io.MouseWheel * 2.0f);
+
+						if (ggui::rtt_model_preview.fov < 10.0f) {
+							ggui::rtt_model_preview.fov = 10.0f;
+						}
+
+						if (ggui::rtt_model_preview.fov > 130.0f) {
+							ggui::rtt_model_preview.fov = 130.0f;
+						}
+					}
+				}
+			}
+		}
+
+
+		ImGui::EndChild();
+		ImGui::End();
+	}
+
 	// *
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
 	void gui::render_loop()
@@ -564,6 +673,104 @@ namespace components
 			
 			// close external console
 			PostMessage(GetConsoleWindow(), WM_QUIT, 0, 0);
+
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::rtt_model_preview,
+				model_selector(ggui::rtt_model_preview), nullptr);
+			
+			// model selector
+//			/*{
+//				if(!ggui::rtt_model_preview.one_time_init)
+//				{
+//					ggui::rtt_model_preview.xmodel_filelist = game::FS_ListFilteredFilesWrapper("xmodel", nullptr, &ggui::rtt_model_preview.xmodel_filecount);
+//					ggui::rtt_model_preview.one_time_init = true;
+//				}
+//				
+//				const auto MIN_WINDOW_SIZE = ImVec2(500.0f, 400.0f);
+//				const auto INITIAL_WINDOW_SIZE = ImVec2(550.0f, 600.0f);
+//
+//				ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+//				ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+//				ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
+//
+//				ImGui::Begin("model rtt test", nullptr, ImGuiWindowFlags_NoCollapse);
+//
+//				const auto window_size = ImGui::GetWindowSize();
+//
+//				if (ImGui::BeginListBox("##model_list", ImVec2(window_size.x * 0.25f, ImGui::GetContentRegionAvail().y)))
+//				{
+//					for (auto i = 0; i < ggui::rtt_model_preview.xmodel_filecount; i++)
+//					{
+//						const bool is_selected = (ggui::rtt_model_preview.xmodel_selection == i);
+//						if (ImGui::Selectable(ggui::rtt_model_preview.xmodel_filelist[i], is_selected))
+//						{
+//							ggui::rtt_model_preview.xmodel_selection = i;
+//							ggui::rtt_model_preview.model_name = ggui::rtt_model_preview.xmodel_filelist[i];
+//						}
+//
+//						if (is_selected) {
+//							ImGui::SetItemDefaultFocus();
+//						}
+//					}
+//
+//					ImGui::EndListBox();
+//				}
+//
+//				ImGui::SameLine();
+//
+//				ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
+//				{
+//					const auto child_size = ImGui::GetContentRegionAvail();
+//					SetWindowPos(layermatwnd_struct->m_content_hwnd, HWND_BOTTOM, 0, 0, (int)child_size.x, (int)child_size.y, SWP_NOZORDER);
+//					ggui::rtt_model_preview.scene_size_imgui = child_size;
+//					
+//					if (ggui::rtt_model_preview.scene_texture) 
+//					{
+//						ImGui::Image(ggui::rtt_model_preview.scene_texture, child_size);
+//					}
+//				}
+//				
+//				
+//				ImGui::EndChild();
+//#if 0
+//				const auto window_size = ImGui::GetWindowSize();
+//				const auto MODEL_COLUMNS = static_cast<int>(window_size.x / MODEL_PREV_SIZE.x);
+//				const int  MODEL_ROWS = static_cast<int>(window_size.y / MODEL_PREV_SIZE.y);
+//
+//				
+//				for(auto r = 0; r < MODEL_ROWS; r++)
+//				{
+//					for(auto c = 0; c < MODEL_COLUMNS; c++)
+//					{
+//						if (c % 2)
+//						{
+//							if (ggui::rtt_model01) {
+//								ImGui::Image(ggui::rtt_model01, MODEL_PREV_SIZE);
+//							}
+//							else
+//							{
+//								ImGui::InvisibleButton("aaaaa", MODEL_PREV_SIZE);
+//							}
+//						}
+//						else
+//						{
+//							if (ggui::rtt_model02) {
+//								ImGui::Image(ggui::rtt_model02, MODEL_PREV_SIZE);
+//							}
+//							else
+//							{
+//								ImGui::InvisibleButton("aaaaa", MODEL_PREV_SIZE);
+//							}
+//						}
+//
+//						if(c + 1 < MODEL_COLUMNS)
+//						{
+//							ImGui::SameLine();
+//						}
+//					}
+//				}
+//#endif
+//				ImGui::End();
+//			}*/
 	
 			// end the current context frame
 			goto END_FRAME;

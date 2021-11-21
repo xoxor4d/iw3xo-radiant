@@ -124,21 +124,32 @@ namespace ggui::entity
 
 			if(game::multiple_edit_entities)
 			{
-				for (auto sb = game::g_selected_brushes_next();
+				for (auto	sb = game::g_selected_brushes_next();
 					(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
-					sb = sb->next)
+							sb = sb->next)
 				{
-					if (should_add_undo)
-					{
-						game::Undo_AddEntity_W(sb->owner->firstActive);
-					}
-					
-					game::SetKeyValue(sb->owner->firstActive, key, value);
+					std::string class_str;
 
-					if (!strcmp("origin", key) && edit_entity)
+					if(sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->name)
 					{
-						Entity_GetVec3ForKey((game::entity_s*)edit_entity, edit_entity->origin, "origin");
-						++edit_entity->version;
+						class_str = utils::str_to_lower(sb->owner->firstActive->eclass->name);
+					}
+
+					if(class_str != "worldspawn")
+					{
+
+						if (should_add_undo)
+						{
+							game::Undo_AddEntity_W(sb->owner->firstActive);
+						}
+
+						game::SetKeyValue(sb->owner->firstActive, key, value);
+
+						if (!strcmp("origin", key) && edit_entity)
+						{
+							Entity_GetVec3ForKey((game::entity_s*)edit_entity, edit_entity->origin, "origin");
+							++edit_entity->version;
+						}
 					}
 				}
 				/* // not working yet
@@ -283,7 +294,8 @@ namespace ggui::entity
 		edit_entity_changed = false;
 		edit_entity_changed_should_scroll = false;
 	}
-	
+
+	// UpdateSelection
 	void on_update_selection_intercept()
 	{
 		if (const auto	g_edit_ent = game::g_edit_entity();
@@ -298,17 +310,26 @@ namespace ggui::entity
 				edit_entity_changed_should_scroll = true;
 			}
 
-			// update / set initial origin on selection (freshly spawned prefabs wont have an origin key otherwise)
-			// og. radiant does this aswell by writing into the key/value field and "simulating" the enter key
-			if (0.0f != g_edit_ent->origin[0] || 0.0f != g_edit_ent->origin[1] || 0.0f != g_edit_ent->origin[2])
+			if(g_edit_ent && g_edit_ent->eclass->name)
 			{
-				addprop_helper_s helper = {};
-				helper.add_undo = false;
-				helper.is_origin = true;
-				
-				char origin_str_buf[64] = {};
-				if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", g_edit_ent->origin[0], g_edit_ent->origin[1], g_edit_ent->origin[2])) {
-					AddProp("origin", origin_str_buf, &helper);
+				std::string class_str = utils::str_to_lower(g_edit_ent->eclass->name);
+
+				if(class_str != "worldspawn")
+				{
+					// update / set initial origin on selection (freshly spawned prefabs wont have an origin key otherwise)
+					// og. radiant does this aswell by writing into the key/value field and "simulating" the enter key
+					if (0.0f != g_edit_ent->origin[0] || 0.0f != g_edit_ent->origin[1] || 0.0f != g_edit_ent->origin[2])
+					{
+						addprop_helper_s helper = {};
+						helper.add_undo = false;
+						helper.is_origin = true;
+
+						char origin_str_buf[64] = {};
+						if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", g_edit_ent->origin[0], g_edit_ent->origin[1], g_edit_ent->origin[2])) 
+						{
+							AddProp("origin", origin_str_buf, &helper);
+						}
+					}
 				}
 			}
 		}

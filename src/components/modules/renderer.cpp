@@ -17,7 +17,7 @@ namespace components
 		if (text && *text)
 		{
 			const size_t t_size = strlen(text);
-			auto cmd = reinterpret_cast<game::GfxCmdDrawText3D*>(game::R_RenderBufferCmdCheck((t_size + 0x34) & 0xFFFFFFFC, 16));
+			auto cmd = reinterpret_cast<game::GfxCmdDrawText3D*>(game::R_GetCommandBuffer((t_size + 0x34) & 0xFFFFFFFC, 16));
 			if (cmd)
 			{
 				cmd->org[0] = origin[0];

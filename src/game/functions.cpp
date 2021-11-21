@@ -67,6 +67,7 @@ namespace game
 	game::GfxCmdBufSourceState* gfx_cmd_buf_source_state = reinterpret_cast<game::GfxCmdBufSourceState*>(0x174D760);
 	game::r_globals_t* rg = reinterpret_cast<game::r_globals_t*>(0x13683F0);
 	game::r_global_permanent_t* rgp = reinterpret_cast<game::r_global_permanent_t*>(0x136C700);
+	game::GfxScene* scene = reinterpret_cast<game::GfxScene*>(0x1370980);
 	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
 
 	HWND* entitywnd_hwnds = reinterpret_cast<HWND*>(0x240A118);
@@ -75,6 +76,18 @@ namespace game
 	{
 		const auto ent = reinterpret_cast<game::entity_s*>(*game::worldEntity_ptr);
 		return ent;
+	}
+
+	game::selbrush_t* g_active_brushes()
+	{
+		const auto brush = reinterpret_cast<game::selbrush_t*>(*game::active_brushes_ptr);
+		return brush;
+	}
+
+	game::selbrush_t* g_active_brushes_next()
+	{
+		const auto brush = reinterpret_cast<game::selbrush_t*>(*game::active_brushes_next_ptr);
+		return brush;
 	}
 	
 	game::selbrush_t* g_selected_brushes()
@@ -236,7 +249,65 @@ namespace game
 			popad;
 		}
 	}
+
+	int Brush_MoveVertex(const float* delta /*eax*/, game::brush_t* def, float* move_points, float* end)
+	{
+		const static uint32_t func_addr = 0x471C30;
+		__asm
+		{
+			//pushad;
+			push	end;
+			push	move_points;
+			push	def;
+			mov		eax, delta;
+			call	func_addr;
+			add     esp, 12;
+			//popad;
+		}
+	}
+
+	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count)
+	{
+		const static uint32_t func_addr = 0x4A11A0;
+		__asm
+		{
+			push	file_count;
+			mov		esi, null;
+			mov		edx, path;
 	
+			call	func_addr;
+			add     esp, 4;
+		}
+	}
+
+	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* wnd)
+	{
+		const static uint32_t func_addr = 0x466290;
+		__asm
+		{
+			pushad;
+			push	wnd;
+			mov		ecx, x;
+			mov		eax, height;
+			call	func_addr;
+			add     esp, 4;
+			popad;
+		}
+	}
+
+	game::trace_t* Trace_AllDirectionsIfFailed(float* cam_origin /*ebx*/, void* trace_result, float* dir, int contents)
+	{
+		const static uint32_t func_addr = 0x48DAA0;
+		__asm
+		{
+			mov		ebx, cam_origin;
+			push	contents;
+			push	dir;
+			push	trace_result;
+			call	func_addr;
+			add     esp, 12;
+		}
+	}
 
 	int* dvarCount = reinterpret_cast<int*>(0x242394C);
 	game::dvar_s* dvarPool = reinterpret_cast<game::dvar_s*>(0x2427DA4); // dvarpool + 1 dvar size
@@ -254,6 +325,10 @@ namespace game
 	Com_Error_t Com_Error = Com_Error_t(0x499F50);
 	OnCtlColor_t OnCtlColor = OnCtlColor_t(0x587907);
 
+	MatrixMultiply44_t MatrixMultiply44 = reinterpret_cast<MatrixMultiply44_t>(0x4A6180);
+	MatrixInverse44_t MatrixInverse44 = reinterpret_cast<MatrixInverse44_t>(0x4A6670);
+	CopyAxis_t CopyAxis = reinterpret_cast<CopyAxis_t>(0x4A8860);
+	AnglesToAxis_t AnglesToAxis = reinterpret_cast<AnglesToAxis_t>(0x4ABEB0);
 	
 	// -----------------------------------------------------------
 	// DVARS
@@ -468,7 +543,7 @@ namespace game
 		return image;
 	}
 
-	game::GfxCmdHeader* R_RenderBufferCmdCheck(int bytes /*ebx*/, int render_cmd /*edi*/)
+	game::GfxCmdHeader* R_GetCommandBuffer(int bytes /*ebx*/, int render_cmd /*edi*/)
 	{
 		const static uint32_t R_RenderBufferCmdCheck_Func = 0x4FAEB0;
 		__asm

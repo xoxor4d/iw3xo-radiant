@@ -287,6 +287,10 @@ namespace ggui::menubar
 				if (ImGui::MenuItem("Preferences ImGui")) {
 					components::gui::toggle(context.m_preferences, 0, true);
 				}
+
+				if (ImGui::MenuItem("Model Selector")) {
+					ggui::rtt_model_preview.menustate = !ggui::rtt_model_preview.menustate;
+				}
 				
 				if (ImGui::MenuItem("Preferences ...", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
 					mainframe_thiscall(void, 0x426950); //cmainframe::OnPrefs

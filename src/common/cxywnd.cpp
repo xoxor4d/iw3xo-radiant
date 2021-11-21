@@ -62,6 +62,25 @@ void draw_entity_names_hk(const char* text, game::Font_s* font, float* origin, f
 	components::renderer::R_AddCmdDrawTextAtPosition(text, font, origin, pixel_step_x, pixel_step_y, game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK]);
 }
 
+bool g_block_radiant_modeldialog = false;
+
+void create_entity_from_name_intercept()
+{
+	if(!g_block_radiant_modeldialog)
+	{
+		PostMessageA(game::g_qeglobals->d_hwndEntity, WM_COMMAND, 0x50E, 0); // IDC_E_ADD_MODEL
+	}
+}
+
+void __declspec(naked) create_entity_from_name_stub()
+{
+	const static uint32_t retn_pt = 0x466268;
+	__asm
+	{
+		call	create_entity_from_name_intercept;
+		jmp		retn_pt;
+	}
+}
 
 // gui::render_loop()
 // render to texture - imgui grid window
@@ -126,6 +145,37 @@ void cxywnd::rtt_grid_window()
 			ImGui::Image(gridwnd->scene_texture, cxy_size);
 			gridwnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
+
+			// model selection drop target
+			if(ImGui::BeginDragDropTarget())
+			{
+				if(ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
+				{
+					game::Select_Deselect(1);
+					
+					game::Undo_ClearRedo();
+					game::Undo_GeneralStart("create entity");
+					
+					if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+					{
+						game::CreateEntityBrush(gridwnd->scene_size_imgui.y - gridwnd->cursor_pos_pt.y, gridwnd->cursor_pos_pt.x, cmainframe::activewnd->m_pXYWnd);
+					}
+
+					// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+					g_block_radiant_modeldialog = true;
+					
+					//CreateEntityFromName(classname);
+					utils::hook::call<void(__cdecl)(const char*)>(0x465CC0)("misc_model");
+					
+					g_block_radiant_modeldialog = false;
+					
+					ggui::entity::AddProp("model", ggui::rtt_model_preview.model_name.c_str());
+					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
+					
+					game::Undo_End();
+				}
+			}
+			
 			// pop ItemSpacing
 			ImGui::PopStyleVar(); p_styles--;
 
@@ -147,7 +197,6 @@ void cxywnd::rtt_grid_window()
 	ImGui::PopStyleVar(p_styles);
 	ImGui::End();
 }
-
 
 namespace xywnd
 {
@@ -569,4 +618,7 @@ void cxywnd::hooks()
 	// zoom to cursor
 	utils::hook(0x42B9EB, on_view_zoomin_stub, HOOK_JUMP).install()->quick();
 	utils::hook(0x42B9FE, on_view_zoomout_stub, HOOK_JUMP).install()->quick();
+
+	utils::hook::nop(0x466255, 19);
+				utils::hook(0x466255, create_entity_from_name_stub, HOOK_JUMP).install()->quick();
 }

@@ -78,6 +78,7 @@
 #include "ImGuizmo.h"
 #pragma warning(pop)
 
+#include "game/structs.hpp"
 #include "utils/utils.hpp"
 #include "utils/memory.hpp"
 #include "utils/hooking.hpp"
@@ -85,7 +86,6 @@
 #include "utils/vector.hpp"
 
 #include "common/afx.hpp"
-#include "game/structs.hpp"
 #include "game/functions.hpp"
 #include "game/dvars.hpp"
 

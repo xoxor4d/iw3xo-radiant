@@ -7,6 +7,8 @@ namespace ggui::preferences
 	const std::string CAT_GRID = "Grid";
 	const std::string CAT_CAMERA = "Camera";
 	const std::string CAT_LIVELINK = "Live Link";
+	const std::string CAT_DEVELOPER = "Developer";
+
 	
 	std::vector<std::string> _pref_categories;
 	static size_t _pref_current = 0;
@@ -19,6 +21,7 @@ namespace ggui::preferences
 		_pref_categories.emplace_back(CAT_GRID);
 		_pref_categories.emplace_back(CAT_CAMERA);
 		_pref_categories.emplace_back(CAT_LIVELINK);
+		_pref_categories.emplace_back(CAT_DEVELOPER);
 	}
 
 	void child_gui()
@@ -173,6 +176,18 @@ namespace ggui::preferences
 			ImGui::EndChild();
 		}
 	}
+
+	
+	void child_developer()
+	{
+		if (_pref_categories[_pref_current] == CAT_DEVELOPER)
+		{
+			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
+			{
+			}
+			ImGui::EndChild();
+		}
+	}
 	
 	void menu(ggui::imgui_context_menu& menu)
 	{
@@ -213,7 +228,8 @@ namespace ggui::preferences
 		child_grid();
 		child_camera();
 		child_livelink();
-
+		child_developer();
+		
 		ImGui::PopStyleVar();
 		ImGui::End();
 	}

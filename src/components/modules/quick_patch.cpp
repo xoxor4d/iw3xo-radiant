@@ -95,6 +95,12 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 					SendMessageA(hwnd, WM_PAINT, 0, 0);
 				}
 			}
+
+			if (const auto hwnd = layermatwnd_struct->m_content_hwnd;
+				hwnd != nullptr)
+			{
+				SendMessageA(hwnd, WM_PAINT, 0, 0);
+			}
 		}
 	}
 

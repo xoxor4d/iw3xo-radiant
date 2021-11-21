@@ -2,13 +2,32 @@
 
 struct layermatwnd_s
 {
-	HWND m_LayeredWnd_hWnd;
-	HWND m_LayeredWnd_Toolbar_hWnd;
-	HWND m_hWnd;
+	HWND m_frame_hwnd;
+	HWND m_toolbar_hwnd;
+	HWND m_content_hwnd;
 	int unkown01;
 	int active_layer_material;
 	int selected_layer_index;
 };
+
+enum GfxProjectionTypes
+{
+	GFX_PROJECTION_2D = 0x0,
+	GFX_PROJECTION_3D = 0x1,
+};
+
+struct GfxCmdProjectionSet
+{
+	game::GfxCmdHeader header;
+	GfxProjectionTypes projection;
+};
+
+struct GfxPointVertex
+{
+	float xyz[3];
+	game::GfxColor color;
+};
+
 
 extern layermatwnd_s* layermatwnd_struct;
 
@@ -25,6 +44,7 @@ public:
 	static void		create_layerlist();
 	static void		precreate_window();
 	static void		on_paint();
-	
+
+	static LRESULT __stdcall windowproc_frame(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT __stdcall windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 };

@@ -85,9 +85,12 @@ namespace game
 	extern game::GfxCmdBufSourceState* gfx_cmd_buf_source_state;
 	extern game::r_globals_t* rg;
 	extern game::r_global_permanent_t* rgp;
+	extern game::GfxScene* scene;
 	extern game::DxGlobals* dx;
 
 	extern game::entity_s* g_world_entity();
+	extern game::selbrush_t* g_active_brushes();
+	extern game::selbrush_t* g_active_brushes_next();
 	extern game::selbrush_t* g_selected_brushes();
 	extern game::selbrush_t* g_selected_brushes_next();
 	extern game::entity_s_def* g_edit_entity();
@@ -111,11 +114,20 @@ namespace game
 
 	void SetSpawnFlags(int flag);
 	void UpdateSel(int wParam, game::eclass_t* e_class);
+	static utils::function<void(bool)> Select_Deselect = 0x48E800;
 	void Brush_Move(const float* delta, game::brush_t* def, int snap);
-	
+	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t* def, float* move_points, float* end);
+
 	static utils::function<void(game::entity_s* ent, const char* key, const char* value)> SetKeyValue = 0x483690;
 	static utils::function<void()> SetKeyValuePairs = 0x496CF0;
 	static utils::function<void()> CreateEntity = 0x497300;
+
+	// world bounds, not local
+	static utils::function<void(game::XModel* model, float* axis, float* mins, float* maxs)> R_GetXModelBounds = 0x4C9150;
+
+	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count);
+	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* cxywnd);
+	game::trace_t* Trace_AllDirectionsIfFailed(float* cam_origin /*ebx*/, void* trace_result, float* dir, int contents);
 	
 	extern int* dvarCount;
 	extern game::dvar_s* dvarPool;
@@ -125,6 +137,8 @@ namespace game
 	extern int sortedDvarsAddonsCount;
 
 	static DWORD* frontEndDataOut_ptr = (DWORD*)(0x73D480);  // frontEndDataOut pointer
+	static DWORD* active_brushes_ptr = (DWORD*)(0x23F189C);
+	static DWORD* active_brushes_next_ptr = (DWORD*)(0x23F18A0);
 	static DWORD* currSelectedBrushes = (DWORD*)(0x23F1864); // (selected_brushes array pointer)
 	static DWORD* worldEntity_ptr = (DWORD*)(0x25D5B30); // holds pointer to worldEntity
 	static DWORD* g_pParentWnd_ptr = (DWORD*)(0x25D5A70);
@@ -147,10 +161,31 @@ namespace game
 	
 	// *
 	// renderer
+	static utils::function<void()> R_BeginFrame = 0x4FCB10;
 	static utils::function<void()> R_EndFrame = 0x4FCBC0;
 	static utils::function<void()> R_ReloadImages = 0x513D70;
 	static utils::function<void(float* from, game::GfxColor* to)> Byte4PackPixelColor = 0x402AC0;
+	static utils::function<game::GfxViewParms*()> R_SetupViewParms = 0x4FB540;
+	static utils::function<void(game::GfxMatrix*, float halfx, float halfy, float znear)> R_SetupProjection = 0x4A78E0;
+	static utils::function<void(game::GfxSceneDef*, game::GfxViewParms*)> R_SetupRenderCmd = 0x4FC3A0;
+	static utils::function<void(int, const float*, float, bool)> R_Clear = 0x4FCC70;
+	static utils::function<void(int)> R_IssueRenderCommands = 0x4FD630;
+	static utils::function<void()> R_SortMaterials = 0x4FD910;
 	
+	static utils::function<void(float(*mtx)[4], const float* origin, const float*)> MatrixForViewer = 0x4A7A70;
+
+	typedef void(*MatrixMultiply44_t)(game::GfxViewParms* viewParms, game::GfxMatrix*, game::GfxMatrix*);
+		extern MatrixMultiply44_t MatrixMultiply44;
+	
+	typedef void(*MatrixInverse44_t)(game::GfxMatrix*, game::GfxMatrix*);
+		extern MatrixInverse44_t MatrixInverse44;
+
+	typedef void(*CopyAxis_t)(float*, float*);
+		extern CopyAxis_t CopyAxis;
+
+	typedef void(*AnglesToAxis_t)(float*, float*);
+		extern AnglesToAxis_t AnglesToAxis;
+
 	// no error but doesnt reload everything
 	static utils::function< void()>	DX_ResetDevice = 0x5015F0;
 
@@ -194,7 +229,7 @@ namespace game
 	game::GfxImage* Image_FindExisting(const char* name);
 	game::GfxImage* Image_RegisterHandle(const char* name);
 
-	game::GfxCmdHeader* R_RenderBufferCmdCheck(int bytes /*ebx*/, int render_cmd /*edi*/);
+	game::GfxCmdHeader* R_GetCommandBuffer(int bytes /*ebx*/, int render_cmd /*edi*/);
 	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
 	
 }

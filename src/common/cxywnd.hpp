@@ -2,6 +2,8 @@
 
 class cmainframe;
 
+extern bool g_block_radiant_modeldialog;
+
 class cxywnd : public CWnd
 {
 private:

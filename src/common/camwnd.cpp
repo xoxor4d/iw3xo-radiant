@@ -77,6 +77,39 @@ void get_matrices_for_guizmo(game::GfxMatrix* view, game::GfxMatrix* projection)
 	mtx4x4_mul(projection, projection, &inv_proj_mtx);
 }
 
+void get_selection_center_movepoints(float* center_point)
+{
+	const auto num_points = game::g_qeglobals->d_num_move_points;
+
+	if(num_points)
+	{
+		// get bounds of selection
+		game::vec3_t mins, maxs;
+		utils::vector::set_vec3(mins, 131072.0f);
+		utils::vector::set_vec3(maxs, -131072.0f);
+
+		// get bounds from windings
+		for (auto p = 0; p < num_points; p++)
+		{
+			for(auto v = 0; v < 3; v++)
+			{
+				game::g_qeglobals->d_move_points[p][v];
+
+				// mins :: find the closest point on each axis
+				if (mins[v] > game::g_qeglobals->d_move_points[p][v])
+					mins[v] = game::g_qeglobals->d_move_points[p][v];
+
+				// maxs :: find the furthest point on each axis
+				if (maxs[v] < game::g_qeglobals->d_move_points[p][v])
+					maxs[v] = game::g_qeglobals->d_move_points[p][v];
+			}
+		}
+
+		utils::vector::add(mins, maxs, center_point);
+		utils::vector::scale(center_point, 0.5f, center_point);
+	}
+}
+
 void get_selection_center(float* center_point)
 {
 	// get bounds of selection
@@ -322,6 +355,23 @@ void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis)
 	}
 }
 
+void CameraCalcRayDir(int x, int y, float* dir)
+{
+	const auto cam = cmainframe::activewnd->m_pCamWnd;
+	
+	const float tan_half_y = tan(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f);
+	const float tan_half_x = (tan_half_y * 0.75f + tan_half_y * 0.75f) / (float)cam->camera.height;
+
+	const float xa = tan_half_x * (float)(y - cam->camera.height / 2);
+	const float xb = tan_half_x * (float)(x - cam->camera.width / 2);
+
+	dir[0] = cam->camera.vup[0] * xa + cam->camera.vright[0] * xb + cam->camera.vpn[0];
+	dir[1] = cam->camera.vup[1] * xa + cam->camera.vright[1] * xb + cam->camera.vpn[1];
+	dir[2] = cam->camera.vup[2] * xa + cam->camera.vright[2] * xb + cam->camera.vpn[2];
+
+	utils::vector::normalize(dir);
+}
+
 // render to texture - camera window
 void ccamwnd::rtt_camera_window()
 {
@@ -381,6 +431,61 @@ void ccamwnd::rtt_camera_window()
 
 			ImGui::Image(camerawnd->scene_texture, camera_size);
 			camerawnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+
+
+			// model selection drop target
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
+				{
+					// add toggle to disable this so the selector can be used to change an existing model in-place
+					game::Select_Deselect(1);
+
+					game::Undo_ClearRedo();
+					game::Undo_GeneralStart("create entity");
+
+					if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+					{
+						game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+					}
+
+					// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+					g_block_radiant_modeldialog = true;
+
+					//CreateEntityFromName(classname);
+					utils::hook::call<void(__cdecl)(const char*)>(0x465CC0)("misc_model");
+
+					g_block_radiant_modeldialog = false;
+
+					ggui::entity::AddProp("model", ggui::rtt_model_preview.model_name.c_str());
+					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
+
+					float dir[3];
+					CameraCalcRayDir(camerawnd->cursor_pos_pt.x, camerawnd->scene_size_imgui.y - camerawnd->cursor_pos_pt.y, dir);
+					
+					game::trace_t trace = {};
+					game::trace_t trace2 = {};
+
+					memcpy(&trace2, game::Trace_AllDirectionsIfFailed(cmainframe::activewnd->m_pCamWnd->camera.origin, &trace, dir, 0x1200), sizeof(game::trace_t));
+
+					if(trace2.brush)
+					{
+						float origin[3];
+						//utils::vector::scale(dir, trace2.dist, origin);
+						utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, trace2.dist, dir, origin);
+
+						char origin_str_buf[64] = {};
+						if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", origin[0], origin[1], origin[2]))
+						{
+							ggui::entity::AddProp("origin", origin_str_buf);
+						}
+					}
+					
+					game::Undo_End();
+				}
+			}
+
+
 			
 			// pop ItemSpacing
 			ImGui::PopStyleVar(); p_styles--;
@@ -438,10 +543,8 @@ void ccamwnd::rtt_camera_window()
 					utils::vector::set_vec3(snap, snap_size);
 				}
 
-				// TODO: auto detect? + dvar
 				if (dvars::guizmo_brush_mode->current.enabled)
 				{
-
 					if (const auto b = game::g_selected_brushes()->currSelection; b)
 					{
 						// pass mouse input to ImGui
@@ -453,7 +556,15 @@ void ccamwnd::rtt_camera_window()
 						// guizmo position
 						game::vec3_t selection_center = {};
 
-
+//#define VERTEX_GUIZMO
+#ifdef VERTEX_GUIZMO
+						const auto num_move_points = game::g_qeglobals->d_num_move_points;
+						const auto selection_mode = game::g_qeglobals->d_select_mode;
+						const bool in_vertex_mode = num_move_points && (selection_mode == game::sel_curvepoint || selection_mode == game::sel_area);
+#else
+						const bool in_vertex_mode = false;
+#endif
+						
 						if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
 						{
 							// use radiants rotate origin
@@ -461,8 +572,15 @@ void ccamwnd::rtt_camera_window()
 						}
 						else
 						{
-							// calculate center of brush/es
-							get_selection_center(selection_center);
+							if(in_vertex_mode)
+							{
+								get_selection_center_movepoints(selection_center);
+							}
+							else
+							{
+								// calculate center of brush/es
+								get_selection_center(selection_center);
+							}
 						}
 
 						float tmp_matrix[16];
@@ -470,9 +588,27 @@ void ccamwnd::rtt_camera_window()
 
 						// build guizmo matrix from components
 						ImGuizmo::RecomposeMatrixFromComponents(selection_center, angles, mtx_scale, tmp_matrix);
+//#define BOUNDS_TEST					
+#ifdef BOUNDS_TEST
+						// *
+						// bounds 
+						game::vec3_t local_mins;
+						game::vec3_t local_maxs;
+
+						utils::vector::subtract(b->mins, selection_center, local_mins);
+						utils::vector::subtract(b->maxs, selection_center, local_maxs);
+
+						float bounds[] =
+						{
+							local_mins[0], local_mins[1], local_mins[2],
+							local_maxs[0], local_maxs[1], local_maxs[2]
+						};
 
 						// draw guizmo / manipulate
+						if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap, bounds))
+#else
 						if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap))
+#endif
 						{
 							if (ImGuizmo::IsOver())
 							{
@@ -532,6 +668,9 @@ void ccamwnd::rtt_camera_window()
 
 								else if (guizmo_mode == ImGuizmo::OPERATION::TRANSLATE)
 								{
+									game::vec3_t end_vec = {};
+									int end_vec_valid = true;
+									
 									// move all selected brushes using the delta
 									for (auto	sb = game::g_selected_brushes_next();
 										(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
@@ -539,10 +678,23 @@ void ccamwnd::rtt_camera_window()
 									{
 										if (const auto brushes = sb->currSelection; brushes)
 										{
-											game::Brush_Move(delta_origin, brushes, true);
-											components::remote_net::cmd_send_brush_select_deselect(true);
+											if(in_vertex_mode)
+											{
+												end_vec_valid &= game::Brush_MoveVertex(delta_origin, brushes, game::g_qeglobals->d_move_points[0], end_vec);
+											}
+											else
+											{
+												game::Brush_Move(delta_origin, brushes, true);
+												components::remote_net::cmd_send_brush_select_deselect(true);
+											}
 										}
 									}
+#ifdef VERTEX_GUIZMO
+									if(end_vec_valid)
+									{
+										utils::vector::copy(end_vec, game::g_qeglobals->d_move_points[0]);
+									}
+#endif
 								}
 							}
 						}
@@ -885,11 +1037,16 @@ bool should_move_selection()
 {
 	if(dvars::guizmo_enable->current.enabled)
 	{
-		// disable brush dragging within the camera window
-		if (ggui::get_rtt_camerawnd()->window_hovered && game::g_qeglobals->d_select_mode == game::select_t::sel_brush)
+		if(ImGuizmo::IsOver() || ImGuizmo::IsUsing())
 		{
 			return false;
 		}
+		
+		// disable brush drsagging within the camera window
+		/*if (ggui::get_rtt_camerawnd()->window_hovered && game::g_qeglobals->d_select_mode == game::select_t::sel_brush)
+		{
+			return false;
+		}*/
 	}
 
     return true;

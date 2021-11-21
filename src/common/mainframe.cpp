@@ -742,6 +742,11 @@ void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* ed
 	__on_size(pThis, nFlags, x, y);
 }
 
+
+// *
+// | ----------------------------------------------------------
+// *
+
 void __fastcall cmainframe::on_destroy(cmainframe* pThis)
 {
 	if (dvars::radiant_gameview->current.enabled)
@@ -756,10 +761,10 @@ void __fastcall cmainframe::on_destroy(cmainframe* pThis)
 	__on_destroy(pThis);
 }
 
+
 // *
 // | ----------------------------------------------------------
 // *
-
 
 // check for nullptr (world_entity)
 void __declspec(naked) sunlight_preview_arg_check()

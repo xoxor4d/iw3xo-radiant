@@ -21,6 +21,8 @@ namespace ggui
 	ImGuiID		toolbar_dock_top;
 	ImGuiID		toolbar_dock_left;
 
+	model_preview_s rtt_model_preview;
+
 	std::vector<commandbinds> cmd_hotkeys;
 
 	// * cmainframe::on_keydown()

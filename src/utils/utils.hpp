@@ -1,7 +1,13 @@
+#pragma once
+
 #define ARR_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 namespace utils
 {
+	void mtx4x4_mul(game::GfxMatrix* mtx_out, game::GfxMatrix* a, game::GfxMatrix* b);
+
+	// -----------
+	
 	static std::vector<std::string> split(const std::string& rawInput, const std::vector<char>& delims)
 	{
 		std::vector<std::string> strings;
