@@ -642,15 +642,33 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 			return;
 		}
 
+
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			memset(io.KeysDown, 0, sizeof(io.KeysDown));
+			
+			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
+		}
+
+		// after HandleKeyAbove using WantCaptureMouse
+		if (auto modelselector = ggui::get_rtt_modelselector();
+				 modelselector->window_hovered)
+		{
+			return;
+		}
+
+		/* // backup ^
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
 			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
-			//return;
+			// return;
 		}
 
 		// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
 		ImGuiIO& io = ImGui::GetIO();
 		memset(io.KeysDown, 0, sizeof(io.KeysDown));
+		*/
 	}
 
 	on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);

@@ -158,7 +158,7 @@ void cxywnd::rtt_grid_window()
 					
 					if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
 					{
-						game::CreateEntityBrush(gridwnd->scene_size_imgui.y - gridwnd->cursor_pos_pt.y, gridwnd->cursor_pos_pt.x, cmainframe::activewnd->m_pXYWnd);
+						game::CreateEntityBrush(static_cast<int>(gridwnd->scene_size_imgui.y) - gridwnd->cursor_pos_pt.y, gridwnd->cursor_pos_pt.x, cmainframe::activewnd->m_pXYWnd);
 					}
 
 					// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
@@ -169,7 +169,7 @@ void cxywnd::rtt_grid_window()
 					
 					g_block_radiant_modeldialog = false;
 					
-					ggui::entity::AddProp("model", ggui::rtt_model_preview.model_name.c_str());
+					ggui::entity::AddProp("model", ggui::get_rtt_modelselector()->preview_model_name.c_str());
 					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
 					
 					game::Undo_End();

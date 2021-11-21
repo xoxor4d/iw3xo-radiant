@@ -124,7 +124,8 @@ namespace game
 
 	// world bounds, not local
 	static utils::function<void(game::XModel* model, float* axis, float* mins, float* maxs)> R_GetXModelBounds = 0x4C9150;
-
+	static utils::function<game::XModel*(const char*)> R_RegisterModel = 0x51D450;
+	
 	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count);
 	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* cxywnd);
 	game::trace_t* Trace_AllDirectionsIfFailed(float* cam_origin /*ebx*/, void* trace_result, float* dir, int contents);
@@ -171,20 +172,29 @@ namespace game
 	static utils::function<void(int, const float*, float, bool)> R_Clear = 0x4FCC70;
 	static utils::function<void(int)> R_IssueRenderCommands = 0x4FD630;
 	static utils::function<void()> R_SortMaterials = 0x4FD910;
+	static utils::function<bool(HWND)> R_SetupRendertarget_CheckDevice = 0x501A70;
+	static utils::function<bool(HWND)> R_CheckTargetWindow = 0x500660;
 	
-	static utils::function<void(float(*mtx)[4], const float* origin, const float*)> MatrixForViewer = 0x4A7A70;
-
-	typedef void(*MatrixMultiply44_t)(game::GfxViewParms* viewParms, game::GfxMatrix*, game::GfxMatrix*);
+	typedef void(*MatrixForViewer_t)(float(*mtx)[4], const float* origin, const float* axis);
+		extern MatrixForViewer_t MatrixForViewer;
+	
+	typedef void(*MatrixMultiply44_t)(game::GfxViewParms* view_params, game::GfxMatrix* a, game::GfxMatrix* b);
 		extern MatrixMultiply44_t MatrixMultiply44;
 	
-	typedef void(*MatrixInverse44_t)(game::GfxMatrix*, game::GfxMatrix*);
+	typedef void(*MatrixInverse44_t)(game::GfxMatrix* a, game::GfxMatrix* b);
 		extern MatrixInverse44_t MatrixInverse44;
 
-	typedef void(*CopyAxis_t)(float*, float*);
+	typedef void(*CopyAxis_t)(float* src, float* dest);
 		extern CopyAxis_t CopyAxis;
 
 	typedef void(*AnglesToAxis_t)(float*, float*);
 		extern AnglesToAxis_t AnglesToAxis;
+
+	typedef void(*AngleVectors_t)(float* _angles, float* _vpn, float* _right, float* _up);
+		extern AngleVectors_t AngleVectors;
+
+	typedef void(*OrientationConcatenate_t)(const game::orientation_t* orFirst, const game::orientation_t* orSecond, game::orientation_t* out);
+		extern OrientationConcatenate_t OrientationConcatenate;
 
 	// no error but doesnt reload everything
 	static utils::function< void()>	DX_ResetDevice = 0x5015F0;

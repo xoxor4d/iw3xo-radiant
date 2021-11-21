@@ -98,6 +98,7 @@
 #include "ggui/filter.hpp"
 #include "ggui/entity.hpp"
 #include "ggui/preferences.hpp"
+#include "ggui/modelselector.hpp"
 
 #include "common/mainframe.hpp"
 #include "common/camwnd.hpp"

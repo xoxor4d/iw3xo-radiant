@@ -18,6 +18,8 @@ struct camera_s
 	game::vec3_t vright;
 };
 
+extern void CameraCalcRayDir(int x, int y, float* dir);
+
 class ccamwnd : public CWnd
 {
 private:

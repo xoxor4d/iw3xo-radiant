@@ -2019,6 +2019,12 @@ namespace game
 		vec3_t some_point;
 	};
 
+	struct orientation_t
+	{
+		float origin[3];
+		float axis[3][3];
+	};
+
 	
 	enum ENTITY_DEFS
 	{

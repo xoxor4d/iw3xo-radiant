@@ -457,28 +457,39 @@ void ccamwnd::rtt_camera_window()
 
 					g_block_radiant_modeldialog = false;
 
-					ggui::entity::AddProp("model", ggui::rtt_model_preview.model_name.c_str());
+					ggui::entity::AddProp("model", ggui::get_rtt_modelselector()->preview_model_name.c_str());
 					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
 
 					float dir[3];
-					CameraCalcRayDir(camerawnd->cursor_pos_pt.x, camerawnd->scene_size_imgui.y - camerawnd->cursor_pos_pt.y, dir);
+					CameraCalcRayDir(camerawnd->cursor_pos_pt.x, static_cast<int>(camerawnd->scene_size_imgui.y) - camerawnd->cursor_pos_pt.y, dir);
 					
 					game::trace_t trace = {};
-					game::trace_t trace2 = {};
+					game::Trace_AllDirectionsIfFailed(cmainframe::activewnd->m_pCamWnd->camera.origin, &trace, dir, 0x1200);
 
-					memcpy(&trace2, game::Trace_AllDirectionsIfFailed(cmainframe::activewnd->m_pCamWnd->camera.origin, &trace, dir, 0x1200), sizeof(game::trace_t));
+					float origin[3];
 
-					if(trace2.brush)
+					// if trace hit something other then the void
+					if(trace.brush)
 					{
-						float origin[3];
-						//utils::vector::scale(dir, trace2.dist, origin);
-						utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, trace2.dist, dir, origin);
-
-						char origin_str_buf[64] = {};
-						if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", origin[0], origin[1], origin[2]))
+						utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, trace.dist, dir, origin);
+					}
+					// if trace hit nothing, spawn model infront of the camera
+					else
+					{
+						float dist = 100.0f;
+						if(auto model = ggui::get_rtt_modelselector()->preview_model_ptr; 
+								model)
 						{
-							ggui::entity::AddProp("origin", origin_str_buf);
+							dist += model->radius;
 						}
+
+						utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, dist, dir, origin);
+					}
+
+					char origin_str_buf[64] = {};
+					if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", origin[0], origin[1], origin[2]))
+					{
+						ggui::entity::AddProp("origin", origin_str_buf);
 					}
 					
 					game::Undo_End();

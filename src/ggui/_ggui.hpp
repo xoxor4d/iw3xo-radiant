@@ -90,26 +90,36 @@ namespace ggui
 		bool one_time_init;
 	};
 
-	struct model_preview_s
+	struct model_selector_s
 	{
 		IDirect3DTexture9* scene_texture;
-		float fov = 60.0f;
+		
+		float camera_fov;
+		float camera_distance;
+		float camera_angles[3];
+		float camera_offset[3];
+		CPoint m_ptCursor;
+		bool user_rotation;
 
-		std::string model_name;
-		game::XModel* model_ptr;
-		int model_inst_handle;
+		// axis model
+		bool axis_model_initiated;
+		int axis_model_inst_handle;
+		
+		// model preview
+		std::string preview_model_name;
+		game::XModel* preview_model_ptr;
+		int preview_model_inst_handle;
 
-		int  xmodel_filecount = 0;
+		// raw/xmodel folder
+		int  xmodel_filecount;
 		const char** xmodel_filelist = nullptr;
 		int xmodel_selection = -1;
 		
 		ImVec2 scene_size_imgui;
-		ImVec2 cursor_pos;
 		CPoint cursor_pos_pt;
 
+		bool scene_hovered;
 		bool window_hovered;
-		bool should_set_focus;
-		bool capture_left_mousebutton;
 		bool menustate;
 		bool was_open;
 		bool one_time_init;
@@ -133,6 +143,7 @@ namespace ggui
 		render_to_texture_window_s rtt_camerawnd;
 		render_to_texture_window_s rtt_gridwnd;
 		render_to_texture_window_s rtt_texwnd;
+		model_selector_s rtt_model_selector;
 	};
 
 	struct imgui_state_t
@@ -173,7 +184,7 @@ namespace ggui
 	extern std::vector<game::SCommandInfo> cmd_addon_hotkeys_builtin;
 	extern std::vector<game::SCommandInfoHotkey> cmd_addon_hotkeys; //std::vector<game::SCommandInfo> cmd_addon_hotkeys;
 
-	extern model_preview_s rtt_model_preview;
+	//extern model_selector_s rtt_model_preview;
 	
 	// *
 	// | -------------------- Functions ------------------------
@@ -199,5 +210,10 @@ namespace ggui
 	inline render_to_texture_window_s* get_rtt_texturewnd()
 	{
 		return &state.czwnd.rtt_texwnd;
+	}
+
+	inline model_selector_s* get_rtt_modelselector()
+	{
+		return &state.czwnd.rtt_model_selector;
 	}
 }

@@ -334,10 +334,13 @@ namespace components
 
 		utils::hook(0x478E33, render_origin_boxes_stub, HOOK_JUMP).install()->quick();
 
+		// silence "gfxCmdBufState.prim.vertDeclType == VERTDECL_PACKED" assert
+		utils::hook::nop(0x53AB4A, 5);
+		
 		command::register_command_with_hotkey("xo_gameview"s, [](auto)
-			{
-				components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
-			});
+		{
+			components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
+		});
 	}
 
 	renderer::~renderer()

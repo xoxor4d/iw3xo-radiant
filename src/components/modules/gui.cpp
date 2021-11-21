@@ -424,115 +424,6 @@ namespace components
 		ImGui::PopStyleVar(_stylevars);
 	}
 
-	void model_selector(ggui::model_preview_s& menu)
-	{
-		if (!ggui::rtt_model_preview.one_time_init)
-		{
-			ggui::rtt_model_preview.xmodel_filelist = game::FS_ListFilteredFilesWrapper("xmodel", nullptr, &ggui::rtt_model_preview.xmodel_filecount);
-			ggui::rtt_model_preview.one_time_init = true;
-		}
-
-		const auto MIN_WINDOW_SIZE = ImVec2(500.0f, 400.0f);
-		const auto INITIAL_WINDOW_SIZE = ImVec2(550.0f, 600.0f);
-
-		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
-
-		ImGui::Begin("model rtt test", nullptr, ImGuiWindowFlags_NoCollapse);
-
-		const auto window_size = ImGui::GetWindowSize();
-
-		if (ImGui::BeginListBox("##model_list", ImVec2(ImClamp(window_size.x * 0.25f, 200.0f, FLT_MAX), ImGui::GetContentRegionAvail().y)))
-		{
-			ImGuiListClipper clipper;
-			clipper.Begin(ggui::rtt_model_preview.xmodel_filecount);
-
-			while (clipper.Step())
-			{
-				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) 
-				{
-					const bool is_selected = (ggui::rtt_model_preview.xmodel_selection == i);
-					if (ImGui::Selectable(ggui::rtt_model_preview.xmodel_filelist[i], is_selected))
-					{
-						ggui::rtt_model_preview.xmodel_selection = i;
-						ggui::rtt_model_preview.model_name = ggui::rtt_model_preview.xmodel_filelist[i];
-					}
-
-					if (is_selected) {
-						ImGui::SetItemDefaultFocus();
-					}
-
-					// target => cxywnd::rtt_grid_window()
-					if(ImGui::BeginDragDropSource())
-					{
-						ImGui::SetDragDropPayload("MODEL_SELECTOR_ITEM", nullptr, 0, ImGuiCond_Once);
-
-						ggui::rtt_model_preview.xmodel_selection = i;
-						ggui::rtt_model_preview.model_name = ggui::rtt_model_preview.xmodel_filelist[i];
-						
-						ImGui::Text("Model: %s", ggui::rtt_model_preview.xmodel_filelist[i]);
-						ImGui::EndDragDropSource();
-					}
-				}
-			}
-			clipper.End();
-
-			/*for (auto i = 0; i < ggui::rtt_model_preview.xmodel_filecount; i++)
-			{
-				const bool is_selected = (ggui::rtt_model_preview.xmodel_selection == i);
-				if (ImGui::Selectable(ggui::rtt_model_preview.xmodel_filelist[i], is_selected))
-				{
-					ggui::rtt_model_preview.xmodel_selection = i;
-					ggui::rtt_model_preview.model_name = ggui::rtt_model_preview.xmodel_filelist[i];
-				}
-
-				if (is_selected) {
-					ImGui::SetItemDefaultFocus();
-				}
-			}*/
-
-			ImGui::EndListBox();
-		}
-
-		ImGui::SameLine();
-
-		ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
-		{
-			const auto child_size = ImGui::GetContentRegionAvail();
-			SetWindowPos(layermatwnd_struct->m_content_hwnd, HWND_BOTTOM, 0, 0, (int)child_size.x, (int)child_size.y, SWP_NOZORDER);
-			ggui::rtt_model_preview.scene_size_imgui = child_size;
-
-			if (ggui::rtt_model_preview.scene_texture)
-			{
-				ImGui::Image(ggui::rtt_model_preview.scene_texture, child_size);
-				ggui::rtt_model_preview.window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
-
-				if(ggui::rtt_model_preview.window_hovered)
-				{
-					const auto io = ImGui::GetIO();
-					
-					if(io.MouseWheel != 0.0f)
-					{
-						ggui::rtt_model_preview.fov -= (io.MouseWheel * 2.0f);
-
-						if (ggui::rtt_model_preview.fov < 10.0f) {
-							ggui::rtt_model_preview.fov = 10.0f;
-						}
-
-						if (ggui::rtt_model_preview.fov > 130.0f) {
-							ggui::rtt_model_preview.fov = 130.0f;
-						}
-					}
-				}
-			}
-		}
-
-
-		ImGui::EndChild();
-		ImGui::End();
-	}
-
 	// *
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
 	void gui::render_loop()
@@ -660,118 +551,27 @@ namespace components
 			// preferences menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_preferences,
 				ggui::preferences::menu(ggui::state.czwnd.m_preferences), nullptr);
-
 			//ggui::state.czwnd.m_preferences.menustate = true;
+
+			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_modelselector(),
+				ggui::modelselector::menu(), nullptr);
+			
+			// render to texture :: texture window
+			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_texturewnd(),
+				ctexwnd::rtt_texture_window(), nullptr);
+
 			
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
 				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
 
-			// render to texture :: texture window
-			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_texturewnd(),
-				ctexwnd::rtt_texture_window(), nullptr);
-			
 			// close external console
-			PostMessage(GetConsoleWindow(), WM_QUIT, 0, 0);
+			if(static bool close_console = true; close_console)
+			{
+				PostMessage(GetConsoleWindow(), WM_QUIT, 0, 0);
+				close_console = false;
+			}
 
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::rtt_model_preview,
-				model_selector(ggui::rtt_model_preview), nullptr);
-			
-			// model selector
-//			/*{
-//				if(!ggui::rtt_model_preview.one_time_init)
-//				{
-//					ggui::rtt_model_preview.xmodel_filelist = game::FS_ListFilteredFilesWrapper("xmodel", nullptr, &ggui::rtt_model_preview.xmodel_filecount);
-//					ggui::rtt_model_preview.one_time_init = true;
-//				}
-//				
-//				const auto MIN_WINDOW_SIZE = ImVec2(500.0f, 400.0f);
-//				const auto INITIAL_WINDOW_SIZE = ImVec2(550.0f, 600.0f);
-//
-//				ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
-//				ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
-//				ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
-//
-//				ImGui::Begin("model rtt test", nullptr, ImGuiWindowFlags_NoCollapse);
-//
-//				const auto window_size = ImGui::GetWindowSize();
-//
-//				if (ImGui::BeginListBox("##model_list", ImVec2(window_size.x * 0.25f, ImGui::GetContentRegionAvail().y)))
-//				{
-//					for (auto i = 0; i < ggui::rtt_model_preview.xmodel_filecount; i++)
-//					{
-//						const bool is_selected = (ggui::rtt_model_preview.xmodel_selection == i);
-//						if (ImGui::Selectable(ggui::rtt_model_preview.xmodel_filelist[i], is_selected))
-//						{
-//							ggui::rtt_model_preview.xmodel_selection = i;
-//							ggui::rtt_model_preview.model_name = ggui::rtt_model_preview.xmodel_filelist[i];
-//						}
-//
-//						if (is_selected) {
-//							ImGui::SetItemDefaultFocus();
-//						}
-//					}
-//
-//					ImGui::EndListBox();
-//				}
-//
-//				ImGui::SameLine();
-//
-//				ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
-//				{
-//					const auto child_size = ImGui::GetContentRegionAvail();
-//					SetWindowPos(layermatwnd_struct->m_content_hwnd, HWND_BOTTOM, 0, 0, (int)child_size.x, (int)child_size.y, SWP_NOZORDER);
-//					ggui::rtt_model_preview.scene_size_imgui = child_size;
-//					
-//					if (ggui::rtt_model_preview.scene_texture) 
-//					{
-//						ImGui::Image(ggui::rtt_model_preview.scene_texture, child_size);
-//					}
-//				}
-//				
-//				
-//				ImGui::EndChild();
-//#if 0
-//				const auto window_size = ImGui::GetWindowSize();
-//				const auto MODEL_COLUMNS = static_cast<int>(window_size.x / MODEL_PREV_SIZE.x);
-//				const int  MODEL_ROWS = static_cast<int>(window_size.y / MODEL_PREV_SIZE.y);
-//
-//				
-//				for(auto r = 0; r < MODEL_ROWS; r++)
-//				{
-//					for(auto c = 0; c < MODEL_COLUMNS; c++)
-//					{
-//						if (c % 2)
-//						{
-//							if (ggui::rtt_model01) {
-//								ImGui::Image(ggui::rtt_model01, MODEL_PREV_SIZE);
-//							}
-//							else
-//							{
-//								ImGui::InvisibleButton("aaaaa", MODEL_PREV_SIZE);
-//							}
-//						}
-//						else
-//						{
-//							if (ggui::rtt_model02) {
-//								ImGui::Image(ggui::rtt_model02, MODEL_PREV_SIZE);
-//							}
-//							else
-//							{
-//								ImGui::InvisibleButton("aaaaa", MODEL_PREV_SIZE);
-//							}
-//						}
-//
-//						if(c + 1 < MODEL_COLUMNS)
-//						{
-//							ImGui::SameLine();
-//						}
-//					}
-//				}
-//#endif
-//				ImGui::End();
-//			}*/
-	
 			// end the current context frame
 			goto END_FRAME;
 		}
@@ -830,6 +630,7 @@ namespace components
 	
 	// *
 	// handles opened/closed states of windows via dvars
+	// register dvars @ gui::register_dvars()
 	void gui::saved_windowstates()
 	{
 		// startup only
@@ -839,22 +640,7 @@ namespace components
 			SAVED_STATE_INIT(m_filter,	dvars::gui_saved_state_filter);
 			SAVED_STATE_INIT(m_entity,	dvars::gui_saved_state_entity);
 			SAVED_STATE_INIT_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
-			
-			/*if (dvars::gui_saved_state_console) {
-				ggui::state.czwnd.m_console.menustate = dvars::gui_saved_state_console->current.enabled;
-			}
-
-			if (dvars::gui_saved_state_filter) {
-				ggui::state.czwnd.m_filter.menustate = dvars::gui_saved_state_filter->current.enabled;
-			}
-
-			if(dvars::gui_saved_state_entity) {
-				ggui::state.czwnd.m_entity.menustate = dvars::gui_saved_state_entity->current.enabled;
-			}
-			
-			if (dvars::gui_saved_state_textures) {
-				ggui::get_rtt_texturewnd()->menustate = dvars::gui_saved_state_textures->current.enabled;
-			}*/
+			SAVED_STATE_INIT_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
 
 			ggui::saved_states_init = true;
 		}
@@ -866,30 +652,7 @@ namespace components
 		SAVED_STATE_UPDATE(m_filter,	dvars::gui_saved_state_filter);
 		SAVED_STATE_UPDATE(m_entity,	dvars::gui_saved_state_entity);
 		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
-		
-		/*if (dvars::gui_saved_state_console
-			&& ggui::state.czwnd.m_console.menustate != dvars::gui_saved_state_console->current.enabled)
-		{
-			dvars::set_bool(dvars::gui_saved_state_console, ggui::state.czwnd.m_console.menustate);
-		}
-
-		if (dvars::gui_saved_state_filter
-			&& ggui::state.czwnd.m_filter.menustate != dvars::gui_saved_state_filter->current.enabled)
-		{
-			dvars::set_bool(dvars::gui_saved_state_filter, ggui::state.czwnd.m_filter.menustate);
-		}
-
-		if (dvars::gui_saved_state_entity
-			&& ggui::state.czwnd.m_entity.menustate != dvars::gui_saved_state_entity->current.enabled)
-		{
-			dvars::set_bool(dvars::gui_saved_state_entity, ggui::state.czwnd.m_entity.menustate);
-		}
-
-		if (const auto texwnd = ggui::get_rtt_texturewnd();
-			dvars::gui_saved_state_textures && texwnd->menustate != dvars::gui_saved_state_textures->current.enabled)
-		{
-			dvars::set_bool(dvars::gui_saved_state_textures, texwnd->menustate);
-		}*/
+		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
 	}
 
 	// *
@@ -1147,6 +910,12 @@ namespace components
 			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "saved opened/closed state of texture window");
+
+		dvars::gui_saved_state_modelselector = dvars::register_bool(
+			/* name		*/ "gui_saved_state_modelselector",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved opened/closed state of modelselector window");
 	}
 
 	

@@ -27,7 +27,8 @@ namespace dvars
 	game::dvar_s* gui_saved_state_filter = nullptr;
 	game::dvar_s* gui_saved_state_entity = nullptr;
 	game::dvar_s* gui_saved_state_textures = nullptr;
-	
+	game::dvar_s* gui_saved_state_modelselector = nullptr;
+
 	//
 	game::dvar_s* mainframe_show_console = nullptr;
 	game::dvar_s* mainframe_show_zview = nullptr;

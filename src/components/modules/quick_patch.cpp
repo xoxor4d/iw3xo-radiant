@@ -443,6 +443,7 @@ namespace components
 		ctexwnd::hooks();
 		ggui::filter::hooks();
 		ggui::entity::hooks();
+		ggui::modelselector::init();
 		
 		// force global preferences on init
 		utils::hook(0x450730, force_preferences_on_init_stub, HOOK_JUMP).install()->quick();

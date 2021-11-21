@@ -325,10 +325,13 @@ namespace game
 	Com_Error_t Com_Error = Com_Error_t(0x499F50);
 	OnCtlColor_t OnCtlColor = OnCtlColor_t(0x587907);
 
+	MatrixForViewer_t MatrixForViewer = reinterpret_cast<MatrixForViewer_t>(0x4A7A70);
 	MatrixMultiply44_t MatrixMultiply44 = reinterpret_cast<MatrixMultiply44_t>(0x4A6180);
 	MatrixInverse44_t MatrixInverse44 = reinterpret_cast<MatrixInverse44_t>(0x4A6670);
 	CopyAxis_t CopyAxis = reinterpret_cast<CopyAxis_t>(0x4A8860);
 	AnglesToAxis_t AnglesToAxis = reinterpret_cast<AnglesToAxis_t>(0x4ABEB0);
+	AngleVectors_t AngleVectors = reinterpret_cast<AngleVectors_t>(0x4ABD70);
+	OrientationConcatenate_t OrientationConcatenate = reinterpret_cast<OrientationConcatenate_t>(0x4BA7D0);
 	
 	// -----------------------------------------------------------
 	// DVARS

@@ -289,7 +289,8 @@ namespace ggui::menubar
 				}
 
 				if (ImGui::MenuItem("Model Selector")) {
-					ggui::rtt_model_preview.menustate = !ggui::rtt_model_preview.menustate;
+					const auto m_selector = ggui::get_rtt_modelselector();
+					m_selector->menustate = !m_selector->menustate;
 				}
 				
 				if (ImGui::MenuItem("Preferences ...", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
