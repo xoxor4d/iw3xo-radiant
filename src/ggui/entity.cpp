@@ -463,96 +463,97 @@ namespace ggui::entity
 		
 		if (ImGui::TreeNodeEx("Spawnflags", dvars::gui_props_spawnflags_defaultopen->current.enabled ? ImGuiTreeNodeFlags_DefaultOpen : 0))
 		{
-			SPACING(0.0f, 0.01f);
-			ImGui::PushStyleCompact();
-			
-			const auto pre_checkbox_cursor = ImGui::GetCursorPos();
-			for (auto i = 0; i < 8; i++)
+			if (ImGui::TreeNodeEx("Gametype Specific##who_needs_these", ImGuiTreeNodeFlags_SpanFullWidth))
 			{
-				if (i == 4) {
-					ImGui::SetCursorPosY(pre_checkbox_cursor.y);
-				}
+				SPACING(0.0f, 0.01f);
+				ImGui::PushStyleCompact();
 
-				if (i >= 4) {
-					ImGui::SetCursorPosX(pre_checkbox_cursor.x + (wnd_size.x * 0.5f));
-				}
+				int cb_num = 8;
+				const auto pre_checkbox_cursor = ImGui::GetCursorPos();
 
-				bool flag_in_use = false;
-				std::string flagname;
-
-				if (sel_list_ent && sel_list_ent->flagnames[i] && sel_list_ent->flagnames[i][0] != 0)
+				if (ImGui::Checkbox("!Easy", &checkboxflags_states[cb_num]))
 				{
-					flag_in_use = true;
-					flagname = sel_list_ent->flagnames[i];
-				}
+					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
+					game::SetSpawnFlags(cb_num);
+				} cb_num++;
 
-				flagname += "##entcheckbox"s + std::to_string(i);
 
-				if (ImGui::Checkbox(flagname.c_str(), &checkboxflags_states[i]))
+				if (ImGui::Checkbox("!Medium", &checkboxflags_states[cb_num]))
 				{
-					if (flag_in_use)
+					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
+					game::SetSpawnFlags(cb_num);
+				} cb_num++;
+
+				ImGui::SetCursorPosX(pre_checkbox_cursor.x + (wnd_size.x * 0.5f));
+				ImGui::SetCursorPosY(pre_checkbox_cursor.y);
+
+				if (ImGui::Checkbox("!Hard", &checkboxflags_states[cb_num]))
+				{
+					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
+					game::SetSpawnFlags(cb_num);
+				} cb_num++;
+
+				ImGui::SetCursorPosX(pre_checkbox_cursor.x + (wnd_size.x * 0.5f));
+
+				if (ImGui::Checkbox("!Deathmatch", &checkboxflags_states[cb_num]))
+				{
+					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
+					game::SetSpawnFlags(cb_num);
+				} cb_num++;
+
+				ImGui::PopStyleCompact();
+				SPACING(0.0f, 0.01f);
+				ImGui::TreePop();
+			}
+
+			if (ImGui::TreeNodeEx("General", ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				SPACING(0.0f, 0.01f);
+				ImGui::PushStyleCompact();
+
+				const auto pre_checkbox_cursor = ImGui::GetCursorPos();
+				for (auto i = 0; i < 8; i++)
+				{
+					if (i == 4) {
+						ImGui::SetCursorPosY(pre_checkbox_cursor.y);
+					}
+
+					if (i >= 4) {
+						ImGui::SetCursorPosX(pre_checkbox_cursor.x + (wnd_size.x * 0.5f));
+					}
+
+					bool flag_in_use = false;
+					std::string flagname;
+
+					if (sel_list_ent && sel_list_ent->flagnames[i] && sel_list_ent->flagnames[i][0] != 0)
 					{
-						SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + i], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[i], 0);
-						game::SetSpawnFlags(i);
+						flag_in_use = true;
+						flagname = sel_list_ent->flagnames[i];
+					}
+
+					flagname += "##entcheckbox"s + std::to_string(i);
+
+					if (ImGui::Checkbox(flagname.c_str(), &checkboxflags_states[i]))
+					{
+						if (flag_in_use)
+						{
+							SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + i], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[i], 0);
+							game::SetSpawnFlags(i);
+						}
 					}
 				}
+
+				ImGui::PopStyleCompact();
+				SPACING(0.0f, 0.01f);
+				ImGui::TreePop();
 			}
-			
-			ImGui::PopStyleCompact();
-			SPACING(0.0f, 0.01f);
+
 			ImGui::TreePop();
 		}
 
-		SPACING(0.0f, 0.01f);
-
-		if(ImGui::TreeNode("Spawnflags Easy / Medium / Hard / Deathmatch##who_needs_these"))
-		{
-			SPACING(0.0f, 0.01f);
-			ImGui::PushStyleCompact();
-			
-			int cb_num = 8;
-			const auto pre_checkbox_cursor = ImGui::GetCursorPos();
-			
-			if (ImGui::Checkbox("!Easy", &checkboxflags_states[cb_num]))
-			{
-				SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
-				game::SetSpawnFlags(cb_num);
-			} cb_num++;
-
-			
-			if (ImGui::Checkbox("!Medium", &checkboxflags_states[cb_num]))
-			{
-				SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
-				game::SetSpawnFlags(cb_num);
-			} cb_num++;
-
-			ImGui::SetCursorPosX(pre_checkbox_cursor.x + (wnd_size.x * 0.5f));
-			ImGui::SetCursorPosY(pre_checkbox_cursor.y);
-
-			if (ImGui::Checkbox("!Hard", &checkboxflags_states[cb_num]))
-			{
-				SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
-				game::SetSpawnFlags(cb_num);
-			} cb_num++;
-
-			ImGui::SetCursorPosX(pre_checkbox_cursor.x + (wnd_size.x * 0.5f));
-			
-			if (ImGui::Checkbox("!Deathmatch", &checkboxflags_states[cb_num]))
-			{
-				SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
-				game::SetSpawnFlags(cb_num);
-			} cb_num++;
-
-			ImGui::PopStyleCompact();
-			SPACING(0.0f, 0.01f);
-			ImGui::TreePop();
-		}
-
-		ImGui::PopStyleVar();
-
+		ImGui::PopStyleVar(); // ImGuiStyleVar_IndentSpacing
 		SPACING(0.0f, 0.01f);
 	}
-	
 
 	void gui_entprop_new_keyvalue_pair()
 	{
@@ -873,46 +874,90 @@ namespace ggui::entity
 			ImGui::BeginDisabled(true);
 		}
 
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 4));
 
 		const float line_height		= ImGui::GetFrameHeight();
 		const auto  button_size		= ImVec2(line_height, line_height);
-		const float widget_spacing	= 8.0f;
+		const float widget_spacing	= 4.0f;
 		const float widget_width	= (ImGui::GetContentRegionAvailWidth() - (3.0f * button_size.x) - (2.0f * widget_spacing)) * 0.33333f;
 
+		const float window_width	= ImGui::GetWindowWidth();
+		const bool  min_window_width_origin = window_width < 460.0f;
+
+		// -------
+		// -- X --
+		
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.55f, 0.17f, 0.17f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.55f, 0.17f, 0.17f, 1.0f));
 		ImGui::ButtonEx("X", button_size, ImGuiButtonFlags_MouseButtonMiddle);
 		ImGui::PopStyleColor(2);
 		ImGui::SameLine();
 
-		ImGui::SetNextItemWidth(widget_width);
+		if (!min_window_width_origin)
+		{
+			ImGui::SetNextItemWidth(widget_width);
+		}
+		else
+		{
+			ImGui::SetNextItemWidth(-1);
+		}
+		
 		if(DragFloat_HelperUndo(&helper, "##X", &vec3[0], epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
 		{
 			dirty = true;
 		}
 
-		ImGui::SameLine(0, widget_spacing);
+		// -------
+		// -- Y --
+		
+		if(!min_window_width_origin) 
+		{
+			ImGui::SameLine(0, widget_spacing);
+		}
+			
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.185f, 0.6f, 0.23f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.185f, 0.6f, 0.23f, 1.0f));
 		ImGui::ButtonEx("Y", button_size, ImGuiButtonFlags_MouseButtonMiddle);
 		ImGui::PopStyleColor(2);
 		ImGui::SameLine();
 
-		ImGui::SetNextItemWidth(widget_width);
+		if (!min_window_width_origin) 
+		{
+			ImGui::SetNextItemWidth(widget_width);
+		}
+		else
+		{
+			ImGui::SetNextItemWidth(-1);
+		}
+		
 		if(DragFloat_HelperUndo(&helper, "##Y", &vec3[1], epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
 		{
 			dirty = true;
 		}
 
-		ImGui::SameLine(0, widget_spacing);
+		// -------
+		// -- Z --
+
+		if(!min_window_width_origin) 
+		{
+			ImGui::SameLine(0, widget_spacing);
+		}
+
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.165f, 0.375f, 0.69f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.165f, 0.375f, 0.69f, 1.0f));
 		ImGui::ButtonEx("Z", button_size, ImGuiButtonFlags_MouseButtonMiddle);
 		ImGui::PopStyleColor(2);
 		ImGui::SameLine();
 
-		ImGui::SetNextItemWidth(widget_width);
+		if (!min_window_width_origin)
+		{
+			ImGui::SetNextItemWidth(widget_width);
+		}
+		else
+		{
+			ImGui::SetNextItemWidth(-1);
+		}
+		
 		if(DragFloat_HelperUndo(&helper, "##Z", &vec3[2], epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
 		{
 			dirty = true;
@@ -1212,10 +1257,15 @@ namespace ggui::entity
 						// for each entry in our sorted vector
 						for (auto ep : eprop_sorted)
 						{
+							const bool is_classname = !_stricmp(ep.epair->key, "classname");
+							
 							ImGui::PushID(row);
 							ImGui::TableNextColumn();
 							{
+								// do not allow to edit the origin key
+								ImGui::BeginDisabled(is_classname || ep.type == EPAIR_VALUETYPE::ORIGIN);
 								gui_entprop_add_key(ep.epair, row);
+								ImGui::EndDisabled();
 							}
 
 							ImGui::TableNextColumn();
@@ -1241,14 +1291,18 @@ namespace ggui::entity
 								default:
 								case EPAIR_VALUETYPE::MODEL:
 								case EPAIR_VALUETYPE::TEXT:
+
+									// do not allow to edit classname - worldspawn
+									ImGui::BeginDisabled(is_classname && is_worldspawn);
 									gui_entprop_add_value_text(ep, row);
+									ImGui::EndDisabled();
 									break;
 								}
 							}
 
 							ImGui::TableNextColumn();
 							{
-								if (ep.type != ORIGIN && _stricmp(ep.epair->key, "classname") != 0)
+								if (ep.type != EPAIR_VALUETYPE::ORIGIN && !is_classname)
 								{
 									if (ImGui::Button("x"))
 									{
