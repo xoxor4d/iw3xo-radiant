@@ -66,6 +66,7 @@ user*.bat
 *.tmp
 *.aps
 
+.vscode/*
 !.vscode/tracked
 !.vscode/readme.txt
 
