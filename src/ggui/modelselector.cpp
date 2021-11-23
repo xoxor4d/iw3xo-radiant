@@ -127,20 +127,56 @@ namespace ggui::modelselector
 		{
 			if(m_selector->xmodel_selection + 1 < m_selector->xmodel_filecount)
 			{
-				m_selector->xmodel_selection += 1;
-				m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+                if (m_filter.IsActive())
+                {
+                    for (int i = m_selector->xmodel_selection + 1; i < m_selector->xmodel_filecount; i++)
+					{
+						if (!m_filter.PassFilter(m_selector->xmodel_filelist[i])) {
+							continue;
+						}
 
-				update_scroll_pos = true;
+                        m_selector->xmodel_selection = i;
+				        m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+
+				        update_scroll_pos = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    m_selector->xmodel_selection += 1;
+				    m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+
+				    update_scroll_pos = true;
+                }
 			}
 		}
 		else if(ImGui::IsKeyPressedMap(ImGuiKey_UpArrow))
 		{
 			if (m_selector->xmodel_selection - 1 >= 0)
 			{
-				m_selector->xmodel_selection -= 1;
-				m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+                if (m_filter.IsActive())
+                {
+                    for (int i = m_selector->xmodel_selection - 1; i >= 0; i--)
+					{
+						if (!m_filter.PassFilter(m_selector->xmodel_filelist[i])) {
+							continue;
+						}
 
-				update_scroll_pos = true;
+                        m_selector->xmodel_selection = i;
+				        m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+
+				        update_scroll_pos = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    m_selector->xmodel_selection -= 1;
+				    m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+
+				    update_scroll_pos = true;
+                }
 			}
 		}
 		
@@ -226,6 +262,13 @@ namespace ggui::modelselector
 				"Mouse Scroll:\t\t\t  Zoom\n"
 				"Up/Down Arrow:\t\tChange selection\n"
 				"- Drag and drop xmodel from list to grid or camera to spawn it");
+
+            if(m_selector->bad_model)
+            {
+                ImGui::SameLine();
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
+                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Bad model");
+            }
 		}
 		
 		ImGui::EndChild();

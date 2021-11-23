@@ -66,6 +66,9 @@ user*.bat
 *.tmp
 *.aps
 
+!.vscode/tracked
+!.vscode/readme.txt
+
 # IDA
 # =========================
 *.id0

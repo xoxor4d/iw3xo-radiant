@@ -109,6 +109,7 @@ namespace ggui
 		std::string preview_model_name;
 		game::XModel* preview_model_ptr;
 		int preview_model_inst_handle;
+		bool bad_model;
 
 		// raw/xmodel folder
 		int  xmodel_filecount;

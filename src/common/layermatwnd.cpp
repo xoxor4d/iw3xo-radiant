@@ -196,14 +196,20 @@ void clayermatwnd::on_paint()
 		{
 			if (m_selector->menustate && !m_selector->preview_model_name.empty())
 			{
+                m_selector->bad_model = false;
+
 				// get model handle
 				if(auto model = game::R_RegisterModel(m_selector->preview_model_name.c_str());
 						model)
 				{
-					// use the fx model for vertex heavy models
-					if (model->surfs->vertCount > 15000) {
-						model = game::R_RegisterModel("fx");
-					}
+                    // use the fx model for invalid or vertex heavy models
+                    if(   !model->surfs 
+                        || model->bad
+                        || model->surfs->vertCount > 15000)
+                    {
+                        model = game::R_RegisterModel("fx");
+                        m_selector->bad_model = true;
+                    }
 
 					// begin a new frame, clear the scene
 					game::R_BeginFrame();
