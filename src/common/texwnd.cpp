@@ -108,7 +108,7 @@ BOOL __fastcall ctexwnd::on_paint(ctexwnd* pThis)
 
 void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 {
-	auto texwnd = ggui::get_rtt_texturewnd();
+	const auto texwnd = ggui::get_rtt_texturewnd();
 	//ImGui::SetCursorScreenPos(ImVec2(cursor_pos.x, cursor_pos.y + 40.0f)); // no effect with sameline below
 
 	// right side alignment
@@ -121,18 +121,39 @@ void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 	// group all so we can get the actual toolbar width for the next frame
 	ImGui::BeginGroup();
 	{
-		//ImGui::SameLine();
 		ImGui::PushStyleCompact();
-		ImGui::TextUnformatted("Usage:");
+		if (ImGui::Button("A"))
+		{
+			// Texture_ShowAll
+			cdeclcall(void, 0x45B730);
+		} ggui::rtt_handle_windowfocus_overlaywidget(texwnd); TT("Show all textures");
+
 		ImGui::SameLine();
+		if(ImGui::Button("U"))
+		{
+			// Texture_ShowInuse
+			cdeclcall(void, 0x45B850);
+		} ggui::rtt_handle_windowfocus_overlaywidget(texwnd); TT("Show all textures in use");
+		ImGui::PopStyleCompact();
+		
+		ImGui::SameLine();
+		ImGui::PushStyleCompact();
+		//ImGui::TextUnformatted("Usage:");
+		//ImGui::SameLine();
 		ImGui::SetNextItemWidth(140.0f);
 
-		if (ImGui::BeginCombo("##combo_usage", game::filter_usage_array[game::texWndGlob_usageFilter].name, ImGuiComboFlags_HeightLarge))
+		const char* combo_usage_preview_str = "Usage: all";
+		if(game::texWndGlob_usageFilter)
 		{
-			for (std::uint8_t i = 0; i < game::texWndGlob_usageCount; i++)
+			combo_usage_preview_str = game::filter_usage_array[game::texWndGlob_usageFilter].name;
+		}
+
+		if (ImGui::BeginCombo("##combo_usage", combo_usage_preview_str, ImGuiComboFlags_HeightLarge))
+		{
+			for (std::uint8_t i = 0; i < static_cast<std::uint8_t>(game::texWndGlob_usageCount); i++)
 			{
-				const char* name = game::filter_usage_array[i].name;
-				if (name)
+				if (const char* name = game::filter_usage_array[i].name; 
+								name)
 				{
 					if (ImGui::Selectable(name, game::texWndGlob_usageFilter == i))
 					{
@@ -199,11 +220,17 @@ void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 
 		ImGui::SameLine();
 		ImGui::PushStyleCompact();
-		ImGui::TextUnformatted("Surface:");
-		ImGui::SameLine();
+		//ImGui::TextUnformatted("Surface:");
+		//ImGui::SameLine();
 		ImGui::SetNextItemWidth(140.0f);
 
-		if (ImGui::BeginCombo("##combo_surface", game::filter_surfacetype_array[game::texWndGlob_surfaceTypeFilter].name, ImGuiComboFlags_HeightLarge))
+		const char* combo_surface_preview_str = "Surface: all";
+		if (game::texWndGlob_surfaceTypeFilter)
+		{
+			combo_surface_preview_str = game::filter_surfacetype_array[game::texWndGlob_surfaceTypeFilter].name;
+		}
+		
+		if (ImGui::BeginCombo("##combo_surface", combo_surface_preview_str, ImGuiComboFlags_HeightLarge))
 		{
 			for (std::uint8_t i = 0; i < 29; i++) // hardcoded value
 			{
@@ -400,7 +427,7 @@ void ctexwnd::rtt_texture_window()
 		const auto tex_hwnd = cmainframe::activewnd->m_pTexWnd->GetWindow();
 		prefs->m_bTextureScrollbar = false;
 		ShowScrollBar(tex_hwnd, 1, 0);
-		InvalidateRect(tex_hwnd, 0, 1);
+		InvalidateRect(tex_hwnd, nullptr, 1);
 		UpdateWindow(tex_hwnd);
 		//scrollbar_width = GetSystemMetrics(SM_CXVSCROLL);
 	}

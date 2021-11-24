@@ -448,6 +448,10 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 
 						// restore context
 						ImGui::SetCurrentContext(imgui_context_old);
+
+						// reset keys when mouse leaves the mainframe
+						ImGuiIO& io = ImGui::GetIO();
+						memset(io.KeysDown, 0, sizeof(io.KeysDown));
 					}
 				}
 			}
