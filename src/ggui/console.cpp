@@ -127,7 +127,7 @@ namespace ggui
 
 		// Reserve enough left-over height for 1 separator + 1 input text
 		const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-		ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar);
+		ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_AlwaysHorizontalScrollbar);
 
 		if (ImGui::BeginPopupContextWindow())
 		{
@@ -720,8 +720,8 @@ namespace ggui
 		utils::hook::detour(0x423CB0, on_viewconsole_command, HK_JUMP);
 
 		components::command::register_command("console_test_multiline_print"s, [](auto)
-			{
-				game::printf_to_console("I'm\na multiline\nprint ...\n\nDo I work?");
-			});
+		{
+			game::printf_to_console("I'm\na multiline\nprint ...\n\nDo I work?");
+		});
 	}
 };

@@ -491,13 +491,45 @@ void ctexwnd::rtt_texture_window()
 
 
 // *
-// *
+// detours
 
 // CMainFrame::OnViewTexture
 void on_viewtextures_command()
 {
 	components::gui::toggle(ggui::get_rtt_texturewnd(), 0, true);
 }
+
+// CMainFrame::OnTexturesShowinuse
+void on_textures_show_in_use_command()
+{
+	ggui::get_rtt_texturewnd()->menustate = true;
+	
+	// Texture_ShowInuse
+	cdeclcall(void, 0x45B850);
+}
+
+
+// CMainFrame::OnTexturesShowall
+void on_textures_show_all_command()
+{
+	ggui::get_rtt_texturewnd()->menustate = true;
+}
+
+void __declspec(naked) on_textures_show_all_command_stub()
+{
+	const static uint32_t sub_453E50 = 0x453E50;
+	const static uint32_t retn_pt = 0x42B445;
+	__asm
+	{
+		pushad;
+		call	on_textures_show_all_command;
+		popad;
+		
+		call    sub_453E50; // overwritten
+		jmp     retn_pt; // jump back to "test al, al"
+	}
+}
+
 
 void ctexwnd::hooks()
 {
@@ -518,6 +550,13 @@ void ctexwnd::hooks()
 	// -- rewritten one runs fine
 	utils::hook::detour(0x45DB20, ctexwnd::on_paint, HK_JUMP);
 
-	// detour CMainFrame::OnViewTexture (hotkey to open the original dialog)
+	// detour the view textures hotkey (CMainFrame::OnViewTexture) to open the imgui texture window
 	utils::hook::detour(0x424440, on_viewtextures_command, HK_JUMP);
+
+	// detour the show textures in use hotkey (CMainFrame::OnTexturesShowinuse) to open the imgui texture window
+	utils::hook::detour(0x424B20, on_textures_show_in_use_command, HK_JUMP);
+
+	// detour fails here .. so doing it manually -> make the show all textures hotkey (CMainFrame::OnTexturesShowall) open the imgui texture window
+	utils::hook(0x42B440, on_textures_show_all_command_stub, HOOK_JUMP).install()->quick();
+	
 }
