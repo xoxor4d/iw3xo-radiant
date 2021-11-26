@@ -197,8 +197,8 @@ namespace game
 		extern OrientationConcatenate_t OrientationConcatenate;
 
 	// no error but doesnt reload everything
-	static utils::function< void()>	DX_ResetDevice = 0x5015F0;
-
+	static utils::function<void()> DX_ResetDevice = 0x5015F0;
+	static utils::function<int*(size_t)> Hunk_Alloc = 0x5104E0;
 
 	// *
 	// dvars

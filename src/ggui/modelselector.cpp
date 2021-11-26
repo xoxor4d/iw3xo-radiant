@@ -263,6 +263,42 @@ namespace ggui::modelselector
 				"Up/Down Arrow:\t\tChange selection\n"
 				"- Drag and drop xmodel from list to grid or camera to spawn it");
 
+			ImGui::SameLine();
+
+			/*  + render methods +
+			 *	fullbright		= 4,
+			 *	normal-based	= 24,
+			 *	view-based		= 25,
+			 *	case-textures	= 27,
+			 *	wireframe		= 29,
+			 */
+			
+			ImGui::PushStyleCompact();
+			if(ImGui::Button("Fullbright")) {
+				layermatwnd::rendermethod_preview = 4;
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Normal")) {
+				layermatwnd::rendermethod_preview = 24;
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("View")) {
+				layermatwnd::rendermethod_preview = 25;
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Case")) {
+				layermatwnd::rendermethod_preview = 27;
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Wireframe")) {
+				layermatwnd::rendermethod_preview = 29;
+			}
+			ImGui::PopStyleCompact();
+			
             if(m_selector->bad_model)
             {
                 ImGui::SameLine();

@@ -1961,6 +1961,282 @@ namespace game
 		XModel* model; //0x0024 
 		int random_one; //0x0028 
 	}; STATIC_ASSERT_SIZE(model_inst, 0x2C); //Size=0x002C
+
+	enum MaterialVertexDeclType
+	{
+		VERTDECL_GENERIC = 0x0,
+		VERTDECL_PACKED = 0x1,
+		VERTDECL_WORLD = 0x2,
+		VERTDECL_WORLD_T1N0 = 0x3,
+		VERTDECL_WORLD_T1N1 = 0x4,
+		VERTDECL_WORLD_T2N0 = 0x5,
+		VERTDECL_WORLD_T2N1 = 0x6,
+		VERTDECL_WORLD_T2N2 = 0x7,
+		VERTDECL_WORLD_T3N0 = 0x8,
+		VERTDECL_WORLD_T3N1 = 0x9,
+		VERTDECL_WORLD_T3N2 = 0xA,
+		VERTDECL_WORLD_T4N0 = 0xB,
+		VERTDECL_WORLD_T4N1 = 0xC,
+		VERTDECL_WORLD_T4N2 = 0xD,
+		VERTDECL_POS_TEX = 0xE,
+		VERTDECL_STATICMODELCACHE = 0xF,
+		VERTDECL_COUNT = 0x10,
+	};
+
+	struct gfxVertexSteamsUnk
+	{
+		unsigned int stride;
+		int* vb;
+		unsigned int offset;
+	};
+
+	struct GfxCmdBufPrimState
+	{
+		IDirect3DDevice9* device;
+		IDirect3DIndexBuffer9* indexBuffer;
+		MaterialVertexDeclType vertDeclType;
+		gfxVertexSteamsUnk streams[2];
+		IDirect3DVertexDeclaration9* vertexDecl;
+	}; STATIC_ASSERT_SIZE(GfxCmdBufPrimState, 0x28);
+
+	struct MaterialStreamRouting
+	{
+		char source;
+		char dest;
+	};
+
+	struct MaterialVertexStreamRouting
+	{
+		MaterialStreamRouting data[16];
+		void* decl[16];
+	};
+
+	struct MaterialVertexDeclaration
+	{
+		char streamCount;
+		bool hasOptionalSource;
+		bool isLoaded;
+		MaterialVertexStreamRouting routing;
+	};
+	
+	struct GfxVertexShaderLoadDef
+	{
+		unsigned int* program;
+		unsigned __int16 programSize;
+		unsigned __int16 loadForRenderer;
+	};
+
+	struct MaterialVertexShaderProgram
+	{
+		void* vs;
+		GfxVertexShaderLoadDef loadDef;
+	};
+
+	struct MaterialVertexShader
+	{
+		const char* name;
+		MaterialVertexShaderProgram prog;
+	};
+
+	struct GfxPixelShaderLoadDef
+	{
+		unsigned int* program;
+		unsigned __int16 programSize;
+		unsigned __int16 loadForRenderer;
+	};
+
+	struct MaterialPixelShaderProgram
+	{
+		void* ps;
+		GfxPixelShaderLoadDef loadDef;
+	};
+
+	struct MaterialPixelShader
+	{
+		const char* name;
+		MaterialPixelShaderProgram prog;
+	};
+
+	enum ShaderCodeConstants : unsigned __int16
+	{
+		CONST_SRC_CODE_MAYBE_DIRTY_PS_BEGIN = 0x0,
+		CONST_SRC_CODE_LIGHT_POSITION = 0x0,
+		CONST_SRC_CODE_LIGHT_DIFFUSE = 0x1,
+		CONST_SRC_CODE_LIGHT_SPECULAR = 0x2,
+		CONST_SRC_CODE_LIGHT_SPOTDIR = 0x3,
+		CONST_SRC_CODE_LIGHT_SPOTFACTORS = 0x4,
+		CONST_SRC_CODE_NEARPLANE_ORG = 0x5,
+		CONST_SRC_CODE_NEARPLANE_DX = 0x6,
+		CONST_SRC_CODE_NEARPLANE_DY = 0x7,
+		CONST_SRC_CODE_SHADOW_PARMS = 0x8,
+		CONST_SRC_CODE_SHADOWMAP_POLYGON_OFFSET = 0x9,
+		CONST_SRC_CODE_RENDER_TARGET_SIZE = 0xA,
+		CONST_SRC_CODE_LIGHT_FALLOFF_PLACEMENT = 0xB,
+		CONST_SRC_CODE_DOF_EQUATION_VIEWMODEL_AND_FAR_BLUR = 0xC,
+		CONST_SRC_CODE_DOF_EQUATION_SCENE = 0xD,
+		CONST_SRC_CODE_DOF_LERP_SCALE = 0xE,
+		CONST_SRC_CODE_DOF_LERP_BIAS = 0xF,
+		CONST_SRC_CODE_DOF_ROW_DELTA = 0x10,
+		CONST_SRC_CODE_PARTICLE_CLOUD_COLOR = 0x11,
+		CONST_SRC_CODE_GAMETIME = 0x12,
+		CONST_SRC_CODE_MAYBE_DIRTY_PS_END = 0x13,
+		CONST_SRC_CODE_ALWAYS_DIRTY_PS_BEGIN = 0x13,
+		CONST_SRC_CODE_PIXEL_COST_FRACS = 0x13,
+		CONST_SRC_CODE_PIXEL_COST_DECODE = 0x14,
+		CONST_SRC_CODE_FILTER_TAP_0 = 0x15,
+		CONST_SRC_CODE_FILTER_TAP_1 = 0x16,
+		CONST_SRC_CODE_FILTER_TAP_2 = 0x17,
+		CONST_SRC_CODE_FILTER_TAP_3 = 0x18,
+		CONST_SRC_CODE_FILTER_TAP_4 = 0x19,
+		CONST_SRC_CODE_FILTER_TAP_5 = 0x1A,
+		CONST_SRC_CODE_FILTER_TAP_6 = 0x1B,
+		CONST_SRC_CODE_FILTER_TAP_7 = 0x1C,
+		CONST_SRC_CODE_COLOR_MATRIX_R = 0x1D,
+		CONST_SRC_CODE_COLOR_MATRIX_G = 0x1E,
+		CONST_SRC_CODE_COLOR_MATRIX_B = 0x1F,
+		CONST_SRC_CODE_ALWAYS_DIRTY_PS_END = 0x20,
+		CONST_SRC_CODE_NEVER_DIRTY_PS_BEGIN = 0x20,
+		CONST_SRC_CODE_SHADOWMAP_SWITCH_PARTITION = 0x20,
+		CONST_SRC_CODE_SHADOWMAP_SCALE = 0x21,
+		CONST_SRC_CODE_ZNEAR = 0x22,
+		CONST_SRC_CODE_SUN_POSITION = 0x23,
+		CONST_SRC_CODE_SUN_DIFFUSE = 0x24,
+		CONST_SRC_CODE_SUN_SPECULAR = 0x25,
+		CONST_SRC_CODE_LIGHTING_LOOKUP_SCALE = 0x26,
+		CONST_SRC_CODE_DEBUG_BUMPMAP = 0x27,
+		CONST_SRC_CODE_MATERIAL_COLOR = 0x28,
+		CONST_SRC_CODE_FOG = 0x29,
+		CONST_SRC_CODE_FOG_COLOR = 0x2A,
+		CONST_SRC_CODE_GLOW_SETUP = 0x2B,
+		CONST_SRC_CODE_GLOW_APPLY = 0x2C,
+		CONST_SRC_CODE_COLOR_BIAS = 0x2D,
+		CONST_SRC_CODE_COLOR_TINT_BASE = 0x2E,
+		CONST_SRC_CODE_COLOR_TINT_DELTA = 0x2F,
+		CONST_SRC_CODE_OUTDOOR_FEATHER_PARMS = 0x30,
+		CONST_SRC_CODE_ENVMAP_PARMS = 0x31,
+		CONST_SRC_CODE_SPOT_SHADOWMAP_PIXEL_ADJUST = 0x32,
+		CONST_SRC_CODE_CLIP_SPACE_LOOKUP_SCALE = 0x33,
+		CONST_SRC_CODE_CLIP_SPACE_LOOKUP_OFFSET = 0x34,
+		CONST_SRC_CODE_PARTICLE_CLOUD_MATRIX = 0x35,
+		CONST_SRC_CODE_DEPTH_FROM_CLIP = 0x36,
+		CONST_SRC_CODE_CODE_MESH_ARG_0 = 0x37,
+		CONST_SRC_CODE_CODE_MESH_ARG_1 = 0x38,
+		CONST_SRC_CODE_CODE_MESH_ARG_LAST = 0x38,
+		CONST_SRC_CODE_BASE_LIGHTING_COORDS = 0x39,
+		CONST_SRC_CODE_NEVER_DIRTY_PS_END = 0x3A,
+		CONST_SRC_CODE_COUNT_FLOAT4 = 0x3A,
+		CONST_SRC_FIRST_CODE_MATRIX = 0x3A,
+		CONST_SRC_CODE_WORLD_MATRIX = 0x3A,
+		CONST_SRC_CODE_INVERSE_WORLD_MATRIX = 0x3B,
+		CONST_SRC_CODE_TRANSPOSE_WORLD_MATRIX = 0x3C,
+		CONST_SRC_CODE_INVERSE_TRANSPOSE_WORLD_MATRIX = 0x3D,
+		CONST_SRC_CODE_VIEW_MATRIX = 0x3E,
+		CONST_SRC_CODE_INVERSE_VIEW_MATRIX = 0x3F,
+		CONST_SRC_CODE_TRANSPOSE_VIEW_MATRIX = 0x40,
+		CONST_SRC_CODE_INVERSE_TRANSPOSE_VIEW_MATRIX = 0x41,
+		CONST_SRC_CODE_PROJECTION_MATRIX = 0x42,
+		CONST_SRC_CODE_INVERSE_PROJECTION_MATRIX = 0x43,
+		CONST_SRC_CODE_TRANSPOSE_PROJECTION_MATRIX = 0x44,
+		CONST_SRC_CODE_INVERSE_TRANSPOSE_PROJECTION_MATRIX = 0x45,
+		CONST_SRC_CODE_WORLD_VIEW_MATRIX = 0x46,
+		CONST_SRC_CODE_INVERSE_WORLD_VIEW_MATRIX = 0x47,
+		CONST_SRC_CODE_TRANSPOSE_WORLD_VIEW_MATRIX = 0x48,
+		CONST_SRC_CODE_INVERSE_TRANSPOSE_WORLD_VIEW_MATRIX = 0x49,
+		CONST_SRC_CODE_VIEW_PROJECTION_MATRIX = 0x4A,
+		CONST_SRC_CODE_INVERSE_VIEW_PROJECTION_MATRIX = 0x4B,
+		CONST_SRC_CODE_TRANSPOSE_VIEW_PROJECTION_MATRIX = 0x4C,
+		CONST_SRC_CODE_INVERSE_TRANSPOSE_VIEW_PROJECTION_MATRIX = 0x4D,
+		CONST_SRC_CODE_WORLD_VIEW_PROJECTION_MATRIX = 0x4E,
+		CONST_SRC_CODE_INVERSE_WORLD_VIEW_PROJECTION_MATRIX = 0x4F,
+		CONST_SRC_CODE_TRANSPOSE_WORLD_VIEW_PROJECTION_MATRIX = 0x50,
+		CONST_SRC_CODE_INVERSE_TRANSPOSE_WORLD_VIEW_PROJECTION_MATRIX = 0x51,
+		CONST_SRC_CODE_SHADOW_LOOKUP_MATRIX = 0x52,
+		CONST_SRC_CODE_INVERSE_SHADOW_LOOKUP_MATRIX = 0x53,
+		CONST_SRC_CODE_TRANSPOSE_SHADOW_LOOKUP_MATRIX = 0x54,
+		CONST_SRC_CODE_INVERSE_TRANSPOSE_SHADOW_LOOKUP_MATRIX = 0x55,
+		CONST_SRC_CODE_WORLD_OUTDOOR_LOOKUP_MATRIX = 0x56,
+		CONST_SRC_CODE_INVERSE_WORLD_OUTDOOR_LOOKUP_MATRIX = 0x57,
+		CONST_SRC_CODE_TRANSPOSE_WORLD_OUTDOOR_LOOKUP_MATRIX = 0x58,
+		CONST_SRC_CODE_INVERSE_TRANSPOSE_WORLD_OUTDOOR_LOOKUP_MATRIX = 0x59,
+		CONST_SRC_TOTAL_COUNT = 0x5A,
+		CONST_SRC_NONE = 0x5B,
+	};
+
+	struct MaterialArgumentCodeConst
+	{
+		ShaderCodeConstants index; //unsigned __int16 index;
+		char firstRow;
+		char rowCount;
+	};
+
+	union MaterialArgumentDef
+	{
+		const float* literalConst;
+		MaterialArgumentCodeConst codeConst;
+		unsigned int codeSampler;
+		unsigned int nameHash;
+	};
+
+	struct MaterialShaderArgument
+	{
+		unsigned __int16 type;
+		unsigned __int16 dest;
+		MaterialArgumentDef u;
+	};
+
+	struct MaterialPass
+	{
+		MaterialVertexDeclaration* vertexDecl;
+		MaterialVertexShader* vertexShader;
+		MaterialPixelShader* pixelShader;
+		char perPrimArgCount;
+		char perObjArgCount;
+		char stableArgCount;
+		char customSamplerFlags;
+		MaterialShaderArgument* args;
+	};
+
+	struct MaterialTechnique
+	{
+		const char* name;
+		unsigned __int16 flags;
+		unsigned __int16 passCount;
+		MaterialPass passArray[1];
+	};
+
+	enum GfxDepthRangeType
+	{
+		GFX_DEPTH_RANGE_SCENE = 0x0,
+		GFX_DEPTH_RANGE_VIEWMODEL = 0x2,
+		GFX_DEPTH_RANGE_FULL = 0xFFFFFFFF,
+	};
+
+	struct GfxCmdBufState
+	{
+		char refSamplerState[16];
+		unsigned int samplerState[16];
+		GfxTexture* samplerTexture[16];
+		GfxCmdBufPrimState prim;
+		Material* material;
+		MaterialTechniqueType techType;
+		MaterialTechnique* technique;
+		MaterialPass* pass;
+		unsigned int passIndex;
+		GfxDepthRangeType depthRangeType;
+		float depthRangeNear;
+		float depthRangeFar;
+		unsigned __int64 vertexShaderConstState[32];
+		unsigned __int64 pixelShaderConstState[256];
+		char alphaRef;
+		unsigned int refStateBits[2];
+		unsigned int activeStateBits[2];
+		MaterialPixelShader* pixelShader;
+		MaterialVertexShader* vertexShader;
+		GfxViewport viewport;
+		GfxRenderTargetId renderTargetId;
+		Material* origMaterial;
+		MaterialTechniqueType origTechType;
+	}; STATIC_ASSERT_SIZE(GfxCmdBufState, 0xA10);
 	
 	struct filter_material_t
 	{

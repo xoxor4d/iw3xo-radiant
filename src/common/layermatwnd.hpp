@@ -31,6 +31,12 @@ struct GfxPointVertex
 
 extern layermatwnd_s* layermatwnd_struct;
 
+namespace layermatwnd
+{
+	extern int rendermethod_axis;
+	extern int rendermethod_preview;
+}
+
 class clayermatwnd
 {
 private:
