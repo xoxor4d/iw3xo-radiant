@@ -119,11 +119,14 @@ namespace dvars
 
 		components::gui::register_dvars();
 		components::remote_net::register_dvars();
+		components::renderer::register_dvars();
+		components::gameview::register_dvars();
+
 		cmainframe::register_dvars();
 		cxywnd::register_dvars();
 		ccamwnd::register_dvars();
+		
 		ggui::toolbar::register_dvars();
-		components::renderer::register_dvars();
 		ggui::entity::register_dvars();
 		
 		game::printf_to_console("\n");

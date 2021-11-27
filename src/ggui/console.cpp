@@ -90,12 +90,19 @@ namespace ggui
 
 		std::string item_s = text;
 
-		if (   utils::starts_with(item_s, "^1")
+		bool is_red = utils::starts_with(item_s, "[RED]");
+		if ( is_red
+			|| utils::starts_with(item_s, "^1")
 			|| utils::starts_with(item_s, "ERROR:")
 			|| utils::starts_with(item_s, "Error:"))
 		{
 			color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
 			has_color = true;
+
+			if(is_red)
+			{
+				utils::erase_substring(item_s, "[RED]");
+			}
 		}
 		else if (utils::starts_with(item_s, "^3")
 			  || utils::starts_with(item_s, "WARNING:")
@@ -111,7 +118,7 @@ namespace ggui
 		}
 
 		if (has_color) { ImGui::PushStyleColor(ImGuiCol_Text, color); }
-		ImGui::TextUnformatted(text);
+		ImGui::TextUnformatted(item_s.c_str());
 		if (has_color) { ImGui::PopStyleColor(); }
 	}
 

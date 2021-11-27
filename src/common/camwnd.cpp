@@ -296,7 +296,7 @@ void rtt_camera_window_toolbar()
 					, &toolbar_button_background_active
 					, &toolbar_button_size))
 				{
-					components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
+					components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 				
 				ImGui::PopStyleVar();

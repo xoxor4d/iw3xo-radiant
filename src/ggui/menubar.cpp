@@ -466,7 +466,7 @@ namespace ggui::menubar
 
 					if (ImGui::MenuItem("Game View", 0, dvars::radiant_gameview->current.enabled)) 
 					{
-						components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
+						components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
 					}
 
 					ImGui::EndMenu(); // XY Window

@@ -12,6 +12,7 @@ namespace components
 		loader::_register(new command());
 		loader::_register(new d3d9ex());
 		loader::_register(new renderer());
+		loader::_register(new gameview());
 		loader::_register(new gui());
 		loader::_register(new remote_net());
 		loader::_register(new config());
@@ -53,7 +54,6 @@ namespace components
 	{
 		if (component)
 		{
-			//game::glob::loadedModules.append(utils::va("component registered: %s\n", component->get_name()));
 			game::glob::loadedModules.push_back("component registered: "s + component->get_name() + "\n");
 			loader::components_.push_back(component);
 		}

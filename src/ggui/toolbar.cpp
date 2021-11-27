@@ -443,7 +443,7 @@ namespace ggui::toolbar
 				if (image_togglebutton("gameview", hov_gameview, dvars::radiant_gameview->current.enabled,
 					std::string("Gameview [" + hotkeys::get_hotkey_for_command("xo_gameview") + "]").c_str()))
 				{
-					components::renderer::game_view(!dvars::radiant_gameview->current.enabled);
+					components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
 				}
 			});
 

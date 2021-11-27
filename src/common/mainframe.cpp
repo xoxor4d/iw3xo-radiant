@@ -773,7 +773,7 @@ void __fastcall cmainframe::on_destroy(cmainframe* pThis)
 {
 	if (dvars::radiant_gameview->current.enabled)
 	{
-		components::renderer::game_view(false);
+		components::gameview::p_this->set_state(false);
 	}
 	
 	components::remote_net::on_shutdown();

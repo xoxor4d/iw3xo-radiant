@@ -32,3 +32,4 @@ namespace components
 #include "modules/quick_patch.hpp"
 #include "modules/remote_net.hpp"
 #include "modules/config.hpp"
+#include "modules/gameview.hpp"
