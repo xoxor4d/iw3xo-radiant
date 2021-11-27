@@ -56,26 +56,21 @@ BOOL __fastcall ctexwnd::on_paint(ctexwnd* pThis)
 		return EndPaint(pThis->GetWindow(), &Paint);
 	}
 
-	// R_BeginFrame
-	cdeclcall(void, 0x4FCB10);
+	if(ggui::get_rtt_texturewnd()->menustate)
+	{
+		game::R_BeginFrame();
+		game::R_Clear(7, game::g_qeglobals->d_savedinfo.colors[0], 1.0f, 0);
 
-	// R_Clear
-	utils::hook::call<void(__cdecl)(int, const float*, float, char)>(0x4FCC70)(7, game::g_qeglobals->d_savedinfo.colors[0], 1.0f, 0);
+		// SetProjection 2D
+		cdeclcall(game::GfxCmdHeader*, 0x4FD390);
 
-	// SetProjectionType ??
-	cdeclcall(game::GfxCmdHeader*, 0x4FD390);
+		// R_DrawTexWnd
+		cdeclcall(void, 0x45D0F0);
 
-	// R_DrawTexWnd
-	cdeclcall(void, 0x45D0F0);
-	
-	// R_EndFrame
-	cdeclcall(void, 0x4FCBC0);
-
-	// R_IssueRenderCommands
-	utils::hook::call<void(__cdecl)(int)>(0x4FD630)(-1);
-
-	// still no clue what this is
-	cdeclcall(void, 0x4FD910);
+		game::R_EndFrame();
+		game::R_IssueRenderCommands(-1);
+		game::R_SortMaterials();
+	}
 
 	// R_CheckTargetWindow
 	utils::hook::call<void(__cdecl)(HWND)>(0x500660)(pThis->GetWindow());

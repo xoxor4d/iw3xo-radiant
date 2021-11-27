@@ -73,6 +73,16 @@ namespace utils
 	void replace(std::string &string, std::string find, std::string replace);
 	void erase_substring(std::string &base, std::string replace);
 
+	static bool string_contains(const std::string &s1, const std::string s2)
+	{
+		if (s1.find(s2) != std::string::npos) {
+			return true;
+			
+		}
+
+		return false;
+	}
+	
 	std::string &ltrim(std::string &s);
 	std::string &rtrim(std::string &s);
 	std::string &trim(std::string &s);

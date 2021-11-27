@@ -1,98 +1,71 @@
 #include "std_include.hpp"
 
-// Create a message pump thread so that we can update certain windows at a constant framerate
-DWORD WINAPI realtimewnd_msg_pump(LPVOID)
+DWORD WINAPI gui_paint_msg(LPVOID)
 {
-	const int maxfps = 1000 / 250;
+	int base_time = 0;
+	int current_frame = 0;
+	int last_frame = 0;
 
-	int sys_timeBase = 0;
-	int com_frameTime = 0;
-	int com_lastFrameTime = 0;
-
-	int quater_update = 0;
-	
 	while(true)
 	{
-		if(game::glob::d3d9_device)
+		if (game::glob::d3d9_device)
 		{
-			while (true)
-			{
-				if(!sys_timeBase)
+			const float maxfps_grid = 1000.0f / (float)dvars::radiant_maxfps_grid->current.integer;
+			const float maxfps_camera = 1000.0f / (float)dvars::radiant_maxfps_camera->current.integer;
+			const float maxfps_textures = 1000.0f / (float)dvars::radiant_maxfps_textures->current.integer;
+			const float maxfps_modelselector = 1000.0f / (float)dvars::radiant_maxfps_modelselector->current.integer;
+			const float maxfps_mainframe = 1000.0f / (float)dvars::radiant_maxfps_mainframe->current.integer;
+
+			float maxfps_gui_f; // force gui to use the lowest frametime / highest framerate of the above or its own setting
+			maxfps_gui_f = fminf(maxfps_grid, maxfps_camera);
+			maxfps_gui_f = fminf(maxfps_gui_f, maxfps_textures);
+			maxfps_gui_f = fminf(maxfps_gui_f, maxfps_modelselector);
+
+			{ // cap / limit gui framerate to the highest framerate of the above
+				const int val = static_cast<int>(1000.0f / maxfps_gui_f);
+				dvars::radiant_maxfps_mainframe->domain.integer.min = val;
+
+				if (maxfps_gui_f <= maxfps_mainframe)
 				{
-					sys_timeBase = timeGetTime();
-				}
-				
-				com_frameTime = timeGetTime() - sys_timeBase;
-				int last = com_lastFrameTime;
-				
-				if ((com_frameTime - com_lastFrameTime) < 0)
-				{
-					last = com_frameTime;
-					com_lastFrameTime = com_frameTime;
-				}
-
-				if ((com_frameTime - last) >= maxfps)
-				{
-					break;
-				}
-				
-				Sleep(0u);
-			}
-
-			game::glob::frametime_ms = com_frameTime - com_lastFrameTime;
-			com_lastFrameTime = com_frameTime;
-
-			if(quater_update >= 4)
-			{
-				quater_update = 0;
-			}
-
-			quater_update++;
-
-
-			// update camera window ~ 250fps
-			if  (const auto hwnd = cmainframe::activewnd->m_pCamWnd->GetWindow();
-				hwnd != nullptr)
-			{
-				if(game::glob::frametime_ms <= 100)
-				{
-					game::glob::ccamwindow_realtime = true;
-					SendMessageA(hwnd, WM_PAINT, 0, 0);
+					dvars::set_int(dvars::radiant_maxfps_mainframe, val);
 				}
 				else
 				{
-					game::glob::ccamwindow_realtime = false;
+					maxfps_gui_f = maxfps_mainframe;
 				}
 			}
 
-			
-			// update grid window ~ 250fps
-			if (const auto hwnd = cmainframe::activewnd->m_pXYWnd->GetWindow();
-				hwnd != nullptr)
-			{
-				SendMessageA(hwnd, WM_PAINT, 0, 0);
+			const int maxfps_gui = static_cast<int>(maxfps_gui_f);
+
+			// ----------
+
+			if (!base_time) {
+				base_time = timeGetTime();
 			}
 
-			// update z window ~ 250fps
-			if (const auto hwnd = cmainframe::activewnd->m_pZWnd->GetWindow();
-				hwnd != nullptr)
+			current_frame = timeGetTime() - base_time;
+			int last = last_frame;
+
+			if (current_frame - last_frame < 0)
 			{
-				SendMessageA(hwnd, WM_PAINT, 0, 0);
+				last = current_frame;
+				last_frame = current_frame;
 			}
 
-			//if(quater_update == 3) // update texture window ~ 60fps
+			if ((current_frame - last) >= maxfps_gui)
 			{
-				if (const auto hwnd = cmainframe::activewnd->m_pTexWnd->GetWindow();
+				game::glob::frametime_ms = current_frame - last_frame;
+				last_frame = current_frame;
+
+				if (const auto hwnd = cmainframe::activewnd->m_pZWnd->GetWindow();
 					hwnd != nullptr)
 				{
 					SendMessageA(hwnd, WM_PAINT, 0, 0);
 				}
 			}
-
-			if (const auto hwnd = layermatwnd_struct->m_content_hwnd;
-				hwnd != nullptr)
+			else
 			{
-				SendMessageA(hwnd, WM_PAINT, 0, 0);
+				Sleep(0u);
 			}
 		}
 	}
@@ -100,10 +73,143 @@ DWORD WINAPI realtimewnd_msg_pump(LPVOID)
 	return TRUE;
 }
 
+DWORD WINAPI paint_msg_loop(LPVOID)
+{
+	int base_time = 0;
+	int current_frame = 0;
+
+	double timer_grid = 0;
+	double timer_camera = 0;
+	double timer_textures = 0;
+	double timer_modelselector = 0;
+	double timer_gui = 0;
+	
+	while (true)
+	{
+		if (game::glob::d3d9_device)
+		{
+			const float maxfps_grid = 1000.0f / (float)dvars::radiant_maxfps_grid->current.integer;
+			const float maxfps_camera = 1000.0f / (float)dvars::radiant_maxfps_camera->current.integer;
+			const float maxfps_textures = 1000.0f / (float)dvars::radiant_maxfps_textures->current.integer;
+			const float maxfps_modelselector = 1000.0f / (float)dvars::radiant_maxfps_modelselector->current.integer;
+			const float maxfps_mainframe = 1000.0f / (float)dvars::radiant_maxfps_mainframe->current.integer;
+
+			float maxfps_gui_f; // force gui to use the lowest frametime / highest framerate of the above or its own setting
+			maxfps_gui_f = fminf(maxfps_grid, maxfps_camera);
+			maxfps_gui_f = fminf(maxfps_gui_f, maxfps_textures);
+			maxfps_gui_f = fminf(maxfps_gui_f, maxfps_modelselector);
+
+			{ // cap / limit gui framerate to the highest framerate of the above
+				const int val = static_cast<int>(1000.0f / maxfps_gui_f);
+				dvars::radiant_maxfps_mainframe->domain.integer.min = val;
+
+				if (maxfps_gui_f <= maxfps_mainframe)
+				{
+					dvars::set_int(dvars::radiant_maxfps_mainframe, val);
+				}
+				else
+				{
+					maxfps_gui_f = maxfps_mainframe;
+				}
+			}
+			
+			if (!base_time) {
+				base_time = timeGetTime();
+			}
+
+			current_frame = static_cast<int>(timeGetTime()) - base_time;
+
+			if (current_frame - static_cast<int>(timer_gui) < 0) {
+				current_frame = static_cast<int>(timer_gui);
+			}
+
+			if (current_frame > timer_grid)
+			{
+				if (const auto hwnd = cmainframe::activewnd->m_pXYWnd->GetWindow();
+					hwnd != nullptr)
+				{
+					SendMessageA(hwnd, WM_PAINT, 0, 0);
+				}
+				timer_grid += maxfps_grid;
+			}
+
+			if (current_frame > timer_camera)
+			{
+				if (const auto hwnd = cmainframe::activewnd->m_pCamWnd->GetWindow();
+					hwnd != nullptr)
+				{
+					SendMessageA(hwnd, WM_PAINT, 0, 0);
+				}
+				timer_camera += maxfps_camera;
+			}
+
+			if (current_frame > timer_textures)
+			{
+				if (const auto hwnd = cmainframe::activewnd->m_pTexWnd->GetWindow();
+					hwnd != nullptr)
+				{
+					SendMessageA(hwnd, WM_PAINT, 0, 0);
+				}
+				timer_textures += maxfps_textures;
+			}
+
+			if (current_frame > timer_modelselector)
+			{
+				if (const auto hwnd = layermatwnd_struct->m_content_hwnd;
+					hwnd != nullptr)
+				{
+					SendMessageA(hwnd, WM_PAINT, 0, 0);
+				}
+				timer_modelselector += maxfps_modelselector;
+			}
+			
+			if (current_frame > timer_gui)
+			{
+				if (const auto hwnd = cmainframe::activewnd->m_pZWnd->GetWindow();
+					hwnd != nullptr)
+				{
+					SendMessageA(hwnd, WM_PAINT, 0, 0);
+				}
+
+				timer_gui += maxfps_gui_f;
+			}
+		}
+	}
+	
+	return TRUE;
+}
+
+				//const float maxfps_grid = 1000.0f / (float)dvars::radiant_maxfps_grid->current.integer;
+				//const float maxfps_camera = 1000.0f / (float)dvars::radiant_maxfps_camera->current.integer;
+				//const float maxfps_textures = 1000.0f / (float)dvars::radiant_maxfps_textures->current.integer;
+				//const float maxfps_modelselector = 1000.0f / (float)dvars::radiant_maxfps_modelselector->current.integer;
+				//const float maxfps_mainframe = 1000.0f / (float)dvars::radiant_maxfps_mainframe->current.integer;
+
+				//float maxfps_gui_f; // force gui to use the lowest frametime / highest framerate of the above or its own setting
+				//maxfps_gui_f = fminf(maxfps_grid, maxfps_camera);
+				//maxfps_gui_f = fminf(maxfps_gui_f, maxfps_textures);
+				//maxfps_gui_f = fminf(maxfps_gui_f, maxfps_modelselector);
+
+				//{ // cap / limit gui framerate to the highest framerate of the above
+				//	const int val = static_cast<int>(1000.0f / maxfps_gui_f);
+				//	dvars::radiant_maxfps_mainframe->domain.integer.min = val;
+
+				//	if (maxfps_gui_f <= maxfps_mainframe)
+				//	{
+				//		dvars::set_int(dvars::radiant_maxfps_mainframe, val);
+				//	}
+				//	else
+				//	{
+				//		maxfps_gui_f = maxfps_mainframe;
+				//	}
+				//}
+
+				//const int maxfps_gui = static_cast<int>(maxfps_gui_f);
+
 BOOL init_threads()
 {
-	// Create a message pump thread to paint certain windows at a constant and continuous framerate
-	CreateThread(nullptr, 0, realtimewnd_msg_pump, nullptr, 0, nullptr);
+	//CreateThread(nullptr, 0, gui_paint_msg, nullptr, 0, nullptr);
+	CreateThread(nullptr, 0, paint_msg_loop, nullptr, 0, nullptr);
 
 	// Create LiveRadiant thread (connecting to the server)
 	CreateThread(nullptr, 0, remote_net_search_server_thread, nullptr, 0, nullptr);

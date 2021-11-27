@@ -106,6 +106,14 @@ namespace ggui::preferences
 				}
 				ImGui::EndDisabled();
 
+
+				// -----------------
+				title_with_seperator("System Settings");
+				ImGui::DragInt("Max fps grid window", &dvars::radiant_maxfps_grid->current.integer, 0.1f, dvars::radiant_maxfps_grid->domain.integer.min, dvars::radiant_maxfps_grid->domain.integer.max);
+				ImGui::DragInt("Max fps camera window", &dvars::radiant_maxfps_camera->current.integer, 0.1f, dvars::radiant_maxfps_camera->domain.integer.min, dvars::radiant_maxfps_camera->domain.integer.max);
+				ImGui::DragInt("Max fps texture window", &dvars::radiant_maxfps_textures->current.integer, 0.1f, dvars::radiant_maxfps_textures->domain.integer.min, dvars::radiant_maxfps_textures->domain.integer.max);
+				ImGui::DragInt("Max fps modelselector window", &dvars::radiant_maxfps_modelselector->current.integer, 0.1f, dvars::radiant_maxfps_modelselector->domain.integer.min, dvars::radiant_maxfps_modelselector->domain.integer.max);
+				ImGui::DragInt("Max fps gui", &dvars::radiant_maxfps_mainframe->current.integer, 0.1f, dvars::radiant_maxfps_mainframe->domain.integer.min, dvars::radiant_maxfps_mainframe->domain.integer.max);
 				
 				// -----------------
 				title_with_seperator("Unordered Settings");
@@ -286,6 +294,50 @@ namespace ggui::preferences
 	void on_prefsdialog_command()
 	{
 		components::gui::toggle(ggui::state.czwnd.m_preferences, 0, true);
+	}
+
+	void register_dvars()
+	{
+		dvars::radiant_maxfps_grid = dvars::register_int(
+			/* name		*/ "radiant_maxfps_grid",
+			/* val		*/ 250,
+			/* minVal	*/ 30,
+			/* maxVal	*/ 250,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "redraw the grid window x frames/second");
+
+		dvars::radiant_maxfps_camera = dvars::register_int(
+			/* name		*/ "radiant_maxfps_camera",
+			/* val		*/ 250,
+			/* minVal	*/ 30,
+			/* maxVal	*/ 250,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "redraw the camera window x frames/second");
+
+		dvars::radiant_maxfps_textures = dvars::register_int(
+			/* name		*/ "radiant_maxfps_textures",
+			/* val		*/ 125,
+			/* minVal	*/ 30,
+			/* maxVal	*/ 250,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "redraw the texture window x frames/second");
+
+		dvars::radiant_maxfps_modelselector = dvars::register_int(
+			/* name		*/ "radiant_maxfps_modelselector",
+			/* val		*/ 30,
+			/* minVal	*/ 5,
+			/* maxVal	*/ 250,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "redraw the modelselector window x frames/second");
+
+		dvars::radiant_maxfps_mainframe = dvars::register_int(
+			/* name		*/ "radiant_maxfps_mainframe",
+			/* val		*/ 250,
+			/* minVal	*/ 30,
+			/* maxVal	*/ 250,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "redraw the main window x frames/second (main gui)");
+		
 	}
 	
 	void hooks()

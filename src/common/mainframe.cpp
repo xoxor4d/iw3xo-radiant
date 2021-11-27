@@ -416,7 +416,7 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 		if (ggui::cz_context_ready())
 		{
 			// only above 10 fps (we might 'loose focus' on < 5 FPS, preventing imgui mouse input )
-			if(game::glob::frametime_ms <= 100)
+			//if(game::glob::frametime_ms <= 100)
 			{
 				// auto close mainframe menubar popups when the mouse leaves the cxy window
 				if (cmainframe::activewnd && cmainframe::activewnd->m_pZWnd)

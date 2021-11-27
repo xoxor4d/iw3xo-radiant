@@ -48,6 +48,11 @@ namespace dvars
 	extern game::dvar_s* guizmo_brush_mode;
 	
 	extern game::dvar_s* radiant_gameview;
+	extern game::dvar_s* radiant_maxfps_grid;
+	extern game::dvar_s* radiant_maxfps_camera;
+	extern game::dvar_s* radiant_maxfps_textures;
+	extern game::dvar_s* radiant_maxfps_modelselector;
+	extern game::dvar_s* radiant_maxfps_mainframe;
 	
 	// radiant-live
 	extern game::dvar_s* radiant_live;

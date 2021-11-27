@@ -48,6 +48,11 @@ namespace dvars
 	game::dvar_s* guizmo_brush_mode = nullptr;
 	
 	game::dvar_s* radiant_gameview = nullptr;
+	game::dvar_s* radiant_maxfps_grid = nullptr;
+	game::dvar_s* radiant_maxfps_camera = nullptr;
+	game::dvar_s* radiant_maxfps_textures = nullptr;
+	game::dvar_s* radiant_maxfps_modelselector = nullptr;
+	game::dvar_s* radiant_maxfps_mainframe = nullptr;
 	
 	// radiant-live
 	game::dvar_s* radiant_live = nullptr;
@@ -128,6 +133,7 @@ namespace dvars
 		
 		ggui::toolbar::register_dvars();
 		ggui::entity::register_dvars();
+		ggui::preferences::register_dvars();
 		
 		game::printf_to_console("\n");
 	}

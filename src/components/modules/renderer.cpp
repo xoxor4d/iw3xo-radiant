@@ -421,7 +421,7 @@ namespace components
 
 	void set_custom_pixelshader_constants(game::GfxCmdBufState* state)
 	{
-		if (_in_draw_xmodelpreview)
+		//if (_in_draw_xmodelpreview)
 		{
 			if (state && state->pass)
 			{
@@ -434,6 +434,15 @@ namespace components
 					{
 						if (state->pass->pixelShader)
 						{
+							std::string material_name = state->material->info.name;
+							if(utils::string_contains(material_name, "mtl_tree_shadow") || utils::string_contains(material_name, "mtl_shadowcaster"))
+							{
+								/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_MATERIAL_COLOR)
+								{
+									game::vec4_t temp = { 1.0f, 0.0f, 0.0f, 0.0f };
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								}*/
+							}
 							/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_MATERIAL_COLOR)
 							{
 								game::vec4_t temp = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -447,7 +456,7 @@ namespace components
 
 								// check in hlsl shader if custom constant is set :: if(lightDiffuse.w == 0.1337f)
 								game::vec4_t temp = { 1.0f, 0.4f, 0.4f, 0.1337f };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								//game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 
 							/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
@@ -503,6 +512,21 @@ namespace components
 					{
 						if (state->pass->vertexShader)
 						{
+							if(state->material && state->material->info.name)
+							{
+								std::string material_name = state->material->info.name;
+
+								// break shadowcaster materials (make them invisible)
+								if (utils::string_contains(material_name, "mtl_tree_shadow") || utils::string_contains(material_name, "mtl_shadowcaster"))
+								{
+									if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_TRANSPOSE_VIEW_PROJECTION_MATRIX)
+									{
+										float null[4][4] = { 0.0f };
+										game::dx->device->SetVertexShaderConstantF(arg_def->dest, &null[0][0], 4);
+									}
+								}
+							}
+
 							// set fog
 							/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG)
 							{
