@@ -29,7 +29,7 @@ namespace components
 #include "modules/d3d9ex.hpp"
 #include "modules/renderer.hpp"
 #include "modules/gui.hpp"
-#include "modules/quick_patch.hpp"
+#include "modules/main_module.hpp"
 #include "modules/remote_net.hpp"
 #include "modules/config.hpp"
 #include "modules/gameview.hpp"

@@ -16,7 +16,7 @@ namespace components
 		loader::_register(new gui());
 		loader::_register(new remote_net());
 		loader::_register(new config());
-		loader::_register(new quick_patch());
+		loader::_register(new main_module());
 
 		if(ggui::_console)
 		{

@@ -6,6 +6,35 @@ typedef int(__thiscall* CWinApp_WriteProfileInt_t)(CWinApp* pthis, LPCSTR lpAppN
 typedef int(__thiscall* CWinApp_GetProfileIntA_t)(CWinApp* pthis, LPCSTR cbData, LPCSTR lpValueName, int nDefault);
 						CWinApp_GetProfileIntA_t CWinApp_GetProfileIntA = reinterpret_cast<CWinApp_GetProfileIntA_t>(0x5984D5);
 
+void force_preferences_on_init()
+{
+	const auto prefs = game::g_PrefsDlg();
+
+	// force split view
+	prefs->m_nView = 1;
+
+	// disable detatched windows
+	prefs->detatch_windows = false;
+
+	// this can really kill performance without the user knowing why
+	prefs->preview_sun_aswell = false;
+}
+
+__declspec(naked) void force_preferences_on_init_stub()
+{
+	const static uint32_t retn_pt = 0x450735;
+	__asm
+	{
+		push    ecx; // og
+		lea     ecx, [esp + 1Ch]; // og
+
+		pushad;
+		call	force_preferences_on_init;
+		popad;
+
+		jmp retn_pt;
+	}
+}
 
 void registery_save([[maybe_unused]] CPrefsDlg* prefs)
 {
@@ -265,6 +294,9 @@ __declspec(naked) void menubar_stub_03()
 
 void radiantapp::hooks()
 {
+	// force global preferences on init
+	utils::hook(0x450730, force_preferences_on_init_stub, HOOK_JUMP).install()->quick();
+	
 	// registery saving stub :: CPrefsDlg::SavePrefs
 	utils::hook(0x44F294, registery_save_stub, HOOK_JUMP).install()->quick();
 
