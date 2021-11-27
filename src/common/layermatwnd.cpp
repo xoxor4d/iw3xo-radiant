@@ -17,6 +17,14 @@ layermatwnd_s* layermatwnd_struct = reinterpret_cast<layermatwnd_s*>(0x181F500);
 camera_s layercam = {};
 float _model_anim_yaw = 0.0f;
 
+namespace layermatwnd
+{
+	int rendermethod_axis = 4;
+	int rendermethod_preview = 24;
+	float fov = 60.0f;
+	bool rotation_pause = false;
+}
+
 static game::orientation_t editor_instmodel_mtx =
 {
 	0.0f, 0.0f, 0.0f,
@@ -162,12 +170,6 @@ void build_matrix_modelselector()
 // rendering happens in 0x533880
 // model inst rendering in 0x53AA30
 
-namespace layermatwnd
-{
-	int rendermethod_axis = 4;
-	int rendermethod_preview = 24;
-}
-
 void clayermatwnd::on_paint()
 {
 	PAINTSTRUCT Paint;
@@ -185,10 +187,10 @@ void clayermatwnd::on_paint()
 	build_matrix_modelselector();
 	
 	const auto m_selector = ggui::get_rtt_modelselector();
-	m_selector->camera_fov = 60.0f;
+	m_selector->camera_fov = layermatwnd::fov;
 	
 	// stop yaw animation if rotated manually
-	if(!m_selector->user_rotation)
+	if(!m_selector->user_rotation && !layermatwnd::rotation_pause)
 	{
 		_model_anim_yaw += 0.1f;
 	}
@@ -248,9 +250,9 @@ void clayermatwnd::on_paint()
 					axis[8] = layercam.vup[2];
 
 					float origin[3];
-					origin[0] = m_selector->camera_offset[0]; //cmainframe::activewnd->m_pCamWnd->camera.origin[0];
-					origin[1] = m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[1];
-					origin[2] = m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[2];
+					origin[0] = 0.0f; //m_selector->camera_offset[0]; //cmainframe::activewnd->m_pCamWnd->camera.origin[0];
+					origin[1] = 0.0f; //m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[1];
+					origin[2] = m_selector->camera_offset[2]; //cmainframe::activewnd->m_pCamWnd->camera.origin[2];
 
 					float temp_angles[3];
 					temp_angles[0] = -m_selector->camera_angles[0];
@@ -274,8 +276,12 @@ void clayermatwnd::on_paint()
 					game::vec3_t direction;
 					calc_raydir_modelselector(static_cast<int>(m_selector->scene_size_imgui.x * 0.5f), static_cast<int>(m_selector->scene_size_imgui.y * 0.5f), direction);
 
+					game::vec3_t model_origin;
+					utils::vector::copy(origin, model_origin);
+					model_origin[1] = m_selector->camera_offset[1];
+
 					// calculate model origin including "zoom"
-					utils::vector::ma(origin, model->radius * 1.75f + m_selector->camera_distance, direction, model_orientation.origin);
+					utils::vector::ma(model_origin, model->radius * 1.75f + m_selector->camera_distance, direction, model_orientation.origin);
 					model_orientation.origin[2] = -(model->maxs[2] - dist);
 					
 					// transform by identity matrix (not needed)

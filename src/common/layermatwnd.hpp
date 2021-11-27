@@ -35,6 +35,8 @@ namespace layermatwnd
 {
 	extern int rendermethod_axis;
 	extern int rendermethod_preview;
+	extern float fov;
+	extern bool rotation_pause;
 }
 
 class clayermatwnd

@@ -65,16 +65,17 @@ namespace ggui::modelselector
 		m_selector->window_hovered = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 		
 		const auto window_size = ImGui::GetWindowSize();
-		const auto listbox_width = ImClamp(window_size.x * 0.25f, 200.0f, FLT_MAX);
-
+		bool split_horizontal = window_size.x >= 700.0f;
+		const auto listbox_width = split_horizontal ? ImClamp(window_size.x * 0.25f, 200.0f, FLT_MAX) : ImGui::GetContentRegionAvailWidth();
+	
 		ImGui::BeginGroup();
 		{
 			// filter widget
 			const auto screenpos_prefilter = ImGui::GetCursorScreenPos();
-			m_filter.Draw("##xmodel_filter", listbox_width - 26);
+			m_filter.Draw("##xmodel_filter", listbox_width - 32);
 			const auto screenpos_postfilter = ImGui::GetCursorScreenPos();
 
-			ImGui::SameLine(listbox_width - 22);
+			ImGui::SameLine(listbox_width - 27);
 			if (ImGui::ButtonEx("x##clear_filter"))
 			{
 				m_filter.Clear();
@@ -90,7 +91,7 @@ namespace ggui::modelselector
 			}
 
 			// xmodel listbox
-			if (ImGui::BeginListBox("##model_list", ImVec2(listbox_width, ImGui::GetContentRegionAvail().y)))
+			if (ImGui::BeginListBox("##model_list", ImVec2(listbox_width, split_horizontal ? ImGui::GetContentRegionAvail().y : ImGui::GetContentRegionAvail().y * 0.5f)))
 			{
 				if (m_filter.IsActive())
 				{
@@ -179,8 +180,11 @@ namespace ggui::modelselector
                 }
 			}
 		}
-		
-		ImGui::SameLine();
+
+		if(split_horizontal)
+		{
+			ImGui::SameLine();
+		}
 
 		ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
 		{
@@ -205,7 +209,6 @@ namespace ggui::modelselector
 						m_selector->camera_distance -= (io.MouseWheel * 10.0f);
 					}
 
-					// rotation
 					if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
 					{
 						CPoint point;
@@ -219,14 +222,21 @@ namespace ggui::modelselector
 						{
 							if (point.x != m_selector->m_ptCursor.x || point.y != m_selector->m_ptCursor.y)
 							{
-								const float angle_speed = static_cast<float>(game::g_PrefsDlg()->m_nAngleSpeed);
-
-								if (io.KeyMods == ImGuiKeyModFlags_Ctrl)
+								const auto angle_speed = static_cast<float>(game::g_PrefsDlg()->m_nAngleSpeed);
+								
+								// rotation mod
+								if (io.KeyMods == (ImGuiKeyModFlags_Ctrl | ImGuiKeyModFlags_Shift))
 								{
-									//m_selector->camera_offset[2] = m_selector->camera_offset[2] - angle_speed / 500.0f * static_cast<float>(point.x - m_selector->m_ptCursor.x);
-									//m_selector->camera_offset[1] = m_selector->camera_offset[1] - angle_speed / 500.0f * static_cast<float>(point.y - m_selector->m_ptCursor.y);
 									m_selector->camera_angles[2] = m_selector->camera_angles[2] - angle_speed / 500.0f * static_cast<float>(point.y - m_selector->m_ptCursor.y);
 								}
+								// translation
+								else if (io.KeyMods == ImGuiKeyModFlags_Ctrl)
+								{
+									const auto move_speed = static_cast<float>(game::g_PrefsDlg()->m_nMoveSpeed);
+									m_selector->camera_offset[1] = (m_selector->camera_offset[1] + move_speed / 1000.0f * static_cast<float>(point.x - m_selector->m_ptCursor.x));
+									m_selector->camera_offset[2] = (m_selector->camera_offset[2] - move_speed / 1000.0f * static_cast<float>(point.y - m_selector->m_ptCursor.y));
+								}
+								// normal rotation
 								else
 								{
 									m_selector->user_rotation = true;
@@ -257,10 +267,11 @@ namespace ggui::modelselector
 			ImGui::SetCursorScreenPos(ImVec2(screenpos_pre_scene.x + 10, screenpos_pre_scene.y));
 
 			ImGui::HelpMarker(
-				"Right Mouse:\t\t\t  Rotate Object\n"
-				"Right Mouse + CTRL: Rotate Modifier\n"
-				"Mouse Scroll:\t\t\t  Zoom\n"
-				"Up/Down Arrow:\t\tChange selection\n"
+				"Rotate Object:\t\tRight Mouse\n"
+				"Rotate Modifier:\t Right Mouse +Ctrl\n"
+				"Move Object:\t\t  Right Mouse +Ctrl +Shift\n"
+				"Zoom Object:\t\t  Mouse Scroll\n"
+				"Change selection:  Up/Down Arrow:\n"
 				"- Drag and drop xmodel from list to grid or camera to spawn it");
 
 			ImGui::SameLine();
@@ -273,31 +284,42 @@ namespace ggui::modelselector
 			 *	wireframe		= 29,
 			 */
 			
-			ImGui::PushStyleCompact();
-			if(ImGui::Button("Fullbright")) {
-				layermatwnd::rendermethod_preview = 4;
-			}
+			ImGui::BeginGroup();
+			{
+				ImGui::PushStyleCompact();
+				if(ImGui::Button("Fullbright")) {
+					layermatwnd::rendermethod_preview = 4;
+				}
 
-			ImGui::SameLine();
-			if (ImGui::Button("Normal")) {
-				layermatwnd::rendermethod_preview = 24;
-			}
+				ImGui::SameLine();
+				if (ImGui::Button("Normal")) {
+					layermatwnd::rendermethod_preview = 24;
+				}
 
-			ImGui::SameLine();
-			if (ImGui::Button("View")) {
-				layermatwnd::rendermethod_preview = 25;
-			}
+				ImGui::SameLine();
+				if (ImGui::Button("View")) {
+					layermatwnd::rendermethod_preview = 25;
+				}
 
-			ImGui::SameLine();
-			if (ImGui::Button("Case")) {
-				layermatwnd::rendermethod_preview = 27;
-			}
+				ImGui::SameLine();
+				if (ImGui::Button("Case")) {
+					layermatwnd::rendermethod_preview = 27;
+				}
 
-			ImGui::SameLine();
-			if (ImGui::Button("Wireframe")) {
-				layermatwnd::rendermethod_preview = 29;
+				ImGui::SameLine();
+				if (ImGui::Button("Wireframe")) {
+					layermatwnd::rendermethod_preview = 29;
+				}
+
+				ImGui::SameLine();
+				if(ImGui::Button(layermatwnd::rotation_pause ? "Play" : "Pause", ImVec2(56.0f, 0))) { 
+					layermatwnd::rotation_pause = !layermatwnd::rotation_pause; 
+				} TT("play/pause automatic rotation");
+				ImGui::PopStyleCompact();
 			}
-			ImGui::PopStyleCompact();
+			ImGui::EndGroup();
+			
+			float buttons_total_width = ImGui::GetItemRectSize().x;
 			
             if(m_selector->bad_model)
             {
@@ -305,6 +327,13 @@ namespace ggui::modelselector
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
                 ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Bad model");
             }
+
+			ImGui::PushStyleCompact();
+			ImGui::TextDisabled(" Fov");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(buttons_total_width);
+			ImGui::DragFloat("##fov_slider", &layermatwnd::fov, 0.1f, 45.0f, 100.0f);
+			ImGui::PopStyleCompact();
 		}
 		
 		ImGui::EndChild();
