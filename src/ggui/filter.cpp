@@ -224,6 +224,11 @@ namespace ggui::filter
 
 		return return_val;
 	}
+
+	bool input_focused = false;
+	bool window_hovered = false;
+
+	bool needs_window_hovered_once = false;
 	
 	// *
 	// imgui filter window
@@ -239,9 +244,25 @@ namespace ggui::filter
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		
 		ImGui::Begin("Filters##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
-
+		window_hovered = ImGui::IsWindowHovered();
+		
 		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
+
 		imgui_filter.Draw("#filter_filter", ImGui::GetContentRegionAvailWidth());
+		input_focused = ImGui::IsItemFocused();
+
+		if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0) && !ImGui::IsWindowAppearing())
+		{
+			if(needs_window_hovered_once && window_hovered)
+			{
+				needs_window_hovered_once = false;
+			}
+			else if(window_hovered && !needs_window_hovered_once)
+			{
+				ImGui::SetKeyboardFocusHere(-1);
+			}
+		}
+		
 		const auto post_filter_pos = ImGui::GetCursorScreenPos();
 		
 		if(!imgui_filter.IsActive())
@@ -399,6 +420,7 @@ namespace ggui::filter
 	// CMainFrame::OnFilterDlg
 	void on_filterdialog_command()
 	{
+		needs_window_hovered_once = true;
 		components::gui::toggle(ggui::state.czwnd.m_filter, 0, true);
 	}
 

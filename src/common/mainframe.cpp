@@ -622,7 +622,7 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 
 		if (ImGui::GetIO().WantTextInput)
 		{
-			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
+			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar); // hwnd is only needed for mouse inputs
 			return;
 		}
 
@@ -652,7 +652,7 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 			ImGuiIO& io = ImGui::GetIO();
 			memset(io.KeysDown, 0, sizeof(io.KeysDown));
 			
-			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
+			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
 		}
 
 		// after HandleKeyAbove using WantCaptureMouse
@@ -689,7 +689,7 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 
 		if (ImGui::GetIO().WantTextInput)
 		{
-			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYUP, 0, nChar);
+			ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
 			return;
 		}
 		
@@ -713,7 +713,7 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 		
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
-			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYUP, 0, nChar);
+			ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
 			//return;
 		}
 	}

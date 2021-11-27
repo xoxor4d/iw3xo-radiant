@@ -19,6 +19,7 @@ namespace ggui
 		bool					m_auto_scroll;
 		bool					m_scroll_to_bottom;
 		ImVec2					m_post_inputbox_cursor;
+		bool					m_input_focused;
 
 	public:
 		console();

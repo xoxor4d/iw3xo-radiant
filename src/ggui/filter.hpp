@@ -10,6 +10,9 @@ namespace ggui::filter
 		TRIGGER,
 		OTHER,
 	};
+
+	extern	bool input_focused;
+	extern	bool window_hovered;
 	
 	extern	std::vector<game::filter_entry_s*> _geofilters, _entityfilters, _triggerfilters, _otherfilters;
 	

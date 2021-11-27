@@ -65,9 +65,9 @@ namespace ggui::modelselector
 		m_selector->window_hovered = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
 		
 		const auto window_size = ImGui::GetWindowSize();
-		bool split_horizontal = window_size.x >= 700.0f;
+		const bool split_horizontal = window_size.x >= 700.0f;
 		const auto listbox_width = split_horizontal ? ImClamp(window_size.x * 0.25f, 200.0f, FLT_MAX) : ImGui::GetContentRegionAvailWidth();
-	
+
 		ImGui::BeginGroup();
 		{
 			// filter widget
@@ -124,60 +124,63 @@ namespace ggui::modelselector
 		}
 		ImGui::EndGroup();
 
-		if(ImGui::IsKeyPressedMap(ImGuiKey_DownArrow))
+		if(m_selector->window_hovered)
 		{
-			if(m_selector->xmodel_selection + 1 < m_selector->xmodel_filecount)
+			if (ImGui::IsKeyPressedMap(ImGuiKey_DownArrow))
 			{
-                if (m_filter.IsActive())
-                {
-                    for (int i = m_selector->xmodel_selection + 1; i < m_selector->xmodel_filecount; i++)
+				if (m_selector->xmodel_selection + 1 < m_selector->xmodel_filecount)
+				{
+					if (m_filter.IsActive())
 					{
-						if (!m_filter.PassFilter(m_selector->xmodel_filelist[i])) {
-							continue;
+						for (int i = m_selector->xmodel_selection + 1; i < m_selector->xmodel_filecount; i++)
+						{
+							if (!m_filter.PassFilter(m_selector->xmodel_filelist[i])) {
+								continue;
+							}
+
+							m_selector->xmodel_selection = i;
+							m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+
+							update_scroll_pos = true;
+							break;
 						}
+					}
+					else
+					{
+						m_selector->xmodel_selection += 1;
+						m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
 
-                        m_selector->xmodel_selection = i;
-				        m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
-
-				        update_scroll_pos = true;
-                        break;
-                    }
-                }
-                else
-                {
-                    m_selector->xmodel_selection += 1;
-				    m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
-
-				    update_scroll_pos = true;
-                }
+						update_scroll_pos = true;
+					}
+				}
 			}
-		}
-		else if(ImGui::IsKeyPressedMap(ImGuiKey_UpArrow))
-		{
-			if (m_selector->xmodel_selection - 1 >= 0)
+			else if (ImGui::IsKeyPressedMap(ImGuiKey_UpArrow))
 			{
-                if (m_filter.IsActive())
-                {
-                    for (int i = m_selector->xmodel_selection - 1; i >= 0; i--)
+				if (m_selector->xmodel_selection - 1 >= 0)
+				{
+					if (m_filter.IsActive())
 					{
-						if (!m_filter.PassFilter(m_selector->xmodel_filelist[i])) {
-							continue;
+						for (int i = m_selector->xmodel_selection - 1; i >= 0; i--)
+						{
+							if (!m_filter.PassFilter(m_selector->xmodel_filelist[i])) {
+								continue;
+							}
+
+							m_selector->xmodel_selection = i;
+							m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+
+							update_scroll_pos = true;
+							break;
 						}
+					}
+					else
+					{
+						m_selector->xmodel_selection -= 1;
+						m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
 
-                        m_selector->xmodel_selection = i;
-				        m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
-
-				        update_scroll_pos = true;
-                        break;
-                    }
-                }
-                else
-                {
-                    m_selector->xmodel_selection -= 1;
-				    m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
-
-				    update_scroll_pos = true;
-                }
+						update_scroll_pos = true;
+					}
+				}
 			}
 		}
 

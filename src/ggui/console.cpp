@@ -20,7 +20,8 @@ namespace ggui
 			m_auto_scroll = true;
 			m_scroll_to_bottom = false;
 			m_post_inputbox_cursor = ImVec2(0.0f, 0.0f);
-
+			m_input_focused = false;
+			
 			ggui::_console = this;
 		}
 	}
@@ -221,6 +222,7 @@ namespace ggui
 			strcpy(s, "");
 			m_input_reclaim_focus = true;
 		}
+		m_input_focused = ImGui::IsItemFocused();
 		m_post_inputbox_cursor = ImGui::GetCursorScreenPos();
 
 		// Auto-focus on window apparition
