@@ -52,9 +52,6 @@ public:
 	int x47;
 	int x48;
 
-	//
-	static ccamwnd *activewnd;
-
 	static void				rtt_camera_window();
 	
 	void					mouse_control(float dtime);

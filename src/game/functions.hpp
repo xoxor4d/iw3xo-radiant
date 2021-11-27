@@ -27,14 +27,11 @@ namespace game
 		extern bool command_thread_running;
 		extern std::vector<std::string> loadedModules;
 		
-		extern bool radiant_floatingWindows;
 		extern bool radiant_initiated;
 		extern bool radiant_config_loaded;
 		extern bool radiant_config_not_found;
 		extern int  frametime_ms;
 		extern bool ccamwindow_realtime;
-
-		extern CWnd* m_pCamWnd_ref;
 
 		// Misc
 		extern game::TrackWorldspawn track_worldspawn;

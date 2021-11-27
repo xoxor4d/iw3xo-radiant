@@ -140,7 +140,7 @@ BOOL init_threads()
 
 namespace components
 {
-	__declspec(naked) void ccam_init_stub()
+	/*__declspec(naked) void ccam_init_stub()
 	{
 		const static uint32_t CCam_activewnd_Func = 0x402C40;
 		const static uint32_t retnPt = 0x422711;
@@ -151,7 +151,7 @@ namespace components
 			mov		game::glob::radiant_floatingWindows, 1
 			jmp		retnPt
 		}
-	}
+	}*/
 
 	void add_iw3xradiant_searchpath()
 	{
@@ -197,7 +197,7 @@ namespace components
 		ggui::filter::hooks();
 		ggui::entity::hooks();
 		ggui::modelselector::init();
-		
+		ggui::preferences::hooks();
 
 		// add iw3xradiant search path (imgui images)
 		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
@@ -206,7 +206,7 @@ namespace components
 		utils::hook::nop(0x552806, 5);
 
 		// hook / Grab CameraWnd object (only when using floating windows) :: (cmainframe::update_windows sets cmainframe::activewnd otherwise)
-		utils::hook(0x42270C, ccam_init_stub, HOOK_JUMP).install()->quick();
+		//utils::hook(0x42270C, ccam_init_stub, HOOK_JUMP).install()->quick();
 
 		// disable black world on selecting a brush with sun preview enabled -> still disables active sun preview .. no black world tho
 		utils::hook::nop(0x406A11, 5);

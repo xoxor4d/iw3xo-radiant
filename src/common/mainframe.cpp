@@ -285,13 +285,6 @@ void track_worldspawn_settings()
 
 void cmainframe::update_windows(int nBits)
 {
-	// grab camera if not using floating windows
-	if (!game::glob::radiant_floatingWindows && this->m_pCamWnd)
-	{
-		ccamwnd::activewnd = this->m_pCamWnd;
-		game::glob::radiant_floatingWindows = true;
-	}
-
 	if (!game::g_bScreenUpdates)
 	{
 		return;
@@ -327,8 +320,6 @@ void cmainframe::update_windows(int nBits)
 				m_pCamWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 			}
 			
-			game::glob::m_pCamWnd_ref = m_pCamWnd;
-
 			// on update cam window through the 2d grid or something else
 			if ((nBits & W_CAMERA_IFON) && this->m_bCamPreview || nBits < 0 || nBits == 3)
 			{
@@ -338,9 +329,9 @@ void cmainframe::update_windows(int nBits)
 			else if(game::glob::live_connected)
 			{
 				// Attempt to update the remote camera
-				if (ccamwnd::activewnd)
+				if(this->m_pCamWnd)
 				{
-					components::remote_net::cmd_send_camera_update(ccamwnd::activewnd->camera.origin, ccamwnd::activewnd->camera.angles);
+					components::remote_net::cmd_send_camera_update(this->m_pCamWnd->camera.origin, this->m_pCamWnd->camera.angles);
 				}
 			}
 		}
@@ -362,9 +353,6 @@ void cmainframe::update_windows(int nBits)
 		}
 	}
 }
-
-
-
 
 
 #define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))

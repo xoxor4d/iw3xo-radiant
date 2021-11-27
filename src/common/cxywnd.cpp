@@ -2,8 +2,6 @@
 
 IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-#define RTT_GRID_USE_PADDING
-
 enum VIEWTYPE
 {
 	YZ = 0x0,

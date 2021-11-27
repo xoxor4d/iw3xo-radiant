@@ -281,4 +281,16 @@ namespace ggui::preferences
 		ImGui::PopStyleVar();
 		ImGui::End();
 	}
+
+	// CMainFrame::OnPrefs
+	void on_prefsdialog_command()
+	{
+		components::gui::toggle(ggui::state.czwnd.m_preferences, 0, true);
+	}
+	
+	void hooks()
+	{
+		// detour CMainFrame::OnPrefs (hotkey to open the original dialog)
+		utils::hook::detour(0x426950, on_prefsdialog_command, HK_JUMP);
+	}
 }

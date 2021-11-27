@@ -4,5 +4,5 @@
 namespace ggui::preferences
 {
 	void	menu(ggui::imgui_context_menu& menu);
-	
+	void	hooks();
 }

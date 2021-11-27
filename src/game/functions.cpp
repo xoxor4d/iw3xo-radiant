@@ -8,14 +8,11 @@ namespace game
 		bool command_thread_running;
 		std::vector<std::string> loadedModules;
 
-		bool radiant_floatingWindows;
 		bool radiant_initiated;
 		bool radiant_config_loaded;
 		bool radiant_config_not_found;
 		int  frametime_ms;
 		bool ccamwindow_realtime;
-
-		CWnd* m_pCamWnd_ref;
 
 		// Misc
 		game::TrackWorldspawn track_worldspawn = game::TrackWorldspawn();
