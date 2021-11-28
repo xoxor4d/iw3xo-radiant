@@ -316,7 +316,7 @@ namespace ggui::preferences
 
 		dvars::radiant_maxfps_textures = dvars::register_int(
 			/* name		*/ "radiant_maxfps_textures",
-			/* val		*/ 125,
+			/* val		*/ 60,
 			/* minVal	*/ 30,
 			/* maxVal	*/ 250,
 			/* flags	*/ game::dvar_flags::saved,
@@ -324,8 +324,8 @@ namespace ggui::preferences
 
 		dvars::radiant_maxfps_modelselector = dvars::register_int(
 			/* name		*/ "radiant_maxfps_modelselector",
-			/* val		*/ 30,
-			/* minVal	*/ 5,
+			/* val		*/ 250,
+			/* minVal	*/ 30,
 			/* maxVal	*/ 250,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "redraw the modelselector window x frames/second");

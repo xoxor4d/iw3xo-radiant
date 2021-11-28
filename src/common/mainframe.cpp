@@ -643,12 +643,12 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
 		}
 
-		// after HandleKeyAbove using WantCaptureMouse
-		if (auto modelselector = ggui::get_rtt_modelselector();
+		// after HandleKeyAbove using WantCaptureMouse (this blocks mainframe key input - feels bad)
+		/*if (auto modelselector = ggui::get_rtt_modelselector();
 				 modelselector->window_hovered)
 		{
 			return;
-		}
+		}*/
 
 		/* // backup ^
 		if (ImGui::GetIO().WantCaptureMouse)

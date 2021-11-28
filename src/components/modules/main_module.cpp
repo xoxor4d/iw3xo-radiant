@@ -105,7 +105,10 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 
 				if (maxfps_gui_f <= maxfps_mainframe)
 				{
-					dvars::set_int(dvars::radiant_maxfps_mainframe, val);
+					if(val >= dvars::radiant_maxfps_mainframe->domain.integer.min && val <= dvars::radiant_maxfps_mainframe->domain.integer.max)
+					{
+						dvars::set_int(dvars::radiant_maxfps_mainframe, val);
+					}
 				}
 				else
 				{
@@ -178,33 +181,6 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 	
 	return TRUE;
 }
-
-				//const float maxfps_grid = 1000.0f / (float)dvars::radiant_maxfps_grid->current.integer;
-				//const float maxfps_camera = 1000.0f / (float)dvars::radiant_maxfps_camera->current.integer;
-				//const float maxfps_textures = 1000.0f / (float)dvars::radiant_maxfps_textures->current.integer;
-				//const float maxfps_modelselector = 1000.0f / (float)dvars::radiant_maxfps_modelselector->current.integer;
-				//const float maxfps_mainframe = 1000.0f / (float)dvars::radiant_maxfps_mainframe->current.integer;
-
-				//float maxfps_gui_f; // force gui to use the lowest frametime / highest framerate of the above or its own setting
-				//maxfps_gui_f = fminf(maxfps_grid, maxfps_camera);
-				//maxfps_gui_f = fminf(maxfps_gui_f, maxfps_textures);
-				//maxfps_gui_f = fminf(maxfps_gui_f, maxfps_modelselector);
-
-				//{ // cap / limit gui framerate to the highest framerate of the above
-				//	const int val = static_cast<int>(1000.0f / maxfps_gui_f);
-				//	dvars::radiant_maxfps_mainframe->domain.integer.min = val;
-
-				//	if (maxfps_gui_f <= maxfps_mainframe)
-				//	{
-				//		dvars::set_int(dvars::radiant_maxfps_mainframe, val);
-				//	}
-				//	else
-				//	{
-				//		maxfps_gui_f = maxfps_mainframe;
-				//	}
-				//}
-
-				//const int maxfps_gui = static_cast<int>(maxfps_gui_f);
 
 BOOL init_threads()
 {

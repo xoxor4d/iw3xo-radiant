@@ -571,7 +571,7 @@ namespace game
 		d3dpp->SwapEffect = D3DSWAPEFFECT_DISCARD;
 		d3dpp->EnableAutoDepthStencil = 0;
 		d3dpp->AutoDepthStencilFormat = static_cast<D3DFORMAT>(game::dx->depthStencilFormat);
-		d3dpp->PresentationInterval = 1; //r_vsync->current.enabled ? 1 : 0x80000000;
+		d3dpp->PresentationInterval = 0x80000000; //r_vsync->current.enabled ? 1 : 0x80000000;
 		d3dpp->hDeviceWindow = wnd->hwnd;
 		d3dpp->Flags = 0;
 
