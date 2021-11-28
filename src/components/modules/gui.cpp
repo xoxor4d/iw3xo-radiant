@@ -520,6 +520,11 @@ namespace components
 				ccamwnd::rtt_camera_window();
 			}
 
+			//auto modelLightGlob = reinterpret_cast<game::modelLightGlobals_s*>(0x150D500);
+			//ImGui::Begin("Debug", nullptr);
+			//ImGui::Image(modelLightGlob->lightImages[0]->texture.data, ImVec2(modelLightGlob->lightImages[0]->width, modelLightGlob->lightImages[0]->height));
+			//ImGui::End();
+
 			// color menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_colors,
 				ggui::colors::menu(ggui::state.czwnd.m_colors), nullptr);

@@ -2237,6 +2237,44 @@ namespace game
 		Material* origMaterial;
 		MaterialTechniqueType origTechType;
 	}; STATIC_ASSERT_SIZE(GfxCmdBufState, 0xA10);
+
+	struct GfxEntity
+	{
+		unsigned int renderFxFlags;
+		float materialTime;
+	};
+
+	struct GfxLightingInfo
+	{
+		char primaryLightIndex;
+		char reflectionProbeIndex;
+	};
+
+	struct modelLightGlobals_s
+	{
+		float invImageHeight;
+		unsigned int xmodel;
+		unsigned int totalEntryLimit;
+		unsigned int entryBitsY;
+		unsigned int imageHeight;
+		GfxEntity* entities;
+		unsigned int modFrameCount;
+		GfxImage* lightImages[2];
+		GfxImage* image;
+		unsigned int xmodelEntryLimit;
+		GfxLightingInfo* lightingInfo;
+		float(*lightingOrigins)[3];
+		int allocModelFail;
+		unsigned int* pixelFreeBits[4];
+		unsigned int* prevPrevPixelFreeBits;
+		unsigned int* prevPixelFreeBits;
+		unsigned int* currPixelFreeBits;
+		unsigned int pixelFreeBitsSize;
+		unsigned int pixelFreeBitsWordCount;
+		unsigned int pixelFreeRover;
+		_D3DLOCKED_BOX lockedBox;
+	};
+
 	
 	struct filter_material_t
 	{

@@ -80,6 +80,26 @@ void __declspec(naked) create_entity_from_name_stub()
 	}
 }
 
+float fix_selection_alpha_float_glob = 1.0f;
+void fix_selection_alpha_update_var()
+{
+	fix_selection_alpha_float_glob = game::g_qeglobals->d_savedinfo.colors[11][3];
+}
+
+void __declspec(naked) fix_selection_alpha_textured_mode()
+{
+	const static uint32_t retn_pt = 0x46D8EB;
+	__asm
+	{
+		pushad;
+		call	fix_selection_alpha_update_var;
+		popad;
+		fld		fix_selection_alpha_float_glob;
+		fstp    dword ptr[ebp - 1438h];
+		jmp		retn_pt;
+	}
+}
+
 // gui::render_loop()
 // render to texture - imgui grid window
 void cxywnd::rtt_grid_window()
@@ -605,6 +625,10 @@ void cxywnd::hooks()
 
 	// fix entity name drawing
 	utils::hook(0x46CA02, draw_entity_names_hk, HOOK_CALL).install()->quick();
+
+	// use alpha value on selected brush when using textured mode
+	utils::hook::nop(0x46D8E3, 8);
+		 utils::hook(0x46D8E3, fix_selection_alpha_textured_mode, HOOK_JUMP).install()->quick();
 
 #if 1
 	// cxywnd::precreatewindow -> change window style for child windows (split view, not detatched)

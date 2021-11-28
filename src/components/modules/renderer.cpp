@@ -512,20 +512,22 @@ namespace components
 					{
 						if (state->pass->vertexShader)
 						{
-							if(state->material && state->material->info.name)
-							{
-								std::string material_name = state->material->info.name;
+							// this somehow breaks other materials like caulk
 
-								// break shadowcaster materials (make them invisible)
-								if (utils::string_contains(material_name, "mtl_tree_shadow") || utils::string_contains(material_name, "mtl_shadowcaster"))
-								{
-									if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_TRANSPOSE_VIEW_PROJECTION_MATRIX)
-									{
-										float null[4][4] = { 0.0f };
-										game::dx->device->SetVertexShaderConstantF(arg_def->dest, &null[0][0], 4);
-									}
-								}
-							}
+							//if(state->material && state->material->info.name)
+							//{
+							//	std::string material_name = state->material->info.name;
+
+							//	// break shadowcaster materials (make them invisible)
+							//	if (utils::string_contains(material_name, "mtl_tree_shadow") || utils::string_contains(material_name, "mtl_shadowcaster"))
+							//	{
+							//		if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_TRANSPOSE_VIEW_PROJECTION_MATRIX)
+							//		{
+							//			float null[4][4] = { 0.0f };
+							//			game::dx->device->SetVertexShaderConstantF(arg_def->dest, &null[0][0], 4);
+							//		}
+							//	}
+							//}
 
 							// set fog
 							/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG)
