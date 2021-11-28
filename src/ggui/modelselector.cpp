@@ -4,6 +4,7 @@ namespace ggui::modelselector
 {
 	ImGuiTextFilter	m_filter;
 	bool update_scroll_pos = false;
+	bool prefs_open = false;
 
 	void xmodel_listbox_elem(int index)
 	{
@@ -204,6 +205,15 @@ namespace ggui::modelselector
 				ImGui::Image(m_selector->scene_texture, child_size);
 				m_selector->scene_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
+				// target => cxywnd::rtt_grid_window()
+				// target => ccamwnd::rtt_camera_window()
+				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+				{
+					ImGui::SetDragDropPayload("MODEL_SELECTOR_ITEM", nullptr, 0, ImGuiCond_Once);
+					ImGui::Text("Model: %s", m_selector->preview_model_name.c_str());
+					ImGui::EndDragDropSource();
+				}
+				
 				if (m_selector->scene_hovered)
 				{
 					// zoom
@@ -267,18 +277,6 @@ namespace ggui::modelselector
 				}
 			}
 
-			ImGui::SetCursorScreenPos(ImVec2(screenpos_pre_scene.x + 10, screenpos_pre_scene.y));
-
-			ImGui::HelpMarker(
-				"Rotate Object:\t\tRight Mouse\n"
-				"Rotate Modifier:\t Right Mouse +Ctrl\n"
-				"Move Object:\t\t  Right Mouse +Ctrl +Shift\n"
-				"Zoom Object:\t\t  Mouse Scroll\n"
-				"Change selection:  Up/Down Arrow:\n"
-				"- Drag and drop xmodel from list to grid or camera to spawn it");
-
-			ImGui::SameLine();
-
 			/*  + render methods +
 			 *	fullbright		= 4,
 			 *	normal-based	= 24,
@@ -286,57 +284,92 @@ namespace ggui::modelselector
 			 *	case-textures	= 27,
 			 *	wireframe		= 29,
 			 */
+
+			ImGui::SetItemAllowOverlap();
+			ImGui::SetCursorScreenPos(ImVec2(screenpos_pre_scene.x, screenpos_pre_scene.y));
 			
-			ImGui::BeginGroup();
+			if (ImGui::ButtonEx("#", ImVec2(0, 0), ImGuiButtonFlags_AllowItemOverlap))
 			{
-				ImGui::PushStyleCompact();
-				if(ImGui::Button("Fullbright")) {
-					layermatwnd::rendermethod_preview = 4;
-				}
-
+				prefs_open = !prefs_open;
+			} TT("open modelselector settings");
+			
+			if(prefs_open)
+			{
 				ImGui::SameLine();
-				if (ImGui::Button("Normal")) {
-					layermatwnd::rendermethod_preview = 24;
-				}
+				ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
+				ImGui::SetNextWindowBgAlpha(0.75f);
+				ImGui::BeginChild("settings_child", ImVec2(448.0f, 64.0f), true, ImGuiWindowFlags_None);
+				{
+					ImGui::BeginGroup();
+					{
+						ImGui::PushStyleCompact();
+						if (ImGui::Button("Fullbright")) {
+							layermatwnd::rendermethod_preview = 4;
+						}
 
-				ImGui::SameLine();
-				if (ImGui::Button("View")) {
-					layermatwnd::rendermethod_preview = 25;
-				}
+						ImGui::SameLine();
+						if (ImGui::Button("Normal")) {
+							layermatwnd::rendermethod_preview = 24;
+						}
 
-				ImGui::SameLine();
-				if (ImGui::Button("Case")) {
-					layermatwnd::rendermethod_preview = 27;
-				}
+						ImGui::SameLine();
+						if (ImGui::Button("View")) {
+							layermatwnd::rendermethod_preview = 25;
+						}
 
-				ImGui::SameLine();
-				if (ImGui::Button("Wireframe")) {
-					layermatwnd::rendermethod_preview = 29;
-				}
+						ImGui::SameLine();
+						if (ImGui::Button("Case")) {
+							layermatwnd::rendermethod_preview = 27;
+						}
 
-				ImGui::SameLine();
-				if(ImGui::Button(layermatwnd::rotation_pause ? "Play" : "Pause", ImVec2(56.0f, 0))) { 
-					layermatwnd::rotation_pause = !layermatwnd::rotation_pause; 
-				} TT("play/pause automatic rotation");
-				ImGui::PopStyleCompact();
+						ImGui::SameLine();
+						if (ImGui::Button("Wireframe")) {
+							layermatwnd::rendermethod_preview = 29;
+						}
+
+						ImGui::SameLine();
+						if (ImGui::Button(layermatwnd::rotation_pause ? "Play" : "Pause", ImVec2(56.0f, 0))) {
+							layermatwnd::rotation_pause = !layermatwnd::rotation_pause;
+						} TT("play/pause automatic rotation");
+						ImGui::PopStyleCompact();
+					}
+					ImGui::EndGroup();
+
+					const float buttons_total_width = ImGui::GetItemRectSize().x;
+
+					ImGui::PushStyleCompact();
+
+					if (ImGui::Button(m_selector->overwrite_selection ? "Overwrite selection: On" : "Overwrite selection: Off", ImVec2(168.0f, 0))) {
+						m_selector->overwrite_selection = !m_selector->overwrite_selection;
+					} TT("On: change models for selected entities\nOff: spawn a new one");
+
+					const float second_row_button_width = ImGui::GetItemRectSize().x;
+
+					ImGui::SetNextItemWidth(buttons_total_width - ImGui::CalcTextSize("Fov").x - 24.0f - second_row_button_width);
+					ImGui::SameLine();
+					ImGui::DragFloat("Fov", &layermatwnd::fov, 0.1f, 45.0f, 100.0f);
+					ImGui::PopStyleCompact();
+				}
+				ImGui::EndChild();
+				ImGui::PopStyleVar();
 			}
-			ImGui::EndGroup();
-			
-			float buttons_total_width = ImGui::GetItemRectSize().x;
-			
-            if(m_selector->bad_model)
-            {
-                ImGui::SameLine();
-                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
-                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Bad model");
-            }
 
-			ImGui::PushStyleCompact();
-			ImGui::TextDisabled(" Fov");
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(buttons_total_width);
-			ImGui::DragFloat("##fov_slider", &layermatwnd::fov, 0.1f, 45.0f, 100.0f);
-			ImGui::PopStyleCompact();
+			const auto current_pos = ImGui::GetCursorPos();
+			ImGui::SetCursorPos(ImVec2(split_horizontal ? current_pos.x : current_pos.x + 4.0f, ImGui::GetWindowHeight() - 22.0f));
+			ImGui::HelpMarker(
+				"Rotate Object:\t\tRight Mouse\n"
+				"Rotate Modifier:\t Right Mouse +Ctrl\n"
+				"Move Object:\t\t  Right Mouse +Ctrl +Shift\n"
+				"Zoom Object:\t\t  Mouse Scroll\n"
+				"Change selection:  Up/Down Arrow:\n"
+				"- Drag and drop xmodel from list or preview to grid or camera to spawn it");
+
+			if (m_selector->bad_model)
+			{
+				ImGui::SameLine();
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
+				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Bad model");
+			}
 		}
 		
 		ImGui::EndChild();

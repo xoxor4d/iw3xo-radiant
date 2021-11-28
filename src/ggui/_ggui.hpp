@@ -100,6 +100,7 @@ namespace ggui
 		float camera_offset[3];
 		CPoint m_ptCursor;
 		bool user_rotation;
+		bool overwrite_selection;
 
 		// axis model
 		bool axis_model_initiated;

@@ -437,61 +437,85 @@ void ccamwnd::rtt_camera_window()
 			{
 				if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 				{
-					// add toggle to disable this so the selector can be used to change an existing model in-place
-					game::Select_Deselect(1);
+					const auto m_selector = ggui::get_rtt_modelselector();
 
-					game::Undo_ClearRedo();
-					game::Undo_GeneralStart("create entity");
-
-					if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+					if(m_selector->overwrite_selection)
 					{
-						game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
-					}
+						game::Undo_ClearRedo();
+						game::Undo_GeneralStart("change entity model");
 
-					// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
-					g_block_radiant_modeldialog = true;
-
-					//CreateEntityFromName(classname);
-					utils::hook::call<void(__cdecl)(const char*)>(0x465CC0)("misc_model");
-
-					g_block_radiant_modeldialog = false;
-
-					ggui::entity::AddProp("model", ggui::get_rtt_modelselector()->preview_model_name.c_str());
-					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
-
-					float dir[3];
-					CameraCalcRayDir(camerawnd->cursor_pos_pt.x, static_cast<int>(camerawnd->scene_size_imgui.y) - camerawnd->cursor_pos_pt.y, dir);
-					
-					game::trace_t trace = {};
-					game::Trace_AllDirectionsIfFailed(cmainframe::activewnd->m_pCamWnd->camera.origin, &trace, dir, 0x1200);
-
-					float origin[3];
-
-					// if trace hit something other then the void
-					if(trace.brush)
-					{
-						utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, trace.dist, dir, origin);
-					}
-					// if trace hit nothing, spawn model infront of the camera
-					else
-					{
-						float dist = 100.0f;
-						if(auto model = ggui::get_rtt_modelselector()->preview_model_ptr; 
-								model)
+						if(components::remote_net::selection_is_brush(game::g_selected_brushes()->currSelection))
 						{
-							dist += model->radius;
+							// nothing but worldspawn selected, lets spawn a new entity
+							goto SPAWN_AWAY;
+						}
+						
+						if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+						{
+							// nothing but worldspawn selected, lets spawn a new entity
+							goto SPAWN_AWAY;
 						}
 
-						utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, dist, dir, origin);
+						ggui::entity::AddProp("model", m_selector->preview_model_name.c_str());
+						game::Undo_End();
 					}
-
-					char origin_str_buf[64] = {};
-					if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", origin[0], origin[1], origin[2]))
+					else
 					{
-						ggui::entity::AddProp("origin", origin_str_buf);
+						game::Select_Deselect(1);
+						game::Undo_ClearRedo();
+						game::Undo_GeneralStart("create entity");
+
+						if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+						{
+							SPAWN_AWAY:
+							game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+						}
+
+						// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+						g_block_radiant_modeldialog = true;
+
+						//CreateEntityFromName(classname);
+						utils::hook::call<void(__cdecl)(const char*)>(0x465CC0)("misc_model");
+
+						g_block_radiant_modeldialog = false;
+
+						ggui::entity::AddProp("model", m_selector->preview_model_name.c_str());
+						// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
+
+						float dir[3];
+						CameraCalcRayDir(camerawnd->cursor_pos_pt.x, static_cast<int>(camerawnd->scene_size_imgui.y) - camerawnd->cursor_pos_pt.y, dir);
+
+						game::trace_t trace = {};
+						game::Trace_AllDirectionsIfFailed(cmainframe::activewnd->m_pCamWnd->camera.origin, &trace, dir, 0x1200);
+
+						float origin[3];
+
+						// if trace hit something other then the void
+						if (trace.brush)
+						{
+							utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, trace.dist, dir, origin);
+						}
+						// if trace hit nothing, spawn model infront of the camera
+						else
+						{
+							float dist = 100.0f;
+							if (auto model = m_selector->preview_model_ptr;
+								model)
+							{
+								dist += model->radius;
+							}
+
+							utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, dist, dir, origin);
+						}
+
+						char origin_str_buf[64] = {};
+						if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", origin[0], origin[1], origin[2]))
+						{
+							ggui::entity::AddProp("origin", origin_str_buf);
+						}
+
+						game::Undo_End();
 					}
-					
-					game::Undo_End();
 				}
 			}
 

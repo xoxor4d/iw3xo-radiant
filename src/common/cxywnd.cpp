@@ -149,28 +149,53 @@ void cxywnd::rtt_grid_window()
 			{
 				if(ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 				{
-					game::Select_Deselect(1);
-					
-					game::Undo_ClearRedo();
-					game::Undo_GeneralStart("create entity");
-					
-					if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
-					{
-						game::CreateEntityBrush(static_cast<int>(gridwnd->scene_size_imgui.y) - gridwnd->cursor_pos_pt.y, gridwnd->cursor_pos_pt.x, cmainframe::activewnd->m_pXYWnd);
-					}
+					const auto m_selector = ggui::get_rtt_modelselector();
 
-					// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
-					g_block_radiant_modeldialog = true;
-					
-					//CreateEntityFromName(classname);
-					utils::hook::call<void(__cdecl)(const char*)>(0x465CC0)("misc_model");
-					
-					g_block_radiant_modeldialog = false;
-					
-					ggui::entity::AddProp("model", ggui::get_rtt_modelselector()->preview_model_name.c_str());
-					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
-					
-					game::Undo_End();
+					if (m_selector->overwrite_selection)
+					{
+						game::Undo_ClearRedo();
+						game::Undo_GeneralStart("change entity model");
+
+						if (components::remote_net::selection_is_brush(game::g_selected_brushes()->currSelection))
+						{
+							// nothing but worldspawn selected, lets spawn a new entity
+							goto SPAWN_AWAY;
+						}
+
+						if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+						{
+							// nothing but worldspawn selected, lets spawn a new entity
+							goto SPAWN_AWAY;
+						}
+
+						ggui::entity::AddProp("model", m_selector->preview_model_name.c_str());
+						game::Undo_End();
+					}
+					else
+					{
+						game::Select_Deselect(1);
+						game::Undo_ClearRedo();
+						game::Undo_GeneralStart("create entity");
+
+						if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+						{
+							SPAWN_AWAY:
+							game::CreateEntityBrush(static_cast<int>(gridwnd->scene_size_imgui.y) - gridwnd->cursor_pos_pt.y, gridwnd->cursor_pos_pt.x, cmainframe::activewnd->m_pXYWnd);
+						}
+
+						// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+						g_block_radiant_modeldialog = true;
+
+						//CreateEntityFromName(classname);
+						utils::hook::call<void(__cdecl)(const char*)>(0x465CC0)("misc_model");
+
+						g_block_radiant_modeldialog = false;
+
+						ggui::entity::AddProp("model", ggui::get_rtt_modelselector()->preview_model_name.c_str());
+						// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
+
+						game::Undo_End();
+					}
 				}
 			}
 			

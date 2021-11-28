@@ -528,7 +528,7 @@ namespace components
 
 	// *
 	// Check if input brush is a valid brush
-	bool selection_is_brush(game::brush_t *brush)
+	bool remote_net::selection_is_brush(game::brush_t *brush)
 	{
 		if (brush && brush->owner && brush->owner->eclass)
 		{
