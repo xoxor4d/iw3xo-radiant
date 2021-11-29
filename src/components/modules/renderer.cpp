@@ -687,7 +687,7 @@ namespace components
 		// SunLightPreview_BrushShadow(&active_brushes, cam_some_matrix, sundir);// nop to disable shadows ++ MUCH FPS
 		// SunLightPreview_BrushShadow(&selected_brushes, cam_some_matrix, sundir);// nop to disable shadows ++ MUCH FPS
 		// SunLightPreview_PolyOffsetShadows();
-		// game::R_SortMaterials(); // needed when shadows are active
+		game::R_SortMaterials(); // needed when shadows are active
 		
 		sunpreview_drawbrush(game::g_selected_brushes());
 		sunpreview_drawbrush(game::g_active_brushes());
