@@ -499,7 +499,7 @@ namespace components
 
 	void set_custom_vertexshader_constants([[maybe_unused]] game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
-		if(_in_draw_xmodelpreview)
+		//if(_in_draw_xmodelpreview)
 		{
 			if (state && state->pass)
 			{
@@ -569,6 +569,135 @@ namespace components
 		}
 	}
 
+	
+	// *
+	// sun preview
+
+	void sunpreview_drawbrush(game::selbrush_t* brush /*edi*/)
+	{
+		const static uint32_t func_addr = 0x406960;
+		__asm
+		{
+			pushad;
+			mov		edi, brush;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void R_AddCmdSetCustomShaderConstant(game::ShaderCodeConstants constant, float x, float y, float z, float w)
+	{
+		auto setconstant_cmd = reinterpret_cast<game::GfxCmdSetCustomConstant*>(game::R_GetCommandBuffer(sizeof(game::GfxCmdSetCustomConstant), game::GfxRenderCommand::RC_SET_CUSTOM_CONSTANT));
+		if(setconstant_cmd)
+		{
+			setconstant_cmd->type = constant;
+			setconstant_cmd->vec[0] = x;
+			setconstant_cmd->vec[1] = y;
+			setconstant_cmd->vec[2] = z;
+			setconstant_cmd->vec[3] = w;
+		}
+	}
+
+	// parses worldspawn and light settings, sets custom shader constants and returns the sun direction in "sun_dir"
+	bool sunpreview_set_shader_constants(float* sun_dir)
+	{
+		const auto prefs = game::g_PrefsDlg();
+		const auto world_ent = reinterpret_cast<game::entity_s_def*>(game::g_world_entity()->firstActive);
+
+		if (!ggui::entity::HasKeyValuePair(world_ent, "sundirection"))
+		{
+			game::printf_to_console("[Sunpreview] disabled. Missing worldspawn kvp: \"sundirection\"");
+			prefs->preview_sun_aswell = false;
+			return false;
+		}
+
+		if (!ggui::entity::HasKeyValuePair(world_ent, "sunlight"))
+		{
+			game::printf_to_console("[Sunpreview] disabled. Missing worldspawn kvp: \"sunlight\"");
+			prefs->preview_sun_aswell = false;
+			return false;
+		}
+
+		if (!ggui::entity::HasKeyValuePair(world_ent, "suncolor"))
+		{
+			game::printf_to_console("[Sunpreview] disabled. Missing worldspawn kvp: \"suncolor\"");
+			prefs->preview_sun_aswell = false;
+			return false;
+		}
+
+		// R_ParseSunLight expects the worldspawn in the following format:
+		/* {
+			"classname" "worldspawn"
+			"sundirection" "%f %f %f"
+			"suncolor" "%f %f %f"
+			"sunlight" "2.4"
+		}*/
+
+		std::string worldspawn;
+		worldspawn += "{\n";
+		for (auto ep = world_ent->epairs; ep; ep = ep->next)
+		{
+			worldspawn += utils::va("\"%s\" \"%s\"\n", ep->key, ep->value);
+		}
+		worldspawn += "}\n";
+
+		game::SunLightParseParams parms = {};
+		// R_ParseSunLight(SunLightParseParams *params, const char *str)
+		utils::hook::call<void(__cdecl)(game::SunLightParseParams* _params, const char* _str)>(0x50A740)(&parms, worldspawn.c_str());
+
+		game::GfxLight light = {};
+		//R_InterpretSunLightParseParamsIntoLights(SunLightParseParams *params, GfxLight *light)
+		utils::hook::call<void(__cdecl)(game::SunLightParseParams* _params, game::GfxLight* _light)>(0x50C400)(&parms, &light);
+
+		R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_POSITION, light.dir[0], light.dir[1], light.dir[2], 0.0f);
+		R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_DIFFUSE, light.color[0], light.color[1], light.color[2], 1.0f);
+		R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_SPECULAR, light.color[0], light.color[1], light.color[2], 1.0f);
+
+		if(sun_dir)
+		{
+			utils::vector::copy(light.dir, sun_dir);
+		}
+
+		return true;
+	}
+
+	// draws brushes and entities with "sunpre_" techniques, would normally show rudimentary shadows (they kill fps tho)
+	bool sunpreview()
+	{
+		if(!sunpreview_set_shader_constants(nullptr))
+		{
+			return false;
+		}
+		
+		auto projection_cmd = reinterpret_cast<game::GfxCmdProjectionSet*>(game::R_GetCommandBuffer(sizeof(game::GfxCmdProjectionSet), game::GfxRenderCommand::RC_PROJECTION_SET));
+		if(projection_cmd)
+		{
+			projection_cmd->projection = game::GfxProjectionTypes::GFX_PROJECTION_2D;
+		}
+		
+
+		// this was within the original func, only here for reference
+		//game::R_AddCmdDrawFullScreenColoredQuad(0.0f, 0.0f, 1.0f, 1.0f, some_color_from_func_above, material_white_multiply);
+		game::R_AddCmdDrawFullScreenColoredQuad(0.0f, 0.0f, 1.0f, 1.0f, game::color_white, game::rgp->clearAlphaStencilMaterial);
+
+		// + shadow related +
+		// int& active_sunpreview01 = *reinterpret_cast<int*>(0x23F15B8); active_sunpreview01 = 3;
+		// int& active_sunpreview02 = *reinterpret_cast<int*>(0x23F15B4); active_sunpreview02 = 3;
+
+		// SunLightPreview_BrushShadow(&active_brushes, cam_some_matrix, sundir);// nop to disable shadows ++ MUCH FPS
+		// SunLightPreview_BrushShadow(&selected_brushes, cam_some_matrix, sundir);// nop to disable shadows ++ MUCH FPS
+		// SunLightPreview_PolyOffsetShadows();
+		// game::R_SortMaterials(); // needed when shadows are active
+		
+		sunpreview_drawbrush(game::g_selected_brushes());
+		sunpreview_drawbrush(game::g_active_brushes());
+
+		// sorts surfaces and adds RC_DRAW_EDITOR_SKINNEDCACHED rendercmd
+		utils::hook::call<void(__cdecl)()>(0x4FDA10)();
+		
+		return true;
+	}
+
 	// *
 	// *
 
@@ -603,6 +732,9 @@ namespace components
 
 		utils::hook::nop(0x51873F, 17);
 		 	 utils::hook(0x51873F, r_create_vertexshader_stub, HOOK_JUMP).install()->quick();
+
+		// fix sun preview (selecting brushes keeps sunpreview active; sun no longer casts shadows -> FPS ++)
+		utils::hook(0x406706, sunpreview, HOOK_CALL).install()->quick();
 	}
 
 	renderer::~renderer()

@@ -95,6 +95,28 @@ namespace ggui::entity
 		return sscanf(value_str, "%f %f %f", &vec3[0], &vec3[1], &vec3[2]) == 3;
 	}
 
+	bool HasKeyValuePair(game::entity_s_def* ent, const char* key)
+	{
+		game::epair_t* ep;
+
+		ep = ent->epairs;
+		if (!ep)
+		{
+			return false;
+		}
+		
+		while (strcmp(ep->key, key))
+		{
+			ep = ep->next;
+			if (!ep)
+			{
+				return false;
+			}
+		}
+		
+		return true;
+	}
+
 	
 	/*struct addprop_helper_s
 	{

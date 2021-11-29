@@ -290,8 +290,20 @@ namespace components
 		// hook / Grab CameraWnd object (only when using floating windows) :: (cmainframe::update_windows sets cmainframe::activewnd otherwise)
 		//utils::hook(0x42270C, ccam_init_stub, HOOK_JUMP).install()->quick();
 
+#if 0 // not needed because func was rewritten (renderer)
 		// disable black world on selecting a brush with sun preview enabled -> still disables active sun preview .. no black world tho
 		utils::hook::nop(0x406A11, 5);
+
+		// sunpreview: disable shadow projection for unselected brushes and entities
+		utils::hook::nop(0x406A70, 5);
+		// sunpreview: disable shadow projection for selected brushes and entities
+		utils::hook::nop(0x406A86, 5);
+		// sunpreview: disable shadow polyoffset
+		utils::hook::nop(0x406A8E, 5);
+
+		// sunpreview: keep sunpreview active even if a brush is selected ... what the fuck -> can no longer copy-paste brushes
+		//utils::hook::nop(0x484947, 5);
+#endif
 
 		// nop com_math.cpp "det" line:1775 assert (MatrixInverse44)
 		utils::hook::nop(0x4A6BC9, 5);

@@ -14,7 +14,8 @@ namespace ggui::entity
 	
 	void	AddProp(const char* key, const char* value, addprop_helper_s* helper = nullptr);
 	bool	Entity_GetVec3ForKey(game::entity_s* ent, float* vec3, const char* keyname);
-
+	bool	HasKeyValuePair(game::entity_s_def* ent, const char* key);
+	
 	void	menu(ggui::imgui_context_menu& menu);
 	void	register_dvars();
 	void	hooks();

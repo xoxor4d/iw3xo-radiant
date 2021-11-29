@@ -26,6 +26,8 @@ namespace game
 		
 	}
 
+	game::vec4_t color_white = { 1.0f, 1.0f, 1.0f, 1.0f };
+	
 	// radiant globals
 	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
 	game::qeglobals_t* g_qeglobals = reinterpret_cast<game::qeglobals_t*>(0x25F39C0);

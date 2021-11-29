@@ -2057,6 +2057,69 @@ namespace game
 		MaterialPixelShaderProgram prog;
 	};
 
+	enum GfxRenderCommand
+	{
+		RC_END_OF_LIST = 0x0,
+		RC_SET_MATERIAL_COLOR = 0x1,
+		RC_SET_LIGHT_COLOR = 0x2,
+		RC_SAVE_SCREEN = 0x3,
+		RC_SAVE_SCREEN_SECTION = 0x4,
+		RC_CLEAR_SCREEN = 0x5,
+		RC_BEGIN_VIEW = 0x6,
+		RC_SET_VIEWPORT = 0x7,
+		RC_FIRST_NONCRITICAL = 0x8,
+		RC_STRETCH_PIC = 0x8,
+		RC_STRETCH_PIC_FLIP_ST = 0x9,
+		RC_STRETCH_PIC_ROTATE_XY = 0xA,
+		RC_STRETCH_PIC_ROTATE_ST = 0xB,
+		RC_STRETCH_RAW = 0xC,
+		RC_DRAW_QUAD_PIC = 0xD,
+		RC_DRAW_FULLSCREEN_COLORED_QUAD = 0xE,
+		RC_DRAW_TEXT_2D = 0xF,
+		RC_DRAW_TEXT_3D = 0x10,
+		RC_BLEND_SAVED_SCREEN_BLURRED = 0x11,
+		RC_BLEND_SAVED_SCREEN_FLASHED = 0x12,
+		RC_DRAW_POINTS = 0x13,
+		RC_DRAW_LINES = 0x14,
+		RC_DRAW_TRIANGLES = 0x15,
+		RC_DRAW_EDITOR_SKINNEDCACHED = 0x16,
+		RC_SET_CUSTOM_CONSTANT = 0x17,
+		RC_PROJECTION_SET = 0x18,
+		RC_COUNT = 0x18,
+	};
+
+	enum GfxProjectionTypes
+	{
+		GFX_PROJECTION_2D = 0x0,
+		GFX_PROJECTION_3D = 0x1,
+	};
+
+	struct GfxCmdProjectionSet
+	{
+		GfxCmdHeader header;
+		GfxProjectionTypes projection;
+	}; STATIC_ASSERT_SIZE(GfxCmdProjectionSet, 8);
+
+	struct GfxCmdSetCustomConstant
+	{
+		GfxCmdHeader header;
+		unsigned int type;
+		float vec[4];
+	}; STATIC_ASSERT_SIZE(GfxCmdSetCustomConstant, 24);
+
+	struct SunLightParseParams
+	{
+		char name[64];
+		float ambientScale;
+		float ambientColor[3];
+		float diffuseFraction;
+		float sunLight;
+		float sunColor[3];
+		float diffuseColor[3];
+		bool diffuseColorHasBeenSet;
+		float angles[3];
+	};
+
 	enum ShaderCodeConstants : unsigned __int16
 	{
 		CONST_SRC_CODE_MAYBE_DIRTY_PS_BEGIN = 0x0,

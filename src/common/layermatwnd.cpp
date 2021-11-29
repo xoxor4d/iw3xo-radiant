@@ -379,7 +379,7 @@ void clayermatwnd::on_paint()
 					}
 				}
 
-				// sorts surfaces and adds draw triangle rendercmd
+				// sorts surfaces and adds RC_DRAW_EDITOR_SKINNEDCACHED rendercmd
 				utils::hook::call<void(__cdecl)()>(0x4FDA10)();
 
 				game::R_EndFrame();

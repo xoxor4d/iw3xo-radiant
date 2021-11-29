@@ -44,6 +44,8 @@ namespace game
 		extern IDirect3DDevice9* d3d9_device;
 		
 	}
+
+	extern game::vec4_t color_white;
 	
 	// radiant globals
 	extern int&			g_nScaleHow;
@@ -171,6 +173,7 @@ namespace game
 	static utils::function<void()> R_SortMaterials = 0x4FD910;
 	static utils::function<bool(HWND)> R_SetupRendertarget_CheckDevice = 0x501A70;
 	static utils::function<bool(HWND)> R_CheckTargetWindow = 0x500660;
+	static utils::function<bool(float s0, float t0, float s1, float t1, float* color, game::Material* mtl)> R_AddCmdDrawFullScreenColoredQuad = 0x4FC260;
 	
 	typedef void(*MatrixForViewer_t)(float(*mtx)[4], const float* origin, const float* axis);
 		extern MatrixForViewer_t MatrixForViewer;
