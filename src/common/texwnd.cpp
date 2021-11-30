@@ -406,7 +406,6 @@ void __declspec(naked) texwnd_listmaterials_intercept()
 	}
 }
 
-
 // gui::render_loop()
 // render to texture - imgui texture window
 void ctexwnd::rtt_texture_window()
@@ -442,19 +441,24 @@ void ctexwnd::rtt_texture_window()
 
 	auto texwnd = ggui::get_rtt_texturewnd();
 
-	if (texwnd->should_set_focus)
+	// yes 2 bools for the same thing, cba to refactor and test use-cases across all menus
+	if (texwnd->should_set_focus || texwnd->bring_tab_to_front)
 	{
-		ImGui::SetNextWindowFocus();
+		texwnd->bring_tab_to_front = false;
 		texwnd->should_set_focus = false;
+		ImGui::SetNextWindowFocus();
 	}
 
 	if(!ImGui::Begin("Textures##rtt", &texwnd->menustate, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 	{
+		texwnd->inactive_tab = true;
 		ImGui::PopStyleColor(p_colors);
 		ImGui::PopStyleVar(p_styles);
 		ImGui::End();
 		return;
 	}
+
+	texwnd->inactive_tab = false;
 	
 	if (texwnd->scene_texture)
 	{
@@ -518,23 +522,35 @@ void ctexwnd::rtt_texture_window()
 // CMainFrame::OnViewTexture
 void on_viewtextures_command()
 {
+	const auto texwnd = ggui::get_rtt_texturewnd();
+	if(texwnd->inactive_tab && texwnd->menustate)
+	{
+		texwnd->bring_tab_to_front = true;
+		return;
+	}
+
 	components::gui::toggle(ggui::get_rtt_texturewnd(), 0, true);
+
 }
 
 // CMainFrame::OnTexturesShowinuse
 void on_textures_show_in_use_command()
 {
-	ggui::get_rtt_texturewnd()->menustate = true;
+	const auto texwnd = ggui::get_rtt_texturewnd();
+	texwnd->bring_tab_to_front = true;
+	texwnd->menustate = true;
 	
 	// Texture_ShowInuse
 	cdeclcall(void, 0x45B850);
 }
 
 
-// CMainFrame::OnTexturesShowall
-void on_textures_show_all_command()
+// CMainFrame::OnTexturesShowall (intercept: no logic besides showing the menu)
+void on_textures_show_all_command_intercept()
 {
-	ggui::get_rtt_texturewnd()->menustate = true;
+	const auto texwnd = ggui::get_rtt_texturewnd();
+	texwnd->bring_tab_to_front = true;
+	texwnd->menustate = true;
 }
 
 void __declspec(naked) on_textures_show_all_command_stub()
@@ -544,7 +560,7 @@ void __declspec(naked) on_textures_show_all_command_stub()
 	__asm
 	{
 		pushad;
-		call	on_textures_show_all_command;
+		call	on_textures_show_all_command_intercept;
 		popad;
 		
 		call    sub_453E50; // overwritten

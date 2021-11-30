@@ -71,6 +71,8 @@ namespace ggui
 		bool menustate;
 		bool was_open;
 		bool one_time_init;
+		bool inactive_tab;
+		bool bring_tab_to_front;
 		float position[2];
 		float size[2];
 	};
@@ -86,6 +88,8 @@ namespace ggui
 		bool should_set_focus;
 		bool capture_left_mousebutton;
 		bool menustate;
+		bool inactive_tab;
+		bool bring_tab_to_front;
 		bool was_open;
 		bool one_time_init;
 	};
