@@ -216,7 +216,7 @@ void clayermatwnd::on_paint()
 	if (layercam.width != 0 && layercam.height != 0)
 	{
 		{
-			if (m_selector->menustate && !m_selector->preview_model_name.empty())
+			if (m_selector->menustate && !m_selector->inactive_tab && !m_selector->preview_model_name.empty())
 			{
 				m_selector->bad_model = false;
 

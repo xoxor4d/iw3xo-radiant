@@ -29,7 +29,7 @@ namespace ggui
 		void	draw_text_with_color(const char* text);
 		void	addline_no_format(const char* text);
 		void	addline(const char* fmt, ...) IM_FMTARGS(2);
-		void	draw(const char* title, bool* p_open);
+		void	draw(const char* title, ggui::imgui_context_menu& menu);
 		void	exec_command(const char* command_line);
 
 		static int	text_edit_callback_stub(ImGuiInputTextCallbackData* data);

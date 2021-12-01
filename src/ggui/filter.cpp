@@ -242,12 +242,25 @@ namespace ggui::filter
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+
+		if (menu.bring_tab_to_front)
+		{
+			menu.bring_tab_to_front = false;
+			ImGui::SetNextWindowFocus();
+		}
 		
-		ImGui::Begin("Filters##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		if(!ImGui::Begin("Filters##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
+		{
+			menu.inactive_tab = true;
+			ImGui::End();
+			return;
+		}
+
+		menu.inactive_tab = false;
 		window_hovered = ImGui::IsWindowHovered();
 		
 		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
-
+		
 		imgui_filter.Draw("#filter_filter", ImGui::GetContentRegionAvailWidth());
 		input_focused = ImGui::IsItemFocused();
 
@@ -420,7 +433,15 @@ namespace ggui::filter
 	// CMainFrame::OnFilterDlg
 	void on_filterdialog_command()
 	{
+		auto& menu = ggui::state.czwnd.m_filter;
 		needs_window_hovered_once = true;
+		
+		if(menu.inactive_tab && menu.menustate)
+		{
+			menu.bring_tab_to_front = true;
+			return;
+		}
+		
 		components::gui::toggle(ggui::state.czwnd.m_filter, 0, true);
 	}
 

@@ -123,14 +123,22 @@ namespace ggui
 		if (has_color) { ImGui::PopStyleColor(); }
 	}
 
-	void console::draw(const char* title, bool* p_open)
+	void console::draw(const char* title, ggui::imgui_context_menu& menu)
 	{
-		if (!ImGui::Begin(title, p_open))
+		if (menu.bring_tab_to_front)
 		{
+			menu.bring_tab_to_front = false;
+			ImGui::SetNextWindowFocus();
+		}
+		
+		if (!ImGui::Begin(title, &menu.menustate))
+		{
+			menu.inactive_tab = true;
 			ImGui::End();
 			return;
 		}
 
+		menu.inactive_tab = false;
 		bool copy_to_clipboard = false;
 
 		// Reserve enough left-over height for 1 separator + 1 input text
@@ -627,7 +635,7 @@ namespace ggui
 		return 0;
 	}
 
-	void console::menu(ggui::imgui_context_menu & menu)
+	void console::menu(ggui::imgui_context_menu& menu)
 	{
 		if (ggui::_console)
 		{
@@ -638,7 +646,7 @@ namespace ggui
 			ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 			ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-			ggui::_console->draw("Console##window", &menu.menustate);
+			ggui::_console->draw("Console##window", menu);
 		}
 	}
 
@@ -688,6 +696,13 @@ namespace ggui
 	// CMainFrame::OnViewConsole
 	void on_viewconsole_command()
 	{
+		auto& menu = ggui::state.czwnd.m_console;
+		if (menu.inactive_tab && menu.menustate)
+		{
+			menu.bring_tab_to_front = true;
+			return;
+		}
+		
 		components::gui::toggle(ggui::state.czwnd.m_console, 0, true);
 	}
 

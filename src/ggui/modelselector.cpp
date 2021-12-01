@@ -59,8 +59,20 @@ namespace ggui::modelselector
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
 
-		ImGui::Begin("Model Selector / Previewer", &m_selector->menustate, ImGuiWindowFlags_NoCollapse);
+		if (m_selector->bring_tab_to_front)
+		{
+			m_selector->bring_tab_to_front = false;
+			ImGui::SetNextWindowFocus();
+		}
+		
+		if(!ImGui::Begin("Model Selector / Previewer", &m_selector->menustate, ImGuiWindowFlags_NoCollapse))
+		{
+			m_selector->inactive_tab = true;
+			ImGui::End();
+			return;
+		}
 
+		m_selector->inactive_tab = false;
 		//if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) __debugbreak();
 		// block all hotkeys if window is focused (cmainframe::on_keydown())
 		m_selector->window_hovered = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
@@ -381,6 +393,13 @@ namespace ggui::modelselector
 		components::command::register_command_with_hotkey("xo_modelselector"s, [](auto)
 		{
 			const auto m_selector = ggui::get_rtt_modelselector();
+
+			if(m_selector->inactive_tab && m_selector->menustate)
+			{
+				m_selector->bring_tab_to_front = true;
+				return;
+			}
+			
 			m_selector->menustate = !m_selector->menustate;
 		});
 	}

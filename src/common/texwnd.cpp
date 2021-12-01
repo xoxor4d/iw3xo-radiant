@@ -93,14 +93,6 @@ BOOL __fastcall ctexwnd::on_paint(ctexwnd* pThis)
 // *
 // *
 
-//void handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd)
-//{
-//	if (ImGui::IsItemHovered(ImGuiHoveredFlags_None))
-//	{
-//		wnd->window_hovered = false;
-//	}
-//}
-
 void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 {
 	const auto texwnd = ggui::get_rtt_texturewnd();

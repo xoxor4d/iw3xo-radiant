@@ -1383,8 +1383,21 @@ namespace ggui::entity
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+
+		if (menu.bring_tab_to_front)
+		{
+			menu.bring_tab_to_front = false;
+			ImGui::SetNextWindowFocus();
+		}
 		
-		ImGui::Begin("Entity##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		if(!ImGui::Begin("Entity##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
+		{
+			menu.inactive_tab = true;
+			ImGui::End();
+			return;
+		}
+
+		menu.inactive_tab = false;
 
 		draw_classlist();
 		draw_comments();
@@ -1454,6 +1467,13 @@ namespace ggui::entity
 	// CMainFrame::OnViewEntity
 	void on_viewentity_command()
 	{
+		auto& menu = ggui::state.czwnd.m_entity;
+		if (menu.inactive_tab && menu.menustate)
+		{
+			menu.bring_tab_to_front = true;
+			return;
+		}
+		
 		components::gui::toggle(ggui::state.czwnd.m_entity, 0, true);
 	}
 

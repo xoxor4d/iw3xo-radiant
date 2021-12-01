@@ -127,6 +127,8 @@ namespace ggui
 		bool scene_hovered;
 		bool window_hovered;
 		bool menustate;
+		bool inactive_tab;
+		bool bring_tab_to_front;
 		bool was_open;
 		bool one_time_init;
 	};
