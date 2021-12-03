@@ -141,7 +141,7 @@ void rtt_camera_window_toolbar()
 {
 	const auto camwnd = ggui::get_rtt_camerawnd();
 	const auto prefs = game::g_PrefsDlg();
-	
+
 	ImVec2 toolbar_button_open_size = ImVec2(22.0f, 22.0f);
 	ImVec2 toolbar_button_size = ImVec2(32.0f, 32.0f);
 	ImVec4 toolbar_button_background = ImVec4(0.1f, 0.1f, 0.1f, 0.55f);
@@ -254,7 +254,7 @@ void rtt_camera_window_toolbar()
 					mainframe_thiscall(LRESULT, 0x428F90); // CMainFrame::OnViewCubicclipping
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 
-				
+#if 0
 				static bool hov_camera_movement;
 				ImGui::BeginGroup();
 				{
@@ -284,6 +284,7 @@ void rtt_camera_window_toolbar()
 					}
 				}
 				ImGui::EndGroup();
+#endif
 
 				static bool hov_gameview;
 				if (ggui::toolbar::image_togglebutton("gameview"
@@ -300,6 +301,44 @@ void rtt_camera_window_toolbar()
 				
 				ImGui::PopStyleVar();
 			}
+
+			SPACING(0.0f, 0.0f);
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
+			{
+				static bool hov_lightpreview;
+				if (ggui::toolbar::image_togglebutton("lightpreview"
+					, hov_lightpreview
+					, prefs->enable_light_preview
+					, std::string("Lightpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewToggle") + "]").c_str()
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
+				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+				//ImGui::BeginDisabled(!prefs->enable_light_preview);
+				//{
+					static bool hov_sunpreview;
+					if (ggui::toolbar::image_togglebutton("sunpreview"
+						, hov_sunpreview
+						, prefs->preview_sun_aswell
+						, std::string("Sunpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewSun") + "]\nNeeds Lightpreview! ^").c_str()
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun;
+					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+				//}
+				//ImGui::EndDisabled();
+				
+				ImGui::PopStyleVar();
+			}
+			
 		}
 	
 		ImGui::EndGroup();
@@ -378,12 +417,14 @@ void ccamwnd::rtt_camera_window()
 	int p_colors = 0;
 
 	const auto IO = ImGui::GetIO();
+	const auto camerawnd = ggui::get_rtt_camerawnd();
 	const auto camera_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.width), static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.height));
 	ImGui::SetNextWindowSizeConstraints(ImVec2(320.0f, 320.0f), ImVec2(FLT_MAX, FLT_MAX));
 
 	float	window_padding = 0.0f;
-	if(dvars::gui_rtt_padding_enabled && dvars::gui_rtt_padding_enabled->current.enabled) {
-			window_padding = dvars::gui_rtt_padding_size ? dvars::gui_rtt_padding_size->current.integer : 6.0f;
+	if(dvars::gui_rtt_padding_enabled && dvars::gui_rtt_padding_enabled->current.enabled) 
+	{
+			window_padding = dvars::gui_rtt_padding_size ? static_cast<float>(dvars::gui_rtt_padding_size->current.integer) : 6.0f;
 	}
 	
 	const ImVec2 window_padding_both = ImVec2(window_padding * 2.0f, window_padding * 2.0f);
@@ -396,7 +437,16 @@ void ccamwnd::rtt_camera_window()
 	//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_TabUnfocusedActive)); p_colors++;
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_rtt_padding_color->current.vector)); p_colors++;
 	
-	auto camerawnd = ggui::get_rtt_camerawnd();
+	if (!camerawnd->one_time_init)
+	{
+		if (dvars::gui_camera_toolbar_defaultopen && dvars::gui_camera_toolbar_defaultopen->current.enabled)
+		{
+			_rttcam_toolbar_state = true;
+		}
+
+		camerawnd->one_time_init = true;
+	}
+	
 	if (camerawnd->should_set_focus)
 	{
 		ImGui::SetNextWindowFocus();
@@ -1127,6 +1177,12 @@ void ccamwnd::register_dvars()
 		/* default	*/ true,
 		/* flags	*/ game::dvar_flags::saved,
 		/* desc		*/ "Guizmo: Enable brush mode");
+
+	dvars::gui_camera_toolbar_defaultopen = dvars::register_bool(
+		/* name		*/ "gui_camera_toolbar_defaultopen",
+		/* default	*/ false,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "Open the camera toolbar by default");
 }
 
 void ccamwnd::hooks()

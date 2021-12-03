@@ -207,6 +207,7 @@ namespace ggui::preferences
 				// -----------------
 				title_with_seperator("Toolbar");
 				ImGui::Checkbox("Draw FPS within the camera window", &dvars::gui_draw_fps->current.enabled);
+				ImGui::Checkbox("Default Open - Toolbar", &dvars::gui_camera_toolbar_defaultopen->current.enabled);
 			}
 			ImGui::EndChild();
 		}

@@ -26,6 +26,8 @@ namespace dvars
 	extern game::dvar_s* gui_props_classlist_defaultopen;
 	extern game::dvar_s* gui_props_comments_defaultopen;
 	extern game::dvar_s* gui_props_spawnflags_defaultopen;
+
+	extern game::dvar_s* gui_camera_toolbar_defaultopen;
 	
 	extern game::dvar_s* gui_saved_state_console;
 	extern game::dvar_s* gui_saved_state_filter;

@@ -562,7 +562,7 @@ namespace ggui::toolbar
 				}
 				ImGui::EndDisabled();
 			});
-
+		
 		register_element("free_rotate"s, []()
 			{
 				static bool hov_freerotate;
@@ -817,6 +817,28 @@ namespace ggui::toolbar
 					"Disable selection of static models"))
 				{
 					mainframe_thiscall(LRESULT, 0x42A280);
+				}
+			});
+
+		register_element("lightpreview"s, false, []()
+			{
+				static bool hov_lightpreview;
+				const auto prefs = game::g_PrefsDlg();
+
+				if (image_togglebutton("lightpreview", hov_lightpreview, prefs->enable_light_preview, std::string("Lightpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewToggle") + "]").c_str()))
+				{
+					mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
+				}
+			});
+
+		register_element("sunpreview"s, false, []()
+			{
+				static bool hov_sunpreview;
+				const auto prefs = game::g_PrefsDlg();
+
+				if (image_togglebutton("sunpreview", hov_sunpreview, prefs->preview_sun_aswell, std::string("Sunpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewSun") + "]\nNeeds Lightpreview!").c_str()))
+				{
+					mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun;
 				}
 			});
 

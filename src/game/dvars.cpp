@@ -26,6 +26,8 @@ namespace dvars
 	game::dvar_s* gui_props_classlist_defaultopen = nullptr;
 	game::dvar_s* gui_props_comments_defaultopen = nullptr;
 	game::dvar_s* gui_props_spawnflags_defaultopen = nullptr;
+
+	game::dvar_s* gui_camera_toolbar_defaultopen = nullptr;
 	
 	game::dvar_s* gui_saved_state_console = nullptr;
 	game::dvar_s* gui_saved_state_filter = nullptr;
