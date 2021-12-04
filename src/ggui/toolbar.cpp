@@ -134,11 +134,11 @@ namespace ggui::toolbar
 	
 	// *
 	// 
+
 	
 	bool toolbar_initiated = false;
-	nlohmann::fifo_map<std::string, std::function<void()>> tbedit_elements;
-
 	int tb_element_id = 0;
+	
 	struct tb_order_element_s
 	{
 		std::string name;
@@ -147,22 +147,27 @@ namespace ggui::toolbar
 		bool		is_separator;
 		bool		debug;
 	};
-	std::vector<tb_order_element_s> tbedit_ordered_list;
 
-	
 	struct tb_selection_s
 	{
 		bool is_selected;
 		uint32_t element_id;
 		uint32_t element_pos;
 	};
+	
+	nlohmann::fifo_map<std::string, std::function<void()>> toolbar_registered_elements_callbacks;
+	std::vector<tb_order_element_s> toolbar_registered_elements;
+
+	int toolbar_sorted_element_id = 0;
+	std::vector<tb_order_element_s> toolbar_sorted_list;
+
 	tb_selection_s tbedit_selection = {};
 
 
 	void register_element(const std::string& name, bool default_visible, std::function<void()> callback)
 	{
 		bool is_debug = false;
-		tbedit_elements[name] = callback;
+		toolbar_registered_elements_callbacks[name] = callback;
 
 		// if separator
 		if (utils::starts_with(name, ";"s))
@@ -170,14 +175,14 @@ namespace ggui::toolbar
 			// insert before selection
 			if (tbedit_selection.is_selected)
 			{
-				tbedit_ordered_list.insert(
-					tbedit_ordered_list.begin() + tbedit_selection.element_pos,
+				toolbar_registered_elements.insert(
+					toolbar_registered_elements.begin() + tbedit_selection.element_pos,
 					tb_order_element_s("; ------------", tb_element_id++, default_visible, true, is_debug));
 			}
 			// emplace back if nothing is selected
 			else
 			{
-				tbedit_ordered_list.emplace_back(
+				toolbar_registered_elements.emplace_back(
 					tb_order_element_s("; ------------", tb_element_id++, default_visible, true, is_debug));
 			}
 
@@ -189,31 +194,51 @@ namespace ggui::toolbar
 			is_debug = true;
 		}
 
-		tbedit_ordered_list.emplace_back(
+		toolbar_registered_elements.emplace_back(
 			tb_order_element_s(name, tb_element_id++, default_visible, false, is_debug));
 	}
 	
 	void register_element(const std::string& name, std::function<void()> callback)
 	{
 		bool is_debug = false;
-		tbedit_elements[name] = callback;
+		toolbar_registered_elements_callbacks[name] = callback;
 
 		// if separator
 		if (utils::starts_with(name, ";"s))
 		{
-			// insert before selection
-			if(tbedit_selection.is_selected)
+			if(!toolbar_initiated)
 			{
-				tbedit_ordered_list.insert(
-					tbedit_ordered_list.begin() + tbedit_selection.element_pos,
-					tb_order_element_s("; ------------", tb_element_id++, true, true, is_debug));
+				// insert before selection
+				if (tbedit_selection.is_selected)
+				{
+					toolbar_registered_elements.insert(
+						toolbar_registered_elements.begin() + tbedit_selection.element_pos,
+						tb_order_element_s("; ------------", tb_element_id++, true, true, is_debug));
+				}
+				// emplace back if nothing is selected
+				else
+				{
+					toolbar_registered_elements.emplace_back(
+						tb_order_element_s("; ------------", tb_element_id++, true, true, is_debug));
+				}
 			}
-			// emplace back if nothing is selected
 			else
 			{
-				tbedit_ordered_list.emplace_back(
-					tb_order_element_s("; ------------", tb_element_id++, true, true, is_debug));
+				// insert before selection
+				if (tbedit_selection.is_selected)
+				{
+					toolbar_sorted_list.insert(
+						toolbar_sorted_list.begin() + tbedit_selection.element_pos,
+						tb_order_element_s("; ------------", toolbar_sorted_element_id++, true, true, is_debug));
+				}
+				// emplace back if nothing is selected
+				else
+				{
+					toolbar_sorted_list.emplace_back(
+						tb_order_element_s("; ------------", toolbar_sorted_element_id++, true, true, is_debug));
+				}
 			}
+			
 
 			return;
 		}
@@ -223,7 +248,7 @@ namespace ggui::toolbar
 			is_debug = true;
 		}
 
-		tbedit_ordered_list.emplace_back(
+		toolbar_registered_elements.emplace_back(
 			tb_order_element_s(name, tb_element_id++, true, false, is_debug));
 	}
 
@@ -853,103 +878,113 @@ namespace ggui::toolbar
 			});
 #endif
 	}
-
 	
 	void load_settings_ini()
 	{
 		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
-						fs_homepath)
+			fs_homepath)
 		{
+			bool no_ini_or_empty = false;
+			
 			std::ifstream ini;
 			std::string ini_path = fs_homepath->current.string;
 						ini_path += "\\" + INI_FILENAME;
-
+	
 			ini.open(ini_path.c_str());
 			if (!ini.is_open())
 			{
-				printf("[Toolbar] Failed to open file: \"%s\"", ini_path.c_str());
-				return;
+				game::printf_to_console("[Toolbar] Failed to open ini: \"%s\"", ini_path.c_str());
+				no_ini_or_empty = true;
 			}
-
-			tb_element_id = 0;
-			tbedit_ordered_list.clear();
-
-			std::string input;
-			int line = 0;
-
-			// read line by line
-			while (std::getline(ini, input))
+			
+			// read ini line by line
+			if(!no_ini_or_empty)
 			{
-				if (input.find("//") != std::string::npos)
+				std::string input;
+				int line = 0;
+				
+				while (std::getline(ini, input))
 				{
-					continue;
+					if (input.find("//") != std::string::npos)
+					{
+						continue;
+					}
+
+					line++;
+
+					// separators
+					if (input.find(';') != std::string::npos)
+					{
+						toolbar_sorted_list.emplace_back(
+							tb_order_element_s("; ------------", toolbar_sorted_element_id++, true, true, false));
+
+						continue;
+					}
+
+					// split the string on ','
+					std::vector<std::string> args = utils::split(input, ',');
+
+					if (args.size() != 2)
+					{
+						printf("[Toolbar] malformed element @ line #%d (\"%s\")\n", line, input.c_str());
+						continue;
+					}
+
+					utils::trim(args[0]);
+					utils::trim(args[1]);
+
+					// check if the element exists
+					if (toolbar_registered_elements_callbacks.find(args[0]) != toolbar_registered_elements_callbacks.end())
+					{
+						toolbar_sorted_list.emplace_back(
+							tb_order_element_s(args[0], toolbar_sorted_element_id++, args[1] != "0"s, false));
+					}
+					else
+					{
+						game::printf_to_console("[Toolbar] not a valid element @ line #%d (\"%s\")\n", line, input.c_str());
+					}
 				}
 
-				line++;
-
-				// separators
-				if (input.find(';') != std::string::npos)
+				if (!line)
 				{
-					tbedit_ordered_list.emplace_back(
-						tb_order_element_s("; ------------", tb_element_id++, true, true, false));
-					
-					continue;
-				}
-
-				// split the string on ','
-				std::vector<std::string> args = utils::split(input, ',');
-
-				if (args.size() != 2)
-				{
-					printf("[Toolbar] malformed element @ line #%d (\"%s\")\n", line, input.c_str());
-					continue;
-				}
-
-				utils::trim(args[0]);
-				utils::trim(args[1]);
-
-				// check if the element exists
-				if(tbedit_elements.find(args[0]) != tbedit_elements.end())
-				{
-					tbedit_ordered_list.emplace_back(
-						tb_order_element_s(args[0], tb_element_id++, args[1] != "0"s, false));
-				}
-				else
-				{
-					printf("[Toolbar] not a valid element @ line #%d (\"%s\")\n", line, input.c_str());
+					no_ini_or_empty = true;
 				}
 			}
 
-			// add registered elements that are not part of the ini (eg. radiant was updated -> new elements)
-			for (const auto& element : tbedit_elements)
+			// loop all registered elements to add all elements not found inside the ini (eg. new elements after an update)
+			for (const auto& element : toolbar_registered_elements)
 			{
 				bool found = false;
 				bool is_debug = false;
 
-				// do not add separators
-				if(utils::starts_with(element.first, ";"s))
+				// add seperators if no ini or ini was empty
+				// do not add separators otherwise
+				if(!no_ini_or_empty)
 				{
-					continue;
+					if (utils::starts_with(element.name, ";"s))
+					{
+						continue;
+					}
 				}
 
-				if (utils::starts_with(element.first, "debug_"s))
+				if (utils::starts_with(element.name, "debug_"s))
 				{
 					is_debug = true;
 				}
-				
-				for (uint32_t e = 0; e < tbedit_ordered_list.size(); e++)
+
+				for (uint32_t e = 0; e < toolbar_sorted_list.size(); e++)
 				{
-					if(element.first == tbedit_ordered_list[e].name)
+					if (element.name == toolbar_sorted_list[e].name)
 					{
 						found = true;
 						break;
 					}
 				}
 
-				if(!found)
+				if (!found)
 				{
-					tbedit_ordered_list.emplace_back(
-						tb_order_element_s(element.first, tb_element_id++, true, false, is_debug));
+					toolbar_sorted_list.emplace_back(
+						tb_order_element_s(element.name, toolbar_sorted_element_id++, element.visible, false, is_debug));
 				}
 			}
 		}
@@ -958,7 +993,7 @@ namespace ggui::toolbar
 	
 	void save_settings_ini()
 	{
-		if (tbedit_ordered_list.empty())
+		if (toolbar_sorted_list.empty())
 		{
 			return;
 		}
@@ -979,7 +1014,7 @@ namespace ggui::toolbar
 
 			ini << "// [Name] [IsVisible] (';' Separator)" << std::endl;
 
-			for (const auto& element : tbedit_ordered_list)
+			for (const auto& element : toolbar_sorted_list)
 			{
 				if(element.debug)
 				{
@@ -1015,18 +1050,17 @@ namespace ggui::toolbar
 			register_element(";"s, nullptr);
 		}
 
-		
 		ImGui::SameLine();
 		if (ImGui::Button("Delete Selected Separator"))
 		{
-			const bool out_of_bounds = tbedit_selection.element_pos >= tbedit_ordered_list.size();
+			const bool out_of_bounds = tbedit_selection.element_pos >= toolbar_sorted_list.size();
 
 			if (tbedit_selection.is_selected 
 				&& !out_of_bounds 
-				&& tbedit_ordered_list[tbedit_selection.element_pos].is_separator)
+				&& toolbar_sorted_list[tbedit_selection.element_pos].is_separator)
 			{
 				printf("selected sep, deleting ...\n");
-				tbedit_ordered_list.erase(tbedit_ordered_list.begin() + tbedit_selection.element_pos);
+				toolbar_sorted_list.erase(toolbar_sorted_list.begin() + tbedit_selection.element_pos);
 			}
 			else if (out_of_bounds)
 			{
@@ -1035,7 +1069,6 @@ namespace ggui::toolbar
 			}
 		}
 		
-
 		// this does not work with the way we order the list -> flickering
 		//ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(1.0f, 4.0f));
 
@@ -1052,12 +1085,12 @@ namespace ggui::toolbar
 			int widget_id_num = 0;
 
 			// loop amount of registered-sorted elements
-			for (uint32_t e = 0; e < tbedit_ordered_list.size(); e++)
+			for (uint32_t e = 0; e < toolbar_sorted_list.size(); e++)
 			{
-				const auto element = tbedit_ordered_list[e];
+				const auto element = toolbar_sorted_list[e];
 
 				// check if the element was registered
-				if (element.is_separator || tbedit_elements.find(tbedit_ordered_list[e].name) != tbedit_elements.end())
+				if (element.is_separator || toolbar_registered_elements_callbacks.find(toolbar_sorted_list[e].name) != toolbar_registered_elements_callbacks.end())
 				{
 					ImGui::TableNextRow();
 
@@ -1066,7 +1099,6 @@ namespace ggui::toolbar
 						ImGui::TableNextColumn();
 						switch (column)
 						{
-
 						case 0:
 							if (!element.is_separator && !element.debug)
 							{
@@ -1079,24 +1111,31 @@ namespace ggui::toolbar
 									ImGui::Image(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1);
 								}
 
-								// TODO! - add placeholder image or text when icon is missing
+								// placeholder image when icon is missing
+								else if (const auto image = game::Image_RegisterHandle("cycle_xyz");
+									image && image->texture.data)
+								{
+									const ImVec2 uv0 = ImVec2(0.5f, 0.0f);
+									const ImVec2 uv1 = ImVec2(1.0f, 1.0f);
+
+									ImGui::Image(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1);
+								}
 							}
 
 							break;
-
 
 						case 1:
 							if (element.is_separator)
 							{
 								// unique id for each separator
 								if (ImGui::Selectable(
-									utils::va("------------##%d", tbedit_ordered_list[e].id),
+									utils::va("------------##%d", toolbar_sorted_list[e].id),
 									e == tbedit_selection.element_pos && tbedit_selection.is_selected,
 									ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, 
 									ImVec2(0.0f, IMAGEBUTTON_SIZE.y)))
 								{
 									tbedit_selection.is_selected = true;
-									tbedit_selection.element_id = tbedit_ordered_list[e].id;
+									tbedit_selection.element_id = toolbar_sorted_list[e].id;
 									tbedit_selection.element_pos = e;
 								}
 							}
@@ -1109,27 +1148,25 @@ namespace ggui::toolbar
 									ImVec2(0.0f, IMAGEBUTTON_SIZE.y)))
 								{
 									tbedit_selection.is_selected = true;
-									tbedit_selection.element_id = tbedit_ordered_list[e].id;
+									tbedit_selection.element_id = toolbar_sorted_list[e].id;
 									tbedit_selection.element_pos = e;
 								}
 							}
-
-
-
+							
 							if (ImGui::IsItemActive() && !ImGui::IsItemHovered())
 							{
 								int n_next = e + (ImGui::GetMouseDragDelta(0).y < 0.0f ? -1 : 1);
-								if (n_next >= 0 && static_cast<uint32_t>(n_next) < tbedit_ordered_list.size())
+								if (n_next >= 0 && static_cast<uint32_t>(n_next) < toolbar_sorted_list.size())
 								{
-									const auto temp_pair = tbedit_ordered_list[n_next];
+									const auto temp_pair = toolbar_sorted_list[n_next];
 
-									tbedit_ordered_list[n_next] = tbedit_ordered_list[e];
-									tbedit_ordered_list[e] = temp_pair;
+									toolbar_sorted_list[n_next] = toolbar_sorted_list[e];
+									toolbar_sorted_list[e] = temp_pair;
 
 									ImGui::ResetMouseDragDelta();
 
 									tbedit_selection.is_selected = true;
-									tbedit_selection.element_id = tbedit_ordered_list[n_next].id;
+									tbedit_selection.element_id = toolbar_sorted_list[n_next].id;
 									tbedit_selection.element_pos = n_next;
 								}
 							}
@@ -1139,7 +1176,7 @@ namespace ggui::toolbar
 							if (!element.is_separator)
 							{
 								ImGui::PushID(widget_id_num); widget_id_num++;
-								ImGui::Checkbox("##checkbox", &tbedit_ordered_list[e].visible);
+								ImGui::Checkbox("##checkbox", &toolbar_sorted_list[e].visible);
 								ImGui::PopID(); // widget_id_num
 								break;
 							}
@@ -1280,9 +1317,9 @@ namespace ggui::toolbar
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 70));		_stylecolors++;
 
 		// loop amount of registered-sorted elements
-		for (uint32_t e = 0; e < tbedit_ordered_list.size(); e++)
+		for (uint32_t e = 0; e < toolbar_sorted_list.size(); e++)
 		{
-			if (tbedit_ordered_list[e].is_separator)
+			if (toolbar_sorted_list[e].is_separator)
 			{
 				if (ggui::toolbar_axis == ImGuiAxis_X)
 				{
@@ -1299,10 +1336,10 @@ namespace ggui::toolbar
 			}
 
 			// check if the element was registered
-			if (auto element  = tbedit_elements.find(tbedit_ordered_list[e].name);
-					 element != tbedit_elements.end())
+			if (auto element  = toolbar_registered_elements_callbacks.find(toolbar_sorted_list[e].name);
+					 element != toolbar_registered_elements_callbacks.end())
 			{
-				if (tbedit_ordered_list[e].visible)
+				if (toolbar_sorted_list[e].visible)
 				{
 					element->second();
 
