@@ -2,6 +2,13 @@
 
 namespace ggui::preferences
 {
+	int		dev_num_01 = 0;
+	float	modelpreview_sun_dir[3] = { 0.98f, 0.01f, 0.17f };
+	float	modelpreview_sun_diffuse[3] = { 0.5f, 0.5f, 0.5f };
+	float	modelpreview_sun_specular[4] = { 0.5f, 0.5f, 0.5f };
+	float	modelpreview_material_specular[4] = { 0.5f, 0.5f, 0.5f };
+	float	modelpreview_ambient[4] = { 0.1f, 0.1f, 0.1f, 0.1f };
+	
 	const std::string CAT_GUI = "Gui";
 	const std::string CAT_GENERAL = "General";
 	const std::string CAT_GRID = "Grid";
@@ -21,7 +28,9 @@ namespace ggui::preferences
 		_pref_categories.emplace_back(CAT_GRID);
 		_pref_categories.emplace_back(CAT_CAMERA);
 		_pref_categories.emplace_back(CAT_LIVELINK);
+#ifdef DEBUG
 		_pref_categories.emplace_back(CAT_DEVELOPER);
+#endif
 	}
 
 	void title_with_seperator(const char* title_text, bool pre_spacing = true)
@@ -241,6 +250,15 @@ namespace ggui::preferences
 		{
 			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
 			{
+				ImGui::DragInt("Dev Int 01", &dev_num_01, 0.1f);
+
+#ifdef CUSTOM_SHADER_TEST_LIT_SUN
+				ImGui::DragFloat3("Modelpreview: Sun Dir", modelpreview_sun_dir, 0.1f);
+				ImGui::ColorEdit3("Modelpreview: Sun Diffuse", modelpreview_sun_diffuse, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+				ImGui::ColorEdit4("Modelpreview: Sun Specular", modelpreview_sun_specular, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+				ImGui::ColorEdit4("Modelpreview: Material Specular", modelpreview_material_specular, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+				ImGui::ColorEdit4("Modelpreview: Ambient", modelpreview_ambient, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+#endif
 			}
 			ImGui::EndChild();
 		}

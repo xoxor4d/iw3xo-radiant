@@ -160,6 +160,74 @@ namespace components
 		sprintf_s(buff_out, always_16, "%s_3_0", ps);
 	}
 
+	bool r_load_shader_programm(unsigned int* shader_len, unsigned int* cached_shader_out, const char* filename)
+	{
+		*shader_len = 0;
+		*cached_shader_out = 0;
+
+		// open the shader file
+		auto shader_binary = fopen(filename, "rb");
+		if (!shader_binary)
+		{
+			return false;
+		}
+
+		// first 4 bytes (int) = programm size in bytes
+		if (fread(shader_len, 4u, 1u, shader_binary) != 1)
+		{
+			fclose(shader_binary);
+			return false;
+		}
+
+		// Z_Malloc :: alloc memory (programm size in bytes)
+		auto chached_shader = utils::hook::call<unsigned int* (__cdecl)(size_t)>(0x4AC330)(*shader_len);
+		if (chached_shader)
+		{
+			// assign buffer addr to our ptr
+			*cached_shader_out = reinterpret_cast<unsigned int>(chached_shader);
+
+			// read and write programm to buffer
+			fread(chached_shader, 1u, *shader_len, shader_binary);
+			fclose(shader_binary);
+
+			return true;
+		}
+
+		game::Com_Error("r_load_shader_programm :: failed to alloc %d amount of bytes", *shader_len);
+		return false;
+	}
+
+	bool Material_CopyTextToDXBuffer(ID3DXBuffer** shader, DWORD shader_hash, const char* prefix_str)
+	{
+		char shader_path[260];
+		unsigned int shader_len = 0;
+		unsigned int chachedShader = 0;
+
+		sprintf_s(shader_path, 260u, "%s/raw/shader_bin/%s_%8.8x", game::Dvar_FindVar("fs_basepath")->current.string, prefix_str, shader_hash);
+		if (!r_load_shader_programm(&shader_len, &chachedShader, shader_path))
+		{
+			// look for addon shaders in bin/IW3xRadiant/shader_bin
+			memset(&shader_path, 0, sizeof(shader_path));
+			sprintf_s(shader_path, 260u, "%s/bin/IW3xRadiant/shader_bin/%s_%8.8x", game::Dvar_FindVar("fs_basepath")->current.string, prefix_str, shader_hash);
+
+			if (!r_load_shader_programm(&shader_len, &chachedShader, shader_path))
+			{
+				return false;
+			}
+		}
+
+		// create shader buffer
+		if (D3DXCreateBuffer(shader_len, shader) < 0)
+		{
+			game::Com_Error("ERROR: Material_CopyTextToDXBuffer: D3DXCreateBuffer(%d) failed\n", shader_len);
+		}
+
+		// copy shader programm to shader buffer
+		memcpy((*shader)->GetBufferPointer(), (void*)chachedShader, shader_len);
+
+		return true;
+	}
+
 
 	// *
 	//  hashing
@@ -225,8 +293,8 @@ namespace components
 			// calculate shader hash if not found in the shader_names file .. always calculate?
 			shader_hash = 0xFFFFFFFF - swap_byte_order32(generate_hash_value(shader_name));
 		}
-
-		if(!R_CreateShaderBuffer(&shader, shader_hash, prefix_buffer))
+		
+		if(!Material_CopyTextToDXBuffer(&shader, shader_hash, prefix_buffer)) // R_CreateShaderBuffer (original func)
 		{
 			game::Com_Error("r_create_pixelshader :: Can't find shader: shader_bin/%s_%8.8x (%s)\n", prefix_buffer, shader_hash, shader_name);
 		}
@@ -260,7 +328,7 @@ namespace components
 		// assign ptr and copy shader prog
 		char* addr_shader_prog = (char*)&mtlShader[1];
 		DWORD* shader_prog_ptr = (DWORD*)shader->GetBufferPointer();
-		memcpy(addr_shader_prog, shader_prog_ptr, programSize); // <- the fuck? size 4 ?
+		memcpy(addr_shader_prog, shader_prog_ptr, programSize);
 
 		// create pixelshader
 		if (game::dx->device->CreatePixelShader((DWORD*)addr_shader_prog, (IDirect3DPixelShader9**)&mtlShader->prog.ps) >= 0)
@@ -287,6 +355,8 @@ namespace components
 	// *
 	// vertexshader
 
+	
+
 	game::MaterialVertexShader* r_create_vertexshader(const char* shader_name, signed int name_len, int always_one)
 	{
 		ID3DXBuffer* shader = nullptr;
@@ -301,7 +371,7 @@ namespace components
 			shader_hash = 0xFFFFFFFF - swap_byte_order32(generate_hash_value(shader_name));
 		}
 
-		if (!R_CreateShaderBuffer(&shader, shader_hash, prefix_buffer))
+		if (!Material_CopyTextToDXBuffer(&shader, shader_hash, prefix_buffer))
 		{
 			game::Com_Error("r_create_vertexshader :: Can't find shader: shader_bin/%s_%8.8x (%s)\n", prefix_buffer, shader_hash, shader_name);
 		}
@@ -335,7 +405,7 @@ namespace components
 		// assign ptr and copy shader prog
 		char* addr_shader_prog = (char*)&mtlShader[1];
 		DWORD* shader_prog_ptr = (DWORD*)shader->GetBufferPointer();
-		memcpy(addr_shader_prog, shader_prog_ptr, programSize); // <- the fuck? size 4 ?
+		memcpy(addr_shader_prog, shader_prog_ptr, programSize);
 
 		// create vertexshader
 		if (game::dx->device->CreateVertexShader((DWORD*)addr_shader_prog, (IDirect3DVertexShader9**)&mtlShader->prog.vs) >= 0)
@@ -425,48 +495,51 @@ namespace components
 		{
 			if (state && state->pass)
 			{
-				// loop through all argument defs to find custom codeconsts
-				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
+#ifdef	CUSTOM_SHADER_TEST_LIT_SUN
+				if (utils::string_contains(state->technique->passArray[0].pixelShader->name, "sgen_model01"))
 				{
-					const auto arg_def = &state->pass->args[arg];
-
-					if (arg_def && arg_def->type == 5)
+					// loop through all argument defs to find custom codeconsts
+					for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 					{
-						if (state->pass->pixelShader)
+						const auto arg_def = &state->pass->args[arg];
+
+						if (arg_def && arg_def->type == 5)
 						{
-							std::string material_name = state->material->info.name;
-							if(utils::string_contains(material_name, "mtl_tree_shadow") || utils::string_contains(material_name, "mtl_shadowcaster"))
+							if (state->pass->pixelShader)
 							{
-								/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_MATERIAL_COLOR)
+								if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
 								{
 									game::vec4_t temp = { 1.0f, 0.0f, 0.0f, 0.0f };
+									
+									// AngleVectors(float* angles, float* vpn, float* right, float* up)
+									utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(ggui::preferences::modelpreview_sun_dir, temp, nullptr, nullptr);
 									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-								}*/
+								}
+								else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
+								{
+									game::vec4_t temp = { ggui::preferences::modelpreview_sun_diffuse[0], ggui::preferences::modelpreview_sun_diffuse[1], ggui::preferences::modelpreview_sun_diffuse[2], 1.0f };
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								}
+								else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
+								{
+									game::vec4_t temp = { ggui::preferences::modelpreview_sun_specular[0], ggui::preferences::modelpreview_sun_specular[1], ggui::preferences::modelpreview_sun_specular[2], ggui::preferences::modelpreview_sun_specular[3] };
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								}
+								else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
+								{
+									game::vec4_t temp = { ggui::preferences::modelpreview_material_specular[0], ggui::preferences::modelpreview_material_specular[1], ggui::preferences::modelpreview_material_specular[2], ggui::preferences::modelpreview_material_specular[3] };
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								}
+								else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
+								{
+									game::vec4_t temp = { ggui::preferences::modelpreview_ambient[0], ggui::preferences::modelpreview_ambient[1], ggui::preferences::modelpreview_ambient[2], ggui::preferences::modelpreview_ambient[3] };
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								}
 							}
-							/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_MATERIAL_COLOR)
-							{
-								game::vec4_t temp = { 1.0f, 0.0f, 0.0f, 1.0f };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-							}*/
-
-							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_DIFFUSE)
-							{
-								//game::vec4_t get_temp;
-								//game::dx->device->GetVertexShaderConstantF(arg_def->dest, get_temp, 1);
-
-								// check in hlsl shader if custom constant is set :: if(lightDiffuse.w == 0.1337f)
-								game::vec4_t temp = { 1.0f, 0.4f, 0.4f, 0.1337f };
-								//game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-							}
-
-							/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
-							{
-								game::vec4_t temp = { 1.0f, 0.0f, 0.0f, 1.0f };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-							}*/
 						}
 					}
 				}
+#endif
 			}
 		}
 	}
@@ -585,7 +658,7 @@ namespace components
 		}
 	}
 
-	void R_AddCmdSetCustomShaderConstant(game::ShaderCodeConstants constant, float x, float y, float z, float w)
+	void renderer::R_AddCmdSetCustomShaderConstant(game::ShaderCodeConstants constant, float x, float y, float z, float w)
 	{
 		auto setconstant_cmd = reinterpret_cast<game::GfxCmdSetCustomConstant*>(game::R_GetCommandBuffer(sizeof(game::GfxCmdSetCustomConstant), game::GfxRenderCommand::RC_SET_CUSTOM_CONSTANT));
 		if(setconstant_cmd)
@@ -649,9 +722,9 @@ namespace components
 		//R_InterpretSunLightParseParamsIntoLights(SunLightParseParams *params, GfxLight *light)
 		utils::hook::call<void(__cdecl)(game::SunLightParseParams* _params, game::GfxLight* _light)>(0x50C400)(&parms, &light);
 
-		R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_POSITION, light.dir[0], light.dir[1], light.dir[2], 0.0f);
-		R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_DIFFUSE, light.color[0], light.color[1], light.color[2], 1.0f);
-		R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_SPECULAR, light.color[0], light.color[1], light.color[2], 1.0f);
+		renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_POSITION, light.dir[0], light.dir[1], light.dir[2], 0.0f);
+		renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_DIFFUSE, light.color[0], light.color[1], light.color[2], 1.0f);
+		renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_SPECULAR, light.color[0], light.color[1], light.color[2], 1.0f);
 
 		if(sun_dir)
 		{

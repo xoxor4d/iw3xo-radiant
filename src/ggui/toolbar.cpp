@@ -1059,13 +1059,13 @@ namespace ggui::toolbar
 				&& !out_of_bounds 
 				&& toolbar_sorted_list[tbedit_selection.element_pos].is_separator)
 			{
-				printf("selected sep, deleting ...\n");
+				game::printf_to_console("selected sep, deleting ...\n");
 				toolbar_sorted_list.erase(toolbar_sorted_list.begin() + tbedit_selection.element_pos);
 			}
 			else if (out_of_bounds)
 			{
 				tbedit_selection.is_selected = false;
-				printf("out of bounds!\n");
+				game::printf_to_console("out of bounds!\n");
 			}
 		}
 		
@@ -1112,13 +1112,13 @@ namespace ggui::toolbar
 								}
 
 								// placeholder image when icon is missing
-								else if (const auto image = game::Image_RegisterHandle("cycle_xyz");
-									image && image->texture.data)
+								else if (const auto temp_image = game::Image_RegisterHandle("cycle_xyz");
+									temp_image&& temp_image->texture.data)
 								{
 									const ImVec2 uv0 = ImVec2(0.5f, 0.0f);
 									const ImVec2 uv1 = ImVec2(1.0f, 1.0f);
 
-									ImGui::Image(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1);
+									ImGui::Image(temp_image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1);
 								}
 							}
 

@@ -204,6 +204,7 @@ void clayermatwnd::on_paint()
 	 *	normal-based	= 24,
 	 *	view-based		= 25,
 	 *	case-textures	= 27,
+	 *	wireframe white = 28,
 	 *	wireframe		= 29,
 	 */
 	
@@ -261,6 +262,19 @@ void clayermatwnd::on_paint()
 
 					setup_scene_modelselector(origin, axis, 0, 0, game::dx->windows[game::dx->targetWindowIndex].width, game::dx->windows[game::dx->targetWindowIndex].height);
 
+#if 0
+					float dir_out[3] = {};
+					
+					// AngleVectors(float* angles, float* vpn, float* right, float* up)
+					utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(ggui::preferences::modelpreview_sun_dir, dir_out, nullptr, nullptr);
+
+					components::renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_POSITION, dir_out[0], dir_out[1], dir_out[2], 1.0f);
+					components::renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_DIFFUSE, ggui::preferences::modelpreview_sun_diffuse[0], ggui::preferences::modelpreview_sun_diffuse[1], ggui::preferences::modelpreview_sun_diffuse[2], 1.0f);
+					components::renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_SPECULAR, ggui::preferences::modelpreview_sun_specular[0], ggui::preferences::modelpreview_sun_specular[1], ggui::preferences::modelpreview_sun_specular[2], ggui::preferences::modelpreview_sun_specular[3]);
+					components::renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_LIGHT_SPOTDIR, ggui::preferences::modelpreview_material_specular[0], ggui::preferences::modelpreview_material_specular[1], ggui::preferences::modelpreview_material_specular[2], ggui::preferences::modelpreview_material_specular[3]);
+					components::renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_LIGHT_SPOTFACTORS, ggui::preferences::modelpreview_ambient[0], ggui::preferences::modelpreview_ambient[1], ggui::preferences::modelpreview_ambient[2], ggui::preferences::modelpreview_ambient[3]);
+#endif
+					
 					// setup model orientation
 					game::orientation_t model_orientation = {};
 					game::AnglesToAxis(temp_angles, &model_orientation.axis[0][0]);

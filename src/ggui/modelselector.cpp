@@ -294,6 +294,7 @@ namespace ggui::modelselector
 			 *	normal-based	= 24,
 			 *	view-based		= 25,
 			 *	case-textures	= 27,
+			 *	wireframe white = 28,
 			 *	wireframe		= 29,
 			 */
 
@@ -335,9 +336,11 @@ namespace ggui::modelselector
 						}
 
 						ImGui::SameLine();
-						if (ImGui::Button("Wireframe")) {
-							layermatwnd::rendermethod_preview = 29;
-						}
+						if (ImGui::Button("Wireframe")) 
+						{
+							layermatwnd::rendermethod_preview = layermatwnd::rendermethod_preview != 28 ? 28 : 29;
+							//layermatwnd::rendermethod_preview = 29;
+						} TT("Press a second time to switch to textured wireframe");
 
 						ImGui::SameLine();
 						if (ImGui::Button(layermatwnd::rotation_pause ? "Play" : "Pause", ImVec2(56.0f, 0))) {
@@ -353,7 +356,7 @@ namespace ggui::modelselector
 
 					if (ImGui::Button(m_selector->overwrite_selection ? "Overwrite selection: On" : "Overwrite selection: Off", ImVec2(168.0f, 0))) {
 						m_selector->overwrite_selection = !m_selector->overwrite_selection;
-					} TT("On: change models for selected entities\nOff: spawn a new one");
+					} TT("On: swap model for selected entity\nOff: spawn a new entity");
 
 					const float second_row_button_width = ImGui::GetItemRectSize().x;
 
