@@ -242,7 +242,7 @@ namespace ggui::menubar
 							
 						} TT(dvars::gui_floating_toolbar->description);
 						
-						if (ImGui::MenuItem("^ Resize Dockspace", 0, dvars::gui_resize_dockspace->current.enabled))
+						if (ImGui::MenuItem("Resize Dockspace ^", 0, dvars::gui_resize_dockspace->current.enabled))
 						{
 							dvars::set_bool(dvars::gui_resize_dockspace, dvars::gui_resize_dockspace->current.enabled ? false : true);
 						} TT(dvars::gui_resize_dockspace->description);
@@ -251,6 +251,25 @@ namespace ggui::menubar
 						{
 							ggui::reset_dockspace = true; // used to trigger dockspace rebuilding (cxywnd_gui)
 						}
+					}
+
+					SEPERATORV(0.0f);
+
+					if (ImGui::BeginMenu("Background"))
+					{
+						if (ImGui::MenuItem("None", 0, dvars::gui_mainframe_background->current.integer == 0)) {
+							dvars::set_int(dvars::gui_mainframe_background, 0);
+						} TT("No special background (stock)");
+
+						if (ImGui::MenuItem("Grid", 0, dvars::gui_mainframe_background->current.integer == 1)) {
+							dvars::set_int(dvars::gui_mainframe_background, 1);
+						} TT("Use the grid window as the editor background");
+
+						if (ImGui::MenuItem("Camera", 0, dvars::gui_mainframe_background->current.integer == 2)) {
+							dvars::set_int(dvars::gui_mainframe_background, 2);
+						} TT("Use the camera window as the editor background");
+
+						ImGui::EndMenu(); // Background
 					}
 					
 					ImGui::EndMenu(); // Gui Settings
@@ -268,33 +287,8 @@ namespace ggui::menubar
 					components::gui::toggle(context.m_cmdbinds, 0, true);
 				}
 
-				if (ImGui::MenuItem("Console")) {
-					components::gui::toggle(context.m_console, 0, true);
-				}
-
-				if (ImGui::MenuItem("Filter")) {
-					components::gui::toggle(context.m_filter, 0, true);
-				}
-
-				if (ImGui::MenuItem("Entity")) {
-					components::gui::toggle(context.m_entity, 0, true);
-				}
-
-				if (ImGui::MenuItem("Demo")) {
-					components::gui::toggle(context.m_demo, 0, true);
-				}
-
-				if (ImGui::MenuItem("Preferences ImGui")) {
+				if (ImGui::MenuItem("Preferences", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
 					components::gui::toggle(context.m_preferences, 0, true);
-				}
-
-				if (ImGui::MenuItem("Model Selector")) {
-					const auto m_selector = ggui::get_rtt_modelselector();
-					m_selector->menustate = !m_selector->menustate;
-				}
-				
-				if (ImGui::MenuItem("Preferences ...", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
-					mainframe_thiscall(void, 0x426950); //cmainframe::OnPrefs
 				}
 
 				ImGui::EndMenu(); // Edit
@@ -304,104 +298,89 @@ namespace ggui::menubar
 			{
 				if (ImGui::BeginMenu("Toggle"))
 				{
-					if (ImGui::MenuItem("Menubar", 0, ggui::mainframe_menubar_enabled)) 
-					{
-						if (!ggui::mainframe_menubar_enabled)
-						{
-							components::command::execute("menubar_show");
-						}
-						else
-						{
-							components::command::execute("menubar_hide");
-						}
-						
-						game::CPrefsDlg_SavePrefs();
+					if (ImGui::MenuItem("Game View", hotkeys::get_hotkey_for_command("xo_gameview").c_str(), dvars::radiant_gameview->current.enabled)) {
+						components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
+					}
+					
+					if (ImGui::MenuItem("Console", hotkeys::get_hotkey_for_command("ViewConsole").c_str())) {
+						components::gui::toggle(context.m_console, 0, true);
 					}
 
-					if (ImGui::MenuItem("Toolbar", 0, dvars::mainframe_show_toolbar->current.enabled))
-					{
-						typedef void(__thiscall* CFrameWnd_ShowControlBar_t)(CFrameWnd*, CControlBar*, BOOL bShow, BOOL bDelay);
-									  const auto CFrameWnd_ShowControlBar = reinterpret_cast<CFrameWnd_ShowControlBar_t>(0x59E9DD);
-
-						if (!dvars::mainframe_show_toolbar->current.enabled)
-						{
-							CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndToolBar, 1, 1);
-							dvars::set_bool(dvars::mainframe_show_toolbar, true);
-						}
-						else
-						{
-							CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndToolBar, 0, 1);
-							dvars::set_bool(dvars::mainframe_show_toolbar, false);
-						}
+					if (ImGui::MenuItem("Filter", hotkeys::get_hotkey_for_command("ViewFilters").c_str())) {
+						components::gui::toggle(context.m_filter, 0, true);
 					}
 
-					if (ImGui::MenuItem("Camera View (Original)", hotkeys::get_hotkey_for_command("ToggleCamera").c_str(), nullptr, cmainframe::is_combined_view())) {
-						mainframe_thiscall(void, 0x426A40); // cmainframe::OnTogglecamera
-					}
-
-					if (ImGui::MenuItem("XY View (Original)", hotkeys::get_hotkey_for_command("ToggleView").c_str(), nullptr, cmainframe::is_combined_view())) {
-						mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
-					}
-
-					if (ImGui::MenuItem("Textures (Original)", 0, false, cmainframe::is_combined_view())) {
-						ShowWindow(cmainframe::activewnd->m_pTexWnd->GetWindow(), SW_HIDE);
-					}
-
-					if (ImGui::MenuItem("Console View", hotkeys::get_hotkey_for_command("ViewConsole").c_str(), nullptr, cmainframe::is_combined_view())) {
-						mainframe_thiscall(void, 0x426A90); // cmainframe::OnToggleconsole
-					}
-
-					// this would be stupid
-					//if (ImGui::MenuItem("Z View", hotkeys::get_hotkey_for_command("ToggleZ").c_str(), nullptr, cmainframe::is_combined_view())) {
-					//	mainframe_thiscall(void, 0x426B30); // cmainframe::OnTogglez
-					//}
-
-					if (ImGui::MenuItem("XY Crosshair", hotkeys::get_hotkey_for_command("ToggleCrosshairs").c_str(), game::g_bCrossHairs)) {
-						game::g_bCrossHairs ^= 1;
-					}
-
-					if (ImGui::MenuItem("Selected Outlines", hotkeys::get_hotkey_for_command("ToggleOutlineDraw").c_str(), !game::g_qeglobals->dontDrawSelectedOutlines)) {
-						game::g_qeglobals->dontDrawSelectedOutlines ^= 1;
-					}
-
-					if (ImGui::MenuItem("Selected Tint", hotkeys::get_hotkey_for_command("ToggleTintDraw").c_str(), !game::g_qeglobals->dontDrawSelectedTint)) {
-						game::g_qeglobals->dontDrawSelectedTint ^= 1;
-					}
-
-					if (ImGui::MenuItem("Entity View", hotkeys::get_hotkey_for_command("ViewEntityInfo").c_str())) {
-						mainframe_thiscall(void, 0x423F00); // cmainframe::OnViewEntity
+					if (ImGui::MenuItem("Entity", hotkeys::get_hotkey_for_command("ViewEntityInfo").c_str())) {
+						components::gui::toggle(context.m_entity, 0, true);
 					}
 
 					if (ImGui::MenuItem("Layers", hotkeys::get_hotkey_for_command("ToggleLayers").c_str())) {
 						cdeclcall(void, 0x42BD10); // cmainframe::OnLayersDlg
 					}
 
-					if (ImGui::MenuItem("Filter Settings", hotkeys::get_hotkey_for_command("ViewFilters").c_str())) {
-						mainframe_thiscall(void, 0x42B7A0); // cmainframe::OnFilterDlg
-					}
-
 					if (ImGui::MenuItem("Textures", hotkeys::get_hotkey_for_command("ViewTextures").c_str())) {
 						components::gui::toggle(ggui::get_rtt_texturewnd(), 0, true);
 					}
 
-					ImGui::EndMenu(); // Toggle
-				}
-
-				if (ImGui::BeginMenu("Background"))
-				{
-					if (ImGui::MenuItem("None", 0, dvars::gui_mainframe_background->current.integer == 0)) {
-						dvars::set_int(dvars::gui_mainframe_background, 0);
+					if (ImGui::MenuItem("Model Selector", hotkeys::get_hotkey_for_command("xo_modelselector").c_str()))
+					{
+						const auto m_selector = ggui::get_rtt_modelselector();
+						m_selector->menustate = !m_selector->menustate;
 					}
 
-					if (ImGui::MenuItem("Grid", 0, dvars::gui_mainframe_background->current.integer == 1)) {
-						dvars::set_int(dvars::gui_mainframe_background, 1);
-					}
-
-					if (ImGui::MenuItem("Camera", 0, dvars::gui_mainframe_background->current.integer == 2)) {
-						dvars::set_int(dvars::gui_mainframe_background, 2);
+					if (ImGui::MenuItem("ImGui Demo")) {
+						components::gui::toggle(context.m_demo, 0, true);
 					}
 					
-					ImGui::EndMenu(); // Background
+#ifdef DEBUG					
+					SEPERATORV(0.0f);
+
+					if (ImGui::BeginMenu("Original Windows"))
+					{
+						if (ImGui::MenuItem("Menubar", 0, ggui::mainframe_menubar_enabled))
+						{
+							if (!ggui::mainframe_menubar_enabled)
+							{
+								components::command::execute("menubar_show");
+							}
+							else
+							{
+								components::command::execute("menubar_hide");
+							}
+
+							game::CPrefsDlg_SavePrefs();
+						}
+
+						if (ImGui::MenuItem("Toolbar", 0, dvars::mainframe_show_toolbar->current.enabled))
+						{
+							typedef void(__thiscall* CFrameWnd_ShowControlBar_t)(CFrameWnd*, CControlBar*, BOOL bShow, BOOL bDelay);
+							const auto CFrameWnd_ShowControlBar = reinterpret_cast<CFrameWnd_ShowControlBar_t>(0x59E9DD);
+
+							if (!dvars::mainframe_show_toolbar->current.enabled)
+							{
+								CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndToolBar, 1, 1);
+								dvars::set_bool(dvars::mainframe_show_toolbar, true);
+							}
+							else
+							{
+								CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndToolBar, 0, 1);
+								dvars::set_bool(dvars::mainframe_show_toolbar, false);
+							}
+						}
+
+						if (ImGui::MenuItem("Camera View (Original)", hotkeys::get_hotkey_for_command("ToggleCamera").c_str(), nullptr, cmainframe::is_combined_view())) {
+							mainframe_thiscall(void, 0x426A40); // cmainframe::OnTogglecamera
+						}
+
+						if (ImGui::MenuItem("XY View (Original)", hotkeys::get_hotkey_for_command("ToggleView").c_str(), nullptr, cmainframe::is_combined_view())) {
+							mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
+						}
+						
+						ImGui::EndMenu(); // Original Windows
+					}
+#endif
+
+					ImGui::EndMenu(); // Toggle
 				}
 
 				SEPERATORV(0.0f);
@@ -428,7 +407,7 @@ namespace ggui::menubar
 					mainframe_thiscall(void, 0x426DB0); // cmainframe::OnViewNextview
 				}
 
-				if (ImGui::BeginMenu("XY Window"))
+				if (ImGui::BeginMenu("Grid Window"))
 				{
 					if (ImGui::MenuItem("XY")) {
 						mainframe_thiscall(void, 0x424710); // cmainframe::OnViewXy
@@ -441,35 +420,8 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("XZ")) {
 						mainframe_thiscall(void, 0x424A80); // cmainframe::OnViewXz
 					}
-
-					SEPERATORV(0.0f);
-
-					if (ImGui::MenuItem("Show Names", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 8) == 0)) {
-						mainframe_thiscall(void, 0x42BA40); // cmainframe::OnSelectNames
-					}
-
-					if (ImGui::MenuItem("Show Angles", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 2) == 0)) {
-						mainframe_thiscall(void, 0x42BAA0); // cmainframe::OnSelectAngles
-					}
-
-					if (ImGui::MenuItem("Show Grid Blocks", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 16) == 0)) {
-						mainframe_thiscall(void, 0x42BB00); // cmainframe::OnSelectBlocks
-					}
-
-					if (ImGui::MenuItem("Show Connections", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 4) == 0)) {
-						mainframe_thiscall(void, 0x42BBC0); // cmainframe::OnSelectConnections
-					}
-
-					if (ImGui::MenuItem("Draw Model Origins", 0, dvars::r_draw_model_origin->current.enabled)) {
-						dvars::set_bool(dvars::r_draw_model_origin, !dvars::r_draw_model_origin->current.enabled);
-					}
-
-					if (ImGui::MenuItem("Game View", 0, dvars::radiant_gameview->current.enabled)) 
-					{
-						components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
-					}
-
-					ImGui::EndMenu(); // XY Window
+					
+					ImGui::EndMenu(); // Grid Window
 				}
 
 				SEPERATORV(0.0f);
@@ -490,11 +442,127 @@ namespace ggui::menubar
 					cdeclcall(void, 0x42B6D0); // cmainframe::OnShowHidden
 				}
 
+				ImGui::EndMenu(); // View
+			}
+
+			if (ImGui::BeginMenu("Renderer"))
+			{
+				if (ImGui::BeginMenu("General"))
+				{
+					if (ImGui::MenuItem("Outline Selected", hotkeys::get_hotkey_for_command("ToggleOutlineDraw").c_str(), !game::g_qeglobals->dontDrawSelectedOutlines)) {
+						game::g_qeglobals->dontDrawSelectedOutlines ^= 1;
+					}
+
+					if (ImGui::MenuItem("Tint Selected", hotkeys::get_hotkey_for_command("ToggleTintDraw").c_str(), !game::g_qeglobals->dontDrawSelectedTint)) {
+						game::g_qeglobals->dontDrawSelectedTint ^= 1;
+					}
+
+					if (ImGui::MenuItem("Show Connections", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 4) == 0)) {
+						mainframe_thiscall(void, 0x42BBC0); // cmainframe::OnSelectConnections
+					} TT("Draw connection lines between entities, eg. target <-> targetname");
+
+					if (ImGui::MenuItem("Show Angles", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 2) == 0)) {
+						mainframe_thiscall(void, 0x42BAA0); // cmainframe::OnSelectAngles
+					} TT("Draw entity angles");
+
+					if (ImGui::MenuItem("Draw Model Origins", 0, dvars::r_draw_model_origin->current.enabled)) {
+						dvars::set_bool(dvars::r_draw_model_origin, !dvars::r_draw_model_origin->current.enabled);
+					} TT("Draw small boxes around entity origins (size can be set in preferences/general \"Model origin size\"");
+					
+					ImGui::EndMenu(); // General
+				}
+
+				if (ImGui::BeginMenu("Grid Window"))
+				{
+					if (ImGui::MenuItem("Show Names", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 8) == 0)) {
+						mainframe_thiscall(void, 0x42BA40); // cmainframe::OnSelectNames
+					} TT("Draw entity classnames");
+
+					if (ImGui::MenuItem("Show Grid Blocks", 0, (game::g_qeglobals->d_savedinfo.d_xyShowFlags & 16) == 0)) {
+						mainframe_thiscall(void, 0x42BB00); // cmainframe::OnSelectBlocks
+					}
+
+					if (ImGui::MenuItem("Draw Crosshair", hotkeys::get_hotkey_for_command("ToggleCrosshairs").c_str(), game::g_bCrossHairs)) {
+						game::g_bCrossHairs ^= 1;
+					}
+
+					ImGui::EndMenu(); // Grid Window
+				}
+
+				if (ImGui::BeginMenu("Render Method"))
+				{
+					if (ImGui::MenuItem("Wireframe", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_WIREFRAME)) {
+						set_render_method(RM_WIREFRAME);
+					}
+
+					if (ImGui::MenuItem("Fullbright", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_FULLBRIGHT)) {
+						set_render_method(RM_FULLBRIGHT);
+					}
+
+					if (ImGui::MenuItem("Normal-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_NORMALFAKELIGHT)) {
+						set_render_method(RM_NORMALFAKELIGHT);
+					}
+
+					if (ImGui::MenuItem("View-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_VIEWFAKELIGHT)) {
+						set_render_method(RM_VIEWFAKELIGHT);
+					}
+
+					if (ImGui::MenuItem("Case Textures", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_CASETEXTURES)) {
+						set_render_method(RM_CASETEXTURES);
+					}
+
+					ImGui::EndMenu(); // Render Method
+				}
+
 				SEPERATORV(0.0f);
 
+				if (ImGui::BeginMenu("Texture Filter"))
+				{
+					if (ImGui::MenuItem("Unchanged", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 0)) {
+						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 0);
+					}
+
+					if (ImGui::MenuItem("Force Trilinear", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 1)) {
+						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 1);
+					}
+
+					if (ImGui::MenuItem("Force Bilinear", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 2)) {
+						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 2);
+					}
+
+					if (ImGui::MenuItem("Force Mipmaps Off", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 3)) {
+						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 3);
+					}
+
+					ImGui::EndMenu(); // Texture Filter
+				}
+
+				if (ImGui::BeginMenu("Texture Resolution"))
+				{
+					if (ImGui::MenuItem("Maximum", 0, game::g_qeglobals->d_savedinfo.d_picmip == 0)) {
+						set_texture_resolution(0);
+					}
+
+					if (ImGui::MenuItem("High", 0, game::g_qeglobals->d_savedinfo.d_picmip == 1)) {
+						set_texture_resolution(1);
+					}
+
+					if (ImGui::MenuItem("Normal", 0, game::g_qeglobals->d_savedinfo.d_picmip == 2)) {
+						set_texture_resolution(2);
+					}
+
+					if (ImGui::MenuItem("Low", 0, game::g_qeglobals->d_savedinfo.d_picmip == 3)) {
+						set_texture_resolution(3);
+					}
+
+					ImGui::EndMenu(); // Texture Resolution
+				}
+
+				SEPERATORV(0.0f);
+				
 				if (ImGui::BeginMenu("Show Patches As"))
 				{
-					if (ImGui::MenuItem("Textured", 0, !prefs->g_nPatchAsWireframe)) 
+					if (ImGui::MenuItem("Textured", 0, !prefs->g_nPatchAsWireframe))
 					{
 						prefs->g_nPatchAsWireframe = 0;
 						game::CPrefsDlg_SavePrefs();
@@ -511,10 +579,10 @@ namespace ggui::menubar
 						prefs->g_nPatchAsWireframe = 2;
 						game::CPrefsDlg_SavePrefs();
 					}
-					
+
 					ImGui::EndMenu(); // Draw Patches As
 				}
-				
+
 				if (ImGui::BeginMenu("Show Entities As"))
 				{
 					if (ImGui::MenuItem("Bounding Box", 0, prefs->m_nEntityShowState == game::ENTITY_BOXED)) {
@@ -596,8 +664,8 @@ namespace ggui::menubar
 				if (ImGui::MenuItem("Cubic Clipping", hotkeys::get_hotkey_for_command("ToggleCubicClip").c_str(), prefs->m_bCubicClipping)) {
 					mainframe_thiscall(void, 0x428F90); // cmainframe::OnViewCubicclipping
 				}
-
-				ImGui::EndMenu(); // View
+				
+				ImGui::EndMenu(); // Renderer
 			}
 
 			if (ImGui::BeginMenu("Selection"))
@@ -899,80 +967,7 @@ namespace ggui::menubar
 				if (ImGui::MenuItem("Find / Replace")) {
 					cdeclcall(void, 0x428B40); // CMainFrame::OnTextureReplaceall
 				}
-
-				if (ImGui::BeginMenu("Render Method"))
-				{
-					if (ImGui::MenuItem("Wireframe", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_WIREFRAME)) {
-						set_render_method(RM_WIREFRAME);
-					}
-
-					if (ImGui::MenuItem("Fullbright", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_FULLBRIGHT)) {
-						set_render_method(RM_FULLBRIGHT);
-					}
-
-					if (ImGui::MenuItem("Normal-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_NORMALFAKELIGHT)) {
-						set_render_method(RM_NORMALFAKELIGHT);
-					}
-
-					if (ImGui::MenuItem("View-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_VIEWFAKELIGHT)) {
-						set_render_method(RM_VIEWFAKELIGHT);
-					}
-
-					if (ImGui::MenuItem("Case Textures", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_CASETEXTURES)) {
-						set_render_method(RM_CASETEXTURES);
-					}
-
-					SEPERATORV(0.0f);
-
-					if (ImGui::MenuItem("Alpha Rendering", 0, prefs->camera_masked)) {
-						mainframe_thiscall(void, 0x429F10); // CMainFrame::OnToggleTextureAlphaRendering
-					}
-
-					ImGui::EndMenu(); // Render Method
-				}
-
-				if (ImGui::BeginMenu("Texture Filter"))
-				{
-					if (ImGui::MenuItem("Unchanged", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 0)) {
-						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 0);
-					}
-
-					if (ImGui::MenuItem("Force Trilinear", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 1)) {
-						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 1);
-					}
-
-					if (ImGui::MenuItem("Force Bilinear", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 2)) {
-						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 2);
-					}
-
-					if (ImGui::MenuItem("Force Mipmaps Off", 0, game::Dvar_FindVar("r_texFilterMipMode")->current.integer == 3)) {
-						game::Dvar_SetInt(game::Dvar_FindVar("r_texFilterMipMode"), 3);
-					}
-
-					ImGui::EndMenu(); // Texture Filter
-				}
-
-				if (ImGui::BeginMenu("Texture Resolution"))
-				{
-					if (ImGui::MenuItem("Maximum", 0, game::g_qeglobals->d_savedinfo.d_picmip == 0)) {
-						set_texture_resolution(0);
-					}
-
-					if (ImGui::MenuItem("High", 0, game::g_qeglobals->d_savedinfo.d_picmip == 1)) {
-						set_texture_resolution(1);
-					}
-
-					if (ImGui::MenuItem("Normal", 0, game::g_qeglobals->d_savedinfo.d_picmip == 2)) {
-						set_texture_resolution(2);
-					}
-
-					if (ImGui::MenuItem("Low", 0, game::g_qeglobals->d_savedinfo.d_picmip == 3)) {
-						set_texture_resolution(3);
-					}
-
-					ImGui::EndMenu(); // Texture Resolution
-				}
-
+				
 				if (ImGui::BeginMenu("Texture Window Scale"))
 				{
 					if (ImGui::MenuItem("200%", 0, prefs->m_nTextureWindowScale == 200)) {
@@ -1017,18 +1012,22 @@ namespace ggui::menubar
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::BeginMenu("Layered Materials"))
-				{
-					if (ImGui::MenuItem("Toogle Tool Window", hotkeys::get_hotkey_for_command("ToggleLayeredMaterialWnd").c_str()))
-					{
-						cdeclcall(void, 0x42BFE0); // CMainFrame::OnToggleLayeredMaterials
-					}
+				//if (ImGui::BeginMenu("Layered Materials"))
+				//{
+				//	if (ImGui::MenuItem("Toogle Tool Window", hotkeys::get_hotkey_for_command("ToggleLayeredMaterialWnd").c_str()))
+				//	{
+				//		cdeclcall(void, 0x42BFE0); // CMainFrame::OnToggleLayeredMaterials
+				//	}
 
-					if (ImGui::MenuItem("Save", hotkeys::get_hotkey_for_command("SaveLayeredMaterials").c_str())) {
-						cdeclcall(void, 0x42C020); // CMainFrame::OnSaveLayeredMaterials
-					}
+				//	if (ImGui::MenuItem("Save", hotkeys::get_hotkey_for_command("SaveLayeredMaterials").c_str())) {
+				//		cdeclcall(void, 0x42C020); // CMainFrame::OnSaveLayeredMaterials
+				//	}
 
-					ImGui::EndMenu(); // Layered Materials
+				//	ImGui::EndMenu(); // Layered Materials
+				//}
+
+				if (ImGui::MenuItem("Refresh Textures", hotkeys::get_hotkey_for_command("RefreshTextures").c_str())) {
+					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
 				}
 
 				if (ImGui::BeginMenu("Edit Layer"))
@@ -1052,10 +1051,6 @@ namespace ggui::menubar
 					}
 
 					ImGui::EndMenu(); // Edit Layer
-				}
-
-				if (ImGui::MenuItem("Refresh Textures", hotkeys::get_hotkey_for_command("RefreshTextures").c_str())) {
-					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
 				}
 
 				if (ImGui::BeginMenu("Usage Filter"))
