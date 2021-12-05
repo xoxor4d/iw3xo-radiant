@@ -221,6 +221,9 @@ namespace ggui::modelselector
 				// target => ccamwnd::rtt_camera_window()
 				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
 				{
+					// tell czwnd::on_lbutton_up() to pass left mouse input to imgui (on release, once)
+					ggui::dragdrop_overwrite_leftmouse_capture();
+					
 					ImGui::SetDragDropPayload("MODEL_SELECTOR_ITEM", nullptr, 0, ImGuiCond_Once);
 					ImGui::Text("Model: %s", m_selector->preview_model_name.c_str());
 					ImGui::EndDragDropSource();

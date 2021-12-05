@@ -169,8 +169,12 @@ void cxywnd::rtt_grid_window()
 			{
 				if(ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 				{
+					// reset manual left mouse capture
+					ggui::dragdrop_reset_leftmouse_capture();
+					
 					const auto m_selector = ggui::get_rtt_modelselector();
-
+					ggui::entity::addprop_helper_s no_undo = {};
+					
 					if (m_selector->overwrite_selection)
 					{
 						game::Undo_ClearRedo();
@@ -188,7 +192,7 @@ void cxywnd::rtt_grid_window()
 							goto SPAWN_AWAY;
 						}
 
-						ggui::entity::AddProp("model", m_selector->preview_model_name.c_str());
+						ggui::entity::AddProp("model", m_selector->preview_model_name.c_str(), &no_undo);
 						game::Undo_End();
 					}
 					else
@@ -211,7 +215,7 @@ void cxywnd::rtt_grid_window()
 
 						g_block_radiant_modeldialog = false;
 
-						ggui::entity::AddProp("model", ggui::get_rtt_modelselector()->preview_model_name.c_str());
+						ggui::entity::AddProp("model", ggui::get_rtt_modelselector()->preview_model_name.c_str(), &no_undo);
 						// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
 
 						game::Undo_End();

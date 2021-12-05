@@ -117,5 +117,17 @@ namespace ggui
 			//ImGui::Text("Hovered Triangle? %d", hovered);
 		}
 	}
+
+	void dragdrop_overwrite_leftmouse_capture()
+	{
+		get_rtt_camerawnd()->capture_left_mousebutton = true;
+		get_rtt_gridwnd()->capture_left_mousebutton = true;
+	}
+
+	void dragdrop_reset_leftmouse_capture()
+	{
+		get_rtt_camerawnd()->capture_left_mousebutton = false;
+		get_rtt_gridwnd()->capture_left_mousebutton = false;
+	}
 	
 }

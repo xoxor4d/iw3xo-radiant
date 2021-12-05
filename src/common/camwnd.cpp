@@ -487,7 +487,11 @@ void ccamwnd::rtt_camera_window()
 			{
 				if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 				{
+					// reset manual left mouse capture
+					ggui::dragdrop_reset_leftmouse_capture();
+					
 					const auto m_selector = ggui::get_rtt_modelselector();
+					ggui::entity::addprop_helper_s no_undo = {};
 
 					if(m_selector->overwrite_selection)
 					{
@@ -506,7 +510,7 @@ void ccamwnd::rtt_camera_window()
 							goto SPAWN_AWAY;
 						}
 
-						ggui::entity::AddProp("model", m_selector->preview_model_name.c_str());
+						ggui::entity::AddProp("model", m_selector->preview_model_name.c_str(), &no_undo);
 						game::Undo_End();
 					}
 					else
@@ -528,8 +532,8 @@ void ccamwnd::rtt_camera_window()
 						utils::hook::call<void(__cdecl)(const char*)>(0x465CC0)("misc_model");
 
 						g_block_radiant_modeldialog = false;
-
-						ggui::entity::AddProp("model", m_selector->preview_model_name.c_str());
+						
+						ggui::entity::AddProp("model", m_selector->preview_model_name.c_str(), &no_undo);
 						// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
 
 						float dir[3];
@@ -561,12 +565,14 @@ void ccamwnd::rtt_camera_window()
 						char origin_str_buf[64] = {};
 						if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", origin[0], origin[1], origin[2]))
 						{
-							ggui::entity::AddProp("origin", origin_str_buf);
+							ggui::entity::AddProp("origin", origin_str_buf, &no_undo);
 						}
 
 						game::Undo_End();
 					}
 				}
+
+				ImGui::EndDragDropTarget();
 			}
 
 

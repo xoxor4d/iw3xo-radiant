@@ -204,6 +204,9 @@ namespace ggui
 
 	extern bool rtt_handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd);
 	extern void	FixDockingTabbarTriangle(ImGuiWindow* wnd, ggui::render_to_texture_window_s* rtt);
+
+	extern void dragdrop_overwrite_leftmouse_capture();
+	extern void dragdrop_reset_leftmouse_capture();
 	
 	inline render_to_texture_window_s* get_rtt_gridwnd()
 	{

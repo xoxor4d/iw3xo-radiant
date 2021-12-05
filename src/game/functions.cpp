@@ -146,6 +146,10 @@ namespace game
 
 	void Undo_GeneralStart(const char* operation /*eax*/)
 	{
+#ifdef DEBUG
+		game::printf_to_console("Undo_GeneralStart :: %s", operation);
+#endif
+		
 		const static uint32_t func_addr = 0x45E3F0;
 		__asm
 		{

@@ -48,6 +48,13 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			gridwnd->should_set_focus = true;
 
 			xywnd::__on_lbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+
+			if (gridwnd->capture_left_mousebutton)
+			{
+				ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_LBUTTONDOWN);
+				gridwnd->capture_left_mousebutton = false;
+			}
+
 			return;
 		}
 
@@ -117,6 +124,13 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 				 gridwnd->window_hovered)
 		{
 			xywnd::__on_lbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+
+			if (gridwnd->capture_left_mousebutton)
+			{
+				ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_LBUTTONUP);
+				gridwnd->capture_left_mousebutton = false;
+			}
+			
 			return;
 		}
 
