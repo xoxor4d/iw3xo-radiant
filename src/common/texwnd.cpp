@@ -95,12 +95,14 @@ BOOL __fastcall ctexwnd::on_paint(ctexwnd* pThis)
 
 void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 {
+	const float RIGHT_OFFSET = 14.0f;
+	
 	const auto texwnd = ggui::get_rtt_texturewnd();
 	//ImGui::SetCursorScreenPos(ImVec2(cursor_pos.x, cursor_pos.y + 40.0f)); // no effect with sameline below
 
 	// right side alignment
 	static float toolbar_line1_width = 580.0f; // used as first frame estimate
-	ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line1_width + 8.0f));
+	ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line1_width + RIGHT_OFFSET));
 
 	// offset toolbar vertically
 	ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 8.0f);
@@ -299,7 +301,7 @@ void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 	// line 2
 	
 	static float toolbar_line2_width = 220.0f; // used as first frame estimate
-	ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line2_width + 8.0f));
+	ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line2_width + RIGHT_OFFSET));
 
 	// offset toolbar vertically
 	ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 28.0f);
@@ -308,12 +310,14 @@ void rtt_texture_window_toolbar([[maybe_unused]] ImVec2 cursor_pos)
 	{
 		ImGui::PushStyleCompact();
 
-		// TODO! :: scrollbar
-		const int scroll_percent = (int)((float)(g_texwnd->nPos) / (float)(g_texwnd->nPosMax - g_texwnd->m_nHeight) * 100);
-		if(scroll_percent == 100 || g_texwnd->nPos < g_texwnd->nPosMax - g_texwnd->m_nHeight)
+		if(dvars::gui_texwnd_draw_scrollpercent && dvars::gui_texwnd_draw_scrollpercent->current.enabled)
 		{
-			ImGui::Text("%d/100%%", scroll_percent);
-			ImGui::SameLine();
+			const int scroll_percent = (int)((float)(g_texwnd->nPos) / (float)(g_texwnd->nPosMax - g_texwnd->m_nHeight) * 100);
+			if (scroll_percent == 100 || g_texwnd->nPos < g_texwnd->nPosMax - g_texwnd->m_nHeight)
+			{
+				ImGui::Text("%d/100%%", scroll_percent);
+				ImGui::SameLine();
+			}
 		}
 
 		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
@@ -497,7 +501,36 @@ void ctexwnd::rtt_texture_window()
 			// reset cursorpos and fix tabbar triangle
 			ImGui::SetCursorScreenPos(pre_child_pos);
 			ggui::FixDockingTabbarTriangle(wnd, texwnd);
+
 			
+			// *
+			// custom scrollbar
+			if(dvars::gui_texwnd_draw_scrollbar && dvars::gui_texwnd_draw_scrollbar->current.enabled)
+			{
+				ImGuiContext& g = *GImGui;
+				ImGuiWindow* window = g.CurrentWindow;
+
+				const ImGuiID id = ImGui::GetWindowScrollbarID(window, ImGuiAxis_Y);
+				ImGui::KeepAliveID(id);
+
+				// Calculate scrollbar bounding box
+				const ImRect outer_rect = window->Rect();
+				const ImRect inner_rect = window->InnerRect;
+				const float border_size = window->WindowBorderSize;
+				const float scrollbar_size = 10.0f;
+
+				const ImRect bb = ImRect(ImMax(outer_rect.Min.x, outer_rect.Max.x - border_size - scrollbar_size), inner_rect.Min.y, outer_rect.Max.x, inner_rect.Max.y);
+				const ImDrawFlags rounding_corners = ImDrawFlags_RoundCornersTopRight | ImDrawFlags_RoundCornersBottomRight;
+
+				float scroll = (float)g_texwnd->nPos;
+				const float size_avail = window->InnerRect.Max[ImGuiAxis_Y] - window->InnerRect.Min[ImGuiAxis_Y];
+				const float size_contents = (float)g_texwnd->nPosMax + 110.0f;
+				
+				ImGui::ScrollbarEx(bb, id, ImGuiAxis_Y, &scroll, size_avail, size_contents, rounding_corners);
+
+				g_texwnd->nPos = (int)scroll;
+			}
+
 			ImGui::EndChild();
 		}
 	}
@@ -560,6 +593,20 @@ void __declspec(naked) on_textures_show_all_command_stub()
 	}
 }
 
+void ctexwnd::register_dvars()
+{
+	dvars::gui_texwnd_draw_scrollbar = dvars::register_bool(
+		/* name		*/ "gui_texwnd_draw_scrollbar",
+		/* default	*/ true,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "Draw texturewindow scrollbar");
+
+	dvars::gui_texwnd_draw_scrollpercent = dvars::register_bool(
+		/* name		*/ "gui_texwnd_draw_scrollpercent",
+		/* default	*/ false,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "Draw texturewindow scroll in percent (position in % / 100%)");
+}
 
 void ctexwnd::hooks()
 {

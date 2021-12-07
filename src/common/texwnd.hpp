@@ -38,6 +38,8 @@ private:
 
 public:
     static void				hooks();
+	static void				register_dvars();
+	
 	static void				on_mousebutton_down(UINT nFlags);
 	static void				on_mousebutton_up(UINT nFlags);
 	static void				on_mousemove(UINT nFlags);

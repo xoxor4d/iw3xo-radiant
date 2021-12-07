@@ -556,7 +556,10 @@ namespace components
 			// preferences menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_preferences,
 				ggui::preferences::menu(ggui::state.czwnd.m_preferences), nullptr);
-			//ggui::state.czwnd.m_preferences.menustate = true;
+
+			// about menu
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_about,
+				ggui::about::menu(ggui::state.czwnd.m_about), nullptr);
 
 			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_modelselector(),
 				ggui::modelselector::menu(), nullptr);

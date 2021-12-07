@@ -23,6 +23,9 @@ namespace dvars
 	game::dvar_s* gui_menubar_show_mouseorigin = nullptr;
 	game::dvar_s* gui_draw_fps = nullptr;
 
+	game::dvar_s* gui_texwnd_draw_scrollbar = nullptr;
+	game::dvar_s* gui_texwnd_draw_scrollpercent = nullptr;
+	
 	game::dvar_s* gui_props_classlist_defaultopen = nullptr;
 	game::dvar_s* gui_props_comments_defaultopen = nullptr;
 	game::dvar_s* gui_props_spawnflags_defaultopen = nullptr;
@@ -132,6 +135,7 @@ namespace dvars
 		cmainframe::register_dvars();
 		cxywnd::register_dvars();
 		ccamwnd::register_dvars();
+		ctexwnd::register_dvars();
 		
 		ggui::toolbar::register_dvars();
 		ggui::entity::register_dvars();

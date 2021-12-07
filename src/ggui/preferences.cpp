@@ -8,92 +8,184 @@ namespace ggui::preferences
 	float	modelpreview_sun_specular[4] = { 0.5f, 0.5f, 0.5f };
 	float	modelpreview_material_specular[4] = { 0.5f, 0.5f, 0.5f };
 	float	modelpreview_ambient[4] = { 0.1f, 0.1f, 0.1f, 0.1f };
+
+	// --------------------------------------
 	
 	const std::string CAT_GUI = "Gui";
 	const std::string CAT_GENERAL = "General";
 	const std::string CAT_GRID = "Grid";
 	const std::string CAT_CAMERA = "Camera";
+	const std::string CAT_TEXTURES = "Textures";
 	const std::string CAT_LIVELINK = "Live Link";
 	const std::string CAT_DEVELOPER = "Developer";
 
+	bool _pref_update_scroll = false;
 	
-	std::vector<std::string> _pref_categories;
-	static size_t _pref_current = 0;
-
-	void init_categories()
+	int _pref_child_current = -1;
+	unsigned int _pref_child_count = 0;
+	
+	const float _pref_child_bg_col[4] = { 0.1f, 0.1f, 0.1f, 0.2f };
+	const float _pref_child_bg_highlight_col[4] = { 0.7f, 0.7f, 0.7f, 0.1f };
+	
+	struct pref_child_s
 	{
-		// order
-		_pref_categories.emplace_back(CAT_GENERAL);
-		_pref_categories.emplace_back(CAT_GUI);
-		_pref_categories.emplace_back(CAT_GRID);
-		_pref_categories.emplace_back(CAT_CAMERA);
-		_pref_categories.emplace_back(CAT_LIVELINK);
-#ifdef DEBUG
-		_pref_categories.emplace_back(CAT_DEVELOPER);
-#endif
+		unsigned int index;
+		std::function<void()> callback;
+	};
+	
+	nlohmann::fifo_map<std::string, pref_child_s> _pref_childs;
+
+	void register_child(const std::string& _child_name, std::function<void()> _callback)
+	{
+		_pref_childs[_child_name] = pref_child_s
+		(
+			_pref_child_count,
+			_callback
+		);
+
+		_pref_child_count++;
 	}
 
-	void title_with_seperator(const char* title_text, bool pre_spacing = true)
+	void title_with_background(const char* title_text, const ImVec2& pos, const float width, const float height, const float* bg_color, const float* border_color, bool pre_spacing = true, const float text_indent = 8.0f)
+	{
+		if (bg_color && border_color)
+		{
+			if (pre_spacing)
+			{
+				SPACING(0.0f, 8.0f);
+			}
+
+			// GetForegroundDrawList
+
+			ImVec2 text_pos = ImGui::GetCursorScreenPos();
+			text_pos.x += text_indent;
+			
+			ImGui::PushFontFromIndex(BOLD_18PX);
+			text_pos.y = text_pos.y + (height * 0.5f - ImGui::CalcTextSize(title_text).y * 0.5f);
+			
+			ImVec2 max = ImVec2(pos.x + width, pos.y + height);
+			ImGui::GetWindowDrawList()->AddRectFilled(pos, max, ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(bg_color)), 0.0f);
+			ImGui::GetWindowDrawList()->AddRect(pos, max, ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(border_color)), 0.0f);
+			//ImGui::PushFontFromIndex(BOLD_18PX);
+			ImGui::GetWindowDrawList()->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), title_text);
+			ImGui::PopFont();
+
+			SPACING(0.0f, 40.0f);
+		}
+	}
+	
+	void title_with_seperator(const char* title_text, bool pre_spacing = true, float width = 0.0f, float height = 2.0f)
 	{
 		if(pre_spacing)
 		{
-			SPACING(0.0f, 8.0f);
+			SPACING(0.0f, 12.0f);
 		}
 
+		if(width == 0.0f)
+		{
+			width = ImGui::GetContentRegionAvailWidth() - 16.0f;
+		}
+		
 		ImGui::PushFontFromIndex(BOLD_18PX);
 		ImGui::TextUnformatted(title_text);
 		ImGui::PopFont();
-		ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
+		//ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
+
+		const ImVec2 seperator_pos = ImGui::GetCursorScreenPos();
+		ImGui::GetWindowDrawList()->AddLine(seperator_pos, ImVec2(seperator_pos.x + width, seperator_pos.y + height), ImGui::GetColorU32(ImGuiCol_Separator));
 
 		SPACING(0.0f, 2.0f);
 	}
 
+
+	
+	float pref_child_lambda(const std::string& child_name, const float child_height, const float* bg_color, const float* border_color, const std::function<void()>& cb)
+	{
+		auto background_color = bg_color;
+
+		// do not offset the first child
+		if(_pref_childs[child_name].index)
+		{
+			SPACING(0.0f, 24.0f);
+		}
+
+		if (_pref_childs[child_name].index == _pref_child_current)
+		{
+			background_color = _pref_child_bg_highlight_col;
+		}
+
+		std::string child_str = "[ "s + child_name + " ]"s;
+		const float child_indent = 8.0f;
+		const float child_width = ImGui::GetContentRegionAvailWidth() - child_indent;
+
+		ImVec2 min = ImGui::GetCursorScreenPos();
+		ImVec2 max = ImVec2(min.x + child_width, min.y + child_height);
+		ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(background_color)), 10.0f, ImDrawFlags_RoundCornersBottom);
+		ImGui::GetWindowDrawList()->AddRect(min, max, ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(border_color)), 10.0f, ImDrawFlags_RoundCornersBottom);
+
+		ImGui::BeginGroup();
+		title_with_background(child_str.c_str(), min, child_width, 38.0f, dvars::gui_window_bg_color->current.vector, dvars::gui_border_color->current.vector, false, child_indent);
+
+		if (_pref_update_scroll)
+		{
+			if (_pref_childs[child_name].index == _pref_child_current)
+			{
+				ImGui::SetScrollHereY(0.0f);
+				_pref_update_scroll = false;
+			}
+		}
+
+		ImGui::Indent(child_indent);
+
+		cb();
+
+		SPACING(0.0f, 12.0f);
+		ImGui::EndGroup();
+		return ImGui::GetItemRectSize().y;
+	}
+
 	void child_gui()
 	{
-		if (_pref_categories[_pref_current] == CAT_GUI)
+		static float height = 0.0f;
+		height = pref_child_lambda(CAT_GUI, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
-			{
 				title_with_seperator("Menubar", false);
 
 				ImGui::Checkbox("Show mousecursor origin within the menubar", &dvars::gui_menubar_show_mouseorigin->current.enabled);
 
-				
+
 				// -----------------
 				title_with_seperator("Main Toolbar");
 
-				if(ImGui::Checkbox("Floating Toolbar", &dvars::gui_floating_toolbar->current.enabled)) {
+				if (ImGui::Checkbox("Floating Toolbar", &dvars::gui_floating_toolbar->current.enabled)) {
 					ggui::toolbar_reset = true;
 				}
 
-				
+
 				// -----------------
 				title_with_seperator("Docking");
-				
+
 				ImGui::BeginDisabled(!dvars::gui_floating_toolbar->current.enabled);
 				{
 					ImGui::Checkbox("Resize Dockspace for floating toolbar", &dvars::gui_resize_dockspace->current.enabled);
 				}
 				ImGui::EndDisabled();
 
-				if(ImGui::Button("Reset Dockspace")) {
+				if (ImGui::Button("Reset Dockspace")) {
 					ggui::reset_dockspace = true;
 				}
-			}
-			ImGui::EndChild();
-		}
+		});
 	}
 
 	void child_general()
 	{
-		if (_pref_categories[_pref_current] == CAT_GENERAL)
+		static float height = 0.0f;
+		height = pref_child_lambda(CAT_GENERAL, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
-			{
 				auto prefs = game::g_PrefsDlg();
 
 				title_with_seperator("Load / Save", false);
-				
+
 				ImGui::Checkbox("Load last project on open", &prefs->m_bLoadLast);
 				ImGui::Checkbox("Load last map on open", &prefs->m_bLoadLastMap);
 
@@ -104,10 +196,10 @@ namespace ggui::preferences
 					TT("Brush will be removed if ANY side is below the threshold. Not a saved setting!");
 				}
 				ImGui::EndDisabled();
-				
+
 				ImGui::Checkbox("Loose changes dialog on exit", &prefs->loose_changes);
 				ImGui::Checkbox("Enable snapshots", &prefs->m_bSnapShots);
-				
+
 				ImGui::Checkbox("Enable autosave", &prefs->m_bAutoSave);
 				ImGui::BeginDisabled(!prefs->m_bAutoSave);
 				{
@@ -123,17 +215,17 @@ namespace ggui::preferences
 				ImGui::DragInt("Max fps texture window", &dvars::radiant_maxfps_textures->current.integer, 0.1f, dvars::radiant_maxfps_textures->domain.integer.min, dvars::radiant_maxfps_textures->domain.integer.max);
 				ImGui::DragInt("Max fps modelselector window", &dvars::radiant_maxfps_modelselector->current.integer, 0.1f, dvars::radiant_maxfps_modelselector->domain.integer.min, dvars::radiant_maxfps_modelselector->domain.integer.max);
 				ImGui::DragInt("Max fps gui", &dvars::radiant_maxfps_mainframe->current.integer, 0.1f, dvars::radiant_maxfps_mainframe->domain.integer.min, dvars::radiant_maxfps_mainframe->domain.integer.max);
-				
+
 				// -----------------
 				title_with_seperator("Unordered Settings");
 				ImGui::Checkbox("Linking entities keeps selection", &prefs->linking_keeps_selection);
 
-				if(ImGui::SliderInt("Undo levels", &prefs->m_nUndoLevels, 16, 512))
+				if (ImGui::SliderInt("Undo levels", &prefs->m_nUndoLevels, 16, 512))
 				{
 					game::g_undoMaxSize = prefs->m_nUndoLevels;
 				}
 
-				
+
 				// -----------------
 				title_with_seperator("Views / Scales / Sizes");
 
@@ -146,23 +238,21 @@ namespace ggui::preferences
 				ImGui::DragInt("Vehicle arrow time", &prefs->vehicle_arrow_time, 0.1f, 0, 10000);
 				ImGui::DragInt("Vehicle arrow size", &prefs->vehicle_arrow_size, 0.1f, 0, 1000);
 
-				
+
 				// -----------------
 				title_with_seperator("Property Editor");
 				ImGui::Checkbox("Default Open - Classlist", &dvars::gui_props_classlist_defaultopen->current.enabled); TT(dvars::gui_props_classlist_defaultopen->description);
 				ImGui::Checkbox("Default Open - Spawnflags", &dvars::gui_props_spawnflags_defaultopen->current.enabled); TT(dvars::gui_props_spawnflags_defaultopen->description);
 				ImGui::Checkbox("Default Open - Comments", &dvars::gui_props_comments_defaultopen->current.enabled); TT(dvars::gui_props_comments_defaultopen->description);
-			}
-			ImGui::EndChild();
-		}
+
+		});
 	}
 
 	void child_grid()
 	{
-		if (_pref_categories[_pref_current] == CAT_GRID)
+		static float height = 0.0f;
+		height = pref_child_lambda(CAT_GRID, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
-			{
 				auto prefs = game::g_PrefsDlg();
 
 				title_with_seperator("Mouse", false);
@@ -170,30 +260,27 @@ namespace ggui::preferences
 				ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
 				ImGui::Checkbox("Disable grid snapping", &prefs->m_bNoClamp); TT("Org: Don't clamp plane points");
 
-				
+
 				// -----------------
 				title_with_seperator("Dragging");
 				ImGui::Checkbox("Alt always drags when multiple brushes are selected", &prefs->m_bALTEdge); TT("Holding ALT and having selected multiple brushes wont extrude, but instead move brushes when clicked outside");
 				ImGui::Checkbox("Fast view dragging", &prefs->fast_2d_view_dragging); TT("Hides static models when moving the grid");
 
-				
+
 				// -----------------
 				title_with_seperator("Visuals");
 				ImGui::Checkbox("Show sizing info", &prefs->m_bSizePaint);
 				ImGui::Checkbox("Thick selection lines", &prefs->thick_selection_lines);
 				ImGui::Checkbox("Texture brushes", &prefs->texture_brush_2d);
 				ImGui::Checkbox("Texture meshes", &prefs->texture_mesh_2d);
-			}
-			ImGui::EndChild();
-		}
+		});;
 	}
 	
 	void child_camera()
 	{
-		if (_pref_categories[_pref_current] == CAT_CAMERA)
+		static float height = 0.0f;
+		height = pref_child_lambda(CAT_CAMERA, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
-			{
 				auto prefs = game::g_PrefsDlg();
 
 				title_with_seperator("General", false);
@@ -207,49 +294,52 @@ namespace ggui::preferences
 				ImGui::SliderInt("Camera angle speed", &prefs->m_nAngleSpeed, 1, 1000);
 				ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
 
-				
+
 				// -----------------
 				title_with_seperator("Visuals");
 				ImGui::Checkbox("Cull sky when using cubic clipping", &prefs->b_mCullSky);
-				
+
 
 				// -----------------
 				title_with_seperator("Toolbar");
 				ImGui::Checkbox("Draw FPS within the camera window", &dvars::gui_draw_fps->current.enabled);
 				ImGui::Checkbox("Default Open - Toolbar", &dvars::gui_camera_toolbar_defaultopen->current.enabled);
-			}
-			ImGui::EndChild();
-		}
+
+		});
 	}
 
-	
+	void child_textures()
+	{
+		static float height = 0.0f;
+		height = pref_child_lambda(CAT_TEXTURES, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
+		{
+				ImGui::Checkbox("Draw scrollbar", &dvars::gui_texwnd_draw_scrollbar->current.enabled);
+				ImGui::Checkbox("Show scroll position in percent", &dvars::gui_texwnd_draw_scrollpercent->current.enabled);
+		});
+	}
 
 	void child_livelink()
 	{
-		if (_pref_categories[_pref_current] == CAT_LIVELINK)
+		static float height = 0.0f;
+		height = pref_child_lambda(CAT_LIVELINK, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
-			{
 				title_with_seperator("General", false);
 				ImGui::Checkbox("Enable live-link", &dvars::radiant_live->current.enabled);
 				ImGui::DragInt("Port", &dvars::radiant_livePort->current.integer, 0.5f, 1, 99999);
 
-				
+
 				// -----------------
 				title_with_seperator("Debug / Experimental Features");
 				ImGui::Checkbox("Enable debug prints", &dvars::radiant_liveDebug->current.enabled);
-			}
-			ImGui::EndChild();
-		}
+		});
 	}
 
 	
 	void child_developer()
 	{
-		if (_pref_categories[_pref_current] == CAT_DEVELOPER)
+		static float height = 0.0f;
+		height = pref_child_lambda(CAT_DEVELOPER, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
-			{
 				ImGui::DragInt("Dev Int 01", &dev_num_01, 0.1f);
 
 #ifdef CUSTOM_SHADER_TEST_LIT_SUN
@@ -259,16 +349,24 @@ namespace ggui::preferences
 				ImGui::ColorEdit4("Modelpreview: Material Specular", modelpreview_material_specular, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 				ImGui::ColorEdit4("Modelpreview: Ambient", modelpreview_ambient, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 #endif
-			}
-			ImGui::EndChild();
-		}
+		});
 	}
 	
 	void menu(ggui::imgui_context_menu& menu)
 	{
 		if(!menu.one_time_init)
 		{
-			init_categories();
+			register_child(CAT_GENERAL, child_general);
+			register_child(CAT_GUI, child_gui);
+			register_child(CAT_GRID, child_grid);
+			register_child(CAT_CAMERA, child_camera);
+			register_child(CAT_TEXTURES, child_textures);
+			register_child(CAT_LIVELINK, child_livelink);
+
+#ifdef DEBUG
+			register_child(CAT_DEVELOPER, child_developer);
+#endif
+			
 			menu.one_time_init = true;
 		}
 		
@@ -281,29 +379,39 @@ namespace ggui::preferences
 
 		if (ImGui::BeginListBox("##pref_cat", ImVec2(180.0f, ImGui::GetContentRegionAvail().y)))
 		{
-			for (size_t i = 0; i < _pref_categories.size(); i++)
+			size_t i = 0;
+
+			for(const auto& child : _pref_childs)
 			{
-				const bool is_selected = (_pref_current == i);
-				if (ImGui::Selectable(_pref_categories[i].c_str(), is_selected)) {
-					_pref_current = i;
+				const bool is_selected = (_pref_child_current == i);
+				if (ImGui::Selectable(child.first.c_str(), is_selected))
+				{
+					_pref_child_current = i;
+					_pref_update_scroll = true;
 				}
 
-				if (is_selected) {
+				if (is_selected)
+				{
 					ImGui::SetItemDefaultFocus();
 				}
-			}
 
+				i++;
+			}
+			
 			ImGui::EndListBox();
 		}
 
 		ImGui::SameLine();
 
-		child_gui();
-		child_general();
-		child_grid();
-		child_camera();
-		child_livelink();
-		child_developer();
+		if(ImGui::BeginChild("camera##pref_child", ImVec2(0, 0), false))
+		{
+			for(const auto& child : _pref_childs)
+			{
+				child.second.callback();
+			}
+
+			ImGui::EndChild();
+		}
 		
 		ImGui::PopStyleVar();
 		ImGui::End();

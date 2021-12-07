@@ -11,6 +11,9 @@
 
 //#define CUSTOM_SHADER_TEST_LIT_SUN
 
+// Version number
+#include <version.hpp>
+
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -101,6 +104,7 @@
 #include "ggui/entity.hpp"
 #include "ggui/preferences.hpp"
 #include "ggui/modelselector.hpp"
+#include "ggui/about.hpp"
 
 #include "common/mainframe.hpp"
 #include "common/camwnd.hpp"

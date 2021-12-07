@@ -23,6 +23,9 @@ namespace dvars
 	extern game::dvar_s* gui_menubar_show_mouseorigin;
 	extern game::dvar_s* gui_draw_fps;
 
+	extern game::dvar_s* gui_texwnd_draw_scrollbar;
+	extern game::dvar_s* gui_texwnd_draw_scrollpercent;
+	
 	extern game::dvar_s* gui_props_classlist_defaultopen;
 	extern game::dvar_s* gui_props_comments_defaultopen;
 	extern game::dvar_s* gui_props_spawnflags_defaultopen;

@@ -14,6 +14,10 @@ namespace ImGui
 	void	HelpMarker(const char* desc);
 	void	PushFontFromIndex(int font);
 
+	void	AddUnterline(ImColor col);
+	void	TextURL(const char* name, const char* url);
+	void	SetCursorForCenteredText(const char* text);
+	
 	void	debug_table_entry_vec3(const char* label, const float* vec3);
 	void	debug_table_entry_float(const char* label, const float* val);
 	void	debug_table_entry_int(const char* label, const int val);

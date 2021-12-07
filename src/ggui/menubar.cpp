@@ -1449,19 +1449,20 @@ namespace ggui::menubar
 				ImGui::EndMenu(); // Patch
 			}
 
-
 			if (ImGui::BeginMenu("Help"))
 			{
-				// TODO! implement help
+				//if (ImGui::MenuItem("Command List")) {
+				//	cdeclcall(void, 0x426E00); // CMainFrame::OnHelpCommandlist
+				//}
 
-				if (ImGui::MenuItem("Command List")) {
-					cdeclcall(void, 0x426E00); // CMainFrame::OnHelpCommandlist
+				if (ImGui::MenuItem("About / Version"))
+				{
+					components::gui::toggle(context.m_about, 0, true);
 				}
 
-				// TODO! implement about
 				ImGui::EndMenu(); // Help
 			}
-			ImGui::EndGroup();
+			ImGui::EndGroup(); // used to calculate total width below
 
 			if(dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
 			{
