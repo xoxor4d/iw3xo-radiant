@@ -463,35 +463,12 @@ namespace components
 	}
 
 
-	/*
-	 * custom shader constants within model previewer:
-	 * hook call to "R_DrawXModelSkinnedUncached_2" @ 0x4FEB29 to flip bool on
-	 * ^ call, then flip bool off
-	 * hooks for vertex and shader constants - check if bool is true -> only affects model previewer
-	 */
-
-	// only true if we're in the model previewer
-	bool _in_draw_xmodelpreview = false;
-
-	void __declspec(naked) r_draw_xmodel_skinned_uncached_stub()
-	{
-		const static uint32_t func_addr = 0x53AA30;
-		const static uint32_t retn_pt = 0x4FEB2E;
-		__asm
-		{
-			mov		_in_draw_xmodelpreview, 1;
-			call	func_addr;
-			mov		_in_draw_xmodelpreview, 0;
-			jmp		retn_pt;
-		}
-	}
-
 	// *
 	// pixelshader custom constants
 
 	void set_custom_pixelshader_constants(game::GfxCmdBufState* state)
 	{
-		//if (_in_draw_xmodelpreview)
+		//if (renderer::is_rendering_layeredwnd())
 		{
 			if (state && state->pass)
 			{
@@ -572,7 +549,7 @@ namespace components
 
 	void set_custom_vertexshader_constants([[maybe_unused]] game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
-		//if(_in_draw_xmodelpreview)
+		//if (renderer::is_rendering_layeredwnd())
 		{
 			if (state && state->pass)
 			{
@@ -639,6 +616,109 @@ namespace components
 			popad;
 
 			retn;
+		}
+	}
+
+
+	// --------------
+
+	void R_SetPassShaderStableArguments(unsigned __int16* arg_type /*eax*/, game::GfxCmdBufSourceState* src, game::GfxCmdBufState* state, int stableArgCount)
+	{
+		const static uint32_t func_addr = 0x53BF60;
+		__asm
+		{
+			pushad;
+			push	stableArgCount;
+			push	state;
+			push	src;
+
+			mov		eax, arg_type;
+			
+			call	func_addr;
+			add		esp, 12;
+			
+			popad;
+		}
+	}
+
+	// returns handle for already loaded technique, loads new technique from raw/technique otherwise
+	game::MaterialTechnique* Material_RegisterTechnique(const char* name /*eax*/, int is_renderer_in_use /*edi*/)
+	{
+		const static uint32_t func_addr = 0x519790;
+		__asm
+		{
+			mov		eax, name;
+			mov		edi, is_renderer_in_use;
+			call	func_addr;
+		}
+	}
+
+	// 
+	void r_setup_pass(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
+	{
+		// hue hue
+		/*if (renderer::is_rendering_layeredwnd())
+		{
+			if(utils::string_contains(state->technique->name, "fakelight_normal_dtex"))
+			{
+				if(const auto	tech = Material_RegisterTechnique("fakelight_normal_custom_dtex", 1);
+								tech)
+				{
+					state->technique = tech;
+				}
+			}
+		}*/
+
+		const auto pass = &state->technique->passArray[passIndex];
+		const auto material = state->material;
+
+		state->pass = pass;
+		state->passIndex = passIndex;
+
+		if (material->stateBitsEntry[state->techType] >= material->stateBitsCount)
+		{
+			game::Com_Error("r_setup_pass :: material->stateBitsEntry[context.state->techType] doesn't index material->stateBitsCount");
+		}
+
+		const int bit			= passIndex + material->stateBitsEntry[state->techType];
+		unsigned int loadbit_0	= material->stateBitsTable[bit].loadBits[0];
+		unsigned int loadbit_1	= material->stateBitsTable[bit].loadBits[1];
+		
+		if (source->viewMode == game::VIEW_MODE_NONE)
+		{
+			game::Com_Error("r_setup_pass :: context.source->viewMode != VIEW_MODE_NONE");
+		}
+		
+		if (source->viewMode == game::VIEW_MODE_2D)
+		{
+			loadbit_1 = loadbit_1 & 0xFFFFFFC2 | 2;
+		}
+		
+		if (loadbit_0 != state->refStateBits[0])
+		{
+			// void __cdecl R_ChangeState_0(GfxCmdBufState *state, unsigned int statebit)
+			utils::hook::call<void(__cdecl)(game::GfxCmdBufState* _state, unsigned int _statebit)>(0x538AF0)(state, loadbit_0);
+			state->refStateBits[0] = loadbit_0;
+		}
+		
+		if (loadbit_1 != state->refStateBits[1])
+		{
+			// void __cdecl R_ChangeState_1(GfxCmdBufState *state, unsigned int statebit)
+			utils::hook::call<void(__cdecl)(game::GfxCmdBufState* _state, unsigned int _statebit)>(0x53A170)(state, loadbit_1);
+			state->refStateBits[1] = loadbit_1;
+		}
+		
+		if (!pass->pixelShader)
+		{
+			game::Com_Error("r_setup_pass :: pass->pixelShader");
+		}
+
+		// void __cdecl R_SetPixelShader(GfxCmdBufState *state, MaterialPixelShader *pixelShader)
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufState* _state, game::MaterialPixelShader* _pixelShader)>(0x53C2C0)(state, pass->pixelShader);
+
+		if (pass->stableArgCount)
+		{
+			R_SetPassShaderStableArguments(&pass->args[pass->perPrimArgCount + pass->perObjArgCount].type, source, state, pass->stableArgCount);
 		}
 	}
 
@@ -796,7 +876,6 @@ namespace components
 
 
 		// custom shader constants
-		utils::hook(0x4FEB29, r_draw_xmodel_skinned_uncached_stub, HOOK_JUMP).install()->quick();
 		utils::hook(0x53BC39, R_SetPassPixelShaderStableArguments_stub, HOOK_JUMP).install()->quick();
 		utils::hook(0x53B9E3, R_SetPassShaderObjectArguments_stub, HOOK_JUMP).install()->quick();
 
@@ -806,8 +885,47 @@ namespace components
 		utils::hook::nop(0x51873F, 17);
 		 	 utils::hook(0x51873F, r_create_vertexshader_stub, HOOK_JUMP).install()->quick();
 
+		
 		// fix sun preview (selecting brushes keeps sunpreview active; sun no longer casts shadows -> FPS ++)
 		utils::hook(0x406706, sunpreview, HOOK_CALL).install()->quick();
+
+		
+		// hook R_SetupPass in R_DrawXModelSkinnedUncached to set custom techniques
+		utils::hook(0x53AC4F, r_setup_pass, HOOK_CALL).install()->quick();
+
+		// 14EFCBC
+
+		command::register_command_with_hotkey("reload_techniques"s, [this](auto)
+		{
+			auto& tech_count = *reinterpret_cast<int*>(0x14EFCB8);
+			tech_count = 0;
+			
+			const auto tech_hashtable = reinterpret_cast<void*>(0x14EFCBC);
+			memset(tech_hashtable, 0, sizeof(int[8192]));
+		});
+
+		command::register_command_with_hotkey("reload_shaders"s, [this](auto)
+		{
+			auto& vs_count = *reinterpret_cast<int*>(0x14E7C2C);
+			vs_count = 0;
+
+			const auto vs_hashtable = reinterpret_cast<void*>(0x14E7C30);
+			memset(vs_hashtable, 0, sizeof(int[4096]));
+
+			auto& ps_count = *reinterpret_cast<int*>(0x14EBC30);
+			ps_count = 0;
+			
+			const auto ps_hashtable = reinterpret_cast<void*>(0x14EBC34);
+			memset(ps_hashtable, 0, sizeof(int[4096]));
+
+			// also reload techniques (loadcode loads shaders)
+
+			auto& tech_count = *reinterpret_cast<int*>(0x14EFCB8);
+			tech_count = 0;
+
+			const auto tech_hashtable = reinterpret_cast<void*>(0x14EFCBC);
+			memset(tech_hashtable, 0, sizeof(int[8192]));
+		});
 	}
 
 	renderer::~renderer()

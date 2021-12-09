@@ -3,6 +3,7 @@
 #pragma warning(disable: 4324)
 namespace game
 {
+	struct MaterialTechnique;
 	typedef float vec_t;
 	typedef vec_t vec2_t[2];
 	typedef vec_t vec3_t[3];
@@ -1154,19 +1155,99 @@ namespace game
 		unsigned __int16 hashIndex;
 	};
 
+	struct GfxStateBits
+	{
+		unsigned int loadBits[2];
+	};
+
+	struct WaterWritable
+	{
+		float floatTime;
+	};
+
+	struct complex_s
+	{
+		float real;
+		float imag;
+	};
+
+	struct water_t
+	{
+		WaterWritable writable;
+		complex_s* H0;
+		float* wTerm;
+		int M;
+		int N;
+		float Lx;
+		float Lz;
+		float gravity;
+		float windvel;
+		float winddir[2];
+		float amplitude;
+		float codeConstant[4];
+		GfxImage* image;
+	};
+
+	union MaterialTextureDefInfo
+	{
+		GfxImage* image;
+		water_t* water;
+	};
+
+	struct MaterialTextureDef
+	{
+		unsigned int nameHash;
+		char nameStart;
+		char nameEnd;
+		char samplerState;
+		char semantic;
+		MaterialTextureDefInfo u;
+	};
+
+	struct MaterialConstantDef
+	{
+		int nameHash;
+		char name[12];
+		vec4_t literal;
+	};
+
+	enum MaterialWorldVertexFormat : __int8
+	{
+		MTL_WORLDVERT_TEX_1_NRM_1 = 0x0,
+		MTL_WORLDVERT_TEX_2_NRM_1 = 0x1,
+		MTL_WORLDVERT_TEX_2_NRM_2 = 0x2,
+		MTL_WORLDVERT_TEX_3_NRM_1 = 0x3,
+		MTL_WORLDVERT_TEX_3_NRM_2 = 0x4,
+		MTL_WORLDVERT_TEX_3_NRM_3 = 0x5,
+		MTL_WORLDVERT_TEX_4_NRM_1 = 0x6,
+		MTL_WORLDVERT_TEX_4_NRM_2 = 0x7,
+		MTL_WORLDVERT_TEX_4_NRM_3 = 0x8,
+		MTL_WORLDVERT_TEX_5_NRM_1 = 0x9,
+		MTL_WORLDVERT_TEX_5_NRM_2 = 0xA,
+		MTL_WORLDVERT_TEX_5_NRM_3 = 0xB,
+	};
+
+	struct MaterialTechniqueSet
+	{
+		char* name;
+		MaterialWorldVertexFormat worldVertFormat;
+		MaterialTechnique* techniques[34];
+	};
+	
 	struct Material
 	{
 		MaterialInfo info;
+		char pad[32];
 		char stateBitsEntry[34];
 		char textureCount;
 		char constantCount;
 		char stateBitsCount;
 		char stateFlags;
 		char cameraRegion;
-		void* techniqueSet; // MaterialTechniqueSet
-		void* textureTable; // MaterialTextureDef
-		void* constantTable; // MaterialConstantDef
-		void* stateBitsTable; // GfxStateBits
+		MaterialTechniqueSet* techniqueSet;
+		MaterialTextureDef* textureTable;
+		MaterialConstantDef* constantTable;
+		GfxStateBits* stateBitsTable;
 	};
 
 	struct Glyph
