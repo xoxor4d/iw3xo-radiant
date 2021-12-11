@@ -33,8 +33,22 @@ extern layermatwnd_s* layermatwnd_struct;
 
 namespace layermatwnd
 {
-	extern int rendermethod_axis;
-	extern int rendermethod_preview;
+	enum E_RENDERMETHOD
+	{
+		FULLBRIGHT = 4,
+		FAKELIGHT_NORMAL = 24,
+		FAKELIGHT_VIEW = 25,
+		CASE_TEXTURE = 27,
+		WIREFRAME_WHITE = 28,
+		WIREFRAME = 29,
+
+		// custom ones
+		CUSTOM_BEGIN = 100,
+		FAKESUN_DAY = 100,
+	};
+	
+	extern E_RENDERMETHOD rendermethod_axis;
+	extern E_RENDERMETHOD rendermethod_preview;
 	extern float fov;
 	extern bool rotation_pause;
 }

@@ -212,6 +212,8 @@ namespace game
 	static utils::function< void (game::dvar_s* dvar, float x, float y, float z)>				Dvar_SetVec3 = 0x4B3870;
 	static utils::function< void (game::dvar_s* dvar, float x, float y, float z, float w)>		Dvar_SetVec4 = 0x4B38A0;
 
+	static utils::function< void __fastcall (int value, const char* name)>						Dvar_SetIntByName = 0x4B3A60;
+	
 	static utils::function< game::dvar_s* (const char* dvar_name, char value, __int16 flags, const char* description)> Dvar_RegisterBool = 0x4B25F0;
 	static utils::function< game::dvar_s* (const char* dvar_name, int value, int mins, int maxs, __int16 flags, const char* description)> Dvar_RegisterInt = 0x4B2660;
 	static utils::function< game::dvar_s* (const char* dvar_name, float value, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterFloat = 0x4B26D0;

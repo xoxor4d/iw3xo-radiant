@@ -47,7 +47,8 @@ namespace dvars
 	//
 	game::dvar_s* grid_zoom_to_cursor = nullptr;
 	game::dvar_s* r_draw_model_origin = nullptr;
-
+	game::dvar_s* r_draw_model_shadowcaster = nullptr;
+	
 	game::dvar_s* guizmo_enable = nullptr;
 	game::dvar_s* guizmo_snapping = nullptr;
 	game::dvar_s* guizmo_brush_mode = nullptr;

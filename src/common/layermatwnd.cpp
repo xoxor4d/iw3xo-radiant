@@ -19,8 +19,8 @@ float _model_anim_yaw = 0.0f;
 
 namespace layermatwnd
 {
-	int rendermethod_axis = 4;
-	int rendermethod_preview = 24;
+	E_RENDERMETHOD rendermethod_axis = FULLBRIGHT;
+	E_RENDERMETHOD rendermethod_preview = FAKELIGHT_NORMAL;
 	float fov = 60.0f;
 	bool rotation_pause = false;
 }
@@ -199,20 +199,15 @@ void clayermatwnd::on_paint()
 		_model_anim_yaw -= 360.0f;
 	}
 
-	/*  + render methods +
-	 *	fullbright		= 4,
-	 *	normal-based	= 24,
-	 *	view-based		= 25,
-	 *	case-textures	= 27,
-	 *	wireframe white = 28,
-	 *	wireframe		= 29,
-	 */
-	
-	//const int rendermethod_axis = 4;
-	//const int rendermethod_preview = 24;
-
 	layercam.width = game::dx->windows[ggui::LAYERED].width;
 	layercam.height = game::dx->windows[ggui::LAYERED].height;
+
+	// custom rendermethods always use fakelight_normal
+	auto render_method_model = layermatwnd::rendermethod_preview;
+	if(render_method_model >= layermatwnd::CUSTOM_BEGIN)
+	{
+		render_method_model = layermatwnd::FAKELIGHT_NORMAL;
+	}
 	
 	if (layercam.width != 0 && layercam.height != 0)
 	{
@@ -388,7 +383,7 @@ void clayermatwnd::on_paint()
 						{
 							// SkinModelInst - add model surfs to the skinnedCached buffer
 							utils::hook::call<int(__cdecl)(int inst_handle, int checkhandle, int techflags, game::GfxColor* color, int drawflags)>(0x4FE2E0)(
-								m_selector->preview_model_inst_handle, 0, layermatwnd::rendermethod_preview, nullptr, 2);
+								m_selector->preview_model_inst_handle, 0, render_method_model, nullptr, 2);
 						}
 					}
 				}

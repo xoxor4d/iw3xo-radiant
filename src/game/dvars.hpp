@@ -47,7 +47,8 @@ namespace dvars
 	//
 	extern game::dvar_s* grid_zoom_to_cursor;
 	extern game::dvar_s* r_draw_model_origin;
-
+	extern game::dvar_s* r_draw_model_shadowcaster;
+	
 	extern game::dvar_s* guizmo_enable;
 	extern game::dvar_s* guizmo_snapping;
 	extern game::dvar_s* guizmo_brush_mode;

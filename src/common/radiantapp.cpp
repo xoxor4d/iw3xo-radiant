@@ -134,7 +134,7 @@ void MFCCreate()
 	{
 		game::g_qeglobals->d_savedinfo.iSize = sizeof(game::g_qeglobals->d_savedinfo);
 		game::g_qeglobals->d_savedinfo.iTextMenu = 32993;
-		game::g_qeglobals->d_savedinfo.d_gridsize_float = 1;
+		game::g_qeglobals->d_savedinfo.d_gridsize = 1.0f;
 		game::g_qeglobals->d_savedinfo.d_picmip = 0;
 		
 		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], 0.169f, 0.169f, 0.169f, 1.0f); // 0

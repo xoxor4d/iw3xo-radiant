@@ -1096,7 +1096,7 @@ namespace game
 		char szProject[256];
 		vec4_t colors[27];
 		int d_xyShowFlags;
-		float d_gridsize_float;
+		float d_gridsize;
 		int d_picmip;
 	}; STATIC_ASSERT_SIZE(SavedInfo_t, 0x2C4);
 
@@ -1436,7 +1436,7 @@ namespace game
 		char patch_verts_array02[196600];
 		int patch_verts_array02_count;
 		int pad_02;
-		int current_edit_layer; // material, lightmap, smoothing
+		int current_edit_layer;
 		void* d_activeLayer;
 		char random_texture_stuff[6300];
 		LPMRUMENU* d_lpMruMenu;
@@ -1471,8 +1471,8 @@ namespace game
 		bool preview_at_max_intensity;
 		char pad_draw_toggle_unk01[3];
 		bool toggle_unk02;
-		bool toggle_unk03;
-		bool toggle_unk04;
+		bool toggle_unk03_mousedrag_state1;
+		bool toggle_unk04_mousedrag_state2;
 		bool bLockPatchVerts;
 		bool bUnlockPatchVerts;
 		bool toggle_unk05;

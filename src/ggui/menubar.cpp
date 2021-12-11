@@ -26,7 +26,7 @@ namespace ggui::menubar
 		game::g_qeglobals->d_gridsize = size;
 		if (game::g_PrefsDlg()->m_bSnapTToGrid)
 		{
-			game::g_qeglobals->d_savedinfo.d_gridsize_float = xywnd::GRID_SIZES[size];
+			game::g_qeglobals->d_savedinfo.d_gridsize = xywnd::GRID_SIZES[size];
 		}
 
 		mainframe_thiscall(void, 0x428A00); // CMainFrame::SetGridStatus
@@ -558,6 +558,56 @@ namespace ggui::menubar
 					ImGui::EndMenu(); // Texture Resolution
 				}
 
+				if (ImGui::BeginMenu("Specular Texture Resolution"))
+				{
+					const auto r_picmip_spec = game::Dvar_FindVar("r_picmip_spec");
+					
+					if (ImGui::MenuItem("Maximum", 0, r_picmip_spec->current.integer == 0)) {
+						game::Dvar_SetInt(r_picmip_spec, 0);
+					}
+
+					if (ImGui::MenuItem("High", 0, r_picmip_spec->current.integer == 1)) {
+						game::Dvar_SetInt(r_picmip_spec, 1);
+					}
+
+					if (ImGui::MenuItem("Normal", 0, r_picmip_spec->current.integer == 2)) {
+						game::Dvar_SetInt(r_picmip_spec, 2);
+					}
+
+					if (ImGui::MenuItem("Low", 0, r_picmip_spec->current.integer == 3)) {
+						game::Dvar_SetInt(r_picmip_spec, 3);
+					}
+
+					ImGui::EndMenu(); // Texture Resolution
+				}
+
+				if (ImGui::BeginMenu("Bump Texture Resolution"))
+				{
+					const auto r_picmip_bump = game::Dvar_FindVar("r_picmip_bump");
+
+					if (ImGui::MenuItem("Maximum", 0, r_picmip_bump->current.integer == 0)) {
+						game::Dvar_SetInt(r_picmip_bump, 0);
+					}
+
+					if (ImGui::MenuItem("High", 0, r_picmip_bump->current.integer == 1)) {
+						game::Dvar_SetInt(r_picmip_bump, 1);
+					}
+
+					if (ImGui::MenuItem("Normal", 0, r_picmip_bump->current.integer == 2)) {
+						game::Dvar_SetInt(r_picmip_bump, 2);
+					}
+
+					if (ImGui::MenuItem("Low", 0, r_picmip_bump->current.integer == 3)) {
+						game::Dvar_SetInt(r_picmip_bump, 3);
+					}
+
+					ImGui::EndMenu(); // Texture Resolution
+				}
+
+				if (ImGui::MenuItem("Reload Textures", hotkeys::get_hotkey_for_command("RefreshTextures").c_str())) {
+					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
+				}
+
 				SEPERATORV(0.0f);
 				
 				if (ImGui::BeginMenu("Show Patches As"))
@@ -1025,11 +1075,7 @@ namespace ggui::menubar
 
 				//	ImGui::EndMenu(); // Layered Materials
 				//}
-
-				if (ImGui::MenuItem("Refresh Textures", hotkeys::get_hotkey_for_command("RefreshTextures").c_str())) {
-					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
-				}
-
+				
 				if (ImGui::BeginMenu("Edit Layer"))
 				{
 					if (ImGui::MenuItem("Cycle", hotkeys::get_hotkey_for_command("TexLayerCycle").c_str())) {

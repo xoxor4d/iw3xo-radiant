@@ -311,49 +311,57 @@ namespace ggui::modelselector
 			
 			if(prefs_open)
 			{
+				static float buttons_total_width = 448.0f;
+				
 				ImGui::SameLine();
 				ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
 				ImGui::SetNextWindowBgAlpha(0.75f);
-				ImGui::BeginChild("settings_child", ImVec2(448.0f, 64.0f), true, ImGuiWindowFlags_None);
+				ImGui::BeginChild("settings_child", ImVec2(buttons_total_width + 12.0f, 64.0f), true, ImGuiWindowFlags_None);
 				{
 					ImGui::BeginGroup();
 					{
 						ImGui::PushStyleCompact();
 						if (ImGui::Button("Fullbright")) {
-							layermatwnd::rendermethod_preview = 4;
+							layermatwnd::rendermethod_preview = layermatwnd::FULLBRIGHT;
 						}
 
 						ImGui::SameLine();
 						if (ImGui::Button("Normal")) {
-							layermatwnd::rendermethod_preview = 24;
+							layermatwnd::rendermethod_preview = layermatwnd::FAKELIGHT_NORMAL;
 						}
 
 						ImGui::SameLine();
 						if (ImGui::Button("View")) {
-							layermatwnd::rendermethod_preview = 25;
+							layermatwnd::rendermethod_preview = layermatwnd::FAKELIGHT_VIEW;
 						}
 
 						ImGui::SameLine();
 						if (ImGui::Button("Case")) {
-							layermatwnd::rendermethod_preview = 27;
+							layermatwnd::rendermethod_preview = layermatwnd::CASE_TEXTURE;
+						}
+
+						ImGui::SameLine();
+						if (ImGui::Button("Sun")) {
+							layermatwnd::rendermethod_preview = layermatwnd::FAKESUN_DAY;
 						}
 
 						ImGui::SameLine();
 						if (ImGui::Button("Wireframe")) 
 						{
-							layermatwnd::rendermethod_preview = layermatwnd::rendermethod_preview != 28 ? 28 : 29;
-							//layermatwnd::rendermethod_preview = 29;
+							layermatwnd::rendermethod_preview = layermatwnd::rendermethod_preview != layermatwnd::WIREFRAME_WHITE ? layermatwnd::WIREFRAME_WHITE : layermatwnd::WIREFRAME;
 						} TT("Press a second time to switch to textured wireframe");
 
 						ImGui::SameLine();
-						if (ImGui::Button(layermatwnd::rotation_pause ? "Play" : "Pause", ImVec2(56.0f, 0))) {
+						if (ImGui::Button(layermatwnd::rotation_pause ? "Play" : "Pause", ImVec2(56.0f, 0))) 
+						{
 							layermatwnd::rotation_pause = !layermatwnd::rotation_pause;
 						} TT("play/pause automatic rotation");
+						
 						ImGui::PopStyleCompact();
 					}
 					ImGui::EndGroup();
 
-					const float buttons_total_width = ImGui::GetItemRectSize().x;
+					buttons_total_width = ImGui::GetItemRectSize().x;
 
 					ImGui::PushStyleCompact();
 

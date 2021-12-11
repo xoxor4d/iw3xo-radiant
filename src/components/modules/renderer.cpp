@@ -446,78 +446,127 @@ namespace components
 		}
 	}
 
-	/* reload materials / techsets?
-	 * R_LoadMaterialHashTable 0x511CD0 ?
-	 */
-
-	void Material_LoadTechnique(const char* name, int unk)
-	{
-		const static uint32_t func_addr = 0x519440;
-		__asm
-		{
-			push	unk;
-			mov		ecx, name;
-			call	func_addr;
-			add		esp, 4;
-		}
-	}
-
 
 	// *
 	// pixelshader custom constants
 
 	void set_custom_pixelshader_constants(game::GfxCmdBufState* state)
 	{
-		//if (renderer::is_rendering_layeredwnd())
+		if (state && state->pass)
 		{
-			if (state && state->pass)
+			if (renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY)
 			{
-#ifdef	CUSTOM_SHADER_TEST_LIT_SUN
-				if (utils::string_contains(state->technique->passArray[0].pixelShader->name, "sgen_model01"))
+				// loop through all argument defs to find custom codeconsts
+				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
-					// loop through all argument defs to find custom codeconsts
-					for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
+					const auto arg_def = &state->pass->args[arg];
+					if (arg_def && arg_def->type == 5)
 					{
-						const auto arg_def = &state->pass->args[arg];
-
-						if (arg_def && arg_def->type == 5)
+						if (state->pass->pixelShader)
 						{
-							if (state->pass->pixelShader)
+							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_ENVMAP_PARMS)
 							{
-								if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
+								game::vec4_t temp;
+								game::dx->device->GetPixelShaderConstantF(arg_def->dest, temp, 1);
+
+								// set envmapparams from material
+								if(state->material && state->material->constantCount && state->material->constantTable)
 								{
-									game::vec4_t temp = { 1.0f, 0.0f, 0.0f, 0.0f };
-									
-									// AngleVectors(float* angles, float* vpn, float* right, float* up)
-									utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(ggui::preferences::modelpreview_sun_dir, temp, nullptr, nullptr);
-									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+									for(auto constant = 0; constant < state->material->constantCount; constant++)
+									{
+										if(state->material->constantTable[constant].name)
+										{
+											if (utils::string_contains(state->material->constantTable[constant].name, "envMapParms"))
+											{
+												// needs multiplication by 0.2, 0.2, 1.0, 1.0 or its way to shiny
+												game::dx->device->SetPixelShaderConstantF(arg_def->dest, state->material->constantTable[constant].literal, 1);
+												break;
+											}
+										}
+										
+									}
 								}
-								else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
-								{
-									game::vec4_t temp = { ggui::preferences::modelpreview_sun_diffuse[0], ggui::preferences::modelpreview_sun_diffuse[1], ggui::preferences::modelpreview_sun_diffuse[2], 1.0f };
-									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-								}
-								else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
-								{
-									game::vec4_t temp = { ggui::preferences::modelpreview_sun_specular[0], ggui::preferences::modelpreview_sun_specular[1], ggui::preferences::modelpreview_sun_specular[2], ggui::preferences::modelpreview_sun_specular[3] };
-									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-								}
-								else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
-								{
-									game::vec4_t temp = { ggui::preferences::modelpreview_material_specular[0], ggui::preferences::modelpreview_material_specular[1], ggui::preferences::modelpreview_material_specular[2], ggui::preferences::modelpreview_material_specular[3] };
-									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-								}
-								else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
-								{
-									game::vec4_t temp = { ggui::preferences::modelpreview_ambient[0], ggui::preferences::modelpreview_ambient[1], ggui::preferences::modelpreview_ambient[2], ggui::preferences::modelpreview_ambient[3] };
-									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-								}
+								
+							}
+							
+							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
+							{
+								game::vec4_t temp = { 1.0f, 0.0f, 0.0f, 0.0f };
+
+								// AngleVectors(float* angles, float* vpn, float* right, float* up)
+								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(ggui::preferences::modelpreview_sun_dir, temp, nullptr, nullptr);
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
+							{
+								game::vec4_t temp = { ggui::preferences::modelpreview_sun_diffuse[0], ggui::preferences::modelpreview_sun_diffuse[1], ggui::preferences::modelpreview_sun_diffuse[2], 1.0f };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
+							{
+								game::vec4_t temp = { ggui::preferences::modelpreview_sun_specular[0], ggui::preferences::modelpreview_sun_specular[1], ggui::preferences::modelpreview_sun_specular[2], ggui::preferences::modelpreview_sun_specular[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
+							{
+								game::vec4_t temp = { ggui::preferences::modelpreview_material_specular[0], ggui::preferences::modelpreview_material_specular[1], ggui::preferences::modelpreview_material_specular[2], ggui::preferences::modelpreview_material_specular[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
+							{
+								game::vec4_t temp = { ggui::preferences::modelpreview_ambient[0], ggui::preferences::modelpreview_ambient[1], ggui::preferences::modelpreview_ambient[2], ggui::preferences::modelpreview_ambient[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 						}
 					}
 				}
-#endif
 			}
+			
+#ifdef	CUSTOM_SHADER_TEST_LIT_SUN
+			if (utils::string_contains(state->technique->passArray[0].pixelShader->name, "sgen_model01"))
+			{
+				// loop through all argument defs to find custom codeconsts
+				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
+				{
+					const auto arg_def = &state->pass->args[arg];
+
+					if (arg_def && arg_def->type == 5)
+					{
+						if (state->pass->pixelShader)
+						{
+							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
+							{
+								game::vec4_t temp = { 1.0f, 0.0f, 0.0f, 0.0f };
+								
+								// AngleVectors(float* angles, float* vpn, float* right, float* up)
+								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(ggui::preferences::modelpreview_sun_dir, temp, nullptr, nullptr);
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
+							{
+								game::vec4_t temp = { ggui::preferences::modelpreview_sun_diffuse[0], ggui::preferences::modelpreview_sun_diffuse[1], ggui::preferences::modelpreview_sun_diffuse[2], 1.0f };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
+							{
+								game::vec4_t temp = { ggui::preferences::modelpreview_sun_specular[0], ggui::preferences::modelpreview_sun_specular[1], ggui::preferences::modelpreview_sun_specular[2], ggui::preferences::modelpreview_sun_specular[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
+							{
+								game::vec4_t temp = { ggui::preferences::modelpreview_material_specular[0], ggui::preferences::modelpreview_material_specular[1], ggui::preferences::modelpreview_material_specular[2], ggui::preferences::modelpreview_material_specular[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
+							{
+								game::vec4_t temp = { ggui::preferences::modelpreview_ambient[0], ggui::preferences::modelpreview_ambient[1], ggui::preferences::modelpreview_ambient[2], ggui::preferences::modelpreview_ambient[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+						}
+					}
+				}
+			}
+#endif
 		}
 	}
 
@@ -641,7 +690,7 @@ namespace components
 		}
 	}
 
-	// returns handle for already loaded technique, loads new technique from raw/technique otherwise
+	// returns handle for already loaded technique, loads new technique from "raw/techniques" or "bin/IW3xRadiant/techniques" otherwise
 	game::MaterialTechnique* Material_RegisterTechnique(const char* name /*eax*/, int is_renderer_in_use /*edi*/)
 	{
 		const static uint32_t func_addr = 0x519790;
@@ -657,18 +706,82 @@ namespace components
 	void r_setup_pass(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
 	{
 		// hue hue
-		/*if (renderer::is_rendering_layeredwnd())
+		// todo: create "new" lighting state 
+		// -> re-use eg. fakelight_normal, check if "new" lightstate is enabled
+		// -> overwrite used techniques with custom ones
+		// -> profit
+		//
+		// needs:
+		// -> qol: add sliders to modify shader constants
+		// -> qol: add sky or generic background?
+		
+		if (renderer::is_rendering_layeredwnd())
 		{
-			if(utils::string_contains(state->technique->name, "fakelight_normal_dtex"))
+			if(layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY)
 			{
-				if(const auto	tech = Material_RegisterTechnique("fakelight_normal_custom_dtex", 1);
-								tech)
+				if (utils::string_contains(state->technique->name, "fakelight_normal_dtex"))
+				{
+					// 2 = color, 1 : 0x5 = normal, 0x8 = spec
+					//if (mat->textureTable[tex].u.image->semantic == 0x2)
+					//if(state->material->textureTable[3].u.image->semantic)
+					bool has_normal = false;
+					bool has_spec = false;
+
+					for(auto tex = 0; tex < state->material->textureCount; tex++)
+					{
+						/*if(state->material->textureTable[tex].u.image->semantic == 0x1)
+						{
+							has_normal = true;
+						}
+						else if(state->material->textureTable[tex].u.image->semantic == 0x8)
+						{
+							has_spec = true;
+						}*/
+
+						if(state->material->textureTable[tex].u.image->semantic == 0x1 || state->material->textureTable[tex].u.image->semantic == 0x5)
+						{
+							has_normal = true;
+						}
+						
+						//has_normal = state->material->textureTable[tex].u.image->semantic == 0x1 ? true : has_normal;
+						has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
+					}
+
+					if(has_spec && has_normal)
+					{
+						if (const auto	tech = Material_RegisterTechnique("fakesun_normal_dtex", 1);
+							tech)
+						{
+							state->technique = tech;
+
+							// set reflection probe sampler here?
+							// R_SetSampler(int a1, GfxCmdBufState *state, int a3, char a4, GfxImage *img)
+
+							if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+								image && image->texture.data)
+							{
+								utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int unk1, char unk2, game::GfxImage* _img)>
+									(0x538D70)(0, state, 1, 114, image);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if(dvars::r_draw_model_shadowcaster && !dvars::r_draw_model_shadowcaster->current.enabled)
+		{
+			// replace shadow caster technique with a none visible one
+			if (utils::string_contains(state->material->info.name, "mc/mtl_tree_shadow_caster"))
+			{
+				if (const auto	tech = Material_RegisterTechnique("cinematic", 1);
+					tech)
 				{
 					state->technique = tech;
 				}
 			}
-		}*/
-
+		}
+		
 		const auto pass = &state->technique->passArray[passIndex];
 		const auto material = state->material;
 
@@ -721,7 +834,6 @@ namespace components
 			R_SetPassShaderStableArguments(&pass->args[pass->perPrimArgCount + pass->perObjArgCount].type, source, state, pass->stableArgCount);
 		}
 	}
-
 	
 	// *
 	// sun preview
@@ -852,6 +964,28 @@ namespace components
 	}
 
 	// *
+	// picmip
+	/*void set_picmip_values()
+	{
+		game::Dvar_SetIntByName(game::g_qeglobals->d_picmip, "r_picmip");
+		game::Dvar_SetIntByName(game::g_qeglobals->d_picmip, "r_picmip");
+		game::Dvar_SetIntByName(game::g_qeglobals->d_picmip, "r_picmip");
+	}
+	
+	void set_picmip_values_stub()
+	{
+		const static uint32_t retn_pt = 0x4208CE;
+		__asm
+		{
+			pushad;
+			call	set_picmip_values;
+			popad;
+
+			jmp		retn_pt;
+		}
+	}*/
+	
+	// *
 	// *
 
 	void renderer::register_dvars()
@@ -861,6 +995,12 @@ namespace components
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "render model origins");
+
+		dvars::r_draw_model_shadowcaster = dvars::register_bool(
+			/* name		*/ "r_draw_model_shadowcaster",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "render shadowcaster materials on xmodels");
 	}
 	
 	renderer::renderer()
@@ -874,6 +1014,17 @@ namespace components
 		// enable/disable drawing of boxes around the origin on entities
 		utils::hook(0x478E33, render_origin_boxes_stub, HOOK_JUMP).install()->quick();
 
+		// use actual picmip dvar values for spec and bump quality
+		//utils::hook(0x4208B0, set_picmip_values_stub, HOOK_JUMP).install()->quick();
+		
+		// do not force spec and bump picmip
+		utils::hook::nop(0x420A73, 30);
+		// do not force spec and bump picmip
+		utils::hook::nop(0x4208B0, 30);
+		// do not force spec and bump picmip
+		utils::hook::nop(0x41656E, 30);
+
+		
 
 		// custom shader constants
 		utils::hook(0x53BC39, R_SetPassPixelShaderStableArguments_stub, HOOK_JUMP).install()->quick();
@@ -889,12 +1040,10 @@ namespace components
 		// fix sun preview (selecting brushes keeps sunpreview active; sun no longer casts shadows -> FPS ++)
 		utils::hook(0x406706, sunpreview, HOOK_CALL).install()->quick();
 
-		
-		// hook R_SetupPass in R_DrawXModelSkinnedUncached to set custom techniques
+		// R_SetupPass @ 0x4FE646 for brushes
+		// hook R_SetupPass in R_DrawXModelSkinnedUncached to set custom techniques for xmodels
 		utils::hook(0x53AC4F, r_setup_pass, HOOK_CALL).install()->quick();
-
-		// 14EFCBC
-
+		
 		command::register_command_with_hotkey("reload_techniques"s, [this](auto)
 		{
 			auto& tech_count = *reinterpret_cast<int*>(0x14EFCB8);

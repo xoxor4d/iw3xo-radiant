@@ -615,8 +615,8 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		}
 
 		// if mouse is inside imgui-cxy window
-		if (auto gridwnd = ggui::get_rtt_gridwnd();
-				 gridwnd->window_hovered)
+		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
+						gridwnd->window_hovered)
 		{
 			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
 			//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
@@ -625,8 +625,8 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 
 		// handle imgui-camera window (only triggers when czwnd is focused)
 		// cmainframe::on_keydown handles input if imgui-camera window is focused 
-		if (auto camerawnd = ggui::get_rtt_camerawnd();
-				 camerawnd->window_hovered)
+		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
+						camerawnd->window_hovered)
 		{
 			// calls the original on_keydown function
 			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
@@ -643,12 +643,16 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
 		}
 
-		// after HandleKeyAbove using WantCaptureMouse (this blocks mainframe key input - feels bad)
-		/*if (auto modelselector = ggui::get_rtt_modelselector();
-				 modelselector->window_hovered)
+		// block specific keys from triggering hotkeys (eg. moving the camera via the arrow keys, because we use the up/down arrow to change xmodel previews)
+		if (const auto	modelselector = ggui::get_rtt_modelselector();
+						modelselector->window_hovered)
 		{
-			return;
-		}*/
+			// DownArrow / UpArrow
+			if (nChar == VK_DOWN || nChar == VK_UP)
+			{
+				return;
+			}
+		}
 
 		/* // backup ^
 		if (ImGui::GetIO().WantCaptureMouse)

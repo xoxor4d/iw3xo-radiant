@@ -1,0 +1,20 @@
+{
+	stateMap "default";
+
+	vertexShader 3.0 "sgen_model01" // vertexShader 1.1 "fakelight_normal_dtex.hlsl" // 
+	{
+	}
+
+	pixelShader 3.0 "sgen_model01" // pixelShader 1.1 "vertcol_shaded.hlsl" // 
+	{
+		colorMapSampler = material.colorMap;
+		specularMapSampler = material.specularMap;
+		normalMapSampler = material.normalMap;
+	}
+
+	vertex.position = code.position;
+	vertex.normal = code.normal;
+	vertex.color[0] = code.color;
+	vertex.texcoord[0] = code.texcoord[0];
+	vertex.texcoord[2] = code.tangent;
+}
