@@ -20,6 +20,7 @@ namespace components
 		{
 			bool enabled;
 			bool s_model_origin;
+			bool s_patch_backface_wireframe;
 			int  s_xyflags;
 
 			// geo

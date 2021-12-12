@@ -32,27 +32,16 @@ namespace ggui::menubar
 		mainframe_thiscall(void, 0x428A00); // CMainFrame::SetGridStatus
 		game::g_nUpdateBits |= W_Z | W_XY;
 	}
-
-
-	enum RENDER_METHOD_E : int
-	{
-		RM_WIREFRAME,
-		RM_FULLBRIGHT,
-		RM_NORMALFAKELIGHT,
-		RM_VIEWFAKELIGHT,
-		RM_CASETEXTURES,
-	};
-
 	
-	void set_render_method(const RENDER_METHOD_E meth)
+	void set_render_method(const game::RENDER_METHOD_E meth)
 	{
 		switch (meth)
 		{
-		case RM_WIREFRAME: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80DE; break;
-		case RM_FULLBRIGHT: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80DF; break;
-		case RM_NORMALFAKELIGHT: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80E0; break;
-		case RM_VIEWFAKELIGHT: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80E1; break;
-		case RM_CASETEXTURES: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80E2; break;
+		case game::RM_WIREFRAME: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80DE; break;
+		case game::RM_FULLBRIGHT: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80DF; break;
+		case game::RM_NORMALFAKELIGHT: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80E0; break;
+		case game::RM_VIEWFAKELIGHT: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80E1; break;
+		case game::RM_CASETEXTURES: game::g_qeglobals->d_savedinfo.iTextMenu = 0x80E2; break;
 		}
 
 		if (cmainframe::activewnd->m_pCamWnd->camera.draw_mode != meth)
@@ -230,50 +219,6 @@ namespace ggui::menubar
 				}
 
 				SEPERATORV(0.0f);
-
-				if (ImGui::BeginMenu("Gui Settings"))
-				{
-					if(dvars::gui_floating_toolbar && dvars::gui_resize_dockspace)
-					{
-						if (ImGui::MenuItem("Floating Toolbar", 0, dvars::gui_floating_toolbar->current.enabled)) 
-						{
-							dvars::set_bool(dvars::gui_floating_toolbar, dvars::gui_floating_toolbar->current.enabled ? false : true);
-							ggui::toolbar_reset = true;
-							
-						} TT(dvars::gui_floating_toolbar->description);
-						
-						if (ImGui::MenuItem("Resize Dockspace ^", 0, dvars::gui_resize_dockspace->current.enabled))
-						{
-							dvars::set_bool(dvars::gui_resize_dockspace, dvars::gui_resize_dockspace->current.enabled ? false : true);
-						} TT(dvars::gui_resize_dockspace->description);
-
-						if(ImGui::MenuItem("Reset Dockspace"))
-						{
-							ggui::reset_dockspace = true; // used to trigger dockspace rebuilding (cxywnd_gui)
-						}
-					}
-
-					SEPERATORV(0.0f);
-
-					if (ImGui::BeginMenu("Background"))
-					{
-						if (ImGui::MenuItem("None", 0, dvars::gui_mainframe_background->current.integer == 0)) {
-							dvars::set_int(dvars::gui_mainframe_background, 0);
-						} TT("No special background (stock)");
-
-						if (ImGui::MenuItem("Grid", 0, dvars::gui_mainframe_background->current.integer == 1)) {
-							dvars::set_int(dvars::gui_mainframe_background, 1);
-						} TT("Use the grid window as the editor background");
-
-						if (ImGui::MenuItem("Camera", 0, dvars::gui_mainframe_background->current.integer == 2)) {
-							dvars::set_int(dvars::gui_mainframe_background, 2);
-						} TT("Use the camera window as the editor background");
-
-						ImGui::EndMenu(); // Background
-					}
-					
-					ImGui::EndMenu(); // Gui Settings
-				}
 
 				if (ImGui::MenuItem("Edit Colors ...")) {
 					components::gui::toggle(context.m_colors, 0, true);
@@ -491,24 +436,32 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Render Method"))
 				{
-					if (ImGui::MenuItem("Wireframe", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_WIREFRAME)) {
-						set_render_method(RM_WIREFRAME);
+					if (ImGui::MenuItem("Wireframe", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == game::RM_WIREFRAME)) {
+						set_render_method(game::RM_WIREFRAME);
 					}
 
-					if (ImGui::MenuItem("Fullbright", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_FULLBRIGHT)) {
-						set_render_method(RM_FULLBRIGHT);
+					if (ImGui::MenuItem("Fullbright", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == game::RM_FULLBRIGHT)) {
+						set_render_method(game::RM_FULLBRIGHT);
 					}
 
-					if (ImGui::MenuItem("Normal-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_NORMALFAKELIGHT)) {
-						set_render_method(RM_NORMALFAKELIGHT);
+					if (ImGui::MenuItem("Normal-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == game::RM_NORMALFAKELIGHT)) {
+						set_render_method(game::RM_NORMALFAKELIGHT);
 					}
 
-					if (ImGui::MenuItem("View-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_VIEWFAKELIGHT)) {
-						set_render_method(RM_VIEWFAKELIGHT);
+					if (ImGui::MenuItem("View-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == game::RM_VIEWFAKELIGHT)) {
+						set_render_method(game::RM_VIEWFAKELIGHT);
 					}
 
-					if (ImGui::MenuItem("Case Textures", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == RM_CASETEXTURES)) {
-						set_render_method(RM_CASETEXTURES);
+					if (ImGui::MenuItem("Enable Fake Sun Preview", hotkeys::get_hotkey_for_command("fakesun_toggle").c_str(), dvars::r_fakesun_preview->current.enabled)) {
+						components::command::execute("fakesun_toggle");
+					} TT("with specular and bumpmap support, settings @preferences->developer");
+
+					if (ImGui::MenuItem("Enable Fog", 0, dvars::r_fakesun_fog_enabled->current.enabled)) {
+						dvars::set_bool(dvars::r_fakesun_fog_enabled, !dvars::r_fakesun_fog_enabled->current.enabled);
+					} TT("settings @preferences->developer");
+
+					if (ImGui::MenuItem("Case Textures", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == game::RM_CASETEXTURES)) {
+						set_render_method(game::RM_CASETEXTURES);
 					}
 
 					ImGui::EndMenu(); // Render Method
@@ -612,6 +565,12 @@ namespace ggui::menubar
 				
 				if (ImGui::BeginMenu("Show Patches As"))
 				{
+					// dvars::r_draw_patch_backface_wireframe
+					if (ImGui::MenuItem("Draw Backface Wireframe", 0, dvars::r_draw_patch_backface_wireframe->current.enabled))
+					{
+						game::Dvar_SetBool(dvars::r_draw_patch_backface_wireframe, !dvars::r_draw_patch_backface_wireframe->current.enabled);
+					}
+					
 					if (ImGui::MenuItem("Textured", 0, !prefs->g_nPatchAsWireframe))
 					{
 						prefs->g_nPatchAsWireframe = 0;

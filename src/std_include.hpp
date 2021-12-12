@@ -9,8 +9,6 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_BEGIN_CZWND if(ggui::cz_context_ready()) ImGui::SetCurrentContext(ggui::state.czwnd.context)
 
-//#define CUSTOM_SHADER_TEST_LIT_SUN
-
 // Version number
 #include <version.hpp>
 

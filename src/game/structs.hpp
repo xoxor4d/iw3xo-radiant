@@ -43,6 +43,15 @@ namespace game
 		SERVER_EXPORT_SINGLE_BRUSH_FACE = 21, // receive a single face
 	};
 
+	enum RENDER_METHOD_E : int
+	{
+		RM_WIREFRAME,
+		RM_FULLBRIGHT,
+		RM_NORMALFAKELIGHT,
+		RM_VIEWFAKELIGHT,
+		RM_CASETEXTURES,
+	};
+	
 	struct ServerCommand
 	{
 		ServerCommandType type;

@@ -319,22 +319,32 @@ void rtt_camera_window_toolbar()
 					mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 
-				//ImGui::BeginDisabled(!prefs->enable_light_preview);
+				//static bool hov_sunpreview;
+				//if (ggui::toolbar::image_togglebutton("sunpreview"
+				//	, hov_sunpreview
+				//	, prefs->preview_sun_aswell
+				//	, std::string("Sunpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewSun") + "]\nNeeds Lightpreview! ^").c_str()
+				//	, &toolbar_button_background
+				//	, &toolbar_button_background_hovered
+				//	, &toolbar_button_background_active
+				//	, &toolbar_button_size))
 				//{
-					static bool hov_sunpreview;
-					if (ggui::toolbar::image_togglebutton("sunpreview"
-						, hov_sunpreview
-						, prefs->preview_sun_aswell
-						, std::string("Sunpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewSun") + "]\nNeeds Lightpreview! ^").c_str()
-						, &toolbar_button_background
-						, &toolbar_button_background_hovered
-						, &toolbar_button_background_active
-						, &toolbar_button_size))
-					{
-						mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun;
-					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
-				//}
-				//ImGui::EndDisabled();
+				//	mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun;
+				//} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+				static bool hov_fakesunpreview;
+				if (ggui::toolbar::image_togglebutton("sunpreview"
+					, hov_fakesunpreview
+					, dvars::r_fakesun_preview->current.enabled
+					, std::string("Fake sun preview [" + ggui::hotkeys::get_hotkey_for_command("fakesun_toggle") + "]\nSupports specular and bump mapping.").c_str()
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					components::command::execute("fakesun_toggle");
+				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+				
 				
 				ImGui::PopStyleVar();
 			}

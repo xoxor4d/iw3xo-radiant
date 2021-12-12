@@ -89,10 +89,26 @@ namespace ggui::entity
 		return nullptr;
 	}
 
+	bool Entity_GetValueForKey(game::entity_s* ent, float* value, const char* keyname)
+	{
+		if(auto value_str = ValueForKey(ent->epairs, keyname);
+				value_str)
+		{
+			return sscanf(value_str, "%f", value) == 1;
+		}
+
+		return false;
+	}
+
 	bool Entity_GetVec3ForKey(game::entity_s* ent, float* vec3, const char* keyname)
 	{
-		auto value_str = ValueForKey(ent->epairs, keyname);
-		return sscanf(value_str, "%f %f %f", &vec3[0], &vec3[1], &vec3[2]) == 3;
+		if(auto value_str = ValueForKey(ent->epairs, keyname);
+				value_str)
+		{
+			return sscanf(value_str, "%f %f %f", &vec3[0], &vec3[1], &vec3[2]) == 3;
+		}
+
+		return false;
 	}
 
 	bool HasKeyValuePair(game::entity_s_def* ent, const char* key)

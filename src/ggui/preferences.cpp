@@ -8,7 +8,7 @@ namespace ggui::preferences
 	float	modelpreview_sun_specular[4] = { 3.0f, 3.2f, 3.0f, 0.0f };
 	float	modelpreview_material_specular[4] = { 0.12f, 0.19f, 1.0f, 5.0f };
 	float	modelpreview_ambient[4] = { 0.3f, 0.3f, 0.3f, 0.42f };
-
+	
 	// --------------------------------------
 	
 	const std::string CAT_GUI = "Gui";
@@ -151,31 +151,33 @@ namespace ggui::preferences
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_GUI, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			title_with_seperator("Menubar", false);
+			title_with_seperator("General", false);
 
 			ImGui::Checkbox("Show mousecursor origin within the menubar", &dvars::gui_menubar_show_mouseorigin->current.enabled);
-
-
-			// -----------------
-			title_with_seperator("Main Toolbar");
 
 			if (ImGui::Checkbox("Floating Toolbar", &dvars::gui_floating_toolbar->current.enabled)) {
 				ggui::toolbar_reset = true;
 			}
 
-
 			// -----------------
 			title_with_seperator("Docking");
 
+			if (ImGui::Button("Reset Dockspace")) {
+				ggui::reset_dockspace = true;
+			}
+
+			ImGui::SameLine();
+			
 			ImGui::BeginDisabled(!dvars::gui_floating_toolbar->current.enabled);
 			{
 				ImGui::Checkbox("Resize Dockspace for floating toolbar", &dvars::gui_resize_dockspace->current.enabled);
 			}
 			ImGui::EndDisabled();
 
-			if (ImGui::Button("Reset Dockspace")) {
-				ggui::reset_dockspace = true;
-			}
+			const char* background_names[] = { "None", "Grid", "Camera" };
+			const char* background_str = (dvars::gui_mainframe_background->current.integer >= 0 && dvars::gui_mainframe_background->current.integer <= 2) ? background_names[dvars::gui_mainframe_background->current.integer] : "Unknown";
+			ImGui::SliderInt("Dockspace Background", &dvars::gui_mainframe_background->current.integer, 0, 2, background_str);
+			
 		});
 	}
 
@@ -351,9 +353,11 @@ namespace ggui::preferences
 			ImGui::SliderInt("Bump Texture Quality", &r_picmip_bump_proxy, 0, 3, quality_bump);
 			r_picmip_bump->current.integer = 3 - r_picmip_bump_proxy;
 
+			const auto sliderint_size = ImGui::GetItemRectSize();
 			const bool needs_reload = r_picmip_renderer_val != r_picmip->current.integer || r_picmip_spec_renderer_val != r_picmip_spec->current.integer || r_picmip_bump_renderer_val != r_picmip_bump->current.integer;
+
 			ImGui::BeginDisabled(!needs_reload);
-			if(ImGui::Button("Apply / Reload Textures"))
+			if(ImGui::Button("Apply / Reload Textures", ImVec2(ImGui::CalcItemWidth(), 0.0f))) //ImVec2(sliderint_size.x - 145.0f, 0.0f)))
 			{
 				// R_UpdateMipMap
 				cdeclcall(void, 0x5139A0);
@@ -385,6 +389,9 @@ namespace ggui::preferences
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_DEVELOPER, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
+			ImGui::Checkbox("Use Worldspawn Settings", &dvars::r_fakesun_use_worldspawn->current.enabled);
+			TT("Uses default values below if a required key can not be found");
+			
 			ImGui::DragInt("Dev Int 01", &dev_num_01, 0.1f);
 //#ifdef CUSTOM_SHADER_TEST_LIT_SUN
 			ImGui::DragFloat3("MdlPrev: Sun Dir", modelpreview_sun_dir, 0.1f);
@@ -393,6 +400,14 @@ namespace ggui::preferences
 			ImGui::ColorEdit4("MdlPrev: EnvMapParms (lightSpotDir)", modelpreview_material_specular, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 			ImGui::ColorEdit4("MdlPrev: Ambient (lightSpotFactors)", modelpreview_ambient, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 //#endif
+
+			// -----------------
+			title_with_seperator("Fog Settings");
+			
+			ImGui::Checkbox("Enable Fog", &dvars::r_fakesun_fog_enabled->current.enabled);
+			ImGui::DragFloat("Fog Start", &dvars::r_fakesun_fog_start->current.value);
+			ImGui::DragFloat("Fog Half Dist", &dvars::r_fakesun_fog_half->current.value);
+			ImGui::ColorEdit4("Fog Color", dvars::r_fakesun_fog_color->current.vector, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 		});
 	}
 	
@@ -418,11 +433,14 @@ namespace ggui::preferences
 		const auto INITIAL_WINDOW_SIZE = ImVec2(800.0f, 600.0f);
         ggui::set_next_window_initial_pos_and_constraints(MIN_WINDOW_SIZE, INITIAL_WINDOW_SIZE);
 
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
+		int stylevars = 0, stylecolors = 0;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f)); stylevars++;
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.08f, 0.08f, 0.08f, 0.31f)); stylecolors++;
 
 		if (!ImGui::Begin("Preferences##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
 		{
-			ImGui::PopStyleVar();
+			ImGui::PopStyleColor(stylecolors);
+			ImGui::PopStyleVar(stylevars);
 			ImGui::End();
 			return;
 		}
@@ -456,8 +474,9 @@ namespace ggui::preferences
 		if (!ImGui::BeginChild("##pref_child", ImVec2(0, 0), false))
 		{
 			ImGui::EndChild();
+			ImGui::PopStyleColor(stylecolors);
+			ImGui::PopStyleVar(stylevars);
 			ImGui::End();
-			ImGui::PopStyleVar();
 			return;
 		}
 
@@ -469,10 +488,12 @@ namespace ggui::preferences
 
 		// end "##pref_child"
 		ImGui::EndChild();
+
+		ImGui::PopStyleColor(stylecolors);
+		ImGui::PopStyleVar(stylevars);
 		
 		// end "Preferences##window"
 		ImGui::End();
-		ImGui::PopStyleVar();
 	}
 
 	// CMainFrame::OnPrefs

@@ -48,6 +48,14 @@ namespace dvars
 	extern game::dvar_s* grid_zoom_to_cursor;
 	extern game::dvar_s* r_draw_model_origin;
 	extern game::dvar_s* r_draw_model_shadowcaster;
+	extern game::dvar_s* r_draw_patch_backface_wireframe;
+	
+	extern game::dvar_s* r_fakesun_preview;
+	extern game::dvar_s* r_fakesun_use_worldspawn;
+	extern game::dvar_s* r_fakesun_fog_enabled;
+	extern game::dvar_s* r_fakesun_fog_start;
+	extern game::dvar_s* r_fakesun_fog_half;
+	extern game::dvar_s* r_fakesun_fog_color;
 	
 	extern game::dvar_s* guizmo_enable;
 	extern game::dvar_s* guizmo_snapping;

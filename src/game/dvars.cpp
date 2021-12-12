@@ -48,6 +48,14 @@ namespace dvars
 	game::dvar_s* grid_zoom_to_cursor = nullptr;
 	game::dvar_s* r_draw_model_origin = nullptr;
 	game::dvar_s* r_draw_model_shadowcaster = nullptr;
+	game::dvar_s* r_draw_patch_backface_wireframe = nullptr;
+
+	game::dvar_s* r_fakesun_preview = nullptr;
+	game::dvar_s* r_fakesun_use_worldspawn = nullptr;
+	game::dvar_s* r_fakesun_fog_enabled = nullptr;
+	game::dvar_s* r_fakesun_fog_start = nullptr;
+	game::dvar_s* r_fakesun_fog_half = nullptr;
+	game::dvar_s* r_fakesun_fog_color = nullptr;
 	
 	game::dvar_s* guizmo_enable = nullptr;
 	game::dvar_s* guizmo_snapping = nullptr;

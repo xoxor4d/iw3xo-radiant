@@ -25,6 +25,29 @@ namespace utils
 		mtx_out->m[3][3] = b->m[1][3] * a->m[3][1] + a->m[3][0] * b->m[0][3] + a->m[3][2] * b->m[2][3] + a->m[3][3] * b->m[3][3];
 	}
 
+	void normalize_color3(float* src, float* dest)
+	{
+		float max = src[0];
+		
+		if (max < src[1]) {
+			max = src[1];
+		}
+		
+		if (max < src[2]) {
+			max = src[2];
+		}
+		
+		if (max == 0.0f)
+		{
+			utils::vector::set_vec3(dest, 1.0f);
+		}
+		else
+		{
+			const float length = 1.0f / max;
+			utils::vector::scale(src, length, dest);
+		}
+	}
+	
 	// ----------------
 	
 	int try_stoi(const std::string str, bool quite)

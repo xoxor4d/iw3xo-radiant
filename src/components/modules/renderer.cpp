@@ -2,6 +2,83 @@
 
 namespace components
 {
+	// *
+	// enable/disable drawing of boxes around the origin on entities
+
+	bool should_render_origin()
+	{
+		if (dvars::r_draw_model_origin && !dvars::r_draw_model_origin->current.enabled)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	void __declspec(naked) render_origin_boxes_stub()
+	{
+		const static uint32_t continue_pt = 0x478E38;
+		__asm
+		{
+			pushad;
+			call    should_render_origin;
+			test    al, al;
+			popad;
+
+			je      SKIP;
+			mov     eax, 0x10B0;
+			jmp		continue_pt;
+
+		SKIP:
+			pop     ebp;
+			retn;
+		}
+	}
+
+	
+	// *
+	// enable/disable drawing of backface wireframe on patches
+	
+	bool should_render_patch_backface_wireframe()
+	{
+		if (dvars::r_draw_patch_backface_wireframe && !dvars::r_draw_patch_backface_wireframe->current.enabled)
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	void __declspec(naked) patch_backface_wireframe_stub()
+	{
+		const static uint32_t func_addr = 0x440670;
+		const static uint32_t retn_pt = 0x441577;
+		__asm
+		{
+			pushad;
+			call    should_render_patch_backface_wireframe;
+			test    al, al;
+			popad;
+
+			je      SKIP;
+			push	29;
+			mov     eax, esi;
+			mov     ecx, 1;
+			mov     edx, edi;
+
+			call	func_addr;
+			jmp		retn_pt;
+
+		SKIP:
+			// we need atleast 1 push because of the add, esp 4 after we jump back
+			push	1; // random push
+			jmp		retn_pt;
+		}
+	}
+
+	// *
+	// *
+	
 	void renderer::R_ConvertColorToBytes(float* from, game::GfxColor* gfx_col)
 	{
 		if (from)
@@ -79,42 +156,6 @@ namespace components
 		// write texture to file (test)
 		//D3DXSaveTextureToFileA("texture_to_file.png", D3DXIFF_PNG, dest, NULL);
 	}
-
-
-	// *
-	// enable/disable drawing of boxes around the origin on entities
-
-	bool should_render_origin()
-	{
-		if (dvars::r_draw_model_origin && !dvars::r_draw_model_origin->current.enabled)
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	void __declspec(naked) render_origin_boxes_stub()
-	{
-		//const static uint32_t draw_origin_func = 0x478E30;
-		const static uint32_t continue_pt = 0x478E38;
-		__asm
-		{
-			pushad;
-			call    should_render_origin;
-			test    al, al;
-			popad;
-			
-			je      SKIP;
-			mov     eax, 0x10B0;
-			jmp		continue_pt;
-
-		SKIP:
-			pop     ebp;
-			retn;
-		}
-	}
-
 
 	/*
 	 *  vertexshader + pixelshader loading (allows to load shaders that are not included in the shader_names file)
@@ -355,8 +396,6 @@ namespace components
 	// *
 	// vertexshader
 
-	
-
 	game::MaterialVertexShader* r_create_vertexshader(const char* shader_name, signed int name_len, int always_one)
 	{
 		ID3DXBuffer* shader = nullptr;
@@ -454,7 +493,8 @@ namespace components
 	{
 		if (state && state->pass)
 		{
-			if (renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY)
+			if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
+				(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
 			{
 				// loop through all argument defs to find custom codeconsts
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
@@ -476,7 +516,7 @@ namespace components
 									{
 										if(state->material->constantTable[constant].name)
 										{
-											if (utils::string_contains(state->material->constantTable[constant].name, "envMapParms"))
+											if (utils::string_equals(state->material->constantTable[constant].name, "envMapParms"))
 											{
 												// needs multiplication by 0.2, 0.2, 1.0, 1.0 or its way to shiny
 												game::dx->device->SetPixelShaderConstantF(arg_def->dest, state->material->constantTable[constant].literal, 1);
@@ -486,79 +526,115 @@ namespace components
 										
 									}
 								}
-								
+							}
+
+							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
+							{
+								game::vec4_t temp = { dvars::r_fakesun_fog_color->current.vector[0], dvars::r_fakesun_fog_color->current.vector[1], dvars::r_fakesun_fog_color->current.vector[2], dvars::r_fakesun_fog_color->current.vector[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 							
 							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
 							{
-								game::vec4_t temp = { 1.0f, 0.0f, 0.0f, 0.0f };
+								bool worldspawn_valid = false;
+								game::vec3_t sun_dir = {};
+								
+								if(dvars::r_fakesun_use_worldspawn->current.enabled)
+								{
+									const auto world_ent = game::g_world_entity();
+									if(world_ent && world_ent->firstActive && ggui::entity::Entity_GetVec3ForKey(world_ent->firstActive, sun_dir, "sundirection"))
+									{
+										worldspawn_valid = true;
+									}
+								}
 
-								// AngleVectors(float* angles, float* vpn, float* right, float* up)
-								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(ggui::preferences::modelpreview_sun_dir, temp, nullptr, nullptr);
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-							}
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
-							{
-								game::vec4_t temp = { ggui::preferences::modelpreview_sun_diffuse[0], ggui::preferences::modelpreview_sun_diffuse[1], ggui::preferences::modelpreview_sun_diffuse[2], 1.0f };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-							}
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
-							{
-								game::vec4_t temp = { ggui::preferences::modelpreview_sun_specular[0], ggui::preferences::modelpreview_sun_specular[1], ggui::preferences::modelpreview_sun_specular[2], ggui::preferences::modelpreview_sun_specular[3] };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-							}
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
-							{
-								game::vec4_t temp = { ggui::preferences::modelpreview_material_specular[0], ggui::preferences::modelpreview_material_specular[1], ggui::preferences::modelpreview_material_specular[2], ggui::preferences::modelpreview_material_specular[3] };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-							}
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
-							{
-								game::vec4_t temp = { ggui::preferences::modelpreview_ambient[0], ggui::preferences::modelpreview_ambient[1], ggui::preferences::modelpreview_ambient[2], ggui::preferences::modelpreview_ambient[3] };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-							}
-						}
-					}
-				}
-			}
-			
-#ifdef	CUSTOM_SHADER_TEST_LIT_SUN
-			if (utils::string_contains(state->technique->passArray[0].pixelShader->name, "sgen_model01"))
-			{
-				// loop through all argument defs to find custom codeconsts
-				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
-				{
-					const auto arg_def = &state->pass->args[arg];
-
-					if (arg_def && arg_def->type == 5)
-					{
-						if (state->pass->pixelShader)
-						{
-							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
-							{
-								game::vec4_t temp = { 1.0f, 0.0f, 0.0f, 0.0f };
+								game::vec4_t temp = { 0.0f, 0.0f, 0.0f, 0.0f };
 								
 								// AngleVectors(float* angles, float* vpn, float* right, float* up)
-								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(ggui::preferences::modelpreview_sun_dir, temp, nullptr, nullptr);
+								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : ggui::preferences::modelpreview_sun_dir, temp, nullptr, nullptr);
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
+							
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
 							{
+								bool worldspawn_valid = false;
+								game::vec4_t sun_diffuse = {};
+
+								if (dvars::r_fakesun_use_worldspawn->current.enabled)
+								{
+									const auto world_ent = game::g_world_entity();
+
+									float sunlight = 0.0f;
+									game::vec3_t suncolor = {};
+
+									if(world_ent && world_ent->firstActive && ggui::entity::Entity_GetVec3ForKey(world_ent->firstActive, suncolor, "suncolor"))
+									{
+										if (!ggui::entity::Entity_GetValueForKey(world_ent->firstActive, &sunlight, "sunlight"))
+										{
+											// default value
+											sunlight = 1.35f;
+										}
+
+										sunlight *= 1.5f;
+										utils::vector::scale(suncolor, sunlight, sun_diffuse);
+
+										worldspawn_valid = true;
+									}
+								}
+								
 								game::vec4_t temp = { ggui::preferences::modelpreview_sun_diffuse[0], ggui::preferences::modelpreview_sun_diffuse[1], ggui::preferences::modelpreview_sun_diffuse[2], 1.0f };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
 							}
+							
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
 							{
+								bool worldspawn_valid = false;
+								game::vec4_t sun_specular = {};
+
+								if (dvars::r_fakesun_use_worldspawn->current.enabled)
+								{
+									const auto world_ent = game::g_world_entity();
+									if (world_ent && world_ent->firstActive && ggui::entity::Entity_GetVec3ForKey(world_ent->firstActive, sun_specular, "suncolor"))
+									{
+										// worldspawn suncolor
+										utils::vector::ma(game::vec3_t(1.0f, 1.0f, 1.0f), 2.0f, sun_specular, sun_specular);
+										worldspawn_valid = true;
+									}
+								}
+								
 								game::vec4_t temp = { ggui::preferences::modelpreview_sun_specular[0], ggui::preferences::modelpreview_sun_specular[1], ggui::preferences::modelpreview_sun_specular[2], ggui::preferences::modelpreview_sun_specular[3] };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_specular : temp, 1);
 							}
+							
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
 							{
 								game::vec4_t temp = { ggui::preferences::modelpreview_material_specular[0], ggui::preferences::modelpreview_material_specular[1], ggui::preferences::modelpreview_material_specular[2], ggui::preferences::modelpreview_material_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
+							
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
 							{
+								//bool worldspawn_valid = false;
+								//game::vec4_t ambient = {};
+
+								//if (dvars::r_fakesun_use_worldspawn->current.enabled)
+								//{
+								//	const auto world_ent = reinterpret_cast<game::entity_s_def*>(game::g_world_entity()->firstActive);
+
+								//	// not proper at all
+								//	
+								//	float ambient_scale = 0.0f;
+								//	if (!ggui::entity::Entity_GetValueForKey(reinterpret_cast<game::entity_s*>(world_ent), &ambient_scale, "ambient"))
+								//	{
+								//		// default value
+								//		ambient_scale = 0.2f;
+								//	}
+								//	
+								//	utils::vector::set_vec4(ambient, ambient_scale);
+	
+								//	worldspawn_valid = true;
+								//}
+								
 								game::vec4_t temp = { ggui::preferences::modelpreview_ambient[0], ggui::preferences::modelpreview_ambient[1], ggui::preferences::modelpreview_ambient[2], ggui::preferences::modelpreview_ambient[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
@@ -566,7 +642,6 @@ namespace components
 					}
 				}
 			}
-#endif
 		}
 	}
 
@@ -598,7 +673,7 @@ namespace components
 
 	void set_custom_vertexshader_constants([[maybe_unused]] game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
-		//if (renderer::is_rendering_layeredwnd())
+		if (!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_fog_enabled->current.enabled)
 		{
 			if (state && state->pass)
 			{
@@ -606,38 +681,19 @@ namespace components
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
 					const auto arg_def = &state->pass->args[arg];
-
 					if (arg_def && arg_def->type == 3)
 					{
 						if (state->pass->vertexShader)
 						{
-							// this somehow breaks other materials like caulk
-
-							//if(state->material && state->material->info.name)
-							//{
-							//	std::string material_name = state->material->info.name;
-
-							//	// break shadowcaster materials (make them invisible)
-							//	if (utils::string_contains(material_name, "mtl_tree_shadow") || utils::string_contains(material_name, "mtl_shadowcaster"))
-							//	{
-							//		if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_TRANSPOSE_VIEW_PROJECTION_MATRIX)
-							//		{
-							//			float null[4][4] = { 0.0f };
-							//			game::dx->device->SetVertexShaderConstantF(arg_def->dest, &null[0][0], 4);
-							//		}
-							//	}
-							//}
-
 							// set fog
-							/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG)
+							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG)
 							{
-								game::vec4_t temp;
-								game::dx->device->GetVertexShaderConstantF(arg_def->dest, temp, 1);
-
-								temp[2] = -0.005f; // density
-								temp[3] = 1.0f; // start
+								const float density = 0.69314f / dvars::r_fakesun_fog_half->current.value;
+								const float start = dvars::r_fakesun_fog_start->current.value * density;
+								
+								game::vec4_t temp = { 0.0f, 1.0f, -density, start };
 								game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
-							}*/
+							}
 						}
 					}
 				}
@@ -702,67 +758,69 @@ namespace components
 		}
 	}
 
-	// 
-	void r_setup_pass(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
+	// create "new" lighting state 
+	// -> re-use eg. fakelight_normal, check if "new" lightstate is enabled
+	// -> overwrite used techniques with custom ones
+	// -> profit
+	//
+	// needs:
+	// -> qol: add sliders to modify shader constants
+	// -> qol: add sky or generic background?
+	
+	void r_setup_pass_xmodel(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
 	{
-		// hue hue
-		// todo: create "new" lighting state 
-		// -> re-use eg. fakelight_normal, check if "new" lightstate is enabled
-		// -> overwrite used techniques with custom ones
-		// -> profit
-		//
-		// needs:
-		// -> qol: add sliders to modify shader constants
-		// -> qol: add sky or generic background?
-		
-		if (renderer::is_rendering_layeredwnd())
+		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) || 
+			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
 		{
-			if(layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY)
+			if (utils::string_equals(state->technique->name, "fakelight_normal_dtex") ||
+				utils::string_equals(state->technique->name, "fakelight_normal_d0_dtex"))
 			{
-				if (utils::string_contains(state->technique->name, "fakelight_normal_dtex"))
+				bool has_normal = false;
+				bool has_spec = false;
+
+				for (auto tex = 0; tex < state->material->textureCount; tex++)
 				{
-					// 2 = color, 1 : 0x5 = normal, 0x8 = spec
-					//if (mat->textureTable[tex].u.image->semantic == 0x2)
-					//if(state->material->textureTable[3].u.image->semantic)
-					bool has_normal = false;
-					bool has_spec = false;
-
-					for(auto tex = 0; tex < state->material->textureCount; tex++)
+					if (state->material->textureTable[tex].u.image->semantic == 0x1 || state->material->textureTable[tex].u.image->semantic == 0x5)
 					{
-						/*if(state->material->textureTable[tex].u.image->semantic == 0x1)
-						{
-							has_normal = true;
-						}
-						else if(state->material->textureTable[tex].u.image->semantic == 0x8)
-						{
-							has_spec = true;
-						}*/
-
-						if(state->material->textureTable[tex].u.image->semantic == 0x1 || state->material->textureTable[tex].u.image->semantic == 0x5)
-						{
-							has_normal = true;
-						}
-						
-						//has_normal = state->material->textureTable[tex].u.image->semantic == 0x1 ? true : has_normal;
-						has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
+						has_normal = true;
 					}
 
-					if(has_spec && has_normal)
+					has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
+				}
+
+				if (has_spec && has_normal)
+				{
+					if (const auto	tech = Material_RegisterTechnique("fakesun_normal_dtex", 1);
+						tech)
 					{
-						if (const auto	tech = Material_RegisterTechnique("fakesun_normal_dtex", 1);
-							tech)
+						state->technique = tech;
+
+						// set reflection probe sampler here?
+						// R_SetSampler(int a1, GfxCmdBufState *state, int a3, char a4, GfxImage *img)
+
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+							image && image->texture.data)
 						{
-							state->technique = tech;
+							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
+								(0x538D70)(0, state, 1, 114, image);
+						}
+					}
+				}
+				else if (!has_spec && has_normal)
+				{
+					if (const auto	tech = Material_RegisterTechnique("fakesun_normal_no_spec_img_dtex", 1);
+						tech)
+					{
+						state->technique = tech;
 
-							// set reflection probe sampler here?
-							// R_SetSampler(int a1, GfxCmdBufState *state, int a3, char a4, GfxImage *img)
+						// set reflection probe sampler here?
+						// R_SetSampler(int a1, GfxCmdBufState *state, int a3, char a4, GfxImage *img)
 
-							if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
-								image && image->texture.data)
-							{
-								utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int unk1, char unk2, game::GfxImage* _img)>
-									(0x538D70)(0, state, 1, 114, image);
-							}
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+							image && image->texture.data)
+						{
+							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
+								(0x538D70)(0, state, 1, 114, image);
 						}
 					}
 				}
@@ -772,7 +830,7 @@ namespace components
 		if(dvars::r_draw_model_shadowcaster && !dvars::r_draw_model_shadowcaster->current.enabled)
 		{
 			// replace shadow caster technique with a none visible one
-			if (utils::string_contains(state->material->info.name, "mc/mtl_tree_shadow_caster"))
+			if (utils::string_equals(state->material->info.name, "mc/mtl_tree_shadow_caster"))
 			{
 				if (const auto	tech = Material_RegisterTechnique("cinematic", 1);
 					tech)
@@ -821,6 +879,104 @@ namespace components
 			state->refStateBits[1] = loadbit_1;
 		}
 		
+		if (!pass->pixelShader)
+		{
+			game::Com_Error("r_setup_pass :: pass->pixelShader");
+		}
+
+		// void __cdecl R_SetPixelShader(GfxCmdBufState *state, MaterialPixelShader *pixelShader)
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufState* _state, game::MaterialPixelShader* _pixelShader)>(0x53C2C0)(state, pass->pixelShader);
+
+		if (pass->stableArgCount)
+		{
+			R_SetPassShaderStableArguments(&pass->args[pass->perPrimArgCount + pass->perObjArgCount].type, source, state, pass->stableArgCount);
+		}
+	}
+
+	void r_setup_pass_brush(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
+	{
+		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
+			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
+		{
+			if (utils::string_equals(state->technique->name, "fakelight_normal"))
+			{
+				// 2 = color, 1 : 0x5 = normal, 0x8 = spec
+				//if (mat->textureTable[tex].u.image->semantic == 0x2)
+				//if(state->material->textureTable[3].u.image->semantic)
+				bool has_normal = false;
+				bool has_spec = false;
+
+				for (auto tex = 0; tex < state->material->textureCount; tex++)
+				{
+					if (state->material->textureTable[tex].u.image->semantic == 0x1 || state->material->textureTable[tex].u.image->semantic == 0x5)
+					{
+						has_normal = true;
+					}
+
+					//has_normal = state->material->textureTable[tex].u.image->semantic == 0x1 ? true : has_normal;
+					has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
+				}
+
+				if (has_spec && has_normal)
+				{
+					if (const auto	tech = Material_RegisterTechnique("fakesun_normal", 1);
+						tech)
+					{
+						state->technique = tech;
+
+						// set reflection probe sampler here?
+						// R_SetSampler(int a1, GfxCmdBufState *state, int a3, char a4, GfxImage *img)
+
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+							image && image->texture.data)
+						{
+							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int unk1, char unk2, game::GfxImage* _img)>
+								(0x538D70)(0, state, 1, 114, image);
+						}
+					}
+				}
+			}
+		}
+		
+		const auto pass = &state->technique->passArray[passIndex];
+		const auto material = state->material;
+
+		state->pass = pass;
+		state->passIndex = passIndex;
+
+		if (material->stateBitsEntry[state->techType] >= material->stateBitsCount)
+		{
+			game::Com_Error("r_setup_pass :: material->stateBitsEntry[context.state->techType] doesn't index material->stateBitsCount");
+		}
+
+		const int bit = passIndex + material->stateBitsEntry[state->techType];
+		unsigned int loadbit_0 = material->stateBitsTable[bit].loadBits[0];
+		unsigned int loadbit_1 = material->stateBitsTable[bit].loadBits[1];
+
+		if (source->viewMode == game::VIEW_MODE_NONE)
+		{
+			game::Com_Error("r_setup_pass :: context.source->viewMode != VIEW_MODE_NONE");
+		}
+
+		if (source->viewMode == game::VIEW_MODE_2D)
+		{
+			loadbit_1 = loadbit_1 & 0xFFFFFFC2 | 2;
+		}
+
+		if (loadbit_0 != state->refStateBits[0])
+		{
+			// void __cdecl R_ChangeState_0(GfxCmdBufState *state, unsigned int statebit)
+			utils::hook::call<void(__cdecl)(game::GfxCmdBufState* _state, unsigned int _statebit)>(0x538AF0)(state, loadbit_0);
+			state->refStateBits[0] = loadbit_0;
+		}
+
+		if (loadbit_1 != state->refStateBits[1])
+		{
+			// void __cdecl R_ChangeState_1(GfxCmdBufState *state, unsigned int statebit)
+			utils::hook::call<void(__cdecl)(game::GfxCmdBufState* _state, unsigned int _statebit)>(0x53A170)(state, loadbit_1);
+			state->refStateBits[1] = loadbit_1;
+		}
+
 		if (!pass->pixelShader)
 		{
 			game::Com_Error("r_setup_pass :: pass->pixelShader");
@@ -962,28 +1118,6 @@ namespace components
 		
 		return true;
 	}
-
-	// *
-	// picmip
-	/*void set_picmip_values()
-	{
-		game::Dvar_SetIntByName(game::g_qeglobals->d_picmip, "r_picmip");
-		game::Dvar_SetIntByName(game::g_qeglobals->d_picmip, "r_picmip");
-		game::Dvar_SetIntByName(game::g_qeglobals->d_picmip, "r_picmip");
-	}
-	
-	void set_picmip_values_stub()
-	{
-		const static uint32_t retn_pt = 0x4208CE;
-		__asm
-		{
-			pushad;
-			call	set_picmip_values;
-			popad;
-
-			jmp		retn_pt;
-		}
-	}*/
 	
 	// *
 	// *
@@ -1001,6 +1135,57 @@ namespace components
 			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "render shadowcaster materials on xmodels");
+
+		dvars::r_draw_patch_backface_wireframe = dvars::register_bool(
+			/* name		*/ "r_draw_patch_backface_wireframe",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "render backface of patches using wireframe");
+
+		dvars::r_fakesun_preview = dvars::register_bool(
+			/* name		*/ "r_fakesun_preview",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::none,
+			/* desc		*/ "render world using a custom fakesun shader (supports specular and bump mapping)");
+
+		dvars::r_fakesun_use_worldspawn = dvars::register_bool(
+			/* name		*/ "r_fakesun_use_worldspawn",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "fakesun shader uses the current worldspawn settings (default values for missing keys)");
+		
+		dvars::r_fakesun_fog_enabled = dvars::register_bool(
+			/* name		*/ "r_fakesun_fog_enabled",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "enable fog");
+		
+		dvars::r_fakesun_fog_start = dvars::register_float(
+			/* name		*/ "r_fakesun_fog_start",
+			/* default	*/ 900.0f,
+			/* mins		*/ 0.0f,
+			/* maxs		*/ FLT_MAX,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "fog start dist");
+
+		dvars::r_fakesun_fog_half = dvars::register_float(
+			/* name		*/ "r_fakesun_fog_half",
+			/* default	*/ 2200.0f,
+			/* mins		*/ 0.0f,
+			/* maxs		*/ FLT_MAX,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "fog half way dist");
+		
+		dvars::r_fakesun_fog_color = dvars::register_vec4(
+			/* name		*/ "r_fakesun_fog_color",
+			/* x		*/ 0.63f,
+			/* y		*/ 0.56f,
+			/* z		*/ 0.46f,
+			/* w		*/ 1.0f,
+			/* minVal	*/ 0.0f,
+			/* maxVal	*/ 1.0f,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "fog color");
 	}
 	
 	renderer::renderer()
@@ -1014,17 +1199,14 @@ namespace components
 		// enable/disable drawing of boxes around the origin on entities
 		utils::hook(0x478E33, render_origin_boxes_stub, HOOK_JUMP).install()->quick();
 
-		// use actual picmip dvar values for spec and bump quality
-		//utils::hook(0x4208B0, set_picmip_values_stub, HOOK_JUMP).install()->quick();
+		// enable/disable drawing of backface wireframe on patches
+		utils::hook::nop(0x441567, 16);
+			 utils::hook(0x441567, patch_backface_wireframe_stub).install()->quick();
 		
 		// do not force spec and bump picmip
 		utils::hook::nop(0x420A73, 30);
-		// do not force spec and bump picmip
 		utils::hook::nop(0x4208B0, 30);
-		// do not force spec and bump picmip
 		utils::hook::nop(0x41656E, 30);
-
-		
 
 		// custom shader constants
 		utils::hook(0x53BC39, R_SetPassPixelShaderStableArguments_stub, HOOK_JUMP).install()->quick();
@@ -1042,7 +1224,8 @@ namespace components
 
 		// R_SetupPass @ 0x4FE646 for brushes
 		// hook R_SetupPass in R_DrawXModelSkinnedUncached to set custom techniques for xmodels
-		utils::hook(0x53AC4F, r_setup_pass, HOOK_CALL).install()->quick();
+		utils::hook(0x53AC4F, r_setup_pass_xmodel, HOOK_CALL).install()->quick(); // xmodels
+		utils::hook(0x4FE646, r_setup_pass_brush, HOOK_CALL).install()->quick(); // brushes
 		
 		command::register_command_with_hotkey("reload_techniques"s, [this](auto)
 		{
@@ -1074,6 +1257,47 @@ namespace components
 
 			const auto tech_hashtable = reinterpret_cast<void*>(0x14EFCBC);
 			memset(tech_hashtable, 0, sizeof(int[8192]));
+		});
+
+		command::register_command_with_hotkey("fakesun_toggle"s, [this](auto)
+		{
+			const bool state = !dvars::r_fakesun_preview->current.enabled;
+
+			if(state)
+			{
+				const auto r_picmip = game::Dvar_FindVar("r_picmip");
+				const auto r_picmip_spec = game::Dvar_FindVar("r_picmip_spec");
+				const auto r_picmip_bump = game::Dvar_FindVar("r_picmip_bump");
+
+				// use high quality materials if already in-use
+				if(r_picmip->current.integer != 0 || r_picmip_spec->current.integer != 0 || r_picmip_bump->current.integer != 0)
+				{
+					dvars::set_int(r_picmip, 0);
+					dvars::set_int(r_picmip_spec, 0);
+					dvars::set_int(r_picmip_bump, 0);
+
+					// reload textures
+					cdeclcall(void, 0x5139A0); // R_UpdateMipMap
+					game::R_ReloadImages();
+				}
+
+				// set normal fakelight method
+				cmainframe::activewnd->m_pCamWnd->camera.draw_mode = game::RM_NORMALFAKELIGHT;
+				game::g_qeglobals->d_savedinfo.iTextMenu = 0x80E0;
+
+				dvars::set_bool(dvars::r_fakesun_preview, true);
+			}
+			else
+			{
+				int orig_rendermethod = 2;
+				if(game::g_qeglobals->d_savedinfo.iTextMenu >= 0x80DE && game::g_qeglobals->d_savedinfo.iTextMenu <= 0x80E2)
+				{
+					orig_rendermethod = game::g_qeglobals->d_savedinfo.iTextMenu - 0x80DE;
+				}
+
+				dvars::set_bool(dvars::r_fakesun_preview, false);
+				cmainframe::activewnd->m_pCamWnd->camera.draw_mode = orig_rendermethod;
+			}
 		});
 	}
 

@@ -13,7 +13,7 @@ namespace ggui::about
 		{
 			SPACING(0.0f, 2.0f);
 
-			const char* version_str = utils::va("IW3xRadiant :: %.lf :: %s", REVISION, __TIMESTAMP__);
+			const char* version_str = utils::va("IW3xRadiant :: %.lf :: %s", REVISION, __DATE__);
 			ImGui::PushFontFromIndex(BOLD_18PX);
 			ImGui::SetCursorForCenteredText(version_str);
 			ImGui::TextUnformatted(version_str);

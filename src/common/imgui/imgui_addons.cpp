@@ -181,6 +181,38 @@ namespace ImGui
 		}
 	}
 
+	void AddUnterline(ImColor col)
+	{
+		ImVec2 min = ImGui::GetItemRectMin();
+		ImVec2 max = ImGui::GetItemRectMax();
+		min.y = max.y;
+		ImGui::GetWindowDrawList()->AddLine(min, max, col, 1.0f);
+	}
+
+	void TextURL(const char* name, const char* url)
+	{
+		ImGui::TextUnformatted(name);
+
+		if (ImGui::IsItemHovered())
+		{
+			if (ImGui::IsMouseClicked(0))
+			{
+				ShellExecuteA(0, 0, url, 0, 0, SW_SHOW);
+			}
+
+			AddUnterline(ImGui::GetStyle().Colors[ImGuiCol_TabHovered]);
+			ImGui::SetTooltip("Open in browser\n[%s]", url);
+		}
+		else
+		{
+			AddUnterline(ImGui::GetStyle().Colors[ImGuiCol_Button]);
+		}
+	}
+
+	void SetCursorForCenteredText(const char* text)
+	{
+		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(text).x) * 0.5f);
+	}
 	
 	void debug_table_entry_vec3(const char* label, const float* vec3)
 	{
@@ -226,39 +258,6 @@ namespace ImGui
 			ImGui::TableNextColumn();
 			ImGui::Text("%d", val[i]);
 		}
-	}
-
-	void AddUnterline(ImColor col)
-	{
-		ImVec2 min = ImGui::GetItemRectMin();
-		ImVec2 max = ImGui::GetItemRectMax();
-		min.y = max.y;
-		ImGui::GetWindowDrawList()->AddLine(min, max, col, 1.0f);
-	}
-
-	void TextURL(const char* name, const char* url)
-	{
-		ImGui::TextUnformatted(name);
-		
-		if (ImGui::IsItemHovered())
-		{
-			if (ImGui::IsMouseClicked(0))
-			{
-				ShellExecuteA(0, 0, url, 0, 0, SW_SHOW);
-			}
-			
-			AddUnterline(ImGui::GetStyle().Colors[ImGuiCol_TabHovered]);
-			ImGui::SetTooltip("Open in browser\n[%s]", url);
-		}
-		else
-		{
-			AddUnterline(ImGui::GetStyle().Colors[ImGuiCol_Button]);
-		}
-	}
-
-	void SetCursorForCenteredText(const char* text)
-	{
-		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(text).x) * 0.5f);
 	}
 
 	void StyleColorsDevgui(ImGuiStyle* dst)

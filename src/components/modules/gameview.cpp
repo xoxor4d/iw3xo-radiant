@@ -31,7 +31,8 @@ namespace components
 			}
 
 			dvars::set_bool(dvars::r_draw_model_origin, this->var.s_model_origin);
-
+			dvars::set_bool(dvars::r_draw_patch_backface_wireframe, this->var.s_patch_backface_wireframe);
+			
 			// geometry filters
 			{
 				if (this->var.s_filter_mantle)				ggui::filter::toggle_by_name("mantle", ggui::filter::GEOMETRY, true);
@@ -97,12 +98,14 @@ namespace components
 			{
 				this->var.s_xyflags = game::g_qeglobals->d_savedinfo.d_xyShowFlags;
 				this->var.s_model_origin = dvars::r_draw_model_origin->current.enabled;
+				this->var.s_patch_backface_wireframe = dvars::r_draw_patch_backface_wireframe->current.enabled;
 				this->var.enabled = true;
 			}
 
 			game::g_qeglobals->d_savedinfo.d_xyShowFlags |= (2|4); // add angles and connection lines flags to disable rendering
 			dvars::set_bool(dvars::r_draw_model_origin, false);
-
+			dvars::set_bool(dvars::r_draw_patch_backface_wireframe, false);
+			
 			// geometry filters
 			{
 				this->var.s_filter_mantle			= ggui::filter::toggle_by_name("mantle", ggui::filter::GEOMETRY, false);
