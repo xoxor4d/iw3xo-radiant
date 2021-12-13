@@ -694,6 +694,13 @@ namespace components
 								game::vec4_t temp = { 0.0f, 1.0f, -density, start };
 								game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
 							}
+
+							// needed for vertcol_mul_fog (2 pass technique for some decals)
+							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
+							{
+								game::vec4_t temp = { dvars::r_fakesun_fog_color->current.vector[0], dvars::r_fakesun_fog_color->current.vector[1], dvars::r_fakesun_fog_color->current.vector[2], dvars::r_fakesun_fog_color->current.vector[3] };
+								game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
+							}
 						}
 					}
 				}
@@ -763,9 +770,10 @@ namespace components
 	// -> overwrite used techniques with custom ones
 	// -> profit
 	//
-	// needs:
-	// -> qol: add sliders to modify shader constants
-	// -> qol: add sky or generic background?
+	// nice to have:
+	// -> add sliders to modify shader constants
+	// -> add sky or generic background to model preview?
+	// -> add custom image kvp to reflection probes to assign probes, find nearest probe to material .. etc
 	
 	void r_setup_pass_xmodel(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
 	{
@@ -898,11 +906,9 @@ namespace components
 		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
 			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
 		{
-			if (utils::string_equals(state->technique->name, "fakelight_normal"))
+			if (utils::string_equals(state->technique->name, "fakelight_normal") ||
+				utils::string_equals(state->technique->name, "fakelight_normal_d0"))
 			{
-				// 2 = color, 1 : 0x5 = normal, 0x8 = spec
-				//if (mat->textureTable[tex].u.image->semantic == 0x2)
-				//if(state->material->textureTable[3].u.image->semantic)
 				bool has_normal = false;
 				bool has_spec = false;
 
@@ -912,8 +918,6 @@ namespace components
 					{
 						has_normal = true;
 					}
-
-					//has_normal = state->material->textureTable[tex].u.image->semantic == 0x1 ? true : has_normal;
 					has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
 				}
 
@@ -924,21 +928,37 @@ namespace components
 					{
 						state->technique = tech;
 
-						// set reflection probe sampler here?
-						// R_SetSampler(int a1, GfxCmdBufState *state, int a3, char a4, GfxImage *img)
-
+						// set reflection probe sampler
 						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
-							image && image->texture.data)
+										image && image->texture.data)
 						{
-							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int unk1, char unk2, game::GfxImage* _img)>
+							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
+							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
+								(0x538D70)(0, state, 1, 114, image);
+						}
+					}
+				}
+				else if (!has_spec && has_normal)
+				{
+					if (const auto	tech = Material_RegisterTechnique("fakesun_normal_no_spec_img", 1);
+						tech)
+					{
+						state->technique = tech;
+
+						// set reflection probe sampler
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+										image && image->texture.data)
+						{
+							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
+							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
 								(0x538D70)(0, state, 1, 114, image);
 						}
 					}
 				}
 			}
 		}
-		
-		const auto pass = &state->technique->passArray[passIndex];
+
+ 		const auto pass = &state->technique->passArray[passIndex];
 		const auto material = state->material;
 
 		state->pass = pass;
