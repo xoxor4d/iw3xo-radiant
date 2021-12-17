@@ -1,0 +1,126 @@
+{
+    "version": "2.0.0",
+    "tasks": 
+    [
+        // generate vs project files
+        {
+            "type": "shell",
+            "label": "a_generate-buildfiles",
+            "command": "generate-buildfiles.bat",
+            "options": 
+            {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": 
+            {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+        },
+
+        // update submodules
+        {
+            "type": "shell",
+            "label": "a_update_submodules",
+            "command": "update_submodules.bat",
+            "options": 
+            {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": 
+            {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": [],
+        },
+        
+        // *
+        // compiling
+
+        // debug: build
+        {
+            "type": "process",
+            "label": "debug-build",
+            "command": "msbuild.exe",
+            "args": [
+              "build/iw3xo-radiant.sln",
+              "/p:Configuration=Debug;Platform=Win32",
+            ],
+            "problemMatcher": "$msCompile",
+            "group": {
+              "kind": "build",
+              "isDefault": true
+            },
+            //"dependsOn": ["a_generate-buildfiles"]
+        },
+        // build  release
+        {
+            "type": "process",
+            "label": "release-build",
+            "command": "msbuild.exe",
+            "args": [
+              "build/iw3xo-radiant.sln",
+              "/p:Configuration=Release;Platform=Win32",
+            ],
+            "problemMatcher": ["$msCompile"],
+            "group": "build",
+            //"dependsOn": ["a_generate-buildfiles"]
+        },
+
+        // *
+        // copy to dir
+
+        // debug: copy build to cod4/bin
+        {
+            "type": "shell",
+            "label": "z-copy-debug",
+            "command": "copy-to-cod4-dir.bat",
+            "options": 
+            {
+                "cwd": "${workspaceFolder}\\.vscode"
+            },
+            "args": ["debug"],
+        },
+        // release: copy build to cod4/bin
+        {
+            "type": "shell",
+            "label": "z-copy-release",
+            "command": "copy-to-cod4-dir.bat",
+            "options": 
+            {
+                "cwd": "${workspaceFolder}\\.vscode"
+            },
+            "args": ["release"],
+        },
+
+        // *
+        // combined tasks
+
+        // debug: build and copy
+        {
+            "label": "debug-build-copy",
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+              },
+            "dependsOrder": "sequence",
+            "dependsOn": ["debug-build", "z-copy-debug"]
+        },
+
+        // release: build and copy
+        {
+            "label": "release-build-copy",
+            "problemMatcher": "$msCompile",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+              },
+            "dependsOrder": "sequence",
+            "dependsOn": ["release-build", "z-copy-release"]
+        },
+    ]
+}
+

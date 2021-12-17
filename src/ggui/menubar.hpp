@@ -1,7 +1,7 @@
 #pragma once
-#include "ggui/_ggui.hpp"
+#include "_ggui.hpp"
 
 namespace ggui::menubar
 {
-	void	menu(ggui::imgui_context_cxy& context);
+	void	menu(ggui::imgui_context_cz& context);
 }

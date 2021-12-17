@@ -1,0 +1,19 @@
+{
+	stateMap "default";
+
+	vertexShader 3.0 "radiant_fakesun_dtex"
+	{
+	}
+
+	pixelShader 3.0 "radiant_fakesun_no_spec_dtex"
+	{
+		colorMapSampler = material.colorMap;
+		normalMapSampler = material.normalMap;
+	}
+
+	vertex.position = code.position;
+	vertex.normal = code.normal;
+	vertex.color[0] = code.color;
+	vertex.texcoord[0] = code.texcoord[0];
+	vertex.texcoord[2] = code.tangent;
+}

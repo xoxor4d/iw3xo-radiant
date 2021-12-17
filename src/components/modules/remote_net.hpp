@@ -16,6 +16,8 @@ namespace components
 		~remote_net();
 		const char*		get_name() override { return "remote_net"; };
 
+		static bool		selection_is_brush(game::brush_t* brush);
+		
 		static void		cmd_process_camera(const char *strCommand);
 		static void		Cmd_ProcessBrushSideIndex(const char *strCommand);
 		static void		cmd_process_brushside(const char *strCommand);
@@ -28,6 +30,7 @@ namespace components
 		static bool		cmd_send_single_brush(game::brush_t *brush, int brushNum);
 		static void		cmd_send_brush_select_deselect(bool select);
 
+		static void		on_shutdown();
 		static void		register_dvars();
 		
 	private:

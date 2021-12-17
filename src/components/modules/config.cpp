@@ -6,7 +6,7 @@ namespace components
 	// the game re-registers them and uses the values of the external dvars
 	void config::load_dvars()
 	{
-		printf(utils::va("\n-------------- Modules -------------- \n%s\n", game::glob::loadedModules.c_str()), 0);
+		//game::printf_to_console(utils::va("\n-------------- Modules -------------- \n%s\n", game::glob::loadedModules.c_str()), 0);
 
 		// fs_homepath should be registered internally already
 		dvars::fs_homepath = game::Dvar_FindVar("fs_homepath");
@@ -23,12 +23,12 @@ namespace components
 			std::string filePath = dvars::fs_homepath->current.string;
 						filePath += "\\iw3r_dvars.cfg";
 
-			printf("[CFG] Executing config \"bin/iw3r_dvars.cfg\"\n");
+			game::printf_to_console("[Cfg] Executing config \"bin/iw3r_dvars.cfg\"\n");
 
 			cfgFile.open(filePath.c_str());
 			if (!cfgFile.is_open())
 			{
-				printf("|-> Could not find \"iw3r_dvars.cfg\" in \"%s\". Loading defaults!\n", dvars::fs_homepath->current.string);
+				game::printf_to_console("|-> Could not find \"iw3r_dvars.cfg\" in \"%s\". Loading defaults!\n", dvars::fs_homepath->current.string);
 				
 				dvars::register_addon_dvars();
 				game::glob::radiant_config_not_found = true;
@@ -60,7 +60,7 @@ namespace components
 
 				if (args.size() != 3)
 				{
-					printf("|-> skipping line: %s :: failed to parse args\n", input.c_str());
+					game::printf_to_console("|-> skipping line: %s :: failed to parse args\n", input.c_str());
 					continue;
 				}
 
@@ -90,10 +90,11 @@ namespace components
 
 		else
 		{
-			printf("|-> fs_homepath->current.string was NULL. Loading defaults!\n");
+			game::printf_to_console("|-> fs_homepath->current.string was NULL. Loading defaults!\n");
 		}
 
-		printf("|-> loaded %d dvars from disk.\n", loadedDvarCount);
+		game::printf_to_console("|-> loaded %d dvars from disk.\n", loadedDvarCount);
+		game::printf_to_console("\n");
 
 		// register all addon dvars
 		dvars::register_addon_dvars();
@@ -132,13 +133,13 @@ namespace components
 			std::string	filePath = dvars::fs_homepath->current.string;
 						filePath += "\\iw3r_dvars.cfg";
 
-			printf("[CFG] Writing config \"iw3r_dvars.cfg\"\n");
+			game::printf_to_console("[Cfg] Writing config \"iw3r_dvars.cfg\"\n");
 
 			cfgFile.open(filePath.c_str());
 
 			if (!cfgFile.is_open())
 			{
-				game::Com_Error("Could not create iw3r_dvars.cfg. Aborting!\n");
+				game::printf_to_console("Could not create iw3r_dvars.cfg. Aborting!\n");
 				return;
 			}
 
@@ -152,7 +153,7 @@ namespace components
 				if (!dvar)
 				{
 					//int realdvarCount = *game::dvarCount;
-					game::Com_Error("Dvar was invalid! Saving ...\n");
+					game::printf_to_console("Dvar was invalid! Saving ...\n");
 					break;
 				}
 
@@ -175,7 +176,7 @@ namespace components
 				}
 
 				dvarString = utils::va(dvarString, dvar->name, dvarValue);
-				printf(dvarString);
+				//game::printf_to_console(dvarString);
 
 				cfgFile << dvarString;
 

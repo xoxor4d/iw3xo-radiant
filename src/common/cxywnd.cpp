@@ -1,7 +1,6 @@
 #include "std_include.hpp"
 
-// tests
-//#define HK_RESIZE_WND
+IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 enum VIEWTYPE
 {
@@ -35,32 +34,7 @@ void reposition_viewtype_hint(const char* text, game::Font_s* font, [[maybe_unus
 	new_org[nDim2] = (cmainframe::activewnd->m_pXYWnd->m_vOrigin[nDim2] - h + 28.0f / cmainframe::activewnd->m_pXYWnd->m_fScale) + hd;
 	new_org[nDim3] = 0.0f;
 
-	// ----
-
-	if (text && *text)
-	{
-		const size_t t_size = strlen(text);
-		auto cmd = reinterpret_cast<game::GfxCmdDrawText3D*>(game::R_RenderBufferCmdCheck((t_size + 0x34) & 0xFFFFFFFC, 16));
-		if (cmd)
-		{
-			cmd->org[0] = new_org[0];
-			cmd->org[1] = new_org[1];
-			cmd->org[2] = new_org[2];
-			cmd->font = font;
-			cmd->xPixelStep[0] = pixel_step_x[0];
-			cmd->xPixelStep[1] = pixel_step_x[1];
-			cmd->xPixelStep[2] = pixel_step_x[2];
-			cmd->yPixelStep[0] = pixel_step_y[0];
-			cmd->yPixelStep[1] = pixel_step_y[1];
-			cmd->yPixelStep[2] = pixel_step_y[2];
-
-			// R_ConvertColorToBytes
-			utils::function<void(float*, game::GfxColor*)>(0x528EA0)(color, &cmd->color);
-
-			memcpy(cmd->text, text, t_size);
-			cmd->text[t_size] = 0;
-		}
-	}
+	components::renderer::R_AddCmdDrawTextAtPosition(text, font, new_org, pixel_step_x, pixel_step_y, color);
 }
 
 
@@ -77,183 +51,215 @@ void reposition_top_grid_hint(const char* text, game::Font_s* font, [[maybe_unus
 	new_org[nDim2] = origin[nDim2] - h;
 	new_org[nDim3] = origin[nDim3];
 
-	// ----
+	components::renderer::R_AddCmdDrawTextAtPosition(text, font, new_org, pixel_step_x, pixel_step_y, color);
+}
 
-	if (text && *text)
+// fix entity name drawing
+void draw_entity_names_hk(const char* text, game::Font_s* font, float* origin, float* pixel_step_x, float* pixel_step_y, [[maybe_unused]] float* color)
+{
+	components::renderer::R_AddCmdDrawTextAtPosition(text, font, origin, pixel_step_x, pixel_step_y, game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK]);
+}
+
+bool g_block_radiant_modeldialog = false;
+
+void create_entity_from_name_intercept()
+{
+	if(!g_block_radiant_modeldialog)
 	{
-		const size_t t_size = strlen(text);
-		auto cmd = reinterpret_cast<game::GfxCmdDrawText3D*>(game::R_RenderBufferCmdCheck((t_size + 0x34) & 0xFFFFFFFC, 16));
-		if (cmd)
-		{
-			cmd->org[0] = new_org[0];
-			cmd->org[1] = new_org[1];
-			cmd->org[2] = new_org[2];
-			cmd->font = font;
-			cmd->xPixelStep[0] = pixel_step_x[0];
-			cmd->xPixelStep[1] = pixel_step_x[1];
-			cmd->xPixelStep[2] = pixel_step_x[2];
-			cmd->yPixelStep[0] = pixel_step_y[0];
-			cmd->yPixelStep[1] = pixel_step_y[1];
-			cmd->yPixelStep[2] = pixel_step_y[2];
-
-			// R_ConvertColorToBytes
-			utils::function<void(float*, game::GfxColor*)>(0x528EA0)(color, &cmd->color);
-
-			memcpy(cmd->text, text, t_size);
-			cmd->text[t_size] = 0;
-		}
+		PostMessageA(game::g_qeglobals->d_hwndEntity, WM_COMMAND, 0x50E, 0); // IDC_E_ADD_MODEL
 	}
 }
 
-#ifdef HK_RESIZE_WND
-//void R_SetupAntiAliasing(game::GfxWindowParms* wnd, int window_count)
-//{
-//	int wnd_count = window_count;
-//	
-//	int aa_samples = wnd->aaSamples;
-//	if (aa_samples <= 1)
-//	{
-//	LABEL_9:
-//		game::dx->multiSampleType = 0;
-//		game::dx->multiSampleQuality = 0;
-//	}
-//	else
-//	{
-//		while (1)
-//		{
-//			game::dx->multiSampleType = aa_samples;
-//			if (game::dx->d3d9->CheckDeviceMultiSampleType(0, D3DDEVTYPE_HAL, D3DFMT_A8R8G8B8, !wnd->fullscreen, (D3DMULTISAMPLE_TYPE)aa_samples, (DWORD*)&wnd_count) >= 0)
-//			{
-//				break;
-//			}
-//			if (--aa_samples <= 1)
-//			{
-//				goto LABEL_9;
-//			}
-//		}
-//		printf("Using %ix anti-aliasing\n", aa_samples);
-//		game::dx->multiSampleQuality = aa_samples - 1;
-//	}
-//}
-
-void R_SetD3DPresentParameters(_D3DPRESENT_PARAMETERS_* d3dpp, game::GfxWindowParms* wnd, int window_count)
+void __declspec(naked) create_entity_from_name_stub()
 {
-	ASSERT_MSG(d3dpp, "invalid D3DPRESENT_PARAMETERS d3dpp");
-	ASSERT_MSG(wnd, "invalid GfxWindowParms wnd");
-	ASSERT_MSG(wnd->hwnd, "invalid HWND wnd->hwnd");
-
-	//R_SetupAntiAliasing(wnd, window_count);
-	memset(d3dpp, 0, sizeof(_D3DPRESENT_PARAMETERS_));
-	d3dpp->BackBufferWidth = wnd->displayWidth;
-	d3dpp->BackBufferHeight = wnd->displayHeight;
-	d3dpp->BackBufferFormat = D3DFMT_A8R8G8B8;
-	d3dpp->BackBufferCount = 1;
-	d3dpp->MultiSampleType = _D3DMULTISAMPLE_TYPE::D3DMULTISAMPLE_NONE; // (D3DMULTISAMPLE_TYPE)game::dx->multiSampleType;
-	d3dpp->MultiSampleQuality = 0; // game::dx->multiSampleQuality
-	d3dpp->SwapEffect = D3DSWAPEFFECT_DISCARD;
-	d3dpp->EnableAutoDepthStencil = 0;
-	d3dpp->AutoDepthStencilFormat = static_cast<D3DFORMAT>(game::dx->depthStencilFormat);
-	d3dpp->PresentationInterval = 1; //r_vsync->current.enabled ? 1 : 0x80000000;
-	d3dpp->hDeviceWindow = wnd->hwnd;
-	d3dpp->Flags = 0;
-
-	if (wnd->fullscreen)
+	const static uint32_t retn_pt = 0x466268;
+	__asm
 	{
-		d3dpp->Windowed = 0;
-		d3dpp->FullScreen_RefreshRateInHz = wnd->hz;
-	}
-	else
-	{
-		d3dpp->FullScreen_RefreshRateInHz = 0;
-		d3dpp->Windowed = 1;
+		call	create_entity_from_name_intercept;
+		jmp		retn_pt;
 	}
 }
 
-// R_Hwnd_Resize called from CXYWnd::OnSize
-void cxywnd::on_resize(HWND__* hwnd, int width, int height)
+float fix_selection_alpha_float_glob = 1.0f;
+void fix_selection_alpha_update_var()
 {
-	ASSERT_MSG(hwnd, "invalid hwnd");
+	fix_selection_alpha_float_glob = game::g_qeglobals->d_savedinfo.colors[11][3];
+}
 
-	_D3DPRESENT_PARAMETERS_ d3dpp{};
-	game::GfxWindowParms wnd{};
-
-	if (width && height)
+void __declspec(naked) fix_selection_alpha_textured_mode()
+{
+	const static uint32_t retn_pt = 0x46D8EB;
+	__asm
 	{
-		int wnd_count = 0;
-		if (game::dx->windowCount > 0)
+		pushad;
+		call	fix_selection_alpha_update_var;
+		popad;
+		fld		fix_selection_alpha_float_glob;
+		fstp    dword ptr[ebp - 1438h];
+		jmp		retn_pt;
+	}
+}
+
+// gui::render_loop()
+// render to texture - imgui grid window
+void cxywnd::rtt_grid_window()
+{
+	int p_styles = 0;
+	int p_colors = 0;
+	
+	const auto IO = ImGui::GetIO();
+	const auto cxy_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nWidth), static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nHeight));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(320.0f, 320.0f), ImVec2(FLT_MAX, FLT_MAX));
+
+	float	window_padding = 0.0f;
+	if (dvars::gui_rtt_padding_enabled && dvars::gui_rtt_padding_enabled->current.enabled) {
+			window_padding = dvars::gui_rtt_padding_size ? dvars::gui_rtt_padding_size->current.integer : 6.0f;
+	}
+	
+	const ImVec2 window_padding_both = ImVec2(window_padding * 2.0f, window_padding * 2.0f);
+	
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(window_padding, window_padding)); p_styles++;
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f)); p_styles++;
+	ImGui::PushStyleColor(ImGuiCol_ResizeGrip, 0); p_colors++;
+	ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); p_colors++;
+	ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); p_colors++;
+	//ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));	 p_colors++;
+	//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_TabUnfocusedActive)); p_colors++;
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_rtt_padding_color->current.vector)); p_colors++;
+
+	auto gridwnd = ggui::get_rtt_gridwnd();
+	if (gridwnd->should_set_focus)
+	{
+		ImGui::SetNextWindowFocus();
+		gridwnd->should_set_focus = false;
+	}
+
+	ImGui::Begin("Grid Window##rtt", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+
+	if (gridwnd->scene_texture)
+	{
+		bool tabbar_visible = true;
+		const auto wnd = ImGui::GetCurrentWindow();
+
+		if (ImGui::IsWindowDocked() && wnd)
 		{
-			for (auto i = game::dx->windows; i->hwnd != hwnd; ++i)
+			if (wnd->DockNode && wnd->DockNode->IsHiddenTabBar())
 			{
-				if (++wnd_count >= game::dx->windowCount)
+				tabbar_visible = false;
+			}
+		}
+
+		const float frame_height = tabbar_visible ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
+		gridwnd->scene_size_imgui = ImGui::GetWindowSize() - ImVec2(0.0f, frame_height) - window_padding_both;
+
+		// hack to disable left mouse window movement
+		ImGui::BeginChild("scene_child_cxy", ImVec2(cxy_size.x, cxy_size.y + frame_height) + window_padding_both, false, ImGuiWindowFlags_NoMove);
+		{
+			const auto screenpos = ImGui::GetCursorScreenPos();
+			SetWindowPos(cmainframe::activewnd->m_pXYWnd->m_hWnd, HWND_BOTTOM, (int)screenpos.x, (int)screenpos.y, (int)gridwnd->scene_size_imgui.x, (int)gridwnd->scene_size_imgui.y, SWP_NOZORDER);
+
+			const auto pre_image_cursor = ImGui::GetCursorPos();
+
+			ImGui::Image(gridwnd->scene_texture, cxy_size);
+			gridwnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+
+
+			// model selection drop target
+			if(ImGui::BeginDragDropTarget())
+			{
+				if(ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 				{
-					return;
+					// reset manual left mouse capture
+					ggui::dragdrop_reset_leftmouse_capture();
+					
+					const auto m_selector = ggui::get_rtt_modelselector();
+					ggui::entity::addprop_helper_s no_undo = {};
+					
+					if (m_selector->overwrite_selection)
+					{
+						game::Undo_ClearRedo();
+						game::Undo_GeneralStart("change entity model");
+
+						if (components::remote_net::selection_is_brush(game::g_selected_brushes()->currSelection))
+						{
+							// nothing but worldspawn selected, lets spawn a new entity
+							goto SPAWN_AWAY;
+						}
+
+						if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+						{
+							// nothing but worldspawn selected, lets spawn a new entity
+							goto SPAWN_AWAY;
+						}
+
+						ggui::entity::AddProp("model", m_selector->preview_model_name.c_str(), &no_undo);
+						game::Undo_End();
+					}
+					else
+					{
+						game::Select_Deselect(1);
+						game::Undo_ClearRedo();
+						game::Undo_GeneralStart("create entity");
+
+						if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+						{
+							SPAWN_AWAY:
+							game::CreateEntityBrush(static_cast<int>(gridwnd->scene_size_imgui.y) - gridwnd->cursor_pos_pt.y, gridwnd->cursor_pos_pt.x, cmainframe::activewnd->m_pXYWnd);
+						}
+
+						// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+						g_block_radiant_modeldialog = true;
+
+						//CreateEntityFromName(classname);
+						utils::hook::call<void(__cdecl)(const char*)>(0x465CC0)("misc_model");
+
+						g_block_radiant_modeldialog = false;
+
+						ggui::entity::AddProp("model", ggui::get_rtt_modelselector()->preview_model_name.c_str(), &no_undo);
+						// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
+
+						game::Undo_End();
+					}
 				}
 			}
+			
+			// pop ItemSpacing
+			ImGui::PopStyleVar(); p_styles--;
 
-			wnd.hwnd = hwnd;
-			wnd.fullscreen = false;
-			wnd.displayWidth = width;
-			wnd.displayHeight = height;
-			wnd.sceneWidth = width;
-			wnd.sceneHeight = height;
-			wnd.aaSamples = 1;
+			ImGui::SetCursorPos(pre_image_cursor);
+			const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
 
-			R_SetD3DPresentParameters(&d3dpp, &wnd, game::dx->windowCount);
+			gridwnd->cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
+			gridwnd->cursor_pos_pt = CPoint((LONG)gridwnd->cursor_pos.x, (LONG)gridwnd->cursor_pos.y);
 
-			auto swapchain = &game::dx->windows[wnd_count].swapChain;
-			auto old_swapchain = *swapchain;
-			if (*swapchain == nullptr)
-			{
-				ASSERT_MSG(1, "var");
-			}
-			*swapchain == nullptr;
+			ggui::FixDockingTabbarTriangle(wnd, gridwnd);
 
-			if (old_swapchain->lpVtbl->Release((IDirect3DSwapChain9*)old_swapchain))
-			{
-				ASSERT_MSG(0, "release failed, leaks ...");
-			}
-
-			if (auto hr = game::dx->device->CreateAdditionalSwapChain(&d3dpp, (IDirect3DSwapChain9**)swapchain);
-				hr < 0)
-			{
-				// g_disableRendering;
-				ASSERT_MSG(0, "CreateAdditionalSwapChain failed ...");
-			}
-
-			game::dx->windows[wnd_count].width = width;
-			game::dx->windows[wnd_count].height = height;
-
-			//cmainframe::activewnd->m_pXYWnd->m_nHeight = height;
+			//ImGui::Indent(8.0f);
+			//ImGui::Text("Hovered? %d", gridwnd->window_hovered);
+			
+			ImGui::EndChild();
 		}
 	}
+	ImGui::PopStyleColor(p_colors);
+	ImGui::PopStyleVar(p_styles);
+	ImGui::End();
 }
-#endif
 
-// *
-// | -------------------- gui i/o ------------------------
-// *
-
-IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-/*
- * (cxywnd member functions are only used if the xy subwindow is focused)
- * - Directly clicking onto an imgui window will not focus the subwindow behind it
- * - IO will instead be handled by cmainframe member functions
- * + Mouse scrolling handled by cmainframe::on_mscroll
- * + Char events handled by cxywnd::wndproc / ccamwnd::wndproc or cmainframe::windowproc (depends on focused window)
- */
-
-typedef void(__thiscall* on_cxywnd_msg)(cxywnd*, UINT, CPoint);
+namespace xywnd
+{
 	on_cxywnd_msg __on_lbutton_down;
 	on_cxywnd_msg __on_lbutton_up;
 	on_cxywnd_msg __on_rbutton_down;
 	on_cxywnd_msg __on_rbutton_up;
+	on_cxywnd_msg __on_mbutton_down;
+	on_cxywnd_msg __on_mbutton_up;
 	on_cxywnd_msg __on_mouse_move;
 
-
-typedef void(__stdcall* on_cxywnd_key)(UINT nChar, UINT nRepCnt, UINT nFlags);
 	on_cxywnd_key __on_keydown;
 	on_cxywnd_key __on_keyup;
+
+	on_cxywnd_scroll __on_scroll;
+}
 
 
 // *
@@ -262,34 +268,16 @@ typedef void(__stdcall* on_cxywnd_key)(UINT nChar, UINT nRepCnt, UINT nFlags);
 
 void __fastcall cxywnd::on_lbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
-	// set cxy context
-	IMGUI_BEGIN_CXYWND;
-
-	// check if mouse cursor is above any cxy imgui window
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		// handle input, don't pass input to the xywindow
-		ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
-	}
-	else // pass input to the xywindow
-    {
-        return __on_lbutton_down(pThis, nFlags, point);
-    }
+	// pass input to the xywindow
+	xywnd::__on_lbutton_down(pThis, nFlags, point);
 }
 
 void __fastcall cxywnd::on_lbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
-	IMGUI_BEGIN_CXYWND;
-	
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
-	}
-	else
-    {
-        return __on_lbutton_up(pThis, nFlags, point);
-    }
+	// pass input to the xywindow
+	xywnd::__on_lbutton_up(pThis, nFlags, point);
 }
+
 
 
 // *
@@ -298,30 +286,32 @@ void __fastcall cxywnd::on_lbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx,
 
 void __fastcall cxywnd::on_rbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
-	IMGUI_BEGIN_CXYWND;
-	
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONDOWN);
-	}
-	else
-    {
-        return __on_rbutton_down(pThis, nFlags, point);
-    }
+	// pass input to the xywindow
+	xywnd::__on_rbutton_down(pThis, nFlags, point);
 }
 
 void __fastcall cxywnd::on_rbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
-	IMGUI_BEGIN_CXYWND;
-	
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONUP);
-	}
-	else
-    {
-        return __on_rbutton_up(pThis, nFlags, point);
-    }
+	// pass input to the xywindow
+	xywnd::__on_rbutton_up(pThis, nFlags, point);
+}
+
+
+
+// *
+// | ----------------- Middle Mouse Button ---------------------
+// *
+
+void __fastcall cxywnd::on_mbutton_down(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+{
+	// pass input to the xywindow
+	xywnd::__on_mbutton_down(pThis, nFlags, point);
+}
+
+void __fastcall cxywnd::on_mbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+{
+	// pass input to the xywindow
+	xywnd::__on_mbutton_up(pThis, nFlags, point);
 }
 
 
@@ -332,13 +322,8 @@ void __fastcall cxywnd::on_rbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx,
 
 void __fastcall cxywnd::on_mouse_move(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
-	IMGUI_BEGIN_CXYWND;
-
-	// block xywindow input if mouse cursor is above any cxy imgui window
-	if (!ImGui::GetIO().WantCaptureMouse)
-	{
-		return __on_mouse_move(pThis, nFlags, point);
-	}
+	// original function
+	xywnd::__on_mouse_move(pThis, nFlags, point);
 }
 
 
@@ -349,39 +334,217 @@ void __fastcall cxywnd::on_mouse_move(cxywnd* pThis, [[maybe_unused]] void* edx,
 
 void __stdcall cxywnd::on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	IMGUI_BEGIN_CXYWND;
-	
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
-	}
-	else
-	{
-		// cmainframe::OnKeyDown
-		return __on_keydown(nChar, nRepCnt, nFlags);
-	}
+	// original function :: CMainFrame::OnKeyDown (detoured)
+	xywnd::__on_keydown(nChar, nRepCnt, nFlags);
 }
 
 void __stdcall cxywnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	IMGUI_BEGIN_CXYWND;
-	
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYUP, 0, nChar);
-	}
-	else
-	{
-		// cmainframe::OnKeyUp
-		return __on_keyup(nChar, nRepCnt, nFlags);
-	}
+	// original function :: CMainFrame::OnKeyUp (detoured)
+	xywnd::__on_keyup(nChar, nRepCnt, nFlags);
 }
 
 
-//void cxywnd::on_endframe()
-//{
-//	game::R_EndFrame();
-//}
+
+// *
+// | ----------------- Mouse Scrolling ---------------------
+// *
+
+BOOL __stdcall cxywnd::on_scroll(UINT nFlags, std::int16_t zDelta, [[maybe_unused]] CPoint point)
+{
+	return xywnd::__on_scroll(nFlags, zDelta, point);
+}
+
+
+void xy_to_point(cxywnd* wnd, float* origin_out, CPoint point)
+{
+	const auto zoom_center_x = ((float)point.x - (float)wnd->m_nWidth * 0.5f) / wnd->m_fScale;
+	const auto zoom_center_y = ((float)point.y - (float)wnd->m_nHeight * 0.5f) / wnd->m_fScale;
+	
+	switch(wnd->m_nViewType)
+	{
+	case XY:
+		origin_out[0] = (zoom_center_x + wnd->m_vOrigin[0]);
+		origin_out[1] = (zoom_center_y + wnd->m_vOrigin[1]);
+		origin_out[2] = 131072.0;
+		break;
+		
+	case XZ:
+		origin_out[0] = (zoom_center_x + wnd->m_vOrigin[0]);
+		origin_out[1] = 131072.0;
+		origin_out[2] = (zoom_center_y + wnd->m_vOrigin[2]);
+		break;
+
+	case YZ:
+		origin_out[0] = 131072.0;
+		origin_out[1] = (zoom_center_x + wnd->m_vOrigin[1]);
+		origin_out[2] = (zoom_center_y + wnd->m_vOrigin[2]);
+		break;
+	}
+}
+
+// zoom to cursor
+void cxywnd::on_view_zoomin(cmainframe* pThis, CPoint point)
+{
+	float origin_from_point_oldzoom[3] = { 0.0f };
+	float origin_from_point_newzoom[3] = { 0.0f };
+
+	xy_to_point(pThis->m_pXYWnd, origin_from_point_oldzoom, point);
+	
+	if (pThis->m_pXYWnd && pThis->m_pXYWnd->m_bActive)
+	{
+
+		pThis->m_pXYWnd->m_fScale = pThis->m_pXYWnd->m_fScale * 1.25f;
+		
+		if (pThis->m_pXYWnd->m_fScale > 160.0f) {
+			pThis->m_pXYWnd->m_fScale = 160.0f;
+		}
+
+		// needed?
+		game::g_zoomLevel = pThis->m_pXYWnd->m_fScale;
+
+		xy_to_point(pThis->m_pXYWnd, origin_from_point_newzoom, point);
+
+		if(dvars::grid_zoom_to_cursor && dvars::grid_zoom_to_cursor->current.enabled)
+		{
+			float delta_x = 0.0f, delta_y = 0.0f, delta_z = 0.0f;
+
+			switch (pThis->m_pXYWnd->m_nViewType)
+			{
+			case XY:
+				delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+				delta_y = -(origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+
+				break;
+
+			case XZ:
+				delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+				delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+				break;
+
+			case YZ:
+				delta_y = (origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+				delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+				break;
+			}
+
+			pThis->m_pXYWnd->m_vOrigin[0] -= delta_x;
+			pThis->m_pXYWnd->m_vOrigin[1] -= delta_y;
+			pThis->m_pXYWnd->m_vOrigin[2] -= delta_z;
+		}
+	}
+	
+	game::g_nUpdateBits |= W_XY_OVERLAY | W_XY;
+	game::g_nUpdateBits |= W_Z_OVERLAY  | W_Z;
+
+	zwnd->scale = 1.25f * zwnd->scale;
+	if (zwnd->scale > 160.0f) {
+		zwnd->scale = 160.0f;
+	}
+}
+
+__declspec(naked) void on_view_zoomin_stub()
+{
+	const static uint32_t retn_pt = 0x42B9F0;
+	__asm
+	{
+		pushad;
+		push	ebx; // point.y
+		push	esi; // point.x
+		push	ecx; // cmainframe*
+
+		call	cxywnd::on_view_zoomin;
+		add		esp, 12;
+		popad;
+		
+		jmp		retn_pt;
+	}
+}
+
+// zoom to cursor
+void cxywnd::on_view_zoomout(cmainframe* pThis, CPoint point)
+{
+	float origin_from_point_oldzoom[3] = { 0.0f };
+	float origin_from_point_newzoom[3] = { 0.0f };
+
+	xy_to_point(pThis->m_pXYWnd, origin_from_point_oldzoom, point);
+	
+	if (pThis->m_pXYWnd && pThis->m_pXYWnd->m_bActive)
+	{
+		pThis->m_pXYWnd->m_fScale *= 0.8f;
+		if (pThis->m_pXYWnd->m_fScale < 0.003125f) {
+			pThis->m_pXYWnd->m_fScale = 0.003125f;
+		}
+
+		// needed?
+		game::g_zoomLevel = pThis->m_pXYWnd->m_fScale;
+
+		if (dvars::grid_zoom_to_cursor && dvars::grid_zoom_to_cursor->current.enabled)
+		{
+			xy_to_point(pThis->m_pXYWnd, origin_from_point_newzoom, point);
+
+			float delta_x = 0.0f, delta_y = 0.0f, delta_z = 0.0f;
+
+			switch (pThis->m_pXYWnd->m_nViewType)
+			{
+			case XY:
+				delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+				delta_y = -(origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+
+				break;
+
+			case XZ:
+				delta_x = (origin_from_point_newzoom[0] - origin_from_point_oldzoom[0]);
+				delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+				break;
+
+			case YZ:
+				delta_y = (origin_from_point_newzoom[1] - origin_from_point_oldzoom[1]);
+				delta_z = -(origin_from_point_newzoom[2] - origin_from_point_oldzoom[2]);
+				break;
+			}
+
+			pThis->m_pXYWnd->m_vOrigin[0] -= delta_x;
+			pThis->m_pXYWnd->m_vOrigin[1] -= delta_y;
+			pThis->m_pXYWnd->m_vOrigin[2] -= delta_z;
+		}
+		
+		if (pThis->m_pXYWnd->m_fScale != 0.0f)
+		{
+			game::g_nUpdateBits |= W_XY_OVERLAY | W_XY;
+			game::g_nUpdateBits |= W_Z_OVERLAY | W_Z;
+			
+			zwnd->scale = pThis->m_pXYWnd->m_fScale;
+			return;
+		}
+	}
+
+	game::g_nUpdateBits |= W_XY_OVERLAY | W_XY;
+	game::g_nUpdateBits |= W_Z_OVERLAY | W_Z;
+	
+	zwnd->scale *= 0.8f;
+	if (zwnd->scale < 0.003125f) {
+		zwnd->scale = 0.003125f;
+	}
+}
+
+__declspec(naked) void on_view_zoomout_stub()
+{
+	const static uint32_t retn_pt = 0x42BA03;
+	__asm
+	{
+		pushad;
+		push	ebx; // point.y
+		push	esi; // point.x
+		push	ecx; // cmainframe*
+
+		call	cxywnd::on_view_zoomout;
+		add		esp, 12;
+		popad;
+
+		jmp		retn_pt;
+	}
+}
 
 
 // *
@@ -390,22 +553,16 @@ void __stdcall cxywnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 
 LRESULT WINAPI cxywnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if (components::gui::all_contexts_ready())
+	// handle text input when the imgui grid window is active (selected) 
+	// but the user is within a textbox in some other imgui window
+	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 	{
-		// we only need the char event
-		if (Msg == WM_CHAR)
+		if (ggui::cz_context_ready())
 		{
-			// handle char inputs when xy window is focused
-			IMGUI_BEGIN_CXYWND;
-			if (ImGui::GetIO().WantCaptureMouse)
-			{
-				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
-				return true;
-			}
+			// set cz context (in-case we use multiple imgui context's)
+			IMGUI_BEGIN_CZWND;
 
-			// handle char inputs if xy window is focused but cursor is within the camera window, over an imgui menu
-			IMGUI_BEGIN_CCAMERAWND;
-			if (ImGui::GetIO().WantCaptureMouse)
+			if (!ggui::get_rtt_gridwnd()->window_hovered && ImGui::GetIO().WantCaptureMouse)
 			{
 				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
 				return true;
@@ -429,38 +586,90 @@ void __declspec(naked) windowproc_stub()
 	}
 }
 
+void __declspec(naked) set_child_window_style()
+{
+	const static uint32_t retn_pt = 0x463A6D;
+	__asm
+	{
+		mov		dword ptr[eax + 20h], WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_CHILD; // WS_VISIBLE //WS_TABSTOP | WS_GROUP | WS_THICKFRAME | WS_SYSMENU | WS_MAXIMIZE | WS_DLGFRAME | WS_BORDER | WS_CLIPCHILDREN | WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE;
+		jmp		retn_pt;
+	}
+}
+
+void __declspec(naked) set_detatched_child_window_style()
+{
+	const static uint32_t retn_pt = 0x463A47;
+	__asm
+	{
+		mov		dword ptr[eax + 20h], WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_CHILD | WS_POPUP; // WS_VISIBLE
+		jmp		retn_pt;
+	}
+}
+
 // *
-// | ----------------- Main ---------------------
 // *
 
-void cxywnd::main()
+// dvars::register_addon_dvars()
+void cxywnd::register_dvars()
+{
+	dvars::grid_zoom_to_cursor = dvars::register_bool(
+		/* name		*/ "grid_zoom_to_cursor",
+		/* default	*/ true,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "grid-view: zoom towards the mouse cursor");
+}
+
+void cxywnd::hooks()
 {
 	// reposition xy-xz-yz text
 	utils::hook(0x4690C5, reposition_viewtype_hint, HOOK_CALL).install()->quick();
 
 	// reposition top grid -> bottom
 	utils::hook(0x468E50, reposition_top_grid_hint, HOOK_CALL).install()->quick();
-	
-	#ifdef HK_RESIZE_WND
-	utils::hook(0x46DBF2, cxywnd::on_resize, HOOK_CALL).install()->quick();
+
+	// fix entity name drawing
+	utils::hook(0x46CA02, draw_entity_names_hk, HOOK_CALL).install()->quick();
+
+	// use alpha value on selected brush when using textured mode
+	utils::hook::nop(0x46D8E3, 8);
+		 utils::hook(0x46D8E3, fix_selection_alpha_textured_mode, HOOK_JUMP).install()->quick();
+
+#if 1
+	// cxywnd::precreatewindow -> change window style for child windows (split view, not detatched)
+	utils::hook::nop(0x463A64, 2);
+	utils::hook::nop(0x463A66, 7);
+		 utils::hook(0x463A66, set_child_window_style, HOOK_JUMP).install()->quick();
+
+	// cxywnd::precreatewindow -> change window style for detatched windows (split view, detatched)
+	utils::hook::nop(0x463A40, 7);
+		 utils::hook(0x463A40, set_detatched_child_window_style, HOOK_JUMP).install()->quick();
 #endif
-	
 	
 	// custom windowproc
 	utils::hook::nop(0x463A00, 9);
 		 utils::hook(0x463A00, windowproc_stub, HOOK_JUMP).install()->quick();
 	
-	// endframe hook
-	//utils::hook(0x465C0E, cxywnd::on_endframe, HOOK_CALL).install()->quick();
 
-	__on_lbutton_down	= reinterpret_cast<on_cxywnd_msg>(utils::hook::detour(0x463F70, cxywnd::on_lbutton_down, HK_JUMP));
-	__on_lbutton_up		= reinterpret_cast<on_cxywnd_msg>(utils::hook::detour(0x464860, cxywnd::on_lbutton_up, HK_JUMP));
+	xywnd::__on_lbutton_down	= reinterpret_cast<xywnd::on_cxywnd_msg>(utils::hook::detour(0x463F70, cxywnd::on_lbutton_down, HK_JUMP));
+	xywnd::__on_lbutton_up		= reinterpret_cast<xywnd::on_cxywnd_msg>(utils::hook::detour(0x464860, cxywnd::on_lbutton_up, HK_JUMP));
 
-	__on_rbutton_down	= reinterpret_cast<on_cxywnd_msg>(utils::hook::detour(0x4647B0, cxywnd::on_rbutton_down, HK_JUMP));
-	__on_rbutton_up		= reinterpret_cast<on_cxywnd_msg>(utils::hook::detour(0x464990, cxywnd::on_rbutton_up, HK_JUMP));
+	xywnd::__on_rbutton_down	= reinterpret_cast<xywnd::on_cxywnd_msg>(utils::hook::detour(0x4647B0, cxywnd::on_rbutton_down, HK_JUMP));
+	xywnd::__on_rbutton_up		= reinterpret_cast<xywnd::on_cxywnd_msg>(utils::hook::detour(0x464990, cxywnd::on_rbutton_up, HK_JUMP));
 
-	__on_mouse_move		= reinterpret_cast<on_cxywnd_msg>(utils::hook::detour(0x464B10, cxywnd::on_mouse_move, HK_JUMP));
+	xywnd::__on_mbutton_down	= reinterpret_cast<xywnd::on_cxywnd_msg>(utils::hook::detour(0x463FF0, cxywnd::on_mbutton_down, HK_JUMP));
+	xywnd::__on_mbutton_up		= reinterpret_cast<xywnd::on_cxywnd_msg>(utils::hook::detour(0x464950, cxywnd::on_mbutton_up, HK_JUMP));
+	
+	xywnd::__on_mouse_move		= reinterpret_cast<xywnd::on_cxywnd_msg>(utils::hook::detour(0x464B10, cxywnd::on_mouse_move, HK_JUMP));
 
-	__on_keydown		= reinterpret_cast<on_cxywnd_key>(utils::hook::detour(0x465C90, cxywnd::on_keydown, HK_JUMP));
-	__on_keyup			= reinterpret_cast<on_cxywnd_key>(utils::hook::detour(0x46E510, cxywnd::on_keyup, HK_JUMP));
+	xywnd::__on_keydown			= reinterpret_cast<xywnd::on_cxywnd_key>(utils::hook::detour(0x465C90, cxywnd::on_keydown, HK_JUMP));
+	xywnd::__on_keyup			= reinterpret_cast<xywnd::on_cxywnd_key>(utils::hook::detour(0x46E510, cxywnd::on_keyup, HK_JUMP));
+
+	xywnd::__on_scroll			= reinterpret_cast<xywnd::on_cxywnd_scroll>(utils::hook::detour(0x46E5C0, cxywnd::on_scroll, HK_JUMP));
+
+	// zoom to cursor
+	utils::hook(0x42B9EB, on_view_zoomin_stub, HOOK_JUMP).install()->quick();
+	utils::hook(0x42B9FE, on_view_zoomout_stub, HOOK_JUMP).install()->quick();
+
+	utils::hook::nop(0x466255, 19);
+				utils::hook(0x466255, create_entity_from_name_stub, HOOK_JUMP).install()->quick();
 }

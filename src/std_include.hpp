@@ -6,19 +6,11 @@
 
 // *
 // gui
-#define GET_GGUI Game::Globals::gui
-#define GGUI_READY Game::Globals::gui.imgui_initialized
-#define GGUI_READY_DVARS Game::Globals::gui.dvars_initialized
-#define GGUI_ANY_MENUS_OPEN Game::Globals::gui.any_menus_open
-#define GGUI_MENU_COUNT 2
-
 #define IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_BEGIN_CZWND if(ggui::cz_context_ready()) ImGui::SetCurrentContext(ggui::state.czwnd.context)
 
-#define IMGUI_CONTEXT_COUNT 2 // amount of imgui contexts
-#define IMGUI_CONTEXT_MENUS 1 // amount of menus per context
-
-#define IMGUI_BEGIN_CCAMERAWND ImGui::SetCurrentContext(ggui::state.ccamerawnd.context)
-#define IMGUI_BEGIN_CXYWND ImGui::SetCurrentContext(ggui::state.cxywnd.context)
+// Version number
+#include <version.hpp>
 
 #include <windows.h>
 #include <stdio.h>
@@ -80,10 +72,16 @@
 #include <backends/imgui_impl_win32.h>
 #include <misc/cpp/imgui_stdlib.h>
 #pragma warning(pop)
+
 #include "common/imgui/imgui_addons.hpp"
 #include "detours/Detours.h"
 #include "fifo_map.hpp"
 
+#pragma warning(push, 0)  
+#include "ImGuizmo.h"
+#pragma warning(pop)
+
+#include "game/structs.hpp"
 #include "utils/utils.hpp"
 #include "utils/memory.hpp"
 #include "utils/hooking.hpp"
@@ -91,7 +89,6 @@
 #include "utils/vector.hpp"
 
 #include "common/afx.hpp"
-#include "game/structs.hpp"
 #include "game/functions.hpp"
 #include "game/dvars.hpp"
 
@@ -100,10 +97,19 @@
 #include "ggui/menubar.hpp"
 #include "ggui/colors.hpp"
 #include "ggui/toolbar.hpp"
+#include "ggui/console.hpp"
+#include "ggui/filter.hpp"
+#include "ggui/entity.hpp"
+#include "ggui/preferences.hpp"
+#include "ggui/modelselector.hpp"
+#include "ggui/about.hpp"
+#include "ggui/fakesun_settings.hpp"
 
-#include "common/camwnd.hpp"
 #include "common/mainframe.hpp"
+#include "common/camwnd.hpp"
 #include "common/radiantapp.hpp"
+#include "common/layermatwnd.hpp"
+#include "common/zwnd.hpp"
 
 #include "components/fonts.hpp"
 #include "components/loader.hpp"

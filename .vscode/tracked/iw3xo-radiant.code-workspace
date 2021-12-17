@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+    ],
+    "settings": {
+        "files.exclude": {
+            "build/": true,
+            "tools/": true
+        }
+    }
+}

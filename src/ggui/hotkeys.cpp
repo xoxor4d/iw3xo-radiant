@@ -3,24 +3,6 @@
 
 namespace ggui::hotkeys
 {
-	const char* radiant_modifier_alt[] =
-	{
-		"",
-		"ALT"
-	};
-
-	const char* radiant_modifier_ctrl[] =
-	{
-		"",
-		"CTRL"
-	};
-
-	const char* radiant_modifier_shift[] =
-	{
-		"",
-		"SHIFT"
-	};
-
 	const char* radiant_keybind_array[] =
 	{
 		"",
@@ -162,7 +144,7 @@ namespace ggui::hotkeys
 			if (key == "~"s)			return 0x0C0;
 			if (key == "LWin"s)			return 0x5B;
 
-			printf("[Hotkeys] Unkown key '%s'", key.c_str());
+			game::printf_to_console("[Hotkeys] Unkown key '%s'", key.c_str());
 			return 0;
 		}
 
@@ -224,7 +206,6 @@ namespace ggui::hotkeys
 		return out;
 	}
 
-
 	std::string get_hotkey_for_command(const char* command)
 	{
 		// find command in cmd_hotkeys (ini)
@@ -233,9 +214,9 @@ namespace ggui::hotkeys
 			if (!_strcmpi(command, bind.cmd_name.c_str()))
 			{
 				return	(bind.modifier_shift == 1 ? "SHIFT-"s : "") +
-					(bind.modifier_alt == 1 ? "ALT-"s : "") +
-					(bind.modifier_ctrl == 1 ? "CTRL-"s : "") +
-					bind.modifier_key;
+						(bind.modifier_alt   == 1 ? "ALT-"s : "") +
+						(bind.modifier_ctrl  == 1 ? "CTRL-"s : "") +
+						 bind.modifier_key;
 			}
 		}
 
@@ -278,7 +259,7 @@ namespace ggui::hotkeys
 			char buffer[512];
 			if (!GetModuleFileNameA(nullptr, buffer, 512))
 			{
-				printf("[Hotkeys] could not get the base directory.\n");
+				game::printf_to_console("[Hotkeys] could not get the base directory.\n");
 				return false;
 			}
 
@@ -287,15 +268,14 @@ namespace ggui::hotkeys
 		}
 
 		std::ifstream ini;
-
 		std::string ini_path = home_path;
-		ini_path += "\\" + file;
+					ini_path += "\\" + file;
 
 		ini.open(ini_path.c_str());
 
 		if (!ini.is_open())
 		{
-			printf("[Hotkeys] Could not find \"iw3r_hotkeys.ini\" in \"%s\"\n", home_path.c_str());
+			game::printf_to_console("[Hotkeys] Could not find \"iw3r_hotkeys.ini\" in \"%s\"\n", home_path.c_str());
 			return false;
 		}
 
@@ -314,14 +294,14 @@ namespace ggui::hotkeys
 			// ignore comments
 			if (input.find(';') != std::string::npos)
 			{
-				printf("[Hotkeys] Ignored '%s'\n", input.c_str());
+				game::printf_to_console("[Hotkeys] Ignored '%s'\n", input.c_str());
 				continue;
 			}
 
 			// ignore lines not containing '='
 			if (input.find(" =") == std::string::npos)
 			{
-				printf("[Hotkeys] Ignored '%s' => missing '='\n", input.c_str());
+				game::printf_to_console("[Hotkeys] Ignored '%s' => missing '='\n", input.c_str());
 				continue;
 			}
 
@@ -381,13 +361,13 @@ namespace ggui::hotkeys
 		}
 
 		int commands_overwritten = 0;
-		printf("[Hotkeys] Loading '%d' hotkeys from 'iw3r_hotkeys.ini'\n", cmd_hotkeys.size());
+		game::printf_to_console("[Hotkeys] Loading '%d' hotkeys from 'iw3r_hotkeys.ini'\n", cmd_hotkeys.size());
 
 		for (auto i = 0; i < game::g_nCommandCount; i++)
 		{
-			for (commandbinds& bind : cmd_hotkeys)
+			for (commandbinds& hotkey : cmd_hotkeys)
 			{
-				if (!_strcmpi(game::g_Commands[i].m_strCommand, bind.cmd_name.c_str()))
+				if (!_strcmpi(game::g_Commands[i].m_strCommand, hotkey.cmd_name.c_str()))
 				{
 					const unsigned int o_key = game::g_Commands[i].m_nKey;
 					const unsigned int o_mod = game::g_Commands[i].m_nModifiers;
@@ -395,22 +375,21 @@ namespace ggui::hotkeys
 					//printf("overwriting command '%s'\n", game::g_Commands[i].m_strCommand);
 					//printf("|-> m_nKey '%d' to ", game::g_Commands[i].m_nKey);
 
-					game::g_Commands[i].m_nKey = cmdbinds_key_to_ascii(bind.modifier_key);
+					game::g_Commands[i].m_nKey = cmdbinds_key_to_ascii(hotkey.modifier_key);
 
 					//printf("'%d'\n", game::g_Commands[i].m_nKey);
 					//printf("|-> m_nModifiers '%d' to ", game::g_Commands[i].m_nModifiers);
 
-					game::g_Commands[i].m_nModifiers =
-						bind.modifier_shift
-						| (bind.modifier_alt == 1 ? 2 : 0)
-						| (bind.modifier_ctrl == 1 ? 4 : 0);
+					game::g_Commands[i].m_nModifiers = hotkey.modifier_shift
+													| (hotkey.modifier_alt  == 1 ? 2 : 0)
+													| (hotkey.modifier_ctrl == 1 ? 4 : 0);
 
 					//printf("'%d'\n\n", game::g_Commands[i].m_nModifiers);
 
 					if (o_key != game::g_Commands[i].m_nKey ||
 						o_mod != game::g_Commands[i].m_nModifiers)
 					{
-						printf("|-> modified hotkey '%s'\n", bind.cmd_name.c_str());
+						game::printf_to_console("|-> modified hotkey '%s'\n", hotkey.cmd_name.c_str());
 						commands_overwritten++;
 					}
 
@@ -419,7 +398,37 @@ namespace ggui::hotkeys
 			}
 		}
 
-		printf("|-> modified '%d' commands\n\n", commands_overwritten);
+		// exec cmainframe::on_keydown()
+		for(auto& addon_bind : ggui::cmd_addon_hotkeys_builtin)
+		{
+			for (commandbinds& hotkey : cmd_hotkeys)
+			{
+				if (!_strcmpi(addon_bind.m_strCommand, hotkey.cmd_name.c_str()))
+				{
+					addon_bind.m_nKey = cmdbinds_key_to_ascii(hotkey.modifier_key);
+					addon_bind.m_nModifiers =  hotkey.modifier_shift
+											| (hotkey.modifier_alt  == 1 ? 2 : 0)
+											| (hotkey.modifier_ctrl == 1 ? 4 : 0);
+				}
+			}
+		}
+
+		for (auto& addon_bind : ggui::cmd_addon_hotkeys)
+		{
+			for (commandbinds& hotkey : cmd_hotkeys)
+			{
+				if (addon_bind.m_strCommand == hotkey.cmd_name)
+				{
+					addon_bind.m_nKey = cmdbinds_key_to_ascii(hotkey.modifier_key);
+					addon_bind.m_nModifiers =  hotkey.modifier_shift
+											| (hotkey.modifier_alt == 1 ? 2 : 0)
+											| (hotkey.modifier_ctrl == 1 ? 4 : 0);
+				}
+			}
+		}
+
+		game::printf_to_console("|-> modified '%d' commands\n", commands_overwritten);
+		game::printf_to_console("\n");
 
 		// there is a second commandmap (vector/unsorted map) ... whatever
 		// clear ^ and set command count to 0
@@ -449,12 +458,11 @@ namespace ggui::hotkeys
 		}
 
 		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
-			fs_homepath)
+						fs_homepath)
 		{
 			std::ofstream ini;
-
 			std::string ini_path = fs_homepath->current.string;
-			ini_path += "\\iw3r_hotkeys.ini";
+						ini_path += "\\iw3r_hotkeys.ini";
 
 			ini.open(ini_path.c_str());
 
@@ -473,7 +481,7 @@ namespace ggui::hotkeys
 				ini << (bind.modifier_shift == 0 ? "" : "+shift ");
 				ini << (bind.modifier_alt == 0 ? "" : "+alt ");
 				ini << (bind.modifier_ctrl == 0 ? "" : "+ctrl ");
-				ini << bind.modifier_key << std::endl;
+				ini <<  bind.modifier_key << std::endl;
 			}
 
 			load_commandmap();
@@ -491,7 +499,7 @@ namespace ggui::hotkeys
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		
 		ImGui::SetNextWindowSizeConstraints(ImVec2(450, 160), ImVec2(450, 160));
-		ImGui::Begin("Hotkeys Helper##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		ImGui::Begin("Hotkeys Helper##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 
 		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
 			fs_homepath)
@@ -542,7 +550,7 @@ namespace ggui::hotkeys
 		{
 			if (!cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
 			{
-				components::gui::toggle(ggui::state.cxywnd.m_cmdbinds_helper, 0, true);
+				components::gui::toggle(ggui::state.czwnd.m_cmdbinds_helper, 0, true);
 				menu.menustate = false;
 			}
 		}
@@ -555,7 +563,7 @@ namespace ggui::hotkeys
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		
-		ImGui::Begin("Hotkeys##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		ImGui::Begin("Hotkeys##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 
 		const char* apply_hint = "Changes will apply upon closing the window.";
 		ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(apply_hint).x) * 0.5f);
@@ -574,85 +582,94 @@ namespace ggui::hotkeys
 			ImGui::TableHeadersRow();
 
 			int row = 0;
-			for (commandbinds& bind : cmd_hotkeys)
+
+			ImGuiListClipper clipper;
+			clipper.Begin(cmd_hotkeys.size());
+			while (clipper.Step())
 			{
-				std::string str_dupe_bind = bind.cmd_name;
-				bool found_dupe = cmdbinds_check_dupe(bind, str_dupe_bind);
-
-				// unique widget id's for each row (we get collisions otherwise)
-				ImGui::PushID(row); row++;
-				ImGui::TableNextRow();
-
-				for (int column = 0; column < 5; column++)
+				// for (commandbinds& bind : cmd_hotkeys)
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) 
 				{
-					ImGui::PushID(column);
-					ImGui::TableNextColumn();
+					commandbinds& bind = cmd_hotkeys[i];
 
-					switch (column)
+					std::string str_dupe_bind = bind.cmd_name;
+					bool found_dupe = cmdbinds_check_dupe(bind, str_dupe_bind);
+
+					// unique widget id's for each row (we get collisions otherwise)
+					ImGui::PushID(row); row++;
+					ImGui::TableNextRow();
+
+					for (int column = 0; column < 5; column++)
 					{
-					case 0:
-						ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(bind.cmd_name.c_str()).x) * 0.5f);
-						ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
+						ImGui::PushID(column);
+						ImGui::TableNextColumn();
 
-						if (found_dupe)
+						switch (column)
 						{
-							ImGui::TextColored(ImVec4(0.9f, 0.1f, 0.1f, 1.0f), bind.cmd_name.c_str());
-							ImGui::SameLine();
-							ImGui::HelpMarker(utils::va("bind conflicts with '%s'", str_dupe_bind.c_str()));
-						}
-						else
-						{
-							ImGui::TextUnformatted(bind.cmd_name.c_str());
-						}
+						case 0:
+							ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(bind.cmd_name.c_str()).x) * 0.5f);
+							ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
 
-						break;
-					case 1:
-						ImGui::Checkbox("##2", (bool*)&bind.modifier_shift);
-						break;
-					case 2:
-						ImGui::Checkbox("##0", (bool*)&bind.modifier_alt);
-						break;
-					case 3:
-						ImGui::Checkbox("##1", (bool*)&bind.modifier_ctrl);
-						break;
-					case 4:
-						float w = ImGui::GetColumnWidth();//ImGui::CalcItemWidth();
-						ImGui::PushItemWidth(w - 6.0f);
-
-						if (ImGui::BeginCombo("##combokey", bind.modifier_key.c_str(), ImGuiComboFlags_NoArrowButton)) // The second parameter is the label previewed before opening the combo.
-						{
-							for (int n = 0; n < IM_ARRAYSIZE(radiant_keybind_array); n++)
+							if (found_dupe)
 							{
-								const bool is_selected = !_stricmp(bind.modifier_key.c_str(), radiant_keybind_array[n]); // You can store your selection however you want, outside or inside your objects
-								if (is_selected)
-								{
-									ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-								}
+								ImGui::TextColored(ImVec4(0.9f, 0.1f, 0.1f, 1.0f), bind.cmd_name.c_str());
+								ImGui::SameLine();
+								ImGui::HelpMarker(utils::va("bind conflicts with '%s'", str_dupe_bind.c_str()));
+							}
+							else
+							{
+								ImGui::TextUnformatted(bind.cmd_name.c_str());
+							}
 
-								if (ImGui::Selectable(radiant_keybind_array[n], is_selected))
+							break;
+						case 1:
+							ImGui::Checkbox("##2", (bool*)&bind.modifier_shift);
+							break;
+						case 2:
+							ImGui::Checkbox("##0", (bool*)&bind.modifier_alt);
+							break;
+						case 3:
+							ImGui::Checkbox("##1", (bool*)&bind.modifier_ctrl);
+							break;
+						case 4:
+							float w = ImGui::GetColumnWidth();//ImGui::CalcItemWidth();
+							ImGui::PushItemWidth(w - 6.0f);
+
+							if (ImGui::BeginCombo("##combokey", bind.modifier_key.c_str(), ImGuiComboFlags_NoArrowButton)) // The second parameter is the label previewed before opening the combo.
+							{
+								for (int n = 0; n < IM_ARRAYSIZE(radiant_keybind_array); n++)
 								{
-									bind.modifier_key = radiant_keybind_array[n];
+									const bool is_selected = !_stricmp(bind.modifier_key.c_str(), radiant_keybind_array[n]); // You can store your selection however you want, outside or inside your objects
 									if (is_selected)
 									{
 										ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
 									}
+
+									if (ImGui::Selectable(radiant_keybind_array[n], is_selected))
+									{
+										bind.modifier_key = radiant_keybind_array[n];
+										if (is_selected)
+										{
+											ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+										}
+									}
 								}
+								ImGui::EndCombo();
 							}
-							ImGui::EndCombo();
+
+							ImGui::PopItemWidth();
+							break;
 						}
 
-						ImGui::PopItemWidth();
-						break;
+						// column
+						ImGui::PopID();
 					}
 
-					// column
+					// row
 					ImGui::PopID();
 				}
-
-				// row
-				ImGui::PopID();
-			}
-
+			} clipper.End();
+			
 			ImGui::EndTable();
 		}
 
@@ -662,7 +679,7 @@ namespace ggui::hotkeys
 
 	// -------------
 
-	void init()
+	void hooks()
 	{
 		// replace hardcoded hotkeys with our own (ini)
 		utils::hook(0x420A4F, load_commandmap, HOOK_CALL).install()->quick();

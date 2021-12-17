@@ -31,6 +31,17 @@ namespace utils
 			return 1;
 		}
 
+		void clamp_vec3(const vec3_t a, const vec3_t b, vec3_t o1, vec3_t o2)
+		{
+			if (a[0] < o1[0]) o1[0] = a[0];
+			if (a[1] < o1[1]) o1[1] = a[1];
+			if (a[2] < o1[2]) o1[2] = a[2];
+			
+			if (b[0] > o2[0]) o2[0] = b[0];
+			if (b[1] > o2[1]) o2[1] = b[1];
+			if (b[2] > o2[2]) o2[2] = b[2];
+		}
+
 		vec_t length(const vec3_t v) 
 		{
 			return (vec_t)sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
@@ -63,6 +74,36 @@ namespace utils
 			v1[0] = 0.0f;
 			v1[1] = 0.0f;
 			v1[2] = 0.0f;
+		}
+
+		void set_vec3(vec3_t v, float val)
+		{
+			v[0] = val;
+			v[1] = val;
+			v[2] = val;
+		}
+		
+		void set_vec3(vec3_t v, float x, float y, float z)
+		{
+			v[0] = x;
+			v[1] = y;
+			v[2] = z;
+		}
+
+		void set_vec4(vec4_t v, float val)
+		{
+			v[0] = val;
+			v[1] = val;
+			v[2] = val;
+			v[3] = val;
+		}
+		
+		void set_vec4(vec4_t v, float x, float y, float z, float w)
+		{
+			v[0] = x;
+			v[1] = y;
+			v[2] = z;
+			v[3] = w;
 		}
 
 		// inverse input vector

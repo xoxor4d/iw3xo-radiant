@@ -18,6 +18,8 @@ struct camera_s
 	game::vec3_t vright;
 };
 
+extern void CameraCalcRayDir(int x, int y, float* dir);
+
 class ccamwnd : public CWnd
 {
 private:
@@ -30,18 +32,35 @@ public:
 	camera_s camera;
 	int m_nCambuttonstate;
 	CPoint m_ptButton;
-	int unkown01;
+	int x32;
 	CPoint m_ptCursor;
 	CPoint m_ptLastCursor;
+	int x33;
+	int x34;
+	int x35;
+	int x36;
+	int x37;
+	int x38;
+	int x39;
+	int x40;
+	int x41;
+	int x42;
+	int x43;
+	int x44;
+	int x45;
+	int prob_some_cursor;
+	int x47;
+	int x48;
 
-	//
-	static ccamwnd *activewnd;
-
+	static void				rtt_camera_window();
+	
 	void					mouse_control(float dtime);
+	static void				mouse_up(ccamwnd* cam, int flags);
+	static void				mouse_moved(ccamwnd* wnd, int buttons, int x, int y);
 
-	static void				main();
+	static void				register_dvars();
+	static void				hooks();
 	static BOOL WINAPI		windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
-	//static void			on_endframe();
 
 	static void __fastcall	on_lbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 	static void __fastcall	on_lbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
@@ -54,6 +73,6 @@ public:
 	static void __stdcall	on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	static void __stdcall	on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
-STATIC_ASSERT_OFFSET(ccamwnd, camera.origin, 0x64); // diff. offset then bo1
-STATIC_ASSERT_OFFSET(ccamwnd, camera.angles, 0x70); // ^
+STATIC_ASSERT_OFFSET(ccamwnd, camera.origin, 0x64);
+STATIC_ASSERT_OFFSET(ccamwnd, camera.angles, 0x70);
 STATIC_ASSERT_OFFSET(ccamwnd, m_nCambuttonstate, 0xD4);

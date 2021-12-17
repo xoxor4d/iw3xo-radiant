@@ -115,8 +115,8 @@ namespace components
 
 	HRESULT d3d9ex::d3d9device::Reset(D3DPRESENT_PARAMETERS* pPresentationParameters)
 	{
-		if (gui::all_contexts_ready())
-		{
+		//if (ggui::all_contexts_ready())
+		//{
 			ImGui_ImplDX9_InvalidateDeviceObjects();
 
 			HRESULT hr = m_pIDirect3DDevice9->Reset(pPresentationParameters);
@@ -128,9 +128,9 @@ namespace components
 			ImGui_ImplDX9_CreateDeviceObjects();
 
 			return hr;
-		}
+		//}
 
-		return m_pIDirect3DDevice9->Reset(pPresentationParameters);
+		//return m_pIDirect3DDevice9->Reset(pPresentationParameters);
 	}
 
 	HRESULT d3d9ex::d3d9device::Present(CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion)

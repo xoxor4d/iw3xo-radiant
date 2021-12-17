@@ -1,8 +1,21 @@
 #include "std_include.hpp"
 
-IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+#define HIDE_STATUSBAR
 
+IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 cmainframe* cmainframe::activewnd;
+
+#ifdef HIDE_STATUSBAR
+	const static int WNDSTATUSBAR_HEIGHT = 0; // bottom statusbar height
+#else
+	const static int WNDSTATUSBAR_HEIGHT = 20; // bottom statusbar height
+#endif
+
+// set cxywnd pos/size once on startup (if split view with detatched or attached child windows) 
+bool CZWND_POS_ONCE_ON_STARTUP = false;
+bool LAYERWND_POS_ONCE_ON_STARTUP = false;
+bool CXYWND_POS_ONCE_ON_STARTUP = false;
+bool CAMERAWND_POS_ONCE_ON_STARTUP = false;
 
 void cmainframe::routine_processing()
 {
@@ -10,7 +23,7 @@ void cmainframe::routine_processing()
 	{
 		return;
 	}
-
+	
 	if (0.0 == game::g_time)
 	{
 		game::g_time = 0.0;
@@ -41,7 +54,7 @@ void cmainframe::routine_processing()
 	if (this->m_pCamWnd)
 	{
 		const auto delta = static_cast<float>(oldtime);
-		this->m_pCamWnd->mouse_control(delta);
+		this->m_pCamWnd->mouse_control(delta); // this is used for the q3 camera mode (0)
 	}
 
 	if (game::g_nUpdateBits)
@@ -69,6 +82,18 @@ void cmainframe::routine_processing()
 		{
 			CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndToolBar, 0, 1);
 		}
+
+		if(cmainframe::activewnd->m_wndStatusBar.m_hWnd)
+		{
+			//CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndStatusBar, 0, 1);
+
+			//auto vtable = reinterpret_cast<CFrameWnd_vtbl*>(cmainframe::activewnd->__vftable);
+			//vtable->RecalcLayout(cmainframe::activewnd, 1);
+
+			//auto prefs = game::g_PrefsDlg();
+			//prefs->m_nStatusSize = 20;
+		}
+			
 	}
 
 	// toggle menubar by dvar
@@ -123,6 +148,43 @@ void on_createclient()
 				reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable)->DeleteColumn(&cmainframe::activewnd->m_wndSplit2, 2);
 			}
 		}
+	}
+
+	// disable r_vsync
+	if (const auto& r_vsync = game::Dvar_FindVar("r_vsync");
+					r_vsync && r_vsync->current.enabled)
+	{
+		dvars::set_bool(r_vsync, false);
+	}
+
+	if(cmainframe::activewnd)
+	{
+		if(cmainframe::activewnd->m_pXYWnd)
+		{
+			ShowWindow(cmainframe::activewnd->m_pXYWnd->GetWindow(), SW_HIDE);
+		}
+
+		if (cmainframe::activewnd->m_pCamWnd)
+		{
+			ShowWindow(cmainframe::activewnd->m_pCamWnd->GetWindow(), SW_HIDE);
+		}
+
+		if (cmainframe::activewnd->m_pZWnd)
+		{
+			ShowWindow(cmainframe::activewnd->m_pZWnd->GetWindow(), SW_SHOW);
+		}
+
+		if (cmainframe::activewnd->m_pTexWnd)
+		{
+			ShowWindow(cmainframe::activewnd->m_pTexWnd->GetWindow(), SW_HIDE);
+		}
+
+		if (cmainframe::activewnd->m_pFilterWnd)
+		{
+			ShowWindow(cmainframe::activewnd->m_pFilterWnd->GetWindow(), SW_HIDE);
+		}
+
+		ShowWindow(cmainframe::activewnd->m_wndStatusBar.m_hWnd, SW_HIDE);
 	}
 }
 
@@ -223,13 +285,6 @@ void track_worldspawn_settings()
 
 void cmainframe::update_windows(int nBits)
 {
-	// grab camera if not using floating windows
-	if (!game::glob::radiant_floatingWindows && this->m_pCamWnd)
-	{
-		ccamwnd::activewnd = this->m_pCamWnd;
-		game::glob::radiant_floatingWindows = true;
-	}
-
 	if (!game::g_bScreenUpdates)
 	{
 		return;
@@ -265,8 +320,6 @@ void cmainframe::update_windows(int nBits)
 				m_pCamWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 			}
 			
-			game::glob::m_pCamWnd_ref = m_pCamWnd;
-
 			// on update cam window through the 2d grid or something else
 			if ((nBits & W_CAMERA_IFON) && this->m_bCamPreview || nBits < 0 || nBits == 3)
 			{
@@ -276,9 +329,9 @@ void cmainframe::update_windows(int nBits)
 			else if(game::glob::live_connected)
 			{
 				// Attempt to update the remote camera
-				if (ccamwnd::activewnd)
+				if(this->m_pCamWnd)
 				{
-					components::remote_net::cmd_send_camera_update(ccamwnd::activewnd->camera.origin, ccamwnd::activewnd->camera.angles);
+					components::remote_net::cmd_send_camera_update(this->m_pCamWnd->camera.origin, this->m_pCamWnd->camera.angles);
 				}
 			}
 		}
@@ -300,9 +353,6 @@ void cmainframe::update_windows(int nBits)
 		}
 	}
 }
-
-
-
 
 
 #define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
@@ -332,68 +382,96 @@ typedef LRESULT(__thiscall* wndproc_t)(cmainframe*, UINT Msg, WPARAM wParam, LPA
 // handle wm_char events for non-focused subwindows, see above msg
 LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	static TRACKMOUSEEVENT tme{};
-	static BOOL mouse_tracing = false;
-	
-	if (components::gui::all_contexts_ready())
+	if (Msg == WM_MOVE || Msg == WM_SIZE)
 	{
-		// ! do not set imgui context for every msg
+		// keep split-view cxy window maximized within the mainframe
+		const auto prefs = game::g_PrefsDlg();
 
-		if (Msg == WM_SETCURSOR)
+		if (prefs->m_nView == 1 && cmainframe::activewnd && cmainframe::activewnd->m_pZWnd)
 		{
-			// auto close mainframe menubar popups when the mouse leaves the cxy window
-			if (cmainframe::activewnd && cmainframe::activewnd->m_pXYWnd)
+			RECT _rect;
+			GetClientRect(pThis->m_hWnd, &_rect);
+
+			const int width = _rect.right - _rect.left;
+			const int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
+
+			POINT _point = { 0,0 };
+			ClientToScreen(pThis->m_hWnd, &_point);
+
+			if (prefs->detatch_windows)
 			{
-				if (is_mouse_outside_window(cmainframe::activewnd->m_pXYWnd->GetWindow()))
-				{
-					const auto imgui_context_old = ImGui::GetCurrentContext();
-
-					IMGUI_BEGIN_CXYWND;
-					const auto context = ImGui::GetCurrentContext();
-
-					// TODO! we might 'loose focus' on < 5 FPS, preventing imgui mouse input 
-					if (context->OpenPopupStack.Size > 0)
-					{
-						//printf("closing popup #%d\n", context->OpenPopupStack.Size - 1);
-						ImGui::ClosePopupToLevel(context->OpenPopupStack.Size - 1, false);
-					}
-
-					// restore context
-					ImGui::SetCurrentContext(imgui_context_old);
-				}
+				SetWindowPos(cmainframe::activewnd->m_pZWnd->GetWindow(), HWND_BOTTOM, _point.x, _point.y, width, height, 0); //SWP_FRAMECHANGED); //| SWP_NOZORDER | SWP_NOACTIVATE);
+			}
+			else
+			{
+				SetWindowPos(cmainframe::activewnd->m_pZWnd->GetWindow(), HWND_BOTTOM, 0, 0, width, height, 0); // SWP_NOACTIVATE SWP_NOZORDER |
 			}
 		}
+	}
 
-		
-		if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
+	// ! do not set imgui context for every msg
+
+	if (Msg == WM_SETCURSOR)
+	{
+		if (ggui::cz_context_ready())
 		{
-			IMGUI_BEGIN_CCAMERAWND;
-			if (ImGui::GetIO().WantCaptureMouse)
+			// only above 10 fps (we might 'loose focus' on < 5 FPS, preventing imgui mouse input )
+			//if(game::glob::frametime_ms <= 100)
 			{
-				ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam);
-				return true;
-			}
-			else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
-			{
-				ImGuiIO& io = ImGui::GetIO();
-				memset(io.KeysDown, 0, sizeof(io.KeysDown));
+				// auto close mainframe menubar popups when the mouse leaves the cxy window
+				if (cmainframe::activewnd && cmainframe::activewnd->m_pZWnd)
+				{
+					if (is_mouse_outside_window(cmainframe::activewnd->m_pZWnd->GetWindow()))
+					{
+						const auto imgui_context_old = ImGui::GetCurrentContext();
+
+						IMGUI_BEGIN_CZWND;
+						const auto context = ImGui::GetCurrentContext();
+
+						if (context->OpenPopupStack.Size > 0)
+						{
+							//printf("closing popup #%d\n", context->OpenPopupStack.Size - 1);
+							ImGui::ClosePopupToLevel(context->OpenPopupStack.Size - 1, false);
+						}
+
+						// restore context
+						ImGui::SetCurrentContext(imgui_context_old);
+
+						// reset keys when mouse leaves the mainframe
+						ImGuiIO& io = ImGui::GetIO();
+						memset(io.KeysDown, 0, sizeof(io.KeysDown));
+					}
+				}
 			}
 
-			
-			IMGUI_BEGIN_CXYWND;
+			// fix mouse cursors
+			if(ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam))
+			{
+				return true;
+			}
+		}
+	}
+
+	
+	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
+	{
+		if (ggui::cz_context_ready())
+		{
+			IMGUI_BEGIN_CZWND;
 			if (ImGui::GetIO().WantCaptureMouse)
 			{
 				ImGui_ImplWin32_WndProcHandler(pThis->GetWindow(), Msg, wParam, lParam);
 				return true;
 			}
-			else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
+			
+			// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
 			{
 				ImGuiIO& io = ImGui::GetIO();
 				memset(io.KeysDown, 0, sizeof(io.KeysDown));
 			}
 		}
 	}
-
+	
 	// => CFrameWnd::DefWindowProc
 	return o_wndproc(pThis, Msg, wParam, lParam);
 }
@@ -403,101 +481,304 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 // | -------------------- MSG typedefs ------------------------
 // *
 
+namespace mainframe
+{
+	on_cmainframe_scroll	__on_mscroll;
+	on_cmainframe_keydown	__on_keydown;
+	on_cmainframe_keyup		__on_keyup;
+	
+}
 
-typedef void(__thiscall* on_cmainframe_scroll)(cmainframe*, UINT, SHORT, CPoint);
-	on_cmainframe_scroll __on_mscroll;
+typedef void(__thiscall* on_cmainframe_size)(cmainframe*, UINT, int, int);
+	on_cmainframe_size		__on_size;
 
-
-typedef void(__thiscall* on_cmainframe_keydown)(cmainframe*, UINT, UINT, UINT);
-	on_cmainframe_keydown __on_keydown;
-
-typedef void(__stdcall* on_cmainframe_keyup)(cmainframe*, UINT);
-	on_cmainframe_keyup __on_keyup;
+typedef void(__thiscall* on_cmainframe_on_destroy)(cmainframe*);
+	on_cmainframe_on_destroy	__on_destroy;
 
 
 // *
 // | -------------------- Mouse Scroll ------------------------
 // *
 
-void __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
+BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
 {
-	IMGUI_BEGIN_CCAMERAWND;
-	if (ImGui::GetIO().WantCaptureMouse)
+	if (ggui::cz_context_ready())
 	{
-		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
-		return;
-	}
+		// set cz context (in-case we use multiple imgui context's)
+		IMGUI_BEGIN_CZWND;
 
+
+		// if mouse is inside imgui-cxy window
+		if (auto gridwnd = ggui::get_rtt_gridwnd();
+				 gridwnd->window_hovered)
+		{
+			return mainframe::__on_mscroll(pThis, nFlags, zDelta, gridwnd->cursor_pos_pt);
+		}
+
+		// if mouse is inside imgui-camera window
+		if (auto camerawnd = ggui::get_rtt_camerawnd();
+				 camerawnd->window_hovered)
+		{
+			float scroll_dir = zDelta <= 0 ? 1.0f : -1.0f;
+
+			const static uint32_t CCamWnd__Scroll_Func = 0x4248A0;
+			__asm
+			{
+				pushad;
+
+				mov		edi, cmainframe::activewnd; // yes .. :r
+				push	cmainframe::activewnd;		// ^
+				fld		scroll_dir;
+				fstp    dword ptr[esp];
+				call	CCamWnd__Scroll_Func; // cleans the stack
+
+				popad;
+			}
+
+			return 1;
+		}
+
+		// if mouse is inside texture window
+		if (auto texwnd = ggui::get_rtt_texturewnd();
+				 texwnd->window_hovered)
+		{
+			// CTexWnd::Scroll
+			utils::hook::call<void(__cdecl)(std::int16_t _zDelta)>(0x45DD80)(zDelta);
+		}
+		
+		
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
+			return 1;
+		}
+	}
 	
-	IMGUI_BEGIN_CXYWND;
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
-		return;
-	}
-
-	return __on_mscroll(pThis, nFlags, zDelta, point);
+	return mainframe::__on_mscroll(pThis, nFlags, zDelta, point);
 }
+
 
 // *
 // | ------------------------ Key ----------------------------
 // *
 
-void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
+void on_keydown_intercept(cmainframe* pThis, UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	IMGUI_BEGIN_CCAMERAWND;
-	if (ImGui::GetIO().WantCaptureMouse)
+	for(const auto& hotkey : ggui::cmd_addon_hotkeys_builtin)
 	{
-		ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
-		return;
-	}
-	else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		memset(io.KeysDown, 0, sizeof(io.KeysDown));
+		if(hotkey.m_nKey == nChar)
+		{
+			unsigned int modifiers = 0;
+			if (GetKeyState(VK_MENU) < 0)	 modifiers |= 2;
+			if (GetKeyState(VK_CONTROL) < 0) modifiers |= 4;
+			if (GetKeyState(VK_SHIFT) < 0)   modifiers |= 1;
+
+			if ((hotkey.m_nModifiers & 0x7) == modifiers)
+			{
+				SendMessageA(pThis->GetWindow(), WM_COMMAND, hotkey.m_nCommand, 0);
+				return;
+			}
+		}
 	}
 
+	for (const auto& hotkey : ggui::cmd_addon_hotkeys)
+	{
+		if (hotkey.m_nKey == nChar)
+		{
+			unsigned int modifiers = 0;
+			if (GetKeyState(VK_MENU) < 0)	 modifiers |= 2;
+			if (GetKeyState(VK_CONTROL) < 0) modifiers |= 4;
+			if (GetKeyState(VK_SHIFT) < 0)   modifiers |= 1;
 
-	IMGUI_BEGIN_CXYWND;
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
-		return;
-	}
-	else // reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
-	{
-		ImGuiIO& io = ImGui::GetIO();
-		memset(io.KeysDown, 0, sizeof(io.KeysDown));
+			if ((hotkey.m_nModifiers & 0x7) == modifiers)
+			{
+				components::command::execute(hotkey.m_strCommand);
+				return;
+			}
+		}
 	}
 	
-	return __on_keydown(pThis, nChar, nRepCnt, nFlags);
+	mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
+}
+
+void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	if (ggui::cz_context_ready())
+	{
+		// set cz context (in-case we use multiple imgui context's)
+		IMGUI_BEGIN_CZWND;
+
+		if (ImGui::GetIO().WantTextInput)
+		{
+			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar); // hwnd is only needed for mouse inputs
+			return;
+		}
+
+		// if mouse is inside imgui-cxy window
+		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
+						gridwnd->window_hovered)
+		{
+			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
+			//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
+			return;
+		}
+
+		// handle imgui-camera window (only triggers when czwnd is focused)
+		// cmainframe::on_keydown handles input if imgui-camera window is focused 
+		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
+						camerawnd->window_hovered)
+		{
+			// calls the original on_keydown function
+			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
+			//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
+			return;
+		}
+
+
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			ImGuiIO& io = ImGui::GetIO();
+			memset(io.KeysDown, 0, sizeof(io.KeysDown));
+			
+			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
+		}
+
+		// block specific keys from triggering hotkeys (eg. moving the camera via the arrow keys, because we use the up/down arrow to change xmodel previews)
+		if (const auto	modelselector = ggui::get_rtt_modelselector();
+						modelselector->window_hovered)
+		{
+			// DownArrow / UpArrow
+			if (nChar == VK_DOWN || nChar == VK_UP)
+			{
+				return;
+			}
+		}
+
+		/* // backup ^
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
+			// return;
+		}
+
+		// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
+		ImGuiIO& io = ImGui::GetIO();
+		memset(io.KeysDown, 0, sizeof(io.KeysDown));
+		*/
+	}
+
+	on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
+	//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 }
 
 
 void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 {
-	IMGUI_BEGIN_CCAMERAWND;
-	if (ImGui::GetIO().WantCaptureMouse)
+	if (ggui::cz_context_ready())
 	{
-		ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYUP, 0, nChar);
-		return;
+		// set cz context (in-case we use multiple imgui context's)
+		IMGUI_BEGIN_CZWND;
+
+		if (ImGui::GetIO().WantTextInput)
+		{
+			ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
+			return;
+		}
+		
+		// if mouse is inside imgui-cxy window
+		if (auto gridwnd = ggui::get_rtt_gridwnd();
+				 gridwnd->window_hovered)
+		{
+			mainframe::__on_keyup(cmainframe::activewnd, nChar);
+			return;
+		}
+
+		// handle imgui-camera window (only triggers when xywnd is focused)
+		// cmainframe::on_keyup handles input if imgui-camera window is focused 
+		if (auto camerawnd = ggui::get_rtt_camerawnd();
+				 camerawnd->window_hovered)
+		{
+			mainframe::__on_keyup(cmainframe::activewnd, nChar);
+			return;
+		}
+
+		
+		if (ImGui::GetIO().WantCaptureMouse)
+		{
+			ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
+			//return;
+		}
 	}
 
-	
-	IMGUI_BEGIN_CXYWND;
-	if (ImGui::GetIO().WantCaptureMouse)
-	{
-		ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_KEYUP, 0, nChar);
-		return;
-	}
-
-	return __on_keyup(pThis, nChar);
+	mainframe::__on_keyup(pThis, nChar);
 }
+
+
+// *
+// | ------------------------ Resize ----------------------------
+// *
+
+void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nFlags, int x, int y)
+{
+	if (!CZWND_POS_ONCE_ON_STARTUP)
+	{
+		const auto prefs = game::g_PrefsDlg();
+		if (prefs->m_nView != 1)
+		{
+			// no need to set pos/size when not using split view
+			CZWND_POS_ONCE_ON_STARTUP = true;
+		}
+
+		if (prefs->m_nView == 1 && cmainframe::activewnd && cmainframe::activewnd->m_pZWnd)
+		{
+			RECT _rect;
+			GetClientRect(pThis->m_hWnd, &_rect);
+
+			const int width = _rect.right - _rect.left;
+			const int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
+
+			POINT _point = { 0,0 };
+			ClientToScreen(pThis->m_hWnd, &_point);
+
+			if (prefs->detatch_windows)
+			{
+				SetWindowPos(cmainframe::activewnd->m_pZWnd->GetWindow(), HWND_BOTTOM, _point.x, _point.y, width, height, /*SWP_FRAMECHANGED |*/ SWP_NOZORDER);  //| SWP_NOACTIVATE);
+			}
+			else
+			{
+				SetWindowPos(cmainframe::activewnd->m_pZWnd->GetWindow(), HWND_BOTTOM, 0, 0, width, height, SWP_NOZORDER); //  SWP_NOACTIVATE SWP_NOZORDER |
+			}
+
+			CZWND_POS_ONCE_ON_STARTUP = true;
+		}
+	}
+	
+	__on_size(pThis, nFlags, x, y);
+}
+
 
 // *
 // | ----------------------------------------------------------
 // *
 
+void __fastcall cmainframe::on_destroy(cmainframe* pThis)
+{
+	if (dvars::radiant_gameview->current.enabled)
+	{
+		components::gameview::p_this->set_state(false);
+	}
+	
+	components::remote_net::on_shutdown();
+
+	components::config::write_dvars();
+	
+	__on_destroy(pThis);
+}
+
+
+// *
+// | ----------------------------------------------------------
+// *
 
 // check for nullptr (world_entity)
 void __declspec(naked) sunlight_preview_arg_check()
@@ -550,7 +831,7 @@ void cmainframe::register_dvars()
 		/* desc		*/ "show the menubar");
 }
 
-void cmainframe::main()
+void cmainframe::hooks()
 {
 	// hook continuous thread
 	utils::hook(0x421A90, cmainframe::hk_routine_processing, HOOK_JUMP).install()->quick();
@@ -560,13 +841,21 @@ void cmainframe::main()
 
 	// hook end of createclient
 	utils::hook(0x4232EE, hk_on_createclient, HOOK_JUMP).install()->quick();
+
+#ifdef HIDE_STATUSBAR
+	utils::hook::nop(0x41F8E0, 5); // class init
+	utils::hook::nop(0x420B04, 12 + 29 + 22); // create
+	utils::hook::nop(0x4210ED, 59); // font stuff
+#endif
 	
 	// *
 	// detour cmainframe member functions to get imgui input
-	
-	__on_mscroll	= reinterpret_cast<on_cmainframe_scroll> (utils::hook::detour(0x42B850, cmainframe::on_mscroll, HK_JUMP));
-	__on_keydown	= reinterpret_cast<on_cmainframe_keydown>(utils::hook::detour(0x422370, cmainframe::on_keydown, HK_JUMP));
-	__on_keyup		= reinterpret_cast<on_cmainframe_keyup>  (utils::hook::detour(0x422270, cmainframe::on_keyup, HK_JUMP));
+
+	mainframe::__on_mscroll	= reinterpret_cast<mainframe::on_cmainframe_scroll> (utils::hook::detour(0x42B850, cmainframe::on_mscroll, HK_JUMP));
+	mainframe::__on_keydown	= reinterpret_cast<mainframe::on_cmainframe_keydown>(utils::hook::detour(0x422370, cmainframe::on_keydown, HK_JUMP));
+	mainframe::__on_keyup	= reinterpret_cast<mainframe::on_cmainframe_keyup>  (utils::hook::detour(0x422270, cmainframe::on_keyup, HK_JUMP));
+			   __on_size	= reinterpret_cast<on_cmainframe_size>				(utils::hook::detour(0x423310, cmainframe::on_size, HK_JUMP));
+			   __on_destroy = reinterpret_cast<on_cmainframe_on_destroy>		(utils::hook::detour(0x421C60, cmainframe::on_destroy, HK_JUMP));
 
 	// check for nullptr (world_entity) in a sunlight preview function. Only required with the ^ hook, see note there.
 	utils::hook::nop(0x4067C7, 6);

@@ -12,13 +12,14 @@ namespace components
 
 		//static void imgui_init_ccamerawnd();
 		static void shutdown();
-		static bool all_contexts_ready();
 		
 		static void begin_frame();
 		static void end_frame(); 
 
+		static void saved_windowstates();
 		static void render_loop();
 		static void toggle(ggui::imgui_context_menu& menu, int keycatcher, bool onCommand);
+		static void toggle(ggui::render_to_texture_window_s* menu, int keycatcher, bool onCommand);
 
 		static void register_dvars();
 		//static bool any_open_menus();

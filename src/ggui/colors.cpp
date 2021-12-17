@@ -11,7 +11,7 @@ namespace ggui::colors
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		
-		ImGui::Begin("Colors##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		ImGui::Begin("Colors##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 
 		ImGui::ColorEdit4("Camera Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_CAMERABACK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Texture Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], ImGuiColorEditFlags_Float);
@@ -23,7 +23,8 @@ namespace ggui::colors
 		ImGui::ColorEdit4("Grid Major", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMAJOR], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Grid Block", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBLOCK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Grid Text", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDTEXT], ImGuiColorEditFlags_Float);
-
+		ImGui::ColorEdit4("Grid Entity Classname", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float);
+		
 		SEPERATORV(0.0f);
 
 		ImGui::ColorEdit4("Unselected Brushes", game::g_qeglobals->d_savedinfo.colors[game::COLOR_BRUSHES], ImGuiColorEditFlags_Float);
@@ -51,17 +52,33 @@ namespace ggui::colors
 		ImGui::ColorEdit4("Func Group", game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_GROUP], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Func Cull Group", game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_CULLGROUP], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Entity", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITY], ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Entity Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float);
+		//ImGui::ColorEdit4("Entity Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Togglesurfs", game::g_qeglobals->d_savedinfo.colors[game::COLOR_DRAW_TOGGLESUFS], ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN2], ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Unkown##1", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN2], ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Unkown##2", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], ImGuiColorEditFlags_Float);
 
 		SEPERATORV(0.0f);
 
-		ImGui::ColorEdit4("Gui Menubar Bg", dvars::gui_menubar_bg_color->current.vector, ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Gui Docked Bg", dvars::gui_dockedwindow_bg_color->current.vector, ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Gui Undocked Bg", dvars::gui_window_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Menubar Bg##1", dvars::gui_menubar_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Toolbar Bg##2", dvars::gui_toolbar_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Bg##3", dvars::gui_window_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Child Bg##4", dvars::gui_window_child_bg_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Border##5", dvars::gui_border_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Docking Preview##6", dvars::gui_dockingpreview_color->current.vector, ImGuiColorEditFlags_Float);
+		
+		ImGui::ColorEdit4("Gui Toolbar Button", dvars::gui_toolbar_button_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Toolbar Button Hovered", dvars::gui_toolbar_button_hovered_color->current.vector, ImGuiColorEditFlags_Float);
+		ImGui::ColorEdit4("Gui Toolbar Button Active", dvars::gui_toolbar_button_active_color->current.vector, ImGuiColorEditFlags_Float);
+		const auto col_edit4_size = ImGui::GetItemRectSize();
+		
+		ImGui::Checkbox("Gui RTT Border", &dvars::gui_rtt_padding_enabled->current.enabled);
+		const auto checkbox_size = ImGui::GetItemRectSize();
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(col_edit4_size.x - checkbox_size.x - 178.0f);
+		ImGui::SliderInt("Gui RTT Bordersize", &dvars::gui_rtt_padding_size->current.integer, dvars::gui_rtt_padding_size->domain.integer.min, dvars::gui_rtt_padding_size->domain.integer.max);
 
+		ImGui::ColorEdit4("Gui RTT Border", dvars::gui_rtt_padding_color->current.vector, ImGuiColorEditFlags_Float);
+		
 		ImGui::End();
 	}
 }

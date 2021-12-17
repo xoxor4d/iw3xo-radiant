@@ -3,10 +3,40 @@
 namespace dvars
 {
 	extern game::dvar_s* gui_menubar_bg_color;
-	extern game::dvar_s* gui_dockedwindow_bg_color;
+	extern game::dvar_s* gui_window_child_bg_color;
 	extern game::dvar_s* gui_window_bg_color;
+	extern game::dvar_s* gui_toolbar_bg_color;
+	extern game::dvar_s* gui_border_color;
+	extern game::dvar_s* gui_dockingpreview_color;
+	
+	extern game::dvar_s* gui_toolbar_button_color;
+	extern game::dvar_s* gui_toolbar_button_hovered_color;
+	extern game::dvar_s* gui_toolbar_button_active_color;
+
+	extern game::dvar_s* gui_rtt_padding_enabled;
+	extern game::dvar_s* gui_rtt_padding_size;
+	extern game::dvar_s* gui_rtt_padding_color;
+		
 	extern game::dvar_s* gui_floating_toolbar;
 	extern game::dvar_s* gui_resize_dockspace;
+	extern game::dvar_s* gui_mainframe_background;
+	extern game::dvar_s* gui_menubar_show_mouseorigin;
+	extern game::dvar_s* gui_draw_fps;
+
+	extern game::dvar_s* gui_texwnd_draw_scrollbar;
+	extern game::dvar_s* gui_texwnd_draw_scrollpercent;
+	
+	extern game::dvar_s* gui_props_classlist_defaultopen;
+	extern game::dvar_s* gui_props_comments_defaultopen;
+	extern game::dvar_s* gui_props_spawnflags_defaultopen;
+
+	extern game::dvar_s* gui_camera_toolbar_defaultopen;
+	
+	extern game::dvar_s* gui_saved_state_console;
+	extern game::dvar_s* gui_saved_state_filter;
+	extern game::dvar_s* gui_saved_state_entity;
+	extern game::dvar_s* gui_saved_state_textures;
+	extern game::dvar_s* gui_saved_state_modelselector;
 	
 	//
 	extern game::dvar_s* mainframe_show_console;
@@ -14,6 +44,30 @@ namespace dvars
 	extern game::dvar_s* mainframe_show_toolbar;
 	extern game::dvar_s* mainframe_show_menubar;
 
+	//
+	extern game::dvar_s* grid_zoom_to_cursor;
+	extern game::dvar_s* r_draw_model_origin;
+	extern game::dvar_s* r_draw_model_shadowcaster;
+	extern game::dvar_s* r_draw_patch_backface_wireframe;
+	
+	extern game::dvar_s* r_fakesun_preview;
+	extern game::dvar_s* r_fakesun_use_worldspawn;
+	extern game::dvar_s* r_fakesun_fog_enabled;
+	extern game::dvar_s* r_fakesun_fog_start;
+	extern game::dvar_s* r_fakesun_fog_half;
+	extern game::dvar_s* r_fakesun_fog_color;
+	
+	extern game::dvar_s* guizmo_enable;
+	extern game::dvar_s* guizmo_snapping;
+	extern game::dvar_s* guizmo_brush_mode;
+	
+	extern game::dvar_s* radiant_gameview;
+	extern game::dvar_s* radiant_maxfps_grid;
+	extern game::dvar_s* radiant_maxfps_camera;
+	extern game::dvar_s* radiant_maxfps_textures;
+	extern game::dvar_s* radiant_maxfps_modelselector;
+	extern game::dvar_s* radiant_maxfps_mainframe;
+	
 	// radiant-live
 	extern game::dvar_s* radiant_live;
 	extern game::dvar_s* radiant_livePort;

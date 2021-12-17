@@ -15,9 +15,9 @@ namespace components
 	public:
 		static void initialize();
 		static void uninitialize();
-		static void Register(component* component);
+		static void _register(component* component);
 
-		static utils::memory::allocator* GetAlloctor();
+		static utils::memory::allocator* get_alloctor();
 
 	private:
 		static std::vector<component*> components_;
@@ -27,7 +27,9 @@ namespace components
 
 #include "modules/command.hpp"
 #include "modules/d3d9ex.hpp"
+#include "modules/renderer.hpp"
 #include "modules/gui.hpp"
-#include "modules/quick_patch.hpp"
+#include "modules/main_module.hpp"
 #include "modules/remote_net.hpp"
 #include "modules/config.hpp"
+#include "modules/gameview.hpp"

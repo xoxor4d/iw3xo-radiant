@@ -20,7 +20,10 @@ namespace ggui::toolbar
 			const ImVec2 uv0 = hovered_state ? ImVec2(0.5f, 0.0f) : ImVec2(0.0f, 0.0f);
 			const ImVec2 uv1 = hovered_state ? ImVec2(1.0f, 1.0f) : ImVec2(0.5f, 1.0f);
 
-			if (ImGui::ImageButton(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1, 0))
+			const ImVec4 bg_col = hovered_state ?
+				ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector) : ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+			
+			if (ImGui::ImageButton(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1, 0, bg_col))
 			{
 				switch(calltype)
 				{
@@ -80,52 +83,62 @@ namespace ggui::toolbar
 		}
 	}
 
-	bool image_togglebutton(const char* image_name, bool toggle_state, const char* tooltip)
+	bool image_togglebutton(const char* image_name, bool& hovered_state, bool toggle_state, const char* tooltip, ImVec4* bg_col, ImVec4* bg_col_hovered, ImVec4* bg_col_active, ImVec2* btn_size)
 	{
-		bool ret_state = false;
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(25, 25, 25, 50));
+		ImVec2 button_size				= IMAGEBUTTON_SIZE;
+		ImVec4 background_color			= ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+		ImVec4 background_color_hovered = ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector);
+		ImVec4 background_color_active	= ImGui::ToImVec4(dvars::gui_toolbar_button_active_color->current.vector);
+
+		if (btn_size)		button_size					= *btn_size;
 		
+		if (bg_col)			background_color			= *bg_col;
+		if (bg_col_hovered) background_color_hovered	= *bg_col_hovered;
+		if (bg_col_active)	background_color_active		= *bg_col_active;
+
+		bool ret_state = false;
+
 		if (const auto	image = game::Image_RegisterHandle(image_name);
 						image && image->texture.data)
 		{
 			const ImVec2 uv0 = toggle_state ? ImVec2(0.5f, 0.0f) : ImVec2(0.0f, 0.0f);
 			const ImVec2 uv1 = toggle_state ? ImVec2(1.0f, 1.0f) : ImVec2(0.5f, 1.0f);
 
-			if (ImGui::ImageButton(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1, 0)) 
-			{
+			ImVec4 color = hovered_state ? background_color_hovered
+						: toggle_state ? background_color_active : background_color;
+			
+			if (ImGui::ImageButton(image->texture.data, button_size, uv0, uv1, 0, color)) {
 				ret_state = true;
 			}
 
-			if (tooltip) 
-			{
+			if (tooltip) {
 				TT(tooltip);
 			}
+
+			hovered_state = ImGui::IsItemHovered();
 		}
 		else
 		{
-			if (ImGui::Button(image_name))
-			{
+			if (ImGui::Button(image_name)) {
 				ret_state = true;
 			}
 
-			if (tooltip)
-			{
+			if (tooltip) {
 				TT(tooltip);
 			}
 		}
-
-		ImGui::PopStyleColor();
+		
 		return ret_state;
 	}
 
 	
 	// *
 	// 
+
 	
 	bool toolbar_initiated = false;
-	nlohmann::fifo_map<std::string, std::function<void()>> tbedit_elements;
-
 	int tb_element_id = 0;
+	
 	struct tb_order_element_s
 	{
 		std::string name;
@@ -134,39 +147,98 @@ namespace ggui::toolbar
 		bool		is_separator;
 		bool		debug;
 	};
-	std::vector<tb_order_element_s> tbedit_ordered_list;
 
-	
 	struct tb_selection_s
 	{
 		bool is_selected;
 		uint32_t element_id;
 		uint32_t element_pos;
 	};
+	
+	nlohmann::fifo_map<std::string, std::function<void()>> toolbar_registered_elements_callbacks;
+	std::vector<tb_order_element_s> toolbar_registered_elements;
+
+	int toolbar_sorted_element_id = 0;
+	std::vector<tb_order_element_s> toolbar_sorted_list;
+
 	tb_selection_s tbedit_selection = {};
 
 
-	void register_element(const std::string& name, std::function<void()> callback)
+	void register_element(const std::string& name, bool default_visible, std::function<void()> callback)
 	{
 		bool is_debug = false;
-		tbedit_elements[name] = callback;
+		toolbar_registered_elements_callbacks[name] = callback;
 
 		// if separator
 		if (utils::starts_with(name, ";"s))
 		{
 			// insert before selection
-			if(tbedit_selection.is_selected)
+			if (tbedit_selection.is_selected)
 			{
-				tbedit_ordered_list.insert(
-					tbedit_ordered_list.begin() + tbedit_selection.element_pos,
-					tb_order_element_s("; ------------", tb_element_id++, true, true, is_debug));
+				toolbar_registered_elements.insert(
+					toolbar_registered_elements.begin() + tbedit_selection.element_pos,
+					tb_order_element_s("; ------------", tb_element_id++, default_visible, true, is_debug));
 			}
 			// emplace back if nothing is selected
 			else
 			{
-				tbedit_ordered_list.emplace_back(
-					tb_order_element_s("; ------------", tb_element_id++, true, true, is_debug));
+				toolbar_registered_elements.emplace_back(
+					tb_order_element_s("; ------------", tb_element_id++, default_visible, true, is_debug));
 			}
+
+			return;
+		}
+
+		if (utils::starts_with(name, "debug_"s))
+		{
+			is_debug = true;
+		}
+
+		toolbar_registered_elements.emplace_back(
+			tb_order_element_s(name, tb_element_id++, default_visible, false, is_debug));
+	}
+	
+	void register_element(const std::string& name, std::function<void()> callback)
+	{
+		bool is_debug = false;
+		toolbar_registered_elements_callbacks[name] = callback;
+
+		// if separator
+		if (utils::starts_with(name, ";"s))
+		{
+			if(!toolbar_initiated)
+			{
+				// insert before selection
+				if (tbedit_selection.is_selected)
+				{
+					toolbar_registered_elements.insert(
+						toolbar_registered_elements.begin() + tbedit_selection.element_pos,
+						tb_order_element_s("; ------------", tb_element_id++, true, true, is_debug));
+				}
+				// emplace back if nothing is selected
+				else
+				{
+					toolbar_registered_elements.emplace_back(
+						tb_order_element_s("; ------------", tb_element_id++, true, true, is_debug));
+				}
+			}
+			else
+			{
+				// insert before selection
+				if (tbedit_selection.is_selected)
+				{
+					toolbar_sorted_list.insert(
+						toolbar_sorted_list.begin() + tbedit_selection.element_pos,
+						tb_order_element_s("; ------------", toolbar_sorted_element_id++, true, true, is_debug));
+				}
+				// emplace back if nothing is selected
+				else
+				{
+					toolbar_sorted_list.emplace_back(
+						tb_order_element_s("; ------------", toolbar_sorted_element_id++, true, true, is_debug));
+				}
+			}
+			
 
 			return;
 		}
@@ -176,7 +248,7 @@ namespace ggui::toolbar
 			is_debug = true;
 		}
 
-		tbedit_ordered_list.emplace_back(
+		toolbar_registered_elements.emplace_back(
 			tb_order_element_s(name, tb_element_id++, true, false, is_debug));
 	}
 
@@ -289,8 +361,10 @@ namespace ggui::toolbar
 
 		register_element("clipper"s, []()
 			{
+				static bool hov_clipper;
+			
 				// CMainFrame::OnViewClipper
-				if (image_togglebutton("clipper", game::g_bClipMode, "Toggle Clipper")) {
+				if (image_togglebutton("clipper", hov_clipper, game::g_bClipMode, "Toggle Clipper")) {
 					mainframe_thiscall(LRESULT, 0x426510);
 				}
 			});
@@ -345,8 +419,9 @@ namespace ggui::toolbar
 		
 		register_element(";"s, nullptr);
 
-		register_element("camera_movement"s, []()
+		register_element("camera_movement"s, false, []()
 			{
+				static bool hov_camera_movement;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnToggleCameraMovementMode
@@ -354,7 +429,7 @@ namespace ggui::toolbar
 				{
 					ImVec2 prebutton_cursor = ImGui::GetCursorScreenPos();
 
-					if (image_togglebutton("camera_movement", prefs->camera_mode,
+					if (image_togglebutton("camera_movement", hov_camera_movement, prefs->camera_mode,
 						"Toggle Camera Movement Mode"))
 					{
 						mainframe_thiscall(LRESULT, 0x429EB0);
@@ -374,15 +449,26 @@ namespace ggui::toolbar
 				ImGui::EndGroup();
 			});
 
-		register_element("cubic_clip"s, []()
+		register_element("cubic_clip"s, false, []()
 			{
+				static bool hov_cubicclip;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnViewCubicclipping
-				if (image_togglebutton("cubic_clip", prefs->m_bCubicClipping, 
+				if (image_togglebutton("cubic_clip", hov_cubicclip, prefs->m_bCubicClipping,
 					std::string("Cubic Clipping [" + hotkeys::get_hotkey_for_command("ToggleCubicClip") + "]").c_str()))
 				{
 					mainframe_thiscall(LRESULT, 0x428F90);
+				}
+			});
+
+		register_element("gameview"s, false, []()
+			{
+				static bool hov_gameview;
+				if (image_togglebutton("gameview", hov_gameview, dvars::radiant_gameview->current.enabled,
+					std::string("Gameview [" + hotkeys::get_hotkey_for_command("xo_gameview") + "]").c_str()))
+				{
+					components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
 				}
 			});
 
@@ -414,10 +500,11 @@ namespace ggui::toolbar
 
 		register_element("plant_models"s, []()
 			{
+				static bool hov_plantmodel;
 				const auto prefs = game::g_PrefsDlg();
 
 				// CMainFrame::OnPlantModel
-				if (image_togglebutton("plant_models", prefs->m_bDropModel,
+				if (image_togglebutton("plant_models", hov_plantmodel, prefs->m_bDropModel,
 					"Plant models and apply random scale and rotation"))
 				{
 					mainframe_thiscall(LRESULT, 0x42A0E0);
@@ -426,10 +513,11 @@ namespace ggui::toolbar
 
 		register_element("plant_orient_to_floor"s, []()
 			{
+				static bool hov_plantorient;
 				const auto prefs = game::g_PrefsDlg();
 
 				// CMainFrame::OnPlantModel
-				if (image_togglebutton("plant_orient_to_floor", prefs->m_bOrientModel,
+				if (image_togglebutton("plant_orient_to_floor", hov_plantorient, prefs->m_bOrientModel,
 					"Orient dropped selection to the floor"))
 				{
 					mainframe_thiscall(LRESULT, 0x4258F0);
@@ -438,10 +526,11 @@ namespace ggui::toolbar
 
 		register_element("plant_force_drop_height"s, []()
 			{
+				static bool hov_plantdrop;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnForceZeroDropHeight
-				if (image_togglebutton("plant_force_drop_height", prefs->m_bForceZeroDropHeight,
+				if (image_togglebutton("plant_force_drop_height", hov_plantdrop, prefs->m_bForceZeroDropHeight,
 					"Force drop height to 0"))
 				{
 					mainframe_thiscall(LRESULT, 0x42A000);
@@ -464,10 +553,47 @@ namespace ggui::toolbar
 				image_button("drop_entities_floor_relative", hov_drop_entities_relative_z, MAINFRAME_THIS, 0x425940, "Drop selection to the floor with relative Z heights");
 			});
 
+		register_element("guizmo_enable"s, false, []()
+			{
+				static bool hov_guizmo_enable;
+				if (image_togglebutton("guizmo_enable", hov_guizmo_enable, dvars::guizmo_enable->current.enabled, dvars::guizmo_enable->description))
+				{
+					dvars::set_bool(dvars::guizmo_enable, !dvars::guizmo_enable->current.enabled);
+				}
+			});
+
+		register_element("guizmo_grid_snapping"s, false, []()
+			{
+				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
+				{
+					static bool hov_guizmo_grid_snapping;
+					if (image_togglebutton("guizmo_grid_snapping", hov_guizmo_grid_snapping, dvars::guizmo_snapping->current.enabled, dvars::guizmo_snapping->description))
+					{
+						dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
+					}
+				}
+				ImGui::EndDisabled();
+			});
+
+		register_element("guizmo_brush_mode"s, false, []()
+			{
+				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
+				{
+					static bool hov_guizmo_brush_mode;
+					if (image_togglebutton("guizmo_brush_mode", hov_guizmo_brush_mode, dvars::guizmo_brush_mode->current.enabled, dvars::guizmo_brush_mode->description))
+					{
+						dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
+					}
+				}
+				ImGui::EndDisabled();
+			});
+		
 		register_element("free_rotate"s, []()
 			{
+				static bool hov_freerotate;
+			
 				// CMainFrame::OnSelectMouserotate
-				if (image_togglebutton("free_rotate", game::g_bRotateMode,
+				if (image_togglebutton("free_rotate", hov_freerotate, game::g_bRotateMode,
 					std::string("Free rotation [" + hotkeys::get_hotkey_for_command("MouseRotate") + "]").c_str()))
 				{
 					mainframe_thiscall(LRESULT, 0x428570);
@@ -476,8 +602,10 @@ namespace ggui::toolbar
 
 		register_element("free_scale"s, []()
 			{
+				static bool hov_freescale;
+			
 				// CMainFrame::OnSelectMousescale
-				if (image_togglebutton("free_scale", game::g_bScaleMode,
+				if (image_togglebutton("free_scale", hov_freescale, game::g_bScaleMode,
 					"Free scaling"))
 				{
 					mainframe_thiscall(LRESULT, 0x428D20);
@@ -486,8 +614,10 @@ namespace ggui::toolbar
 
 		register_element("lock_x"s, []()
 			{
+				static bool hov_lockx;
+			
 				// CMainFrame::OnScalelockX
-				if (image_togglebutton("lock_x",
+				if (image_togglebutton("lock_x", hov_lockx,
 					(game::g_nScaleHow == 2 || game::g_nScaleHow == 4 || game::g_nScaleHow == 6),
 					"Lock grid along the x-axis"))
 				{
@@ -497,8 +627,10 @@ namespace ggui::toolbar
 
 		register_element("lock_y"s, []()
 			{
+				static bool hov_locky;
+			
 				// CMainFrame::OnScalelockY
-				if (image_togglebutton("lock_y",
+				if (image_togglebutton("lock_y", hov_locky,
 					(game::g_nScaleHow == 1 || game::g_nScaleHow == 4 || game::g_nScaleHow == 5),
 					"Lock grid along the y-axis"))
 				{
@@ -508,8 +640,10 @@ namespace ggui::toolbar
 
 		register_element("lock_z"s, []()
 			{
+				static bool hov_lockz;
+			
 				// CMainFrame::OnScalelockZ
-				if (image_togglebutton("lock_z",
+				if (image_togglebutton("lock_z", hov_lockz,
 					(game::g_nScaleHow > 0 && game::g_nScaleHow <= 3),
 					"Lock grid along the z-axis"))
 				{
@@ -521,6 +655,7 @@ namespace ggui::toolbar
 
 		register_element("show_patches_as"s, []()
 			{
+				static bool hov_patches_as;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnPatchWireframe
@@ -528,7 +663,7 @@ namespace ggui::toolbar
 				{
 					ImVec2 prebutton_cursor = ImGui::GetCursorScreenPos();
 
-					if (image_togglebutton("show_patches_as", prefs->g_nPatchAsWireframe,
+					if (image_togglebutton("show_patches_as", hov_patches_as, prefs->g_nPatchAsWireframe,
 						"Show patches as wireframe"))
 					{
 						mainframe_thiscall(LRESULT, 0x42A300);
@@ -559,10 +694,11 @@ namespace ggui::toolbar
 
 		register_element("weld_equal_patches_move"s, []()
 			{
+				static bool hov_weld_patches_move;
 				const auto prefs = game::g_PrefsDlg();
 
 				// CMainFrame::OnPatchWeld
-				if (image_togglebutton("weld_equal_patches_move", 
+				if (image_togglebutton("weld_equal_patches_move", hov_weld_patches_move,
 					prefs->g_bPatchWeld,
 					"Weld equal patch points during moves"))
 				{
@@ -572,10 +708,11 @@ namespace ggui::toolbar
 
 		register_element("select_drill_down_vertices"s, []()
 			{
+				static bool hov_drill_down;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnPatchDrilldown
-				if (image_togglebutton("select_drill_down_vertices", 
+				if (image_togglebutton("select_drill_down_vertices", hov_drill_down,
 					prefs->patch_drill_down,
 					"Select invisible vertices (drill down rows/columns)"))
 				{
@@ -585,8 +722,10 @@ namespace ggui::toolbar
 		
 		register_element("toggle_lock_vertices_mode"s, []()
 			{
+				static bool hov_lock_vertices;
+			
 				// CMainFrame::ToggleLockPatchVertMode
-				if (image_togglebutton("toggle_lock_vertices_mode", 
+				if (image_togglebutton("toggle_lock_vertices_mode", hov_lock_vertices,
 					game::g_qeglobals->bLockPatchVerts,
 					"Toggle lock-vertex mode"))
 				{
@@ -596,8 +735,10 @@ namespace ggui::toolbar
 
 		register_element("toggle_unlock_vertices_mode"s, []()
 			{
+				static bool hov_unlock_vertices;
+			
 				// CMainFrame::ToggleUnlockPatchVertMode
-				if (image_togglebutton("toggle_unlock_vertices_mode", 
+				if (image_togglebutton("toggle_unlock_vertices_mode", hov_unlock_vertices,
 					game::g_qeglobals->bUnlockPatchVerts,
 					"Toggle unlock-vertex mode"))
 				{
@@ -607,8 +748,10 @@ namespace ggui::toolbar
 
 		register_element("cycle_patch_edge_direction"s, []()
 			{
+				static bool hov_cycle_edges;
+			
 				// CMainFrame::OnCycleTerrainEdge
-				if (image_togglebutton("cycle_patch_edge_direction",
+				if (image_togglebutton("cycle_patch_edge_direction", hov_cycle_edges,
 					game::g_qeglobals->d_select_mode == 9,
 					"Toggle terrain-quad edge cycle mode"))
 				{
@@ -618,10 +761,11 @@ namespace ggui::toolbar
 
 		register_element("tolerant_weld"s, []()
 			{
+				static bool hov_tolerant_weld;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnTolerantWeld
-				if (image_togglebutton("tolerant_weld",
+				if (image_togglebutton("tolerant_weld", hov_tolerant_weld,
 					prefs->m_bTolerantWeld,
 					"Toggle tolerant weld / Draw tolerant weld lines"))
 				{
@@ -633,10 +777,11 @@ namespace ggui::toolbar
 
 		register_element("toggle_draw_surfs_portal"s, []()
 			{
+				static bool hov_drawsurfs_portal;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnToggleDrawSurfs
-				if (image_togglebutton("toggle_draw_surfs_portal",
+				if (image_togglebutton("toggle_draw_surfs_portal", hov_drawsurfs_portal,
 					prefs->draw_toggle,
 					"Toggle drawing of portal no-draw surfaces"))
 				{
@@ -646,10 +791,11 @@ namespace ggui::toolbar
 
 		register_element("dont_select_curve"s, []()
 			{
+				static bool hov_select_curve;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnDontselectcurve
-				if (image_togglebutton("dont_select_curve",
+				if (image_togglebutton("dont_select_curve", hov_select_curve,
 					!prefs->m_bSelectCurves,
 					"Disable selection of patches"))
 				{
@@ -659,10 +805,11 @@ namespace ggui::toolbar
 
 		register_element("dont_select_entities"s, []()
 			{
+				static bool hov_select_entities;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnDisableSelectionOfEntities
-				if (image_togglebutton("dont_select_entities",
+				if (image_togglebutton("dont_select_entities", hov_select_entities,
 					prefs->entities_off,
 					"Disable selection of entities"))
 				{
@@ -672,10 +819,11 @@ namespace ggui::toolbar
 
 		register_element("dont_select_sky"s, []()
 			{
+				static bool hov_dont_sel_sky;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnDisableSelectionOfSky
-				if (image_togglebutton("dont_select_sky",
+				if (image_togglebutton("dont_select_sky", hov_dont_sel_sky,
 					prefs->sky_brush_off,
 					"Disable selection of sky brushes"))
 				{
@@ -685,14 +833,37 @@ namespace ggui::toolbar
 
 		register_element("dont_select_models"s, []()
 			{
+				static bool hov_dont_sel_models;
 				const auto prefs = game::g_PrefsDlg();
 			
 				// CMainFrame::OnSelectableModels
-				if (image_togglebutton("dont_select_models",
+				if (image_togglebutton("dont_select_models", hov_dont_sel_models,
 					prefs->m_bSelectableModels,
 					"Disable selection of static models"))
 				{
 					mainframe_thiscall(LRESULT, 0x42A280);
+				}
+			});
+
+		register_element("lightpreview"s, false, []()
+			{
+				static bool hov_lightpreview;
+				const auto prefs = game::g_PrefsDlg();
+
+				if (image_togglebutton("lightpreview", hov_lightpreview, prefs->enable_light_preview, std::string("Lightpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewToggle") + "]").c_str()))
+				{
+					mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
+				}
+			});
+
+		register_element("sunpreview"s, false, []()
+			{
+				static bool hov_sunpreview;
+				const auto prefs = game::g_PrefsDlg();
+
+				if (image_togglebutton("sunpreview", hov_sunpreview, prefs->preview_sun_aswell, std::string("Sunpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewSun") + "]\nNeeds Lightpreview!").c_str()))
+				{
+					mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun;
 				}
 			});
 
@@ -703,107 +874,117 @@ namespace ggui::toolbar
 			{
 				if (ImGui::Button("RI", IMAGEBUTTON_SIZE)) {
 					game::R_ReloadImages();
-				} TT("Reload Images");
+				} TT("DBG: Reload Images");
 			});
 #endif
 	}
-
 	
 	void load_settings_ini()
 	{
 		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
-						fs_homepath)
+			fs_homepath)
 		{
+			bool no_ini_or_empty = false;
+			
 			std::ifstream ini;
 			std::string ini_path = fs_homepath->current.string;
 						ini_path += "\\" + INI_FILENAME;
-
+	
 			ini.open(ini_path.c_str());
 			if (!ini.is_open())
 			{
-				printf("[Toolbar] Failed to open file: \"%s\"", ini_path.c_str());
-				return;
+				game::printf_to_console("[Toolbar] Failed to open ini: \"%s\"", ini_path.c_str());
+				no_ini_or_empty = true;
 			}
-
-			tb_element_id = 0;
-			tbedit_ordered_list.clear();
-
-			std::string input;
-			int line = 0;
-
-			// read line by line
-			while (std::getline(ini, input))
+			
+			// read ini line by line
+			if(!no_ini_or_empty)
 			{
-				if (input.find("//") != std::string::npos)
+				std::string input;
+				int line = 0;
+				
+				while (std::getline(ini, input))
 				{
-					continue;
+					if (input.find("//") != std::string::npos)
+					{
+						continue;
+					}
+
+					line++;
+
+					// separators
+					if (input.find(';') != std::string::npos)
+					{
+						toolbar_sorted_list.emplace_back(
+							tb_order_element_s("; ------------", toolbar_sorted_element_id++, true, true, false));
+
+						continue;
+					}
+
+					// split the string on ','
+					std::vector<std::string> args = utils::split(input, ',');
+
+					if (args.size() != 2)
+					{
+						printf("[Toolbar] malformed element @ line #%d (\"%s\")\n", line, input.c_str());
+						continue;
+					}
+
+					utils::trim(args[0]);
+					utils::trim(args[1]);
+
+					// check if the element exists
+					if (toolbar_registered_elements_callbacks.find(args[0]) != toolbar_registered_elements_callbacks.end())
+					{
+						toolbar_sorted_list.emplace_back(
+							tb_order_element_s(args[0], toolbar_sorted_element_id++, args[1] != "0"s, false));
+					}
+					else
+					{
+						game::printf_to_console("[Toolbar] not a valid element @ line #%d (\"%s\")\n", line, input.c_str());
+					}
 				}
 
-				line++;
-
-				// separators
-				if (input.find(';') != std::string::npos)
+				if (!line)
 				{
-					tbedit_ordered_list.emplace_back(
-						tb_order_element_s("; ------------", tb_element_id++, true, true, false));
-					
-					continue;
-				}
-
-				// split the string on ','
-				std::vector<std::string> args = utils::split(input, ',');
-
-				if (args.size() != 2)
-				{
-					printf("[Toolbar] malformed element @ line #%d (\"%s\")\n", line, input.c_str());
-					continue;
-				}
-
-				utils::trim(args[0]);
-				utils::trim(args[1]);
-
-				// check if the element exists
-				if(tbedit_elements.find(args[0]) != tbedit_elements.end())
-				{
-					tbedit_ordered_list.emplace_back(
-						tb_order_element_s(args[0], tb_element_id++, args[1] != "0"s, false));
-				}
-				else
-				{
-					printf("[Toolbar] not a valid element @ line #%d (\"%s\")\n", line, input.c_str());
+					no_ini_or_empty = true;
 				}
 			}
 
-			// add registered elements that are not part of the ini (eg. radiant was updated -> new elements)
-			for (const auto& element : tbedit_elements)
+			// loop all registered elements to add all elements not found inside the ini (eg. new elements after an update)
+			for (const auto& element : toolbar_registered_elements)
 			{
 				bool found = false;
 				bool is_debug = false;
 
-				// do not add separators
-				if(utils::starts_with(element.first, ";"s))
+				// add seperators if no ini or ini was empty
+				// do not add separators otherwise
+				if(!no_ini_or_empty)
 				{
-					continue;
+					if (utils::starts_with(element.name, ";"s))
+					{
+						continue;
+					}
 				}
 
-				if (utils::starts_with(element.first, "debug_"s))
+				if (utils::starts_with(element.name, "debug_"s))
 				{
 					is_debug = true;
 				}
-				
-				for (uint32_t e = 0; e < tbedit_ordered_list.size(); e++)
+
+				for (uint32_t e = 0; e < toolbar_sorted_list.size(); e++)
 				{
-					if(element.first == tbedit_ordered_list[e].name)
+					if (element.name == toolbar_sorted_list[e].name)
 					{
 						found = true;
 						break;
 					}
 				}
 
-				if(!found)
+				if (!found)
 				{
-					tbedit_ordered_list.emplace_back(
-						tb_order_element_s(element.first, tb_element_id++, true, false, is_debug));
+					toolbar_sorted_list.emplace_back(
+						tb_order_element_s(element.name, toolbar_sorted_element_id++, element.visible, false, is_debug));
 				}
 			}
 		}
@@ -812,7 +993,7 @@ namespace ggui::toolbar
 	
 	void save_settings_ini()
 	{
-		if (tbedit_ordered_list.empty())
+		if (toolbar_sorted_list.empty())
 		{
 			return;
 		}
@@ -833,7 +1014,7 @@ namespace ggui::toolbar
 
 			ini << "// [Name] [IsVisible] (';' Separator)" << std::endl;
 
-			for (const auto& element : tbedit_ordered_list)
+			for (const auto& element : toolbar_sorted_list)
 			{
 				if(element.debug)
 				{
@@ -862,34 +1043,32 @@ namespace ggui::toolbar
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		
-		ImGui::Begin("Toolbar Editor##xywnd", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+		ImGui::Begin("Toolbar Editor##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
 		
 		if (ImGui::Button("Add Separator"))
 		{
 			register_element(";"s, nullptr);
 		}
 
-		
 		ImGui::SameLine();
 		if (ImGui::Button("Delete Selected Separator"))
 		{
-			const bool out_of_bounds = tbedit_selection.element_pos >= tbedit_ordered_list.size();
+			const bool out_of_bounds = tbedit_selection.element_pos >= toolbar_sorted_list.size();
 
 			if (tbedit_selection.is_selected 
 				&& !out_of_bounds 
-				&& tbedit_ordered_list[tbedit_selection.element_pos].is_separator)
+				&& toolbar_sorted_list[tbedit_selection.element_pos].is_separator)
 			{
-				printf("selected sep, deleting ...\n");
-				tbedit_ordered_list.erase(tbedit_ordered_list.begin() + tbedit_selection.element_pos);
+				game::printf_to_console("selected sep, deleting ...\n");
+				toolbar_sorted_list.erase(toolbar_sorted_list.begin() + tbedit_selection.element_pos);
 			}
 			else if (out_of_bounds)
 			{
 				tbedit_selection.is_selected = false;
-				printf("out of bounds!\n");
+				game::printf_to_console("out of bounds!\n");
 			}
 		}
 		
-
 		// this does not work with the way we order the list -> flickering
 		//ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(1.0f, 4.0f));
 
@@ -906,12 +1085,12 @@ namespace ggui::toolbar
 			int widget_id_num = 0;
 
 			// loop amount of registered-sorted elements
-			for (uint32_t e = 0; e < tbedit_ordered_list.size(); e++)
+			for (uint32_t e = 0; e < toolbar_sorted_list.size(); e++)
 			{
-				const auto element = tbedit_ordered_list[e];
+				const auto element = toolbar_sorted_list[e];
 
 				// check if the element was registered
-				if (element.is_separator || tbedit_elements.find(tbedit_ordered_list[e].name) != tbedit_elements.end())
+				if (element.is_separator || toolbar_registered_elements_callbacks.find(toolbar_sorted_list[e].name) != toolbar_registered_elements_callbacks.end())
 				{
 					ImGui::TableNextRow();
 
@@ -920,9 +1099,8 @@ namespace ggui::toolbar
 						ImGui::TableNextColumn();
 						switch (column)
 						{
-
 						case 0:
-							if (!element.is_separator)
+							if (!element.is_separator && !element.debug)
 							{
 								if (const auto image = game::Image_RegisterHandle(element.name.c_str());
 									image && image->texture.data)
@@ -933,24 +1111,31 @@ namespace ggui::toolbar
 									ImGui::Image(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1);
 								}
 
-								// TODO! - add placeholder image or text when icon is missing
+								// placeholder image when icon is missing
+								else if (const auto temp_image = game::Image_RegisterHandle("cycle_xyz");
+									temp_image&& temp_image->texture.data)
+								{
+									const ImVec2 uv0 = ImVec2(0.5f, 0.0f);
+									const ImVec2 uv1 = ImVec2(1.0f, 1.0f);
+
+									ImGui::Image(temp_image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1);
+								}
 							}
 
 							break;
-
 
 						case 1:
 							if (element.is_separator)
 							{
 								// unique id for each separator
 								if (ImGui::Selectable(
-									utils::va("------------##%d", tbedit_ordered_list[e].id),
+									utils::va("------------##%d", toolbar_sorted_list[e].id),
 									e == tbedit_selection.element_pos && tbedit_selection.is_selected,
 									ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, 
 									ImVec2(0.0f, IMAGEBUTTON_SIZE.y)))
 								{
 									tbedit_selection.is_selected = true;
-									tbedit_selection.element_id = tbedit_ordered_list[e].id;
+									tbedit_selection.element_id = toolbar_sorted_list[e].id;
 									tbedit_selection.element_pos = e;
 								}
 							}
@@ -963,27 +1148,25 @@ namespace ggui::toolbar
 									ImVec2(0.0f, IMAGEBUTTON_SIZE.y)))
 								{
 									tbedit_selection.is_selected = true;
-									tbedit_selection.element_id = tbedit_ordered_list[e].id;
+									tbedit_selection.element_id = toolbar_sorted_list[e].id;
 									tbedit_selection.element_pos = e;
 								}
 							}
-
-
-
+							
 							if (ImGui::IsItemActive() && !ImGui::IsItemHovered())
 							{
 								int n_next = e + (ImGui::GetMouseDragDelta(0).y < 0.0f ? -1 : 1);
-								if (n_next >= 0 && static_cast<uint32_t>(n_next) < tbedit_ordered_list.size())
+								if (n_next >= 0 && static_cast<uint32_t>(n_next) < toolbar_sorted_list.size())
 								{
-									const auto temp_pair = tbedit_ordered_list[n_next];
+									const auto temp_pair = toolbar_sorted_list[n_next];
 
-									tbedit_ordered_list[n_next] = tbedit_ordered_list[e];
-									tbedit_ordered_list[e] = temp_pair;
+									toolbar_sorted_list[n_next] = toolbar_sorted_list[e];
+									toolbar_sorted_list[e] = temp_pair;
 
 									ImGui::ResetMouseDragDelta();
 
 									tbedit_selection.is_selected = true;
-									tbedit_selection.element_id = tbedit_ordered_list[n_next].id;
+									tbedit_selection.element_id = toolbar_sorted_list[n_next].id;
 									tbedit_selection.element_pos = n_next;
 								}
 							}
@@ -993,7 +1176,7 @@ namespace ggui::toolbar
 							if (!element.is_separator)
 							{
 								ImGui::PushID(widget_id_num); widget_id_num++;
-								ImGui::Checkbox("##checkbox", &tbedit_ordered_list[e].visible);
+								ImGui::Checkbox("##checkbox", &toolbar_sorted_list[e].visible);
 								ImGui::PopID(); // widget_id_num
 								break;
 							}
@@ -1025,11 +1208,17 @@ namespace ggui::toolbar
 		const ImVec2 requested_size = (ggui::toolbar_axis == ImGuiAxis_X) ? ImVec2(-1.0f, 0.0f) : ImVec2(0.0f, -1.0f);
 
 		ImGui::SetNextWindowSize(requested_size);
-		ImGui::SetNextWindowPos(ImVec2( 5.0f, ggui::menubar_height + 5.0f), ImGuiCond_FirstUseEver);
+
+		const bool is_floating_toolbar = dvars::gui_floating_toolbar && dvars::gui_floating_toolbar->current.enabled;
+		
+		if(is_floating_toolbar)
+		{
+			ImGui::SetNextWindowPos(ImVec2(5.0f, ggui::menubar_height + 5.0f), ImGuiCond_FirstUseEver);
+		}
 
 		if(ggui::toolbar_reset)
 		{
-			if(dvars::gui_floating_toolbar && !dvars::gui_floating_toolbar->current.enabled)
+			if(!is_floating_toolbar)
 			{
 				if (ggui::toolbar_axis == ImGuiAxis_X)
 				{
@@ -1073,7 +1262,10 @@ namespace ggui::toolbar
 		// *
 		// begin into the window
 
-		ImGui::Begin("toolbar##xywnd", nullptr, 
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_toolbar_bg_color->current.vector));	 _stylecolors++;
+		//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_TabUnfocusedActive)); _stylecolors++;
+
+		ImGui::Begin("toolbar##window", nullptr, 
 			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
 
 		// *
@@ -1125,9 +1317,9 @@ namespace ggui::toolbar
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 70));		_stylecolors++;
 
 		// loop amount of registered-sorted elements
-		for (uint32_t e = 0; e < tbedit_ordered_list.size(); e++)
+		for (uint32_t e = 0; e < toolbar_sorted_list.size(); e++)
 		{
-			if (tbedit_ordered_list[e].is_separator)
+			if (toolbar_sorted_list[e].is_separator)
 			{
 				if (ggui::toolbar_axis == ImGuiAxis_X)
 				{
@@ -1144,10 +1336,10 @@ namespace ggui::toolbar
 			}
 
 			// check if the element was registered
-			if (auto element  = tbedit_elements.find(tbedit_ordered_list[e].name);
-					 element != tbedit_elements.end())
+			if (auto element  = toolbar_registered_elements_callbacks.find(toolbar_sorted_list[e].name);
+					 element != toolbar_registered_elements_callbacks.end())
 			{
-				if (tbedit_ordered_list[e].visible)
+				if (toolbar_sorted_list[e].visible)
 				{
 					element->second();
 
@@ -1196,148 +1388,6 @@ namespace ggui::toolbar
 			ImGui::EndPopup();
 		}
 
-		ImGui::End();
-	}
-	
-	void menu_old(ggui::imgui_context_menu& menu)
-	{
-		int _stylevars = 0; int _stylecolors = 0;
-
-		if(!toolbar_initiated)
-		{
-			toolbar_elements_init();
-			load_settings_ini();
-			toolbar_initiated = true;
-		}
-
-		// *
-		// create toolbar window
-
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(1.0f, 4.0f));		_stylevars++;
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));	_stylevars++;
-
-		ImGui::PushStyleColor(ImGuiCol_Border, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(100, 100, 100, 70));	_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 70));		_stylecolors++;
-
-		ImGui::Begin("toolbar##xywnd", nullptr,
-			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar
-		);
-
-
-		// *
-		// sizes (save current window position and size)
-
-		menu.position[0] = ImGui::GetWindowPos().x;
-		menu.position[1] = ImGui::GetWindowPos().y;
-		menu.size[0] = ImGui::GetWindowSize().x;
-		menu.size[1] = ImGui::GetWindowSize().y;
-
-
-		// *
-		// gui elements
-
-		SPACING(2.0f, 0.0f);
-		ImGui::SameLine();
-
-		// loop amount of registered-sorted elements
-		for (uint32_t e = 0; e < tbedit_ordered_list.size(); e++)
-		{
-			if(tbedit_ordered_list[e].is_separator)
-			{
-				TB_SEPARATOR;
-				continue;
-			}
-			
-			// check if the element was registered
-			if (auto element  = tbedit_elements.find(tbedit_ordered_list[e].name);
-					 element != tbedit_elements.end())
-			{
-				if (tbedit_ordered_list[e].visible)
-				{
-					element->second();
-					ImGui::SameLine();
-				}
-			}
-		}
-
-		// TODO! - remove me
-		/*ImGui::SameLine();
-		if (ImGui::Button("Switch Console <-> Splitter"))
-		{
-			const auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
-
-			const auto pTop = afx::CSplitterWnd__GetPane(&cmainframe::activewnd->m_wndSplit, 0, 0);
-			const auto pBottom = afx::CSplitterWnd__GetPane(&cmainframe::activewnd->m_wndSplit, 1, 0);
-
-			if (!pTop || !pBottom)
-			{
-				goto END_GUI;
-			}
-
-			const auto _top = pTop->m_hWnd;
-			const auto idTop = GetWindowLongA(_top, GWL_ID);
-
-			const auto _bottom = pBottom->m_hWnd;
-			const auto idBottom = GetWindowLongA(_bottom, GWL_ID);
-
-			SetWindowLongA(_top, GWL_ID, idBottom);
-			SetWindowLongA(_bottom, GWL_ID, idTop);
-
-			vtable->RecalcLayout(&cmainframe::activewnd->m_wndSplit);
-		}
-
-		ImGui::SameLine();
-		if (ImGui::Button("Hide Console"))
-		{
-			const auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
-			vtable->DeleteRow(&cmainframe::activewnd->m_wndSplit, 1);
-		}*/
-
-		// TODO! - remove me
-		/*ImGui::SameLine();
-		if (ImGui::Button("Set Statustext"))
-		{
-			const auto vtable = reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable);
-			vtable->SetStatusText(&cmainframe::activewnd->m_wndStatusBar, 0x75);
-		}*/
-
-		/*ImGui::SameLine();
-		if (ImGui::Button("Toggle Toolbar"))
-		{
-			typedef void(__thiscall* CFrameWnd_ShowControlBar_t)(CFrameWnd*, CControlBar*, BOOL bShow, BOOL bDelay);
-			CFrameWnd_ShowControlBar_t CFrameWnd_ShowControlBar = reinterpret_cast<CFrameWnd_ShowControlBar_t>(0x59E9DD);
-
-			auto vtable = reinterpret_cast<CToolBar_vtbl*>(cmainframe::activewnd->m_wndToolBar.__vftable);
-			CFrameWnd_ShowControlBar(cmainframe::activewnd, &cmainframe::activewnd->m_wndToolBar, vtable->IsVisible(&cmainframe::activewnd->m_wndToolBar) ? 0 : 1, 1);
-		}*/
-
-		/*ImGui::SameLine();
-		if (ImGui::Button("Toggle Menubar"))
-		{
-			if (!ggui::mainframe_menubar_enabled)
-			{
-				components::command::execute("menubar_show");
-			}
-			else
-			{
-				components::command::execute("menubar_hide");
-			}
-
-			game::CPrefsDlg_SavePrefs();
-		}*/
-
-		//ImGui::SameLine();
-		//if (ImGui::Button("Reload Commandmap"))
-		//{
-		//	// CMainFrame::LoadCommandMap
-		//	cdeclcall(void, 0x421230);
-		//}
-
-	//END_GUI:
-		ImGui::PopStyleColor(_stylecolors);
-		ImGui::PopStyleVar(_stylevars);
 		ImGui::End();
 	}
 

@@ -23,12 +23,14 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 {
 	WSADATA wsaData;
 
+	game::printf_to_console("[LiveRadiant]: Initiating ...");
+	
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR)
 	{
-		printf("[LiveRadiant]: WSAStartup ERROR!\n");
+		game::printf_to_console("[LiveRadiant]: WSAStartup ERROR!\n");
 		return false;
 	}
-		
+
 	while (true)
 	{
 		// wait for config to load
@@ -55,6 +57,8 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 
 		
 	INIT_DEFAULT:
+		game::printf_to_console("[LiveRadiant]: Listening for game server on localhost:%d ...\n", dvars::radiant_livePort ? dvars::radiant_livePort->current.integer : 3700);
+		
 		Sleep(200);
 
 		// connect to the remote game TCP server (doing this in the while loop too if radiant is running and the server is not )
@@ -62,19 +66,9 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 
 		if (g_RemoteSocket == INVALID_SOCKET)
 		{
-			printf("[LiveRadiant]: Failed to initialize client TCP socket!\n");
+			game::printf_to_console("[LiveRadiant]: Failed to initialize client TCP socket!\n");
 			return 0;
 		}
-
-		if (dvars::radiant_livePort)
-		{
-			printf(utils::va("[LiveRadiant]: Listening for game server on 127.0.0.1:%d ...\n", dvars::radiant_livePort->current.integer));
-		}	
-		else
-		{
-			printf("[LiveRadiant]: Listening for game server on 127.0.0.1:3700 ...\n");
-		}
-			
 
 		// Loop indefinitely until we successfully connect
 		while (true)
@@ -111,7 +105,7 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 		}
 
 		// Send updates until the game exits/connection is terminated
-		printf("[LiveRadiant]: game connected!\n");
+		game::printf_to_console("[LiveRadiant]: Game connected!\n");
 		g_RemoteSocketStatus = 1;
 
 		game::glob::live_connected = true;
@@ -153,7 +147,7 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 		closesocket(g_RemoteSocket);
 		g_RemoteSocketStatus = INVALID_SOCKET;
 
-		printf("[LiveRadiant]: game disconnected!\n");
+		game::printf_to_console("[LiveRadiant]: Game disconnected!\n");
 	}
 
 	return 0;
@@ -220,7 +214,7 @@ DWORD WINAPI remote_net_receive_packet_thread(LPVOID)
 				closesocket(g_RemoteSocket);
 
 				g_RemoteSocket = INVALID_SOCKET;
-				printf("[LiveRadiant]: Failed to process server command! Shutting down socket ...\n");
+				game::printf_to_console("[LiveRadiant]: Failed to process server command! Shutting down socket ...\n");
 
 				g_RemoteSocketStatus = INVALID_SOCKET;
 				break;
@@ -237,7 +231,7 @@ DWORD WINAPI remote_net_receive_packet_thread(LPVOID)
 				{
 					if (recv_commands[i].strCommand[0])
 					{
-						printf(utils::va("[SERVER-MSG]: %s\n", recv_commands[i].strCommand));
+						game::printf_to_console("[SERVER-MSG]: %s\n", recv_commands[i].strCommand);
 					}
 				}
 				else if (recv_commands[i].type == game::SERVER_CAMERA_UPDATE)
@@ -271,7 +265,7 @@ DWORD WINAPI remote_net_receive_packet_thread(LPVOID)
 
 				else
 				{
-					printf("[SERVER-MSG]: received unkown command-type!\n");
+					game::printf_to_console("[SERVER-MSG]: received unkown command-type!\n");
 				}
 			}
 		}
@@ -291,45 +285,32 @@ namespace components
 	{
 		if (strCommand)
 		{
-			if (ccamwnd::activewnd)
+			if(cmainframe::activewnd->m_pCamWnd)
 			{
+				auto origin = cmainframe::activewnd->m_pCamWnd->camera.origin;
+				auto angles = cmainframe::activewnd->m_pCamWnd->camera.angles;
+				
 				if (!sscanf(strCommand, "%f %f %f %f %f %f",
-					&ccamwnd::activewnd->camera.origin[0], &ccamwnd::activewnd->camera.origin[1], &ccamwnd::activewnd->camera.origin[2],
-					&ccamwnd::activewnd->camera.angles[0], &ccamwnd::activewnd->camera.angles[1], &ccamwnd::activewnd->camera.angles[2]))
+					&origin[0], &origin[1], &origin[2],
+					&angles[0], &angles[1], &angles[2]))
 				{
-					printf("[!]: sscanf failed to read command of type: SERVER_CAMERA_UPDATE\n");
+					game::printf_to_console("[!]: sscanf failed to read command of type: SERVER_CAMERA_UPDATE\n");
 				}
 
 				if (dvars::radiant_liveDebug->current.enabled)
 				{
-					printf(utils::va("[SERVER-CMD]: SERVER_CAMERA_UPDATE (Origin: (%.1f %.1f %.1f) Angles: (%.1f %.1f %.1f))\n",
-						ccamwnd::activewnd->camera.origin[0], ccamwnd::activewnd->camera.origin[1], ccamwnd::activewnd->camera.origin[2],
-						ccamwnd::activewnd->camera.angles[0], ccamwnd::activewnd->camera.angles[1], ccamwnd::activewnd->camera.angles[2]));
+					game::printf_to_console("[SERVER-CMD]: SERVER_CAMERA_UPDATE (Origin: (%.1f %.1f %.1f) Angles: (%.1f %.1f %.1f))\n",
+						origin[0], origin[1], origin[2],
+						angles[0], angles[1], angles[2]);
 				}
+
+				// not needed because we always update
+				//cmainframe::activewnd->m_pCamWnd->RedrawWindow(NULL, NULL, RDW_INTERNALPAINT | RDW_UPDATENOW);
 			}
-			else
-			{
-				printf("[!] ccamwnd::activewnd was NULL\n");
-				return;
-			}
-
-			game::glob::m_pCamWnd_ref->RedrawWindow(NULL, NULL, RDW_INTERNALPAINT | RDW_UPDATENOW);
-
-			// Debug entries not working as the backend is not active ..
-			/*auto gfxFront = GET_FRONTENTDATA;
-
-			float mins[3] = { -48.0f, 224.0f, 16.0f };
-			float maxs[3] = { 48.0f, 304.0f, 96.0f };
-			float color[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
-
-			game::R_AddDebugBox(gfxFront->debugGlobals, mins, maxs, color);
-
-			int y = 1;*/
 		}
-
 		else
 		{
-			printf("[!][SERVER-CMD]: failed to parse command (SERVER_CAMERA_UPDATE)!\n");
+			game::printf_to_console("[!][SERVER-CMD]: failed to parse command (SERVER_CAMERA_UPDATE)!\n");
 		}
 	}
 
@@ -340,7 +321,7 @@ namespace components
 		{
 			if (!sscanf(strCommand, "%d", &game::glob::cServerCmd.brush_currentSideIndex))
 			{
-				printf("[!]: sscanf failed to read command of type: SERVER_EXPORT_SINGLE_BRUSH_FACE_INDEX\n");
+				game::printf_to_console("[!]: sscanf failed to read command of type: SERVER_EXPORT_SINGLE_BRUSH_FACE_INDEX\n");
 			}
 
 			// uh for now .. because i can
@@ -350,12 +331,13 @@ namespace components
 			}
 
 			if(dvars::radiant_liveDebug->current.enabled)
-				printf(utils::va("[SERVER-CMD]: SERVER_EXPORT_SINGLE_BRUSH_FACE_INDEX (%d)\n", game::glob::cServerCmd.brush_currentSideIndex));
+			{
+				game::printf_to_console("[SERVER-CMD]: SERVER_EXPORT_SINGLE_BRUSH_FACE_INDEX (%d)\n", game::glob::cServerCmd.brush_currentSideIndex);
+			}
 		}
-
 		else
 		{
-			printf("[!][SERVER-CMD]: failed to parse command (SERVER_EXPORT_SINGLE_BRUSH_FACE_INDEX)!\n");
+			game::printf_to_console("[!][SERVER-CMD]: failed to parse command (SERVER_EXPORT_SINGLE_BRUSH_FACE_INDEX)!\n");
 		}
 	}
 
@@ -363,48 +345,48 @@ namespace components
 	// not in use rn
 	void remote_net::cmd_process_brushside(const char *strCommand)
 	{
-		game::selbrush_t *selectedBrushes = SELECTED_BRUSHES_GET_ARRAY;
-
+		auto selectedBrushes = game::g_selected_brushes();
+		
 		// we need to have a brush selected to be able to change its sides (for now)
 		if (!selectedBrushes->currSelection)
 		{
 			if (dvars::radiant_liveDebug->current.enabled)
-				printf("[!][SERVER-CMD]: failed to execute command of type (SERVER_EXPORT_SINGLE_BRUSH_FACE). Select a brush to modify first!\n");
-
+			{
+				game::printf_to_console("[!][SERVER-CMD]: failed to execute command of type (SERVER_EXPORT_SINGLE_BRUSH_FACE). Select a brush to modify first!\n");
+			}
+			
 			return;
 		}
 
+		if (strCommand)
+		{
+			if (!selectedBrushes->currSelection->brush_faces)
+			{
+				game::printf_to_console("[!]: selectedBrushes->currSelection->brush_faces == NULL\n");
+				return;
+			}
+
+			game::face_t *face = &selectedBrushes->currSelection->brush_faces[game::glob::cServerCmd.brush_currentSideIndex];
+
+			if (!sscanf(strCommand, "%f %f %f  %f %f %f  %f %f %f",
+				&face->planepts0[0], &face->planepts0[1], &face->planepts0[2],
+				&face->planepts1[0], &face->planepts1[1], &face->planepts1[2],
+				&face->planepts2[0], &face->planepts2[1], &face->planepts2[2]))
+			{
+				game::printf_to_console("[!]: sscanf failed to read command of type: SERVER_EXPORT_SINGLE_BRUSH_FACE\n");
+			}
+
+			if (dvars::radiant_liveDebug->current.enabled)
+			{
+				game::printf_to_console("[SERVER-CMD]: SERVER_EXPORT_SINGLE_BRUSH_FACE:\n< ( %f %f %f ) ( %f %f %f ) ( %f %f %f ) >\n\n",
+					face->planepts0[0], face->planepts0[1], face->planepts0[2],
+					face->planepts1[0], face->planepts1[1], face->planepts1[2],
+					face->planepts2[0], face->planepts2[1], face->planepts2[2]);
+			}
+		}
 		else
 		{
-			if (strCommand)
-			{
-				if (!selectedBrushes->currSelection->brush_faces)
-				{
-					printf("[!]: selectedBrushes->currSelection->brush_faces == NULL\n");
-					return;
-				}
-
-				game::face_t *face = &selectedBrushes->currSelection->brush_faces[game::glob::cServerCmd.brush_currentSideIndex];
-
-				if (!sscanf(strCommand, "%f %f %f  %f %f %f  %f %f %f",
-					&face->planepts0[0], &face->planepts0[1], &face->planepts0[2],
-					&face->planepts1[0], &face->planepts1[1], &face->planepts1[2],
-					&face->planepts2[0], &face->planepts2[1], &face->planepts2[2]))
-				{
-					printf("[!]: sscanf failed to read command of type: SERVER_EXPORT_SINGLE_BRUSH_FACE\n");
-				}
-
-				if (dvars::radiant_liveDebug->current.enabled)
-					printf(utils::va("[SERVER-CMD]: SERVER_EXPORT_SINGLE_BRUSH_FACE:\n< ( %f %f %f ) ( %f %f %f ) ( %f %f %f ) >\n\n", 
-						face->planepts0[0], face->planepts0[1], face->planepts0[2],
-						face->planepts1[0], face->planepts1[1], face->planepts1[2],
-						face->planepts2[0], face->planepts2[1], face->planepts2[2]));
-			}
-
-			else
-			{
-				printf("[!][SERVER-CMD]: failed to parse command (SERVER_EXPORT_SINGLE_BRUSH_FACE)!\n");
-			}
+			game::printf_to_console("[!][SERVER-CMD]: failed to parse command (SERVER_EXPORT_SINGLE_BRUSH_FACE)!\n");
 		}
 	}
 	
@@ -493,14 +475,13 @@ namespace components
 				cmdType = "COMMAND_TYPE_UNKOWN";
 			}
 
-			printf(utils::va("Send command num: [%d] of type: [%s]\n", _commands_send, cmdType));
+			game::printf_to_console("Send command num: [%d] of type: [%s]\n", _commands_send, cmdType);
 		}
 	}
 
 	void remote_net::Cmd_SendDvar(const char* KVCommand)
 	{
-		game::RadiantCommand cmd;
-		memset(&cmd, 0, sizeof(game::RadiantCommand));
+		game::RadiantCommand cmd = {};
 
 		cmd.type = game::RADIANT_COMMAND_SET_DVAR;
 		strcpy_s(cmd.strCommand, KVCommand);
@@ -511,8 +492,7 @@ namespace components
 	// unused
 	void remote_net::cmd_send_select(const char *KVCommand)
 	{
-		game::RadiantCommand cmd;
-		memset(&cmd, 0, sizeof(game::RadiantCommand));
+		game::RadiantCommand cmd = {};
 
 		cmd.type = game::RADIANT_COMMAND_SELECT;
 		strcpy_s(cmd.strCommand, KVCommand);
@@ -523,8 +503,7 @@ namespace components
 	// unused
 	void remote_net::cmd_send_selected_update(const char *KVCommand)
 	{
-		game::RadiantCommand cmd;
-		memset(&cmd, 0, sizeof(game::RadiantCommand));
+		game::RadiantCommand cmd = {};
 
 		cmd.type = game::RADIANT_COMMAND_UPDATE_SELECTED;
 		strcpy_s(cmd.strCommand, KVCommand);
@@ -534,15 +513,14 @@ namespace components
 
 	// ~ cmainframe::update_windows
 	// Construct a camera command
-	void remote_net::cmd_send_camera_update(float *Origin, float *Angles)
+	void remote_net::cmd_send_camera_update(float *origin, float *angles)
 	{
-		game::RadiantCommand cmd;
-		memset(&cmd, 0, sizeof(game::RadiantCommand));
+		game::RadiantCommand cmd = {};
 
 		cmd.type = game::RADIANT_COMMAND_CAMERA;
 
 		sprintf_s(cmd.strCommand, "{\n\"origin\" \"%.1f %.1f %.1f\"\n\"angles\" \"%.1f %.1f %.1f\"\n}",
-			Origin[0], Origin[1], Origin[2], Angles[0], Angles[1], Angles[2]);
+			origin[0], origin[1], origin[2], angles[0], angles[1], angles[2]);
 
 		remote_net::send_packet(&cmd);
 	}
@@ -550,7 +528,7 @@ namespace components
 
 	// *
 	// Check if input brush is a valid brush
-	bool selection_is_brush(game::brush_t *brush)
+	bool remote_net::selection_is_brush(game::brush_t *brush)
 	{
 		if (brush && brush->owner && brush->owner->eclass)
 		{
@@ -571,7 +549,7 @@ namespace components
 		}
 
 #if RADIANT_DEBUG_BRUSH 
-		printf("\n++ [REMOTE :: NEW BRUSH START] ++\n\n");
+		game::printf_to_console("\n++ [REMOTE :: NEW BRUSH START] ++\n\n");
 #endif
 
 		int tempFaceCount = brush->faceCount;
@@ -581,17 +559,16 @@ namespace components
 		{
 			
 #if RADIANT_DEBUG_BRUSH
-			printf(utils::va("[BRUSH]: Parsing only (%d) of (%d) faces for the current brush!\n", tempFaceCount, brush->faceCount));
+			game::printf_to_console("[BRUSH]: Parsing only (%d) of (%d) faces for the current brush!\n", tempFaceCount, brush->faceCount);
 #endif
 			
 			tempFaceCount = 16;
 		}
 
-		game::RadiantCommand cmd;
+		game::RadiantCommand cmd = {};
 
 		// *
 		// CMD :: BRUSH CURRENT INDEX (so the server knows where to place the data)
-		memset(&cmd, 0, sizeof(game::RadiantCommand));
 
 		cmd.type = game::RADIANT_COMMAND_BRUSH_CURRENT_NUM;
 		sprintf_s(cmd.strCommand, "{\n\"brushnum\" \"%d\"\n}", brushNum);
@@ -613,7 +590,7 @@ namespace components
 		remote_net::send_packet(&cmd);
 
 #if RADIANT_DEBUG_BRUSH
-		printf(utils::va("[RM-CMD]: Brush face count: [%d]\n", tempFaceCount));
+		game::printf_to_console("[RM-CMD]: Brush face count: [%d]\n", tempFaceCount);
 #endif
 
 		// *
@@ -631,9 +608,8 @@ namespace components
 			// check if there is a winding
 			if (!brush->brush_faces[face].face_winding)
 			{
-
 #if RADIANT_DEBUG_BRUSH 
-				printf(utils::va("[BRUSH]: Skipping brush-face with no winding points.\n"));
+				game::printf_to_console("[BRUSH]: Skipping brush-face with no winding points.\n");
 #endif
 				// brush was valid
 				return true;
@@ -664,8 +640,8 @@ namespace components
 			remote_net::send_packet(&cmd);
 
 #if RADIANT_DEBUG_BRUSH 
-			printf(utils::va("[RM-CMD]: Brush face[%d] normal: ( %.3f %.3f %.3f ) | dist: (%.3f)\n", 
-				face, brush->brush_faces[face].plane.normal[0], brush->brush_faces[face].plane.normal[1], brush->brush_faces[face].plane.normal[2], distance));
+			game::printf_to_console("[RM-CMD]: Brush face[%d] normal: ( %.3f %.3f %.3f ) | dist: (%.3f)\n",
+				face, brush->brush_faces[face].plane.normal[0], brush->brush_faces[face].plane.normal[1], brush->brush_faces[face].plane.normal[2], distance);
 #endif
 
 			// skipping a face would result in odd behavior when drawing debug polys
@@ -675,7 +651,7 @@ namespace components
 				windingPtCount = 16;
 
 #if RADIANT_DEBUG_BRUSH 
-				printf(utils::va("[BRUSH]: Parsing (16) of (%d) points for the current brush-face.\n", windingPtCount));
+				game::printf_to_console("[BRUSH]: Parsing (16) of (%d) points for the current brush-face.\n", windingPtCount);
 #endif
 			}
 
@@ -717,16 +693,16 @@ namespace components
 
 #if RADIANT_DEBUG_BRUSH
 
-				printf(utils::va("\n[RM-CMD]: WindingPoints for Face [%d] of [%d]: \n%s\n", face + 1, tempFaceCount, cmd.strCommand));
-				printf("\n---------------------------------------------\n");
+			game::printf_to_console("\n[RM-CMD]: WindingPoints for Face [%d] of [%d]: \n%s\n", face + 1, tempFaceCount, cmd.strCommand);
+			game::printf_to_console("\n---------------------------------------------\n");
 #endif
 
 			remote_net::send_packet(&cmd);
 		}
 
 #if RADIANT_DEBUG_BRUSH
-			printf(utils::va("\n[RM-CMD]: Parsed brush with [%d] faces.\n", brush->faceCount));
-			printf("\n++ [REMOTE :: BRUSH END] ++\n\n");
+		game::printf_to_console("\n[RM-CMD]: Parsed brush with [%d] faces.\n", brush->faceCount);
+		game::printf_to_console("\n++ [REMOTE :: BRUSH END] ++\n\n");
 #endif
 
 		return true;
@@ -741,34 +717,30 @@ namespace components
 			return;
 		}
 		
-		game::RadiantCommand cmd;
-
-		// selected_brushes array
-		game::selbrush_t *selectedBrushes = SELECTED_BRUSHES_GET_ARRAY;
-
+		game::RadiantCommand cmd = {};
+		auto selectedBrushes = game::g_selected_brushes();
+		
 		// deselected
 		if (!select)
 		{
 			// CMD :: BRUSH SELECT
-			memset(&cmd, 0, sizeof(game::RadiantCommand));
-
 			cmd.type = game::RADIANT_COMMAND_BRUSH_SELECT;
 			sprintf_s(cmd.strCommand, "{\n\"brushselect\" \"%d\"\n}", 0);
 
 			remote_net::send_packet(&cmd);
 
 #if RADIANT_DEBUG_BRUSH
-			printf("[RM-CMD]: Brush Select (FALSE)\n");
+			game::printf_to_console("[RM-CMD]: Brush Select (FALSE)\n");
 #endif
 		}
 
 		// nothing selected
 		if (!selectedBrushes->currSelection)
 		{
-
 #if RADIANT_DEBUG_BRUSH
-			printf("[!] No valid data @ remote_net::cmd_send_brush_select_deselect\n");
+			game::printf_to_console("[!] No valid data @ remote_net::cmd_send_brush_select_deselect\n");
 #endif
+			
 			return;
 		}
 
@@ -782,9 +754,8 @@ namespace components
 		remote_net::send_packet(&cmd);
 
 #if RADIANT_DEBUG_BRUSH
-		printf("[RM-CMD]: Brush Select (TRUE)\n");
+		game::printf_to_console("[RM-CMD]: Brush Select (TRUE)\n");
 #endif
-
 
 		// parse brush by brush until there is no valid brush in the selected_brushes array (max. REMOTE_MAX_SEL_BRUSHES) 
 		// older selections :: [selectedBrushes->prev->currSelection != null]
@@ -796,7 +767,7 @@ namespace components
 			// atleast 1 valid brush
 			int selbrushAmount = 1;
 
-			game::selbrush_t* prev = selectedBrushes->prev;
+			auto prev = selectedBrushes->prev;
 
 			// for each selected valid previous brush till REMOTE_MAX_SEL_BRUSHES
 			while (prev->currSelection && selbrushAmount < REMOTE_MAX_SEL_BRUSHES)
@@ -823,7 +794,7 @@ namespace components
 			remote_net::send_packet(&cmd);
 
 #if RADIANT_DEBUG_BRUSH
-			printf(utils::va("[RM-CMD]: Brush Count: [%d]\n", selbrushAmount));
+			game::printf_to_console("[RM-CMD]: Brush Count: [%d]\n", selbrushAmount);
 #endif
 		}
 	}
@@ -966,33 +937,12 @@ namespace components
 		}
 	}
 
-
-	// *
-	// Function that gets called right before radiant closes
-	void cframewnd_on_close()
+	void remote_net::on_shutdown()
 	{
 		closesocket(g_RemoteSocket);
 		g_RemoteSocketStatus = INVALID_SOCKET;
-
-		// export current dvars
-		config::write_dvars();
 	}
-
-	__declspec(naked) void cframewnd_on_close_stub()
-	{
-		const static uint32_t CWinApp_HideApplication = 0x5AC436;
-		const static uint32_t retn_pt = 0x59E458;
-		__asm
-		{
-			pushad;
-			call	cframewnd_on_close;
-			popad;
-
-			call	CWinApp_HideApplication;
-			jmp		retn_pt;
-		}
-	}
-
+	
 	void remote_net::register_dvars()
 	{
 		dvars::radiant_live = dvars::register_bool(
@@ -1018,8 +968,6 @@ namespace components
 
 	remote_net::remote_net()
 	{
-		utils::hook(0x59E453, cframewnd_on_close_stub, HOOK_JUMP).install()->quick();
-
 		// selected_brushes includes reflectionProbes and all sorts of helper boxes so always check currSelection->owner->eclass->name = "worldspawn" 
 		// if not selected any brush :: selected_brushes->currSelection == null
 		// selected_brushes->currSelection = always the latest selection

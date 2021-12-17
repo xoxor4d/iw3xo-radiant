@@ -1,26 +1,18 @@
 #include "std_include.hpp"
 
-//namespace ggui
-//{
-//	imgui_state_t state = imgui_state_t();
-//	bool mainframe_menubar_enabled = false;
-//	
-//}
-
 namespace game
 {
 	namespace glob
 	{
 		// Init
-		std::string loadedModules;
+		bool command_thread_running;
+		std::vector<std::string> loadedModules;
 
-		bool radiant_floatingWindows;
 		bool radiant_initiated;
 		bool radiant_config_loaded;
 		bool radiant_config_not_found;
+		int  frametime_ms;
 		bool ccamwindow_realtime;
-
-		CWnd* m_pCamWnd_ref;
 
 		// Misc
 		game::TrackWorldspawn track_worldspawn = game::TrackWorldspawn();
@@ -34,11 +26,13 @@ namespace game
 		
 	}
 
+	game::vec4_t color_white = { 1.0f, 1.0f, 1.0f, 1.0f };
+	
 	// radiant globals
 	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
-	//CPrefsDlg*	g_PrefsDlg = reinterpret_cast<CPrefsDlg*>(0x73C704);
 	game::qeglobals_t* g_qeglobals = reinterpret_cast<game::qeglobals_t*>(0x25F39C0);
-	
+
+	float&	g_zoomLevel = *reinterpret_cast<float*>(0x25D5A90);
 	int*	g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
 	int&	g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
 	bool&	g_bScreenUpdates = *reinterpret_cast<bool*>(0x739B0F);
@@ -49,6 +43,10 @@ namespace game
 	bool&	g_bClipMode = *reinterpret_cast<bool*>(0x23F16D8);
 	bool&	g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
 	bool&	g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
+	int&	g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
+	int&	g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
+
+	float*	g_vRotateOrigin = reinterpret_cast<float*>(0x23F1658);
 	
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
@@ -63,8 +61,60 @@ namespace game
 	int& texWndGlob_localeCount = *reinterpret_cast<int*>(0x25D7998); // amount of loaded locale filters
 	int& texWndGlob_usageCount = *reinterpret_cast<int*>(0x25D7994); // amount of loaded usage filters
 
+	bool& r_initiated = *reinterpret_cast<bool*>(0x25D5A68);
+	game::GfxBackEndData* gfx_backend_data = reinterpret_cast<game::GfxBackEndData*>(0x73D500);
 	game::GfxCmdBufSourceState* gfx_cmd_buf_source_state = reinterpret_cast<game::GfxCmdBufSourceState*>(0x174D760);
+	game::r_globals_t* rg = reinterpret_cast<game::r_globals_t*>(0x13683F0);
+	game::r_global_permanent_t* rgp = reinterpret_cast<game::r_global_permanent_t*>(0x136C700);
+	game::GfxScene* scene = reinterpret_cast<game::GfxScene*>(0x1370980);
+	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
 
+	HWND* entitywnd_hwnds = reinterpret_cast<HWND*>(0x240A118);
+
+	game::entity_s* g_world_entity()
+	{
+		const auto ent = reinterpret_cast<game::entity_s*>(*game::worldEntity_ptr);
+		return ent;
+	}
+
+	game::selbrush_t* g_active_brushes()
+	{
+		const auto brush = reinterpret_cast<game::selbrush_t*>(*game::active_brushes_ptr);
+		return brush;
+	}
+
+	game::selbrush_t* g_active_brushes_next()
+	{
+		const auto brush = reinterpret_cast<game::selbrush_t*>(*game::active_brushes_next_ptr);
+		return brush;
+	}
+	
+	game::selbrush_t* g_selected_brushes()
+	{
+		const auto brush = reinterpret_cast<game::selbrush_t*>(*game::currSelectedBrushes);
+		return brush;
+	}
+
+	game::selbrush_t* g_selected_brushes_next()
+	{
+		const auto brush = reinterpret_cast<game::selbrush_t*>(*(DWORD*)0x23F1868);
+		return brush;
+	}
+	
+	game::entity_s_def* g_edit_entity()
+	{
+		const auto ent = reinterpret_cast<game::entity_s_def*>(*(DWORD*)0x240A108);
+		return ent;
+	}
+
+	int& multiple_edit_entities = *reinterpret_cast<int*>(0x240A10C);
+	
+	game::eclass_t* g_eclass()
+	{
+		const auto eclass = reinterpret_cast<game::eclass_t*>(*(DWORD*)0x25D5B20);
+		return eclass;
+	}
+	
 	CPrefsDlg* g_PrefsDlg()
 	{
 		const auto prefs = reinterpret_cast<CPrefsDlg*>(*(DWORD*)0x73C704);
@@ -93,8 +143,174 @@ namespace game
 		const auto redo = reinterpret_cast<game::undo_s*>(*(DWORD*)0x23F15CC);
 		return redo;
 	}
+
+	void Undo_GeneralStart(const char* operation /*eax*/)
+	{
+#ifdef DEBUG
+		game::printf_to_console("Undo_GeneralStart :: %s", operation);
+#endif
+		
+		const static uint32_t func_addr = 0x45E3F0;
+		__asm
+		{
+			pushad;
+			mov		eax, operation;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void Undo_AddEntity_W(game::entity_s* ent /*eax*/)
+	{
+		const static uint32_t func_addr = 0x45E990;
+		__asm
+		{
+			pushad;
+			mov		eax, ent;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/)
+	{
+		const static uint32_t func_addr = 0x483720;
+		__asm
+		{
+			pushad;
+			mov		esi, epair;
+			lea		eax, [esi];
+			mov		ebx, key;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void Checkkey_Model(entity_s* ent /*esi*/, const char* key)
+	{
+		const static uint32_t func_addr = 0x482F70;
+		__asm
+		{
+			pushad;
+			push	key;
+			mov		esi, ent;
+			call	func_addr;
+			add     esp, 4;
+			popad;
+		}
+	}
+
+	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/)
+	{
+		const static uint32_t func_addr = 0x483210;
+		__asm
+		{
+			pushad;
+			mov		ebx, key;
+			mov		eax, ent;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void SetSpawnFlags(int flag)
+	{
+		const static uint32_t func_addr = 0x496F00;
+		__asm
+		{
+			pushad;
+			mov		ebx, flag;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void UpdateSel(int wParam, game::eclass_t* e_class)
+	{
+		const static uint32_t func_addr = 0x497180;
+		__asm
+		{
+			pushad;
+			mov		ecx, wParam;
+			mov		eax, e_class;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void Brush_Move(const float* delta, game::brush_t* def, int snap)
+	{
+		const static uint32_t func_addr = 0x47BA40;
+		__asm
+		{
+			pushad;
+			push	snap;
+			push	def;
+			mov		ebx, delta;
+			call	func_addr;
+			add     esp, 8;
+			popad;
+		}
+	}
+
+	int Brush_MoveVertex(const float* delta /*eax*/, game::brush_t* def, float* move_points, float* end)
+	{
+		const static uint32_t func_addr = 0x471C30;
+		__asm
+		{
+			//pushad;
+			push	end;
+			push	move_points;
+			push	def;
+			mov		eax, delta;
+			call	func_addr;
+			add     esp, 12;
+			//popad;
+		}
+	}
+
+	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count)
+	{
+		const static uint32_t func_addr = 0x4A11A0;
+		__asm
+		{
+			push	file_count;
+			mov		esi, null;
+			mov		edx, path;
 	
-	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
+			call	func_addr;
+			add     esp, 4;
+		}
+	}
+
+	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* wnd)
+	{
+		const static uint32_t func_addr = 0x466290;
+		__asm
+		{
+			pushad;
+			push	wnd;
+			mov		ecx, x;
+			mov		eax, height;
+			call	func_addr;
+			add     esp, 4;
+			popad;
+		}
+	}
+
+	game::trace_t* Trace_AllDirectionsIfFailed(float* cam_origin /*ebx*/, void* trace_result, float* dir, int contents)
+	{
+		const static uint32_t func_addr = 0x48DAA0;
+		__asm
+		{
+			mov		ebx, cam_origin;
+			push	contents;
+			push	dir;
+			push	trace_result;
+			call	func_addr;
+			add     esp, 12;
+		}
+	}
 
 	int* dvarCount = reinterpret_cast<int*>(0x242394C);
 	game::dvar_s* dvarPool = reinterpret_cast<game::dvar_s*>(0x2427DA4); // dvarpool + 1 dvar size
@@ -112,6 +328,13 @@ namespace game
 	Com_Error_t Com_Error = Com_Error_t(0x499F50);
 	OnCtlColor_t OnCtlColor = OnCtlColor_t(0x587907);
 
+	MatrixForViewer_t MatrixForViewer = reinterpret_cast<MatrixForViewer_t>(0x4A7A70);
+	MatrixMultiply44_t MatrixMultiply44 = reinterpret_cast<MatrixMultiply44_t>(0x4A6180);
+	MatrixInverse44_t MatrixInverse44 = reinterpret_cast<MatrixInverse44_t>(0x4A6670);
+	CopyAxis_t CopyAxis = reinterpret_cast<CopyAxis_t>(0x4A8860);
+	AnglesToAxis_t AnglesToAxis = reinterpret_cast<AnglesToAxis_t>(0x4ABEB0);
+	AngleVectors_t AngleVectors = reinterpret_cast<AngleVectors_t>(0x4ABD70);
+	OrientationConcatenate_t OrientationConcatenate = reinterpret_cast<OrientationConcatenate_t>(0x4BA7D0);
 	
 	// -----------------------------------------------------------
 	// DVARS
@@ -173,6 +396,23 @@ namespace game
 		}
 	}
 
+	const char* Dvar_DomainToString_Internal(signed int buffer_len /*eax*/, const char* buffer_out /*ebx*/, int dvar_type, int* enum_lines_count, float mins, float maxs) //DvarLimits limit)
+	{
+		const static uint32_t Dvar_DomainToString_Internal_Func = 0x4B0220;
+		__asm
+		{
+			push	maxs;
+			push	mins;
+			
+			push	enum_lines_count;
+			push	dvar_type;
+			mov		ebx, buffer_out;
+			mov		eax, buffer_len;
+			call	Dvar_DomainToString_Internal_Func;
+			add		esp, 16;
+		}
+	}
+
 	game::dvar_s * Dvar_SetFromStringFromSource(const char *string /*ecx*/, game::dvar_s *dvar /*esi*/, int source)
 	{
 		const static uint32_t Dvar_SetFromStringFromSource_Func = 0x4B3910;
@@ -206,10 +446,67 @@ namespace game
 		}
 	}
 
+	// do not call manually :x
+	int printf_to_console_internal(const char* _format, va_list va)
+	{
+		int _result;
+		char text_out[32772];
+
+		vsprintf(text_out, _format, va);
+		_result = _vfprintf_l(stdout, _format, NULL, va);
+
+		if (ggui::_console)
+		{
+			ggui::_console->addline_no_format(text_out);
+		}
+
+		return _result;
+	}
+	
+	int printf_to_console(_In_z_ _Printf_format_string_ char const* const _format, ...)
+	{
+		int _result;
+		va_list _arglist;
+		char text_out[1024];
+
+		__crt_va_start(_arglist, _format);
+		vsprintf(text_out, _format, _arglist);
+		_result = _vfprintf_l(stdout, _format, NULL, _arglist);
+		__crt_va_end(_arglist);
+
+		if(ggui::_console)
+		{
+			ggui::_console->addline_no_format(text_out);
+		}
+		
+		return _result;
+	}
+
+	void com_printf_to_console([[maybe_unused]] int channel, const char* _format, ...)
+	{
+		va_list _arglist;
+		char text_out[1024];
+
+		__crt_va_start(_arglist, _format);
+		vsprintf(text_out, _format, _arglist);
+		_vfprintf_l(stdout, _format, NULL, _arglist);
+		__crt_va_end(_arglist);
+
+		if (ggui::_console)
+		{
+			ggui::_console->addline_no_format(text_out);
+		}
+	}
+
 	void console_error(const std::string &msg)
 	{
 		std::string err = "[!] " + msg + "\n";
 		printf(err.c_str());
+
+		if (ggui::_console)
+		{
+			ggui::_console->addline_no_format(err.c_str());
+		}
 	}
 
 	void FS_ScanForDir(const char* directory, const char* search_path, int localized)
@@ -252,7 +549,7 @@ namespace game
 		return image;
 	}
 
-	game::GfxCmdHeader* R_RenderBufferCmdCheck(int bytes /*ebx*/, int render_cmd /*edi*/)
+	game::GfxCmdHeader* R_GetCommandBuffer(int bytes /*ebx*/, int render_cmd /*edi*/)
 	{
 		const static uint32_t R_RenderBufferCmdCheck_Func = 0x4FAEB0;
 		__asm
@@ -260,6 +557,96 @@ namespace game
 			mov		ebx, bytes;
 			mov		edi, render_cmd;
 			call	R_RenderBufferCmdCheck_Func;
+		}
+	}
+
+	void R_SetD3DPresentParameters(_D3DPRESENT_PARAMETERS_* d3dpp, game::GfxWindowParms* wnd, [[maybe_unused]] int window_count)
+	{
+		ASSERT_MSG(d3dpp, "invalid D3DPRESENT_PARAMETERS d3dpp");
+		ASSERT_MSG(wnd, "invalid GfxWindowParms wnd");
+		ASSERT_MSG(wnd->hwnd, "invalid HWND wnd->hwnd");
+
+		//R_SetupAntiAliasing(wnd, window_count);
+		memset(d3dpp, 0, sizeof(_D3DPRESENT_PARAMETERS_));
+		d3dpp->BackBufferWidth = wnd->displayWidth;
+		d3dpp->BackBufferHeight = wnd->displayHeight;
+		d3dpp->BackBufferFormat = D3DFMT_A8R8G8B8;
+		d3dpp->BackBufferCount = 1;
+		d3dpp->MultiSampleType = _D3DMULTISAMPLE_TYPE::D3DMULTISAMPLE_NONE; // (D3DMULTISAMPLE_TYPE)game::dx->multiSampleType;
+		d3dpp->MultiSampleQuality = 0; // game::dx->multiSampleQuality
+		d3dpp->SwapEffect = D3DSWAPEFFECT_DISCARD;
+		d3dpp->EnableAutoDepthStencil = 0;
+		d3dpp->AutoDepthStencilFormat = static_cast<D3DFORMAT>(game::dx->depthStencilFormat);
+		d3dpp->PresentationInterval = 0x80000000; //r_vsync->current.enabled ? 1 : 0x80000000;
+		d3dpp->hDeviceWindow = wnd->hwnd;
+		d3dpp->Flags = 0;
+
+		if (wnd->fullscreen)
+		{
+			d3dpp->Windowed = 0;
+			d3dpp->FullScreen_RefreshRateInHz = wnd->hz;
+		}
+		else
+		{
+			d3dpp->FullScreen_RefreshRateInHz = 0;
+			d3dpp->Windowed = 1;
+		}
+	}
+
+	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height)
+	{
+		ASSERT_MSG(hwnd, "invalid hwnd");
+
+		_D3DPRESENT_PARAMETERS_ d3dpp{};
+		game::GfxWindowParms wnd{};
+
+		if (display_width && display_height)
+		{
+			if (game::dx->windowCount > 0)
+			{
+				int wnd_count = 0;
+				for (auto i = game::dx->windows; i->hwnd != hwnd; ++i)
+				{
+					if (++wnd_count >= game::dx->windowCount)
+					{
+						return;
+					}
+				}
+
+				wnd.hwnd = hwnd;
+				wnd.fullscreen = false;
+				wnd.displayWidth = display_width;
+				wnd.displayHeight = display_height;
+				wnd.sceneWidth = display_width;
+				wnd.sceneHeight = display_height;
+				wnd.aaSamples = 1;
+
+				R_SetD3DPresentParameters(&d3dpp, &wnd, game::dx->windowCount);
+
+				auto swapchain = &game::dx->windows[wnd_count].swapChain;
+				auto old_swapchain = *swapchain;
+				if (*swapchain == nullptr)
+				{
+					ASSERT_MSG(1, "var");
+				}
+				
+				*swapchain = nullptr;
+
+				if (old_swapchain->Release())
+				{
+					ASSERT_MSG(0, "release failed, leaks ...");
+				}
+
+				if (auto hr = game::dx->device->CreateAdditionalSwapChain(&d3dpp, (IDirect3DSwapChain9**)swapchain);
+					hr < 0)
+				{
+					// g_disableRendering;
+					ASSERT_MSG(0, "CreateAdditionalSwapChain failed ...");
+				}
+
+				game::dx->windows[wnd_count].width = display_width;
+				game::dx->windows[wnd_count].height = display_height;
+			}
 		}
 	}
 	
