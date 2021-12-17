@@ -496,6 +496,31 @@ namespace components
 			if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
 				(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
 			{
+				/*if (utils::string_equals(state->material->info.name, "mc/mtl_sphere_25spec_25gloss_grey"))
+				{
+					for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
+					{
+						const auto arg_def = &state->pass->args[arg];
+						if (arg_def && arg_def->type == 5)
+						{
+							if (state->pass->pixelShader)
+							{
+								if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_OUTDOOR_FEATHER_PARMS)
+								{
+									game::vec4_t temp;
+									utils::vector::set_vec4(temp, 1.0f);
+									utils::vector::subtract(temp, ggui::preferences::specular_sampler, temp);
+									temp[3] -= ggui::preferences::specular_sampler[3];
+									
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+									break;
+								}
+							}
+						}
+					}
+				}*/
+				
+				
 				// loop through all argument defs to find custom codeconsts
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
@@ -551,7 +576,7 @@ namespace components
 								game::vec4_t temp = { 0.0f, 0.0f, 0.0f, 0.0f };
 								
 								// AngleVectors(float* angles, float* vpn, float* right, float* up)
-								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : ggui::preferences::modelpreview_sun_dir, temp, nullptr, nullptr);
+								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : ggui::fakesun_settings::sun_dir, temp, nullptr, nullptr);
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 							
@@ -582,7 +607,7 @@ namespace components
 									}
 								}
 								
-								game::vec4_t temp = { ggui::preferences::modelpreview_sun_diffuse[0], ggui::preferences::modelpreview_sun_diffuse[1], ggui::preferences::modelpreview_sun_diffuse[2], 1.0f };
+								game::vec4_t temp = { ggui::fakesun_settings::sun_diffuse[0], ggui::fakesun_settings::sun_diffuse[1], ggui::fakesun_settings::sun_diffuse[2], 1.0f };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
 							}
 							
@@ -602,13 +627,13 @@ namespace components
 									}
 								}
 								
-								game::vec4_t temp = { ggui::preferences::modelpreview_sun_specular[0], ggui::preferences::modelpreview_sun_specular[1], ggui::preferences::modelpreview_sun_specular[2], ggui::preferences::modelpreview_sun_specular[3] };
+								game::vec4_t temp = { ggui::fakesun_settings::sun_specular[0], ggui::fakesun_settings::sun_specular[1], ggui::fakesun_settings::sun_specular[2], ggui::fakesun_settings::sun_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_specular : temp, 1);
 							}
 							
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
 							{
-								game::vec4_t temp = { ggui::preferences::modelpreview_material_specular[0], ggui::preferences::modelpreview_material_specular[1], ggui::preferences::modelpreview_material_specular[2], ggui::preferences::modelpreview_material_specular[3] };
+								game::vec4_t temp = { ggui::fakesun_settings::material_specular[0], ggui::fakesun_settings::material_specular[1], ggui::fakesun_settings::material_specular[2], ggui::fakesun_settings::material_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 							
@@ -635,7 +660,7 @@ namespace components
 								//	worldspawn_valid = true;
 								//}
 								
-								game::vec4_t temp = { ggui::preferences::modelpreview_ambient[0], ggui::preferences::modelpreview_ambient[1], ggui::preferences::modelpreview_ambient[2], ggui::preferences::modelpreview_ambient[3] };
+								game::vec4_t temp = { ggui::fakesun_settings::ambient[0], ggui::fakesun_settings::ambient[1], ggui::fakesun_settings::ambient[2], ggui::fakesun_settings::ambient[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 						}
@@ -673,7 +698,7 @@ namespace components
 
 	void set_custom_vertexshader_constants([[maybe_unused]] game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
-		if (!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_fog_enabled->current.enabled)
+		if (/*!renderer::is_rendering_layeredwnd()*/ renderer::is_rendering_camerawnd() && dvars::r_fakesun_fog_enabled->current.enabled)
 		{
 			if (state && state->pass)
 			{
@@ -788,7 +813,7 @@ namespace components
 
 				for (auto tex = 0; tex < state->material->textureCount; tex++)
 				{
-					if (state->material->textureTable[tex].u.image->semantic == 0x1 || state->material->textureTable[tex].u.image->semantic == 0x5)
+					if (state->material->textureTable[tex].u.image->semantic == 0x5 || state->material->textureTable[tex].u.image->semantic == 0x1) // or identitynormal
 					{
 						has_normal = true;
 					}
@@ -798,17 +823,16 @@ namespace components
 
 				if (has_spec && has_normal)
 				{
-					if (const auto	tech = Material_RegisterTechnique("fakesun_normal_dtex", 1);
+					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_dtex", 1); // fakesun_normal_dtex
 						tech)
 					{
 						state->technique = tech;
 
-						// set reflection probe sampler here?
-						// R_SetSampler(int a1, GfxCmdBufState *state, int a3, char a4, GfxImage *img)
-
+						// set reflection probe sampler
 						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
 							image && image->texture.data)
 						{
+							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
 							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
 								(0x538D70)(0, state, 1, 114, image);
 						}
@@ -816,17 +840,16 @@ namespace components
 				}
 				else if (!has_spec && has_normal)
 				{
-					if (const auto	tech = Material_RegisterTechnique("fakesun_normal_no_spec_img_dtex", 1);
+					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
 						tech)
 					{
 						state->technique = tech;
 
-						// set reflection probe sampler here?
-						// R_SetSampler(int a1, GfxCmdBufState *state, int a3, char a4, GfxImage *img)
-
+						// set reflection probe sampler
 						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
 							image && image->texture.data)
 						{
+							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
 							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
 								(0x538D70)(0, state, 1, 114, image);
 						}
@@ -914,7 +937,7 @@ namespace components
 
 				for (auto tex = 0; tex < state->material->textureCount; tex++)
 				{
-					if (state->material->textureTable[tex].u.image->semantic == 0x1 || state->material->textureTable[tex].u.image->semantic == 0x5)
+					if (state->material->textureTable[tex].u.image->semantic == 0x5 || state->material->textureTable[tex].u.image->semantic == 0x1) // or identitynormal
 					{
 						has_normal = true;
 					}
@@ -923,7 +946,7 @@ namespace components
 
 				if (has_spec && has_normal)
 				{
-					if (const auto	tech = Material_RegisterTechnique("fakesun_normal", 1);
+					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun", 1); // fakesun_normal
 						tech)
 					{
 						state->technique = tech;
@@ -934,13 +957,13 @@ namespace components
 						{
 							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
 							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
-								(0x538D70)(0, state, 1, 114, image);
+								(0x538D70)(0, state, 1, 114, image); // 114
 						}
 					}
 				}
 				else if (!has_spec && has_normal)
 				{
-					if (const auto	tech = Material_RegisterTechnique("fakesun_normal_no_spec_img", 1);
+					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_no_spec", 1); // fakesun_normal_no_spec_img
 						tech)
 					{
 						state->technique = tech;

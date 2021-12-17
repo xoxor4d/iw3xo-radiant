@@ -103,6 +103,7 @@
 #include "ggui/preferences.hpp"
 #include "ggui/modelselector.hpp"
 #include "ggui/about.hpp"
+#include "ggui/fakesun_settings.hpp"
 
 #include "common/mainframe.hpp"
 #include "common/camwnd.hpp"

@@ -3,11 +3,8 @@
 namespace ggui::preferences
 {
 	int		dev_num_01 = 0;
-	float	modelpreview_sun_dir[3] = { 210.0f, 60.0f, 0.0f };
-	float	modelpreview_sun_diffuse[3] = { 2.45f, 2.1f, 1.8f };
-	float	modelpreview_sun_specular[4] = { 3.0f, 3.2f, 3.0f, 0.0f };
-	float	modelpreview_material_specular[4] = { 0.12f, 0.19f, 1.0f, 5.0f };
-	float	modelpreview_ambient[4] = { 0.3f, 0.3f, 0.3f, 0.42f };
+	float	dev_vec_01[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	float	dev_color_01[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	
 	// --------------------------------------
 	
@@ -46,59 +43,6 @@ namespace ggui::preferences
 		_pref_child_count++;
 	}
 
-	void title_with_background(const char* title_text, const ImVec2& pos, const float width, const float height, const float* bg_color, const float* border_color, bool pre_spacing = true, const float text_indent = 8.0f)
-	{
-		if (bg_color && border_color)
-		{
-			if (pre_spacing)
-			{
-				SPACING(0.0f, 8.0f);
-			}
-
-			// GetForegroundDrawList
-
-			ImVec2 text_pos = ImGui::GetCursorScreenPos();
-			text_pos.x += text_indent;
-			
-			ImGui::PushFontFromIndex(BOLD_18PX);
-			text_pos.y = text_pos.y + (height * 0.5f - ImGui::CalcTextSize(title_text).y * 0.5f);
-			
-			ImVec2 max = ImVec2(pos.x + width, pos.y + height);
-			ImGui::GetWindowDrawList()->AddRectFilled(pos, max, ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(bg_color)), 0.0f);
-			ImGui::GetWindowDrawList()->AddRect(pos, max, ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(border_color)), 0.0f);
-			//ImGui::PushFontFromIndex(BOLD_18PX);
-			ImGui::GetWindowDrawList()->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), title_text);
-			ImGui::PopFont();
-
-			SPACING(0.0f, 40.0f);
-		}
-	}
-	
-	void title_with_seperator(const char* title_text, bool pre_spacing = true, float width = 0.0f, float height = 2.0f)
-	{
-		if(pre_spacing)
-		{
-			SPACING(0.0f, 12.0f);
-		}
-
-		if(width == 0.0f)
-		{
-			width = ImGui::GetContentRegionAvailWidth() - 16.0f;
-		}
-		
-		ImGui::PushFontFromIndex(BOLD_18PX);
-		ImGui::TextUnformatted(title_text);
-		ImGui::PopFont();
-		//ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
-
-		const ImVec2 seperator_pos = ImGui::GetCursorScreenPos();
-		ImGui::GetWindowDrawList()->AddLine(seperator_pos, ImVec2(seperator_pos.x + width, seperator_pos.y + height), ImGui::GetColorU32(ImGuiCol_Separator));
-
-		SPACING(0.0f, 2.0f);
-	}
-
-
-	
 	float pref_child_lambda(const std::string& child_name, const float child_height, const float* bg_color, const float* border_color, const std::function<void()>& cb)
 	{
 		auto background_color = bg_color;
@@ -124,7 +68,7 @@ namespace ggui::preferences
 		ImGui::GetWindowDrawList()->AddRect(min, max, ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(border_color)), 10.0f, ImDrawFlags_RoundCornersBottom);
 
 		ImGui::BeginGroup();
-		title_with_background(child_str.c_str(), min, child_width, 38.0f, dvars::gui_window_bg_color->current.vector, dvars::gui_border_color->current.vector, false, child_indent);
+		ImGui::title_with_background(child_str.c_str(), min, child_width, 38.0f, dvars::gui_window_bg_color->current.vector, dvars::gui_border_color->current.vector, false, child_indent);
 
 		if (_pref_update_scroll)
 		{
@@ -151,7 +95,7 @@ namespace ggui::preferences
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_GUI, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			title_with_seperator("General", false);
+			ImGui::title_with_seperator("General", false);
 
 			ImGui::Checkbox("Show mousecursor origin within the menubar", &dvars::gui_menubar_show_mouseorigin->current.enabled);
 
@@ -160,7 +104,7 @@ namespace ggui::preferences
 			}
 
 			// -----------------
-			title_with_seperator("Docking");
+			ImGui::title_with_seperator("Docking");
 
 			if (ImGui::Button("Reset Dockspace")) {
 				ggui::reset_dockspace = true;
@@ -188,7 +132,7 @@ namespace ggui::preferences
 		{
 			auto prefs = game::g_PrefsDlg();
 
-			title_with_seperator("Load / Save", false);
+			ImGui::title_with_seperator("Load / Save", false);
 
 			ImGui::Checkbox("Load last project on open", &prefs->m_bLoadLast);
 			ImGui::Checkbox("Load last map on open", &prefs->m_bLoadLastMap);
@@ -213,7 +157,7 @@ namespace ggui::preferences
 
 
 			// -----------------
-			title_with_seperator("System Settings");
+			ImGui::title_with_seperator("System Settings");
 			ImGui::DragInt("Max fps grid window", &dvars::radiant_maxfps_grid->current.integer, 0.1f, dvars::radiant_maxfps_grid->domain.integer.min, dvars::radiant_maxfps_grid->domain.integer.max);
 			ImGui::DragInt("Max fps camera window", &dvars::radiant_maxfps_camera->current.integer, 0.1f, dvars::radiant_maxfps_camera->domain.integer.min, dvars::radiant_maxfps_camera->domain.integer.max);
 			ImGui::DragInt("Max fps texture window", &dvars::radiant_maxfps_textures->current.integer, 0.1f, dvars::radiant_maxfps_textures->domain.integer.min, dvars::radiant_maxfps_textures->domain.integer.max);
@@ -221,7 +165,7 @@ namespace ggui::preferences
 			ImGui::DragInt("Max fps gui", &dvars::radiant_maxfps_mainframe->current.integer, 0.1f, dvars::radiant_maxfps_mainframe->domain.integer.min, dvars::radiant_maxfps_mainframe->domain.integer.max);
 
 			// -----------------
-			title_with_seperator("Unordered Settings");
+			ImGui::title_with_seperator("Unordered Settings");
 			ImGui::Checkbox("Linking entities keeps selection", &prefs->linking_keeps_selection);
 
 			if (ImGui::SliderInt("Undo levels", &prefs->m_nUndoLevels, 16, 512))
@@ -231,7 +175,7 @@ namespace ggui::preferences
 
 
 			// -----------------
-			title_with_seperator("Views / Scales / Sizes");
+			ImGui::title_with_seperator("Views / Scales / Sizes");
 
 			ImGui::DragFloat("Model origin size", &prefs->model_origin_size, 0.1f, 0, 100, "%.1f");
 			ImGui::DragFloat("Prefab origin size", &prefs->prefab_origin_size, 0.1f, 0, 100, "%.1f");
@@ -244,7 +188,7 @@ namespace ggui::preferences
 
 
 			// -----------------
-			title_with_seperator("Property Editor");
+			ImGui::title_with_seperator("Property Editor");
 			ImGui::Checkbox("Default Open - Classlist", &dvars::gui_props_classlist_defaultopen->current.enabled); TT(dvars::gui_props_classlist_defaultopen->description);
 			ImGui::Checkbox("Default Open - Spawnflags", &dvars::gui_props_spawnflags_defaultopen->current.enabled); TT(dvars::gui_props_spawnflags_defaultopen->description);
 			ImGui::Checkbox("Default Open - Comments", &dvars::gui_props_comments_defaultopen->current.enabled); TT(dvars::gui_props_comments_defaultopen->description);
@@ -259,20 +203,20 @@ namespace ggui::preferences
 		{
 			auto prefs = game::g_PrefsDlg();
 
-			title_with_seperator("Mouse", false);
+			ImGui::title_with_seperator("Mouse", false);
 			ImGui::Checkbox("Zoom to cursor", &dvars::grid_zoom_to_cursor->current.enabled);
 			ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
 			ImGui::Checkbox("Disable grid snapping", &prefs->m_bNoClamp); TT("Org: Don't clamp plane points");
 
 
 			// -----------------
-			title_with_seperator("Dragging");
+			ImGui::title_with_seperator("Dragging");
 			ImGui::Checkbox("Alt always drags when multiple brushes are selected", &prefs->m_bALTEdge); TT("Holding ALT and having selected multiple brushes wont extrude, but instead move brushes when clicked outside");
 			ImGui::Checkbox("Fast view dragging", &prefs->fast_2d_view_dragging); TT("Hides static models when moving the grid");
 
 
 			// -----------------
-			title_with_seperator("Visuals");
+			ImGui::title_with_seperator("Visuals");
 			ImGui::Checkbox("Show sizing info", &prefs->m_bSizePaint);
 			ImGui::Checkbox("Thick selection lines", &prefs->thick_selection_lines);
 			ImGui::Checkbox("Texture brushes", &prefs->texture_brush_2d);
@@ -287,25 +231,25 @@ namespace ggui::preferences
 		{
 			auto prefs = game::g_PrefsDlg();
 
-			title_with_seperator("General", false);
+			ImGui::title_with_seperator("General", false);
 			ImGui::SliderInt("Camera mode", &prefs->camera_mode, 0, 2);
 			ImGui::DragFloat("Field of view", &prefs->camera_fov, 0.1f, 1.0f, 180.0f, "%.1f");
 
 
 			// -----------------
-			title_with_seperator("Mouse");
+			ImGui::title_with_seperator("Mouse");
 			ImGui::SliderInt("Camera speed", &prefs->m_nMoveSpeed, 10, 5000);
 			ImGui::SliderInt("Camera angle speed", &prefs->m_nAngleSpeed, 1, 1000);
 			ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
 
 
 			// -----------------
-			title_with_seperator("Visuals / Rendering");
+			ImGui::title_with_seperator("Visuals / Rendering");
 			ImGui::Checkbox("Cull sky when using cubic clipping", &prefs->b_mCullSky);
 			ImGui::Checkbox("Draw shadowcaster materials on xmodels", &dvars::r_draw_model_shadowcaster->current.enabled); TT("Render black shadowcaster materials on xmodels.\nMostly seen/used on trees");
 
 			// -----------------
-			title_with_seperator("Toolbar");
+			ImGui::title_with_seperator("Toolbar");
 			ImGui::Checkbox("Draw FPS within the camera window", &dvars::gui_draw_fps->current.enabled);
 			ImGui::Checkbox("Default Open - Toolbar", &dvars::gui_camera_toolbar_defaultopen->current.enabled);
 
@@ -317,11 +261,11 @@ namespace ggui::preferences
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_TEXTURES, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			title_with_seperator("General", false);
+			ImGui::title_with_seperator("General", false);
 			ImGui::Checkbox("Draw scrollbar", &dvars::gui_texwnd_draw_scrollbar->current.enabled);
 			ImGui::Checkbox("Show scroll position in percent", &dvars::gui_texwnd_draw_scrollpercent->current.enabled);
 
-			title_with_seperator("Quality");
+			ImGui::title_with_seperator("Quality");
 
 			// actual picmip vars the renderer is using (used to check if quality was changed)
 			auto& r_picmip_renderer_val = *reinterpret_cast<int*>(0x14E6CF8);
@@ -372,13 +316,13 @@ namespace ggui::preferences
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_LIVELINK, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			title_with_seperator("General", false);
+			ImGui::title_with_seperator("General", false);
 			ImGui::Checkbox("Enable live-link", &dvars::radiant_live->current.enabled);
 			ImGui::DragInt("Port", &dvars::radiant_livePort->current.integer, 0.5f, 1, 99999);
 
 
 			// -----------------
-			title_with_seperator("Debug / Experimental Features");
+			ImGui::title_with_seperator("Debug / Experimental Features");
 			ImGui::Checkbox("Enable debug prints", &dvars::radiant_liveDebug->current.enabled);
 		});
 	}
@@ -389,25 +333,10 @@ namespace ggui::preferences
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_DEVELOPER, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			ImGui::Checkbox("Use Worldspawn Settings", &dvars::r_fakesun_use_worldspawn->current.enabled);
-			TT("Uses default values below if a required key can not be found");
-			
-			ImGui::DragInt("Dev Int 01", &dev_num_01, 0.1f);
-//#ifdef CUSTOM_SHADER_TEST_LIT_SUN
-			ImGui::DragFloat3("MdlPrev: Sun Dir", modelpreview_sun_dir, 0.1f);
-			ImGui::ColorEdit3("MdlPrev: Sun Diffuse", modelpreview_sun_diffuse, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
-			ImGui::ColorEdit4("MdlPrev: Sun Specular", modelpreview_sun_specular, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
-			ImGui::ColorEdit4("MdlPrev: EnvMapParms (lightSpotDir)", modelpreview_material_specular, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
-			ImGui::ColorEdit4("MdlPrev: Ambient (lightSpotFactors)", modelpreview_ambient, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
-//#endif
+			ImGui::DragInt("Int 01", &dev_num_01, 0.1f);
+			ImGui::DragFloat3("Vec4 01", dev_vec_01, 0.1f);
+			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 
-			// -----------------
-			title_with_seperator("Fog Settings");
-			
-			ImGui::Checkbox("Enable Fog", &dvars::r_fakesun_fog_enabled->current.enabled);
-			ImGui::DragFloat("Fog Start", &dvars::r_fakesun_fog_start->current.value);
-			ImGui::DragFloat("Fog Half Dist", &dvars::r_fakesun_fog_half->current.value);
-			ImGui::ColorEdit4("Fog Color", dvars::r_fakesun_fog_color->current.vector, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 		});
 	}
 	

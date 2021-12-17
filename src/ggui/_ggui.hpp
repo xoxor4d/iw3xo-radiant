@@ -81,6 +81,7 @@ namespace ggui
 	{
 		IDirect3DTexture9* scene_texture;
 		ImVec2 scene_size_imgui;
+		ImVec2 scene_pos_imgui;
 		ImVec2 cursor_pos;
 		CPoint cursor_pos_pt;
 		const char* window_name;
@@ -148,6 +149,7 @@ namespace ggui
 		imgui_context_menu m_entity;
 		imgui_context_menu m_preferences;
 		imgui_context_menu m_about;
+		imgui_context_menu m_fakesun_settings;
 		imgui_context_menu m_demo;
 		render_to_texture_window_s rtt_camerawnd;
 		render_to_texture_window_s rtt_gridwnd;

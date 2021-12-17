@@ -213,6 +213,57 @@ namespace ImGui
 	{
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(text).x) * 0.5f);
 	}
+
+	void title_with_background(const char* title_text, const ImVec2& pos, const float width, const float height, const float* bg_color, const float* border_color, bool pre_spacing, const float text_indent)
+	{
+		if (bg_color && border_color)
+		{
+			if (pre_spacing)
+			{
+				SPACING(0.0f, 8.0f);
+			}
+
+			// GetForegroundDrawList
+
+			ImVec2 text_pos = ImGui::GetCursorScreenPos();
+			text_pos.x += text_indent;
+
+			ImGui::PushFontFromIndex(ggui::BOLD_18PX);
+			text_pos.y = text_pos.y + (height * 0.5f - ImGui::CalcTextSize(title_text).y * 0.5f);
+
+			ImVec2 max = ImVec2(pos.x + width, pos.y + height);
+			ImGui::GetWindowDrawList()->AddRectFilled(pos, max, ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(bg_color)), 0.0f);
+			ImGui::GetWindowDrawList()->AddRect(pos, max, ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(border_color)), 0.0f);
+			//ImGui::PushFontFromIndex(BOLD_18PX);
+			ImGui::GetWindowDrawList()->AddText(text_pos, ImGui::GetColorU32(ImGuiCol_Text), title_text);
+			ImGui::PopFont();
+
+			SPACING(0.0f, 40.0f);
+		}
+	}
+
+	void title_with_seperator(const char* title_text, bool pre_spacing, float width, float height)
+	{
+		if (pre_spacing)
+		{
+			SPACING(0.0f, 12.0f);
+		}
+
+		if (width == 0.0f)
+		{
+			width = ImGui::GetContentRegionAvailWidth() - 16.0f;
+		}
+
+		ImGui::PushFontFromIndex(ggui::BOLD_18PX);
+		ImGui::TextUnformatted(title_text);
+		ImGui::PopFont();
+		//ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
+
+		const ImVec2 seperator_pos = ImGui::GetCursorScreenPos();
+		ImGui::GetWindowDrawList()->AddLine(seperator_pos, ImVec2(seperator_pos.x + width, seperator_pos.y + height), ImGui::GetColorU32(ImGuiCol_Separator));
+
+		SPACING(0.0f, 2.0f);
+	}
 	
 	void debug_table_entry_vec3(const char* label, const float* vec3)
 	{

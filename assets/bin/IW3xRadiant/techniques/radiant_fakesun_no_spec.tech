@@ -1,14 +1,13 @@
 {
 	stateMap "default";
 
-	vertexShader 3.0 "radiant_fakesun_brush"
+	vertexShader 3.0 "radiant_fakesun"
 	{
 	}
 
-	pixelShader 3.0 "radiant_fakesun_brush"
+	pixelShader 3.0 "radiant_fakesun_no_spec"
 	{
 		colorMapSampler = material.colorMap;
-		specularMapSampler = material.specularMap;
 		normalMapSampler = material.normalMap;
 	}
 

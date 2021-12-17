@@ -306,18 +306,18 @@ void rtt_camera_window_toolbar()
 
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 			{
-				static bool hov_lightpreview;
-				if (ggui::toolbar::image_togglebutton("lightpreview"
-					, hov_lightpreview
-					, prefs->enable_light_preview
-					, std::string("Lightpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewToggle") + "]").c_str()
-					, &toolbar_button_background
-					, &toolbar_button_background_hovered
-					, &toolbar_button_background_active
-					, &toolbar_button_size))
-				{
-					mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
-				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+				//static bool hov_lightpreview;
+				//if (ggui::toolbar::image_togglebutton("lightpreview"
+				//	, hov_lightpreview
+				//	, prefs->enable_light_preview
+				//	, std::string("Lightpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewToggle") + "]").c_str()
+				//	, &toolbar_button_background
+				//	, &toolbar_button_background_hovered
+				//	, &toolbar_button_background_active
+				//	, &toolbar_button_size))
+				//{
+				//	mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
+				//} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 
 				//static bool hov_sunpreview;
 				//if (ggui::toolbar::image_togglebutton("sunpreview"
@@ -344,7 +344,35 @@ void rtt_camera_window_toolbar()
 				{
 					components::command::execute("fakesun_toggle");
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
-				
+
+				if(dvars::r_fakesun_preview->current.enabled)
+				{
+					static bool hov_fakesun_fog;
+					if (ggui::toolbar::image_togglebutton("fakesun_fog"
+						, hov_fakesun_fog
+						, dvars::r_fakesun_fog_enabled->current.enabled
+						, "Toggle fake sun fog"
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						dvars::set_bool(dvars::r_fakesun_fog_enabled, !dvars::r_fakesun_fog_enabled->current.enabled);
+					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+					static bool hov_fakesun_settings;
+					if (ggui::toolbar::image_togglebutton("fakesun_settings"
+						, hov_fakesun_settings
+						, hov_fakesun_settings
+						, "Open fake sun settings"
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						components::gui::toggle(ggui::state.czwnd.m_fakesun_settings, 0, true);
+					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+				}
 				
 				ImGui::PopStyleVar();
 			}
@@ -483,9 +511,9 @@ void ccamwnd::rtt_camera_window()
 		// hack to disable left mouse window movement
 		ImGui::BeginChild("scene_child", ImVec2(camera_size.x, camera_size.y + frame_height) + window_padding_both, false, ImGuiWindowFlags_NoMove);
 		{
-			const auto screenpos = ImGui::GetCursorScreenPos();
-			SetWindowPos(cmainframe::activewnd->m_pCamWnd->GetWindow(), HWND_BOTTOM, (int)screenpos.x, (int)screenpos.y, (int)camerawnd->scene_size_imgui.x, (int)camerawnd->scene_size_imgui.y, SWP_NOZORDER);
-
+			camerawnd->scene_pos_imgui = ImGui::GetCursorScreenPos();
+			SetWindowPos(cmainframe::activewnd->m_pCamWnd->GetWindow(), HWND_BOTTOM, (int)camerawnd->scene_pos_imgui.x, (int)camerawnd->scene_pos_imgui.y, (int)camerawnd->scene_size_imgui.x, (int)camerawnd->scene_size_imgui.y, SWP_NOZORDER);
+			
 			const auto pre_image_cursor = ImGui::GetCursorPos();
 
 			ImGui::Image(camerawnd->scene_texture, camera_size);
@@ -613,7 +641,7 @@ void ccamwnd::rtt_camera_window()
 				// imguizmo settings
 				ImGuizmo::SetOrthographic(false);
 				ImGuizmo::SetDrawlist();
-				ImGuizmo::SetRect(screenpos.x, screenpos.y, camera_size.x, camera_size.y);
+				ImGuizmo::SetRect(camerawnd->scene_pos_imgui.x, camerawnd->scene_pos_imgui.y, camera_size.x, camera_size.y);
 
 				const auto guizmo_mode = game::g_bRotateMode ? ImGuizmo::OPERATION::ROTATE : ImGuizmo::OPERATION::TRANSLATE;
 

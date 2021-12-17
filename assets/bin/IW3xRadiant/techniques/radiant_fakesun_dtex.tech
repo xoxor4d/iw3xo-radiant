@@ -1,11 +1,11 @@
 {
 	stateMap "default";
 
-	vertexShader 3.0 "sgen_model01" // vertexShader 1.1 "fakelight_normal_dtex.hlsl" // 
+	vertexShader 3.0 "radiant_fakesun_dtex"
 	{
 	}
 
-	pixelShader 3.0 "sgen_model01" // pixelShader 1.1 "vertcol_shaded.hlsl" // 
+	pixelShader 3.0 "radiant_fakesun_dtex"
 	{
 		colorMapSampler = material.colorMap;
 		specularMapSampler = material.specularMap;

@@ -436,6 +436,21 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Render Method"))
 				{
+
+					if (ImGui::MenuItem("Fake Sun Preview", hotkeys::get_hotkey_for_command("fakesun_toggle").c_str(), dvars::r_fakesun_preview->current.enabled)) {
+						components::command::execute("fakesun_toggle");
+					} TT("with specular and bumpmap support, settings @preferences->developer");
+
+					if (ImGui::MenuItem("Fake Sun Fog", 0, dvars::r_fakesun_fog_enabled->current.enabled)) {
+						dvars::set_bool(dvars::r_fakesun_fog_enabled, !dvars::r_fakesun_fog_enabled->current.enabled);
+					} TT("settings @preferences->developer");
+					
+					if (ImGui::MenuItem("Fake Sun Settings")) {
+						components::gui::toggle(ggui::state.czwnd.m_fakesun_settings, 0, true);
+					}
+
+					SEPERATORV(0.0f);
+					
 					if (ImGui::MenuItem("Wireframe", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == game::RM_WIREFRAME)) {
 						set_render_method(game::RM_WIREFRAME);
 					}
@@ -451,14 +466,6 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("View-Based Fake Lighting", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == game::RM_VIEWFAKELIGHT)) {
 						set_render_method(game::RM_VIEWFAKELIGHT);
 					}
-
-					if (ImGui::MenuItem("Enable Fake Sun Preview", hotkeys::get_hotkey_for_command("fakesun_toggle").c_str(), dvars::r_fakesun_preview->current.enabled)) {
-						components::command::execute("fakesun_toggle");
-					} TT("with specular and bumpmap support, settings @preferences->developer");
-
-					if (ImGui::MenuItem("Enable Fog", 0, dvars::r_fakesun_fog_enabled->current.enabled)) {
-						dvars::set_bool(dvars::r_fakesun_fog_enabled, !dvars::r_fakesun_fog_enabled->current.enabled);
-					} TT("settings @preferences->developer");
 
 					if (ImGui::MenuItem("Case Textures", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == game::RM_CASETEXTURES)) {
 						set_render_method(game::RM_CASETEXTURES);
