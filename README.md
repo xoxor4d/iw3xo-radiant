@@ -15,12 +15,14 @@ Running both, IW3xRadiant and IW3xo, enables a live-link between CoD4 and Radian
 ### New features not found within the original cod4 radiant:
 - switch/scale/place the individual windows however you want
 - preview xmodels and drag them directly into the scene using the model previewer/selector
+- custom lighting shader with normalmapping, specular highlights and reflections
 - guizmo to manipulate entities and brushes from within the camera window
-- live link
+- live link (sync brushes, camera and worldspawn settings between cod4 and radiant)
 - realtime viewports
-- better property editor 
+- better property editor
 - zoom to cursor
 - editable toolbars, hotkeys, colors (all saved)
+- texture window toolbar for quick filtering
 - a proper console with dvar support (incl. dvar suggestions and autocomplete)
 - increased undo limit
 - alot of QOL features
@@ -101,10 +103,20 @@ https://discord.gg/t5jRGbj
 <br>
 
 ## Images
+---
+
+### Model Selector / Preview:
+![image](https://user-images.githubusercontent.com/45299104/146609277-803b9203-4a64-4355-99fc-32cfb7ad6d82.jpg)
+
+### Custom Lighting Shader On/Off:
+![image](https://user-images.githubusercontent.com/45299104/146609441-50255d3c-0dc0-4f9a-894e-373abf4eafc6.jpg)
+![image](https://user-images.githubusercontent.com/45299104/146609445-e11ae289-641e-4979-915b-bbb0c6b4942b.jpg)
+
+![image](https://user-images.githubusercontent.com/45299104/146609529-83dad70f-3427-4929-946a-dcbdd4bbbbff.jpg)
+![image](https://user-images.githubusercontent.com/45299104/146609534-4ee6f687-b24e-4e44-8d9d-1b05ddeab2a8.jpg)
+
 
 ![image](https://user-images.githubusercontent.com/45299104/136064807-e08d54bd-e11a-48ae-a01d-1fe87fc4159c.jpg)
-![image](https://user-images.githubusercontent.com/45299104/131264943-5bbb6cca-1853-4c77-b520-3ba76384abc5.png)
-
 <br>
 
 ## Disclaimer
