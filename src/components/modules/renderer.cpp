@@ -1265,6 +1265,9 @@ namespace components
 		// fix sun preview (selecting brushes keeps sunpreview active; sun no longer casts shadows -> FPS ++)
 		utils::hook(0x406706, sunpreview, HOOK_CALL).install()->quick();
 
+		// disable world darkening when selecting light entities with light preview enabled
+		utils::hook::nop(0x407099, 5);
+		
 		// R_SetupPass @ 0x4FE646 for brushes
 		// hook R_SetupPass in R_DrawXModelSkinnedUncached to set custom techniques for xmodels
 		utils::hook(0x53AC4F, r_setup_pass_xmodel, HOOK_CALL).install()->quick(); // xmodels
