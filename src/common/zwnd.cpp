@@ -462,7 +462,6 @@ void __fastcall czwnd::on_mouse_move([[maybe_unused]] czwnd* pThis, [[maybe_unus
 				 camerawnd->window_hovered)
 		{
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
-			const int cursor_point_y = ccam->camera.height - camerawnd->cursor_pos_pt.y - 1;
 
 			ccamwnd::mouse_moved(ccam, nFlags, camerawnd->cursor_pos_pt.x, ccam->camera.height - camerawnd->cursor_pos_pt.y - 1);
 			return;
