@@ -1193,7 +1193,7 @@ namespace ggui::menubar
 			{
 				if (ImGui::MenuItem("Region Off")) {
 					cdeclcall(void, 0x4252B0); // CMainFrame::OnRegionOff
-				}
+				} TT("turn off region filter");
 
 				if (ImGui::MenuItem("Set XY")) {
 					cdeclcall(void, 0x4252F0); // CMainFrame::OnRegionSetxy
@@ -1201,11 +1201,11 @@ namespace ggui::menubar
 
 				if (ImGui::MenuItem("Set Tall Brush")) {
 					cdeclcall(void, 0x4252E0); // CMainFrame::OnRegionSettallbrush
-				}
+				} TT("hide everything thats not within the selection brush\nbrush selection stretches across the Z axis");
 
 				if (ImGui::MenuItem("Set Brush")) {
 					cdeclcall(void, 0x4252C0); // CMainFrame::OnRegionSetbrush
-				}
+				} TT("hide everything thats not within the selection brush");
 
 				if (ImGui::MenuItem("Set Selected Brush")) {
 					cdeclcall(void, 0x4252D0); // CMainFrame::OnRegionSetselection
@@ -1311,9 +1311,15 @@ namespace ggui::menubar
 
 				SEPERATORV(0.0f);
 
+				if (ImGui::MenuItem("Vert Edit Dialog", hotkeys::get_hotkey_for_command("VertEdit").c_str())) {
+					cdeclcall(void, 0x42BCD0); // CMainFrame::OnVertexEditDlg
+				}
+
 				if (ImGui::MenuItem("Advanced Edit Dialog", hotkeys::get_hotkey_for_command("AdvancedCurveEdit").c_str())) {
 					cdeclcall(void, 0x42BC90); // CMainFrame::OnAdvancedEditDlg
 				}
+
+				SEPERATORV(0.0f);
 
 				if (ImGui::BeginMenu("Insert"))
 				{
@@ -1413,6 +1419,14 @@ namespace ggui::menubar
 					ImGui::EndMenu(); // Weld
 				}
 
+				if (ImGui::MenuItem("Inc Subdevision", hotkeys::get_hotkey_for_command("OverBrightShiftUp").c_str())) {
+					cdeclcall(void, 0x428EB0); // CMainFrame::OnOverBrightShiftUp
+				} TT("Curve Patches: increase vertex count (subdivide)");
+
+				if (ImGui::MenuItem("Dec Subdevision", hotkeys::get_hotkey_for_command("OverBrightShiftDown").c_str())) {
+					cdeclcall(void, 0x428EE0); // CMainFrame::OnOverBrightShiftDown
+				} TT("Curve Patches: decrease vertex count (decimate)");
+
 				if (ImGui::MenuItem("Split", hotkeys::get_hotkey_for_command("SplitPatch").c_str())) {
 					cdeclcall(void, 0x42B0C0); // CMainFrame::OnSplitPatch
 				}
@@ -1448,10 +1462,6 @@ namespace ggui::menubar
 
 				if (ImGui::MenuItem("Cycle Cap Texture", hotkeys::get_hotkey_for_command("CycleCapTexturePatch").c_str())) {
 					cdeclcall(void, 0x42B1A0); // CMainFrame::OnCurveCyclecap
-				}
-
-				if (ImGui::MenuItem("Vert Edit Dialog", hotkeys::get_hotkey_for_command("VertEdit").c_str())) {
-					cdeclcall(void, 0x42BCD0); // CMainFrame::OnVertexEditDlg
 				}
 
 				if (ImGui::MenuItem("Cap Texture", hotkeys::get_hotkey_for_command("ApplyPatchCap").c_str())) {
