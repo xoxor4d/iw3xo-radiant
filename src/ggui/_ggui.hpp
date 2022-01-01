@@ -147,6 +147,7 @@ namespace ggui
 		imgui_context_menu m_console;
 		imgui_context_menu m_filter;
 		imgui_context_menu m_entity;
+		imgui_context_menu m_surface_inspector;
 		imgui_context_menu m_preferences;
 		imgui_context_menu m_about;
 		imgui_context_menu m_fakesun_settings;

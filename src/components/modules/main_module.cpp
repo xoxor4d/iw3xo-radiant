@@ -1,78 +1,5 @@
 #include "std_include.hpp"
 
-DWORD WINAPI gui_paint_msg(LPVOID)
-{
-	int base_time = 0;
-	int current_frame = 0;
-	int last_frame = 0;
-
-	while(true)
-	{
-		if (game::glob::d3d9_device)
-		{
-			const float maxfps_grid = 1000.0f / (float)dvars::radiant_maxfps_grid->current.integer;
-			const float maxfps_camera = 1000.0f / (float)dvars::radiant_maxfps_camera->current.integer;
-			const float maxfps_textures = 1000.0f / (float)dvars::radiant_maxfps_textures->current.integer;
-			const float maxfps_modelselector = 1000.0f / (float)dvars::radiant_maxfps_modelselector->current.integer;
-			const float maxfps_mainframe = 1000.0f / (float)dvars::radiant_maxfps_mainframe->current.integer;
-
-			float maxfps_gui_f; // force gui to use the lowest frametime / highest framerate of the above or its own setting
-			maxfps_gui_f = fminf(maxfps_grid, maxfps_camera);
-			maxfps_gui_f = fminf(maxfps_gui_f, maxfps_textures);
-			maxfps_gui_f = fminf(maxfps_gui_f, maxfps_modelselector);
-
-			{ // cap / limit gui framerate to the highest framerate of the above
-				const int val = static_cast<int>(1000.0f / maxfps_gui_f);
-				dvars::radiant_maxfps_mainframe->domain.integer.min = val;
-
-				if (maxfps_gui_f <= maxfps_mainframe)
-				{
-					dvars::set_int(dvars::radiant_maxfps_mainframe, val);
-				}
-				else
-				{
-					maxfps_gui_f = maxfps_mainframe;
-				}
-			}
-
-			const int maxfps_gui = static_cast<int>(maxfps_gui_f);
-
-			// ----------
-
-			if (!base_time) {
-				base_time = timeGetTime();
-			}
-
-			current_frame = timeGetTime() - base_time;
-			int last = last_frame;
-
-			if (current_frame - last_frame < 0)
-			{
-				last = current_frame;
-				last_frame = current_frame;
-			}
-
-			if ((current_frame - last) >= maxfps_gui)
-			{
-				game::glob::frametime_ms = current_frame - last_frame;
-				last_frame = current_frame;
-
-				if (const auto hwnd = cmainframe::activewnd->m_pZWnd->GetWindow();
-					hwnd != nullptr)
-				{
-					SendMessageA(hwnd, WM_PAINT, 0, 0);
-				}
-			}
-			else
-			{
-				Sleep(0u);
-			}
-		}
-	}
-
-	return TRUE;
-}
-
 DWORD WINAPI paint_msg_loop(LPVOID)
 {
 	int base_time = 0;
@@ -128,6 +55,7 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 
 			if (current_frame > timer_grid)
 			{
+				timer_grid = current_frame;
 				if (const auto hwnd = cmainframe::activewnd->m_pXYWnd->GetWindow();
 					hwnd != nullptr)
 				{
@@ -138,6 +66,8 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 
 			if (current_frame > timer_camera)
 			{
+				timer_camera = current_frame;
+
 				if (const auto hwnd = cmainframe::activewnd->m_pCamWnd->GetWindow();
 					hwnd != nullptr)
 				{
@@ -148,6 +78,8 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 
 			if (current_frame > timer_textures)
 			{
+				timer_textures = current_frame;
+
 				if (const auto hwnd = cmainframe::activewnd->m_pTexWnd->GetWindow();
 					hwnd != nullptr)
 				{
@@ -158,6 +90,8 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 
 			if (current_frame > timer_modelselector)
 			{
+				timer_modelselector = current_frame;
+
 				if (const auto hwnd = layermatwnd_struct->m_content_hwnd;
 					hwnd != nullptr)
 				{
@@ -168,6 +102,8 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 			
 			if (current_frame > timer_gui)
 			{
+				timer_gui = current_frame;
+
 				if (const auto hwnd = cmainframe::activewnd->m_pZWnd->GetWindow();
 					hwnd != nullptr)
 				{
@@ -222,19 +158,6 @@ BOOL init_threads()
 
 namespace components
 {
-	/*__declspec(naked) void ccam_init_stub()
-	{
-		const static uint32_t CCam_activewnd_Func = 0x402C40;
-		const static uint32_t retnPt = 0x422711;
-		__asm
-		{
-			Call	CCam_activewnd_Func
-			mov		ccamwnd::activewnd, eax
-			mov		game::glob::radiant_floatingWindows, 1
-			jmp		retnPt
-		}
-	}*/
-
 	void add_iw3xradiant_searchpath()
 	{
 		if(const auto fs_basepath = game::Dvar_FindVar("fs_basepath"); 
@@ -276,10 +199,9 @@ namespace components
 		ccamwnd::hooks();
 		clayermatwnd::hooks();
 		ctexwnd::hooks();
-		ggui::filter::hooks();
-		ggui::entity::hooks();
-		ggui::modelselector::init();
-		ggui::preferences::hooks();
+
+		// ggui hooks ~ gui::gui()
+
 
 		// add iw3xradiant search path (imgui images)
 		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
@@ -303,19 +225,19 @@ namespace components
 
 		// sunpreview: keep sunpreview active even if a brush is selected ... what the fuck -> can no longer copy-paste brushes
 		//utils::hook::nop(0x484947, 5);
+
+		// disable black world on selecting a brush with sun preview enabled -> no longer able to clone brushes ...
+		//utils::hook::set<BYTE>(0x484904, 0xEB);
 #endif
 
 		// nop com_math.cpp "det" line:1775 assert (MatrixInverse44)
 		utils::hook::nop(0x4A6BC9, 5);
 
-		// set max undos
+		// set max undos -> done via preference window
 		//utils::hook::set<int32_t>(0x739F6C, 512);
 
 		// set max undo memory
 		utils::hook::set<int32_t>(0x739F70, 0x01000000); // default 2mb, now 16mb
-		
-		// disable black world on selecting a brush with sun preview enabled -> no longer able to clone brushes ...
-		//utils::hook::set<BYTE>(0x484904, 0xEB);
 	}
 
 	main_module::~main_module()

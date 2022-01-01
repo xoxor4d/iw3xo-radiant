@@ -55,6 +55,7 @@
 #include <future>
 #include <unordered_map>
 #include <iostream>
+#include <filesystem>
 #pragma warning(pop)
 
 #define ASSERT_MSG(expr, msg) assert((msg, expr))
@@ -104,6 +105,8 @@
 #include "ggui/modelselector.hpp"
 #include "ggui/about.hpp"
 #include "ggui/fakesun_settings.hpp"
+#include "ggui/surface_inspector.hpp"
+
 
 #include "common/mainframe.hpp"
 #include "common/camwnd.hpp"

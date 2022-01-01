@@ -11,11 +11,8 @@ cmainframe* cmainframe::activewnd;
 	const static int WNDSTATUSBAR_HEIGHT = 20; // bottom statusbar height
 #endif
 
-// set cxywnd pos/size once on startup (if split view with detatched or attached child windows) 
+// set pos/size once on startup (if split view with detatched or attached child windows) 
 bool CZWND_POS_ONCE_ON_STARTUP = false;
-bool LAYERWND_POS_ONCE_ON_STARTUP = false;
-bool CXYWND_POS_ONCE_ON_STARTUP = false;
-bool CAMERAWND_POS_ONCE_ON_STARTUP = false;
 
 void cmainframe::routine_processing()
 {
@@ -157,6 +154,7 @@ void on_createclient()
 		dvars::set_bool(r_vsync, false);
 	}
 
+	// hide original windows and show the z-view (rendering canvas for imgui)
 	if(cmainframe::activewnd)
 	{
 		if(cmainframe::activewnd->m_pXYWnd)
@@ -203,84 +201,7 @@ void __declspec(naked) hk_on_createclient()
 }
 
 
-bool worldspawn_on_key_change(const game::epair_t* epair, const char* key, float* value, const int &valueSize)
-{
-	if (!utils::Q_stricmp(epair->key, key))
-	{
-		bool changed = false;
-		
-		std::vector<std::string> KeyValues = utils::explode(epair->value, ' ');
 
-		int count = KeyValues.size();
-		if (count > valueSize) count = valueSize;
-
-		for (auto i = 0; i < count; i++)
-		{
-			float temp = utils::try_stof(KeyValues[i], true);
-
-			if (value[i] != temp)
-			{
-				value[i] = temp;
-				changed = true;
-			}
-		}
-
-		if (changed)
-		{
-			return true;
-		}
-	}
-	
-	return false;
-}
-
-void track_worldspawn_settings()
-{
-	// track_worldspawn
-	
-	if (const auto world = GET_WORLDENTITY; 
-		world && world->firstActive->eclass->name)
-	{
-		if (!utils::Q_stricmp(world->firstActive->eclass->name, "worldspawn"))
-		{
-			for (auto epair = world->firstActive->epairs; epair; epair = epair->next)
-			{
-				if (worldspawn_on_key_change(epair, "sundirection", game::glob::track_worldspawn.sundirection, 3))
-				{
-					if (game::glob::track_worldspawn.initiated)
-					{
-						components::remote_net::Cmd_SendDvar(utils::va("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f %.1f %.1f\"\n}", "r_lighttweaksundirection",
-							game::glob::track_worldspawn.sundirection[0], game::glob::track_worldspawn.sundirection[1], game::glob::track_worldspawn.sundirection[2]));
-					}
-				}
-
-				if (worldspawn_on_key_change(epair, "suncolor", game::glob::track_worldspawn.suncolor, 3))
-				{
-					if (game::glob::track_worldspawn.initiated)
-					{
-						components::remote_net::Cmd_SendDvar(utils::va("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f %.1f %.1f\"\n}", "r_lighttweaksuncolor",
-							game::glob::track_worldspawn.suncolor[0], game::glob::track_worldspawn.suncolor[1], game::glob::track_worldspawn.suncolor[2]));
-					}
-				}
-
-				if (worldspawn_on_key_change(epair, "sunlight", &game::glob::track_worldspawn.sunlight, 1))
-				{
-					if (game::glob::track_worldspawn.initiated)
-					{
-						components::remote_net::Cmd_SendDvar(utils::va("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f\"\n}", "r_lighttweaksunlight",
-							game::glob::track_worldspawn.sunlight));
-					}
-				}
-			}
-		}
-
-		if (!game::glob::track_worldspawn.initiated)
-		{
-			game::glob::track_worldspawn.initiated = true;
-			return;
-		}
-	}
-}
 
 
 void cmainframe::update_windows(int nBits)
@@ -292,7 +213,7 @@ void cmainframe::update_windows(int nBits)
 
 	if (game::glob::live_connected) 
 	{
-		track_worldspawn_settings();
+		components::remote_net::track_worldspawn_settings();
 	}
 
 	// check d3d device or we ASSERT in R_CheckHwnd_or_Device (!dx_device) when using floating windows
@@ -300,7 +221,8 @@ void cmainframe::update_windows(int nBits)
 	{
 		return;
 	}
-	
+
+#if 0
 	if (nBits & (W_XY | W_XY_OVERLAY))
 	{
 		if (this->m_pXYWnd)
@@ -308,6 +230,7 @@ void cmainframe::update_windows(int nBits)
 			m_pXYWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 		}
 	}
+#endif
 
 	if (nBits & W_CAMERA || ((nBits & W_CAMERA_IFON) && this->m_bCamPreview))
 	{
@@ -337,6 +260,7 @@ void cmainframe::update_windows(int nBits)
 		}
 	}
 
+#if 0
 	if (nBits & (W_Z | W_Z_OVERLAY))
 	{
 		if (this->m_pZWnd)
@@ -352,6 +276,7 @@ void cmainframe::update_windows(int nBits)
 			m_pTexWnd->RedrawWindow(nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
 		}
 	}
+#endif
 }
 
 
@@ -416,7 +341,7 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 		if (ggui::cz_context_ready())
 		{
 			// only above 10 fps (we might 'loose focus' on < 5 FPS, preventing imgui mouse input )
-			//if(game::glob::frametime_ms <= 100)
+			//if(game::glob::frames_per_second <= 100)
 			{
 				// auto close mainframe menubar popups when the mouse leaves the cxy window
 				if (cmainframe::activewnd && cmainframe::activewnd->m_pZWnd)

@@ -279,6 +279,15 @@ namespace ggui::entity
 		}
 	}
 
+	// adds grey horizontal separator
+	void separator_for_treenode()
+	{
+		SPACING(0.0f, 6.0f);
+		ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.3f, 0.3f, 0.3f, 0.9f));
+		ImGui::Separator();
+		ImGui::PopStyleColor();
+	}
+
 	// *
 	// dragfloat helper - add a single undo before starting to edit the value
 	bool DragFloat_HelperUndo(addprop_helper_s* helper, const char* label, float* v, float v_speed, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
@@ -433,6 +442,7 @@ namespace ggui::entity
 			}
 			
 			ImGui::TreePop();
+			separator_for_treenode();
 		}
 
 		ImGui::PopStyleVar();
@@ -462,10 +472,10 @@ namespace ggui::entity
 			ImGui::InputTextMultiline("##entcomments", comment_buf, comment_buf_len, ImVec2(-4, 0), ImGuiInputTextFlags_ReadOnly);
 
 			ImGui::TreePop();
+			separator_for_treenode();
 		}
 		
 		ImGui::PopStyleVar();
-
 		SPACING(0.0f, 0.01f);
 	}
 
@@ -473,7 +483,7 @@ namespace ggui::entity
 	{
 		// on changed selection -> update spawnflags / checkboxes
 		if (const auto	selected_brush = game::g_selected_brushes();
-			selected_brush && selected_brush->currSelection)
+			selected_brush && selected_brush->def)
 		{
 			if (const auto edit_entity = game::g_edit_entity();
 				edit_entity && edit_entity->epairs)
@@ -587,6 +597,7 @@ namespace ggui::entity
 			}
 
 			ImGui::TreePop();
+			separator_for_treenode();
 		}
 
 		ImGui::PopStyleVar(); // ImGuiStyleVar_IndentSpacing
@@ -847,7 +858,9 @@ namespace ggui::entity
 		{
 			// full with input text without label spacing
 			ImGui::SetNextItemWidth(-1);
-			
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(4.0f, 0.0f));
 			if(ColorEdit3_HelperUndo(&helper, "##value_color", col, ImGuiColorEditFlags_Float))
 			{
 				char col_str_buf[64] = {};
@@ -856,11 +869,12 @@ namespace ggui::entity
 					AddProp(epw.epair->key, col_str_buf, &helper);
 				}
 			}
+			ImGui::PopStyleVar(2);
 		}
 	}
 
 	// move object to new point (does not change "local" object origin)
-	void brush_moveto(game::brush_t* b, const float* new_origin, const float* old_origin, bool snap = true)
+	void brush_moveto(game::brush_t_with_custom_def* b, const float* new_origin, const float* old_origin, bool snap = true)
 	{
 		game::vec3_t delta;
 
@@ -871,7 +885,7 @@ namespace ggui::entity
 	}
 
 	// move and center object (using bounds) around new point (changes "local" object origin)
-	void brush_moveto_center(game::brush_t* b, const float* new_origin, bool snap = true)
+	void brush_moveto_center(game::brush_t_with_custom_def* b, const float* new_origin, bool snap = true)
 	{
 		game::vec3_t v_mid;
 		
@@ -1017,8 +1031,8 @@ namespace ggui::entity
 			{
 				//game::printf_to_console("Inspector: moving entity/brush using Brush_Move");
 				
-				auto sb = game::g_selected_brushes();
-				brush_moveto(sb->currSelection, vec3, vec_in);
+				const auto sb = game::g_selected_brushes();
+				brush_moveto(sb->def, vec3, vec_in);
 
 				if (sprintf_s(vec3_str_buf, "%.3f %.3f %.3f", vec3[0], vec3[1], vec3[2])) {
 					AddProp(epw.epair->key, vec3_str_buf, &helper);
@@ -1081,10 +1095,10 @@ namespace ggui::entity
 
 				// only draw entprops if something is selected or if nothing is selected and sel_list_ent == the worldspawn
 				if (const auto selbrush = game::g_selected_brushes();
-					(selbrush && selbrush->currSelection) || is_worldspawn)
+						(selbrush && selbrush->def) || is_worldspawn)
 				{
 					if (const auto edit_entity = game::g_edit_entity();
-						edit_entity && edit_entity->epairs)
+							edit_entity && edit_entity->epairs)
 					{
 						// add all epairs to our vector
 						for (auto epair = edit_entity->epairs; epair; epair = epair->next)
@@ -1376,7 +1390,7 @@ namespace ggui::entity
 			}
 
 			if(const auto selbrush = game::g_selected_brushes();
-				(selbrush && selbrush->currSelection) || (sel_list_ent && !_stricmp(sel_list_ent->name, "worldspawn")))
+				(selbrush && selbrush->def) || (sel_list_ent && !_stricmp(sel_list_ent->name, "worldspawn")))
 			{
 				if (ImGui::Button("Add new key-value pair", ImVec2(-6.0f, 0.0f)))
 				{
@@ -1386,9 +1400,15 @@ namespace ggui::entity
 			}
 
 			ImGui::TreePop();
+
+			if(dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
+			{
+				separator_for_treenode();
+			}
 		}
-		
+
 		ImGui::PopStyleVar();
+		SPACING(0.0f, 0.01f);
 	}
 	
 	void menu(ggui::imgui_context_menu& menu)
@@ -1430,7 +1450,24 @@ namespace ggui::entity
 		// 12 Checkboxes
 		// checkbox 1 setting spawnflags 1 << 1 using "SetSpawnFlags(1)"
 		// checkbox 2 setting spawnflags 1 << 2 etc
-		
+
+		//SEPERATORV(0.0f);
+
+		if(dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
+		{
+			ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
+
+			if (ImGui::TreeNodeEx("Surface Inspector", dvars::gui_props_classlist_defaultopen->current.enabled ? ImGuiTreeNodeFlags_DefaultOpen : 0))
+			{
+				SPACING(0.0f, 0.01f);
+				ggui::surface_inspector::controls();
+
+				ImGui::TreePop();
+			}
+
+			ImGui::PopStyleVar();
+		}
+
 		ImGui::End();
 	}
 

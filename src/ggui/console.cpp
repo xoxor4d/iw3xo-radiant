@@ -484,7 +484,7 @@ namespace ggui
 		{
 			if(ggui::_console->m_autocomplete_candidates.Size > 0 && data->CursorPos > 0)
 			{
-				const int prev_history_pos = ggui::_console->m_autocomplete_pos;
+				//const int prev_history_pos = ggui::_console->m_autocomplete_pos;
 
 				if (data->EventKey == ImGuiKey_UpArrow)
 				{

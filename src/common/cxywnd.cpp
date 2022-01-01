@@ -180,7 +180,7 @@ void cxywnd::rtt_grid_window()
 						game::Undo_ClearRedo();
 						game::Undo_GeneralStart("change entity model");
 
-						if (components::remote_net::selection_is_brush(game::g_selected_brushes()->currSelection))
+						if (components::remote_net::selection_is_brush(game::g_selected_brushes()->def))
 						{
 							// nothing but worldspawn selected, lets spawn a new entity
 							goto SPAWN_AWAY;

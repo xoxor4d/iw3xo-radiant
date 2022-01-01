@@ -30,7 +30,7 @@ namespace game
 		extern bool radiant_initiated;
 		extern bool radiant_config_loaded;
 		extern bool radiant_config_not_found;
-		extern int  frametime_ms;
+		extern float frames_per_second;
 		extern bool ccamwindow_realtime;
 
 		// Misc
@@ -88,10 +88,10 @@ namespace game
 	extern game::DxGlobals* dx;
 
 	extern game::entity_s* g_world_entity();
-	extern game::selbrush_t* g_active_brushes();
-	extern game::selbrush_t* g_active_brushes_next();
-	extern game::selbrush_t* g_selected_brushes();
-	extern game::selbrush_t* g_selected_brushes_next();
+	extern game::selbrush_def_t* g_active_brushes();
+	extern game::selbrush_def_t* g_active_brushes_next();
+	extern game::selbrush_def_t* g_selected_brushes();
+	extern game::selbrush_def_t* g_selected_brushes_next();
 	extern game::entity_s_def* g_edit_entity();
 	extern int& multiple_edit_entities;
 	extern HWND* entitywnd_hwnds;
@@ -114,8 +114,8 @@ namespace game
 	void SetSpawnFlags(int flag);
 	void UpdateSel(int wParam, game::eclass_t* e_class);
 	static utils::function<void(bool)> Select_Deselect = 0x48E800;
-	void Brush_Move(const float* delta, game::brush_t* def, int snap);
-	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t* def, float* move_points, float* end);
+	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
+	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
 
 	static utils::function<void(game::entity_s* ent, const char* key, const char* value)> SetKeyValue = 0x483690;
 	static utils::function<void()> SetKeyValuePairs = 0x496CF0;
@@ -173,6 +173,10 @@ namespace game
 	static utils::function<void()> R_SortMaterials = 0x4FD910;
 	static utils::function<bool(HWND)> R_SetupRendertarget_CheckDevice = 0x501A70;
 	static utils::function<bool(HWND)> R_CheckTargetWindow = 0x500660;
+
+	// sampler_index = the index used in shader_vars.h
+	static utils::function<void(int unused, game::GfxCmdBufState* state, int sampler_index, char sampler_state, game::GfxImage* img)> R_SetSampler = 0x538D70;
+
 	static utils::function<bool(float s0, float t0, float s1, float t1, float* color, game::Material* mtl)> R_AddCmdDrawFullScreenColoredQuad = 0x4FC260;
 	
 	typedef void(*MatrixForViewer_t)(float(*mtx)[4], const float* origin, const float* axis);

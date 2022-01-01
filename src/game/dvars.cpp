@@ -29,6 +29,8 @@ namespace dvars
 	game::dvar_s* gui_props_classlist_defaultopen = nullptr;
 	game::dvar_s* gui_props_comments_defaultopen = nullptr;
 	game::dvar_s* gui_props_spawnflags_defaultopen = nullptr;
+	game::dvar_s* gui_props_surfinspector = nullptr;
+	game::dvar_s* gui_use_new_surfinspector = nullptr;
 
 	game::dvar_s* gui_camera_toolbar_defaultopen = nullptr;
 	
@@ -37,15 +39,15 @@ namespace dvars
 	game::dvar_s* gui_saved_state_entity = nullptr;
 	game::dvar_s* gui_saved_state_textures = nullptr;
 	game::dvar_s* gui_saved_state_modelselector = nullptr;
+	game::dvar_s* gui_saved_state_surfinspector = nullptr;
 
-	//
 	game::dvar_s* mainframe_show_console = nullptr;
 	game::dvar_s* mainframe_show_zview = nullptr;
 	game::dvar_s* mainframe_show_toolbar = nullptr;
 	game::dvar_s* mainframe_show_menubar = nullptr;
 
-	//
 	game::dvar_s* grid_zoom_to_cursor = nullptr;
+
 	game::dvar_s* r_draw_model_origin = nullptr;
 	game::dvar_s* r_draw_model_shadowcaster = nullptr;
 	game::dvar_s* r_draw_patch_backface_wireframe = nullptr;
@@ -72,9 +74,16 @@ namespace dvars
 	game::dvar_s* radiant_live = nullptr;
 	game::dvar_s* radiant_livePort = nullptr;
 	game::dvar_s* radiant_liveDebug = nullptr;
+	game::dvar_s* radiant_liveWorldspawn = nullptr;
 
 	// stock dvars (not registered but ptr assigned)
 	game::dvar_s* fs_homepath = nullptr;
+	game::dvar_s* r_filmtweakenable = nullptr;
+	game::dvar_s* r_filmtweakdesaturation = nullptr;
+	game::dvar_s* r_filmtweakbrightness = nullptr;
+	game::dvar_s* r_filmtweakcontrast = nullptr;
+	game::dvar_s* r_filmtweakdarktint = nullptr;
+	game::dvar_s* r_filmtweaklighttint = nullptr;
 	
 	// ---------------------------------------------
 
@@ -129,6 +138,41 @@ namespace dvars
 		game::Dvar_SetFloat(dvar, value);
 	}
 
+	bool assign_single_dvar(game::dvar_s*& dest, const char* stock_dvar_name)
+	{
+		if (!dest)
+		{
+			if (const auto	var = game::Dvar_FindVar(stock_dvar_name); 
+							var) 
+			{
+				dest = var;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	void assign_stock_dvars()
+	{
+		bool valid_dvars = true;
+
+		valid_dvars = assign_single_dvar(dvars::r_filmtweakenable, "r_filmtweakenable");
+		valid_dvars = assign_single_dvar(dvars::r_filmtweakdesaturation, "r_filmtweakdesaturation");
+		valid_dvars = assign_single_dvar(dvars::r_filmtweakbrightness, "r_filmtweakbrightness");
+		valid_dvars = assign_single_dvar(dvars::r_filmtweakcontrast, "r_filmtweakcontrast");
+		valid_dvars = assign_single_dvar(dvars::r_filmtweakdarktint, "r_filmtweakdarktint");
+		valid_dvars = assign_single_dvar(dvars::r_filmtweaklighttint, "r_filmtweaklighttint");
+
+		if(!valid_dvars)
+		{
+			game::Com_Error("assign_stock_dvars: failed to assign stock dvars");
+		}
+	}
+
 	// --------------------------------------------------
 
 	// register all new dvars here (exec. after config was loaded)
@@ -148,6 +192,7 @@ namespace dvars
 		
 		ggui::toolbar::register_dvars();
 		ggui::entity::register_dvars();
+		ggui::surface_inspector::register_dvars();
 		ggui::preferences::register_dvars();
 		
 		game::printf_to_console("\n");

@@ -259,6 +259,26 @@ namespace ggui::menubar
 						components::gui::toggle(context.m_entity, 0, true);
 					}
 
+					if (ImGui::MenuItem("Surface Inspector", hotkeys::get_hotkey_for_command("SurfaceInspector").c_str())) 
+					{
+						if (dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
+						{
+							if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
+							{
+								components::gui::toggle(ggui::state.czwnd.m_entity, 0, true);
+							}
+							else
+							{
+								components::gui::toggle(ggui::state.czwnd.m_surface_inspector, 0, true);
+							}
+						}
+						else
+						{
+							// SurfaceInspector::DoSurface
+							cdeclcall(void, 0x4585D0);
+						}
+					}
+
 					if (ImGui::MenuItem("Layers", hotkeys::get_hotkey_for_command("ToggleLayers").c_str())) {
 						cdeclcall(void, 0x42BD10); // cmainframe::OnLayersDlg
 					}
@@ -319,6 +339,13 @@ namespace ggui::menubar
 
 						if (ImGui::MenuItem("XY View (Original)", hotkeys::get_hotkey_for_command("ToggleView").c_str(), nullptr, cmainframe::is_combined_view())) {
 							mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
+						}
+
+						if (ImGui::MenuItem("Surface Inspector (Original)"))
+						{
+							
+							// SurfaceInspector::DoSurface
+							cdeclcall(void, 0x4585D0);
 						}
 						
 						ImGui::EndMenu(); // Original Windows

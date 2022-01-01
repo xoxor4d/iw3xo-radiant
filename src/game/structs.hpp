@@ -295,7 +295,98 @@ namespace game
 		//float unk;
 	};
 
-	struct __declspec() face_t
+	struct texdef_sub_t
+	{
+		float size[2];
+		float shift[2];
+		float rotate;
+		int unk3;
+		float sample_size;
+	};
+
+	struct qtexture_s
+	{
+		qtexture_s* next;
+		const char* name;
+		int unk_flags1;
+		int unk_flags2;
+		int tex_num;
+		int width;
+		int height;
+		int color;
+		int in_use;
+		qtexture_s* prev;
+		char pad_0x0028[8];
+	};
+
+	struct __declspec(align(4)) LayerMaterialDef
+	{
+		int xx001;
+		int xx002;
+		int xx003;
+		int xx004;
+		int xx005;
+		int xx006;
+		int xx007;
+		int xx008;
+		int xx009;
+		int xx010;
+		int xx011;
+		int xx012;
+		int xx013;
+		int xx014;
+		int xx015;
+		int xx016;
+		int xx017;
+		int layerCount;
+		int current_layer;
+		int xx020;
+		int layers_ptr;
+		int xx022;
+		int xx023;
+		int xx024;
+		int xx025;
+		int xx026;
+		int xx027;
+		int xx028;
+		int xx029;
+		int xx030;
+	};
+
+	struct MaterialDef
+	{
+		LayerMaterialDef* lyrMtl;
+		game::qtexture_s* radMtl;
+		texdef_sub_t mat_texDef[1];
+		//int value1;
+		//game::qtexture_s* lightmapMtl;
+		//texdef_sub_t lightmap_texDef;
+		//int value2;
+		//game::qtexture_s* smoothingMtl;
+		//texdef_sub_t smoothing_texDef;
+	}; STATIC_ASSERT_SIZE(MaterialDef, 0x24);//0x6C);
+
+	struct face_t_new
+	{
+		vec3_t planepts0;
+		vec3_t planepts1;
+		vec3_t planepts2;
+		//MaterialDef mtldef;
+		MaterialDef mtldef[4];
+		//int mat_unkown_value1;
+		//qtexture_s* mat_unkown;
+		//texdef_sub_t mat_unknown_texdef;
+		int unk01;
+		int unk02;
+		int unk03;
+		plane_t plane;
+		int unk04;
+		int unk05;
+		winding_t* w;
+		int minus1;
+	}; STATIC_ASSERT_SIZE(face_t_new, 0xE8);
+
+	struct face_t
 	{
 		vec3_t planepts0;
 		vec3_t planepts1;
@@ -439,21 +530,6 @@ namespace game
 		int sideIndex[3];
 	};
 
-	struct qtexture_s
-	{
-		qtexture_s *next;
-		char *name;
-		char pad_0x0008[8];
-		__int16 texture_number_no;
-		__int16 width;
-		__int16 height;
-		__int16 color;
-		bool inuse;
-		char pad_0x0021[3];
-		qtexture_s *prev;
-		char pad_0x0028[8];
-	};
-
 	struct drawVert_t
 	{
 		vec3_t xyz;
@@ -469,38 +545,129 @@ namespace game
 
 	struct patchMesh_t
 	{
-		__int16 width;
-		__int16 height;
-		__int16 contents;
-		__int16 flags;
-		__int16 value;
-		__int16 subDivType;
+		int width;
+		int height;
+		int contents;
+		int flags;
+		int type;
+		int subDivType;
 		char pad_0x0018[4];
-		qtexture_s *d_texture;
+		qtexture_s* d_texture;
 		char pad_0x0020[4];
-		texdef_t *mat_lightmap;
+		texdef_t* mat_lightmap;
 		char pad_0x0028[4];
-		texdef_t *mat_smoothing;
+		texdef_t* mat_smoothing;
 		char pad_0x0030[4];
-		texdef_t *mat_unk;
-		drawVert_t ctrl[16];
+		texdef_t* mat_unk;
+		drawVert_t ctrl[16][16];
+		int xx00;
+		int xx0;
+		int xx1;
+		int xx2;
+		int xx3;
+		int xx4;
+		int xx5;
+		int xx6;
+		int xx7;
+		int xx8;
+		int xx9;
+		int xx10;
+		char pad_0x4468[3028];
+		brush_t* pSymbiot;
+		int xx20;
+		int xx21;
+		int size_of_struct_0x504C;
+	}; STATIC_ASSERT_SIZE(patchMesh_t, 0x504C);
+
+	struct patch_def_t
+	{
+		void* unk;
 	};
 
+
+	struct patch_t
+	{
+		//patch_def_t* def;
+		patchMesh_t* def;
+	};
+
+	
+
+	struct brush_t_with_custom_def
+	{
+		brush_t_with_custom_def* oprev;
+		brush_t_with_custom_def* onext;
+		entity_s* owner;
+		entity_s* ownerNext;
+		entity_s* ownerPrev;
+		brush_t_def* def;
+		int unk1;
+		int refCount;
+		vec3_t mins;
+		vec3_t maxs;
+		int xx1;
+		int xx2;
+		int facecount;
+		//face_t* brush_faces;
+		face_t_new* brush_faces;
+		char* layerstr;
+		std::int16_t unk01;
+		std::int16_t version;
+		patchMesh_t* patch;
+		int total_size_0x58;
+	};
+	STATIC_ASSERT_OFFSET(brush_t_with_custom_def, mins, 0x20);
+	STATIC_ASSERT_OFFSET(brush_t_with_custom_def, version, 0x4E);
+
+	
 	// somethings really off with those structs
 	// selected_brushes should be brush_t but that doesnt match up with real brush_t structs in memory? 
-	struct selbrush_t
+	//struct selbrush_t
+	//{
+	//	selbrush_t *prev; // prev selected brush @prev->currSelection
+	//	selbrush_t *next; // next always empty i guess
+	//	entity_s *owner;	// not sure
+	//	brush_t *ownerNext; // not sure
+	//	char pad[4];		// not sure
+	//	brush_t *currSelection;	// selected brush info
+	//	char pad2[4];
+	//	vec3_t* faces;
+	//	patch_t* patch;
+	//	std::int16_t version;
+	//}; STATIC_ASSERT_OFFSET(selbrush_t, version, 0x24);
+
+	struct selbrush_def_t
 	{
-		selbrush_t *prev; // prev selected brush @prev->currSelection
-		selbrush_t *next; // next always empty i guess
-		entity_s *owner;	// not sure
-		brush_t *ownerNext; // not sure
-		char pad[4];		// not sure
-		brush_t *currSelection;	// selected brush info
+		selbrush_def_t* prev; // prev selected brush @prev->def
+		selbrush_def_t* next; // next always empty i guess
+		entity_s* owner;
+		brush_t* ownerNext;
+		int xx0;		
+		brush_t_with_custom_def* def;
+		int facecount;
+		vec3_t* faces;
+		patch_t* patch;
+		std::int16_t version;
+		std::int16_t unk;
+		int xx1;
+		int xx2;
+		int xx3;
+		int brushflags;
 	};
+	STATIC_ASSERT_OFFSET(selbrush_def_t, def, 0x14);
+	STATIC_ASSERT_OFFSET(selbrush_def_t, version, 0x24);
 
 	struct selbrush_ptr
 	{
-		selbrush_t *p;
+		selbrush_def_t*p;
+	};
+
+	struct selface_t
+	{
+		game::selbrush_def_t* brush;
+		//game::face_t* face;
+		game::face_t_new* face;
+		int index;
 	};
 
 	union GfxColor

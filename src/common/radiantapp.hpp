@@ -9,5 +9,7 @@ private:
 	~radiantapp() = delete;
 
 public:
+	static void		set_default_savedinfo_colors();
+
     static void     hooks();
 };

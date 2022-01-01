@@ -11,7 +11,7 @@ namespace ggui::fakesun_settings
 	void menu(ggui::imgui_context_menu& menu)
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 220.0f);
-		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 460.0f);
+		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 700.0f);
 		
 		auto initial_window_pos = ggui::get_initial_window_pos();
 		
@@ -25,10 +25,13 @@ namespace ggui::fakesun_settings
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(initial_window_pos, ImGuiCond_FirstUseEver);
 
-		if(ImGui::Begin("Fakesun Settings##window", &menu.menustate, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings))
+		if(ImGui::Begin("Fakesun /PostFX Settings##window", &menu.menustate, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings))
 		{
-			SPACING(0.0f, 2.0f);
+			//SPACING(0.0f, 2.0f);
 			ImGui::Indent(8.0f);
+
+			// -----------------
+			ImGui::title_with_seperator("Fakesun Settings", false);
 			
 			ImGui::Checkbox("Use Worldspawn Settings", &dvars::r_fakesun_use_worldspawn->current.enabled);
 				TT("Uses some of the default values below if a required worldspawn key can not be found");
@@ -56,6 +59,19 @@ namespace ggui::fakesun_settings
 			ImGui::DragFloat("Fog Start", &dvars::r_fakesun_fog_start->current.value);
 			ImGui::DragFloat("Fog Half Dist", &dvars::r_fakesun_fog_half->current.value);
 			ImGui::ColorEdit4("Fog Color", dvars::r_fakesun_fog_color->current.vector, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+
+
+			// -----------------
+			ImGui::title_with_seperator("Filmtweaks");
+
+			dvars::assign_stock_dvars();
+
+			ImGui::Checkbox("Enable Filmtweaks", &dvars::r_filmtweakenable->current.enabled);
+			ImGui::DragFloat("Brightness", &dvars::r_filmtweakbrightness->current.value, 0.005f, -1.0f, 1.0f);
+			ImGui::DragFloat("Contrast", &dvars::r_filmtweakcontrast->current.value, 0.005f, 0.0f, 4.0f);
+			ImGui::DragFloat("Desaturation", &dvars::r_filmtweakdesaturation->current.value, 0.005f, 0.0f, 1.0f);
+			ImGui::ColorEdit3("Light Tint", dvars::r_filmtweaklighttint->current.vector, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+			ImGui::ColorEdit3("Dark Tint", dvars::r_filmtweakdarktint->current.vector, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 
 			SPACING(0.0f, 2.0f);
 			

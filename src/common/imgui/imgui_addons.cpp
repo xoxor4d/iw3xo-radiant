@@ -264,6 +264,117 @@ namespace ImGui
 
 		SPACING(0.0f, 2.0f);
 	}
+
+	bool InputScalarDir(const char* label, ImGuiDataType data_type, void* p_data, int* dir, void* p_step, const void* p_step_fast, bool display_p_step, const char* format, ImGuiInputTextFlags flags)
+	{
+		if (GetCurrentWindow()->SkipItems)
+		{
+			return false;
+		}
+
+		ImGuiContext& g = *GImGui;
+		ImGuiStyle& style = g.Style;
+
+		if (format == nullptr)
+		{
+			format = DataTypeGetInfo(data_type)->PrintFmt;
+		}
+
+		char buf[64];
+		DataTypeFormatString(buf, IM_ARRAYSIZE(buf), data_type, p_data, format);
+
+		bool value_changed = false;
+
+		if ((flags & (ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsScientific)) == 0)
+		{
+			flags |= ImGuiInputTextFlags_CharsDecimal;
+		}
+		flags |= ImGuiInputTextFlags_AutoSelectAll;
+		flags |= ImGuiInputTextFlags_NoMarkEdited;  // We call MarkItemEdited() ourselves by comparing the actual data rather than the string.
+
+		if (p_step != nullptr)
+		{
+			const float dragfloat_size = 50.0f;
+			const float button_size = GetFrameHeight();
+
+			BeginGroup(); // The only purpose of the group here is to allow the caller to query item data e.g. IsItemActive()
+			PushID(label);
+
+			SetNextItemWidth(ImMax(68.0f, CalcItemWidth() - (button_size + style.ItemInnerSpacing.x) * 2 - dragfloat_size + style.ItemInnerSpacing.x));
+			
+			if (InputText("", buf, IM_ARRAYSIZE(buf), flags)) // PushId(label) + "" gives us the expected ID from outside point of view
+			{
+				value_changed = DataTypeApplyOpFromText(buf, g.InputTextState.InitialTextA.Data, data_type, p_data, format);
+			}
+
+			// Step buttons
+			const ImVec2 backup_frame_padding = style.FramePadding;
+			style.FramePadding.x = style.FramePadding.y;
+			ImGuiButtonFlags button_flags = ImGuiButtonFlags_Repeat | ImGuiButtonFlags_DontClosePopups;
+
+			SameLine(0, style.ItemInnerSpacing.x);
+			if (ButtonEx("-", ImVec2(button_size, button_size), button_flags))
+			{
+				DataTypeApplyOp(data_type, '-', p_data, p_data, g.IO.KeyCtrl && p_step_fast ? p_step_fast : p_step);
+				value_changed = true;
+				if (dir)
+				{
+					*dir = -1;
+				}
+			}
+
+			SameLine(0, style.ItemInnerSpacing.x);
+			if (ButtonEx("+", ImVec2(button_size, button_size), button_flags))
+			{
+				DataTypeApplyOp(data_type, '+', p_data, p_data, g.IO.KeyCtrl && p_step_fast ? p_step_fast : p_step);
+				value_changed = true;
+
+				if (dir)
+				{
+					*dir = 1;
+				}
+			}
+
+			if(display_p_step)
+			{
+				SameLine(0, style.ItemInnerSpacing.x);
+
+				PushStyleColor(ImGuiCol_FrameBg, GetColorU32(ImGuiCol_Button));
+				PushStyleColor(ImGuiCol_FrameBgHovered, GetColorU32(ImGuiCol_ButtonHovered));
+				PushStyleColor(ImGuiCol_FrameBgActive, GetColorU32(ImGuiCol_ButtonActive));
+
+				SetNextItemWidth(dragfloat_size);
+				ImGui::DragFloat("##amount", static_cast<float*>(p_step), 0.5f, 0.1f, 256.0f, "%.1f");
+				TT("Inc/Dec Amount");
+
+				PopStyleColor(3);
+			}
+
+			const char* label_end = FindRenderedTextEnd(label);
+			if (label != label_end)
+			{
+				SameLine(0, style.ItemInnerSpacing.x);
+				TextEx(label, label_end);
+			}
+
+			style.FramePadding = backup_frame_padding;
+
+			PopID();
+			EndGroup();
+		}
+		else
+		{
+			if (InputText(label, buf, IM_ARRAYSIZE(buf), flags))
+				value_changed = DataTypeApplyOpFromText(buf, g.InputTextState.InitialTextA.Data, data_type, p_data, format);
+		}
+
+		if (value_changed)
+		{
+			MarkItemEdited(g.LastItemData.ID);
+		}
+
+		return value_changed;
+	}
 	
 	void debug_table_entry_vec3(const char* label, const float* vec3)
 	{

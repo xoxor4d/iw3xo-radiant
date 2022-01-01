@@ -1,5 +1,7 @@
 #include "std_include.hpp"
 
+bool cam_test = false;
+
 IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void mtx4x4_mul(game::GfxMatrix* mtx_out, game::GfxMatrix* a, game::GfxMatrix* b)
@@ -120,9 +122,9 @@ void get_selection_center(float* center_point)
 		(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
 				sb = sb->next)
 	{
-		if(sb->currSelection)
+		if(sb->def)
 		{
-			utils::vector::clamp_vec3(sb->currSelection->mins, sb->currSelection->maxs, mins, maxs);
+			utils::vector::clamp_vec3(sb->def->mins, sb->def->maxs, mins, maxs);
 		}
 	}
 
@@ -359,20 +361,35 @@ void rtt_camera_window_toolbar()
 					{
 						dvars::set_bool(dvars::r_fakesun_fog_enabled, !dvars::r_fakesun_fog_enabled->current.enabled);
 					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
-
-					static bool hov_fakesun_settings;
-					if (ggui::toolbar::image_togglebutton("fakesun_settings"
-						, hov_fakesun_settings
-						, hov_fakesun_settings
-						, "Open fake sun settings"
-						, &toolbar_button_background
-						, &toolbar_button_background_hovered
-						, &toolbar_button_background_active
-						, &toolbar_button_size))
-					{
-						components::gui::toggle(ggui::state.czwnd.m_fakesun_settings, 0, true);
-					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 				}
+
+				static bool hov_filmtweaks_settings;
+				const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
+
+				if (ggui::toolbar::image_togglebutton("filmtweaks"
+					, hov_filmtweaks_settings
+					, r_filmtweakenable->current.enabled
+					, "Toggle filmtweaks (r_filmTweakEnable)"
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					dvars::set_bool(r_filmtweakenable, !r_filmtweakenable->current.enabled);
+				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+				static bool hov_fakesun_settings;
+				if (ggui::toolbar::image_togglebutton("fakesun_settings"
+					, hov_fakesun_settings
+					, hov_fakesun_settings
+					, "Open Fakesun / PostFX settings menu"
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					components::gui::toggle(ggui::state.czwnd.m_fakesun_settings, 0, true);
+				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 				
 				ImGui::PopStyleVar();
 			}
@@ -536,7 +553,7 @@ void ccamwnd::rtt_camera_window()
 						game::Undo_ClearRedo();
 						game::Undo_GeneralStart("change entity model");
 
-						if(components::remote_net::selection_is_brush(game::g_selected_brushes()->currSelection))
+						if(components::remote_net::selection_is_brush(game::g_selected_brushes()->def))
 						{
 							// nothing but worldspawn selected, lets spawn a new entity
 							goto SPAWN_AWAY;
@@ -673,7 +690,7 @@ void ccamwnd::rtt_camera_window()
 
 				if (dvars::guizmo_brush_mode->current.enabled)
 				{
-					if (const auto b = game::g_selected_brushes()->currSelection; b)
+					if (const auto b = game::g_selected_brushes()->def; b)
 					{
 						// pass mouse input to ImGui
 						if (ImGuizmo::IsOver())
@@ -785,7 +802,7 @@ void ccamwnd::rtt_camera_window()
 										(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
 												sb = sb->next)
 									{
-										if (const auto brush = sb->currSelection; brush)
+										if (const auto brush = sb->def; brush)
 										{
 											// degree is handled like a boolean, 0.0 will not rotate fixed size brushes / entities
 											Select_ApplyMatrix(&rotate_axis_for_radiant[0][0], sb, false, 1.0f, false);
@@ -804,7 +821,7 @@ void ccamwnd::rtt_camera_window()
 										(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
 												sb = sb->next)
 									{
-										if (const auto brushes = sb->currSelection; brushes)
+										if (const auto brushes = sb->def; brushes)
 										{
 											if(in_vertex_mode)
 											{
@@ -1135,6 +1152,15 @@ BOOL WINAPI ccamwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			}
 		}
 	}
+
+#if 0
+	if(Msg == WM_SIZE)
+	{
+		// disable postfx when resizing
+		components::renderer::postfx::set_disable_duration(0.45f);
+		components::renderer::postfx::disable();
+	}
+#endif
 	
 	// => og CamWndProc
     return utils::hook::call<BOOL(__stdcall)(HWND, UINT, WPARAM, LPARAM)>(0x402D90)(hWnd, Msg, wParam, lParam);

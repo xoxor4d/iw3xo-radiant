@@ -1,0 +1,15 @@
+{
+	stateMap "default";
+
+	vertexShader 3.0 "radiant_filmtweaks"
+	{
+	}
+
+	pixelShader 3.0 "radiant_filmtweaks"
+	{
+		colorMapPostSunSampler = sampler.resolvedPostSun;
+	}
+
+	vertex.position = code.position;
+	vertex.texcoord[0] = code.texcoord[0];
+}

@@ -10,8 +10,27 @@ namespace ggui::colors
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
-		
-		ImGui::Begin("Colors##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+
+		const float inner_item_spacing = 4.0f;
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(inner_item_spacing, 0.0f));
+
+		if(!ImGui::Begin("Colors##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
+		{
+			ImGui::PopStyleVar();
+			ImGui::End();
+		}
+
+		ImGui::Indent(4.0f);
+		SPACING(0.0f, 2.0f);
+
+		const float clamped_min_widget_width = ImGui::CalcItemWidth();
+
+		if (ImGui::Button("Set Default Radiant Colors", ImVec2(clamped_min_widget_width, ImGui::GetFrameHeight())))
+		{
+			radiantapp::set_default_savedinfo_colors();
+		}
+
+		SPACING(0.0f, 2.0f);
 
 		ImGui::ColorEdit4("Camera Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_CAMERABACK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Texture Background", game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], ImGuiColorEditFlags_Float);
@@ -69,16 +88,24 @@ namespace ggui::colors
 		ImGui::ColorEdit4("Gui Toolbar Button", dvars::gui_toolbar_button_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Toolbar Button Hovered", dvars::gui_toolbar_button_hovered_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Toolbar Button Active", dvars::gui_toolbar_button_active_color->current.vector, ImGuiColorEditFlags_Float);
-		const auto col_edit4_size = ImGui::GetItemRectSize();
-		
-		ImGui::Checkbox("Gui RTT Border", &dvars::gui_rtt_padding_enabled->current.enabled);
-		const auto checkbox_size = ImGui::GetItemRectSize();
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(col_edit4_size.x - checkbox_size.x - 178.0f);
-		ImGui::SliderInt("Gui RTT Bordersize", &dvars::gui_rtt_padding_size->current.integer, dvars::gui_rtt_padding_size->domain.integer.min, dvars::gui_rtt_padding_size->domain.integer.max);
 
+
+#if 0	// disabled until camera toolbar is fixed
+		SEPERATORV(0.0f);
+
+		static float group_width = 80.0f;
+		ImGui::SetCursorPosX(clamped_min_widget_width * 0.5f - (group_width * 0.5f));
+
+		ImGui::Checkbox("Gui RTT Border", &dvars::gui_rtt_padding_enabled->current.enabled);
+		group_width = ImGui::GetItemRectSize().x;
+
+		SPACING(0.0f, 4.0f);
+
+		ImGui::SliderInt("Gui RTT Bordersize", &dvars::gui_rtt_padding_size->current.integer, dvars::gui_rtt_padding_size->domain.integer.min, dvars::gui_rtt_padding_size->domain.integer.max);
 		ImGui::ColorEdit4("Gui RTT Border", dvars::gui_rtt_padding_color->current.vector, ImGuiColorEditFlags_Float);
-		
+#endif
+
+		ImGui::PopStyleVar();
 		ImGui::End();
 	}
 }

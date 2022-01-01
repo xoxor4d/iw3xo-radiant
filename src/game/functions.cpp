@@ -11,7 +11,7 @@ namespace game
 		bool radiant_initiated;
 		bool radiant_config_loaded;
 		bool radiant_config_not_found;
-		int  frametime_ms;
+		float frames_per_second;
 		bool ccamwindow_realtime;
 
 		// Misc
@@ -77,27 +77,27 @@ namespace game
 		return ent;
 	}
 
-	game::selbrush_t* g_active_brushes()
+	game::selbrush_def_t* g_active_brushes()
 	{
-		const auto brush = reinterpret_cast<game::selbrush_t*>(*game::active_brushes_ptr);
+		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*game::active_brushes_ptr);
 		return brush;
 	}
 
-	game::selbrush_t* g_active_brushes_next()
+	game::selbrush_def_t* g_active_brushes_next()
 	{
-		const auto brush = reinterpret_cast<game::selbrush_t*>(*game::active_brushes_next_ptr);
+		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*game::active_brushes_next_ptr);
 		return brush;
 	}
 	
-	game::selbrush_t* g_selected_brushes()
+	game::selbrush_def_t* g_selected_brushes()
 	{
-		const auto brush = reinterpret_cast<game::selbrush_t*>(*game::currSelectedBrushes);
+		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*game::currSelectedBrushes);
 		return brush;
 	}
 
-	game::selbrush_t* g_selected_brushes_next()
+	game::selbrush_def_t* g_selected_brushes_next()
 	{
-		const auto brush = reinterpret_cast<game::selbrush_t*>(*(DWORD*)0x23F1868);
+		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*(DWORD*)0x23F1868);
 		return brush;
 	}
 	
@@ -238,7 +238,7 @@ namespace game
 		}
 	}
 
-	void Brush_Move(const float* delta, game::brush_t* def, int snap)
+	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap)
 	{
 		const static uint32_t func_addr = 0x47BA40;
 		__asm
@@ -253,7 +253,7 @@ namespace game
 		}
 	}
 
-	int Brush_MoveVertex(const float* delta /*eax*/, game::brush_t* def, float* move_points, float* end)
+	int Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end)
 	{
 		const static uint32_t func_addr = 0x471C30;
 		__asm

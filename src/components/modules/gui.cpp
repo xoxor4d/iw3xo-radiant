@@ -357,7 +357,7 @@ namespace components
 					ImGui::DockBuilderSetNodeSize(ggui::toolbar_dock_left, ImVec2(36, viewport->Size.y));
 					
 					ggui::dockspace_outer_left_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.5f, nullptr, &main_dock);
-					const auto dockspace_inner_left_node = ImGui::DockBuilderSplitNode(ggui::dockspace_outer_left_node, ImGuiDir_Left, 0.5f, nullptr, &ggui::dockspace_outer_left_node);
+					//const auto dockspace_inner_left_node = ImGui::DockBuilderSplitNode(ggui::dockspace_outer_left_node, ImGuiDir_Left, 0.5f, nullptr, &ggui::dockspace_outer_left_node);
 					const auto dockspace_right_top_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Up, 0.6f, nullptr, &main_dock);
 					
 					if (!floating_toolbar)
@@ -424,10 +424,13 @@ namespace components
 		ImGui::PopStyleVar(_stylevars);
 	}
 
+	
+
 	// *
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
 	void gui::render_loop()
 	{
+
 		/* - radiant draws multiple windows using d3d => multiple endscene / present calls
 		 * - each window should have its own imgui context
 		 * - use dx->targetWindowIndex to distinguish between windows
@@ -440,7 +443,12 @@ namespace components
 		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
 		{
 			// copy scene to texture
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
+			// done in renderer::camera_postfx() if post effects are active
+
+			if (!renderer::postfx::is_any_active())
+			{
+				renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
+			}
 		}
 
 		
@@ -507,6 +515,9 @@ namespace components
 			// load/save window states
 			gui::saved_windowstates();
 
+			// used by postfx logic
+			game::glob::frames_per_second = ImGui::GetIO().Framerate;
+
 			// docking, default layout ... 
 			czwnd_gui(ggui::state.czwnd);
 
@@ -521,9 +532,20 @@ namespace components
 			}
 
 			//auto modelLightGlob = reinterpret_cast<game::modelLightGlobals_s*>(0x150D500);
-			//ImGui::Begin("Debug", nullptr);
-			//ImGui::Image(modelLightGlob->lightImages[0]->texture.data, ImVec2(modelLightGlob->lightImages[0]->width, modelLightGlob->lightImages[0]->height));
-			//ImGui::End();
+			/*game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
+
+			game::GfxRenderTarget* taget = &targets[5];
+			game::GfxRenderTarget* postSun = &targets[3];
+			
+			game::dx->device->StretchRect(taget->surface.color, NULL, postSun->surface.color, NULL, D3DTEXF_NONE);
+
+			ImGui::Begin("Debug", nullptr);
+			ImGui::Image(postSun->image->texture.data, ImVec2(game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].width, game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].height));
+			ImGui::End();*/
+
+			/*ImGui::Begin("Debug", nullptr);
+			ImGui::Image(ggui::get_rtt_camerawnd()->scene_texture, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
+			ImGui::End();*/
 
 			// color menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_colors,
@@ -552,6 +574,10 @@ namespace components
 			// entity menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_entity,
 				ggui::entity::menu(ggui::state.czwnd.m_entity), nullptr);
+
+			// surface inspector menu
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_surface_inspector,
+				ggui::surface_inspector::menu(ggui::state.czwnd.m_surface_inspector), nullptr);
 
 			// preferences menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_preferences,
@@ -649,9 +675,11 @@ namespace components
 		// startup only
 		if (!ggui::saved_states_init)
 		{
-			SAVED_STATE_INIT(m_console, dvars::gui_saved_state_console);
-			SAVED_STATE_INIT(m_filter,	dvars::gui_saved_state_filter);
-			SAVED_STATE_INIT(m_entity,	dvars::gui_saved_state_entity);
+			SAVED_STATE_INIT(m_console,				dvars::gui_saved_state_console);
+			SAVED_STATE_INIT(m_filter,				dvars::gui_saved_state_filter);
+			SAVED_STATE_INIT(m_entity,				dvars::gui_saved_state_entity);
+			SAVED_STATE_INIT(m_surface_inspector,	dvars::gui_saved_state_surfinspector);
+
 			SAVED_STATE_INIT_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
 			SAVED_STATE_INIT_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
 
@@ -661,9 +689,11 @@ namespace components
 		// *
 		// every frame
 
-		SAVED_STATE_UPDATE(m_console,	dvars::gui_saved_state_console);
-		SAVED_STATE_UPDATE(m_filter,	dvars::gui_saved_state_filter);
-		SAVED_STATE_UPDATE(m_entity,	dvars::gui_saved_state_entity);
+		SAVED_STATE_UPDATE(m_console,			dvars::gui_saved_state_console);
+		SAVED_STATE_UPDATE(m_filter,			dvars::gui_saved_state_filter);
+		SAVED_STATE_UPDATE(m_entity,			dvars::gui_saved_state_entity);
+		SAVED_STATE_UPDATE(m_surface_inspector, dvars::gui_saved_state_surfinspector);
+
 		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
 		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
 	}
@@ -929,14 +959,24 @@ namespace components
 			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "saved opened/closed state of modelselector window");
+
+		dvars::gui_saved_state_surfinspector = dvars::register_bool(
+			/* name		*/ "gui_saved_state_surfinspector",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved opened/closed state of surface inspector window");
 	}
 
 	
 	// *
 	gui::gui()
 	{
-		// hotkey hooks
 		ggui::hotkeys::hooks();
+		ggui::filter::hooks();
+		ggui::entity::hooks();
+		ggui::surface_inspector::hooks();
+		ggui::modelselector::init();
+		ggui::preferences::hooks();
 
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{

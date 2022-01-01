@@ -1,6 +1,7 @@
 #pragma once
 //#include <afxwin.h>
 
+
 struct AFX_MODULE_STATE;
 
 struct IAccessibleProxy;
@@ -8,6 +9,8 @@ typedef void(__thiscall * SetTextColor_t)(void *, COLORREF);
 typedef COLORREF(__thiscall * SetBkColor_t)(void *, COLORREF);
 typedef COLORREF(__thiscall* SetBkMode_t)(void*, int mode);
 
+//struct CSurfaceDlg;
+//extern CSurfaceDlg* g_dlgSurface;
 
 class CDC
 {
@@ -1479,6 +1482,16 @@ struct CFilterWnd : public CDialog
 	CCheckListBox trigger_filters;
 	CCheckListBox other_filters;
 };
+
+struct CSurfaceDlg : CDialog
+{
+	bool m_bPatchMode;
+	bool xx9_1;
+	bool xx9_2;
+	bool xx9_3;
+	int xx10;
+};
+
 
 struct CNoTrackObject;
 

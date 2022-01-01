@@ -2,6 +2,14 @@
 
 namespace components
 {
+	//renderer::postfx_state_vars postfx_state = {};
+
+	//bool g_any_postfx_enabled;
+	//bool g_disable_postfx;
+
+	//postfx_state_vars postfx_state = {};
+
+
 	// *
 	// enable/disable drawing of boxes around the origin on entities
 
@@ -115,7 +123,7 @@ namespace components
 		}
 	}
 
-	void renderer::copy_scene_to_texture(ggui::e_gfxwindow wnd, IDirect3DTexture9*& dest)
+	void renderer::copy_scene_to_texture(ggui::e_gfxwindow wnd, IDirect3DTexture9*& dest, bool no_release)
 	{
 		// get the backbuffer surface
 		IDirect3DSurface9* surf_backbuffer = nullptr;
@@ -130,10 +138,13 @@ namespace components
 			D3DSURFACE_DESC desc;
 			dest->GetLevelDesc(0, &desc);
 
-			if (desc.Width != static_cast<unsigned int>(game::dx->windows[wnd].width) || desc.Height != static_cast<unsigned int>(game::dx->windows[wnd].height))
+			if(!no_release)
 			{
-				dest->Release();
-				dest = nullptr;
+				if (desc.Width != static_cast<unsigned int>(game::dx->windows[wnd].width) || desc.Height != static_cast<unsigned int>(game::dx->windows[wnd].height))
+				{
+					dest->Release();
+					dest = nullptr;
+				}
 			}
 		}
 
@@ -486,42 +497,121 @@ namespace components
 	}
 
 
+
+
+	struct front_backend_variable_helper
+	{
+		float float_time = 0.0f;
+	};
+
+	front_backend_variable_helper gfx_fbv = {};
+
 	// *
 	// pixelshader custom constants
 
-	void set_custom_pixelshader_constants(game::GfxCmdBufState* state)
+	void set_custom_pixelshader_constants([[maybe_unused]] game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
-		if (state && state->pass)
+		// there is no proper scene setup for the backend frame ..
+		// grab required stuff from the frontend frame
+
+		if(source && source->viewMode == game::VIEW_MODE_3D)
 		{
-			if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
-				(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
+			gfx_fbv.float_time = source->sceneDef.floatTime;
+		}
+
+		if (source && state && state->pass)
+		{
+			// 2D: set required shader constants for backend passes
+			if(renderer::is_rendering_camerawnd() && source->viewMode == game::VIEW_MODE_2D)
 			{
-				/*if (utils::string_equals(state->material->info.name, "mc/mtl_sphere_25spec_25gloss_grey"))
+				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
-					for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
+					const auto arg_def = &state->pass->args[arg];
+					if (arg_def && arg_def->type == 5)
 					{
-						const auto arg_def = &state->pass->args[arg];
-						if (arg_def && arg_def->type == 5)
+						if (state->pass->pixelShader)
 						{
-							if (state->pass->pixelShader)
+							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_GAMETIME)
 							{
-								if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_OUTDOOR_FEATHER_PARMS)
+								const float clamped_second = gfx_fbv.float_time - floorf(gfx_fbv.float_time);
+
+								game::vec4_t temp = 
 								{
-									game::vec4_t temp;
-									utils::vector::set_vec4(temp, 1.0f);
-									utils::vector::subtract(temp, ggui::preferences::specular_sampler, temp);
-									temp[3] -= ggui::preferences::specular_sampler[3];
-									
+									sinf(clamped_second * 6.283185482025146f),
+									cosf(clamped_second * 6.283185482025146f),
+									clamped_second,
+									gfx_fbv.float_time
+								};
+
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+
+							// filmtweaks
+							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_COLOR_BIAS ||
+								arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_COLOR_TINT_BASE || 
+								arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_COLOR_TINT_DELTA)
+							{
+								dvars::assign_stock_dvars();
+
+								//float v12 = (1.0f - r_filmtweakdesaturation) * r_desaturation + r_filmtweakdesaturation;
+								const float filmtweakdesaturation = dvars::r_filmtweakdesaturation->current.value; //v12 * r_filmtweakdesaturation;
+
+								float desaturation = 0.00024414062f;
+
+								if (0.000244140625f - filmtweakdesaturation < 0.0f)
+								{
+									desaturation = filmtweakdesaturation;
+								}
+
+								const float dc = desaturation * dvars::r_filmtweakcontrast->current.value;
+
+								if(arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_COLOR_BIAS)
+								{
+									const float bc = dvars::r_filmtweakbrightness->current.value + 0.5f - 0.5f * dvars::r_filmtweakcontrast->current.value;
+
+									const game::vec4_t temp =
+									{
+										bc, bc, bc, 1.0f / desaturation - 1.0f
+									};
+
 									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-									break;
+								}
+
+								if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_COLOR_TINT_BASE)
+								{
+									const game::vec4_t temp =
+									{
+										dvars::r_filmtweakdarktint->current.vector[0] * dc,
+										dvars::r_filmtweakdarktint->current.vector[1] * dc,
+										dvars::r_filmtweakdarktint->current.vector[2] * dc,
+										0.0f
+									};
+
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								}
+
+								if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_COLOR_TINT_DELTA)
+								{
+									const game::vec4_t temp =
+									{
+										(dvars::r_filmtweaklighttint->current.vector[0] - dvars::r_filmtweakdarktint->current.vector[0])* dc,
+										(dvars::r_filmtweaklighttint->current.vector[1] - dvars::r_filmtweakdarktint->current.vector[1])* dc,
+										(dvars::r_filmtweaklighttint->current.vector[2] - dvars::r_filmtweakdarktint->current.vector[2])* dc,
+										0.0f
+									};
+
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 								}
 							}
 						}
 					}
-				}*/
-				
-				
-				// loop through all argument defs to find custom codeconsts
+				}
+			}
+
+			// 3D
+			if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
+				(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
+			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
 					const auto arg_def = &state->pass->args[arg];
@@ -543,7 +633,6 @@ namespace components
 										{
 											if (utils::string_equals(state->material->constantTable[constant].name, "envMapParms"))
 											{
-												// needs multiplication by 0.2, 0.2, 1.0, 1.0 or its way to shiny
 												game::dx->device->SetPixelShaderConstantF(arg_def->dest, state->material->constantTable[constant].literal, 1);
 												break;
 											}
@@ -680,12 +769,12 @@ namespace components
 			pop     ebp;
 
 			pushad;
-			//mov		ecx, [esp + 0x24]; // source
+			mov		ecx, [esp + 0x24]; // source
 			mov		edx, [esp + 0x28]; // state
 			push	edx; // state
-			//push	ecx; // source
+			push	ecx; // source
 			call	set_custom_pixelshader_constants;
-			add		esp, 4;
+			add		esp, 8;
 			popad;
 
 			retn;
@@ -698,11 +787,10 @@ namespace components
 
 	void set_custom_vertexshader_constants([[maybe_unused]] game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
-		if (/*!renderer::is_rendering_layeredwnd()*/ renderer::is_rendering_camerawnd() && dvars::r_fakesun_fog_enabled->current.enabled)
+		if (renderer::is_rendering_camerawnd() && dvars::r_fakesun_fog_enabled->current.enabled)
 		{
 			if (state && state->pass)
 			{
-				// loop through all argument defs to find custom codeconsts
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
 					const auto arg_def = &state->pass->args[arg];
@@ -778,7 +866,7 @@ namespace components
 		}
 	}
 
-	// returns handle for already loaded technique, loads new technique from "raw/techniques" or "bin/IW3xRadiant/techniques" otherwise
+	// return handle for loaded technique, loads new technique from "raw/techniques" or "bin/IW3xRadiant/techniques" otherwise
 	game::MaterialTechnique* Material_RegisterTechnique(const char* name /*eax*/, int is_renderer_in_use /*edi*/)
 	{
 		const static uint32_t func_addr = 0x519790;
@@ -790,198 +878,9 @@ namespace components
 		}
 	}
 
-	// create "new" lighting state 
-	// -> re-use eg. fakelight_normal, check if "new" lightstate is enabled
-	// -> overwrite used techniques with custom ones
-	// -> profit
-	//
-	// nice to have:
-	// -> add sliders to modify shader constants
-	// -> add sky or generic background to model preview?
-	// -> add custom image kvp to reflection probes to assign probes, find nearest probe to material .. etc
-	
-	void r_setup_pass_xmodel(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
+	void r_setup_pass_general(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
 	{
-		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) || 
-			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
-		{
-			if (utils::string_equals(state->technique->name, "fakelight_normal_dtex") ||
-				utils::string_equals(state->technique->name, "fakelight_normal_d0_dtex"))
-			{
-				bool has_normal = false;
-				bool has_spec = false;
-
-				for (auto tex = 0; tex < state->material->textureCount; tex++)
-				{
-					if (state->material->textureTable[tex].u.image->semantic == 0x5 || state->material->textureTable[tex].u.image->semantic == 0x1) // or identitynormal
-					{
-						has_normal = true;
-					}
-
-					has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
-				}
-
-				if (has_spec && has_normal)
-				{
-					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_dtex", 1); // fakesun_normal_dtex
-						tech)
-					{
-						state->technique = tech;
-
-						// set reflection probe sampler
-						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
-							image && image->texture.data)
-						{
-							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
-							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
-								(0x538D70)(0, state, 1, 114, image);
-						}
-					}
-				}
-				else if (!has_spec && has_normal)
-				{
-					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
-						tech)
-					{
-						state->technique = tech;
-
-						// set reflection probe sampler
-						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
-							image && image->texture.data)
-						{
-							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
-							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
-								(0x538D70)(0, state, 1, 114, image);
-						}
-					}
-				}
-			}
-		}
-
-		if(dvars::r_draw_model_shadowcaster && !dvars::r_draw_model_shadowcaster->current.enabled)
-		{
-			// replace shadow caster technique with a none visible one
-			if (utils::string_equals(state->material->info.name, "mc/mtl_tree_shadow_caster"))
-			{
-				if (const auto	tech = Material_RegisterTechnique("cinematic", 1);
-					tech)
-				{
-					state->technique = tech;
-				}
-			}
-		}
-		
 		const auto pass = &state->technique->passArray[passIndex];
-		const auto material = state->material;
-
-		state->pass = pass;
-		state->passIndex = passIndex;
-
-		if (material->stateBitsEntry[state->techType] >= material->stateBitsCount)
-		{
-			game::Com_Error("r_setup_pass :: material->stateBitsEntry[context.state->techType] doesn't index material->stateBitsCount");
-		}
-
-		const int bit			= passIndex + material->stateBitsEntry[state->techType];
-		unsigned int loadbit_0	= material->stateBitsTable[bit].loadBits[0];
-		unsigned int loadbit_1	= material->stateBitsTable[bit].loadBits[1];
-		
-		if (source->viewMode == game::VIEW_MODE_NONE)
-		{
-			game::Com_Error("r_setup_pass :: context.source->viewMode != VIEW_MODE_NONE");
-		}
-		
-		if (source->viewMode == game::VIEW_MODE_2D)
-		{
-			loadbit_1 = loadbit_1 & 0xFFFFFFC2 | 2;
-		}
-		
-		if (loadbit_0 != state->refStateBits[0])
-		{
-			// void __cdecl R_ChangeState_0(GfxCmdBufState *state, unsigned int statebit)
-			utils::hook::call<void(__cdecl)(game::GfxCmdBufState* _state, unsigned int _statebit)>(0x538AF0)(state, loadbit_0);
-			state->refStateBits[0] = loadbit_0;
-		}
-		
-		if (loadbit_1 != state->refStateBits[1])
-		{
-			// void __cdecl R_ChangeState_1(GfxCmdBufState *state, unsigned int statebit)
-			utils::hook::call<void(__cdecl)(game::GfxCmdBufState* _state, unsigned int _statebit)>(0x53A170)(state, loadbit_1);
-			state->refStateBits[1] = loadbit_1;
-		}
-		
-		if (!pass->pixelShader)
-		{
-			game::Com_Error("r_setup_pass :: pass->pixelShader");
-		}
-
-		// void __cdecl R_SetPixelShader(GfxCmdBufState *state, MaterialPixelShader *pixelShader)
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufState* _state, game::MaterialPixelShader* _pixelShader)>(0x53C2C0)(state, pass->pixelShader);
-
-		if (pass->stableArgCount)
-		{
-			R_SetPassShaderStableArguments(&pass->args[pass->perPrimArgCount + pass->perObjArgCount].type, source, state, pass->stableArgCount);
-		}
-	}
-
-	void r_setup_pass_brush(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
-	{
-		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
-			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
-		{
-			if (utils::string_equals(state->technique->name, "fakelight_normal") ||
-				utils::string_equals(state->technique->name, "fakelight_normal_d0"))
-			{
-				bool has_normal = false;
-				bool has_spec = false;
-
-				for (auto tex = 0; tex < state->material->textureCount; tex++)
-				{
-					if (state->material->textureTable[tex].u.image->semantic == 0x5 || state->material->textureTable[tex].u.image->semantic == 0x1) // or identitynormal
-					{
-						has_normal = true;
-					}
-					has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
-				}
-
-				if (has_spec && has_normal)
-				{
-					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun", 1); // fakesun_normal
-						tech)
-					{
-						state->technique = tech;
-
-						// set reflection probe sampler
-						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
-										image && image->texture.data)
-						{
-							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
-							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
-								(0x538D70)(0, state, 1, 114, image); // 114
-						}
-					}
-				}
-				else if (!has_spec && has_normal)
-				{
-					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_no_spec", 1); // fakesun_normal_no_spec_img
-						tech)
-					{
-						state->technique = tech;
-
-						// set reflection probe sampler
-						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
-										image && image->texture.data)
-						{
-							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
-							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
-								(0x538D70)(0, state, 1, 114, image);
-						}
-					}
-				}
-			}
-		}
-
- 		const auto pass = &state->technique->passArray[passIndex];
 		const auto material = state->material;
 
 		state->pass = pass;
@@ -1033,11 +932,180 @@ namespace components
 			R_SetPassShaderStableArguments(&pass->args[pass->perPrimArgCount + pass->perObjArgCount].type, source, state, pass->stableArgCount);
 		}
 	}
+
+	void r_setup_pass_xmodel(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
+	{
+		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) || 
+			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
+		{
+			if (utils::string_equals(state->technique->name, "fakelight_normal_dtex") ||
+				utils::string_equals(state->technique->name, "fakelight_normal_d0_dtex"))
+			{
+				bool has_normal = false;
+				bool has_spec = false;
+
+				for (auto tex = 0; tex < state->material->textureCount; tex++)
+				{
+					if (state->material->textureTable[tex].u.image->semantic == 0x5 || state->material->textureTable[tex].u.image->semantic == 0x1) // or identitynormal
+					{
+						has_normal = true;
+					}
+
+					has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
+				}
+
+				if (has_spec && has_normal)
+				{
+					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_dtex", 1); // fakesun_normal_dtex
+									tech)
+					{
+						state->technique = tech;
+
+						// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+										image && image->texture.data)
+						{
+							game::R_SetSampler(0, state, 1, (char)114, image);
+						}
+					}
+				}
+				else if (!has_spec && has_normal)
+				{
+					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
+									tech)
+					{
+						state->technique = tech;
+
+						// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+										image && image->texture.data)
+						{
+							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
+							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
+								(0x538D70)(0, state, 1, 114, image);
+						}
+					}
+				}
+			}
+		}
+
+		if(dvars::r_draw_model_shadowcaster && !dvars::r_draw_model_shadowcaster->current.enabled)
+		{
+			// replace shadow caster technique with a none visible one
+			if (utils::string_equals(state->material->info.name, "mc/mtl_tree_shadow_caster"))
+			{
+				if (const auto	tech = Material_RegisterTechnique("cinematic", 1);
+								tech)
+				{
+					state->technique = tech;
+				}
+			}
+		}
+		
+		r_setup_pass_general(source, state, passIndex);
+	}
+
+	void r_setup_pass_brush(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
+	{
+		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
+			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
+		{
+			if (utils::string_equals(state->technique->name, "fakelight_normal") ||
+				utils::string_equals(state->technique->name, "fakelight_normal_d0"))
+			{
+				bool has_normal = false;
+				bool has_spec = false;
+
+				for (auto tex = 0; tex < state->material->textureCount; tex++)
+				{
+					if (state->material->textureTable[tex].u.image->semantic == 0x5 || state->material->textureTable[tex].u.image->semantic == 0x1) // or identitynormal
+					{
+						has_normal = true;
+					}
+					has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
+				}
+
+				if (has_spec && has_normal)
+				{
+					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun", 1); // fakesun_normal
+						tech)
+					{
+						state->technique = tech;
+
+						// set reflection probe sampler
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+										image && image->texture.data)
+						{
+							game::R_SetSampler(0, state, 1, (char)114, image);
+						}
+					}
+				}
+				else if (!has_spec && has_normal)
+				{
+					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_no_spec", 1); // fakesun_normal_no_spec_img
+						tech)
+					{
+						state->technique = tech;
+
+						// set reflection probe sampler
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+										image && image->texture.data)
+						{
+							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
+							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
+								(0x538D70)(0, state, 1, 114, image);
+						}
+					}
+				}
+			}
+		}
+
+		r_setup_pass_general(source, state, passIndex);
+	}
+
+	void r_setup_pass_2d(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
+	{
+		bool is_filmtweak_tech = false;
+
+		if(renderer::is_rendering_camerawnd())
+		{
+			// filmtweaks :: using pixelCostColorCodeMaterial as a proxy
+			if (utils::string_equals(state->material->info.name, "pixel_cost_color_code"))
+			{
+				// replace the technique used by pixelCostColorCodeMaterial
+				if (const auto	tech = Material_RegisterTechnique("radiant_filmtweaks", 1);
+								tech)
+				{
+					// allows us to reload the shader using the reload_shaders command
+					state->technique = tech;
+					is_filmtweak_tech = true;
+				}
+			}
+		}
+
+		r_setup_pass_general(source, state, passIndex);
+
+		if (renderer::is_rendering_camerawnd())
+		{
+			// filmtweaks :: set colorMapPostSunSampler (uses pre-postfx scene texture)
+			if (is_filmtweak_tech)
+			{
+				if (const auto	cam = ggui::get_rtt_camerawnd();
+								cam && cam->scene_texture)
+				{
+					game::GfxImage postsun = {};
+					postsun.texture.data = cam->scene_texture;
+
+					game::R_SetSampler(0, state, 4, (char)114, &postsun);
+				}
+			}
+		}
+	}
 	
 	// *
 	// sun preview
 
-	void sunpreview_drawbrush(game::selbrush_t* brush /*edi*/)
+	void sunpreview_drawbrush(game::selbrush_def_t* brush /*edi*/)
 	{
 		const static uint32_t func_addr = 0x406960;
 		__asm
@@ -1138,7 +1206,6 @@ namespace components
 		{
 			projection_cmd->projection = game::GfxProjectionTypes::GFX_PROJECTION_2D;
 		}
-		
 
 		// this was within the original func, only here for reference
 		//game::R_AddCmdDrawFullScreenColoredQuad(0.0f, 0.0f, 1.0f, 1.0f, some_color_from_func_above, material_white_multiply);
@@ -1161,7 +1228,75 @@ namespace components
 		
 		return true;
 	}
-	
+
+	// camera post effects
+	// * copy scene without post effects
+	// * draw fullscreen quad with shader or proxy material
+	// * r_setup_pass_2d() :: setup technique and assign scene texture to the colorMapPostSunSampler
+	// * shader logic
+	// * copy scene with post effects for imgui
+	// *
+	// ! implemented "disable for duration logic" (ccamwnd::windowproc()) because resizing the window was causing short black screens
+	// ! ^ fixed by moving the camera_postfx hook
+
+	void camera_postfx()
+	{
+		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		{
+			const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
+
+			// each frame
+			renderer::postfx::set_state(false);
+			renderer::postfx::frame();
+
+			// if postfx are disabled for this frame
+			if(renderer::postfx::is_disabled())
+			{
+				return;
+			}
+
+			const bool filmtweaks_enabled = r_filmtweakenable && r_filmtweakenable->current.enabled && game::rgp->pixelCostColorCodeMaterial;
+			renderer::postfx::set_state(filmtweaks_enabled);
+			
+			if(renderer::postfx::is_any_active())
+			{
+				// get scene without postfx -> used for colorMapPostSunSampler
+				renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
+			}
+
+			// register_material
+			//auto mat_test = utils::hook::call<game::Material* (__cdecl)(const char* _name, int _unk)>(0x511BE0)("hud_font_rendering", 1);
+
+			// filmtweaks :: draw fullscreen quad using pixelCostColorCodeMaterial (we replace its technique in r_setup_pass_2d -> no need to create a custom material this way)
+			if (filmtweaks_enabled)
+			{
+				// RB_FullScreenFilter
+				utils::hook::call<void(__cdecl)(game::Material* _material)>(0x531450)(game::rgp->pixelCostColorCodeMaterial);
+
+				// get scene with postfx -> render with imgui
+				renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
+			}
+		}
+	}
+
+	void __declspec(naked) rb_initscene_vp_stub()
+	{
+		const static uint32_t func_addr = 0x5358D0;
+		const static uint32_t retn_addr = 0x535B1F;
+
+		__asm
+		{
+			call	func_addr;
+			add		esp, 4;
+
+			pushad;
+			call	camera_postfx;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
+
 	// *
 	// *
 
@@ -1230,7 +1365,7 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "fog color");
 	}
-	
+
 	renderer::renderer()
 	{
 		// set default value for r_vsync to false
@@ -1272,15 +1407,20 @@ namespace components
 		// hook R_SetupPass in R_DrawXModelSkinnedUncached to set custom techniques for xmodels
 		utils::hook(0x53AC4F, r_setup_pass_xmodel, HOOK_CALL).install()->quick(); // xmodels
 		utils::hook(0x4FE646, r_setup_pass_brush, HOOK_CALL).install()->quick(); // brushes
-		
-		command::register_command_with_hotkey("reload_techniques"s, [this](auto)
+		utils::hook(0x53A7BA, r_setup_pass_2d, HOOK_CALL).install()->quick(); // 2d and translucent
+
+		// hook RB_InitSceneViewport in RB_CallExecuteRenderCommands to implement camera postfx
+		//utils::hook(0x535AFD, rb_initscene_vp_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x535B17, rb_initscene_vp_stub, HOOK_JUMP).install()->quick();
+
+		/*command::register_command_with_hotkey("reload_techniques"s, [this](auto)
 		{
 			auto& tech_count = *reinterpret_cast<int*>(0x14EFCB8);
 			tech_count = 0;
 			
 			const auto tech_hashtable = reinterpret_cast<void*>(0x14EFCBC);
 			memset(tech_hashtable, 0, sizeof(int[8192]));
-		});
+		});*/
 
 		command::register_command_with_hotkey("reload_shaders"s, [this](auto)
 		{
@@ -1303,6 +1443,58 @@ namespace components
 
 			const auto tech_hashtable = reinterpret_cast<void*>(0x14EFCBC);
 			memset(tech_hashtable, 0, sizeof(int[8192]));
+		});
+
+		command::register_command("dump_shaders_technique", [this](std::vector<std::string> args)
+		{
+			if (args.size() != 2)
+			{
+				game::printf_to_console("Usage: dump_shaders_technique <technique_name>");
+				return;
+			}
+
+			if (const auto	tech = Material_RegisterTechnique(args[1].c_str(), 1); // passthru_film
+							tech)
+			{
+				dvars::fs_homepath = game::Dvar_FindVar("fs_homepath");
+				if (dvars::fs_homepath)
+				{
+					std::string filePath = dvars::fs_homepath->current.string;
+								filePath += "\\shader_dumps\\";
+
+					std::filesystem::create_directories(filePath);
+
+					std::string technique_name = args[1];
+
+					// vertex shader
+					std::ofstream vs_shader_file(filePath + "vs_" + technique_name + ".bin", std::ios::binary);
+					if (!vs_shader_file.is_open())
+					{
+						game::printf_to_console("Could not create vertexshader binary file. Aborting!\n");
+						return;
+					}
+
+					const std::uint16_t vs_bin_size = tech->passArray->vertexShader->prog.loadDef.programSize;
+					vs_shader_file.write(reinterpret_cast<char*>(tech->passArray->vertexShader->prog.loadDef.program), vs_bin_size * 4);
+					vs_shader_file.close();
+
+					// pixelshader
+					std::ofstream ps_shader_file(filePath + "ps_" + technique_name + ".bin", std::ios::binary);
+					if (!ps_shader_file.is_open())
+					{
+						game::printf_to_console("Could not create pixelshader binary file. Aborting!\n");
+						return;
+					}
+
+					const std::uint16_t ps_bin_size = tech->passArray->pixelShader->prog.loadDef.programSize;
+					ps_shader_file.write(reinterpret_cast<char*>(tech->passArray->pixelShader->prog.loadDef.program), ps_bin_size * 4);
+					ps_shader_file.close();
+				}
+				else
+				{
+					game::printf_to_console("[!] Could not find technique");
+				}
+			}
 		});
 
 		command::register_command_with_hotkey("fakesun_toggle"s, [this](auto)

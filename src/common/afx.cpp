@@ -1,5 +1,7 @@
 #include "std_include.hpp"
 
+//CSurfaceDlg* g_dlgSurface = reinterpret_cast<CSurfaceDlg*>(0x25D7668);
+
 // CDC
 // Do not allow this class to be instanced
 CDC::CDC()

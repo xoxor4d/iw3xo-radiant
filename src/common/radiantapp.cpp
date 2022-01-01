@@ -123,6 +123,41 @@ enum XY_SHOW_FLAGS
 	REVERSE_FILTER = 0x40,
 };
 
+void radiantapp::set_default_savedinfo_colors()
+{
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], 0.169f, 0.169f, 0.169f, 1.0f); // 0
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBACK], 0.25f, 0.25f, 0.25f, 1.0f); // 1
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMINOR], 0.233f, 0.233f, 0.233f, 1.0f); // 2
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMAJOR], 0.209f, 0.209f, 0.209f, 1.0f); // 3
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_CAMERABACK], 0.169f, 0.169f, 0.169f, 1.0f); // 4
+
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITY], 0.0f, 0.5f, 0.0f, 1.0f); // 5 - not used org
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], 1.0f, 0.1f, 0.0f, 0.4f); // 6 - not used org - now grid entity classname
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBLOCK], 0.165f, 0.165f, 0.165f, 1.0f); // 7
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDTEXT], 0.0f, 0.0f, 0.0f, 1.0f); // 8
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_BRUSHES], 0.54f, 0.54f, 0.54f, 1.0f); // 9
+
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELBRUSHES], 1.0f, 0.125f, 0.0f, 1.0f); // 10
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELBRUSHES_CAMERA], 1.0f, 0.0f, 0.0f, 0.35f); // 11
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_CLIPPER], 1.0f, 0.0f, 0.0f, 1.0f); // 12
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_VIEWNAME], 1.0f, 0.35f, 0.0f, 0.6f); // 13
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_DETAIL_BRUSH], 0.0f, 0.525f, 0.18f, 1.0f); // 14
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_DRAW_TOGGLESUFS], 0.0f, 0.0f, 0.0f, 1.0f); // 15 - not used org
+
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELFACE_CAMERA], 1.0f, 0.25f, 0.25f, 0.25f); // 16
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_GROUP], 0.0f, 0.5f, 0.65f, 1.0f); // 17
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_CULLGROUP], 0.0f, 0.0f, 1.0f, 1.0f); // 18
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_WEAPON_CLIP], 0.5f, 0.6f, 0.0f, 1.0f); // 19
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SIZE_INFO], 0.72f, 0.72f, 0.72f, 1.0f); // 20
+
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_MODEL], 0.05f, 0.1f, 0.15f, 1.0f); // 21
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_NONCOLLIDING], 1.0f, 0.365f, 0.16f, 1.0f); // 22
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_WIREFRAME], 0.0f, 0.0f, 0.0f, 1.0f); // 23 - not used org
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_FROZEN_LAYERS], 0.4f, 0.4f, 0.8f, 0.5f); // 24 - not used org
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN2], 0.0f, 0.0f, 0.0f, 1.0f); // 25 - not used org
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], 0.0f, 0.0f, 0.0f, 1.0f); // 26 - not used org
+}
+
 
 void MFCCreate()
 {
@@ -137,37 +172,7 @@ void MFCCreate()
 		game::g_qeglobals->d_savedinfo.d_gridsize = 1.0f;
 		game::g_qeglobals->d_savedinfo.d_picmip = 0;
 		
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], 0.169f, 0.169f, 0.169f, 1.0f); // 0
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBACK], 0.25f, 0.25f, 0.25f, 1.0f); // 1
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMINOR], 0.233f, 0.233f, 0.233f, 1.0f); // 2
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMAJOR], 0.209f, 0.209f, 0.209f, 1.0f); // 3
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_CAMERABACK], 0.169f, 0.169f, 0.169f, 1.0f); // 4
-		
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITY], 0.0f, 0.5f, 0.0f, 1.0f); // 5 - not used org
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], 1.0f, 0.1f, 0.0f, 0.4f); // 6 - not used org - now grid entity classname
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBLOCK], 0.165f, 0.165f, 0.165f, 1.0f); // 7
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDTEXT], 0.0f, 0.0f, 0.0f, 1.0f); // 8
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_BRUSHES], 0.54f, 0.54f, 0.54f, 1.0f); // 9
-
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELBRUSHES], 1.0f, 0.125f, 0.0f, 1.0f); // 10
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELBRUSHES_CAMERA], 1.0f, 0.0f, 0.0f, 0.35f); // 11
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_CLIPPER], 1.0f, 0.0f, 0.0f, 1.0f); // 12
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_VIEWNAME], 1.0f, 0.35f, 0.0f, 0.6f); // 13
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_DETAIL_BRUSH], 0.0f, 0.525f, 0.18f, 1.0f); // 14
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_DRAW_TOGGLESUFS], 0.0f, 0.0f, 0.0f, 1.0f); // 15 - not used org
-
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SELFACE_CAMERA], 1.0f, 0.25f, 0.25f, 0.25f); // 16
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_GROUP], 0.0f, 0.5f, 0.65f, 1.0f); // 17
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_CULLGROUP], 0.0f, 0.0f, 1.0f, 1.0f); // 18
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_WEAPON_CLIP], 0.5f, 0.6f, 0.0f, 1.0f); // 19
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_SIZE_INFO], 0.72f, 0.72f, 0.72f, 1.0f); // 20
-
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_MODEL], 0.05f, 0.1f, 0.15f, 1.0f); // 21
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_NONCOLLIDING], 1.0f, 0.365f, 0.16f, 1.0f); // 22
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_WIREFRAME], 0.0f, 0.0f, 0.0f, 1.0f); // 23 - not used org
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_FROZEN_LAYERS], 0.4f, 0.4f, 0.8f, 0.5f); // 24 - not used org
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN2], 0.0f, 0.0f, 0.0f, 1.0f); // 25 - not used org
-		utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], 0.0f, 0.0f, 0.0f, 1.0f); // 26 - not used org
+		radiantapp::set_default_savedinfo_colors();
 
 		if(old_size < sizeof(game::g_qeglobals->d_savedinfo))
 		{

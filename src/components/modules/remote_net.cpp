@@ -348,7 +348,7 @@ namespace components
 		auto selectedBrushes = game::g_selected_brushes();
 		
 		// we need to have a brush selected to be able to change its sides (for now)
-		if (!selectedBrushes->currSelection)
+		if (!selectedBrushes->def)
 		{
 			if (dvars::radiant_liveDebug->current.enabled)
 			{
@@ -360,13 +360,13 @@ namespace components
 
 		if (strCommand)
 		{
-			if (!selectedBrushes->currSelection->brush_faces)
+			if (!selectedBrushes->def->brush_faces)
 			{
 				game::printf_to_console("[!]: selectedBrushes->currSelection->brush_faces == NULL\n");
 				return;
 			}
 
-			game::face_t *face = &selectedBrushes->currSelection->brush_faces[game::glob::cServerCmd.brush_currentSideIndex];
+			auto *face = &selectedBrushes->def->brush_faces[game::glob::cServerCmd.brush_currentSideIndex];
 
 			if (!sscanf(strCommand, "%f %f %f  %f %f %f  %f %f %f",
 				&face->planepts0[0], &face->planepts0[1], &face->planepts0[2],
@@ -528,7 +528,7 @@ namespace components
 
 	// *
 	// Check if input brush is a valid brush
-	bool remote_net::selection_is_brush(game::brush_t *brush)
+	bool remote_net::selection_is_brush(game::brush_t_with_custom_def* brush)
 	{
 		if (brush && brush->owner && brush->owner->eclass)
 		{
@@ -540,7 +540,7 @@ namespace components
 
 	// *
 	// Parse a brush and send it to the server :: returns false if brush is invalid
-	bool remote_net::cmd_send_single_brush(game::brush_t *brush, int brushNum)
+	bool remote_net::cmd_send_single_brush(game::brush_t_with_custom_def* brush, int brushNum)
 	{
 		// check if it is a valid brush
 		if (!selection_is_brush(brush))
@@ -552,7 +552,7 @@ namespace components
 		game::printf_to_console("\n++ [REMOTE :: NEW BRUSH START] ++\n\n");
 #endif
 
-		int tempFaceCount = brush->faceCount;
+		int tempFaceCount = brush->facecount;
 
 		// brushes send to the server only support up to 16 faces for now
 		if (tempFaceCount > 16)
@@ -606,7 +606,7 @@ namespace components
 		for (auto face = 0; face < tempFaceCount; face++)
 		{
 			// check if there is a winding
-			if (!brush->brush_faces[face].face_winding)
+			if (!brush->brush_faces[face].w)
 			{
 #if RADIANT_DEBUG_BRUSH 
 				game::printf_to_console("[BRUSH]: Skipping brush-face with no winding points.\n");
@@ -645,7 +645,7 @@ namespace components
 #endif
 
 			// skipping a face would result in odd behavior when drawing debug polys
-			int windingPtCount = brush->brush_faces[face].face_winding->numPoints;
+			int windingPtCount = brush->brush_faces[face].w->numPoints;
 			if (windingPtCount > 16)
 			{
 				windingPtCount = 16;
@@ -661,9 +661,9 @@ namespace components
 			// for each winding point
 			for (auto pt = 0; pt < windingPtCount; pt++)
 			{
-				windingPtsList[pt][0] = brush->brush_faces[face].face_winding->points[pt][0];
-				windingPtsList[pt][1] = brush->brush_faces[face].face_winding->points[pt][1];
-				windingPtsList[pt][2] = brush->brush_faces[face].face_winding->points[pt][2];
+				windingPtsList[pt][0] = brush->brush_faces[face].w->points[pt][0];
+				windingPtsList[pt][1] = brush->brush_faces[face].w->points[pt][1];
+				windingPtsList[pt][2] = brush->brush_faces[face].w->points[pt][2];
 			}
 
 			// *
@@ -735,7 +735,7 @@ namespace components
 		}
 
 		// nothing selected
-		if (!selectedBrushes->currSelection)
+		if (!selectedBrushes->def)
 		{
 #if RADIANT_DEBUG_BRUSH
 			game::printf_to_console("[!] No valid data @ remote_net::cmd_send_brush_select_deselect\n");
@@ -762,7 +762,7 @@ namespace components
 		// even older selections :: [selectedBrushes->prev->prev->currSelection != null] and so on ..
 
 		// get the last, "most active" selected brush
-		if (remote_net::cmd_send_single_brush(selectedBrushes->currSelection, 0))
+		if (remote_net::cmd_send_single_brush(selectedBrushes->def, 0))
 		{
 			// atleast 1 valid brush
 			int selbrushAmount = 1;
@@ -770,9 +770,9 @@ namespace components
 			auto prev = selectedBrushes->prev;
 
 			// for each selected valid previous brush till REMOTE_MAX_SEL_BRUSHES
-			while (prev->currSelection && selbrushAmount < REMOTE_MAX_SEL_BRUSHES)
+			while (prev->def && selbrushAmount < REMOTE_MAX_SEL_BRUSHES)
 			{
-				if (remote_net::cmd_send_single_brush(prev->currSelection, selbrushAmount))
+				if (remote_net::cmd_send_single_brush(prev->def, selbrushAmount))
 				{
 					selbrushAmount++;
 					prev = prev->prev;
@@ -796,6 +796,89 @@ namespace components
 #if RADIANT_DEBUG_BRUSH
 			game::printf_to_console("[RM-CMD]: Brush Count: [%d]\n", selbrushAmount);
 #endif
+		}
+	}
+
+	// *
+	// *
+
+	bool worldspawn_on_key_change(const game::epair_t* epair, const char* key, float* value, const size_t& valueSize)
+	{
+		bool changed = false;
+
+		if (utils::string_equals(epair->key, key))
+		{
+			const std::vector<std::string> value_str = utils::explode(epair->value, ' ');
+
+			auto count = value_str.size();
+			if (count > valueSize)
+			{
+				count = valueSize;
+			}
+
+			for (size_t i = 0; i < count; i++)
+			{
+				const float temp = utils::try_stof(value_str[i], true);
+				if (value[i] != temp)
+				{
+					value[i] = temp;
+					changed = true;
+				}
+			}
+		}
+
+		return changed;
+	}
+
+	// *
+	// send dvar commands when changing worldspawn values
+	void remote_net::track_worldspawn_settings()
+	{
+		if(dvars::radiant_liveWorldspawn && dvars::radiant_liveWorldspawn->current.enabled)
+		{
+			if (const auto	world = game::g_world_entity();
+				world && world->firstActive->eclass->name)
+			{
+				if (utils::string_equals(world->firstActive->eclass->name, "worldspawn"))
+				{
+					for (auto epair = world->firstActive->epairs; epair; epair = epair->next)
+					{
+						if (worldspawn_on_key_change(epair, "sundirection", game::glob::track_worldspawn.sundirection, 3))
+						{
+							if (game::glob::track_worldspawn.initiated)
+							{
+								components::remote_net::Cmd_SendDvar(utils::va("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f %.1f %.1f\"\n}", "r_lighttweaksundirection",
+									game::glob::track_worldspawn.sundirection[0], game::glob::track_worldspawn.sundirection[1], game::glob::track_worldspawn.sundirection[2]));
+							}
+						}
+
+						if (worldspawn_on_key_change(epair, "suncolor", game::glob::track_worldspawn.suncolor, 3))
+						{
+							if (game::glob::track_worldspawn.initiated)
+							{
+								components::remote_net::Cmd_SendDvar(utils::va("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f %.1f %.1f\"\n}", "r_lighttweaksuncolor",
+									game::glob::track_worldspawn.suncolor[0], game::glob::track_worldspawn.suncolor[1], game::glob::track_worldspawn.suncolor[2]));
+							}
+						}
+
+						if (worldspawn_on_key_change(epair, "sunlight", &game::glob::track_worldspawn.sunlight, 1))
+						{
+							if (game::glob::track_worldspawn.initiated)
+							{
+								components::remote_net::Cmd_SendDvar(utils::va("{\n\"dvarname\" \"%s\"\n\"value\" \"%.1f\"\n}", "r_lighttweaksunlight",
+									game::glob::track_worldspawn.sunlight));
+							}
+						}
+					}
+				}
+
+				// why?
+				if (!game::glob::track_worldspawn.initiated)
+				{
+					game::glob::track_worldspawn.initiated = true;
+					return;
+				}
+			}
 		}
 	}
 
@@ -964,6 +1047,14 @@ namespace components
 			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "enables debug prints.");
+
+		dvars::radiant_liveWorldspawn = dvars::register_bool(
+			/* name		*/ "radiant_liveWorldspawn",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "sync radiant worldspawn settings with the game (lightTweak - sunDirection - sunColor - sunLight");
+
+		// radiant_liveWorldspawn
 	}
 
 	remote_net::remote_net()

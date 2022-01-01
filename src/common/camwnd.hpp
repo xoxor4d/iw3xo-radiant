@@ -19,6 +19,7 @@ struct camera_s
 };
 
 extern void CameraCalcRayDir(int x, int y, float* dir);
+extern bool cam_test;
 
 class ccamwnd : public CWnd
 {
