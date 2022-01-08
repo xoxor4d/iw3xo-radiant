@@ -1,0 +1,24 @@
+#pragma once
+
+namespace fx_system
+{
+	void	AxisCopy(const float(*in)[3], float(*out)[3]);
+	void	PerpendicularVector(const float* src, float* dst);
+	void	AxisToQuat(const float(*mat)[3], float* out);
+	void	UnitQuatToAxis(const float* quat, float(*axis)[3]);
+
+	float	Vec3LengthSq(const float* v);
+	bool	Vec3IsNormalized(const float* v);
+	bool	Vec3Compare(const float* v, const float* f);
+	float	Vec3Normalize(float* v);
+	void	Vec3Cross(const float* v0, const float* v1, float* cross);
+	void	Vec3Basis_RightHanded(const float* forward, float* left, float* up);
+
+	float	Vec4LengthSq(const float* v);
+	bool	Vec4IsNormalized(const float* v);
+	float	Vec4Normalize(float* v);
+
+	float	Abs(const float* v);
+
+
+}

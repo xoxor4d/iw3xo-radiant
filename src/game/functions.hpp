@@ -45,6 +45,7 @@ namespace game
 		
 	}
 
+	extern game::vec3_t vec3_origin;
 	extern game::vec4_t color_white;
 	
 	// radiant globals
