@@ -8,6 +8,36 @@
 
 namespace fx_system
 {
+	std::uint32_t FX_ElemRandomSeed(int effectRandomSeed, int elemMsecBegin, int sequence)
+	{
+		return (0x128 * sequence + effectRandomSeed + elemMsecBegin) % 0x1DFu;
+	}
+
+	void FX_RandomlyRotateAxis(const float(*axisIn)[3], int randomSeed, float(*axisOut)[3])
+	{
+		(*axisOut)[0] = (*axisIn)[0];
+		(*axisOut)[1] = (*axisIn)[1];
+		(*axisOut)[2] = (*axisIn)[2];
+
+		RotatePointAroundVector(&(*axisOut)[3], (const float*)axisOut, &(*axisIn)[3], fx_randomTable[24 + randomSeed] * 360.0f);
+		Vec3Cross((float*)axisOut, &(*axisOut)[3], &(*axisOut)[6]);
+
+		if (!Vec3IsNormalized((float*)axisOut))
+		{
+			Assert();
+		}
+
+		if (!Vec3IsNormalized(&(*axisOut)[3]))
+		{
+			Assert();
+		}
+
+		if (!Vec3IsNormalized(&(*axisOut)[6]))
+		{
+			Assert();
+		}
+	}
+
 	void FX_RandomDir(int seed, float* dir)
 	{
 		const float height = (fx_randomTable[10 + seed] * 2.0f) - 1.0f;

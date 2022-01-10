@@ -4,9 +4,11 @@ namespace fx_system
 {
 	void	AxisCopy(const float(*in)[3], float(*out)[3]);
 	void	PerpendicularVector(const float* src, float* dst);
+	void	RotatePointAroundVector(float* dst, const float* dir, const float* point, const float degrees);
 	void	AxisToQuat(const float(*mat)[3], float* out);
 	void	UnitQuatToAxis(const float* quat, float(*axis)[3]);
 
+	float	Vec3DistanceSq(const float* p1, const float* p2);
 	float	Vec3LengthSq(const float* v);
 	bool	Vec3IsNormalized(const float* v);
 	bool	Vec3Compare(const float* v, const float* f);
@@ -19,6 +21,7 @@ namespace fx_system
 	float	Vec4Normalize(float* v);
 
 	float	Abs(const float* v);
+	void	MatrixMultiply(const float(*in1)[3], const float(*in2)[3], float(*out)[3]);
 
 
 }

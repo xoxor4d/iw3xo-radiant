@@ -4,6 +4,8 @@
 						__debugbreak();		\
 					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__)
 
+#define LODWORD(x)  (*((DWORD*)&(x)))  // low dword
+
 namespace fx_system
 {
 	void AxisCopy(const float(*in)[3], float(*out)[3])
@@ -43,6 +45,87 @@ namespace fx_system
 		dst[pos] = dst[pos] + 1.0f;
 
 		Vec3Normalize(dst);
+	}
+
+	void RotatePointAroundVector(float* dst, const float* dir, const float* point, const float degrees)
+	{
+		if(Vec3Compare(dir, game::vec3_origin))
+		{
+			Assert();
+		}
+
+		const float vf[3] =
+		{
+			dir[0], dir[1], dir[2]
+		};
+
+		float vup[3];
+		float vr[3];
+
+		PerpendicularVector(dir, vr);
+		Vec3Cross(vr, vf, vup);
+
+		
+		float m[3][3] = {};
+		m[0][0] = vr[0];
+		m[1][0] = vr[1];
+		m[2][0] = vr[2];
+		m[0][1] = vup[0];
+		m[1][1] = vup[1];
+		m[2][1] = vup[2];
+		m[0][2] = vf[0];
+		m[1][2] = vf[1];
+		m[2][2] = vf[2];
+
+		float zrot[3][3] = {};
+		zrot[0][0] = 1.0;
+		zrot[0][1] = 0.0f;
+		zrot[0][2] = 0.0f;
+		zrot[1][0] = 0.0;
+		zrot[1][1] = 1.0;
+		zrot[1][2] = 0.0;
+		zrot[2][0] = 0.0f;
+		zrot[2][1] = 0.0f;
+		zrot[2][2] = 1.0;
+
+		float im[3][3];
+		memcpy(im, m, sizeof(im));
+		im[0][1] = vr[1];
+		im[0][2] = vr[2];
+		im[1][0] = vup[0];
+		im[1][2] = vup[2];
+		im[2][0] = vf[0];
+		im[2][1] = vf[1];
+
+		const float rad = degrees * 0.01745329238474369f;
+
+		if (std::isnan(rad))
+		{
+			Assert();
+		}
+
+		zrot[0][0] = cos(rad);
+		zrot[0][1] = sin(rad);
+
+		if (std::isnan(zrot[0][1]))
+		{
+			Assert();
+		}
+
+		if (std::isnan(zrot[0][0]))
+		{
+			Assert();
+		}
+
+		zrot[1][0] = -zrot[0][1];
+		zrot[1][1] =  zrot[0][0];
+
+		MatrixMultiply(m, zrot, zrot);
+		MatrixMultiply(zrot, im, m);
+
+		dst[0] = m[0][0] * point[0] + m[0][1] * point[1] + point[2] * m[0][2];
+		dst[1] = m[1][0] * point[0] + m[1][1] * point[1] + point[2] * m[1][2];
+		dst[2] = m[2][0] * point[0] + m[2][1] * point[1] + point[2] * m[2][2];
 	}
 
 	void AxisToQuat(const float(*mat)[3], float* out)
@@ -144,6 +227,14 @@ namespace fx_system
 		(*axis)[8] = 1.0f - (xx + yy);
 	}
 
+	float Vec3DistanceSq(const float* p1, const float* p2)
+	{
+		const float d1 = p2[1] - p1[1];
+		const float d2 = p2[2] - p1[2];
+
+		return d2 * d2 + d1 * d1 + (p2[0] - p1[0]) * (p2[0] - p1[0]);
+	}
+
 	float Vec3LengthSq(const float* v)
 	{
 		return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
@@ -219,5 +310,18 @@ namespace fx_system
 	float Abs(const float* v)
 	{
 		return sqrtf((v[0] * v[0] + v[1] * v[1]) + v[2] * v[2]);
+	}
+
+	void MatrixMultiply(const float(*in1)[3], const float(*in2)[3], float(*out)[3])
+	{
+		(*out)[0] = (*in1)[0] * (*in2)[0] + (*in1)[1] * (*in2)[3] + (*in1)[2] * (*in2)[6];
+		(*out)[1] = (*in2)[4] * (*in1)[1] + (*in2)[1] * (*in1)[0] + (*in1)[2] * (*in2)[7];
+		(*out)[2] = (*in2)[5] * (*in1)[1] + (*in2)[2] * (*in1)[0] + (*in1)[2] * (*in2)[8];
+		(*out)[3] = (*in1)[4] * (*in2)[3] + (*in1)[3] * (*in2)[0] + (*in2)[6] * (*in1)[5];
+		(*out)[4] = (*in1)[4] * (*in2)[4] + (*in1)[3] * (*in2)[1] + (*in1)[5] * (*in2)[7];
+		(*out)[5] = (*in1)[4] * (*in2)[5] + (*in1)[3] * (*in2)[2] + (*in1)[5] * (*in2)[8];
+		(*out)[6] = (*in1)[7] * (*in2)[3] + (*in1)[6] * (*in2)[0] + (*in2)[6] * (*in1)[8];
+		(*out)[7] = (*in1)[7] * (*in2)[4] + (*in1)[6] * (*in2)[1] + (*in1)[8] * (*in2)[7];
+		(*out)[8] = (*in1)[7] * (*in2)[5] + (*in1)[6] * (*in2)[2] + (*in1)[8] * (*in2)[8];
 	}
 }

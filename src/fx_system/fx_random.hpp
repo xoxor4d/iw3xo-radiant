@@ -3,7 +3,10 @@
 
 namespace fx_system
 {
-	void	FX_RandomDir(int seed, float* dir);
+	std::uint32_t	FX_ElemRandomSeed(int effectRandomSeed, int elemMsecBegin, int sequence);
+
+	void			FX_RandomlyRotateAxis(const float(*axisIn)[3], int randomSeed, float(*axisOut)[3]);
+	void			FX_RandomDir(int seed, float* dir);
 
 
 	// *

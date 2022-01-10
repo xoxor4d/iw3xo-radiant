@@ -8,6 +8,11 @@
 
 namespace fx_system
 {
+	int FX_GetElemLifeSpanMsec(int elemRandomSeed, FxElemDef* elemDef)
+	{
+		return elemDef->lifeSpanMsec.base + (((elemDef->lifeSpanMsec.amplitude + 1) * LOWORD((&fx_randomTable)[elemRandomSeed + 17])) >> 16);
+	}
+
 	void FX_SpatialFrameToOrientation(FxSpatialFrame* frame, game::orientation_t* orient)
 	{
 		orient->origin[0] = frame->origin[0];
@@ -33,6 +38,76 @@ namespace fx_system
 		posWorld[0] = (float)(posLocal[2] * axis[2][0]) + posWorld[0];
 		posWorld[1] = (float)(posLocal[2] * axis[2][1]) + posWorld[1];
 		posWorld[2] = (float)(posLocal[2] * axis[2][2]) + posWorld[2];
+	}
+
+	void FX_GetOriginForElem(FxEffect* effect, float* outOrigin, FxElemDef* elemDef, FxSpatialFrame* effectFrameWhenPlayed, int randomSeed)
+	{
+		FxSpatialFrame* effectFrame = nullptr;
+
+		const int runFlags = elemDef->flags & FX_ELEM_RUN_RELATIVE_TO_OFFSET;
+		if (runFlags == FX_ELEM_RUN_RELATIVE_TO_SPAWN)
+		{
+			effectFrame = &effect->frameAtSpawn;
+		}
+		else
+		{
+			effectFrame = effectFrameWhenPlayed;
+			if (runFlags == FX_ELEM_RUN_RELATIVE_TO_OFFSET)
+			{
+				outOrigin[0] = 0.0f;
+				outOrigin[1] = 0.0f;
+				outOrigin[2] = 0.0f;
+
+				return;
+			}
+		}
+
+		float effectFrameAxis[3][3] = {};
+
+		UnitQuatToAxis(effectFrame->quat, effectFrameAxis);
+		FX_GetSpawnOrigin(effectFrame, elemDef, randomSeed, outOrigin);
+		FX_OffsetSpawnOrigin(effectFrame, elemDef, randomSeed, outOrigin);
+
+		if (runFlags == FX_ELEM_RUN_RELATIVE_TO_EFFECT || runFlags == FX_ELEM_RUN_RELATIVE_TO_SPAWN)
+		{
+			const float delta[3] =
+			{
+				outOrigin[0] - effectFrame->origin[0],
+				outOrigin[1] - effectFrame->origin[1],
+				outOrigin[2] - effectFrame->origin[2]
+			};
+
+			outOrigin[0] = effectFrameAxis[0][0] * delta[0] + effectFrameAxis[0][1] * delta[1] + effectFrameAxis[0][2] * delta[2];
+			outOrigin[1] = effectFrameAxis[1][0] * delta[0] + effectFrameAxis[1][1] * delta[1] + effectFrameAxis[1][2] * delta[2];
+			outOrigin[2] = effectFrameAxis[2][0] * delta[0] + effectFrameAxis[2][1] * delta[1] + effectFrameAxis[2][2] * delta[2];
+		}
+	}
+
+	void FX_GetOriginForTrailElem([[maybe_unused]] FxEffect* effect, FxElemDef* elemDef, FxSpatialFrame* effectFrameWhenPlayed, int randomSeed, float* outOrigin, float* outRight, float* outUp)
+	{
+
+		if (!outRight || !outUp)
+		{
+			Assert();
+		}
+
+		if ((elemDef->flags & FX_ELEM_RUN_MASK) != FX_ELEM_RUN_RELATIVE_TO_WORLD)
+		{
+			Assert();
+		}
+
+		float effectFrameAxis[3][3];
+		UnitQuatToAxis(effectFrameWhenPlayed->quat, effectFrameAxis);
+
+		outRight[0] = effectFrameAxis[1][0];
+		outRight[1] = effectFrameAxis[1][1];
+		outRight[2] = effectFrameAxis[1][2];
+		outUp[0] = effectFrameAxis[2][0];
+		outUp[1] = effectFrameAxis[2][1];
+		outUp[2] = effectFrameAxis[2][2];
+
+		FX_GetSpawnOrigin(effectFrameWhenPlayed, elemDef, randomSeed, outOrigin);
+		FX_OffsetSpawnOrigin(effectFrameWhenPlayed, elemDef, randomSeed, outOrigin);
 	}
 
 	void FX_GetSpawnOrigin(FxSpatialFrame* frameAtSpawn, FxElemDef* elemDef, int randomSeed, float* spawnOrigin)
@@ -96,6 +171,32 @@ namespace fx_system
 				spawnOrigin[2] = (height * axis[0][2]) + spawnOrigin[2];
 			}
 		}
+	}
+
+	bool FX_CullSphere(FxCamera* camera, unsigned int frustumPlaneCount, const float* posWorld, float radius)
+	{
+		if (!camera->isValid || frustumPlaneCount != camera->frustumPlaneCount && frustumPlaneCount != 5)
+		{
+			Assert();
+		}
+
+		for (unsigned int planeIndex = 0; planeIndex < frustumPlaneCount; ++planeIndex)
+		{
+			if (!Vec3IsNormalized(camera->frustum[planeIndex]))
+			{
+				Assert();
+			}
+
+			if (-radius >= (
+				(camera->frustum[planeIndex][0] * posWorld[0]) +
+				(camera->frustum[planeIndex][1] * posWorld[1]) +
+				(camera->frustum[planeIndex][2] * posWorld[2]) - camera->frustum[planeIndex][3]))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	void FX_OrientationPosFromWorldPos(game::orientation_t* orient, const float* pos, float* out)

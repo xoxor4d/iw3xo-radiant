@@ -3,15 +3,7 @@
 
 namespace fx_system
 {
-	
-
-
-	// *
-	// ----------------------------------------
-
-	int					FX_GetElemLifeSpanMsec(int elemRandomSeed, FxElemDef* elemDef);
 	FxElemDef*			FX_GetUpdateElemDef(FxUpdateElem* update);
-
 	float				FX_GetAtRestFraction(FxUpdateElem* update, float msec);
 
 	void				FX_FrameLerp(FxSpatialFrame* begin, FxSpatialFrame* end, FxSpatialFrame* now, float fraction);
@@ -36,6 +28,9 @@ namespace fx_system
 	FxUpdateResult		FX_UpdateElementPosition_Colliding(FxUpdateElem* update, FxSystem* system);
 	FxUpdateResult		FX_UpdateElementPosition(FxUpdateElem* update, FxSystem* system);
 	FxUpdateResult		FX_UpdateElement(FxSystem* system, FxEffect* effect, FxElem* elem, int msecUpdateBegin, int msecUpdateEnd);
+
+	void				FX_SpawnOneShotElems(FxSystem* system, FxEffect* effect, int elemDefIndex, FxSpatialFrame* frameWhenPlayed, int msecWhenPlayed);
+	void				FX_TriggerOneShot(FxSystem* system, FxEffect* effect, int elemDefFirst, int elemDefCount, FxSpatialFrame* frameWhenPlayed, int msecWhenPlayed);
 
 	void				FX_SetNextUpdateTime(int localClientNum, int time);
 	void				FX_SetupCamera_Radiant();

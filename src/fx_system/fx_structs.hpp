@@ -2,9 +2,28 @@
 
 namespace fx_system
 {
+	constexpr auto FX_HANDLE_NONE = 0xFFFF;
+
+	constexpr auto FX_EFFECT_HANDLE_SCALE = 4;
+	constexpr auto FX_EFFECT_LIMIT = 1024; // size 0x80
+	constexpr auto FX_EFFECT_HANDLE_NONE = FX_EFFECT_LIMIT - 1;
+
+	constexpr auto FX_ELEM_HANDLE_SCALE = 4;
+	constexpr auto FX_ELEM_LIMIT = 2048; // size 0x28
+
+	constexpr auto FX_TRAIL_HANDLE_SCALE = 4;
+	constexpr auto FX_TRAIL_LIMIT = 128; // size 0x8
+
+	constexpr auto FX_TRAILELEM_HANDLE_SCALE = 4;
+	constexpr auto FX_TRAILELEM_LIMIT = 2048; // size 0x20
+
+	constexpr auto FX_SPOT_LIGHT_LIMIT = 1;
+
+
 	constexpr auto FX_SPAWN_DOBJ_HANDLES = 4095;
 	constexpr auto FX_SPAWN_BONE_INDEX = 1023;
 	constexpr auto FX_SPAWN_MARK_ENTNUM = 2175;
+
 
 	struct FxEffectDef;
 
@@ -85,6 +104,15 @@ namespace fx_system
 		TRACE_HITTYPE_DYNENT_MODEL = 0x2,
 		TRACE_HITTYPE_DYNENT_BRUSH = 0x3,
 	};
+
+	struct FxInsertSortElem
+	{
+		int defSortOrder;
+		float distToCamSq;
+		int msecBegin;
+		int defIndex;
+		char elemType;
+	}; STATIC_ASSERT_SIZE(FxInsertSortElem, 0x14);
 
 	struct FxCamera
 	{

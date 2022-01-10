@@ -8,11 +8,6 @@
 
 namespace fx_system
 {
-	int FX_GetElemLifeSpanMsec(int elemRandomSeed, FxElemDef* elemDef)
-	{
-		return elemDef->lifeSpanMsec.base + (((elemDef->lifeSpanMsec.amplitude + 1) * LOWORD((&fx_randomTable)[elemRandomSeed + 17])) >> 16);
-	}
-
 	FxElemDef* FX_GetUpdateElemDef(FxUpdateElem* update)
 	{
 		if (!update->effect)
@@ -28,7 +23,7 @@ namespace fx_system
 		return ceilf((msec - static_cast<float>(update->msecElemBegin)) * 255.0f / update->msecLifeSpan - 0.25f);
 	}
 
-	void __cdecl FX_GetQuatForOrientation(FxElemDef* elemDef, FxSpatialFrame* frameNow, FxEffect* effect, float* quat, game::orientation_t* orient)
+	void FX_GetQuatForOrientation(FxElemDef* elemDef, FxSpatialFrame* frameNow, FxEffect* effect, float* quat, game::orientation_t* orient)
 	{
 		const int runFlags = elemDef->flags & FX_ELEM_RUN_RELATIVE_TO_OFFSET;
 
@@ -352,7 +347,7 @@ namespace fx_system
 		update->atRestFraction = elemAtRestFraction;
 		update->elemIndex = elemDefIndex;
 		update->sequence = elemSequence;
-		update->randomSeed = (0x128 * elemSequence + elemMsecBegin + (unsigned int)effect->randomSeed) % 0x1DF;
+		update->randomSeed = (int)FX_ElemRandomSeed(effect->randomSeed, elemMsecBegin, elemSequence);
 
 		FxElemDef* elemDef = FX_GetUpdateElemDef(update);
 		const int random_lifespan = FX_GetElemLifeSpanMsec(update->randomSeed, elemDef);
@@ -597,6 +592,68 @@ namespace fx_system
 		}
 
 		return updateResult;
+	}
+
+	void FX_SpawnOneShotElems(FxSystem* system, FxEffect* effect, int elemDefIndex, FxSpatialFrame* frameWhenPlayed, int msecWhenPlayed)
+	{
+		if (!effect)
+		{
+			Assert();
+		}
+
+		FxEffectDef* effectDef = effect->def;
+		if (!effect->def)
+		{
+			Assert();
+		}
+
+		if (effectDef)
+		{
+			FxElemDef* elemDef = &effect->def->elemDefs[elemDefIndex];
+			if (elemDef->elemType != FX_ELEM_TYPE_TRAIL)
+			{
+				int spawnCount = elemDef->spawn.looping.intervalMsec;
+				if (elemDef->spawn.looping.count)
+				{
+					spawnCount += ((elemDef->spawn.looping.count + 1) * LOWORD((&fx_randomTable)[19 + effect->randomSeed])) >> 16;
+				}
+
+				for (int spawnIndex = 0; spawnIndex < spawnCount; ++spawnIndex)
+				{
+					FX_SpawnElem(system, effect, elemDefIndex, frameWhenPlayed, msecWhenPlayed, 0.0, spawnIndex);
+				}
+			}
+		}
+	}
+
+	void FX_TriggerOneShot(FxSystem* system, FxEffect* effect, int elemDefFirst, int elemDefCount, FxSpatialFrame* frameWhenPlayed, int msecWhenPlayed)
+	{
+
+		if (!effect)
+		{
+			Assert();
+		}
+
+		FxEffectDef* effectDef = effect->def;
+		if (!effect->def)
+		{
+			Assert();
+		}
+
+		if (elemDefCount && (elemDefFirst < 0 || elemDefFirst >= effectDef->elemDefCountEmission + effectDef->elemDefCountOneShot + effectDef->elemDefCountLooping))
+		{
+			Assert();
+		}
+
+		if ((elemDefCount < 0 || elemDefCount + elemDefFirst > effectDef->elemDefCountEmission + effectDef->elemDefCountOneShot + effectDef->elemDefCountLooping))
+		{
+			Assert();
+		}
+
+		for (int elemDefIndex = elemDefFirst; elemDefIndex != elemDefCount + elemDefFirst; ++elemDefIndex)
+		{
+			FX_SpawnOneShotElems(system, effect, elemDefIndex, frameWhenPlayed, msecWhenPlayed);
+		}
 	}
 
 	void FX_SetNextUpdateTime(int localClientNum, int time)
