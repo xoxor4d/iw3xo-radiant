@@ -238,6 +238,131 @@ namespace components
 
 		// set max undo memory
 		utils::hook::set<int32_t>(0x739F70, 0x01000000); // default 2mb, now 16mb
+
+		command::register_command_with_hotkey("brush_from_selected"s, [this](auto)
+		{
+			game::vec3_t bounds_maxs = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
+			game::vec3_t bounds_mins = { FLT_MAX, FLT_MAX, FLT_MAX };
+
+			for (auto	sb = game::g_selected_brushes_next();
+				(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
+				sb = sb->next)
+			{
+				if(remote_net::selection_is_brush(sb->def))
+				{
+					if (sb->def->maxs[0] > bounds_maxs[0])
+					{
+						bounds_maxs[0] = sb->def->maxs[0];
+					}
+
+					if (sb->def->maxs[1] > bounds_maxs[1])
+					{
+						bounds_maxs[1] = sb->def->maxs[1];
+					}
+
+					if (sb->def->maxs[2] > bounds_maxs[2])
+					{
+						bounds_maxs[2] = sb->def->maxs[2];
+					}
+
+
+					if (sb->def->mins[0] < bounds_mins[0])
+					{
+						bounds_mins[0] = sb->def->mins[0];
+					}
+
+					if (sb->def->mins[1] < bounds_mins[1])
+					{
+						bounds_mins[1] = sb->def->mins[1];
+					}
+
+					if (sb->def->mins[2] < bounds_mins[2])
+					{
+						bounds_mins[2] = sb->def->mins[2];
+					}
+				}
+			}
+
+			if (bounds_maxs[0] == -FLT_MAX || bounds_maxs[1] == -FLT_MAX || bounds_maxs[2] == -FLT_MAX)
+			{
+				return;
+			}
+
+			if (bounds_mins[0] == FLT_MAX || bounds_mins[1] == FLT_MAX || bounds_mins[2] == FLT_MAX)
+			{
+				return;
+			}
+
+			// should not happen
+			if((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+			{
+				//// Brush_Alloc
+				//auto new_b = utils::hook::call<game::brush_t_with_custom_def* (__cdecl)(void*, void*)>(0x4751E0)(game::qeglobals_t().random_texture_stuff, nullptr);
+				//game::Brush_Create(bounds_maxs, bounds_mins, new_b, 0);
+
+				//if (!new_b)
+				//{
+				//	return;
+				//}
+
+				//game::Brush_BuildWindings(new_b, 1);
+				//++new_b->version;
+
+				//game::Entity_LinkBrush(new_b, game::g_world_entity()->firstActive);
+				//auto b_linked = game::Brush_AddToList(new_b, game::g_world_entity());
+				//if (b_linked->onext || b_linked->oprev)
+				//{
+				//	__debugbreak();
+				//}
+
+				//game::Brush_AddToList2(b_linked);
+			}
+
+			// should always replace the first selected brush
+			else
+			{
+				// needs Undo_AddBrushList and Undo_EndBrushList
+
+				game::Undo_ClearRedo();
+				game::Undo_GeneralStart("create brush from selection");
+
+				auto curr_sb = game::g_selected_brushes_next();
+				auto b = game::g_selected_brushes_next()->def;
+				game::Brush_Create(bounds_maxs, bounds_mins, b, 0);
+				game::Brush_BuildWindings(b, 1);
+				++b->version;
+
+				// remove all initial selection brushes
+				if (auto sb = curr_sb->next; 
+						 sb)
+				{
+					game::selbrush_def_t* next = nullptr;
+
+					do
+					{
+						if (sb == curr_sb)
+						{
+							break;
+						}
+
+						if (!remote_net::selection_is_brush(sb->def))
+						{
+							break;
+						}
+
+						next = sb->next;
+
+						// Brush_Free
+						utils::hook::call<void(__cdecl)(game::selbrush_def_t*)>(0x475BA0)(sb);
+
+						sb = next;
+
+					} while (next);
+				}
+
+				game::Undo_End();
+			}
+		});
 	}
 
 	main_module::~main_module()

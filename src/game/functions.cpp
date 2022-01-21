@@ -63,6 +63,8 @@ namespace game
 	int& texWndGlob_usageCount = *reinterpret_cast<int*>(0x25D7994); // amount of loaded usage filters
 
 	bool& r_initiated = *reinterpret_cast<bool*>(0x25D5A68);
+	game::GfxBackEndData* gfx_frontend_data = reinterpret_cast<game::GfxBackEndData*>(0x73D480);
+
 	game::GfxBackEndData* gfx_backend_data = reinterpret_cast<game::GfxBackEndData*>(0x73D500);
 	game::GfxCmdBufSourceState* gfx_cmd_buf_source_state = reinterpret_cast<game::GfxCmdBufSourceState*>(0x174D760);
 	game::r_globals_t* rg = reinterpret_cast<game::r_globals_t*>(0x13683F0);
@@ -71,6 +73,18 @@ namespace game
 	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
 
 	HWND* entitywnd_hwnds = reinterpret_cast<HWND*>(0x240A118);
+
+	game::GfxBackEndData* get_backenddata()
+	{
+		const auto out = reinterpret_cast<game::GfxBackEndData*>(*game::backEndDataOut_ptr);
+		return out;
+	}
+
+	game::GfxBackEndData* get_frontenddata()
+	{
+		const auto out = reinterpret_cast<game::GfxBackEndData*>(*game::frontEndDataOut_ptr);
+		return out;
+	}
 
 	game::entity_s* g_world_entity()
 	{
@@ -267,6 +281,87 @@ namespace game
 			call	func_addr;
 			add     esp, 12;
 			//popad;
+		}
+	}
+
+	void Brush_Create(float* maxs /*edx*/, float* mins /*ecx*/, game::brush_t_with_custom_def* brush, int unk)
+	{
+		const static uint32_t func_addr = 0x475300;
+		__asm
+		{
+			pushad;
+
+			push	unk;
+			push	brush;
+			mov		ecx, mins;
+			mov		edx, maxs;
+
+			call	func_addr;
+			add		esp, 8;
+
+			popad;
+		}
+	}
+
+	void Brush_BuildWindings(game::brush_t_with_custom_def* brush /*ecx*/, int snap)
+	{
+		const static uint32_t func_addr = 0x477AC0;
+		__asm
+		{
+			pushad;
+
+			push	snap;
+			mov		ecx, brush;
+
+			call	func_addr;
+			add		esp, 4;
+
+			popad;
+		}
+	}
+
+	void Entity_LinkBrush(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world /*edi*/)
+	{
+		const static uint32_t func_addr = 0x484FC0;
+		__asm
+		{
+			pushad;
+
+			mov		edi, world;
+			mov		eax, brush;
+
+			call	func_addr;
+
+			popad;
+		}
+	}
+
+	game::brush_t_with_custom_def* Brush_AddToList(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world)
+	{
+		const static uint32_t func_addr = 0x475980;
+		__asm
+		{
+			//pushad;
+			push	world;
+			mov		eax, brush;
+
+			call	func_addr;
+			add		esp, 4;
+			//popad;
+		}
+	}
+
+	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/)
+	{
+		const static uint32_t func_addr = 0x4765A0;
+		__asm
+		{
+			pushad;
+
+			mov		eax, brush;
+			call	func_addr;
+
+			popad;
 		}
 	}
 

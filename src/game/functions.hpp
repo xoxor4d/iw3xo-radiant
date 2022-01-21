@@ -88,6 +88,9 @@ namespace game
 	extern game::GfxScene* scene;
 	extern game::DxGlobals* dx;
 
+	extern game::GfxBackEndData* get_backenddata();
+	extern game::GfxBackEndData* get_frontenddata();
+
 	extern game::entity_s* g_world_entity();
 	extern game::selbrush_def_t* g_active_brushes();
 	extern game::selbrush_def_t* g_active_brushes_next();
@@ -117,6 +120,11 @@ namespace game
 	static utils::function<void(bool)> Select_Deselect = 0x48E800;
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
+	void Brush_Create(float* maxs /*edx*/, float* mins /*ecx*/, game::brush_t_with_custom_def* brush, int unk);
+	void Brush_BuildWindings(game::brush_t_with_custom_def* brush /*ecx*/, int snap);
+	void Entity_LinkBrush(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world /*edi*/);
+	game::brush_t_with_custom_def* Brush_AddToList(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world);
+	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/);
 
 	static utils::function<void(game::entity_s* ent, const char* key, const char* value)> SetKeyValue = 0x483690;
 	static utils::function<void()> SetKeyValuePairs = 0x496CF0;
@@ -138,6 +146,8 @@ namespace game
 	extern int sortedDvarsAddonsCount;
 
 	static DWORD* frontEndDataOut_ptr = (DWORD*)(0x73D480);  // frontEndDataOut pointer
+	static DWORD* backEndDataOut_ptr = (DWORD*)(0x174F970);  // backendEndDataOut pointer
+
 	static DWORD* active_brushes_ptr = (DWORD*)(0x23F189C);
 	static DWORD* active_brushes_next_ptr = (DWORD*)(0x23F18A0);
 	static DWORD* currSelectedBrushes = (DWORD*)(0x23F1864); // (selected_brushes array pointer)
