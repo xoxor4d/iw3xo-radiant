@@ -47,6 +47,8 @@ namespace game
 
 	extern game::vec3_t vec3_origin;
 	extern game::vec4_t color_white;
+
+	extern IDirect3DTexture9* framebuffer_test;
 	
 	// radiant globals
 	extern int&			g_nScaleHow;
@@ -81,8 +83,13 @@ namespace game
 	extern int& texWndGlob_usageCount;
 
 	extern bool& r_initiated;
+	extern game::GfxBackEndData* gfx_frontend_data;
 	extern game::GfxBackEndData* gfx_backend_data;
-	extern game::GfxCmdBufSourceState* gfx_cmd_buf_source_state;
+
+	extern game::GfxCmdBufSourceState* gfxCmdBufSourceState;
+	extern game::GfxCmdBufState* gfxCmdBufState;
+	extern game::GfxCmdBufInput* gfxCmdBufInput;
+
 	extern game::r_globals_t* rg;
 	extern game::r_global_permanent_t* rgp;
 	extern game::GfxScene* scene;

@@ -2573,6 +2573,11 @@ namespace game
 		char reflectionProbeIndex;
 	};
 
+	struct GfxCmdBuf
+	{
+		IDirect3DDevice9* device;
+	};
+
 	struct modelLightGlobals_s
 	{
 		float invImageHeight;

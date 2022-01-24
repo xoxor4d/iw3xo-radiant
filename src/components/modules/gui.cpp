@@ -424,8 +424,6 @@ namespace components
 		ImGui::PopStyleVar(_stylevars);
 	}
 
-	
-
 	// *
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
 	void gui::render_loop()
@@ -531,20 +529,22 @@ namespace components
 				ccamwnd::rtt_camera_window();
 			}
 
-			//auto modelLightGlob = reinterpret_cast<game::modelLightGlobals_s*>(0x150D500);
-			/*game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 
-			game::GfxRenderTarget* taget = &targets[5];
+
+			//auto modelLightGlob = reinterpret_cast<game::modelLightGlobals_s*>(0x150D500);
+			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
+
+			//game::GfxRenderTarget* taget = &targets[3];
 			game::GfxRenderTarget* postSun = &targets[3];
 			
-			game::dx->device->StretchRect(taget->surface.color, NULL, postSun->surface.color, NULL, D3DTEXF_NONE);
+			//game::dx->device->StretchRect(taget->surface.color, NULL, postSun->surface.color, NULL, D3DTEXF_NONE);
 
 			ImGui::Begin("Debug", nullptr);
 			ImGui::Image(postSun->image->texture.data, ImVec2(game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].width, game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].height));
-			ImGui::End();*/
+			ImGui::End();
 
 			/*ImGui::Begin("Debug", nullptr);
-			ImGui::Image(ggui::get_rtt_camerawnd()->scene_texture, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
+			ImGui::Image(game::framebuffer_test, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
 			ImGui::End();*/
 
 			// color menu

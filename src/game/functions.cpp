@@ -28,6 +28,8 @@ namespace game
 
 	game::vec3_t vec3_origin = { 0.0f, 0.0f, 0.0f };
 	game::vec4_t color_white = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	IDirect3DTexture9* framebuffer_test = nullptr;
 	
 	// radiant globals
 	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
@@ -64,9 +66,12 @@ namespace game
 
 	bool& r_initiated = *reinterpret_cast<bool*>(0x25D5A68);
 	game::GfxBackEndData* gfx_frontend_data = reinterpret_cast<game::GfxBackEndData*>(0x73D480);
-
 	game::GfxBackEndData* gfx_backend_data = reinterpret_cast<game::GfxBackEndData*>(0x73D500);
-	game::GfxCmdBufSourceState* gfx_cmd_buf_source_state = reinterpret_cast<game::GfxCmdBufSourceState*>(0x174D760);
+
+	game::GfxCmdBufSourceState* gfxCmdBufSourceState = reinterpret_cast<game::GfxCmdBufSourceState*>(0x174D760);
+	game::GfxCmdBufState* gfxCmdBufState = reinterpret_cast<game::GfxCmdBufState*>(0x174E660);
+	game::GfxCmdBufInput* gfxCmdBufInput = reinterpret_cast<game::GfxCmdBufInput*>(0x174F070);
+
 	game::r_globals_t* rg = reinterpret_cast<game::r_globals_t*>(0x13683F0);
 	game::r_global_permanent_t* rgp = reinterpret_cast<game::r_global_permanent_t*>(0x136C700);
 	game::GfxScene* scene = reinterpret_cast<game::GfxScene*>(0x1370980);
