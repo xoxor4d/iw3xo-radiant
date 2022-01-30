@@ -1,16 +1,19 @@
 #include "std_include.hpp"
 
-#define Assert()	if(IsDebuggerPresent()) \
-						__debugbreak();		\
-					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__)
-
-#define LODWORD(x)  (*((DWORD*)&(x)))  // low dword
+#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
+					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
 
 namespace fx_system
 {
-	std::uint32_t FX_ElemRandomSeed(int effectRandomSeed, int elemMsecBegin, int sequence)
+	std::uint16_t FX_RandomFloatAsUInt16(int start_index, int seed)
 	{
-		return (0x128 * sequence + effectRandomSeed + elemMsecBegin) % 0x1DFu;
+		return *reinterpret_cast<std::uint16_t*>(&fx_randomTable[start_index + seed]);
+	}
+
+	// checked
+	int FX_ElemRandomSeed(int effectRandomSeed, int elemMsecBegin, int sequence)
+	{
+		return (0x128 * sequence + effectRandomSeed + elemMsecBegin) % 0x1DF;
 	}
 
 	void FX_RandomlyRotateAxis(const float(*axisIn)[3], int randomSeed, float(*axisOut)[3])

@@ -309,27 +309,39 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 {
 	if (Msg == WM_MOVE || Msg == WM_SIZE)
 	{
-		// keep split-view cxy window maximized within the mainframe
-		const auto prefs = game::g_PrefsDlg();
-
-		if (prefs->m_nView == 1 && cmainframe::activewnd && cmainframe::activewnd->m_pZWnd)
+		if(!IsIconic(pThis->GetWindow()))
 		{
-			RECT _rect;
-			GetClientRect(pThis->m_hWnd, &_rect);
+			// keep split-view cxy window maximized within the mainframe
+			const auto prefs = game::g_PrefsDlg();
 
-			const int width = _rect.right - _rect.left;
-			const int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
-
-			POINT _point = { 0,0 };
-			ClientToScreen(pThis->m_hWnd, &_point);
-
-			if (prefs->detatch_windows)
+			if (prefs->m_nView == 1 && cmainframe::activewnd && cmainframe::activewnd->m_pZWnd)
 			{
-				SetWindowPos(cmainframe::activewnd->m_pZWnd->GetWindow(), HWND_BOTTOM, _point.x, _point.y, width, height, 0); //SWP_FRAMECHANGED); //| SWP_NOZORDER | SWP_NOACTIVATE);
-			}
-			else
-			{
-				SetWindowPos(cmainframe::activewnd->m_pZWnd->GetWindow(), HWND_BOTTOM, 0, 0, width, height, 0); // SWP_NOACTIVATE SWP_NOZORDER |
+				RECT _rect;
+				GetClientRect(pThis->m_hWnd, &_rect);
+
+				int width = _rect.right - _rect.left;
+				int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
+
+				POINT _point = { 0,0 };
+				ClientToScreen(pThis->m_hWnd, &_point);
+
+				if(width == 0 || height == 0)
+				{
+					//__debugbreak();
+					//return o_wndproc(pThis, Msg, wParam, lParam);
+
+					width = 256;
+					height = 256;
+				}
+
+				if (prefs->detatch_windows)
+				{
+					SetWindowPos(cmainframe::activewnd->m_pZWnd->GetWindow(), HWND_BOTTOM, _point.x, _point.y, width, height, 0); //SWP_FRAMECHANGED); //| SWP_NOZORDER | SWP_NOACTIVATE);
+				}
+				else
+				{
+					SetWindowPos(cmainframe::activewnd->m_pZWnd->GetWindow(), HWND_BOTTOM, 0, 0, width, height, 0); // SWP_NOACTIVATE SWP_NOZORDER |
+				}
 			}
 		}
 	}
@@ -659,11 +671,20 @@ void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* ed
 			RECT _rect;
 			GetClientRect(pThis->m_hWnd, &_rect);
 
-			const int width = _rect.right - _rect.left;
-			const int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
+			int width = _rect.right - _rect.left;
+			int height = _rect.bottom - _rect.top - WNDSTATUSBAR_HEIGHT;
 
 			POINT _point = { 0,0 };
 			ClientToScreen(pThis->m_hWnd, &_point);
+
+			if (width == 0 || height == 0)
+			{
+				//__debugbreak();
+				//return __on_size(pThis, nFlags, x, y);
+
+				width = 256;
+				height = 256;
+			}
 
 			if (prefs->detatch_windows)
 			{
@@ -728,6 +749,33 @@ void __declspec(naked) sunlight_preview_arg_check()
 	}
 }
 
+void set_mainwindow_placement(HWND hwnd, WINDOWPLACEMENT* place)
+{
+	// always show window
+	place->showCmd = 1;
+
+	SetWindowPlacement(hwnd, place);
+}
+
+void __declspec(naked) set_windowplacement_stub()
+{
+	const static uint32_t retn_pt = 0x4225D3;
+
+	__asm
+	{
+		pushad;
+
+		push    eax;
+		push    esi;
+		call	set_mainwindow_placement;
+		add		esp, 8;
+
+		popad;
+
+		jmp		retn_pt;
+	}
+}
+
 
 void cmainframe::register_dvars()
 {
@@ -772,6 +820,10 @@ void cmainframe::hooks()
 	utils::hook::nop(0x420B04, 12 + 29 + 22); // create
 	utils::hook::nop(0x4210ED, 59); // font stuff
 #endif
+
+	// hook SetWindowPlacement (Radiant::MainWindowPlace) in OnCreateClient to fix minimize issue
+	utils::hook::nop(0x4225CB, 8);
+		 utils::hook(0x4225CB, set_windowplacement_stub, HOOK_JUMP).install()->quick();
 	
 	// *
 	// detour cmainframe member functions to get imgui input

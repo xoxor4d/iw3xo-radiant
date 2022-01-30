@@ -161,6 +161,8 @@ void radiantapp::set_default_savedinfo_colors()
 
 void MFCCreate()
 {
+	components::effects::radiant_init_fx();
+
 	long savedinfo_size = sizeof(game::g_qeglobals->d_savedinfo);
 	LoadRegistryInfo("SavedInfo", &game::g_qeglobals->d_savedinfo, &savedinfo_size);
 

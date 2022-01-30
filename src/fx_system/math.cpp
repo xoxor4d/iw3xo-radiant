@@ -1,13 +1,46 @@
 #include "std_include.hpp"
 
-#define Assert()	if(IsDebuggerPresent()) \
-						__debugbreak();		\
-					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__)
-
-#define LODWORD(x)  (*((DWORD*)&(x)))  // low dword
+#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
+					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
 
 namespace fx_system
 {
+	int Clamp(int val, int min, int max)
+	{
+		if (min >= max)
+		{
+			Assert();
+		}
+
+		int result = val;
+		if (val < min)
+		{
+			return min;
+		}
+
+		if (val > max)
+		{
+			result = max;
+		}
+
+		return result;
+	}
+
+	void SetIdentityAxis(float* axis)
+	{
+		axis[0] = 1.0;
+		axis[1] = 0.0;
+		axis[2] = 0.0;
+
+		axis[3] = 0.0;
+		axis[4] = 1.0;
+		axis[5] = 0.0;
+
+		axis[6] = 0.0;
+		axis[7] = 0.0;
+		axis[8] = 1.0;
+	}
+
 	void AxisCopy(const float(*in)[3], float(*out)[3])
 	{
 		(*out)[0] = (*in)[0];
@@ -227,6 +260,79 @@ namespace fx_system
 		(*axis)[8] = 1.0f - (xx + yy);
 	}
 
+	game::PackedTexCoords Vec2PackTexCoords(float ucord, float texcoord)
+	{
+		std::uint16_t s0, t0;
+		int s_temp, t_temp;
+
+		if ((int)((2 * LODWORD(ucord)) ^ 0x80000000) >> 14 < 0x3FFF)
+		{
+			s_temp = (int)((2 * LODWORD(ucord)) ^ 0x80000000) >> 14;
+		}
+		else
+		{
+			s_temp = 0x3FFF;
+		}
+
+		if (s_temp > -16384)
+		{
+			s0 = s_temp;
+		}
+		else
+		{
+			s0 = -16384;
+		}
+
+		if ((int)((2 * LODWORD(texcoord)) ^ 0x80000000) >> 14 < 0x3FFF)
+		{
+			t_temp = (int)((2 * LODWORD(texcoord)) ^ 0x80000000) >> 14;
+		}
+		else
+		{
+			t_temp = 0x3FFF;
+		}
+
+		if (t_temp > -16384)
+		{
+			t0 = t_temp;
+		}
+		else
+		{
+			t0 = -16384;
+		}
+
+		return (game::PackedTexCoords)(( (t0 & 0x3FFF) | ((LODWORD(texcoord) >> 16) & 0xC000)) + (( (s0 & 0x3FFF) | ((LODWORD(ucord) >> 16) & 0xC000)) << 16));
+	}
+
+	float Vec2Length(const float* v)
+	{
+		return sqrtf(v[0] * v[0] + v[1] * v[1]);
+	}
+
+	float Vec2Normalize(float* v)
+	{
+		float length = Vec2Length(v);
+		if (-length >= 0.0f)
+		{
+			length = 1.0f;
+		}
+
+		v[0] = v[0] * (1.0f / length);
+		v[1] = v[1] * (1.0f / length);
+
+		return length;
+	}
+
+	float Vec3Distance(const float* p1, const float* p2)
+	{
+		float dir[3];
+		dir[0] = p2[0] - p1[0];
+		dir[1] = p2[1] - p1[1];
+		dir[2] = p2[2] - p1[2];
+
+		return Abs(dir);
+	}
+
 	float Vec3DistanceSq(const float* p1, const float* p2)
 	{
 		const float d1 = p2[1] - p1[1];
@@ -305,6 +411,31 @@ namespace fx_system
 		}
 
 		return length;
+	}
+
+	char Byte1PackClamp(const float from)
+	{
+		const int pack = static_cast<int>( static_cast<double>( from * 255.0f ) + 9.313225746154785e-10 );
+
+		if(pack > 255)
+		{
+			return -1;
+		}
+
+		if(pack < 0)
+		{
+			return 0;
+		}
+
+		return static_cast<char>(pack);
+	}
+
+	void Byte4PackVertexColor(const float* from, char* to)
+	{
+		to[2] = Byte1PackClamp(from[0]);
+		to[1] = Byte1PackClamp(from[1]);
+		to[0] = Byte1PackClamp(from[2]);
+		to[3] = Byte1PackClamp(from[3]);
 	}
 
 	float Abs(const float* v)

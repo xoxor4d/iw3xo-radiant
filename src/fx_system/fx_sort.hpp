@@ -8,5 +8,7 @@ namespace fx_system
 	void		FX_SortSpriteElemIntoEffect(FxSystem* system, FxEffect* effect, FxElem* elem);
 	void		FX_SortNewElemsInEffect(FxSystem* system, FxEffect* effect);
 
-
+	int			FX_CalcRunnerParentSortOrder(FxEffect* effect);
+	bool		FX_FirstEffectIsFurther(FxEffect* firstEffect, FxEffect* secondEffect);
+	void		FX_SortEffects(FxSystem* system);
 }

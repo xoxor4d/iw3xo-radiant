@@ -3,11 +3,27 @@
 
 namespace fx_system
 {
-	extern FxSystem		fx_systemPool;
+	extern FxSystem			fx_systemPool;
+	extern FxSystemBuffers	fx_systemBufferPool;
+
+	extern bool ed_is_playing;
+	extern bool ed_is_repeating;
+
+	extern fx_system::FxEffect* ed_active_effect;
+	extern fx_system::FxEditorEffectDef ed_editor_effect;
+
+	extern float ed_timescale;
+	extern float ed_looppause;
+
+	// * ---------------
 
 	FxSystem*		FX_GetSystem(int localClientNum);
 	bool			FX_GetEffectStatus(FxEffect* effect);
+	FxElemDef*		FX_GetEffectElemDef(const FxEffect* effect, int index);
 
+	void			FX_GetTrailHandleList_Last(FxSystem* system, FxEffect* effect, unsigned __int16* outHandleList, int* outTrailCount);
+
+	void			FX_RetriggerEffect(int localClientNum, FxEffect* effect, int msecBegin);
 	void			FX_BeginLooping(FxSystem* system, FxEffect* effect, int elemDefFirst, int elemDefCount, FxSpatialFrame* frameWhenPlayed, FxSpatialFrame* frameNow, int msecWhenPlayed, int msecNow);
 	void			FX_StartNewEffect(FxSystem* system, FxEffect* effect);
 

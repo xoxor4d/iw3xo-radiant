@@ -33,3 +33,4 @@ namespace components
 #include "modules/remote_net.hpp"
 #include "modules/config.hpp"
 #include "modules/gameview.hpp"
+#include "modules/effects.hpp"

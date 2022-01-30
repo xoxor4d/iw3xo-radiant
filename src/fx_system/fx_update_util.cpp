@@ -1,16 +1,99 @@
 #include "std_include.hpp"
 
-#define Assert()	if(IsDebuggerPresent()) \
-						__debugbreak();		\
-					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__)
-
-#define LODWORD(x)  (*((DWORD*)&(x)))  // low dword
+#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
+					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
 
 namespace fx_system
 {
+	// checked
 	int FX_GetElemLifeSpanMsec(int elemRandomSeed, FxElemDef* elemDef)
 	{
-		return elemDef->lifeSpanMsec.base + (((elemDef->lifeSpanMsec.amplitude + 1) * LOWORD((&fx_randomTable)[elemRandomSeed + 17])) >> 16);
+		int rnd;
+
+		// JTAG :*
+		rnd = *reinterpret_cast<std::uint16_t*>(&fx_randomTable[17 + elemRandomSeed]);
+		rnd *= (elemDef->lifeSpanMsec.amplitude + 1);
+		rnd = rnd >> 16;
+		rnd += elemDef->lifeSpanMsec.base;
+
+		return rnd;
+	}
+
+	void FX_GetVelocityAtTimeInFrame(float* velocity, const float* rangeLerp, const float* weight, FxElemVelStateInFrame* stateNext, FxElemVelStateInFrame* statePrev)
+	{
+		velocity[0] = (rangeLerp[0] * statePrev->velocity.amplitude[0] + statePrev->velocity.base[0]) * weight[0];
+		velocity[0] = (rangeLerp[0] * stateNext->velocity.amplitude[0] + stateNext->velocity.base[0]) * weight[1] + velocity[0];
+
+		velocity[1] = (rangeLerp[1] * statePrev->velocity.amplitude[1] + statePrev->velocity.base[1]) * weight[0];
+		velocity[1] = (rangeLerp[1] * stateNext->velocity.amplitude[1] + stateNext->velocity.base[1]) * weight[1] + velocity[1];
+
+		velocity[2] = (rangeLerp[2] * statePrev->velocity.amplitude[2] + statePrev->velocity.base[2]) * weight[0];
+		velocity[2] = (rangeLerp[2] * stateNext->velocity.amplitude[2] + stateNext->velocity.base[2]) * weight[1] + velocity[2];
+	}
+
+	// checked
+	void FX_GetVelocityAtTime(FxElemDef* elemDef, int randomSeed, float msecLifeSpan, float msecElapsed, game::orientation_t* orient, const float* baseVel, float* velocity)
+	{
+		if (!elemDef || !elemDef->velSamples || !elemDef->velIntervalCount)
+		{
+			Assert();
+		}
+		
+
+		const float sampleTime = msecElapsed / msecLifeSpan;
+		if (sampleTime < 0.0f && sampleTime > 1.0f)
+		{
+			Assert();
+		}
+
+		const float rangeLerp[3] =
+		{
+			fx_randomTable[0 + randomSeed],
+			fx_randomTable[1 + randomSeed],
+			fx_randomTable[2 + randomSeed]
+		};
+
+		const auto intervalCount = static_cast<float>( static_cast<std::uint8_t>(elemDef->velIntervalCount) );
+		const float samplePoint = sampleTime * intervalCount;
+
+		const int sampleIndex = static_cast<int>( floor(samplePoint) );
+		const float sampleLerp = samplePoint - static_cast<float>(sampleIndex);
+
+		if (sampleIndex < 0 || sampleIndex >= static_cast<std::uint8_t>(elemDef->velIntervalCount))
+		{
+			Assert();
+		}
+
+		FxElemVelStateSample* samples = &elemDef->velSamples[sampleIndex];
+
+		float weight[2] = {};
+		weight[1] = intervalCount * sampleLerp;
+		weight[0] = intervalCount - weight[1];
+
+		velocity[0] = baseVel[0];
+		velocity[1] = baseVel[1];
+		velocity[2] = baseVel[2];
+
+		float velocityWorld[3] = {};
+
+		if ((elemDef->flags & FX_ELEM_HAS_VELOCITY_GRAPH_WORLD) != 0)
+		{
+			FX_GetVelocityAtTimeInFrame(velocityWorld, rangeLerp, weight, &samples[1].world, &samples->world);
+			velocity[0] = velocityWorld[0] * 1000.0f + velocity[0];
+			velocity[1] = velocityWorld[1] * 1000.0f + velocity[1];
+			velocity[2] = velocityWorld[2] * 1000.0f + velocity[2];
+		}
+
+		if ((elemDef->flags & FX_ELEM_HAS_VELOCITY_GRAPH_LOCAL) != 0)
+		{
+			float velocityLocal[3] = {};
+			FX_GetVelocityAtTimeInFrame(velocityLocal, rangeLerp, weight, &samples[1].local, &samples->local);
+			FX_OrientationDirToWorldDir(orient, velocityLocal, velocityWorld);
+
+			velocity[0] = velocityWorld[0] * 1000.0f + velocity[0];
+			velocity[1] = velocityWorld[1] * 1000.0f + velocity[1];
+			velocity[2] = velocityWorld[2] * 1000.0f + velocity[2];
+		}
 	}
 
 	void FX_SpatialFrameToOrientation(FxSpatialFrame* frame, game::orientation_t* orient)
@@ -83,6 +166,7 @@ namespace fx_system
 		}
 	}
 
+	// checked
 	void FX_GetOriginForTrailElem([[maybe_unused]] FxEffect* effect, FxElemDef* elemDef, FxSpatialFrame* effectFrameWhenPlayed, int randomSeed, float* outOrigin, float* outRight, float* outUp)
 	{
 
@@ -91,13 +175,15 @@ namespace fx_system
 			Assert();
 		}
 
+		// todo: limit selection to world only
 		if ((elemDef->flags & FX_ELEM_RUN_MASK) != FX_ELEM_RUN_RELATIVE_TO_WORLD)
 		{
 			Assert();
 		}
 
 		float effectFrameAxis[3][3];
-		UnitQuatToAxis(effectFrameWhenPlayed->quat, effectFrameAxis);
+		UnitQuatToAxis(effectFrameWhenPlayed->quat, effectFrameAxis); //utils::hook::call<void(__cdecl)(const float *, float (*)[3])>(0x433A50)(effectFrameWhenPlayed->quat, effectFrameAxis);
+		
 
 		outRight[0] = effectFrameAxis[1][0];
 		outRight[1] = effectFrameAxis[1][1];
@@ -106,10 +192,11 @@ namespace fx_system
 		outUp[1] = effectFrameAxis[2][1];
 		outUp[2] = effectFrameAxis[2][2];
 
-		FX_GetSpawnOrigin(effectFrameWhenPlayed, elemDef, randomSeed, outOrigin);
-		FX_OffsetSpawnOrigin(effectFrameWhenPlayed, elemDef, randomSeed, outOrigin);
+		FX_GetSpawnOrigin(effectFrameWhenPlayed, elemDef, randomSeed, outOrigin); //utils::hook::call<void(__cdecl)(FxSpatialFrame*, FxElemDef*, int, float*)>(0x489280)(effectFrameWhenPlayed, elemDef, randomSeed, outOrigin);
+		FX_OffsetSpawnOrigin(effectFrameWhenPlayed, elemDef, randomSeed, outOrigin); //utils::hook::call<void(__cdecl)(FxSpatialFrame*, FxElemDef*, int, float*)>(0x489120)(effectFrameWhenPlayed, elemDef, randomSeed, outOrigin);
 	}
 
+	// checked
 	void FX_GetSpawnOrigin(FxSpatialFrame* frameAtSpawn, FxElemDef* elemDef, int randomSeed, float* spawnOrigin)
 	{
 		float offset[3];
@@ -117,7 +204,7 @@ namespace fx_system
 		offset[1] = fx_randomTable[7 + randomSeed] * elemDef->spawnOrigin[1].amplitude + elemDef->spawnOrigin[1].base;
 		offset[2] = fx_randomTable[8 + randomSeed] * elemDef->spawnOrigin[2].amplitude + elemDef->spawnOrigin[2].base;
 
-		if ((elemDef->flags & FX_ELEM_SPAWN_RELATIVE_TO_EFFECT) != 0)
+		if ((elemDef->flags & FX_ELEM_SPAWN_RELATIVE_TO_EFFECT) == 0)
 		{
 			spawnOrigin[0] = frameAtSpawn->origin[0] + offset[0];
 			spawnOrigin[1] = frameAtSpawn->origin[1] + offset[1];
@@ -129,6 +216,7 @@ namespace fx_system
 		}
 	}
 
+	// checked
 	void FX_OffsetSpawnOrigin(FxSpatialFrame* effectFrame, FxElemDef* elemDef, int randomSeed, float* spawnOrigin)
 	{
 		if ((elemDef->flags & FX_ELEM_SPAWN_OFFSET_MASK) != FX_ELEM_SPAWN_OFFSET_NONE)
@@ -173,32 +261,6 @@ namespace fx_system
 		}
 	}
 
-	bool FX_CullSphere(FxCamera* camera, unsigned int frustumPlaneCount, const float* posWorld, float radius)
-	{
-		if (!camera->isValid || frustumPlaneCount != camera->frustumPlaneCount && frustumPlaneCount != 5)
-		{
-			Assert();
-		}
-
-		for (unsigned int planeIndex = 0; planeIndex < frustumPlaneCount; ++planeIndex)
-		{
-			if (!Vec3IsNormalized(camera->frustum[planeIndex]))
-			{
-				Assert();
-			}
-
-			if (-radius >= (
-				(camera->frustum[planeIndex][0] * posWorld[0]) +
-				(camera->frustum[planeIndex][1] * posWorld[1]) +
-				(camera->frustum[planeIndex][2] * posWorld[2]) - camera->frustum[planeIndex][3]))
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	void FX_OrientationPosFromWorldPos(game::orientation_t* orient, const float* pos, float* out)
 	{
 		if (pos == out)
@@ -225,6 +287,18 @@ namespace fx_system
 		out[0] = orient->axis[0][0] * pos[0] + orient->origin[0] + orient->axis[1][0] * pos[1] + orient->axis[2][0] * pos[2];
 		out[1] = orient->axis[0][1] * pos[0] + orient->origin[1] + orient->axis[1][1] * pos[1] + orient->axis[2][1] * pos[2];
 		out[2] = orient->axis[0][2] * pos[0] + orient->origin[2] + orient->axis[1][2] * pos[1] + orient->axis[2][2] * pos[2];
+	}
+
+	void FX_OrientationDirToWorldDir(game::orientation_t* orient, const float* dir, float* out)
+	{
+		if (dir == out)
+		{
+			Assert();
+		}
+
+		out[0] = orient->axis[1][0] * dir[1] + orient->axis[0][0] * dir[0] + orient->axis[2][0] * dir[2];
+		out[1] = orient->axis[1][1] * dir[1] + orient->axis[0][1] * dir[0] + orient->axis[2][1] * dir[2];
+		out[2] = orient->axis[1][2] * dir[1] + orient->axis[0][2] * dir[0] + orient->axis[2][2] * dir[2];
 	}
 
 	void FX_GetOrientation(FxElemDef* elemDef, FxSpatialFrame* frameAtSpawn, FxSpatialFrame* frameNow, int randomSeed, game::orientation_t* orient)

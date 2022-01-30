@@ -1,5 +1,8 @@
 #include "std_include.hpp"
 
+#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
+					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
+
 namespace game
 {
 	namespace glob
@@ -436,7 +439,62 @@ namespace game
 	AnglesToAxis_t AnglesToAxis = reinterpret_cast<AnglesToAxis_t>(0x4ABEB0);
 	AngleVectors_t AngleVectors = reinterpret_cast<AngleVectors_t>(0x4ABD70);
 	OrientationConcatenate_t OrientationConcatenate = reinterpret_cast<OrientationConcatenate_t>(0x4BA7D0);
-	
+
+
+	// * --------------------- FX ----------------------------------
+
+	int& g_processCodeMesh = *reinterpret_cast<int*>(0x174F960);
+
+	int I_strncmp(const char* s0, const char* s1, int n)
+	{
+		int c0, c1;
+
+		if (!s0 || !s1)
+		{
+			Assert();
+			return s1 - s0;
+		}
+		do
+		{
+			c0 = *s0++;
+			c1 = *s1++;
+
+			if (!n--)
+			{
+				return 0;
+			}
+
+			if (c0 != c1)
+			{
+				return 2 * (c0 >= c1) - 1;
+			}
+
+		} while (c0);
+
+		return 0;
+	}
+
+	int I_strcmp(const char* s1, const char* s2)
+	{
+		if (!s1 || !s2)
+		{
+			Assert();
+		}
+		
+		return I_strncmp(s1, s2, 0x7FFFFFFF);
+	}
+
+	void I_strncpyz(char* Dest, const char* Source, int destsize)
+	{
+		if (!Source || !Dest || destsize < 1)
+		{
+			Assert();
+		}
+		
+		strncpy(Dest, Source, destsize - 1);
+		Dest[destsize - 1] = 0;
+	}
+
 	// -----------------------------------------------------------
 	// DVARS
 
@@ -750,5 +808,5 @@ namespace game
 			}
 		}
 	}
-	
+
 }

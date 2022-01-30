@@ -1,8 +1,7 @@
 #include "std_include.hpp"
 
-#define Assert()	if(IsDebuggerPresent()) \
-						__debugbreak();		\
-					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__)
+#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
+					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
 
 #define LODWORD(x)  (*((DWORD*)&(x)))  // low dword
 
@@ -120,42 +119,155 @@ namespace fx_system
 		}
 	}
 
-	// todo: clean me up
+	// checked
 	void FX_SortNewElemsInEffect(FxSystem* system, FxEffect* effect)
 	{
-		FxElem* remoteElem = nullptr;
+		if (!system)
+		{
+			Assert();
+		}
 
 		std::uint16_t elemHandle = effect->firstElemHandle[0];
 		const std::uint16_t stopElemHandle = effect->firstSortedElemHandle;
 
-		if (elemHandle != stopElemHandle)
+		if (elemHandle != effect->firstSortedElemHandle)
 		{
-			effect->firstElemHandle[0] = stopElemHandle;
-			if (stopElemHandle != UINT16_MAX)
+			effect->firstElemHandle[0] = effect->firstSortedElemHandle;
+			if (effect->firstSortedElemHandle != UINT16_MAX)
 			{
-				*(std::int16_t*)&FX_ElemFromHandle(system, stopElemHandle)[1].atRestFraction = UINT16_MAX; //-1;
+				FX_ElemFromHandle(system, effect->firstSortedElemHandle)->prevElemHandleInEffect = UINT16_MAX;
 			}
 
-			do
+			while (true)
 			{
-				FxElem* elem = FX_ElemFromHandle(system, elemHandle);
-				elemHandle = *(WORD*)&elem[1].defIndex;
+				const auto elem = FX_ElemFromHandle(system, elemHandle);
+				elemHandle = elem->nextElemHandleInEffect;
+
 				FX_SortSpriteElemIntoEffect(system, effect, elem);
 
-			} while (elemHandle != stopElemHandle);
+				if (elemHandle == stopElemHandle)
+				{
+					break;
+				}
+			}
 
 			effect->firstSortedElemHandle = effect->firstElemHandle[0];
+			const FxElem* elem = nullptr;
 
-			for (elemHandle = effect->firstElemHandle[0]; 
-				 elemHandle != UINT16_MAX;
-				 elemHandle = *(WORD*)&remoteElem[1].defIndex)
+			for (std::uint16_t i = effect->firstElemHandle[0]; i != UINT16_MAX; i = elem->nextElemHandleInEffect)
 			{
-				remoteElem = FX_ElemFromHandle(system, elemHandle);
-				if (static_cast<std::uint8_t>(effect->def->elemDefs[ static_cast<std::uint8_t>(remoteElem->defIndex) ].elemType) > FX_ELEM_TYPE_LAST_SPRITE)
+				elem = FX_ElemFromHandle(system, i);
+				if(FX_GetEffectElemDef(effect, elem->defIndex)->elemType > FX_ELEM_TYPE_LAST_SPRITE)
+				
 				{
 					Assert();
 				}
 			}
 		}
+	}
+
+
+	int FX_CalcRunnerParentSortOrder(FxEffect* effect)
+	{
+		if (!effect || !effect->def)
+		{
+			Assert();
+		}
+
+		int totalSortOrder = 0;
+		int totalNonRunnerElemDefs = 0;
+		for (int elemDefIndex = 0; elemDefIndex < effect->def->elemDefCountLooping + effect->def->elemDefCountOneShot + effect->def->elemDefCountEmission; ++elemDefIndex)
+		{
+			FxElemDef* elemDef = &effect->def->elemDefs[elemDefIndex];
+			if (elemDef->elemType != FX_ELEM_TYPE_RUNNER)
+			{
+				totalSortOrder += static_cast<std::uint8_t>(elemDef->sortOrder);
+				++totalNonRunnerElemDefs;
+			}
+		}
+
+		if (totalNonRunnerElemDefs <= 0)
+		{
+			return 0;
+		}
+
+		int order = 254;
+
+		if (totalSortOrder / totalNonRunnerElemDefs < 254)
+		{
+			order = totalSortOrder / totalNonRunnerElemDefs;
+		}
+
+		return order > 0 ? order : 0;
+	}
+
+	bool FX_FirstEffectIsFurther(FxEffect* firstEffect, FxEffect* secondEffect)
+	{
+		
+		//if (*((BYTE*)&firstEffect->boltAndSortOrder + 3) == 255)
+		if(firstEffect->boltAndSortOrder.sortOrder == 255u)
+		{
+			if (secondEffect->boltAndSortOrder.sortOrder == 255u)
+			{
+				return false;
+			}
+
+			firstEffect->boltAndSortOrder.sortOrder = FX_CalcRunnerParentSortOrder(firstEffect);
+		}
+
+		if (secondEffect->boltAndSortOrder.sortOrder == 255u)
+		{
+			secondEffect->boltAndSortOrder.sortOrder = FX_CalcRunnerParentSortOrder(secondEffect);
+		}
+
+		return firstEffect->boltAndSortOrder.sortOrder < secondEffect->boltAndSortOrder.sortOrder;
+	}
+
+	void FX_SortEffects(FxSystem* system)
+	{
+		if (!system)
+		{
+			Assert();
+		}
+
+		int idx, idy;
+		volatile int i, j;
+		float sort_buffer[1024] = {};
+
+		for (i = system->firstActiveEffect; i != system->firstNewEffect; ++i)
+		{
+			const std::uint16_t firstHandle = system->allEffectHandles[i & 0x3FF];
+			FxEffect* firstEffect = FX_EffectFromHandle(system, firstHandle);
+
+			float dist = Vec3DistanceSq(firstEffect->frameNow.origin, system->camera.origin);
+
+			for (j = i; j != system->firstActiveEffect; --j)
+			{
+				idy = ((WORD)j - 1) & 0x3FF;
+				if (sort_buffer[idy] >= dist * 0.99989998f)
+				{
+					if (sort_buffer[idy] >= dist * 1.0001f)
+					{
+						break;
+					}
+
+					FxEffect* secondEffect = FX_EffectFromHandle(system, system->allEffectHandles[idy]);
+					if (secondEffect->owner != firstEffect->owner || !FX_FirstEffectIsFurther(firstEffect, secondEffect))
+					{
+						break;
+					}
+				}
+
+				idx = j & 0x3FF;
+				sort_buffer[idx] = sort_buffer[idy];
+				system->allEffectHandles[idx] = system->allEffectHandles[idy];
+			}
+
+			idx = j & 0x3FF;
+			sort_buffer[idx] = dist;
+			system->allEffectHandles[idx] = firstHandle;
+		}
+
+		system->iteratorCount = 0;
 	}
 }

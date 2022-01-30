@@ -1,4 +1,5 @@
 #pragma once
+#include "fx_system/fx_structs.hpp"
 
 #define GET_PARENTWND (CMainFrame*) *(DWORD*)(game::g_pParentWnd_ptr)
 
@@ -265,5 +266,29 @@ namespace game
 
 	game::GfxCmdHeader* R_GetCommandBuffer(int bytes /*ebx*/, int render_cmd /*edi*/);
 	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
-	
+
+
+	// * ------------------------- FX --------------------------------
+
+	extern int& g_processCodeMesh;
+
+	extern int I_strncmp(const char* s0, const char* s1, int n);
+	extern int I_strcmp(const char* s1, const char* s2);
+	extern void I_strncpyz(char* Dest, const char* Source, int destsize);
+	static utils::function<int(const char*, const char*)> I_stricmp = 0x4B9490;
+
+	static utils::function<Material* (const char*, int)> Material_RegisterHandle = 0x511BE0;
+
+
+	static utils::function<unsigned int(const char*, void**)> FS_ReadFile = 0x4A0240;
+	static utils::function<void(void*)> FS_FreeFile = 0x4A0300;
+
+	static utils::function<void(const char*)> Com_BeginParseSession = 0x4B78D0;
+	static utils::function<void()> Com_EndParseSession = 0x4B79A0;
+	static utils::function<void(int)> Com_SetSpaceDelimited = 0x4B79D0;
+	static utils::function<void()> Com_SetParseNegativeNumbers = 0x4B7A30;
+
+	static utils::function<char* (const char**)> Com_Parse = 0x4B8390;
+	static utils::function<int(const char**, const char*, int)> Com_MatchToken = 0x4B8430;
+	static utils::function<void()> Com_UngetToken = 0x4B7C90;
 }

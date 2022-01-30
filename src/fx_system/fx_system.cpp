@@ -1,26 +1,41 @@
 #include "std_include.hpp"
 
-#define Assert()	if(IsDebuggerPresent()) \
-						__debugbreak();		\
-					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__)
-
-#define LODWORD(x)  (*((DWORD*)&(x)))  // low dword
-
-// unimplemented features marked with:
-/*
- * #MARKS
- * #PHYS
- */
+#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
+					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
 
 namespace fx_system
 {
 	FxSystem fx_systemPool = {};
+	FxSystemBuffers fx_systemBufferPool = {};
 
-	// *
+	bool ed_is_playing = false;
+	bool ed_is_repeating = false;
+
+	fx_system::FxEffect* ed_active_effect = nullptr;
+	fx_system::FxEditorEffectDef ed_editor_effect = {};
+
+	float ed_timescale = 1.0f;
+	float ed_looppause = 0.3f;
+
+
+	// * --------------------------------
 
 	FxSystem* FX_GetSystem([[maybe_unused]] int localClientNum)
 	{
+#ifdef FXEDITOR
+		return &game::fx_systemPool;
+#else
 		return &fx_systemPool;
+#endif
+	}
+
+	FxSystemBuffers* FX_GetSystemBuffers(int localClientNum)
+	{
+#ifdef FXEDITOR
+		return &game::fx_systemBufferPool;
+#else
+		return &fx_systemBufferPool;
+#endif
 	}
 
 	bool FX_GetEffectStatus(FxEffect* effect)
@@ -34,6 +49,91 @@ namespace fx_system
 		return effect->status == 1;
 	}
 
+	FxElemDef* FX_GetEffectElemDef(const FxEffect* effect, int index)
+	{
+		return &effect->def->elemDefs[index];
+	}
+
+	void FX_GetTrailHandleList_Last(FxSystem* system, FxEffect* effect, unsigned __int16* outHandleList, int* outTrailCount)
+	{
+		FxTrail* trail = nullptr;
+		int trailIndex = 0;
+
+		for (std::uint16_t trailHandle = effect->firstTrailHandle; trailHandle != UINT16_MAX; trailHandle = trail->nextTrailHandle)
+		{
+			trail = FX_TrailFromHandle(system, trailHandle);
+			if (trailIndex >= 2)
+			{
+				Assert();
+			}
+
+			outHandleList[trailIndex++] = trail->lastElemHandle;
+		}
+
+		*outTrailCount = trailIndex;
+	}
+
+	// checked :: utils::hook::detour(0x475A70, fx_system::FX_RetriggerEffect, HK_JUMP);
+	void FX_RetriggerEffect(int localClientNum, FxEffect* effect, int msecBegin)
+	{
+		if ((effect->status & FX_STATUS_REF_COUNT_MASK) == 0)
+		{
+			Assert();
+		}
+
+		FxSystem* system = FX_GetSystem(localClientNum);
+		++effect->status;
+
+		if ((effect->status & FX_STATUS_HAS_PENDING_LOOP_ELEMS) != 0)
+		{
+			FX_SpawnAllFutureLooping(system, effect, 0, effect->def->elemDefCountLooping, &effect->framePrev, &effect->frameNow, effect->msecBegin, effect->msecLastUpdate);
+			FX_StopEffect(system, effect);
+		}
+
+		std::uint16_t firstOldElemHandle[3];
+		firstOldElemHandle[0] = effect->firstElemHandle[0];
+		firstOldElemHandle[1] = effect->firstElemHandle[1];
+		firstOldElemHandle[2] = effect->firstElemHandle[2];
+
+		int trailCount = 0;
+		std::uint16_t lastOldTrailElemHandle[8] = {};
+		FX_GetTrailHandleList_Last(system, effect, lastOldTrailElemHandle, &trailCount);
+
+		if (msecBegin > effect->msecLastUpdate)
+		{
+			std::uint16_t lastElemHandle[3];
+			lastElemHandle[0] = UINT16_MAX; //-1;
+			lastElemHandle[1] = UINT16_MAX;
+			lastElemHandle[2] = UINT16_MAX;
+			FX_UpdateEffectPartial(system, effect, effect->msecLastUpdate, msecBegin, 0.0f, 0.0f, firstOldElemHandle, lastElemHandle, nullptr, lastOldTrailElemHandle);
+		}
+
+		effect->distanceTraveled = 0.0f;
+		effect->msecBegin = msecBegin;
+
+		FX_BeginLooping(system, effect, 0, effect->def->elemDefCountLooping, &effect->frameNow, &effect->frameNow, msecBegin, msecBegin);
+		FX_TriggerOneShot(system, effect, effect->def->elemDefCountLooping, effect->def->elemDefCountOneShot, &effect->frameNow, msecBegin);
+
+
+		if (effect->def->msecLoopingLife != 0)
+		{
+			effect->status |= FX_STATUS_HAS_PENDING_LOOP_ELEMS;
+		}
+
+		if (msecBegin < effect->msecLastUpdate)
+		{
+			FX_UpdateEffectPartial(system, effect, effect->msecBegin, effect->msecLastUpdate, 0.0, 0.0, effect->firstElemHandle, firstOldElemHandle, lastOldTrailElemHandle, 0);
+		}
+
+		FX_SortNewElemsInEffect(system, effect);
+
+		if (effect->def->msecLoopingLife == 0)
+		{
+			FX_DelRefToEffect(system, effect);
+		}
+	}
+
+	// checked :: utils::hook::detour(0x487880, fx_system::FX_BeginLooping, HK_JUMP);
 	void FX_BeginLooping(FxSystem* system, FxEffect* effect, int elemDefFirst, int elemDefCount, FxSpatialFrame* frameWhenPlayed, FxSpatialFrame* frameNow, int msecWhenPlayed, int msecNow)
 	{
 		if (!effect || !effect->def)
@@ -78,6 +178,7 @@ namespace fx_system
 		}
 	}
 
+	// checked
 	void FX_StartNewEffect(FxSystem* system, FxEffect* effect)
 	{
 		FxEffectDef* def = effect->def;
@@ -105,6 +206,7 @@ namespace fx_system
 		}
 	}
 
+	// checked
 	void FX_StopEffect(FxSystem* system, FxEffect* effect)
 	{
 		FxEffect* o_effect = effect;
@@ -155,6 +257,7 @@ namespace fx_system
 		}
 	}
 
+	// checked
 	void FX_TrailElem_CompressBasis(const float(*inBasis)[3], char(*outBasis)[3])
 	{
 		for (int basisVecIter = 0; basisVecIter != 2; ++basisVecIter)
@@ -291,7 +394,7 @@ namespace fx_system
 	// *
 	// ----------------------------
 
-
+	// checked
 	FxPool_FxElem* FX_AllocPool_Generic_FxElem_FxElemContainer_(volatile int* activeCount, volatile int* firstFreeIndex, FxPool_FxElem* pool)
 	{
 		volatile int itemIndex = *firstFreeIndex;
@@ -316,16 +419,17 @@ namespace fx_system
 		return elem;
 	}
 
+	// checked
 	FxElem* FX_AllocElem(FxSystem* system)
 	{
-		return reinterpret_cast<FxElem*>(FX_AllocPool_Generic_FxElem_FxElemContainer_(&system->activeTrailElemCount, &system->firstFreeTrailElem, system->elems));
+		return reinterpret_cast<FxElem*>(FX_AllocPool_Generic_FxElem_FxElemContainer_(&system->activeElemCount, &system->firstFreeElem, system->elems));
 	}
 
 
 	// *
 	// ----------------------------
 
-
+	// checked
 	FxPool_FxTrailElem* FX_AllocPool_Generic_FxTrailElem_FxTrailElem_(volatile int* activeCount, volatile int* trailElems, FxPool_FxTrailElem* pool)
 	{
 
@@ -354,6 +458,7 @@ namespace fx_system
 		return trailElem;
 	}
 
+	// checked
 	FxTrailElem* FX_AllocTrailElem(FxSystem* system)
 	{
 		return reinterpret_cast<FxTrailElem*>(FX_AllocPool_Generic_FxTrailElem_FxTrailElem_(&system->activeTrailElemCount, &system->firstFreeTrailElem, system->trailElems));
@@ -414,7 +519,7 @@ namespace fx_system
 		FxEffectDef* effectDef = FX_GetElemVisuals(remoteElemDef, randomSeed).effectDef.handle;
 		UnitQuatToAxis(effectFrameWhenPlayed->quat, axis);
 
-		if ((remoteElemDef->flags & 8) != 0)
+		if ((remoteElemDef->flags & FX_ELEM_RUNNER_USES_RAND_ROT) != 0)
 		{
 			float rotatedAxis[3][3] = {};
 			FX_RandomlyRotateAxis(axis, randomSeed, rotatedAxis);
@@ -449,10 +554,12 @@ namespace fx_system
 			}
 
 			spawnedEffect = FX_SpawnEffect(system, effectDef, msecWhenPlayed, spawnOrigin, usedAxis, 4095, 1023, sortOrder, effect->owner, v11);
+			//spawnedEffect = utils::hook::call<FxEffect* (__cdecl)(FxSystem*, FxEffectDef*, int, const float*, const float(*)[3], int, int, int, unsigned __int16, unsigned int)>(0x4740E0)(system, effectDef, msecWhenPlayed, spawnOrigin, usedAxis, 4095, 1023, sortOrder, effect->owner, v11);
 		}
 		else
 		{
 			spawnedEffect = FX_SpawnEffect(system, effectDef, msecWhenPlayed, spawnOrigin, usedAxis, *(WORD*)&boltAndSortOrder & 4095, (*(unsigned int*)&boltAndSortOrder >> 14) & 1023, sortOrder, effect->owner, 2175u);
+			//spawnedEffect = utils::hook::call<FxEffect* (__cdecl)(FxSystem*, FxEffectDef*, int, const float*, const float(*)[3], int, int, int, unsigned __int16, unsigned int)>(0x4740E0)(system, effectDef, msecWhenPlayed, spawnOrigin, usedAxis, *(WORD*)&boltAndSortOrder & 4095, (*(unsigned int*)&boltAndSortOrder >> 14) & 1023, sortOrder, effect->owner, 2175u);
 		}
 
 		if (spawnedEffect)
@@ -474,7 +581,7 @@ namespace fx_system
 			Assert();
 		}
 
-		if (fx_cull_elem_spawn->current.enabled)
+		if (game::Dvar_FindVar("fx_cull_elem_spawn")->current.enabled)
 		{
 			if (FX_CullElemForSpawn(effectFrameWhenPlayed->origin, &system->cameraPrev, elemDef))
 			{
@@ -485,10 +592,11 @@ namespace fx_system
 		int msecBegin = msecWhenPlayed + elemDef->spawnDelayMsec.base;
 		if (elemDef->spawnDelayMsec.amplitude)
 		{
-			msecBegin += ((elemDef->spawnDelayMsec.amplitude + 1) * static_cast<std::uint16_t>(fx_randomTable[18 + FX_ElemRandomSeed(effect->randomSeed, msecBegin, sequence)])) >> 16;
+			//msecBegin += ((elemDef->spawnDelayMsec.amplitude + 1) * static_cast<std::uint16_t>(fx_randomTable[18 + FX_ElemRandomSeed(effect->randomSeed, msecBegin, sequence)])) >> 16;
+			msecBegin += ((elemDef->spawnDelayMsec.amplitude + 1) * FX_RandomFloatAsUInt16(18, FX_ElemRandomSeed(effect->randomSeed, msecBegin, sequence))) >> 16;
 		}
 
-		const unsigned int randomSeed = FX_ElemRandomSeed(effect->randomSeed, msecBegin, sequence);
+		const int randomSeed = FX_ElemRandomSeed(effect->randomSeed, msecBegin, sequence);
 		if (elemDef->elemType == FX_ELEM_TYPE_RUNNER)
 		{
 			FX_SpawnRunner(effectFrameWhenPlayed, effect, elemDef, system, randomSeed, msecBegin);
@@ -498,7 +606,9 @@ namespace fx_system
 			// #MARKS
 			// FX_CreateImpactMarkInternal(system->localClientNum, (int)elemDef, (int)effectFrameWhenPlayed, (unsigned __int16)randomSeed);
 		}
-		else if (elemDef->elemType != FX_ELEM_TYPE_SOUND && (elemDef->effectOnImpact.handle || elemDef->effectOnDeath.handle || elemDef->effectEmitted.handle || msecBegin + elemDef->lifeSpanMsec.base + (((elemDef->lifeSpanMsec.amplitude + 1) * (unsigned __int16)fx_randomTable[17 + randomSeed]) >> 16) > system->msecNow))
+		else if (elemDef->elemType != FX_ELEM_TYPE_SOUND && 
+			(elemDef->effectOnImpact.handle || elemDef->effectOnDeath.handle || elemDef->effectEmitted.handle ||
+				msecBegin + FX_GetElemLifeSpanMsec(randomSeed, elemDef) > system->msecNow)) //msecBegin + elemDef->lifeSpanMsec.base + (((elemDef->lifeSpanMsec.amplitude + 1) * (unsigned __int16)fx_randomTable[17 + randomSeed]) >> 16) > system->msecNow))
 		{
 			FxElem* remoteElem = FX_AllocElem(system);
 			if (remoteElem)
@@ -510,8 +620,8 @@ namespace fx_system
 				remoteElem->emitResidual = 0;
 				remoteElem->msecBegin = msecBegin;
 
-				
-				if (randomSeed != FX_ElemRandomSeed(effect->randomSeed, msecBegin, remoteElem->sequence))
+				// should be remoteElem->sequence? casting sequence "128" to char results in -128 tho .. can throw an assert here
+				if (randomSeed != FX_ElemRandomSeed(effect->randomSeed, msecBegin, sequence))
 				{
 					Assert();
 				}
@@ -560,9 +670,13 @@ namespace fx_system
 
 						// #PHYS
 						//if ((elemDef->flags & FX_ELEM_USE_MODEL_PHYSICS) != 0 && !FX_SpawnModelPhysics(elemDef, effect, randomSeed, remoteElem))
-						//{
+						if ((elemDef->flags & FX_ELEM_USE_MODEL_PHYSICS) != 0)
+						{
+							// remove physics flag (does not alter the fx project file)
+							elemDef->flags &= ~FX_ELEM_USE_MODEL_PHYSICS;
+
 							FX_FreeElem(system, FX_ElemToHandle(system->elems, remoteElem), effect, elemClass);
-						//}
+						}
 					}
 				}
 			}
@@ -664,6 +778,7 @@ namespace fx_system
 		}
 	}
 
+	// checked :: utils::hook::detour(0x474940, fx_system::FX_SpawnTrailElem_NoCull, HK_JUMP);
 	void FX_SpawnTrailElem_NoCull(FxSystem* system, FxEffect* effect, FxTrail* trail, FxSpatialFrame* effectFrameWhenPlayed, int msecWhenPlayed, float distanceWhenPlayed)
 	{
 		if (!system || !effect || !effect->def || !trail)
@@ -696,7 +811,9 @@ namespace fx_system
 				float basis[2][3] = {};
 
 				++effect->status;
+
 				FX_GetOriginForTrailElem(effect, elemDef, effectFrameWhenPlayed, randomSeed, remoteTrailElem->origin, (float*)basis, basis[1]);
+				//utils::hook::call<void(__cdecl)(FxEffect*, FxElemDef*, FxSpatialFrame*, int, float*, float*, float*)>(0x489DE0)(effect, elemDef, effectFrameWhenPlayed, randomSeed, remoteTrailElem->origin, (float*)basis, basis[1]);
 
 				const std::uint16_t trailElemHandle = FX_TrailElemToHandle(system->trailElems, remoteTrailElem);
 				if (trail->lastElemHandle == FX_HANDLE_NONE)
@@ -713,7 +830,7 @@ namespace fx_system
 					FX_TrailElemFromHandle(system, trail->lastElemHandle)->nextTrailElemHandle = trailElemHandle;
 				}
 
-				trail->lastElemHandle = trailElemHandle; trail->lastElemHandle = trailElemHandle;
+				trail->lastElemHandle = trailElemHandle;
 				remoteTrailElem->nextTrailElemHandle = UINT16_MAX; //-1;
 				remoteTrailElem->spawnDist = distanceWhenPlayed;
 				remoteTrailElem->msecBegin = msecBegin;
@@ -778,6 +895,7 @@ namespace fx_system
 		}
 	}
 
+	// checked
 	void FX_SpawnEffect_AllocTrails(FxSystem* system, FxEffect* effect)
 	{
 		const FxEffectDef* def = effect->def;
@@ -801,7 +919,10 @@ namespace fx_system
 
 				localTrail.nextTrailHandle = effect->firstTrailHandle;
 				localTrail.defIndex = static_cast<char>(elemDefIter);
-				localTrail.firstElemHandle = INT16_MAX; //-1;
+
+				//*(DWORD*)&localTrail.firstElemHandle = -1; // < sets first and lastElemHandle to 0xFFFF
+				localTrail.firstElemHandle = UINT16_MAX;
+				localTrail.lastElemHandle = UINT16_MAX;
 				localTrail.sequence = 0;
 
 				effect->firstTrailHandle = FX_TrailToHandle(system->trails, remoteTrail);
@@ -809,8 +930,8 @@ namespace fx_system
 			}
 		}
 	}
-
-	// todo: clean me up
+	
+	// todo: clean me up (has issues)
 	FxEffect* FX_SpawnEffect(FxSystem* system, FxEffectDef* remoteDef, int msecBegin, const float* origin, const float(*axis)[3], int dobjHandle, int boneIndex, int runnerSortOrder, unsigned __int16 owner, unsigned int markEntnum)
 	{
 		if (!system || system->isArchiving || !remoteDef || !origin || !axis)
@@ -818,7 +939,7 @@ namespace fx_system
 			Assert();
 		}
 
-		if (fx_cull_effect_spawn->current.enabled && FX_CullEffectForSpawn(remoteDef, &system->cameraPrev, origin))
+		if (game::Dvar_FindVar("fx_cull_effect_spawn")->current.enabled && FX_CullEffectForSpawn(remoteDef, &system->cameraPrev, origin))
 		{
 			return nullptr;
 		}
@@ -835,11 +956,12 @@ namespace fx_system
 			return nullptr;
 		}
 
-		system->firstFreeEffect = system->firstFreeEffect + 1;
+		auto old_firstFree = system->firstFreeEffect;
+		system->firstFreeEffect = old_firstFree + 1;
 
-		FxEffect* remoteEffect = FX_EffectFromHandle(system, system->allEffectHandles[system->firstFreeEffect & FX_EFFECT_HANDLE_NONE]);
+		FxEffect* remoteEffect = FX_EffectFromHandle(system, system->allEffectHandles[old_firstFree & FX_EFFECT_HANDLE_NONE]);
 		remoteEffect->def = remoteDef;
-		remoteEffect->status = remoteDef->msecLoopingLife != 0 ? FX_HANDLE_NONE : 1;
+		remoteEffect->status = remoteDef->msecLoopingLife != 0 ? 65538 : 1;
 		remoteEffect->firstElemHandle[0] = UINT16_MAX; //-1;
 		remoteEffect->firstElemHandle[1] = UINT16_MAX; //-1;
 		remoteEffect->firstElemHandle[2] = UINT16_MAX; //-1;
@@ -872,9 +994,9 @@ namespace fx_system
 			Assert();
 		}
 
-		if (owner == 0xFFFF)
+		if (owner == FX_HANDLE_NONE)
 		{
-			remoteEffect->owner = system->allEffectHandles[system->firstFreeEffect & 1023];
+			remoteEffect->owner = system->allEffectHandles[old_firstFree & FX_EFFECT_HANDLE_NONE];
 			remoteEffect->status |= FX_STATUS_SELF_OWNED;
 		}
 		else
@@ -971,7 +1093,7 @@ namespace fx_system
 			Assert();
 		}
 
-		remoteEffect->frameAtSpawn.origin[0] = *origin;
+		remoteEffect->frameAtSpawn.origin[0] = origin[0];
 		remoteEffect->frameAtSpawn.origin[1] = origin[1];
 		remoteEffect->frameAtSpawn.origin[2] = origin[2];
 
@@ -980,7 +1102,8 @@ namespace fx_system
 		memcpy(&remoteEffect->frameNow, &remoteEffect->frameAtSpawn, sizeof(remoteEffect->frameNow));
 
 		system->firstNewEffect = system->firstFreeEffect;
-		FX_StartNewEffect(system, remoteEffect);
+
+		FX_StartNewEffect(system, remoteEffect); //utils::hook::call<void(__cdecl)(FxSystem*, FxEffect*)>(0x487A80)(system, remoteEffect);
 
 		return remoteEffect;
 	}
@@ -1043,6 +1166,7 @@ namespace fx_system
 	// *
 	// ----------------------------
 
+	// checked
 	std::uint16_t FX_EffectToHandle(FxSystem* system, FxEffect* effect)
 	{
 		if (!system)
@@ -1050,7 +1174,7 @@ namespace fx_system
 			Assert();
 		}
 
-		if (!effect || (effect <= &system->effects[0]) || effect >= &system->effects[FX_EFFECT_LIMIT])
+		if (!effect || (effect < &system->effects[0]) || effect >= &system->effects[FX_EFFECT_LIMIT])
 		{
 			Assert();
 		}
@@ -1058,6 +1182,7 @@ namespace fx_system
 		return static_cast<std::uint16_t>(((char*)effect - (char*)system->effects) / 4);
 	}
 
+	// checked
 	FxEffect* FX_EffectFromHandle(FxSystem* system, unsigned __int16 handle)
 	{
 		if (!system)
@@ -1068,17 +1193,18 @@ namespace fx_system
 		// if ( handle >= 32768u || (handle & 31) != 0 )
 		// handle < FX_EFFECT_LIMIT * sizeof( FxEffect ) / FxEffect::HANDLE_SCALE && handle % (sizeof( FxEffect ) / FxEffect::HANDLE_SCALE) == 0
 
-		if(handle >= (FX_EFFECT_LIMIT * sizeof(FxEffect) / FX_EFFECT_HANDLE_SCALE) || handle % (sizeof(FxEffect) / FX_EFFECT_HANDLE_SCALE) == 0)
+		if(handle >= (FX_EFFECT_LIMIT * sizeof(FxEffect) / FX_EFFECT_HANDLE_SCALE) || handle % (sizeof(FxEffect) / FX_EFFECT_HANDLE_SCALE) != 0)
 		{
 			Assert();
 		}
 
-		return (system->effects + 4 * handle);
+		return reinterpret_cast<FxEffect*>(reinterpret_cast<char*>(system->effects) + 4 * handle);
 	}
 
 	// *
 	// ----------------------------
 
+	// checked :: utils::hook::detour(0x473300, fx_system::FX_ElemToHandle, HK_JUMP);
 	std::uint16_t FX_ElemToHandle(FxPool_FxElem* pool, FxElem* item_slim)
 	{
 		// item && item >= &poolArray[0].item && item < &poolArray[LIMIT].item
@@ -1090,22 +1216,24 @@ namespace fx_system
 		return static_cast<std::uint16_t>(((char*)item_slim - (char*)pool) / 4);
 	}
 
+	// checked :: utils::hook::detour(0x473910, fx_system::FX_ElemFromHandle, HK_JUMP);
 	FxElem* FX_ElemFromHandle(FxSystem* system, unsigned __int16 handle)
 	{
 		// if ( handle < 20480u && !(handle % 10u) )
 		// "handle < LIMIT * sizeof( ITEM_TYPE ) / ITEM_TYPE::HANDLE_SCALE && handle % (sizeof( ITEM_TYPE ) / ITEM_TYPE::HANDLE_SCALE) == 0
 
-		if (handle >= (FX_ELEM_LIMIT * sizeof(FxElem) / FX_ELEM_HANDLE_SCALE) || handle % (sizeof(FxElem) / FX_ELEM_HANDLE_SCALE) == 0)
+		if (handle >= (FX_ELEM_LIMIT * sizeof(FxElem) / FX_ELEM_HANDLE_SCALE) || handle % (sizeof(FxElem) / FX_ELEM_HANDLE_SCALE) != 0)
 		{
 			Assert();
 		}
 
-		return reinterpret_cast<FxElem*>(system->elems + 4 * handle);
+		return reinterpret_cast<FxElem*>(reinterpret_cast<char*>(system->elems) + 4 * handle);
 	}
 
 	// *
 	// ----------------------------
 
+	// checked
 	std::uint16_t FX_TrailElemToHandle(FxPool_FxTrailElem* pool, FxTrailElem* item_slim)
 	{
 		// item && item >= &poolArray[0].item && item < &poolArray[LIMIT].item
@@ -1117,15 +1245,16 @@ namespace fx_system
 		return static_cast<std::uint16_t>(((char*)item_slim - (char*)pool) / 4);
 	}
 
+	// checked
 	FxTrailElem* FX_TrailElemFromHandle(FxSystem* system, unsigned __int16 handle)
 	{
 		// if ( handle >= 16384u || (handle & 7) != 0 )
-		if (handle >= (FX_TRAILELEM_LIMIT * sizeof(FxTrailElem) / FX_TRAILELEM_HANDLE_SCALE) || handle % (sizeof(FxTrailElem) / FX_TRAILELEM_HANDLE_SCALE) == 0)
+		if (handle >= (FX_TRAILELEM_LIMIT * sizeof(FxTrailElem) / FX_TRAILELEM_HANDLE_SCALE) || handle % (sizeof(FxTrailElem) / FX_TRAILELEM_HANDLE_SCALE) != 0)
 		{
 			Assert();
 		}
 
-		return reinterpret_cast<FxTrailElem*>(system->trailElems + 4 * handle);
+		return reinterpret_cast<FxTrailElem*>(reinterpret_cast<char*>(system->trailElems) + 4 * handle);
 	}
 
 	// *
@@ -1142,20 +1271,22 @@ namespace fx_system
 		return static_cast<std::uint16_t>(((char*)item_slim - (char*)pool) / 4);
 	}
 
+	// checked
 	FxTrail* FX_TrailFromHandle(FxSystem* system, unsigned __int16 handle)
 	{
 		// if ( trailHandle >= 256u || (trailHandle & 1) != 0 )
-		if (handle >= (FX_TRAIL_LIMIT * sizeof(FxTrail) / FX_TRAIL_HANDLE_SCALE) || handle % (sizeof(FxTrail) / FX_TRAIL_HANDLE_SCALE) == 0)
+		if (handle >= (FX_TRAIL_LIMIT * sizeof(FxTrail) / FX_TRAIL_HANDLE_SCALE) || handle % (sizeof(FxTrail) / FX_TRAIL_HANDLE_SCALE) != 0)
 		{
 			Assert();
 		}
 
-		return reinterpret_cast<FxTrail*>(system->trails + 4 * handle);
+		return reinterpret_cast<FxTrail*>(reinterpret_cast<char*>(system->trails) + 4 * handle);
 	}
 
 	// *
 	// ----------------------------
 
+	// checked
 	void FX_AddRefToEffect([[maybe_unused]] FxSystem* system, FxEffect* effect)
 	{
 		if (!effect)
@@ -1166,6 +1297,7 @@ namespace fx_system
 		++effect->status;
 	}
 
+	// checked
 	void FX_DelRefToEffect(FxSystem* system, FxEffect* effect)
 	{
 		if (!effect)
@@ -1181,6 +1313,7 @@ namespace fx_system
 		--effect->status;
 	}
 
+	// checked :: utils::hook::detour(0x4728A0, fx_system::FX_EffectNoLongerReferenced, HK_JUMP);
 	void FX_EffectNoLongerReferenced(FxSystem* system, FxEffect* remoteEffect)
 	{
 		if (!remoteEffect)
@@ -1238,6 +1371,7 @@ namespace fx_system
 		*firstFreeIndex = freedIndex;
 	}
 
+	// checked
 	void FX_FreePool_Generic_FxTrail_FxTrail_(FxTrail* item_slim, volatile int* firstFreeIndex, FxPool_FxTrail* pool)
 	{
 		const int freedIndex = ((char*)item_slim - (char*)pool) >> 3;
@@ -1251,10 +1385,11 @@ namespace fx_system
 			Assert();
 		}
 
-		*(DWORD*)&item_slim->defIndex = *firstFreeIndex;
+		*(DWORD*)&item_slim->nextTrailHandle = *firstFreeIndex;
 		*firstFreeIndex = freedIndex;
 	}
 
+	// checked
 	void FX_FreePool_Generic_FxTrailElem_FxTrailElem_(FxTrailElem* item_slim, volatile int* firstFreeIndex, FxPool_FxTrailElem* pool)
 	{
 		const int freedIndex = ((char*)item_slim - (char*)pool) >> 5;
@@ -1272,9 +1407,17 @@ namespace fx_system
 		*firstFreeIndex = freedIndex;
 	}
 
+	// checked :: utils::hook::detour(0x474D60, fx_system::FX_FreeElem, HK_JUMP);
 	void FX_FreeElem(FxSystem* system, unsigned __int16 elemHandle, FxEffect* effect, unsigned int elemClass)
 	{
 		if (!system)
+		{
+			Assert();
+		}
+
+		// custom assert
+		// effect->def = null on live effect edit (eg. velocity inc) when KillEffect detoured
+		if(!effect->def)
 		{
 			Assert();
 		}
@@ -1286,14 +1429,16 @@ namespace fx_system
 			effect->firstSortedElemHandle = remoteElem->nextElemHandleInEffect;
 		}
 
-		const std::uint16_t prevElemHandle = remoteElem->prevElemHandleInEffect;
+		
 		const std::uint16_t nextElemHandle = remoteElem->nextElemHandleInEffect;
 
 		if (nextElemHandle != 0xFFFF)
 		{
 			FX_ElemFromHandle(system, nextElemHandle)->prevElemHandleInEffect = remoteElem->prevElemHandleInEffect;
 		}
-		
+
+		const std::uint16_t prevElemHandle = remoteElem->prevElemHandleInEffect;
+
 		if (prevElemHandle == 0xFFFF)
 		{
 			if (effect->firstElemHandle[elemClass] != elemHandle)
@@ -1309,7 +1454,7 @@ namespace fx_system
 		}
 
 		FxElemDef* elemDef = &effect->def->elemDefs[static_cast<std::uint8_t>(remoteElem->defIndex)];
-		if (elemDef->elemType == 5 && (elemDef->flags & 0x8000000) != 0)
+		if (elemDef->elemType == FX_ELEM_TYPE_MODEL && (elemDef->flags & FX_ELEM_USE_MODEL_PHYSICS) != 0)
 		{
 			if (remoteElem->___u8.physObjId)
 			{
@@ -1326,9 +1471,10 @@ namespace fx_system
 		--system->activeElemCount;
 	}
 
+	// should be good
 	void FX_FreeTrailElem(FxSystem* system, std::int16_t trailElemHandle, FxEffect* effect, FxTrail* trail)
 	{
-		FxTrailElem* remoteTrailElem; // ebx
+		FxTrailElem* remoteTrailElem;
 
 		if (!system || !effect)
 		{
@@ -1349,7 +1495,7 @@ namespace fx_system
 				Assert();
 			}
 
-			trail->lastElemHandle = INT16_MAX; // -1
+			trail->lastElemHandle = UINT16_MAX; // -1
 		}
 
 		trail->firstElemHandle = remoteTrailElem->nextTrailElemHandle;
@@ -1386,7 +1532,7 @@ namespace fx_system
 	}
 
 
-
+	// checked
 	void FX_RemoveAllEffectElems(FxEffect* effect, FxSystem* system)
 	{
 		if (!effect || !effect->status)
@@ -1428,6 +1574,7 @@ namespace fx_system
 		FX_DelRefToEffect(system, effect);
 	}
 
+	// checked :: utils::hook::detour(0x4753C0, fx_system::FX_KillEffect, HK_JUMP);
 	void FX_KillEffect(FxSystem* system, FxEffect* effect)
 	{
 		if (!effect || !effect->status)
@@ -1477,7 +1624,7 @@ namespace fx_system
 
 			if (system->needsGarbageCollection)
 			{
-				FX_RunGarbageCollectionAndPrioritySort(system);
+				FX_RunGarbageCollectionAndPrioritySort(system); //utils::hook::call<void(__cdecl)(FxSystem*)>(0x473E50)(system);
 			}
 
 			o_effect = effect;
@@ -1487,10 +1634,10 @@ namespace fx_system
 	}
 
 
-
+	// checked
 	void FX_RunGarbageCollection_FreeTrails(FxSystem* system, FxEffect* effect)
 	{
-		for (; effect->firstTrailHandle != FX_STATUS_REF_COUNT_MASK; --system->activeTrailCount)
+		for (; effect->firstTrailHandle != (unsigned __int16)FX_STATUS_REF_COUNT_MASK; --system->activeTrailCount)
 		{
 			if (!system)
 			{
@@ -1523,6 +1670,7 @@ namespace fx_system
 		}
 	}
 
+	// checked :: utils::hook::detour(0x473E50, fx_system::FX_RunGarbageCollectionAndPrioritySort, HK_JUMP);
 	void FX_RunGarbageCollectionAndPrioritySort(FxSystem* system)
 	{
 		if (!system)
@@ -1550,7 +1698,7 @@ namespace fx_system
 					const std::uint16_t effectHandle = system->allEffectHandles[--activeIndex & 0x3FF];
 					FxEffect* effect = FX_EffectFromHandle(system, effectHandle);
 
-					if ((effect->status & FX_STATUS_OWNED_EFFECTS_MASK) != 0) //if ((unsigned __int16)effect->status)
+					if (((unsigned __int16)effect->status & FX_STATUS_REF_COUNT_MASK) != 0)
 					{
 						system->allEffectHandles[((WORD)freedCount + (WORD)activeIndex) & 0x3FF] = effectHandle;
 					}
@@ -1558,13 +1706,13 @@ namespace fx_system
 					{
 						FX_RunGarbageCollection_FreeTrails(system, effect);
 						FX_RunGarbageCollection_FreeSpotLight(system, effectHandle);
-						freedHandles[freedCount++] = effectHandle; //*((WORD*)&effectHandle[1] + freedCount++) = effectHandle[0];
+						freedHandles[freedCount++] = effectHandle;
 					}
 				} 
 
 				while (freedCount)
 				{
-					system->allEffectHandles[activeIndex++ & 0x3FF] = freedHandles[--freedCount]; // *((WORD*)effectHandle + freedCount-- + 1);
+					system->allEffectHandles[activeIndex++ & 0x3FF] = freedHandles[--freedCount];
 					FxEffect* effect = FX_EffectFromHandle(system, freedHandles[freedCount]);
 					memset(effect, 0, sizeof(FxEffect));
 				}
@@ -1572,6 +1720,105 @@ namespace fx_system
 
 			system->firstActiveEffect = activeIndex;
 		}
+	}
+
+	void FX_LinkSystemBuffers(FxSystem* system, FxSystemBuffers* systemBuffers)
+	{
+		system->elems = systemBuffers->elems;
+		system->trails = systemBuffers->trails;
+		system->trailElems = systemBuffers->trailElems;
+		system->effects = systemBuffers->effects;
+		system->visState = systemBuffers->visState;
+		system->deferredElems = systemBuffers->deferredElems;
+	}
+
+	void FX_ResetSystem(FxSystem* system)
+	{
+		system->effects->def = nullptr;
+
+		for (int effectIndex = 0; effectIndex < 1024; ++effectIndex)
+		{
+			system->allEffectHandles[effectIndex] = FX_EffectToHandle(system, &system->effects[effectIndex]);
+		}
+
+		system->firstActiveEffect = 0;
+		system->firstNewEffect = 0;
+		system->firstFreeEffect = 0;
+		system->iteratorCount = 0;
+		system->deferredElemCount = 0;
+		system->firstFreeElem = 0;
+
+		int i;
+		for (i = 0; i < 2047; ++i)
+		{
+			system->elems[i].___u0.nextFree = i + 1;
+		}
+
+		system->elems[i].___u0.nextFree = -1;
+		system->activeElemCount = 0;
+		system->firstFreeTrailElem = 0;
+
+
+		int j;
+		for (j = 0; j < 2047; ++j)
+		{
+			system->trailElems[j].___u0.nextFree = j + 1;
+		}
+
+		system->trailElems[j].___u0.nextFree = -1;
+		system->activeTrailElemCount = 0;
+		system->firstFreeTrail = 0;
+
+		int k;
+		for (k = 0; k < 127; ++k)
+		{
+			system->trails[k].___u0.nextFree = k + 1;
+		}
+
+		system->trails[k].___u0.nextFree = -1;
+		system->activeTrailCount = 0;
+		system->activeSpotLightEffectCount = 0;
+		system->activeSpotLightElemCount = 0;
+		system->gfxCloudCount = 0;
+		system->visState->blockerCount = 0;
+		system->visStateBufferRead = system->visState;
+		system->visStateBufferWrite = system->visState + 1;
+	}
+
+	void FX_InitSystem(int localClientNum)
+	{
+		FxSystem* system = FX_GetSystem(localClientNum);
+		if (!system)
+		{
+			Assert();
+		}
+		memset(system, 0, sizeof(FxSystem));
+
+		FxSystemBuffers* systemBuffers = FX_GetSystemBuffers(localClientNum);
+		if (!systemBuffers)
+		{
+			Assert();
+		}
+		memset(systemBuffers, 0, sizeof(FxSystemBuffers));
+
+		FX_LinkSystemBuffers(system, systemBuffers);
+		//FX_RegisterDvars();
+		FX_ResetSystem(system);
+
+		system->msecNow = 0;
+		system->msecDraw = -1;
+		system->cameraPrev.isValid = 1;
+		system->cameraPrev.frustumPlaneCount = 0;
+		system->frameCount = 1;
+
+		if (system->firstActiveEffect || system->firstNewEffect || system->firstFreeEffect)
+		{
+			Assert();
+		}
+
+		//FX_InitMarksSystem((FxMarksSystem*)&markSystem);
+		system->localClientNum = static_cast<unsigned char>(localClientNum);
+		system->isInitialized = true;
 	}
 	
 }
