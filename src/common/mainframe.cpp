@@ -728,6 +728,33 @@ void __declspec(naked) sunlight_preview_arg_check()
 	}
 }
 
+void set_mainwindow_placement(HWND hwnd, WINDOWPLACEMENT* place)
+{
+	// always show window
+	place->showCmd = 1;
+
+	SetWindowPlacement(hwnd, place);
+}
+
+void __declspec(naked) set_windowplacement_stub()
+{
+	const static uint32_t retn_pt = 0x4225D3;
+
+	__asm
+	{
+		pushad;
+
+		push    eax;
+		push    esi;
+		call	set_mainwindow_placement;
+		add		esp, 8;
+
+		popad;
+
+		jmp		retn_pt;
+	}
+}
+
 
 void cmainframe::register_dvars()
 {
@@ -772,6 +799,10 @@ void cmainframe::hooks()
 	utils::hook::nop(0x420B04, 12 + 29 + 22); // create
 	utils::hook::nop(0x4210ED, 59); // font stuff
 #endif
+
+	// hook SetWindowPlacement (Radiant::MainWindowPlace) in OnCreateClient to fix minimize issue
+	utils::hook::nop(0x4225CB, 8);
+		 utils::hook(0x4225CB, set_windowplacement_stub, HOOK_JUMP).install()->quick();
 	
 	// *
 	// detour cmainframe member functions to get imgui input
