@@ -8,6 +8,7 @@ namespace fx_system
 
 	extern bool ed_is_playing;
 	extern bool ed_is_repeating;
+	extern bool ed_is_filename_valid;
 
 	extern fx_system::FxEffect* ed_active_effect;
 	extern fx_system::FxEditorEffectDef ed_editor_effect;
@@ -15,9 +16,15 @@ namespace fx_system
 	extern float ed_timescale;
 	extern float ed_looppause;
 
+	extern int ed_playback_tick;
+	extern int ed_playback_tick_old;
+	extern int ed_repeat_tickcount;
+
 	// * ---------------
 
-	FxSystem*		FX_GetSystem(int localClientNum);
+	FxSystem*			FX_GetSystem(int localClientNum);
+	FxSystemBuffers*	FX_GetSystemBuffers(int localClientNum);
+
 	bool			FX_GetEffectStatus(FxEffect* effect);
 	FxElemDef*		FX_GetEffectElemDef(const FxEffect* effect, int index);
 
@@ -97,4 +104,6 @@ namespace fx_system
 	void			FX_RunGarbageCollection_FreeTrails(FxSystem* system, FxEffect* effect);
 	void			FX_RunGarbageCollection_FreeSpotLight(FxSystem* system, unsigned __int16 effectHandle);
 	void			FX_RunGarbageCollectionAndPrioritySort(FxSystem* system);
+	
+	void			FX_InitSystem(int localClientNum);
 }

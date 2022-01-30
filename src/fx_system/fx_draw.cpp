@@ -151,10 +151,10 @@ namespace fx_system
 				// R_AddParticleCloudToScene(visuals);
 				game::GfxParticleCloud* cloud = utils::hook::call<game::GfxParticleCloud* (__cdecl)(game::Material*)>(0x49FDC0)(visuals.material);
 #else
-				Assert();
+				game::GfxParticleCloud* cloud = utils::hook::call<game::GfxParticleCloud* (__cdecl)(game::Material*)>(0x5022D0)(visuals.material);
 #endif
 
-				/*if (cloud)
+				if (cloud)
 				{
 					FX_EvaluateVisualState(&draw->preVisState, draw->msecLifeSpan, &draw->visState);
 					FX_SetPlacement(&cloud->placement, draw);
@@ -170,7 +170,7 @@ namespace fx_system
 					cloud->endpos[0] = draw->posWorld[0] - draw->velDirWorld[0];
 					cloud->endpos[1] = draw->posWorld[1] - draw->velDirWorld[1];
 					cloud->endpos[2] = draw->posWorld[2] - draw->velDirWorld[2];
-				}*/
+				}
 			}
 		}
 	}

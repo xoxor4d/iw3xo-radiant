@@ -72,6 +72,18 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 					hwnd != nullptr)
 				{
 					SendMessageA(hwnd, WM_PAINT, 0, 0);
+
+					/*if (components::effects::effect_can_play())
+					{
+						if (components::effects::effect_is_playing())
+						{
+							components::effects::editor_trigger_effect(fx_system::ed_playback_tick);
+						}
+						else
+						{
+							components::effects::editor_on_effect_play_repeat();
+						}
+					}*/
 				}
 				timer_camera += maxfps_camera;
 			}

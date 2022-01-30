@@ -339,9 +339,72 @@ namespace ggui::preferences
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_DEVELOPER, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			ImGui::DragInt("Int 01", &dev_num_01, 0.1f);
+			ImGui::Text("Fx Drawsurf Count: %d", components::effect_drawsurf_count);
+
+			if(ImGui::Button("Fx Play"))
+			{
+				components::command::execute("fx_play");
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Fx Repeat"))
+			{
+				if(components::effects::effect_is_repeating())
+				{
+					fx_system::ed_is_repeating = false;
+					return;
+				}
+
+				if (components::effects::effect_is_playing())
+				{
+					fx_system::ed_is_repeating = true;
+					return;
+				}
+
+				components::command::execute("fx_play");
+
+				if(components::effects::effect_is_playing() && !components::effects::effect_is_repeating())
+				{
+					fx_system::ed_is_repeating = true;
+				}
+				else
+				{
+					fx_system::ed_is_repeating = false;
+				}
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Fx Stop"))
+			{
+				components::command::execute("fx_stop");
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Fx Load Def"))
+			{
+				components::command::execute("fx_load");
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Toggle Show Tris"))
+			{
+				auto tris = game::Dvar_FindVar("r_showTris");
+				if(tris)
+				{
+					dvars::set_int(tris, tris->current.integer ? 0 : 1);
+				}
+			}
+
+			ImGui::DragFloat("Fx Timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f);
+
+			
+			/*ImGui::DragInt("Int 01", &dev_num_01, 0.1f);
 			ImGui::DragFloat3("Vec4 01", dev_vec_01, 0.1f);
-			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);*/
 
 		});
 	}

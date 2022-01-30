@@ -7,6 +7,8 @@ namespace components
 	//bool g_any_postfx_enabled;
 	//bool g_disable_postfx;
 
+	int effect_drawsurf_count = 0;
+
 	//postfx_state_vars postfx_state = {};
 
 
@@ -1412,6 +1414,12 @@ namespace components
 		utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(9, 6);
 
 		emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_drawSurfCount];
+
+		if (frontEndDataOut->drawSurfCount > 0)
+		{
+			effect_drawsurf_count = frontEndDataOut->drawSurfCount;
+		}
+
 		viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_drawSurfCount;
 	}
 
@@ -1652,6 +1660,82 @@ namespace components
 		
 	}
 
+	void R_DrawEmissiveCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
+	{
+		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(source, state, dest_rendertarget);
+
+		R_Set3D(source);
+
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
+
+		const RECT rect =
+		{
+			viewInfo->sceneViewport.x,
+			viewInfo->sceneViewport.y,
+			viewInfo->sceneViewport.x + viewInfo->sceneViewport.width,
+			viewInfo->sceneViewport.y + viewInfo->sceneViewport.height
+		};
+
+		state->prim.device->SetScissorRect(&rect);
+
+		//R_DrawSurfs(source, state, 0, &viewInfo->emissiveInfo);
+		// int __cdecl R_DrawSurfs(GfxCmdBufSourceState *source, GfxCmdBufState *state, GfxCmdBufState *prepassstate, GfxDrawSurfListInfo *info)
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x5324E0)
+			(source, state, nullptr, &viewInfo->emissiveInfo);
+
+		//R_ShowTris(source, state, &viewInfo->litInfo);
+		//R_ShowTris(source, state, &viewInfo->decalInfo);
+		//R_ShowTris(source, state, &viewInfo->emissiveInfo);
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState* a1, game::GfxCmdBufState* a2, game::GfxDrawSurfListInfo*)>(0x55B100)(source, state, &viewInfo->emissiveInfo);
+
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
+	}
+
+	void R_DrawCall(void(__cdecl* callback)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*), game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxViewInfo* viewInfo2, game::GfxDrawSurfListInfo* listinfo, game::GfxViewInfo* viewinfo3, game::GfxCmdBuf* cmdbuf, int a9)
+	{
+		game::GfxCmdBufState state1 = {};
+		//game::GfxCmdBufState state2 = {};
+
+		R_BeginView(source, &viewInfo2->sceneDef, viewinfo3);
+
+		memcpy(&state1, game::gfxCmdBufState, sizeof(state1));
+		memset(state1.vertexShaderConstState, 0, sizeof(state1.vertexShaderConstState));
+		memset(state1.pixelShaderConstState, 0, sizeof(state1.pixelShaderConstState));
+
+		/*if (a9)
+		{
+			qmemcpy(&state2, &gfxCmdBufState, sizeof(state2));
+			memset(state2.vertexShaderConstState, 0, sizeof(state2.vertexShaderConstState));
+			memset(state2.pixelShaderConstState, 0, sizeof(state2.pixelShaderConstState));
+			callback((GfxViewInfo*)viewInfo, source, &state1, source, &state2);
+		}
+		else*/
+		{
+			callback(viewInfo, source, &state1, nullptr, nullptr);
+		}
+
+		memcpy(game::gfxCmdBufState, &state1, sizeof(game::GfxCmdBufState));
+	}
+
+	void R_DrawEmissive(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
+	{
+		game::GfxCmdBufSourceState source = {};
+
+		//R_InitCmdBufSourceState(GfxCmdBufSourceState *source, GfxCmdBufInput *input, int a3)
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput* input, int)>(0x53CB20)(&source, &viewinfo->input, 1);
+
+		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(&source, dest_rendertarget);
+
+		// R_SetSceneViewport
+		source.sceneViewport = viewinfo->sceneViewport;
+		source.viewMode = game::VIEW_MODE_NONE;
+		source.viewportIsDirty = true;
+
+		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DrawEmissiveCallback, viewinfo, &source, viewinfo, &viewinfo->emissiveInfo, viewinfo, cmdbuf, 0);
+	}
+
 	void RB_StandardDrawCommands(game::GfxViewInfo* viewInfo)
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
@@ -1659,6 +1743,11 @@ namespace components
 		// R_SetAndClearSceneTarget
 		//utils::hook::call<void(__cdecl)(int)>(0x55B2D0)(0);
 		R_SetAndClearSceneTarget();
+
+		if (game::dx->device && effects::effect_is_playing())
+		{
+			R_DrawEmissive(&cmdBuf, viewInfo);
+		}
 
 		// R_AddDebugLine(frontEndDataOut->debugGlobals, &v10, &v13, v9);
 

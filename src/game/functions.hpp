@@ -280,6 +280,8 @@ namespace game
 	static utils::function<Material* (const char*, int)> Material_RegisterHandle = 0x511BE0;
 
 
+	static utils::function<int* (int)> Z_Malloc = 0x438FD0;
+
 	static utils::function<unsigned int(const char*, void**)> FS_ReadFile = 0x4A0240;
 	static utils::function<void(void*)> FS_FreeFile = 0x4A0300;
 

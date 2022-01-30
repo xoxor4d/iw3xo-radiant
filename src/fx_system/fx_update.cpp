@@ -1426,7 +1426,7 @@ namespace fx_system
 		{
 			if (!Vec3IsNormalized(camera->frustum[planeIndex]))
 			{
-				Assert();
+				//Assert();
 			}
 
 			camera->frustum[planeIndex][3] = 
@@ -1443,10 +1443,12 @@ namespace fx_system
 			camera->frustum[5][3] = -camera->frustum[0][3] - zfar;
 			camera->frustumPlaneCount = 6;
 		}
+
+		camera->isValid = 1;
 	}
 
 	// radiant setup
-	/*void FX_SetupCamera_Radiant()
+	void FX_SetupCamera_Radiant()
 	{
 		const auto system = FX_GetSystem(0);
 		const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
@@ -1466,7 +1468,7 @@ namespace fx_system
 		const float halfTanX = halfTanY * (static_cast<float>(cam->width) / static_cast<float>(cam->height));
 
 		FX_SetupCamera(&system->camera, cam->origin, axis, halfTanX, halfTanY, 0.0f);
-	}*/
+	}
 
 
 	

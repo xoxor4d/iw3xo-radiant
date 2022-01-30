@@ -5,7 +5,7 @@ namespace components
 	//extern bool g_any_postfx_enabled;
 	//extern bool g_disable_postfx;
 
-
+	extern int effect_drawsurf_count;
 
 	class renderer : public component
 	{

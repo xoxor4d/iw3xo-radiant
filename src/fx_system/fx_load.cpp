@@ -60,6 +60,11 @@ namespace fx_system
 
 	// * --------------------------------
 
+	void FX_UnregisterAll()
+	{
+		memset(&fx_load, 0, sizeof(fx_load));
+	}
+
 	game::XModel* FX_RegisterModel(const char* modelName)
 	{
 		return game::R_RegisterModel(modelName);

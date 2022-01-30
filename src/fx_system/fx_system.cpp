@@ -10,6 +10,7 @@ namespace fx_system
 
 	bool ed_is_playing = false;
 	bool ed_is_repeating = false;
+	bool ed_is_filename_valid = false;
 
 	fx_system::FxEffect* ed_active_effect = nullptr;
 	fx_system::FxEditorEffectDef ed_editor_effect = {};
@@ -17,6 +18,9 @@ namespace fx_system
 	float ed_timescale = 1.0f;
 	float ed_looppause = 0.3f;
 
+	int ed_playback_tick = 0;
+	int ed_playback_tick_old = 0;
+	int ed_repeat_tickcount = 0;
 
 	// * --------------------------------
 

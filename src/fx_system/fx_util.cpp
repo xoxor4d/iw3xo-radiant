@@ -35,4 +35,17 @@ namespace fx_system
 		memcpy(matInfo, Material_FromHandle(handle), sizeof(game::MaterialInfo));
 	}
 
+	/*void* FX_AllocMem(size_t size)
+	{
+		int* result = game::Z_Malloc(size);
+
+		if (!result)
+		{
+			game::Com_Error("Z_Malloc failed");
+			result = nullptr;
+		}
+
+		return result;
+	}*/
+
 }

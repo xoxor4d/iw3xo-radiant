@@ -8,4 +8,6 @@ namespace fx_system
 
 	game::Material*		Material_FromHandle(game::Material* handle);
 	void				Material_GetInfo(game::Material* handle, game::MaterialInfo* matInfo);
+
+	//void*				FX_AllocMem(size_t size);
 }
