@@ -14,30 +14,6 @@ namespace utils
 
 		static uintptr_t detour(uintptr_t offset, void* stub, Detours::X86Option option);
 
-		
-		class signature
-		{
-		public:
-			struct container
-			{
-				const char* signature;
-				const char* mask;
-				std::function<void(char*)> callback;
-			};
-
-			signature(void* _start, size_t _length) : start(_start), length(_length) {}
-			signature(DWORD _start, size_t _length) : signature(reinterpret_cast<void*>(_start), _length) {}
-			signature() : signature(0x400000, 0x800000) {}
-
-			void process();
-			void add(container& container);
-
-		private:
-			void* start;
-			size_t length;
-			std::vector<container> signatures;
-		};
-
 		hook() : initialized(false), installed(false), place(nullptr), stub(nullptr), original(nullptr), useJump(false), protection(0) { ZeroMemory(this->buffer, sizeof(this->buffer)); }
 
 		hook(void* place, void* stub, bool useJump = true) : hook() { this->initialize(place, stub, useJump); }
@@ -78,6 +54,9 @@ namespace utils
 
 		static void set_string(void* place, const char* string);
 		static void set_string(DWORD place, const char* string);
+
+		static void write_string(void* place, const std::string& string);
+		static void write_string(DWORD place, const std::string& string);
 
 		static void nop(void* place, size_t length);
 		static void nop(DWORD place, size_t length);
