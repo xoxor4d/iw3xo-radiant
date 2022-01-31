@@ -6,45 +6,6 @@ namespace utils
 	{
 		return Detours::X86::DetourFunction(offset, reinterpret_cast<uintptr_t>(stub), option);
 	}
-	
-	void hook::signature::process()
-	{
-		if (this->signatures.empty()) return;
-
-		char* _start = reinterpret_cast<char*>(this->start);
-
-		unsigned int sigCount = this->signatures.size();
-		hook::signature::container* containers = this->signatures.data();
-
-		for (size_t i = 0; i < this->length; ++i)
-		{
-			char* address = _start + i;
-
-			for (unsigned int k = 0; k < sigCount; ++k)
-			{
-				hook::signature::container* container = &containers[k];
-
-				unsigned int j;
-				for (j = 0; j < strlen(container->mask); ++j)
-				{
-					if (container->mask[j] != '?' &&container->signature[j] != address[j])
-					{
-						break;
-					}
-				}
-
-				if (j == strlen(container->mask))
-				{
-					container->callback(address);
-				}
-			}
-		}
-	}
-
-	void hook::signature::add(hook::signature::container& container)
-	{
-		hook::signature::signatures.push_back(container);
-	}
 
 	hook::~hook()
 	{
@@ -179,6 +140,22 @@ namespace utils
 	void hook::set_string(DWORD place, const char* string)
 	{
 		hook::set_string(reinterpret_cast<void*>(place), string);
+	}
+
+	void hook::write_string(void* place, const std::string& string)
+	{
+		DWORD old_protect;
+		VirtualProtect(place, string.size() + 1, PAGE_EXECUTE_READWRITE, &old_protect);
+
+		memcpy(place, &string[0], string.size() + 1);
+
+		VirtualProtect(place, string.size() + 1, old_protect, &old_protect);
+		FlushInstructionCache(GetCurrentProcess(), place, string.size());
+	}
+
+	void hook::write_string(const DWORD place, const std::string& string)
+	{
+		write_string(reinterpret_cast<void*>(place), string);
 	}
 
 	void hook::redirect_jump(void* place, void* stub)
