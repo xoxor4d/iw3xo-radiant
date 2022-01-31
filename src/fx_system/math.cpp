@@ -260,6 +260,9 @@ namespace fx_system
 		(*axis)[8] = 1.0f - (xx + yy);
 	}
 
+#pragma warning( push )
+#pragma warning( disable : 4244 )
+#pragma warning( disable : 4245 )
 	game::PackedTexCoords Vec2PackTexCoords(float ucord, float texcoord)
 	{
 		std::uint16_t s0, t0;
@@ -303,6 +306,7 @@ namespace fx_system
 
 		return (game::PackedTexCoords)(( (t0 & 0x3FFF) | ((LODWORD(texcoord) >> 16) & 0xC000)) + (( (s0 & 0x3FFF) | ((LODWORD(ucord) >> 16) & 0xC000)) << 16));
 	}
+#pragma warning( pop )
 
 	float Vec2Length(const float* v)
 	{
@@ -443,6 +447,9 @@ namespace fx_system
 		return sqrtf((v[0] * v[0] + v[1] * v[1]) + v[2] * v[2]);
 	}
 
+#pragma warning( push )
+#pragma warning( disable : 6385 )
+#pragma warning( disable : 6386 )
 	void MatrixMultiply(const float(*in1)[3], const float(*in2)[3], float(*out)[3])
 	{
 		(*out)[0] = (*in1)[0] * (*in2)[0] + (*in1)[1] * (*in2)[3] + (*in1)[2] * (*in2)[6];
@@ -455,4 +462,6 @@ namespace fx_system
 		(*out)[7] = (*in1)[7] * (*in2)[4] + (*in1)[6] * (*in2)[1] + (*in1)[8] * (*in2)[7];
 		(*out)[8] = (*in1)[7] * (*in2)[5] + (*in1)[6] * (*in2)[2] + (*in1)[8] * (*in2)[8];
 	}
+#pragma warning( pop )
+
 }

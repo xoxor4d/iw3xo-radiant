@@ -34,7 +34,7 @@ namespace fx_system
 #endif
 	}
 
-	FxSystemBuffers* FX_GetSystemBuffers(int localClientNum)
+	FxSystemBuffers* FX_GetSystemBuffers([[maybe_unused]] int localClientNum)
 	{
 #ifdef FXEDITOR
 		return &game::fx_systemBufferPool;

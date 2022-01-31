@@ -330,11 +330,11 @@ void radiantapp::hooks()
 
 	utils::hook(0x450A27, on_exit_instance_stub, HOOK_JUMP).install()->quick();
 
-	// do not use or overwrite stock radiant registry keys
-	utils::hook::write_string(0x6EBA58, "Software\\iw\\IW3xRadiant\\IW3xRadiant"s);
-	utils::hook::write_string(0x6E2320, "iw\\IW3xRadiant"s);
-	utils::hook::write_string(0x6E22F0, "Software\iw\IW3xRadiant\IniPrefs"s);
-	utils::hook::write_string(0x6DC1EC, "Software\iw\IW3xRadiant\MRU"s);
+	// do not use or overwrite stock radiant registry keys - create seperate ones for IW3xRadiant
+	utils::hook::write_string(0x6EBA58, R"(Software\iw\IW3xRadiant\IW3xRadiant)"s);
+	utils::hook::write_string(0x6E2320, R"(iw\IW3xRadiant)"s);
+	utils::hook::write_string(0x6E22F0, R"(Software\iw\IW3xRadiant\IniPrefs)"s);
+	utils::hook::write_string(0x6DC1EC, R"(Software\iw\IW3xRadiant\MRU)"s);
 
 #ifdef HIDE_MAINFRAME_MENUBAR
 	// -----------------------------------------------------------------------

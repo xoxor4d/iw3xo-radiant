@@ -1605,7 +1605,7 @@ namespace components
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
 	}
 
-	void R_DrawCall(void(__cdecl* callback)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*), game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxViewInfo* viewInfo2, game::GfxDrawSurfListInfo* listinfo, game::GfxViewInfo* viewinfo3, game::GfxCmdBuf* cmdbuf, int a9)
+	void R_DrawCall(void(__cdecl* callback)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*), game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxViewInfo* viewInfo2, [[maybe_unused]] game::GfxDrawSurfListInfo* listinfo, game::GfxViewInfo* viewinfo3, [[maybe_unused]] game::GfxCmdBuf* cmdbuf, [[maybe_unused]] int prepass)
 	{
 		game::GfxCmdBufState state1 = {};
 
@@ -1649,8 +1649,8 @@ namespace components
 			R_DrawEmissive(&cmdBuf, viewInfo);
 		}
 
+#ifdef DEBUG
 		// Add a debug line
-
 		game::vec3_t start = { 0.0f, 0.0f, 0.0f };
 		game::vec3_t end = { 0.0f, 0.0f, 20000.0f };
 		game::vec4_t color = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -1658,6 +1658,7 @@ namespace components
 		// R_AddDebugLine(frontEndDataOut->debugGlobals, &v10, &v13, v9);
 		utils::hook::call<void(__cdecl)(game::DebugGlobals*, const float* start, const float* end, const float* color)>(0x528680)
 			(game::get_frontenddata()->debugGlobals, start, end, color);
+#endif
 
 		RB_EndSceneRendering(game::gfxCmdBufSourceState, game::gfxCmdBufState, &viewInfo->input, viewInfo);
 	}

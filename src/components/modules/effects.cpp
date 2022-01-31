@@ -34,7 +34,7 @@ namespace components
 		return FX_SpawnEffect(system, remoteDef, msecBegin, origin, axis, fx_system::FX_SPAWN_DOBJ_HANDLES, fx_system::FX_SPAWN_BONE_INDEX, 255, 0xFFFFu, markEntnum);
 	}
 
-	void Editor_SetupAndSpawnEffect(unsigned int rand, int playback_tick)
+	void Editor_SetupAndSpawnEffect([[maybe_unused]] unsigned int rand, int playback_tick)
 	{
 		fx_system::FxEffectDef* def = fx_system::FX_Convert(&fx_system::ed_editor_effect, fx_system::FX_AllocMem);
 
@@ -59,7 +59,9 @@ namespace components
 			{ v3[0], v3[1], v3[2] },
 		};
 
-		const auto effect = Editor_SpawnEffect(0, def, playback_tick, game::vec3_origin, effect_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
+		const game::vec3_t spawn_origin_test = { 0.0f, 0.0f, 0.0f };
+
+		const auto effect = Editor_SpawnEffect(0, def, playback_tick, spawn_origin_test, effect_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
 		fx_system::ed_active_effect = effect;
 	}
 
@@ -69,7 +71,8 @@ namespace components
 	{
 		fx_system::FX_UnregisterAll();
 
-		if (fx_system::FX_LoadEditorEffect("1_reverse", &fx_system::ed_editor_effect))
+		// 1_reverse
+		if (fx_system::FX_LoadEditorEffect("fire/firelp_med_pm_nodistort", &fx_system::ed_editor_effect))
 		{
 			fx_system::ed_is_editor_effect_valid = true;
 			game::printf_to_console("[FX] loaded editor effect");
