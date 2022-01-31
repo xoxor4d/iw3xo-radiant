@@ -4,16 +4,16 @@ namespace components
 {
 	const float spawn_axis[][3] =
 	{
-		0.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, -1.0,
-		0.0f, 0.0f, 1.0f,
-		1.0f, 0.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
-		0.0f, 1.0f, 0.0f,
-		1.0f, 0.0f, 0.0f,
-		-1.0f, 0.0f, 0.0f,
-		0.0f, -1.0f, 0.0f
+		{  0.0f,  0.0f,  1.0f },
+		{  1.0f,  0.0f,  0.0f },
+		{  0.0f,  0.0f, -1.0f },
+		{  0.0f,  0.0f,  1.0f },
+		{  1.0f,  0.0f,  0.0f },
+		{  1.0f,  0.0f,  0.0f },
+		{  0.0f,  1.0f,  0.0f },
+		{  1.0f,  0.0f,  0.0f },
+		{ -1.0f,  0.0f,  0.0f },
+		{  0.0f, -1.0f,  0.0f },
 	};
 
 	fx_system::FxEffect* Editor_SpawnEffect(int localClientNum, fx_system::FxEffectDef* remoteDef, int msecBegin, const float* origin, const float(*axis)[3], int markEntnum)
@@ -40,11 +40,9 @@ namespace components
 
 		fx_system::ed_playback_tick_old = playback_tick;
 
-		float v1[3];
-		float v2[3];
-		float v3[3];
-
-		int AX = 0;
+		// quickly switch axis
+		const int AX = 0;
+		float v1[3], v2[3], v3[3];
 
 		v1[0] = spawn_axis[AX][0];
 		v1[1] = spawn_axis[AX][1];
@@ -54,14 +52,14 @@ namespace components
 		v3[2] = spawn_axis[AX + 5][2];
 		fx_system::Vec3Cross(v3, v1, v2);
 
-		float final_axis[3][3] =
+		const float effect_axis[3][3] =
 		{
 			{ v1[0], v1[1], v1[2] },
 			{ v2[0], v2[1], v2[2] },
 			{ v3[0], v3[1], v3[2] },
 		};
 
-		const auto effect = Editor_SpawnEffect(0, def, playback_tick, game::vec3_origin, final_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
+		const auto effect = Editor_SpawnEffect(0, def, playback_tick, game::vec3_origin, effect_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
 		fx_system::ed_active_effect = effect;
 	}
 
@@ -73,11 +71,16 @@ namespace components
 
 		if (fx_system::FX_LoadEditorEffect("1_reverse", &fx_system::ed_editor_effect))
 		{
-			game::printf_to_console("[FX] loaded effect explosions/grenade_flash");
+			fx_system::ed_is_editor_effect_valid = true;
+			game::printf_to_console("[FX] loaded editor effect");
+
 			return true;
 		}
 
+		fx_system::ed_is_editor_effect_valid = false;
+		game::printf_to_console("[FX] failed to load editor effect");
 		reset_editor_effect();
+
 		return false;
 		
 	}
@@ -88,8 +91,6 @@ namespace components
 		{
 			on_effect_stop();
 
-			//__debugbreak();
-			//game::Com_Error("Already playing effect?");
 		}
 
 		if(effect_is_repeating())

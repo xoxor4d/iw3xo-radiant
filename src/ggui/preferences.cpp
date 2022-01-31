@@ -341,45 +341,49 @@ namespace ggui::preferences
 		{
 			ImGui::Text("Fx Drawsurf Count: %d", components::effect_drawsurf_count);
 
-			if(ImGui::Button("Fx Play"))
+			ImGui::BeginDisabled(!fx_system::ed_is_editor_effect_valid);
 			{
-				components::command::execute("fx_play");
+				if (ImGui::Button("Fx Play"))
+				{
+					components::command::execute("fx_play");
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button("Fx Repeat"))
+				{
+					if (components::effects::effect_is_repeating())
+					{
+						fx_system::ed_is_repeating = false;
+						return;
+					}
+
+					if (components::effects::effect_is_playing())
+					{
+						fx_system::ed_is_repeating = true;
+						return;
+					}
+
+					components::command::execute("fx_play");
+
+					if (components::effects::effect_is_playing() && !components::effects::effect_is_repeating())
+					{
+						fx_system::ed_is_repeating = true;
+					}
+					else
+					{
+						fx_system::ed_is_repeating = false;
+					}
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::Button("Fx Stop"))
+				{
+					components::command::execute("fx_stop");
+				}
 			}
-
-			ImGui::SameLine();
-
-			if (ImGui::Button("Fx Repeat"))
-			{
-				if(components::effects::effect_is_repeating())
-				{
-					fx_system::ed_is_repeating = false;
-					return;
-				}
-
-				if (components::effects::effect_is_playing())
-				{
-					fx_system::ed_is_repeating = true;
-					return;
-				}
-
-				components::command::execute("fx_play");
-
-				if(components::effects::effect_is_playing() && !components::effects::effect_is_repeating())
-				{
-					fx_system::ed_is_repeating = true;
-				}
-				else
-				{
-					fx_system::ed_is_repeating = false;
-				}
-			}
-
-			ImGui::SameLine();
-
-			if (ImGui::Button("Fx Stop"))
-			{
-				components::command::execute("fx_stop");
-			}
+			ImGui::EndDisabled();
 
 			ImGui::SameLine();
 

@@ -9,6 +9,7 @@ namespace fx_system
 	extern bool ed_is_playing;
 	extern bool ed_is_repeating;
 	extern bool ed_is_filename_valid;
+	extern bool ed_is_editor_effect_valid;
 
 	extern fx_system::FxEffect* ed_active_effect;
 	extern fx_system::FxEditorEffectDef ed_editor_effect;

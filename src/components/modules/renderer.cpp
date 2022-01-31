@@ -1,5 +1,11 @@
 #include "std_include.hpp"
 
+#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
+					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
+
+#define AssertS(str)	if(IsDebuggerPresent()) __debugbreak();	else {	\
+						game::Com_Error("%s\nLine %d :: %s\n%s ", str, __LINE__, __func__, __FILE__); }
+
 namespace components
 {
 	//renderer::postfx_state_vars postfx_state = {};
@@ -1245,9 +1251,6 @@ namespace components
 	{
 		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
 		{
-			auto front = game::get_backenddata();
-			//front->surfPos_0xD7D50 = 0;
-
 			const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
 
 			// each frame
@@ -1291,16 +1294,6 @@ namespace components
 		{
 			int y = 1;
 		}
-
-		// actual codeMesh rendering in R_TessCodeMeshList
-
-		//auto front = game::get_backenddata();
-		//auto buf_src = game::gfxCmdBufSourceState;
-		//auto scene = game::scene;
-		//front->surfPos_0xD7D50 = 0;
-
-		// framebuffer_test
-		//renderer::copy_scene_to_texture(ggui::CCAMERAWND, game::framebuffer_test);
 	}
 
 	void __declspec(naked) render_all_leftovers_stub()
@@ -1326,39 +1319,6 @@ namespace components
 			jmp		retn_addr;
 		}
 	}
-
-	//// not needed
-	//game::GfxViewParms* R_SetupViewParms()
-	//{
-	//	if (!game::get_frontenddata())
-	//	{
-	//		__debugbreak();
-	//	}
-
-	//	game::GfxBackEndData* frontEndDataOut = game::get_frontenddata();
-
-	//	if (frontEndDataOut->viewParmCount_0xDE198 >= 28)
-	//	{
-	//		__debugbreak();
-	//	}
-
-	//	game::GfxViewParms* result = &frontEndDataOut->viewParms[frontEndDataOut->viewParmCount_0xDE198];
-	//	frontEndDataOut->viewParmCount_0xDE198 = frontEndDataOut->viewParmCount_0xDE198 + 1;
-
-	//	return result;
-	//}
-
-	//// not needed
-	//void __declspec(naked) R_SetupViewParms_stub()
-	//{
-	//	const static uint32_t retn_addr = 0x506328;
-
-	//	__asm
-	//	{
-	//		call	R_SetupViewParms;
-	//		jmp		retn_addr;
-	//	}
-	//}
 
 	void R_InitDrawSurfListInfo(game::GfxDrawSurfListInfo* list)
 	{
@@ -1415,10 +1375,7 @@ namespace components
 
 		emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_drawSurfCount];
 
-		if (frontEndDataOut->drawSurfCount > 0)
-		{
-			effect_drawsurf_count = frontEndDataOut->drawSurfCount;
-		}
+		effect_drawsurf_count = frontEndDataOut->drawSurfCount;
 
 		viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_drawSurfCount;
 	}
@@ -1447,39 +1404,37 @@ namespace components
 	// *
 	// Draw3D Internal
 
+	// draw scene to the following rendertarget
 	game::GfxRenderTargetId dest_rendertarget = game::R_RENDERTARGET_FRAME_BUFFER; //game::R_RENDERTARGET_RESOLVED_POST_SUN;
 
 	void R_Set3D(game::GfxCmdBufSourceState* source)
 	{
-		double v1; // st7
-		game::GfxViewParms* vp3D; // esi
-
 		if (!source->viewParms3D)
 		{
-			__debugbreak();
+			Assert();
 		}
 
 		if (source->viewMode != game::VIEW_MODE_3D)
 		{
-			v1 = 0.0;
-			vp3D = source->viewParms3D;
-			source->viewMode = game::VIEW_MODE_3D;
-			memcpy(&source->viewParms, vp3D, sizeof(source->viewParms));
+			float eye_offset = 0.0f;
 
-			if (0.0 == source->viewParms.origin[3])
+			source->viewMode = game::VIEW_MODE_3D;
+			memcpy(&source->viewParms, source->viewParms3D, sizeof(source->viewParms));
+
+			if (source->viewParms.origin[3] == 0.0f)
 			{
-				source->eyeOffset[0] = 0.0;
-				source->eyeOffset[1] = 0.0;
+				source->eyeOffset[0] = 0.0f;
+				source->eyeOffset[1] = 0.0f;
 			}
 			else
 			{
 				source->eyeOffset[0] = source->viewParms.origin[0];
 				source->eyeOffset[1] = source->viewParms.origin[1];
-				v1 = source->viewParms.origin[2];
+				eye_offset = source->viewParms.origin[2];
 			}
 
-			source->eyeOffset[2] = v1;
-			source->eyeOffset[3] = 1.0;
+			source->eyeOffset[2] = eye_offset;
+			source->eyeOffset[3] = 1.0f;
 
 			//R_CmdBufSet3D(source);
 			utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*)>(0x53CFB0)(source);
@@ -1488,77 +1443,39 @@ namespace components
 
 	void R_SetViewParms(game::GfxCmdBufSourceState* source)
 	{
-		double v1; // st7
-		double v2; // st7
-		double v3; // st7
-		double v4; // st6
-		double v5; // st6
-		double v6; // st6
-		float v7; // [esp+8h] [ebp-8h]
-		float v8; // [esp+8h] [ebp-8h]
-		float v9; // [esp+8h] [ebp-8h]
-		float v10; // [esp+8h] [ebp-8h]
-		float v11; // [esp+Ch] [ebp-4h]
-		float v12; // [esp+Ch] [ebp-4h]
-		float v13; // [esp+Ch] [ebp-4h]
-		float v14; // [esp+Ch] [ebp-4h]
-		float v15; // [esp+Ch] [ebp-4h]
-		float v16; // [esp+Ch] [ebp-4h]
-		float v17; // [esp+Ch] [ebp-4h]
-		float v18; // [esp+Ch] [ebp-4h]
-		float v19; // [esp+Ch] [ebp-4h]
-
-		v11 = fabs(source->viewParms.inverseViewProjectionMatrix.m[0][3]);
-		v1 = v11;
-		v12 = source->viewParms.inverseViewProjectionMatrix.m[3][3] * 0.000009999999747378752;
-		if (v12 <= v1)
+		if (source->viewParms.inverseViewProjectionMatrix.m[3][3] * 0.000009999999f <= fabs(source->viewParms.inverseViewProjectionMatrix.m[0][3]))
 		{
-			__debugbreak();
-			//Assert((int)"C:\\trees\\cod3-pc\\cod3-modtools\\cod3src\\src\\gfx_d3d\\r_state_utils.cpp", 286, 0, "%s\n\t(mtx->m[0][3]) = %g", "(I_fabs( mtx->m[0][3] ) < 1.0e-5f * mtx->m[3][3])", source->viewParms.inverseViewProjectionMatrix.m[0][3]);
+			Assert();
 		}
 
-		v13 = fabs(source->viewParms.inverseViewProjectionMatrix.m[1][3]);
-		v2 = v13;
-		v14 = source->viewParms.inverseViewProjectionMatrix.m[3][3] * 0.000009999999747378752;
-		if (v14 <= v2)
+		if (source->viewParms.inverseViewProjectionMatrix.m[3][3] * 0.000009999999f <= fabs(source->viewParms.inverseViewProjectionMatrix.m[1][3]))
 		{
-			__debugbreak();
-			//Assert((int)"C:\\trees\\cod3-pc\\cod3-modtools\\cod3src\\src\\gfx_d3d\\r_state_utils.cpp", 287, 0, "%s\n\t(mtx->m[1][3]) = %g", "(I_fabs( mtx->m[1][3] ) < 1.0e-5f * mtx->m[3][3])", source->viewParms.inverseViewProjectionMatrix.m[1][3]);
-		}
-		v3 = 0.0;
-		if (0.0 == source->viewParms.inverseViewProjectionMatrix.m[3][3])
-		{
-			__debugbreak();
-			//Assert((int)"C:\\trees\\cod3-pc\\cod3-modtools\\cod3src\\src\\gfx_d3d\\r_state_utils.cpp", 288, 0, "%s", "mtx->m[3][3] != 0");
-			v3 = 0.0f;
+			Assert();
 		}
 
-		v15 = 1.0 / source->viewParms.inverseViewProjectionMatrix.m[3][3];
-		v4 = v15;
-		v16 = source->viewParms.inverseViewProjectionMatrix.m[3][1] * v15 - source->viewParms.origin[1];
-		v7 = source->viewParms.inverseViewProjectionMatrix.m[3][2] * v4 - source->viewParms.origin[2];
-		source->input.consts[5][0] = source->viewParms.inverseViewProjectionMatrix.m[3][0] * v4 - source->viewParms.origin[0];
-		source->input.consts[5][1] = v16;
-		source->input.consts[5][2] = v7;
-		source->input.consts[5][3] = v3;
+		if (source->viewParms.inverseViewProjectionMatrix.m[3][3] == 0.0f)
+		{
+			Assert();
+		}
+
+		const float near_org = 1.0f / source->viewParms.inverseViewProjectionMatrix.m[3][3];
+
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_ORG][0] = source->viewParms.inverseViewProjectionMatrix.m[3][0] * near_org - source->viewParms.origin[0];
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_ORG][1] = source->viewParms.inverseViewProjectionMatrix.m[3][1] * near_org - source->viewParms.origin[1];
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_ORG][2] = source->viewParms.inverseViewProjectionMatrix.m[3][2] * near_org - source->viewParms.origin[2];
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_ORG][3] = 0.0f;
 		++source->constVersions[5];
-		v17 = v4 + v4;
-		v5 = v17;
-		v8 = source->viewParms.inverseViewProjectionMatrix.m[0][1] * v17;
-		v18 = source->viewParms.inverseViewProjectionMatrix.m[0][2] * v17;
-		source->input.consts[6][0] = source->viewParms.inverseViewProjectionMatrix.m[0][0] * v5;
-		source->input.consts[6][1] = v8;
-		source->input.consts[6][2] = v18;
-		source->input.consts[6][3] = v3;
+
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_DX][0] = source->viewParms.inverseViewProjectionMatrix.m[0][0] * (near_org + near_org);
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_DX][1] = source->viewParms.inverseViewProjectionMatrix.m[0][1] * (near_org + near_org);
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_DX][2] = source->viewParms.inverseViewProjectionMatrix.m[0][2] * (near_org + near_org);
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_DX][3] = 0.0f;
 		++source->constVersions[6];
-		v9 = -v5;
-		v6 = v9;
-		v10 = source->viewParms.inverseViewProjectionMatrix.m[1][1] * v9;
-		v19 = source->viewParms.inverseViewProjectionMatrix.m[1][2] * v6;
-		source->input.consts[7][0] = v6 * source->viewParms.inverseViewProjectionMatrix.m[1][0];
-		source->input.consts[7][1] = v10;
-		source->input.consts[7][2] = v19;
-		source->input.consts[7][3] = v3;
+
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_DY][0] = source->viewParms.inverseViewProjectionMatrix.m[1][0] * -(near_org + near_org);
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_DY][1] = source->viewParms.inverseViewProjectionMatrix.m[1][1] * -(near_org + near_org);
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_DY][2] = source->viewParms.inverseViewProjectionMatrix.m[1][2] * -(near_org + near_org);
+		source->input.consts[game::CONST_SRC_CODE_NEARPLANE_DY][3] = 0.0f;
 		++source->constVersions[7];
 	}
 
@@ -1584,14 +1501,12 @@ namespace components
 	{
 		if (viewport->width <= 0)
 		{
-			__debugbreak();
-			//Assert((int)"C:\\trees\\cod3-pc\\cod3-modtools\\cod3src\\src\\gfx_d3d\\r_state.cpp", 1213, 0, "%s\n\t(viewport->width) = %i", "(viewport->width > 0)", viewport->width);
+			AssertS("viewport->width");
 		}
 
 		if (viewport->height <= 0)
 		{
-			__debugbreak();
-			//Assert((int)"C:\\trees\\cod3-pc\\cod3-modtools\\cod3src\\src\\gfx_d3d\\r_state.cpp", 1214, 0, "%s\n\t(viewport->height) = %i", "(viewport->height > 0)", viewport->height);
+			AssertS("viewport->height");
 		}
 
 		source->sceneViewport = *viewport;
@@ -1621,22 +1536,17 @@ namespace components
 		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
 		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(source, state, dest_rendertarget); //game::R_RENDERTARGET_SCENE);
 
-		auto data = game::get_frontenddata();
-
 		// developer
 		R_Set3D(source);
 
 		//RB_DrawDebug(&gfxCmdBufSourceState.viewParms);
 		utils::hook::call<void(__cdecl)(game::GfxViewParms*)>(0x56D420)(&source->viewParms);
-
-		//memcpy(&gfxCmdBufState, state, sizeof(gfxCmdBufState));
-		
 	}
 
 	void R_SetAndClearSceneTarget()
 	{
-		auto buf_source_state = game::gfxCmdBufSourceState;
-		auto buf_state = game::gfxCmdBufState;
+		const auto buf_source_state = game::gfxCmdBufSourceState;
+		const auto buf_state = game::gfxCmdBufState;
 
 		memset(buf_state->vertexShaderConstState, 0, sizeof(buf_state->vertexShaderConstState));
 		memset(buf_state->pixelShaderConstState, 0, sizeof(buf_state->pixelShaderConstState));
@@ -1657,7 +1567,6 @@ namespace components
 		//R_ClearScreen(gfxCmdBufState.prim.device, 6, colorWhite, 1.0, 0, (GfxViewport*)a1);
 		utils::hook::call<void(__cdecl)(IDirect3DDevice9*, int whichToClear, const float* color, float depth, bool stencil, game::GfxViewport*)>(0x539AA0)
 			(buf_state->prim.device, 7, game::g_qeglobals->d_savedinfo.colors[4], 1.0f, false, nullptr);
-		
 	}
 
 	void R_DrawEmissiveCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
@@ -1684,10 +1593,9 @@ namespace components
 		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x5324E0)
 			(source, state, nullptr, &viewInfo->emissiveInfo);
 
-		//R_ShowTris(source, state, &viewInfo->litInfo);
-		//R_ShowTris(source, state, &viewInfo->decalInfo);
 		//R_ShowTris(source, state, &viewInfo->emissiveInfo);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState* a1, game::GfxCmdBufState* a2, game::GfxDrawSurfListInfo*)>(0x55B100)(source, state, &viewInfo->emissiveInfo);
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState* a1, game::GfxCmdBufState* a2, game::GfxDrawSurfListInfo*)>(0x55B100)
+			(source, state, &viewInfo->emissiveInfo);
 
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
 	}
@@ -1695,7 +1603,6 @@ namespace components
 	void R_DrawCall(void(__cdecl* callback)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*), game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxViewInfo* viewInfo2, game::GfxDrawSurfListInfo* listinfo, game::GfxViewInfo* viewinfo3, game::GfxCmdBuf* cmdbuf, int a9)
 	{
 		game::GfxCmdBufState state1 = {};
-		//game::GfxCmdBufState state2 = {};
 
 		R_BeginView(source, &viewInfo2->sceneDef, viewinfo3);
 
@@ -1703,17 +1610,7 @@ namespace components
 		memset(state1.vertexShaderConstState, 0, sizeof(state1.vertexShaderConstState));
 		memset(state1.pixelShaderConstState, 0, sizeof(state1.pixelShaderConstState));
 
-		/*if (a9)
-		{
-			qmemcpy(&state2, &gfxCmdBufState, sizeof(state2));
-			memset(state2.vertexShaderConstState, 0, sizeof(state2.vertexShaderConstState));
-			memset(state2.pixelShaderConstState, 0, sizeof(state2.pixelShaderConstState));
-			callback((GfxViewInfo*)viewInfo, source, &state1, source, &state2);
-		}
-		else*/
-		{
-			callback(viewInfo, source, &state1, nullptr, nullptr);
-		}
+		callback(viewInfo, source, &state1, nullptr, nullptr);
 
 		memcpy(game::gfxCmdBufState, &state1, sizeof(game::GfxCmdBufState));
 	}
@@ -1740,8 +1637,6 @@ namespace components
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
 
-		// R_SetAndClearSceneTarget
-		//utils::hook::call<void(__cdecl)(int)>(0x55B2D0)(0);
 		R_SetAndClearSceneTarget();
 
 		if (game::dx->device && effects::effect_is_playing())
@@ -1749,28 +1644,17 @@ namespace components
 			R_DrawEmissive(&cmdBuf, viewInfo);
 		}
 
-		// R_AddDebugLine(frontEndDataOut->debugGlobals, &v10, &v13, v9);
+		// Add a debug line
 
 		game::vec3_t start = { 0.0f, 0.0f, 0.0f };
 		game::vec3_t end = { 0.0f, 0.0f, 20000.0f };
 		game::vec4_t color = { 1.0f, 0.0f, 0.0f, 1.0f };
 
-		utils::hook::call<void(__cdecl)(game::DebugGlobals*, const float* start, const float* end, const float* color)>(0x528680)(game::get_frontenddata()->debugGlobals, start, end, color);
+		// R_AddDebugLine(frontEndDataOut->debugGlobals, &v10, &v13, v9);
+		utils::hook::call<void(__cdecl)(game::DebugGlobals*, const float* start, const float* end, const float* color)>(0x528680)
+			(game::get_frontenddata()->debugGlobals, start, end, color);
 
-
-
-		auto buf_source_state = game::gfxCmdBufSourceState;
-		auto buf_state = game::gfxCmdBufState;
-
-		// RB_EndSceneRendering
-		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufInput*, game::GfxViewInfo*)>(0x55B190)(buf_source_state, buf_state, &viewInfo->input, viewInfo);
-
-		RB_EndSceneRendering(buf_source_state, buf_state, &viewInfo->input, viewInfo);
-
-		auto data = game::get_frontenddata();
-		int x = 0;
-
-		
+		RB_EndSceneRendering(game::gfxCmdBufSourceState, game::gfxCmdBufState, &viewInfo->input, viewInfo);
 	}
 
 	void RB_Draw3dInternal(game::GfxViewInfo* viewInfo)

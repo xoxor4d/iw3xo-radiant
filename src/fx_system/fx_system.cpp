@@ -11,6 +11,7 @@ namespace fx_system
 	bool ed_is_playing = false;
 	bool ed_is_repeating = false;
 	bool ed_is_filename_valid = false;
+	bool ed_is_editor_effect_valid = false;
 
 	fx_system::FxEffect* ed_active_effect = nullptr;
 	fx_system::FxEditorEffectDef ed_editor_effect = {};
