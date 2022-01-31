@@ -15,6 +15,9 @@ namespace components
 		const char*		get_name() override { return "renderer"; };
 		static void		register_dvars();
 
+		static void		RB_Draw3D();
+		static void		R_SetAndClearSceneTarget(bool clear);
+
 		static void		R_AddCmdSetCustomShaderConstant(game::ShaderCodeConstants constant, float x, float y, float z, float w);
 		static void		R_ConvertColorToBytes(float* from, game::GfxColor* gfx_col);
 		static void		R_AddCmdDrawTextAtPosition(const char* text, game::Font_s* font, float* origin, float* pixel_step_x, float* pixel_step_y, float* color);

@@ -355,24 +355,24 @@ namespace ggui::preferences
 					if (components::effects::effect_is_repeating())
 					{
 						fx_system::ed_is_repeating = false;
-						return;
+						
 					}
-
-					if (components::effects::effect_is_playing())
-					{
-						fx_system::ed_is_repeating = true;
-						return;
-					}
-
-					components::command::execute("fx_play");
-
-					if (components::effects::effect_is_playing() && !components::effects::effect_is_repeating())
+					else if (components::effects::effect_is_playing())
 					{
 						fx_system::ed_is_repeating = true;
 					}
 					else
 					{
-						fx_system::ed_is_repeating = false;
+						components::command::execute("fx_play");
+
+						if (components::effects::effect_is_playing() && !components::effects::effect_is_repeating())
+						{
+							fx_system::ed_is_repeating = true;
+						}
+						else
+						{
+							fx_system::ed_is_repeating = false;
+						}
 					}
 				}
 

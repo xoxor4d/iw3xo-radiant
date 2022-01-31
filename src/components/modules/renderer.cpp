@@ -1251,6 +1251,8 @@ namespace components
 	{
 		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
 		{
+			renderer::RB_Draw3D();
+
 			const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
 
 			// each frame
@@ -1292,7 +1294,7 @@ namespace components
 	{
 		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
 		{
-			int y = 1;
+			renderer::R_SetAndClearSceneTarget(true);
 		}
 	}
 
@@ -1386,7 +1388,7 @@ namespace components
 		const static uint32_t retn_addr = 0x5064B9;
 		__asm
 		{
-			//call	og_func_addr; // R_Clear
+			call	og_func_addr; // R_Clear
 			// no clear command here (done within RB_StandardDrawCommands)
 			add     esp, 0x10;
 
@@ -1543,7 +1545,7 @@ namespace components
 		utils::hook::call<void(__cdecl)(game::GfxViewParms*)>(0x56D420)(&source->viewParms);
 	}
 
-	void R_SetAndClearSceneTarget()
+	void renderer::R_SetAndClearSceneTarget(bool clear)
 	{
 		const auto buf_source_state = game::gfxCmdBufSourceState;
 		const auto buf_state = game::gfxCmdBufState;
@@ -1564,9 +1566,12 @@ namespace components
 		// ^ other 2 clear commands are nop'd because frontend stuff gets drawn before backend rendercommands get executed which would result in
 		// -> drawing frontend stuff -> rendercommands, starting with 2 clears -> render map stuff
 
-		//R_ClearScreen(gfxCmdBufState.prim.device, 6, colorWhite, 1.0, 0, (GfxViewport*)a1);
-		utils::hook::call<void(__cdecl)(IDirect3DDevice9*, int whichToClear, const float* color, float depth, bool stencil, game::GfxViewport*)>(0x539AA0)
-			(buf_state->prim.device, 7, game::g_qeglobals->d_savedinfo.colors[4], 1.0f, false, nullptr);
+		if(clear)
+		{
+			//R_ClearScreen(gfxCmdBufState.prim.device, 6, colorWhite, 1.0, 0, (GfxViewport*)a1);
+			utils::hook::call<void(__cdecl)(IDirect3DDevice9*, int whichToClear, const float* color, float depth, bool stencil, game::GfxViewport*)>(0x539AA0)
+				(buf_state->prim.device, 7, game::g_qeglobals->d_savedinfo.colors[4], 1.0f, false, nullptr);
+		}
 	}
 
 	void R_DrawEmissiveCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
@@ -1637,7 +1642,7 @@ namespace components
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
 
-		R_SetAndClearSceneTarget();
+		renderer::R_SetAndClearSceneTarget(false);
 
 		if (game::dx->device && effects::effect_is_playing())
 		{
@@ -1662,7 +1667,7 @@ namespace components
 		RB_StandardDrawCommands(viewInfo);
 	}
 
-	void RB_Draw3D()
+	void renderer::RB_Draw3D()
 	{
 		const auto backend = game::get_backenddata();
 
@@ -1929,7 +1934,8 @@ namespace components
 		utils::hook(0x5064B1, setup_viewinfo_stub).install()->quick();
 
 		// rewrite RB_Draw3D
-		utils::hook(0x4FD6B3, RB_Draw3D, HOOK_CALL).install()->quick();
+		//utils::hook(0x4FD6B3, renderer::RB_Draw3D, HOOK_CALL).install()->quick();
+		utils::hook::nop(0x4FD6B3, 5);
 
 		// do not call RB_Draw3DCommon (not handled yet)
 		utils::hook::nop(0x535A6E, 5);
