@@ -2,6 +2,8 @@
 
 namespace components
 {
+	game::vec3_t editor_origin_from_fx_origin = {};
+
 	const float spawn_axis[][3] =
 	{
 		{  0.0f,  0.0f,  1.0f },
@@ -59,20 +61,18 @@ namespace components
 			{ v3[0], v3[1], v3[2] },
 		};
 
-		const game::vec3_t spawn_origin_test = { 0.0f, 0.0f, 0.0f };
-
-		const auto effect = Editor_SpawnEffect(0, def, playback_tick, spawn_origin_test, effect_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
+		const auto effect = Editor_SpawnEffect(0, def, playback_tick, editor_origin_from_fx_origin, effect_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
 		fx_system::ed_active_effect = effect;
 	}
 
 
 	// Commandline_LoadEffect
-	bool effects::load_test_effect()
+	bool effects::load_test_effect(const char* effect_name)
 	{
 		fx_system::FX_UnregisterAll();
 
-		// 1_reverse
-		if (fx_system::FX_LoadEditorEffect("fire/firelp_med_pm_nodistort", &fx_system::ed_editor_effect))
+		// 1_reverse // fire/firelp_med_pm_nodistort 
+		if (fx_system::FX_LoadEditorEffect(effect_name, &fx_system::ed_editor_effect))
 		{
 			fx_system::ed_is_editor_effect_valid = true;
 			game::printf_to_console("[FX] loaded editor effect");
@@ -138,7 +138,46 @@ namespace components
 
 	bool effects::effect_can_play()
 	{
-		return /*fx_system::ed_is_filename_valid &&*/ !fx_system::ed_is_repeating;
+		return fx_system::ed_is_editor_effect_valid && effects::is_fx_origin_selected();
+	}
+
+	bool effects::is_fx_origin_selected()
+	{
+		return is_fx_origin_selected_;
+	}
+
+	void effects::fx_origin_frame()
+	{
+		const auto edit_ent = game::g_edit_entity();
+
+		if(edit_ent && edit_ent->eclass->classtype == game::ECLASS_RADIANT_NODE)
+		{
+			if(utils::string_equals(ggui::entity::ValueForKey(edit_ent->epairs, "classname"), "fx_origin"))
+			{
+				is_fx_origin_selected_ = true;
+
+				memcpy(editor_origin_from_fx_origin, edit_ent->origin, sizeof(game::vec3_t));
+				if (fx_system::ed_active_effect && effects::effect_is_playing())
+				{
+					memcpy(fx_system::ed_active_effect->frameNow.origin, edit_ent->origin, sizeof(game::vec3_t));
+				}
+
+				const auto fx_name = ggui::entity::ValueForKey(edit_ent->epairs, "fx");
+				if(fx_name && !utils::string_equals(fx_system::ed_editor_effect.name, fx_name))
+				{
+					effects::load_test_effect(fx_name);
+				}
+
+				return;
+			}
+		}
+
+		if(effects::effect_is_playing())
+		{
+			effects::on_effect_stop();
+		}
+
+		is_fx_origin_selected_ = false;
 	}
 
 	void effects::tick_playback()
@@ -224,6 +263,8 @@ namespace components
 
 	void camera_onpaint_intercept()
 	{
+		effects::fx_origin_frame();
+
 		effects::tick_playback();
 		effects::tick_repeat();
 
@@ -260,6 +301,19 @@ namespace components
 			jmp		retn_addr;
 		}
 	}
+
+	void menu(ggui::imgui_context_menu& menu)
+	{
+		ImGui::SetNextWindowSize(ImVec2(400.0f, 390.0f));
+		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+
+		if (!ImGui::Begin("Effects-Debug##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
+		{
+			ImGui::End();
+		}
+
+		ImGui::End();
+	}
 	
 	effects::effects()
 	{
@@ -278,7 +332,7 @@ namespace components
 
 		command::register_command_with_hotkey("fx_load"s, [this](auto)
 		{
-			effects::load_test_effect();
+			effects::load_test_effect("iw3xradiant_def");
 		});
 	}
 

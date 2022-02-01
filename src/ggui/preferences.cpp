@@ -341,7 +341,8 @@ namespace ggui::preferences
 		{
 			ImGui::Text("Fx Drawsurf Count: %d", components::effect_drawsurf_count);
 
-			ImGui::BeginDisabled(!fx_system::ed_is_editor_effect_valid);
+			const bool can_fx_play = components::effects::effect_can_play();
+			ImGui::BeginDisabled(!can_fx_play);
 			{
 				if (ImGui::Button("Fx Play"))
 				{

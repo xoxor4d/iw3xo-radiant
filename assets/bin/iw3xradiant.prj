@@ -1,0 +1,9 @@
+{
+"basepath" ".."
+"mapspath" "..\\map_source"
+"entitypath" ".\\iw3xradiant.def"
+"autosave" "autosave.map"
+"game" ""
+"basegame" ""
+"layeredmaterials" "cod4_layered_material_library.txt"
+}

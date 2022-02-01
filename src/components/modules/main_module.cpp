@@ -253,13 +253,17 @@ namespace components
 		// set max undo memory
 		utils::hook::set<int32_t>(0x739F70, 0x01000000); // default 2mb, now 16mb
 
+		// * ---------------------------
+
+		// creates a brush that encupsules all selected brushes/patches and uses texture info of the first selected brush
+		// then deletes the original selection
 		command::register_command_with_hotkey("brush_from_selected"s, [this](auto)
 		{
 			game::vec3_t bounds_maxs = { -FLT_MAX, -FLT_MAX, -FLT_MAX };
 			game::vec3_t bounds_mins = { FLT_MAX, FLT_MAX, FLT_MAX };
 
 			for (auto	sb = game::g_selected_brushes_next();
-				(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
+				(DWORD*)sb != game::currSelectedBrushes;
 				sb = sb->next)
 			{
 				if(remote_net::selection_is_brush(sb->def))
