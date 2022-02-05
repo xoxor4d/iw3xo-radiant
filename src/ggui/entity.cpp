@@ -1,4 +1,5 @@
 #include "std_include.hpp"
+#include "commdlg.h"
 
 namespace ggui::entity
 {
@@ -13,6 +14,7 @@ namespace ggui::entity
 		ORIGIN = 3,
 		ANGLES = 4,
 		MODEL = 5,
+		FX = 6
 	};
 
 	struct epair_wrapper
@@ -827,6 +829,92 @@ namespace ggui::entity
 		{
 			_edit_buf_value_dirty[row] = false;
 		}
+
+
+		// *
+		// drop model from modelselector into the textbox
+
+		if (epw.type == EPAIR_VALUETYPE::MODEL)
+		{
+			// model selection drop target
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
+				{
+					const auto m_selector = ggui::get_rtt_modelselector();
+					AddProp(epw.epair->key, m_selector->preview_model_name.c_str());
+				}
+			}
+		}
+	}
+
+	void gui_entprop_effect_fileprompt(const epair_wrapper& epw, int row)
+	{
+		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
+		{
+			char filename[MAX_PATH];
+			OPENFILENAMEA ofn;
+			ZeroMemory(&filename, sizeof(filename));
+			ZeroMemory(&ofn, sizeof(ofn));
+
+			ofn.lStructSize = sizeof(ofn);
+			ofn.hwndOwner = cmainframe::activewnd->GetWindow();
+			ofn.lpstrFilter = "Effect Files\0*.efx\0Any File\0*.*\0";
+			ofn.lpstrFile = filename;
+			ofn.nMaxFile = MAX_PATH;
+			ofn.lpstrTitle = "Select an effect ...";
+			ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
+
+			if (GetOpenFileNameA(&ofn))
+			{
+				const std::string filepath = filename;
+				const std::string replace_path = "raw\\fx\\";
+
+				std::size_t pos = filepath.find(replace_path) + replace_path.length();
+				std::string loc_filepath = filepath.substr(pos);
+				utils::erase_substring(loc_filepath, ".efx"s);
+
+				AddProp(epw.epair->key, loc_filepath.c_str());
+			}
+			else
+			{
+				//game::printf_to_console("filedialog: canceled");
+			}
+		}
+	}
+
+	void gui_entprop_model_fileprompt(const epair_wrapper& epw, int row)
+	{
+		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
+		{
+			char filename[MAX_PATH];
+			OPENFILENAMEA ofn;
+			ZeroMemory(&filename, sizeof(filename));
+			ZeroMemory(&ofn, sizeof(ofn));
+
+			ofn.lStructSize = sizeof(ofn);
+			ofn.hwndOwner = cmainframe::activewnd->GetWindow();
+			ofn.lpstrFilter = "Any File\0*.*\0";
+			ofn.lpstrFile = filename;
+			ofn.nMaxFile = MAX_PATH;
+			ofn.lpstrTitle = "Select a XModel ...";
+			ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
+
+			if (GetOpenFileNameA(&ofn))
+			{
+				const std::string filepath = filename;
+				const std::string replace_path = "raw\\xmodel\\";
+
+				std::size_t pos = filepath.find(replace_path) + replace_path.length();
+				std::string loc_filepath = filepath.substr(pos);
+
+				AddProp(epw.epair->key, loc_filepath.c_str());
+			}
+			else
+			{
+				//game::printf_to_console("filedialog: canceled");
+			}
+		}
 	}
 
 	void gui_entprop_add_value_slider(const epair_wrapper& epw)
@@ -1075,6 +1163,7 @@ namespace ggui::entity
 	void draw_entprops()
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2.0f, 2.0f));
 
 		if (ImGui::TreeNodeEx("Entity Properties", ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -1293,6 +1382,13 @@ namespace ggui::entity
 								continue;
 							}
 
+							if(key == "fx")
+							{
+								eprop.type = EPAIR_VALUETYPE::FX;
+								eprop_sorted.push_back(eprop);
+								continue;
+							}
+
 							// everything else is text
 							eprop_sorted.push_back(eprop);
 						}
@@ -1315,7 +1411,7 @@ namespace ggui::entity
 							ImGui::TableNextColumn();
 							{
 								// do not allow to edit the origin key
-								ImGui::BeginDisabled(is_classname || ep.type == EPAIR_VALUETYPE::ORIGIN);
+								ImGui::BeginDisabled(is_classname || ep.type == EPAIR_VALUETYPE::ORIGIN || ep.type == EPAIR_VALUETYPE::FX);
 								gui_entprop_add_key(ep.epair, row);
 								ImGui::EndDisabled();
 							}
@@ -1340,7 +1436,12 @@ namespace ggui::entity
 									gui_entprop_add_value_vec3(ep, row);
 									break;
 
+								/*case EPAIR_VALUETYPE::FX:
+									gui_entprop_add_text_fileprompt(ep, row);
+									break;*/
+
 								default:
+								case EPAIR_VALUETYPE::FX:
 								case EPAIR_VALUETYPE::MODEL:
 								case EPAIR_VALUETYPE::TEXT:
 
@@ -1354,9 +1455,19 @@ namespace ggui::entity
 
 							ImGui::TableNextColumn();
 							{
-								if (ep.type != EPAIR_VALUETYPE::ORIGIN && !is_classname)
+								if(ep.type == EPAIR_VALUETYPE::FX)
 								{
-									if (ImGui::Button("x"))
+									gui_entprop_effect_fileprompt(ep, row);
+								}
+
+								else if (ep.type == EPAIR_VALUETYPE::MODEL)
+								{
+									gui_entprop_model_fileprompt(ep, row);
+								}
+
+								else if (ep.type != EPAIR_VALUETYPE::ORIGIN && !is_classname)
+								{
+									if (ImGui::Button("x", ImVec2(28, ImGui::GetFrameHeight())))
 									{
 										DelProp(ep.epair->key);
 									}
@@ -1407,7 +1518,7 @@ namespace ggui::entity
 			}
 		}
 
-		ImGui::PopStyleVar();
+		ImGui::PopStyleVar(2);
 		SPACING(0.0f, 0.01f);
 	}
 	

@@ -6,6 +6,7 @@ namespace fx_system
 	extern FxSystem			fx_systemPool;
 	extern FxSystemBuffers	fx_systemBufferPool;
 
+	extern bool ed_is_paused;
 	extern bool ed_is_playing;
 	extern bool ed_is_repeating;
 	extern bool ed_is_filename_valid;

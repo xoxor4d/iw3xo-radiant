@@ -171,7 +171,7 @@ void MFCCreate()
 	if (game::g_qeglobals->d_savedinfo.iSize != sizeof(game::g_qeglobals->d_savedinfo))
 	{
 		game::g_qeglobals->d_savedinfo.iSize = sizeof(game::g_qeglobals->d_savedinfo);
-		game::g_qeglobals->d_savedinfo.iTextMenu = 32993;
+		game::g_qeglobals->d_savedinfo.iTextMenu = 32992; // NORMALFAKELIGHT
 		game::g_qeglobals->d_savedinfo.d_gridsize = 1.0f;
 		game::g_qeglobals->d_savedinfo.d_picmip = 0;
 		

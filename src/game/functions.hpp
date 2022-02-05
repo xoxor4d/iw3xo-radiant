@@ -264,7 +264,7 @@ namespace game
 	game::GfxImage* Image_FindExisting(const char* name);
 	game::GfxImage* Image_RegisterHandle(const char* name);
 
-	game::GfxCmdHeader* R_GetCommandBuffer(int bytes /*ebx*/, int render_cmd /*edi*/);
+	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/);
 	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
 
 

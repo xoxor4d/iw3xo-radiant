@@ -1,3 +1,67 @@
+
+/* STOCK RENDERING PATH:
+ *  > Add Camera Rendercommands
+ *		|> R_SetupScene
+ *		|	|> R_SetSceneParms
+ *		|	|> add render command/s: clear depth buffer
+ *		|
+ *		|> add render command/s: brushes, models etc
+ *		|> add render command/s: clear depth buffer
+ *		|> add render command/s: lines (selection outlines, target->targetname) -> always on top because depthbuffer was cleared
+ *
+ *  > R_IssueRenderCommands
+ *		|> BeginScene
+ *		|> RB_Draw3D				[!] (unused because backend has no viewInfo)
+ *		|	|> RB_StandardDrawCommands	(bsp, sun and emissive (effects) rendering)
+ *		|		|> .....
+ *		|		|> R_DrawEmissive
+ *		|
+ *		|> RB_CallExecuteRenderCommands
+ *		|	|> RB_Draw3DCommon					[!] (unused because backend has no viewInfo)
+ *		|	|	|> RB_StandardDrawCommandsCommon	(post effects)
+ *		|	|
+ *		|	|> RB_ExecuteRenderCommandsLoop			(render brushes(meshes), models, lines, setup viewport etc)
+ *		|	|> EndScene
+ *		|
+ *		|> Present */
+
+ // * ----------------------------------------------------------
+ // * ----------------------------------------------------------
+
+  /* MODIFIED RENDERING PATH:
+   * > Add Camera Rendercommands
+   *	|> R_SetupScene
+   *	|	|> R_SetSceneParms
+   *	|	|> add render command/s: clear depth buffer
+   *	|	|> setup_viewinfo	[NEW] (normally part of R_RenderScene, setup viewinfo and emissive drawlists (for RB_StandardDrawCommands))
+   *	|
+   *	|> add render command/s: brushes, models etc
+   *	|> add render command/s: lines (selection outlines, target->targetname) with disabled depth-test (since we no longer clear the depthbuffer)
+   *
+   *  > R_IssueRenderCommands
+   *	|> BeginScene
+   *	|> RB_CallExecuteRenderCommands
+   *	|	|> pre_scene_command_rendering	[NEW] (only CCAMERAWND :: clear framebuffer color)
+   *	|	|> RB_ExecuteRenderCommandsLoop		  (render meshes, models, lines, setup viewport etc)
+   *	|	|> post_scene_command_rendering	[NEW] (only CCAMERAWND)
+   *	|	|	|> RB_Draw3D
+   *	|	|	|	|> RB_StandardDrawCommands
+   *	|	|	|		|> R_DrawEmissive		  (draw effects)
+   *	|	|	|		|> RB_EndSceneRendering	  (draw debug)
+   *	|	|	|
+   *	|	|	|> camera_postfx
+   *	|	|		|> copy backbuffer
+   *	|	|		|> draw fullscreenfilter using rgp->pixelCostColorCodeMaterial (proxy material)
+   *	|	|		|	|> hooked R_SetupPass assigns "radiant_filmtweaks" technique to the proxy material
+   *	|	|		|	|> hooked R_SetupPass sets postSun sampler (uses the copied backbuffer)
+   *	|	|		|	|> custom filmtweak shader applies filmtweaks
+   *	|	|		|
+   *	|	|		|> copy backbuffer (scene with filmtweaks -> draw via ImGui::Image)
+   *	|	|
+   *	|	|> EndScene
+   *	|
+   *	|> Present */
+
 #include "std_include.hpp"
 
 #define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
@@ -73,8 +137,10 @@ namespace components
 
 	// *
 
-	bool r_log_rendercommands = false;
-	int effect_drawsurf_count = 0;
+	bool g_log_rendercommands = false;
+	//int effect_drawsurf_count = 0;
+
+	bool g_line_depth_testing = true;
 
 	// * ----------------------------------------------------------
 
@@ -1164,8 +1230,6 @@ namespace components
 					game::R_SetSampler(0, state, 4, (char)114, &postsun);
 				}
 			}
-
-			//game::dx->device->SetRenderState(D3DRS_ZENABLE, FALSE);
 		}
 	}
 
@@ -1352,6 +1416,7 @@ namespace components
 		{
 			// clear framebuffer (color)
 			renderer::R_SetAndClearSceneTarget(true);
+			g_line_depth_testing = true;
 		}
 	}
 
@@ -1461,7 +1526,7 @@ namespace components
 		game::GfxRenderCommandExecState execState = {};
 		execState.cmd = cmds;
 
-		bool log = r_log_rendercommands && game::dx->targetWindowIndex == ggui::CCAMERAWND;
+		bool log = g_log_rendercommands && game::dx->targetWindowIndex == ggui::CCAMERAWND;
 		std::ofstream log_file;
 		std::uint32_t log_last_id = 0;
 		std::uint32_t log_last_id_count = 1;
@@ -1480,7 +1545,7 @@ namespace components
 					game::printf_to_console("[!] Could not create log file\n");
 
 					log = false;
-					r_log_rendercommands = false;
+					g_log_rendercommands = false;
 				}
 			}
 		}
@@ -1544,7 +1609,7 @@ namespace components
 		if (log)
 		{
 			log_file.close();
-			r_log_rendercommands = false;
+			g_log_rendercommands = false;
 		}
 	}
 
@@ -1627,7 +1692,7 @@ namespace components
 
 		emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_drawSurfCount];
 
-		effect_drawsurf_count = frontEndDataOut->drawSurfCount;
+		renderer::effect_drawsurf_count_ = frontEndDataOut->drawSurfCount;
 
 		viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_drawSurfCount;
 	}
@@ -1883,7 +1948,7 @@ namespace components
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
 
-		if (game::dx->device && effects::effect_is_playing())
+		if (game::dx->device && (effects::effect_is_playing() || fx_system::ed_is_paused && !effects::effect_is_playing()))
 		{
 			R_DrawEmissive(&cmdBuf, viewInfo);
 		}
@@ -2210,43 +2275,82 @@ namespace components
 	}
 #endif
 
-	// (not proper, makes ALL lines have no depth)
-	void __declspec(naked) zbuf_pre_3dline_drawing()
+	// spot where a depthbuffer clear command would be added
+	void __declspec(naked) disable_line_depth_testing()
 	{
-		const static uint32_t retn_addr = 0x5336B8;
-		__asm	pushad;
-
-		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
-		{
-			game::dx->device->SetRenderState(D3DRS_ZENABLE, FALSE);
-		}
+		const static uint32_t retn_addr = 0x4084D7;
 
 		__asm
 		{
-			popad;
-
-			push    1;
-			lea     ecx, [esi + 8];
+			mov		g_line_depth_testing, 0;
 			jmp		retn_addr;
 		}
 	}
 
-	void __declspec(naked) zbuf_post_3dline_drawing()
+	// add depth_test
+	struct GfxCmdDrawLines
 	{
-		const static uint32_t retn_addr = 0x5336CB;
-		__asm	pushad;
+		game::GfxCmdHeader header;
+		std::uint16_t lineCount;	// 0x4
+		char width;					// 0x6
+		char dimensions;			// 0x7
+		bool depth_test;			// 0x8
+		char pad[3];
+		GfxPointVertex verts[2];	// 0xC (12)
+	};
 
-		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+	// rewrite to add depth_test functionality
+	void R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const GfxPointVertex* verts)
+	{
+		if (count <= 0)
 		{
-			game::dx->device->SetRenderState(D3DRS_ZENABLE, TRUE);
+			Assert();
 		}
 
+		const game::GfxCmdArray* s_cmdList = reinterpret_cast<game::GfxCmdArray*>(*(DWORD*)0x73D4A0);
+		GfxCmdDrawLines* merged_cmd = reinterpret_cast<GfxCmdDrawLines*>(s_cmdList->lastCmd);
+
+		if (merged_cmd && merged_cmd->header.id == game::RC_DRAW_LINES
+			&& (count * sizeof(GfxPointVertex) * 2) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF 
+			&& merged_cmd->width == width 
+			&& merged_cmd->dimensions == dimension 
+			&& count + merged_cmd->lineCount <= 0x7FFF)
+		{
+			// unsure about the name, lets call it R_AddMultipleRendercommands
+			void* cmds = utils::hook::call<void* (__cdecl)(int)>(0x4FB0D0)(count * sizeof(GfxPointVertex) * 2);
+			
+			if (cmds)
+			{
+				memcpy(cmds, verts, count * sizeof(GfxPointVertex) * 2);
+				merged_cmd->lineCount += count;
+			}
+		}
+		else
+		{
+			const size_t vert_mem_size = count * sizeof(GfxPointVertex) * 2;
+			GfxCmdDrawLines* line = reinterpret_cast<GfxCmdDrawLines*>( game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawLines, verts), game::RC_DRAW_LINES));
+
+			if (line)
+			{
+				line->lineCount = count;
+				line->width = width;
+				line->dimensions = dimension;
+				line->depth_test = g_line_depth_testing;
+				memcpy(line->verts, verts, vert_mem_size);
+			}
+		}
+	}
+
+	// use cmd's depth_test var instead of the hardcoded 1
+	void __declspec(naked) rb_drawlinescmd_stub()
+	{
+		const static uint32_t retn_addr = 0x5336B5;
 		__asm
 		{
-			popad;
+			movsx   eax, word ptr[esi + 8]; // depth test offset
+			push	eax;
 
-			add     esp, 0x10;
-			add     ecx, eax;
+			movsx   eax, word ptr[esi + 4]; // og
 			jmp		retn_addr;
 		}
 	}
@@ -2320,18 +2424,6 @@ namespace components
 			/* desc		*/ "fog color");
 	}
 
-	// RB_DrawEditorSkinnedCached_Sub
-	// -> R_DrawXModelSkinnedUncached :: drawing all models
-	// -> Editor_AddMesh :: add effect meshes to the edSceneGlobals_sceneSurfaces buffer
-	// add verts using sub_51CD50?
-	// actual codeMesh rendering in R_TessCodeMeshLis
-
-	// R_RenderMap_Cam -> incorp R_RenderScene -> R_AllocViewParms && R_GenerateSortedDrawSurfs -> R_InitDrawSurfListInfo
-	// R_AllocViewParms to ++ the viewParm count?
-	// R_AddCodeMeshDrawSurf -> adds emmisive drawsurfs (every FX Vert generating func)
-
-	// look at  FX_GenSpriteVerts
-
 	renderer::renderer()
 	{
 		// set default value for r_vsync to false
@@ -2395,11 +2487,23 @@ namespace components
 		utils::hook::nop(0x40304D, 5);
 
 		// do not add a clearscreen command before adding lines to the scene (would leave no depth info for effects)
-		utils::hook::nop(0x4084D2, 5);
+		// utils::hook::nop(0x4084D2, 5);
+		utils::hook(0x4084D2, disable_line_depth_testing, HOOK_JUMP).install()->quick(); // disable depth testing for lines (same result as clearing the depthbuffer)
 
-		// disable depth check for 3d lines (see hook above) (not proper, makes ALL lines have no depth)
-		//utils::hook(0x5336B3, zbuf_pre_3dline_drawing, HOOK_JUMP).install()->quick();
-		//utils::hook(0x5336C6, zbuf_post_3dline_drawing, HOOK_JUMP).install()->quick();
+		// * ------
+
+		// rewrite R_AddLineCmd to add depth_test functionality
+		utils::hook::detour(0x4FD0A0, R_AddLineCmd, HK_JUMP);
+
+		// make RB_DrawLinesCmd use the cmd's depth_test var
+		utils::hook::nop(0x5336AF, 6);
+			 utils::hook(0x5336AF, rb_drawlinescmd_stub, HOOK_JUMP).install()->quick();
+
+		// change vertex offset in RB_DrawLinesCmd because depth_test var was added to GfxCmdDrawLines
+		utils::hook::set<BYTE>(0x533669 + 2, 12);
+		utils::hook::set<BYTE>(0x5336B5 + 2, 12);
+
+		// * ------
 
 		// load depth prepass and build-floatz technique (Material_LoadTechniqueSet -> g_useTechnique)
 		//utils::hook::set<BYTE>(0x633FC4 + 0, 0x1);
@@ -2408,9 +2512,9 @@ namespace components
 		// rewrite, working fine but no need (only debug)
 		//utils::hook::detour(0x4FE750, RB_DrawEditorSkinnedCached, HK_JUMP);
 
-		command::register_command_with_hotkey("r_log_rendercommands"s, [this](auto)
+		command::register_command_with_hotkey("g_log_rendercommands"s, [this](auto)
 		{
-			r_log_rendercommands = true;
+			g_log_rendercommands = true;
 		});
 
 		command::register_command_with_hotkey("reload_shaders"s, [this](auto)

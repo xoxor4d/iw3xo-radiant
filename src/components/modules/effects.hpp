@@ -14,6 +14,7 @@ namespace components
 		static void editor_on_effect_play_repeat();
 		static void editor_trigger_effect(int msecBegin);
 
+		static bool effect_is_paused();
 		static bool effect_is_playing();
 		static bool effect_is_repeating();
 		static bool effect_can_play();
@@ -28,8 +29,8 @@ namespace components
 		static void reset_editor_effect();
 		static void radiant_init_fx();
 
-		static inline bool is_fx_origin_selected_;
-		static inline std::string last_fx_name_;
+		static inline bool			is_fx_origin_selected_;
+		static inline std::string	last_fx_name_;
 
 	private:
 	};

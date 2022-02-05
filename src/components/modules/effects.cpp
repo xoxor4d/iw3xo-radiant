@@ -102,13 +102,23 @@ namespace components
 
 	void effects::editor_on_effect_play_repeat()
 	{
-		if(effects::effect_is_playing())
+		
+		if(effects::effect_is_paused()) // un-pause effect
 		{
-			on_effect_stop();
-
+			if(effects::effect_can_play())
+			{
+				fx_system::ed_is_playing = true;
+				fx_system::ed_is_paused = false;
+				return;
+			}
 		}
 
-		if(effect_is_repeating())
+		if(effects::effect_is_playing()) // restart effect when it was not paused
+		{
+			on_effect_stop();
+		}
+
+		if(effects::effect_is_repeating())
 		{
 			__debugbreak();
 			game::Com_Error("Already repeating effect?");
@@ -136,6 +146,11 @@ namespace components
 
 		// would normally check moving spawn origin here?
 		fx_system::FX_RetriggerEffect(0, fx_system::ed_active_effect, msecBegin);
+	}
+
+	bool effects::effect_is_paused()
+	{
+		return fx_system::ed_is_paused;
 	}
 
 	bool effects::effect_is_playing()
@@ -169,7 +184,7 @@ namespace components
 				is_fx_origin_selected_ = true;
 
 				memcpy(editor_origin_from_fx_origin, edit_ent->origin, sizeof(game::vec3_t));
-				if (fx_system::ed_active_effect && effects::effect_is_playing())
+				if (fx_system::ed_active_effect && (effects::effect_is_playing() || effects::effect_is_paused()))
 				{
 					memcpy(fx_system::ed_active_effect->frameNow.origin, edit_ent->origin, sizeof(game::vec3_t));
 				}
@@ -185,7 +200,10 @@ namespace components
 		}
 		else if(edit_ent && utils::string_equals(edit_ent->eclass->name, "worldspawn"))
 		{
-			return;
+			if(!game::g_selected_brushes()->def)
+			{
+				return;
+			}
 		}
 
 		if(effects::effect_is_playing())
@@ -208,7 +226,7 @@ namespace components
 
 		fx_system::ed_repeat_tickcount = saved_tick;
 
-		if (effect_is_playing())
+		if (effects::effect_is_playing())
 		{
 			auto tick_inc = static_cast<int>( static_cast<double>(tick_cmp) * static_cast<double>(fx_system::ed_timescale) + 9.313225746154785e-10);
 			if(tick_inc <= 1)

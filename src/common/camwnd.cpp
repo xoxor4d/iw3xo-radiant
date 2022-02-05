@@ -647,8 +647,44 @@ void ccamwnd::rtt_camera_window()
 			// *
 			// ImGuizmo
 
+			static bool guizmo_needs_activation = true;
+			static bool guizmo_capture_active = false;
+
 			if(dvars::guizmo_enable->current.enabled)
 			{
+				// do not activate guizmo till initial left click is released
+				// fixes unwanted transforms on multi selection via shift (if mouse is over guizmo)
+				if (const auto b = game::g_selected_brushes()->def; b)
+				{
+					if(guizmo_needs_activation)
+					{
+						camerawnd->capture_left_mousebutton = true;
+
+						// we need a frame to register mouse inputs
+						if(!guizmo_capture_active)
+						{
+							if(ImGui::IsMouseDown(ImGuiMouseButton_Left))
+							{
+								guizmo_capture_active = true;
+							}
+						}
+						else
+						{
+							guizmo_needs_activation = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+						}
+					}
+				}
+				else
+				{
+					guizmo_needs_activation = true;
+					guizmo_capture_active = false;
+				}
+
+				if(guizmo_needs_activation)
+				{
+					goto SKIP_GUIZMO;
+				}
+
 				game::GfxMatrix view = {};
 				game::GfxMatrix projection = {};
 
@@ -931,6 +967,7 @@ void ccamwnd::rtt_camera_window()
 				}
 			}
 
+	SKIP_GUIZMO:
 			rtt_camera_window_toolbar();
 			
 			ImGui::EndChild();

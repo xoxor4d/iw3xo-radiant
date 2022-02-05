@@ -708,7 +708,7 @@ namespace game
 		return image;
 	}
 
-	game::GfxCmdHeader* R_GetCommandBuffer(int bytes /*ebx*/, int render_cmd /*edi*/)
+	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/)
 	{
 		const static uint32_t R_RenderBufferCmdCheck_Func = 0x4FAEB0;
 		__asm

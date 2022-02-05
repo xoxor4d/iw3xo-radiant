@@ -8,6 +8,7 @@ namespace fx_system
 	FxSystem fx_systemPool = {};
 	FxSystemBuffers fx_systemBufferPool = {};
 
+	bool ed_is_paused = true;
 	bool ed_is_playing = false;
 	bool ed_is_repeating = false;
 	bool ed_is_filename_valid = false;

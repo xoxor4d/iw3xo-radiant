@@ -339,7 +339,7 @@ namespace ggui::preferences
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_DEVELOPER, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
-			ImGui::Text("Fx Drawsurf Count: %d", components::effect_drawsurf_count);
+			ImGui::Text("Fx Drawsurf Count: %d", components::renderer::effect_drawsurf_count_);
 
 			const bool can_fx_play = components::effects::effect_can_play();
 			ImGui::BeginDisabled(!can_fx_play);
@@ -347,12 +347,37 @@ namespace ggui::preferences
 				if (ImGui::Button("Fx Play"))
 				{
 					components::command::execute("fx_play");
+
+					/*if(components::effects::effect_is_paused())
+					{
+						fx_system::ed_is_paused = false;
+						fx_system::ed_is_playing = true;
+					}*/
+				}
+
+				if(ImGui::Button("Pause"))
+				{
+					if(fx_system::ed_is_playing)
+					{
+						fx_system::ed_is_playing = false;
+						fx_system::ed_is_paused = true;
+					}
+					else
+					{
+						if(components::effects::effect_can_play() && fx_system::ed_active_effect)
+						{
+							fx_system::ed_is_playing = true;
+							fx_system::ed_is_paused = false;
+						}
+					}
 				}
 
 				ImGui::SameLine();
 
 				if (ImGui::Button("Fx Repeat"))
 				{
+					fx_system::ed_is_paused = false;
+
 					if (components::effects::effect_is_repeating())
 					{
 						fx_system::ed_is_repeating = false;
