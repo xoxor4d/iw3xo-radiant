@@ -530,16 +530,21 @@ namespace components
 			}
 
 
-			/*game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
-			game::GfxRenderTarget* postSun = &targets[3];
+			//game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
+			//game::GfxRenderTarget* depth = &targets[game::R_RENDERTARGET_FLOAT_Z];
 		
-			ImGui::Begin("Debug", nullptr);
+			/*ImGui::Begin("Debug", nullptr);
 			ImGui::Image(postSun->image->texture.data, ImVec2(game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].width, game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].height));
 			ImGui::End();*/
 
-			/*ImGui::Begin("Debug", nullptr);
-			ImGui::Image(game::framebuffer_test, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
-			ImGui::End();*/
+			//if(depth && depth->image && depth->image->texture.data)
+			//{
+			//	ImGui::Begin("Depthbuffer", nullptr);
+			//	ImGui::Image(depth->image->texture.data, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
+			//	ImGui::End();
+			//}
+
+			
 
 			// color menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_colors,

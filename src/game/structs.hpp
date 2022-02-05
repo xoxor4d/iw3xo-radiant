@@ -2319,10 +2319,10 @@ namespace game
 		VERTDECL_COUNT = 0x10,
 	};
 
-	struct gfxVertexSteamsUnk
+	struct $C6651C03833075F2AE4768F11066A2E3
 	{
 		unsigned int stride;
-		int* vb;
+		IDirect3DVertexBuffer9* vb;
 		unsigned int offset;
 	};
 
@@ -2331,7 +2331,7 @@ namespace game
 		IDirect3DDevice9* device;
 		IDirect3DIndexBuffer9* indexBuffer;
 		MaterialVertexDeclType vertDeclType;
-		gfxVertexSteamsUnk streams[2];
+		$C6651C03833075F2AE4768F11066A2E3 streams[2];
 		IDirect3DVertexDeclaration9* vertexDecl;
 	}; STATIC_ASSERT_SIZE(GfxCmdBufPrimState, 0x28);
 
@@ -2797,7 +2797,32 @@ namespace game
 
 	}; STATIC_ASSERT_SIZE(GfxBackEndData, 0xDE270);
 
-	
+	struct GfxVertex
+	{
+		float xyzw[4];
+		GfxColor color;
+		float texCoord[2];
+		PackedUnitVec normal;
+	};
+
+	struct materialCommands_t
+	{
+		GfxVertex verts[5450];
+		unsigned __int16 indices[32704];
+		MaterialVertexDeclType vertDeclType;
+		unsigned int vertexSize;
+		int indexCount;
+		int vertexCount;
+		int firstVertex;
+		int lastVertex;
+		bool finishedFilling;
+	};
+
+	struct GfxRenderCommandExecState
+	{
+		const void* cmd;
+	};
+
 	struct filter_material_t
 	{
 		const char* name;

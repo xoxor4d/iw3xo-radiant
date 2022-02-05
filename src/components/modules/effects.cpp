@@ -71,17 +71,29 @@ namespace components
 	{
 		fx_system::FX_UnregisterAll();
 
-		// 1_reverse // fire/firelp_med_pm_nodistort 
-		if (fx_system::FX_LoadEditorEffect(effect_name, &fx_system::ed_editor_effect))
+		std::string effect_to_load;
+
+		if(!effect_name && !effects::last_fx_name_.empty())
+		{
+			effect_to_load = effects::last_fx_name_;
+		}
+		else
+		{
+			effect_to_load = effect_name;
+		}
+
+		if (fx_system::FX_LoadEditorEffect(effect_to_load.c_str(), &fx_system::ed_editor_effect))
 		{
 			fx_system::ed_is_editor_effect_valid = true;
-			game::printf_to_console("[FX] loaded editor effect");
+			game::printf_to_console("[FX] loaded editor effect [%s]", effect_to_load.c_str());
+
+			effects::last_fx_name_ = effect_to_load;
 
 			return true;
 		}
 
 		fx_system::ed_is_editor_effect_valid = false;
-		game::printf_to_console("[FX] failed to load editor effect");
+		game::printf_to_console("[FX] failed to load editor effect [%s]", effect_to_load.c_str());
 		reset_editor_effect();
 
 		return false;
@@ -170,6 +182,10 @@ namespace components
 
 				return;
 			}
+		}
+		else if(edit_ent && utils::string_equals(edit_ent->eclass->name, "worldspawn"))
+		{
+			return;
 		}
 
 		if(effects::effect_is_playing())
@@ -330,9 +346,9 @@ namespace components
 			effects::on_effect_stop();
 		});
 
-		command::register_command_with_hotkey("fx_load"s, [this](auto)
+		command::register_command_with_hotkey("fx_reload"s, [this](auto)
 		{
-			effects::load_test_effect("iw3xradiant_def");
+			effects::load_test_effect(nullptr);
 		});
 	}
 

@@ -104,7 +104,8 @@ BOOL LoadRegistryInfo(const char* pszName, void* pvBuf, long* plSize)
 	}
 	else
 	{
-		RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\iw\\CoD4Radiant\\CoD4Radiant", 0, KEY_READ, &hKey);
+		//RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\iw\\CoD4Radiant\\CoD4Radiant", 0, KEY_READ, &hKey);
+		RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\iw\\IW3xRadiant\\IW3xRadiant", 0, KEY_READ, &hKey);
 	}
 
 	RegQueryValueExA(hKey, pszName, NULL, (unsigned long*)&lType, (unsigned char*)pvBuf, (unsigned long*)plSize);

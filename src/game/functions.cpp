@@ -734,7 +734,7 @@ namespace game
 		d3dpp->MultiSampleType = _D3DMULTISAMPLE_TYPE::D3DMULTISAMPLE_NONE; // (D3DMULTISAMPLE_TYPE)game::dx->multiSampleType;
 		d3dpp->MultiSampleQuality = 0; // game::dx->multiSampleQuality
 		d3dpp->SwapEffect = D3DSWAPEFFECT_DISCARD;
-		d3dpp->EnableAutoDepthStencil = 0;
+		d3dpp->EnableAutoDepthStencil = 1; // test
 		d3dpp->AutoDepthStencilFormat = static_cast<D3DFORMAT>(game::dx->depthStencilFormat);
 		d3dpp->PresentationInterval = 0x80000000; //r_vsync->current.enabled ? 1 : 0x80000000;
 		d3dpp->hDeviceWindow = wnd->hwnd;

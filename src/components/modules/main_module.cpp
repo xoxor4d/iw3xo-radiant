@@ -198,8 +198,6 @@ namespace components
 
 	main_module::main_module()
 	{
-		//utils::hook::set<BYTE>(0x4225C5, 0xEB);
-
 		init_threads();
 
 		// init internal console class

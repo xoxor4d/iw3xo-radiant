@@ -388,9 +388,9 @@ namespace ggui::preferences
 
 			ImGui::SameLine();
 
-			if (ImGui::Button("Fx Load Def"))
+			if (ImGui::Button("Fx Reload Last Def"))
 			{
-				components::command::execute("fx_load");
+				components::command::execute("fx_reload");
 			}
 
 			ImGui::SameLine();

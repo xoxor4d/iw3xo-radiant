@@ -8,19 +8,78 @@
 
 namespace components
 {
-	//renderer::postfx_state_vars postfx_state = {};
+	enum EDITOR_SURF_TYPE
+	{
+		ED_SURF_MODEL = 0x1,
+		ED_SURF_MESH = 0x2,
+	};
 
-	//bool g_any_postfx_enabled;
-	//bool g_disable_postfx;
+	struct editorMesh_s
+	{
+		game::Material* material;
+		int techType;
+		int unk;
+		int low16_firstIndex__high16_vbOffset;
+		__int16 vertexCount;
+		__int16 indexCount;
+		int unk3;
+	};
 
+	struct __declspec(align(4)) GfxModelSurfaceInfo
+	{
+		game::DObjAnimMat* baseMat;
+		char boneIndex;
+		char boneCount;
+		unsigned __int16 gfxEntIndex;
+		unsigned __int16 lightingHandle;
+	};
+
+	union $178D1D161B34F636C03EBC0CA3007D75
+	{
+		game::GfxPackedVertex* skinnedVert;
+		int oldSkinnedCachedOffset;
+	};
+
+	struct GfxModelSkinnedSurface
+	{
+		int skinnedCachedOffset;
+		game::XSurface* xsurf;
+		GfxModelSurfaceInfo info;
+		$178D1D161B34F636C03EBC0CA3007D75 ___u3;
+	};
+
+	struct editorSurf_sub
+	{
+		game::Material* material;
+		int techType;
+		int unk3;
+		GfxModelSkinnedSurface* skinnedSurf;
+		game::GfxScaledPlacement* placement;
+	};
+
+	struct editorSurf_s
+	{
+		EDITOR_SURF_TYPE type;
+		editorMesh_s* mesh_or_surfSub;
+	};
+
+	// *
+
+	editorSurf_s* edSceneGlobals_sceneSurfaces = reinterpret_cast<editorSurf_s*>(0x114565C);
+	int& pixelCostMode = *reinterpret_cast<int*>(0x17D0068);
+
+	game::materialCommands_t& tess = *reinterpret_cast<game::materialCommands_t*>(0x177A2C0);
+	auto** RB_RenderCommandTable = reinterpret_cast<void(** const)(game::GfxRenderCommandExecState*)>(0x63F800);
+
+	// *
+
+	bool r_log_rendercommands = false;
 	int effect_drawsurf_count = 0;
 
-	//postfx_state_vars postfx_state = {};
-
+	// * ----------------------------------------------------------
 
 	// *
 	// enable/disable drawing of boxes around the origin on entities
-
 	bool should_render_origin()
 	{
 		if (dvars::r_draw_model_origin && !dvars::r_draw_model_origin->current.enabled)
@@ -54,7 +113,6 @@ namespace components
 	
 	// *
 	// enable/disable drawing of backface wireframe on patches
-	
 	bool should_render_patch_backface_wireframe()
 	{
 		if (dvars::r_draw_patch_backface_wireframe && !dvars::r_draw_patch_backface_wireframe->current.enabled)
@@ -506,6 +564,8 @@ namespace components
 
 
 
+	// *
+	// pixelshader custom constants
 
 	struct front_backend_variable_helper
 	{
@@ -513,9 +573,6 @@ namespace components
 	};
 
 	front_backend_variable_helper gfx_fbv = {};
-
-	// *
-	// pixelshader custom constants
 
 	void set_custom_pixelshader_constants([[maybe_unused]] game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
@@ -1107,9 +1164,11 @@ namespace components
 					game::R_SetSampler(0, state, 4, (char)114, &postsun);
 				}
 			}
+
+			//game::dx->device->SetRenderState(D3DRS_ZENABLE, FALSE);
 		}
 	}
-	
+
 	// *
 	// sun preview
 
@@ -1249,78 +1308,272 @@ namespace components
 
 	void camera_postfx()
 	{
-		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
+
+		// each frame
+		renderer::postfx::set_state(false);
+		renderer::postfx::frame();
+
+		// if postfx are disabled for this frame
+		if(renderer::postfx::is_disabled())
 		{
-			renderer::RB_Draw3D();
+			return;
+		}
 
-			const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
+		const bool filmtweaks_enabled = r_filmtweakenable && r_filmtweakenable->current.enabled && game::rgp->pixelCostColorCodeMaterial;
+		renderer::postfx::set_state(filmtweaks_enabled);
+		
+		if(renderer::postfx::is_any_active())
+		{
+			// get scene without postfx -> used for colorMapPostSunSampler
+			renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
+		}
 
-			// each frame
-			renderer::postfx::set_state(false);
-			renderer::postfx::frame();
+		// register_material
+		//auto mat_test = utils::hook::call<game::Material* (__cdecl)(const char* _name, int _unk)>(0x511BE0)("hud_font_rendering", 1);
 
-			// if postfx are disabled for this frame
-			if(renderer::postfx::is_disabled())
-			{
-				return;
-			}
+		// filmtweaks :: draw fullscreen quad using pixelCostColorCodeMaterial (we replace its technique in r_setup_pass_2d -> no need to create a custom material this way)
+		if (filmtweaks_enabled)
+		{
+			// RB_FullScreenFilter
+			utils::hook::call<void(__cdecl)(game::Material* _material)>(0x531450)(game::rgp->pixelCostColorCodeMaterial);
 
-			const bool filmtweaks_enabled = r_filmtweakenable && r_filmtweakenable->current.enabled && game::rgp->pixelCostColorCodeMaterial;
-			renderer::postfx::set_state(filmtweaks_enabled);
-			
-			if(renderer::postfx::is_any_active())
-			{
-				// get scene without postfx -> used for colorMapPostSunSampler
-				renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
-			}
-
-			// register_material
-			//auto mat_test = utils::hook::call<game::Material* (__cdecl)(const char* _name, int _unk)>(0x511BE0)("hud_font_rendering", 1);
-
-			// filmtweaks :: draw fullscreen quad using pixelCostColorCodeMaterial (we replace its technique in r_setup_pass_2d -> no need to create a custom material this way)
-			if (filmtweaks_enabled)
-			{
-				// RB_FullScreenFilter
-				utils::hook::call<void(__cdecl)(game::Material* _material)>(0x531450)(game::rgp->pixelCostColorCodeMaterial);
-
-				// get scene with postfx -> render with imgui
-				renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
-			}
+			// get scene with postfx -> render with imgui
+			renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
 		}
 	}
 
-	// debug
-	void r_pre_scene_command_rendering()
+	
+
+	// called before rendering the command queue
+	void pre_scene_command_rendering()
 	{
 		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
 		{
+			// clear framebuffer (color)
 			renderer::R_SetAndClearSceneTarget(true);
 		}
 	}
 
-	void __declspec(naked) render_all_leftovers_stub()
+	// called after rendering the command queue
+	void post_scene_command_rendering()
 	{
-		const static uint32_t func_addr = 0x5358D0;
-		const static uint32_t retn_addr = 0x535B1F;
+		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		{
+			// render emissive surfs (effects)
+			renderer::RB_Draw3D();
 
+			// post effects logic (filmtweaks)
+			camera_postfx();
+		}
+	}
+
+	std::string rendercommand_id_to_string(int id)
+	{
+		switch(id)
+		{
+		case game::RC_SET_MATERIAL_COLOR:
+			return "RC_SET_MATERIAL_COLOR"s;
+
+		case game::RC_SET_LIGHT_COLOR:
+			return "RC_SET_LIGHT_COLOR"s;
+
+		case game::RC_SAVE_SCREEN:
+			return "RC_SAVE_SCREEN"s;
+
+		case game::RC_SAVE_SCREEN_SECTION:
+			return "RC_SAVE_SCREEN_SECTION"s;
+
+		case game::RC_CLEAR_SCREEN:
+			return "RC_CLEAR_SCREEN"s;
+
+		case game::RC_BEGIN_VIEW:
+			return "RC_BEGIN_VIEW"s;
+
+		case game::RC_SET_VIEWPORT:
+			return "RC_SET_VIEWPORT"s;
+
+		case game::RC_STRETCH_PIC:
+			return "RC_STRETCH_PIC"s;
+
+		case game::RC_STRETCH_PIC_FLIP_ST:
+			return "RC_STRETCH_PIC_FLIP_ST"s;
+
+		case game::RC_STRETCH_PIC_ROTATE_XY:
+			return "RC_STRETCH_PIC_ROTATE_XY"s;
+
+		case game::RC_STRETCH_PIC_ROTATE_ST:
+			return "RC_STRETCH_PIC_ROTATE_ST"s;
+
+		case game::RC_STRETCH_RAW:
+			return "RC_STRETCH_RAW"s;
+
+		case game::RC_DRAW_QUAD_PIC:
+			return "RC_DRAW_QUAD_PIC"s;
+
+		case game::RC_DRAW_FULLSCREEN_COLORED_QUAD:
+			return "RC_DRAW_FULLSCREEN_COLORED_QUAD"s;
+
+		case game::RC_DRAW_TEXT_2D:
+			return "RC_DRAW_TEXT_2D"s;
+
+		case game::RC_DRAW_TEXT_3D:
+			return "RC_DRAW_TEXT_3D"s;
+
+		case game::RC_BLEND_SAVED_SCREEN_BLURRED:
+			return "RC_BLEND_SAVED_SCREEN_BLURRED"s;
+
+		case game::RC_BLEND_SAVED_SCREEN_FLASHED:
+			return "RC_BLEND_SAVED_SCREEN_FLASHED"s;
+
+		case game::RC_DRAW_POINTS:
+			return "RC_DRAW_POINTS"s;
+
+		case game::RC_DRAW_LINES:
+			return "RC_DRAW_LINES"s;
+
+		case game::RC_DRAW_TRIANGLES:
+			return "RC_DRAW_TRIANGLES"s;
+
+		case game::RC_DRAW_EDITOR_SKINNEDCACHED:
+			return "RC_DRAW_EDITOR_SKINNEDCACHED"s;
+
+		case game::RC_SET_CUSTOM_CONSTANT:
+			return "RC_SET_CUSTOM_CONSTANT"s;
+
+		case game::RC_PROJECTION_SET:
+			return "RC_PROJECTION_SET"s;
+
+		default: 
+			return "UNK";
+		}
+	}
+
+	void RB_ExecuteRenderCommandsLoop(const void* cmds)
+	{
+		if (tess.indexCount)
+		{
+			Assert();
+		}
+
+		const void* prevCmd = nullptr;
+
+		game::GfxRenderCommandExecState execState = {};
+		execState.cmd = cmds;
+
+		bool log = r_log_rendercommands && game::dx->targetWindowIndex == ggui::CCAMERAWND;
+		std::ofstream log_file;
+		std::uint32_t log_last_id = 0;
+		std::uint32_t log_last_id_count = 1;
+
+		if(log)
+		{
+			dvars::fs_homepath = game::Dvar_FindVar("fs_homepath");
+			if (dvars::fs_homepath)
+			{
+				std::string filePath = dvars::fs_homepath->current.string;
+							filePath += "\\IW3xRadiant\\LOG_rendercommands.txt"s;
+
+				log_file.open(filePath.c_str());
+				if (!log_file.is_open())
+				{
+					game::printf_to_console("[!] Could not create log file\n");
+
+					log = false;
+					r_log_rendercommands = false;
+				}
+			}
+		}
+
+		while (true)
+		{
+			prevCmd = execState.cmd;
+			if ((reinterpret_cast<int>(execState.cmd) & 3) != 0)
+			{
+				Assert();
+			}
+
+			const game::GfxCmdHeader* header = (game::GfxCmdHeader*)execState.cmd;
+			if (!header->id)
+			{
+				break;
+			}
+
+			if (header->id >= 25u)
+			{
+				Assert();
+			}
+
+			if (!RB_RenderCommandTable[header->id])
+			{
+				Assert();
+			}
+
+			RB_RenderCommandTable[header->id](&execState);
+
+			if (execState.cmd == prevCmd)
+			{
+				Assert();
+			}
+
+			if (log)
+			{
+				const auto h_id = static_cast<std::uint32_t>(header->id);
+
+				if(log_last_id == h_id)
+				{
+					log_last_id_count++;
+				}
+				else
+				{
+					log_file << "[" << rendercommand_id_to_string(h_id) << "] for [" << log_last_id_count << "] iterations." << std::endl;
+					log_last_id_count = 1;
+				}
+
+				log_last_id = h_id;
+			}
+		}
+
+		if (tess.indexCount)
+		{
+			//RB_EndTessSurface();
+			utils::hook::call<void(__cdecl)()>(0x53ADC0)();
+			
+		}
+
+		if (log)
+		{
+			log_file.close();
+			r_log_rendercommands = false;
+		}
+	}
+
+	void __declspec(naked) RB_ExecuteRenderCommandsLoop_stub()
+	{
+		const static uint32_t retn_addr = 0x535B1F;
 		__asm
 		{
 			pushad;
-			call	r_pre_scene_command_rendering;
+			call	pre_scene_command_rendering;
 			popad;
 
-			mov     edx, [eax + 0DE1C0h];
-			push    edx;
-			call	func_addr;
+			mov     edx, [eax + 0DE1C0h]; 
+			push    edx; // backEndData->execState
+			call	RB_ExecuteRenderCommandsLoop;
 			add		esp, 4;
 
 			pushad;
-			call	camera_postfx;
+			call	post_scene_command_rendering;
 			popad;
 
 			jmp		retn_addr;
 		}
 	}
+
+	
+	// *
+	// part of R_RenderScene
+	// setup viewInfo and drawlists so that RB_Draw3D::RB_StandardDrawCommands actually renders something (unused in radiant and would normally render the bsp and effects)
 
 	void R_InitDrawSurfListInfo(game::GfxDrawSurfListInfo* list)
 	{
@@ -1335,9 +1588,6 @@ namespace components
 		list->light = nullptr;
 		list->cameraView = 0;
 	}
-
-	// part of R_RenderScene
-	// setup viewInfo and drawlists so that RB_Draw3D -> RB_StandardDrawCommands actually renders stuff (would normally render the map and effects)
 
 	void setup_viewinfo(game::GfxViewParms* viewParms)
 	{
@@ -1388,8 +1638,7 @@ namespace components
 		const static uint32_t retn_addr = 0x5064B9;
 		__asm
 		{
-			call	og_func_addr; // R_Clear
-			// no clear command here (done within RB_StandardDrawCommands)
+			call	og_func_addr; // R_AddClearCmd, clear the depth buffer
 			add     esp, 0x10;
 
 			pushad;
@@ -1405,9 +1654,6 @@ namespace components
 
 	// *
 	// Draw3D Internal
-
-	// draw scene to the following rendertarget
-	game::GfxRenderTargetId dest_rendertarget = game::R_RENDERTARGET_FRAME_BUFFER; //game::R_RENDERTARGET_RESOLVED_POST_SUN;
 
 	void R_Set3D(game::GfxCmdBufSourceState* source)
 	{
@@ -1516,30 +1762,32 @@ namespace components
 		source->viewportIsDirty = true;
 	}
 
-	void RB_EndSceneRendering(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, game::GfxCmdBufInput* input, game::GfxViewInfo* viewInfo)
+	void RB_EndSceneRendering(game::GfxCmdBufSourceState* source, [[maybe_unused]] game::GfxCmdBufState* state, [[maybe_unused]] game::GfxCmdBufInput* input, [[maybe_unused]] game::GfxViewInfo* viewInfo)
 	{
 		// R_HW_InsertFence(&backEndData->endFence);
-		utils::hook::call<void(__cdecl)(IDirect3DQuery9** fence)>(0x530B30)(&game::get_backenddata()->endFence);
+		//utils::hook::call<void(__cdecl)(IDirect3DQuery9** fence)>(0x530B30)(&game::get_backenddata()->endFence);
 
 		// R_InitCmdBufSourceState(source, input, 0);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput*, int)>(0x53CB20)(source, input, 0);
+		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput*, int)>(0x53CB20)(source, input, 0);
 
-		memset(state->vertexShaderConstState, 0, sizeof(state->vertexShaderConstState));
-		memset(state->pixelShaderConstState, 0, sizeof(state->pixelShaderConstState));
+		//memset(state->vertexShaderConstState, 0, sizeof(state->vertexShaderConstState));
+		//memset(state->pixelShaderConstState, 0, sizeof(state->pixelShaderConstState));
 
 		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(source, dest_rendertarget); //game::R_RENDERTARGET_SCENE);
+		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(source, dest_rendertarget); //game::R_RENDERTARGET_SCENE);
 
 		//R_BeginView(source, &viewInfo->sceneDef, viewInfo);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxSceneDef*, game::GfxViewInfo*)>(0x53D2F0)(source, &viewInfo->sceneDef, viewInfo);
+		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxSceneDef*, game::GfxViewInfo*)>(0x53D2F0)(source, &viewInfo->sceneDef, viewInfo);
 
-		R_SetSceneViewport(source, &viewInfo->sceneViewport);
+		//R_SetSceneViewport(source, &viewInfo->sceneViewport);
 
 		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(source, state, dest_rendertarget); //game::R_RENDERTARGET_SCENE);
+		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(source, state, dest_rendertarget); //game::R_RENDERTARGET_SCENE);
 
 		// developer
-		R_Set3D(source);
+		//R_Set3D(source);
+
+		// ^ not needed
 
 		//RB_DrawDebug(&gfxCmdBufSourceState.viewParms);
 		utils::hook::call<void(__cdecl)(game::GfxViewParms*)>(0x56D420)(&source->viewParms);
@@ -1554,17 +1802,10 @@ namespace components
 		memset(buf_state->pixelShaderConstState, 0, sizeof(buf_state->pixelShaderConstState));
 
 		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(buf_source_state, dest_rendertarget); //game::R_RENDERTARGET_SCENE);
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(buf_source_state, game::R_RENDERTARGET_FRAME_BUFFER); //game::R_RENDERTARGET_SCENE);
 
 		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(buf_source_state, buf_state, dest_rendertarget); //game::R_RENDERTARGET_SCENE);
-
-		game::vec4_t clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-
-		// clear here and not via backend cmd within CCamWnd::OnPaint and R_SetSceneParms
-		// ^ other 2 clear commands are nop'd because frontend stuff gets drawn before backend rendercommands get executed which would result in
-		// -> drawing frontend stuff -> rendercommands, starting with 2 clears -> render map stuff
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(buf_source_state, buf_state, game::R_RENDERTARGET_FRAME_BUFFER); //game::R_RENDERTARGET_SCENE);
 
 		if(clear)
 		{
@@ -1577,7 +1818,7 @@ namespace components
 	void R_DrawEmissiveCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
 		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(source, state, dest_rendertarget);
+		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(source, state, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
 
 		R_Set3D(source);
 
@@ -1628,7 +1869,7 @@ namespace components
 		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput* input, int)>(0x53CB20)(&source, &viewinfo->input, 1);
 
 		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(&source, dest_rendertarget);
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
 
 		// R_SetSceneViewport
 		source.sceneViewport = viewinfo->sceneViewport;
@@ -1642,30 +1883,23 @@ namespace components
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
 
-		renderer::R_SetAndClearSceneTarget(false);
-
 		if (game::dx->device && effects::effect_is_playing())
 		{
 			R_DrawEmissive(&cmdBuf, viewInfo);
 		}
 
-#ifdef DEBUG
-		// Add a debug line
-		game::vec3_t start = { 0.0f, 0.0f, 0.0f };
-		game::vec3_t end = { 0.0f, 0.0f, 20000.0f };
-		game::vec4_t color = { 1.0f, 0.0f, 0.0f, 1.0f };
-
-		// R_AddDebugLine(frontEndDataOut->debugGlobals, &v10, &v13, v9);
-		utils::hook::call<void(__cdecl)(game::DebugGlobals*, const float* start, const float* end, const float* color)>(0x528680)
-			(game::get_frontenddata()->debugGlobals, start, end, color);
-#endif
+//#ifdef DEBUG
+//		// Add a debug line
+//		game::vec3_t start = { 0.0f, 0.0f, 0.0f };
+//		game::vec3_t end = { 0.0f, 0.0f, 20000.0f };
+//		game::vec4_t color = { 1.0f, 0.0f, 0.0f, 1.0f };
+//
+//		// R_AddDebugLine(frontEndDataOut->debugGlobals, &v10, &v13, v9);
+//		utils::hook::call<void(__cdecl)(game::DebugGlobals*, const float* start, const float* end, const float* color)>(0x528680)
+//			(game::get_frontenddata()->debugGlobals, start, end, color);
+//#endif
 
 		RB_EndSceneRendering(game::gfxCmdBufSourceState, game::gfxCmdBufState, &viewInfo->input, viewInfo);
-	}
-
-	void RB_Draw3dInternal(game::GfxViewInfo* viewInfo)
-	{
-		RB_StandardDrawCommands(viewInfo);
 	}
 
 	void renderer::RB_Draw3D()
@@ -1684,119 +1918,338 @@ namespace components
 
 		if(backend->viewInfoCount)
 		{
-			RB_Draw3dInternal(&backend->viewInfo[0]);
+			RB_StandardDrawCommands(&backend->viewInfo[0]);
 		}
 	}
 
+#if 0 // working fine but no need when we can use the original (here to stay for debugging purposes)
+	void RB_BeginSurface(game::Material* material, game::MaterialTechniqueType tech)
+	{
+		if (tess.indexCount || tess.vertexCount || !material)
+		{
+			Assert();
+		}
 
-	// render effects via triangle render commands?
-	//void rendermap_tests()
-	//{
-	//	float xyzw[4][4];
+		tess.firstVertex = 0;
+		tess.lastVertex = 0;
 
-	//	const float normal[4][3] =
-	//	{
-	//		0.0f, 0.0f, 1.0f,
-	//		0.0f, 0.0f, 1.0f,
-	//		0.0f, 0.0f, 1.0f,
-	//		0.0f, 0.0f, 1.0f
-	//	};
+		game::gfxCmdBufState->material = material;
+		game::gfxCmdBufState->techType = tech;
+		game::gfxCmdBufState->prim.vertDeclType = game::VERTDECL_GENERIC;
+		game::gfxCmdBufState->origMaterial = material;
+		game::gfxCmdBufState->origTechType = tech;
 
-	//	const float st[4][2] =
-	//	{
-	//		0.0f, 0.0f,
-	//		0.0f, 0.0f,
-	//		0.0f, 0.0f,
-	//		0.0f, 0.0f
+		if (pixelCostMode > 2)
+		{
+			//R_PixelCost_GetAccumulationMaterial(material);
+			game::gfxCmdBufState->material = utils::hook::call<game::Material* (__cdecl)(game::Material*)>(0x542A10)(material);
+			game::gfxCmdBufState->techType = game::TECHNIQUE_UNLIT;
+		}
 
-	//	};
+		// Material_GetTechnique(mtl, v2);
+		game::gfxCmdBufState->technique = utils::hook::call<game::MaterialTechnique* (__cdecl)(game::Material*, game::MaterialTechniqueType)>(0x4FA720)(game::gfxCmdBufState->material, game::gfxCmdBufState->techType);
+		if (!game::gfxCmdBufState->technique)
+		{
+			Assert();
+		}
+	}
 
-	//	const __int16 indices[6] =
-	//	{
-	//		3, 0, 2, 2, 0, 1
-	//	};
+	// this is how radiant is drawing meshes and models
+	void RB_DrawEditorSkinnedCached(int index, int amount)
+	{
+		editorMesh_s* mesh; // esi
+		game::Material* material; // ebx
+		int index_count; // eax
+		bool v9; // zf
+		int v10; // eax
+		game::GfxMatrix* v11; // edi
+		__int16 v12; // cx
+		unsigned __int16 mesh_vertcount; // ax
+		int v14; // eax
+		game::GfxMatrix* v15; // esi
+		int v16; // [esp+Ch] [ebp-20h]
+		int firstIndex; // [esp+10h] [ebp-1Ch] BYREF
+		editorSurf_s* v19; // [esp+18h] [ebp-14h]
+		game::MaterialTechniqueType tech_type; // [esp+1Ch] [ebp-10h]
+		GfxModelSkinnedSurface* mSurf; // [esp+34h] [ebp+8h]
+		editorSurf_sub* amounta; // [esp+38h] [ebp+Ch]
 
-	//	const game::vec3_t origin =
-	//	{
-	//		0.0f, 0.0f, 100.0f
-	//	};
+		editorSurf_sub* modelsurf = 0;
+		if (tess.indexCount)
+		{
+			//RB_EndTessSurface();
+			utils::hook::call<void(__cdecl)()>(0x53ADC0)();
+			
+		}
 
-	//	game::vec3_t mins =
-	//	{
-	//		-4.0f, -4.0f, -4.0f
-	//	};
+		R_Set3D(game::gfxCmdBufSourceState);
 
-	//	game::vec3_t maxs =
-	//	{
-	//		4.0f, 4.0f, 4.0f
-	//	};
+		editorSurf_s* surf = &edSceneGlobals_sceneSurfaces[index];
 
-	//	mins[0] += origin[0];
-	//	mins[1] += origin[1];
-	//	mins[2] += origin[2];
-	//	maxs[0] += origin[0];
-	//	maxs[1] += origin[1];
-	//	maxs[2] += origin[2];
+		int v21 = 0xFFFF;
+		int vertcount = 0;
+		IDirect3DVertexBuffer9* vb = nullptr;
+		IDirect3DVertexBuffer9* vb_x = nullptr;
+		v19 = surf;
+		if (amount > 0)
+		{
+			v16 = amount;
+			while (1)
+			{
+				if (surf->type == ED_SURF_MESH)
+				{
+					mesh = surf->mesh_or_surfSub;
+					
 
-	//	xyzw[0][0] = mins[0] - 8.0f;
-	//	xyzw[0][1] = (maxs[1] + mins[1]) * 0.5f;
-	//	xyzw[0][2] = mins[2];
-	//	xyzw[0][3] = 1.0f;
-	//	xyzw[1][0] = 0.5f * (mins[0] + maxs[0]);
-	//	xyzw[1][1] = maxs[1] + 8.0f;
-	//	xyzw[1][2] = mins[2];
-	//	xyzw[1][3] = 1.0f;
-	//	xyzw[2][0] = maxs[0] + 8.0f;
-	//	xyzw[2][1] = (maxs[1] + mins[1]) * 0.5f;
-	//	xyzw[2][2] = mins[2];
-	//	xyzw[2][3] = 1.0f;
-	//	xyzw[3][0] = 0.5f * (mins[0] + maxs[0]);
-	//	xyzw[3][1] = mins[1] - 8.0f;
-	//	xyzw[3][2] = mins[2];
-	//	xyzw[3][3] = 1.0f;
+					//editorVB_GetBufferAndIndex(mesh->low16_firstIndex__high16_vbOffset, &vb, &firstIndex);
+					utils::hook::call<void(__cdecl)(unsigned int offset, DWORD* vb, int* firstIndex)>(0x51CCE0)(mesh->low16_firstIndex__high16_vbOffset, (DWORD*)&vb, &firstIndex);
 
-	//	// actually a byte4 packed color D:
-	//	game::vec4_t color = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-	//	// surf_ocean
-
-	//	auto mat_test = utils::hook::call<game::Material* (__cdecl)(const char* _name, int _unk)>(0x511BE0)("surf_ocean", 1);
-	//	if(!mat_test)
-	//	{
-	//		__debugbreak();
-	//	}
+					material = mesh->material;
+					tech_type = (game::MaterialTechniqueType)mesh->techType;
 
 
-	//	// void __cdecl R_AddRenderCmdDrawTris(Material *material, MaterialTechniqueType techType, __int16 indexCount, void *indices, __int16 vertexCount, const float (*xyzw)[4], const float (*normal)[3], float *color, const float (*st)[2])
-	//	utils::hook::call<void(__cdecl)(game::Material* _material, game::MaterialTechniqueType _techType, __int16 _indexCount, const __int16* _indices, __int16 _vertexCount, const float(*_xyzw)[4], const float(*_normal)[3], float* _color, const float(*_st)[2])>(0x4FD1C0)(
-	//		mat_test,
-	//		game::TECHNIQUE_UNLIT,
-	//		6,
-	//		indices,
-	//		4,
-	//		xyzw,
-	//		normal,
-	//		color,
-	//		st );
-	//	
-	//}
+					index_count = static_cast<int>(mesh->indexCount);
+					mSurf = nullptr;
+					amounta = nullptr;
+				}
+				else
+				{
+					if (surf->type != ED_SURF_MODEL)
+					{
+						Assert();
+					}
 
-	//void __declspec(naked) rendermap_stub()
-	//{
-	//	const static uint32_t og_func_addr = 0x47D130;
-	//	const static uint32_t retn_addr = 0x408AAF;
-	//	__asm
-	//	{
-	//		call	og_func_addr;
+					vb = nullptr;
+					firstIndex = 0;
+					mSurf = (GfxModelSkinnedSurface*)surf->mesh_or_surfSub->low16_firstIndex__high16_vbOffset; // prob a union 
+					material = surf->mesh_or_surfSub->material;
+					mesh = nullptr;
+					amounta = (editorSurf_sub*)surf->mesh_or_surfSub;
+					tech_type = (game::MaterialTechniqueType)surf->mesh_or_surfSub->techType;
 
-	//		pushad;
-	//		call	rendermap_tests;
-	//		popad;
+					// RIGID_SKINNED_CACHE_OFFSET
+					if (mSurf->skinnedCachedOffset == -2)
+					{
+						Assert();
+					}
 
-	//		jmp		retn_addr;
-	//	}
-	//}
+					// HIDDEN_SURFACE_OFFSET
+					if (mSurf->skinnedCachedOffset == -3)
+					{
+						Assert();
+					}
 
+					modelsurf = amounta;
+					index_count = 3 * mSurf->xsurf->triCount; //XSurfaceGetNumTris(v8->xsurf);
+				}
+
+				if (   vb != vb_x 
+					|| material != game::gfxCmdBufState->material 
+					|| tech_type != game::gfxCmdBufState->techType 
+					|| index_count + tess.indexCount > 32704)
+				{
+
+					if (vb_x)
+					{
+						//RB_DrawTessSurface(v21, vertcount);
+						utils::hook::call<void(__cdecl)(unsigned __int16 vertCount, unsigned __int16 index)>(0x4FE690)(v21, vertcount);
+						
+						v21 = 0xFFFF;
+						vertcount = 0;
+					}
+					else
+					{
+						//v11 = R_GetActiveWorldMatrix(&game::gfxCmdBufSourceState);// v11 = first mtx in gfxCmdBufSourceState ?
+						v11 = utils::hook::call<game::GfxMatrix* (__cdecl)(game::GfxCmdBufSourceState*)>(0x53CD70)(game::gfxCmdBufSourceState);
+
+						//MatrixIdentity44(v11);
+						utils::hook::call<void(__cdecl)(game::GfxMatrix*)>(0x4A5BC0)(v11);
+						
+
+						v11->m[3][0] = v11->m[3][0] - game::gfxCmdBufSourceState->eyeOffset[0];
+						v11->m[3][1] = v11->m[3][1] - game::gfxCmdBufSourceState->eyeOffset[1];
+						v11->m[3][2] = v11->m[3][2] - game::gfxCmdBufSourceState->eyeOffset[2];
+						modelsurf = amounta;
+					}
+
+					RB_BeginSurface(material, tech_type);
+					if (vb)
+					{
+						game::gfxCmdBufState->prim.vertDeclType = game::VERTDECL_WORLD;
+
+						if (game::gfxCmdBufState->prim.streams[0].vb != vb || game::gfxCmdBufState->prim.streams[0].offset || game::gfxCmdBufState->prim.streams[0].stride != 44)
+						{
+							//R_ChangeStreamSource(&game::gfxCmdBufState->prim, 0, vb, 0, 44);
+							utils::hook::call<void(__cdecl)(game::GfxCmdBufPrimState*, int, IDirect3DVertexBuffer9*, int, int)>(0x4FD780)(&game::gfxCmdBufState->prim, 0, vb, 0, 44);
+						}
+
+						if (game::gfxCmdBufState->prim.streams[1].vb || game::gfxCmdBufState->prim.streams[1].offset || game::gfxCmdBufState->prim.streams[1].stride)
+						{
+							//R_ChangeStreamSource(&game::gfxCmdBufState->prim, 1, 0, 0, 0);
+							utils::hook::call<void(__cdecl)(game::GfxCmdBufPrimState*, int, IDirect3DVertexBuffer9*, int, int)>(0x4FD780)(&game::gfxCmdBufState->prim, 1, 0, 0, 0);
+						}
+					}
+					else
+					{
+						game::gfxCmdBufState->prim.vertDeclType = game::VERTDECL_PACKED;
+					}
+
+					vb_x = vb;
+				}
+
+				if (mesh)
+				{
+					if (modelsurf)
+					{
+						Assert();
+					}
+
+					v12 = firstIndex;
+					if ((unsigned __int16)v21 > (unsigned __int16)firstIndex)
+					{
+						v21 = (unsigned __int16)firstIndex;
+					}
+
+					mesh_vertcount = mesh->vertexCount;
+					if ((unsigned __int16)vertcount < mesh_vertcount + (unsigned __int16)firstIndex - 1)
+					{
+						vertcount = (unsigned __int16)(mesh_vertcount + firstIndex - 1);
+					}
+
+					v14 = 0;
+					if (mesh->indexCount)
+					{
+						do
+						{
+							tess.indices[v14 + tess.indexCount] = v12 + *(WORD*)(mesh->unk3 + 2 * v14);
+							++v14;
+
+						} while (v14 < (unsigned __int16)mesh->indexCount);
+					}
+
+					tess.indexCount += (unsigned __int16)mesh->indexCount;
+				}
+				else
+				{
+					if (!modelsurf)
+					{
+						Assert();
+					}
+
+					if (!modelsurf->skinnedSurf)
+					{
+						Assert();
+					}
+
+					if (tess.indexCount)
+					{
+						Assert();
+					}
+
+					if (tess.vertexCount)
+					{
+						Assert();
+					}
+
+					// RIGID_SKINNED_CACHE_OFFSET
+					if (mSurf->skinnedCachedOffset == -2)
+					{
+						Assert();
+					}
+
+					// HIDDEN_SURFACE_OFFSET
+					if (mSurf->skinnedCachedOffset == -3)
+					{
+						Assert();
+					}
+
+					if (game::gfxCmdBufSourceState->objectPlacement != modelsurf->placement)
+					{
+						//R_ChangeObjectPlacement(&game::gfxCmdBufSourceState, modelsurf->placement);
+						utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxScaledPlacement*)>(0x537C40)(game::gfxCmdBufSourceState, modelsurf->placement);
+						
+					}
+
+					//R_DrawXModelSkinnedUncached_2(indexa->xsurf, indexa->___u3.skinnedVert);
+					utils::hook::call<void(__cdecl)(game::XSurface*, game::GfxPackedVertex*)>(0x53AA30)(mSurf->xsurf, mSurf->___u3.skinnedVert);
+					
+
+					game::gfxCmdBufSourceState->objectPlacement = 0;
+				}
+				++v19;
+				if (!--v16)
+				{
+					break;
+				}
+
+				surf = v19;
+				modelsurf = nullptr;
+			}
+
+			if (vb)
+			{
+				//RB_DrawTessSurface(v21, vertcount);
+				utils::hook::call<void(__cdecl)(unsigned __int16 vertCount, unsigned __int16 index)>(0x4FE690)(v21, vertcount);
+			}
+		}
+
+		game::gfxCmdBufState->prim.vertDeclType = game::VERTDECL_GENERIC;
+
+		//v15 = R_GetActiveWorldMatrix(&game::gfxCmdBufSourceState);
+		v15 = utils::hook::call<game::GfxMatrix*(__cdecl)(game::GfxCmdBufSourceState*)>(0x53CD70)(game::gfxCmdBufSourceState);
+		
+
+		//MatrixIdentity44(v15);
+		utils::hook::call<void(__cdecl)(game::GfxMatrix*)>(0x4A5BC0)(v15);
+
+		//game::gfxCmdBufState->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
+
+		v15->m[3][0] = v15->m[3][0] - game::gfxCmdBufSourceState->eyeOffset[0];
+		v15->m[3][1] = v15->m[3][1] - game::gfxCmdBufSourceState->eyeOffset[1];
+		v15->m[3][2] = v15->m[3][2] - game::gfxCmdBufSourceState->eyeOffset[2];
+	}
+#endif
+
+	// (not proper, makes ALL lines have no depth)
+	void __declspec(naked) zbuf_pre_3dline_drawing()
+	{
+		const static uint32_t retn_addr = 0x5336B8;
+		__asm	pushad;
+
+		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		{
+			game::dx->device->SetRenderState(D3DRS_ZENABLE, FALSE);
+		}
+
+		__asm
+		{
+			popad;
+
+			push    1;
+			lea     ecx, [esi + 8];
+			jmp		retn_addr;
+		}
+	}
+
+	void __declspec(naked) zbuf_post_3dline_drawing()
+	{
+		const static uint32_t retn_addr = 0x5336CB;
+		__asm	pushad;
+
+		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		{
+			game::dx->device->SetRenderState(D3DRS_ZENABLE, TRUE);
+		}
+
+		__asm
+		{
+			popad;
+
+			add     esp, 0x10;
+			add     ecx, eax;
+			jmp		retn_addr;
+		}
+	}
 
 	// *
 	// *
@@ -1903,7 +2356,7 @@ namespace components
 		utils::hook(0x53BC39, R_SetPassPixelShaderStableArguments_stub, HOOK_JUMP).install()->quick();
 		utils::hook(0x53B9E3, R_SetPassShaderObjectArguments_stub, HOOK_JUMP).install()->quick();
 
-		// vertex and pixelshader loading (allows to load shaders that are not included in the shader_names file)
+		// vertex and pixelshader loading (allows loading of shaders that are not included in the shader_names file)
 		utils::hook(0x5188A6, r_create_pixelshader, HOOK_CALL).install()->quick();
 
 		utils::hook::nop(0x51873F, 17);
@@ -1915,38 +2368,50 @@ namespace components
 
 		// disable world darkening when selecting light entities with light preview enabled
 		utils::hook::nop(0x407099, 5);
-		
-		// R_SetupPass @ 0x4FE646 for brushes
-		// hook R_SetupPass in R_DrawXModelSkinnedUncached to set custom techniques for xmodels
-		utils::hook(0x53AC4F, r_setup_pass_xmodel, HOOK_CALL).install()->quick(); // xmodels
-		utils::hook(0x4FE646, r_setup_pass_brush, HOOK_CALL).install()->quick(); // brushes
+
+		// hook R_SetupPass to set custom techniques etc
+		utils::hook(0x53AC4F, r_setup_pass_xmodel, HOOK_CALL).install()->quick();
+		utils::hook(0x4FE646, r_setup_pass_brush, HOOK_CALL).install()->quick();
 		utils::hook(0x53A7BA, r_setup_pass_2d, HOOK_CALL).install()->quick(); // 2d and translucent
 
-		// hook RB_InitSceneViewport in RB_CallExecuteRenderCommands to implement camera postfx
-		//utils::hook(0x535AFD, rb_initscene_vp_stub, HOOK_JUMP).install()->quick();
+		// * ------
 
-
-		// hook call to R_RenderAllLeftovers (where everything including the map gets rendered via commands)
-		// to implement post effects
+		// hook RB_ExecuteRenderCommandsLoop to implement postfx, logging and effect logic
 		utils::hook::nop(0x535B10, 6);
-		utils::hook(0x535B10, render_all_leftovers_stub, HOOK_JUMP).install()->quick();
+			utils::hook( 0x535B10, RB_ExecuteRenderCommandsLoop_stub, HOOK_JUMP).install()->quick();
 
-		// hook call to r_clear within R_SetSceneParms to setup viewinfo and emissive draw lists (effects) (normally done within R_RenderScene)
-		utils::hook(0x5064B1, setup_viewinfo_stub).install()->quick();
+		// hook R_AddClearCmd call (depthbuffer clearing)(last function in R_SetSceneParms) to implement new logic:
+		// setup viewinfo and emissive draw lists (effects) (normally done within R_RenderScene)
+		utils::hook(0x5064B1, setup_viewinfo_stub, HOOK_JUMP).install()->quick();
 
-		// rewrite RB_Draw3D
-		//utils::hook(0x4FD6B3, renderer::RB_Draw3D, HOOK_CALL).install()->quick();
+		// disable original RB_Draw3D call (gets called after RB_ExecuteRenderCommandsLoop, so after the actual scene was rendered)
 		utils::hook::nop(0x4FD6B3, 5);
 
-		// do not call RB_Draw3DCommon (not handled yet)
+		// do not call RB_Draw3DCommon within RB_CallExecuteRenderCommands (not handled yet, needs to be called after effects where added)
 		utils::hook::nop(0x535A6E, 5);
 
 		// do not add a clearscreen command at the beginning of CCamWnd::OnPaint
+		// !! spot used to implement effect controlling logic (effects::camera_onpaint_stub)
 		utils::hook::nop(0x40304D, 5);
 
-		// render triangles using render commands
-		//utils::hook(0x408AAA, rendermap_stub, HOOK_JUMP).install()->quick();
+		// do not add a clearscreen command before adding lines to the scene (would leave no depth info for effects)
+		utils::hook::nop(0x4084D2, 5);
 
+		// disable depth check for 3d lines (see hook above) (not proper, makes ALL lines have no depth)
+		//utils::hook(0x5336B3, zbuf_pre_3dline_drawing, HOOK_JUMP).install()->quick();
+		//utils::hook(0x5336C6, zbuf_post_3dline_drawing, HOOK_JUMP).install()->quick();
+
+		// load depth prepass and build-floatz technique (Material_LoadTechniqueSet -> g_useTechnique)
+		//utils::hook::set<BYTE>(0x633FC4 + 0, 0x1);
+		//utils::hook::set<BYTE>(0x633FC4 + 1, 0x1);
+
+		// rewrite, working fine but no need (only debug)
+		//utils::hook::detour(0x4FE750, RB_DrawEditorSkinnedCached, HK_JUMP);
+
+		command::register_command_with_hotkey("r_log_rendercommands"s, [this](auto)
+		{
+			r_log_rendercommands = true;
+		});
 
 		command::register_command_with_hotkey("reload_shaders"s, [this](auto)
 		{
