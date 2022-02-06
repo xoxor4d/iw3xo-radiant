@@ -18,6 +18,7 @@ namespace ggui::colors
 		{
 			ImGui::PopStyleVar();
 			ImGui::End();
+			return;
 		}
 
 		ImGui::Indent(4.0f);

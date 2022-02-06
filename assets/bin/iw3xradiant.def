@@ -143,7 +143,7 @@ NO_STATIC_SHADOWS - the opaque surfaces will not cast static light map shadows
 /*QUAKED script_struct (1 0 0) (-8 -8 -8) (8 8 8)
 */
 
-/*QUAKED fx_origin (0.45 0.3 0.2) (-4 -4 -4) (4 4 4)
+/*QUAKED fx_origin (0.45 0.3 0.2) (-2 -2 -2) (2 2 2)
 default:"fx" "iw3xradiant_def"
 */
 

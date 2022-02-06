@@ -796,7 +796,7 @@ namespace components
 								game::vec4_t temp = { 0.0f, 0.0f, 0.0f, 0.0f };
 								
 								// AngleVectors(float* angles, float* vpn, float* right, float* up)
-								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : ggui::fakesun_settings::sun_dir, temp, nullptr, nullptr);
+								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : ggui::camera_settings::sun_dir, temp, nullptr, nullptr);
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 							
@@ -827,7 +827,7 @@ namespace components
 									}
 								}
 								
-								game::vec4_t temp = { ggui::fakesun_settings::sun_diffuse[0], ggui::fakesun_settings::sun_diffuse[1], ggui::fakesun_settings::sun_diffuse[2], 1.0f };
+								game::vec4_t temp = { ggui::camera_settings::sun_diffuse[0], ggui::camera_settings::sun_diffuse[1], ggui::camera_settings::sun_diffuse[2], 1.0f };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
 							}
 							
@@ -847,13 +847,13 @@ namespace components
 									}
 								}
 								
-								game::vec4_t temp = { ggui::fakesun_settings::sun_specular[0], ggui::fakesun_settings::sun_specular[1], ggui::fakesun_settings::sun_specular[2], ggui::fakesun_settings::sun_specular[3] };
+								game::vec4_t temp = { ggui::camera_settings::sun_specular[0], ggui::camera_settings::sun_specular[1], ggui::camera_settings::sun_specular[2], ggui::camera_settings::sun_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_specular : temp, 1);
 							}
 							
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
 							{
-								game::vec4_t temp = { ggui::fakesun_settings::material_specular[0], ggui::fakesun_settings::material_specular[1], ggui::fakesun_settings::material_specular[2], ggui::fakesun_settings::material_specular[3] };
+								game::vec4_t temp = { ggui::camera_settings::material_specular[0], ggui::camera_settings::material_specular[1], ggui::camera_settings::material_specular[2], ggui::camera_settings::material_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 							
@@ -880,7 +880,7 @@ namespace components
 								//	worldspawn_valid = true;
 								//}
 								
-								game::vec4_t temp = { ggui::fakesun_settings::ambient[0], ggui::fakesun_settings::ambient[1], ggui::fakesun_settings::ambient[2], ggui::fakesun_settings::ambient[3] };
+								game::vec4_t temp = { ggui::camera_settings::ambient[0], ggui::camera_settings::ambient[1], ggui::camera_settings::ambient[2], ggui::camera_settings::ambient[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 						}
@@ -2278,10 +2278,18 @@ namespace components
 	// spot where a depthbuffer clear command would be added
 	void __declspec(naked) disable_line_depth_testing()
 	{
-		const static uint32_t retn_addr = 0x4084D7;
+		// add target->targetname connection lines before disabling line depth testing
+		const static uint32_t draw_target_connection_lines_func = 0x40C9F0;
+		const static uint32_t sort_and_add_func = 0x4FDA10;
 
+		const static uint32_t retn_addr = 0x4084D7;
 		__asm
 		{
+			pushad;
+			call	draw_target_connection_lines_func;
+			call	sort_and_add_func;
+			popad;
+
 			mov		g_line_depth_testing, 0;
 			jmp		retn_addr;
 		}
@@ -2490,6 +2498,9 @@ namespace components
 		// utils::hook::nop(0x4084D2, 5);
 		utils::hook(0x4084D2, disable_line_depth_testing, HOOK_JUMP).install()->quick(); // disable depth testing for lines (same result as clearing the depthbuffer)
 
+		// ^ nop call that adds connection lines (target->targetname) (after disabled depth testing) and call it before disabling depth testing
+		utils::hook::nop(0x408645, 5);
+
 		// * ------
 
 		// rewrite R_AddLineCmd to add depth_test functionality
@@ -2512,12 +2523,12 @@ namespace components
 		// rewrite, working fine but no need (only debug)
 		//utils::hook::detour(0x4FE750, RB_DrawEditorSkinnedCached, HK_JUMP);
 
-		command::register_command_with_hotkey("g_log_rendercommands"s, [this](auto)
+		command::register_command("g_log_rendercommands"s, [this](auto)
 		{
 			g_log_rendercommands = true;
 		});
 
-		command::register_command_with_hotkey("reload_shaders"s, [this](auto)
+		command::register_command("reload_shaders"s, [this](auto)
 		{
 			auto& vs_count = *reinterpret_cast<int*>(0x14E7C2C);
 			vs_count = 0;
@@ -2631,6 +2642,17 @@ namespace components
 				dvars::set_bool(dvars::r_fakesun_preview, false);
 				cmainframe::activewnd->m_pCamWnd->camera.draw_mode = orig_rendermethod;
 			}
+		});
+
+		command::register_command_with_hotkey("fakesun_fog_toggle"s, [this](auto)
+		{
+			dvars::set_bool(dvars::r_fakesun_fog_enabled, !dvars::r_fakesun_fog_enabled->current.enabled);
+		});
+
+		command::register_command_with_hotkey("filmtweak_toggle"s, [this](auto)
+		{
+			const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
+			dvars::set_bool(r_filmtweakenable, !r_filmtweakenable->current.enabled);
 		});
 	}
 

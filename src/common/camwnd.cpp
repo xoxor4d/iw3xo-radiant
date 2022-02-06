@@ -139,6 +139,8 @@ bool	_rttcam_toolbar_state = false;
 //bool	guizmo_enable_snapping = true;
 //bool	guizmo_enable_brush_mode = true;
 
+constexpr float CAM_DEBUG_TEXT_Y_OFFS = 180.0f;
+
 void rtt_camera_window_toolbar()
 {
 	const auto camwnd = ggui::get_rtt_camerawnd();
@@ -159,15 +161,30 @@ void rtt_camera_window_toolbar()
 	// offset toolbar vertically
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6.0f);
 
-	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(70, 70, 70, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 0));
+	int _stylevars = 0;
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3.0f, 4.0f));		_stylevars++;
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));		_stylevars++;
+
+	int _stylecolors = 0;
+	ImGui::PushStyleColor(ImGuiCol_Border, (ImVec4)ImColor(1, 1, 1, 0));				_stylecolors++;
+	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));				_stylecolors++;
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(70, 70, 70, 0));		_stylecolors++;
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 0));	_stylecolors++;
 
 	if(dvars::gui_draw_fps && dvars::gui_draw_fps->current.enabled)
 	{
 		const auto cursor_pos = ImGui::GetCursorPos();
-		ImGui::SetCursorPosX(cursor_pos.x - 180.0f);
+		ImGui::SetCursorPosX(cursor_pos.x - CAM_DEBUG_TEXT_Y_OFFS);
 		ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::SetCursorPos(cursor_pos);
+	}
+
+	if(components::effects::effect_is_playing() || components::effects::effect_is_paused())
+	{
+		const auto cursor_pos = ImGui::GetCursorPos();
+		ImGui::SetCursorPosX(cursor_pos.x - CAM_DEBUG_TEXT_Y_OFFS);
+		ImGui::SetCursorPosY(cursor_pos.y + 16.0f);
+		ImGui::Text("Fx Drawsurf Count: %d", components::renderer::effect_drawsurf_count_);
 		ImGui::SetCursorPos(cursor_pos);
 	}
 	
@@ -247,7 +264,7 @@ void rtt_camera_window_toolbar()
 				if (ggui::toolbar::image_togglebutton("cubic_clip"
 					, hov_cubicclip
 					, prefs->m_bCubicClipping
-					, std::string("Cubic Clipping [" + ggui::hotkeys::get_hotkey_for_command("ToggleCubicClip") + "]").c_str()
+					, std::string("Cubic Clipping " + ggui::hotkeys::get_hotkey_for_command("ToggleCubicClip")).c_str()
 					, &toolbar_button_background
 					, &toolbar_button_background_hovered
 					, &toolbar_button_background_active
@@ -292,13 +309,14 @@ void rtt_camera_window_toolbar()
 				if (ggui::toolbar::image_togglebutton("gameview"
 					, hov_gameview
 					, dvars::radiant_gameview->current.enabled
-					, std::string("Gameview [" + ggui::hotkeys::get_hotkey_for_command("xo_gameview") + "]").c_str()
+					, std::string("Gameview " + ggui::hotkeys::get_hotkey_for_command("xo_gameview")).c_str()
 					, &toolbar_button_background
 					, &toolbar_button_background_hovered
 					, &toolbar_button_background_active
 					, &toolbar_button_size))
 				{
 					components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
+
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 				
 				ImGui::PopStyleVar();
@@ -308,44 +326,20 @@ void rtt_camera_window_toolbar()
 
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 			{
-				//static bool hov_lightpreview;
-				//if (ggui::toolbar::image_togglebutton("lightpreview"
-				//	, hov_lightpreview
-				//	, prefs->enable_light_preview
-				//	, std::string("Lightpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewToggle") + "]").c_str()
-				//	, &toolbar_button_background
-				//	, &toolbar_button_background_hovered
-				//	, &toolbar_button_background_active
-				//	, &toolbar_button_size))
-				//{
-				//	mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
-				//} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
-
-				//static bool hov_sunpreview;
-				//if (ggui::toolbar::image_togglebutton("sunpreview"
-				//	, hov_sunpreview
-				//	, prefs->preview_sun_aswell
-				//	, std::string("Sunpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewSun") + "]\nNeeds Lightpreview! ^").c_str()
-				//	, &toolbar_button_background
-				//	, &toolbar_button_background_hovered
-				//	, &toolbar_button_background_active
-				//	, &toolbar_button_size))
-				//{
-				//	mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun;
-				//} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
-
 				static bool hov_fakesunpreview;
 				if (ggui::toolbar::image_togglebutton("sunpreview"
 					, hov_fakesunpreview
 					, dvars::r_fakesun_preview->current.enabled
-					, std::string("Fake sun preview [" + ggui::hotkeys::get_hotkey_for_command("fakesun_toggle") + "]\nSupports specular and bump mapping.").c_str()
+					, std::string("Fake sun preview " + ggui::hotkeys::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()
 					, &toolbar_button_background
 					, &toolbar_button_background_hovered
 					, &toolbar_button_background_active
 					, &toolbar_button_size))
 				{
 					components::command::execute("fakesun_toggle");
+
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
 
 				if(dvars::r_fakesun_preview->current.enabled)
 				{
@@ -353,15 +347,17 @@ void rtt_camera_window_toolbar()
 					if (ggui::toolbar::image_togglebutton("fakesun_fog"
 						, hov_fakesun_fog
 						, dvars::r_fakesun_fog_enabled->current.enabled
-						, "Toggle fake sun fog"
+						, std::string("Toggle Fog " + ggui::hotkeys::get_hotkey_for_command("fakesun_fog_toggle")).c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
 						, &toolbar_button_size))
 					{
-						dvars::set_bool(dvars::r_fakesun_fog_enabled, !dvars::r_fakesun_fog_enabled->current.enabled);
+						components::command::execute("fakesun_fog_toggle");
+
 					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 				}
+
 
 				static bool hov_filmtweaks_settings;
 				const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
@@ -369,14 +365,16 @@ void rtt_camera_window_toolbar()
 				if (ggui::toolbar::image_togglebutton("filmtweaks"
 					, hov_filmtweaks_settings
 					, r_filmtweakenable->current.enabled
-					, "Toggle filmtweaks (r_filmTweakEnable)"
+					, std::string("Toggle filmtweaks " + ggui::hotkeys::get_hotkey_for_command("filmtweak_toggle")).c_str()
 					, &toolbar_button_background
 					, &toolbar_button_background_hovered
 					, &toolbar_button_background_active
 					, &toolbar_button_size))
 				{
-					dvars::set_bool(r_filmtweakenable, !r_filmtweakenable->current.enabled);
+					components::command::execute("filmtweak_toggle");
+
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
 
 				static bool hov_fakesun_settings;
 				if (ggui::toolbar::image_togglebutton("fakesun_settings"
@@ -388,18 +386,149 @@ void rtt_camera_window_toolbar()
 					, &toolbar_button_background_active
 					, &toolbar_button_size))
 				{
-					components::gui::toggle(ggui::state.czwnd.m_fakesun_settings, 0, true);
+					if(ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
+					{
+						// close entire window if tab is in-front
+						components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+					}
+					else if(!ggui::state.czwnd.m_camera_settings.menustate)
+					{
+						// open window with focused fakesun tab
+						ggui::camera_settings::set_tabstate_fakesun(true);
+						components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+					}
+					else
+					{
+						// window is open but tab not focused
+						ggui::camera_settings::set_tabstate_fakesun(true);
+						ggui::camera_settings::focus_fakesun();
+					}
+
 				} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 				
 				ImGui::PopStyleVar();
 			}
-			
+
+			//if(components::effects::effect_can_play())
+			{
+				SPACING(0.0f, 0.0f);
+
+				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
+				{
+					const bool can_fx_play = components::effects::effect_can_play();
+					ImGui::BeginDisabled(!can_fx_play);
+					ImGui::BeginGroup();
+					{
+						static bool hov_fx_play;
+						if (ggui::toolbar::image_togglebutton("fx_play"
+							, hov_fx_play
+							, can_fx_play
+							, std::string("Play Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_play")).c_str()
+							, &toolbar_button_background
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &toolbar_button_size))
+						{
+							components::command::execute("fx_play");
+
+						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+
+						static bool hov_fx_repeat;
+						if (ggui::toolbar::image_togglebutton("fx_repeat"
+							, hov_fx_repeat
+							, can_fx_play
+							, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_repeat")).c_str()
+							, &toolbar_button_background
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &toolbar_button_size))
+						{
+							components::command::execute("fx_repeat");
+
+						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+
+						static bool hov_fx_pause;
+						if (ggui::toolbar::image_togglebutton("fx_pause"
+							, hov_fx_pause
+							, can_fx_play
+							, std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_pause")).c_str()
+							, &toolbar_button_background
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &toolbar_button_size))
+						{
+							components::command::execute("fx_pause");
+
+						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+
+						static bool hov_fx_stop;
+						if (ggui::toolbar::image_togglebutton("fx_stop"
+							, hov_fx_stop
+							, can_fx_play
+							, std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_stop")).c_str()
+							, &toolbar_button_background
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &toolbar_button_size))
+						{
+							components::command::execute("fx_stop");
+
+						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+						ImGui::EndDisabled();
+						ImGui::EndGroup();
+
+						if(!can_fx_play)
+						{
+							TT("Select an fx_origin to enable controls.");
+						}
+
+						ImGui::PushID("settings2");
+						static bool hov_fx_settings;
+						if (ggui::toolbar::image_togglebutton("fakesun_settings"
+							, hov_fx_settings
+							, hov_fx_settings
+							, "Open FX settings menu"
+							, &toolbar_button_background
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &toolbar_button_size))
+						{
+							if (ggui::camera_settings::get_tabstate_effects() && ggui::camera_settings::is_tabstate_effects_active())
+							{
+								// close entire window if tab is in-front
+								components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+							}
+							else if (!ggui::state.czwnd.m_camera_settings.menustate)
+							{
+								// open window with focused effects tab
+								ggui::camera_settings::set_tabstate_effects(true);
+								components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+							}
+							else
+							{
+								// window is open but tab not focused
+								ggui::camera_settings::set_tabstate_effects(true);
+								ggui::camera_settings::focus_effects();
+							}
+
+						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+						ImGui::PopID();
+					}
+
+					ImGui::PopStyleVar();
+				}
+			}
 		}
 	
 		ImGui::EndGroup();
 	}
 
-	ImGui::PopStyleColor(3);
+	ImGui::PopStyleVar(_stylevars);
+	ImGui::PopStyleColor(_stylecolors);
 	
 	// save width for the next frame
 	toolbar_line_width = ImGui::GetItemRectSize().x; 
@@ -526,7 +655,7 @@ void ccamwnd::rtt_camera_window()
 		camerawnd->scene_size_imgui = ImGui::GetWindowSize() - ImVec2(0.0f, frame_height) - window_padding_both;
 
 		// hack to disable left mouse window movement
-		ImGui::BeginChild("scene_child", ImVec2(camera_size.x, camera_size.y + frame_height) + window_padding_both, false, ImGuiWindowFlags_NoMove);
+		ImGui::BeginChild("scene_child", ImVec2(camera_size.x, camera_size.y + frame_height) + window_padding_both, false, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		{
 			camerawnd->scene_pos_imgui = ImGui::GetCursorScreenPos();
 			SetWindowPos(cmainframe::activewnd->m_pCamWnd->GetWindow(), HWND_BOTTOM, (int)camerawnd->scene_pos_imgui.x, (int)camerawnd->scene_pos_imgui.y, (int)camerawnd->scene_size_imgui.x, (int)camerawnd->scene_size_imgui.y, SWP_NOZORDER);

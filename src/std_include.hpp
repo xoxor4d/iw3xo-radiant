@@ -119,7 +119,7 @@
 #include "ggui/preferences.hpp"
 #include "ggui/modelselector.hpp"
 #include "ggui/about.hpp"
-#include "ggui/fakesun_settings.hpp"
+#include "ggui/camera_settings.hpp"
 #include "ggui/surface_inspector.hpp"
 
 

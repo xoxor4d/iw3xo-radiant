@@ -150,7 +150,7 @@ namespace components
 
 	bool effects::effect_is_paused()
 	{
-		return fx_system::ed_is_paused;
+		return fx_system::ed_is_paused && !fx_system::ed_is_playing;
 	}
 
 	bool effects::effect_is_playing()
@@ -261,6 +261,7 @@ namespace components
 	{
 		fx_system::ed_is_playing = false;
 		fx_system::ed_is_repeating = false;
+		fx_system::ed_is_paused = false;
 
 		const auto system = fx_system::FX_GetSystem(0);
 
@@ -359,12 +360,57 @@ namespace components
 			effects::editor_on_effect_play_repeat();
 		});
 
+		command::register_command_with_hotkey("fx_repeat"s, [this](auto)
+		{
+			fx_system::ed_is_paused = false;
+
+			if (components::effects::effect_is_repeating())
+			{
+				fx_system::ed_is_repeating = false;
+
+			}
+			else if (components::effects::effect_is_playing())
+			{
+				fx_system::ed_is_repeating = true;
+			}
+			else
+			{
+				components::command::execute("fx_play");
+
+				if (components::effects::effect_is_playing() && !components::effects::effect_is_repeating())
+				{
+					fx_system::ed_is_repeating = true;
+				}
+				else
+				{
+					fx_system::ed_is_repeating = false;
+				}
+			}
+		});
+
+		command::register_command_with_hotkey("fx_pause"s, [this](auto)
+		{
+			if (fx_system::ed_is_playing)
+			{
+				fx_system::ed_is_playing = false;
+				fx_system::ed_is_paused = true;
+			}
+			else
+			{
+				if (components::effects::effect_can_play() && fx_system::ed_active_effect)
+				{
+					fx_system::ed_is_playing = true;
+					fx_system::ed_is_paused = false;
+				}
+			}
+		});
+
 		command::register_command_with_hotkey("fx_stop"s, [this](auto)
 		{
 			effects::on_effect_stop();
 		});
 
-		command::register_command_with_hotkey("fx_reload"s, [this](auto)
+		command::register_command("fx_reload"s, [this](auto)
 		{
 			effects::load_test_effect(nullptr);
 		});
