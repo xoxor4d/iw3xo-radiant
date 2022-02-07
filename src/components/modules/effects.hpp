@@ -30,7 +30,7 @@ namespace components
 		static void reset_editor_effect();
 		static void radiant_init_fx();
 
-		static void export_createfx();
+		static void generate_createfx();
 
 		static inline bool			is_fx_origin_selected_;
 		static inline std::string	last_fx_name_;

@@ -132,7 +132,7 @@ namespace ggui::menubar
 				{
 					if (ImGui::MenuItem("Createfx"))
 					{
-						components::effects::export_createfx();
+						components::effects::generate_createfx();
 
 					} TT("Generate createfx files for current map.\n (bin\\IW3xRadiant\\createfx)");
 
