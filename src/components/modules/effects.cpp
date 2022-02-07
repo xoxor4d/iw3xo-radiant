@@ -3,8 +3,9 @@
 namespace components
 {
 	game::vec3_t editor_origin_from_fx_origin = {};
+	game::vec3_t editor_angles_from_fx_origin = {};
 
-	const float spawn_axis[][3] =
+	/*const float spawn_axis[][3] =
 	{
 		{  0.0f,  0.0f,  1.0f },
 		{  1.0f,  0.0f,  0.0f },
@@ -16,6 +17,13 @@ namespace components
 		{  1.0f,  0.0f,  0.0f },
 		{ -1.0f,  0.0f,  0.0f },
 		{  0.0f, -1.0f,  0.0f },
+	};*/
+
+	float spawn_axis_rotated[3][3] =
+	{
+		{  0.0f,  0.0f,  1.0f },
+		{  0.0f, -1.0f,  0.0f },
+		{  1.0f,  0.0f,  0.0f }
 	};
 
 	fx_system::FxEffect* Editor_SpawnEffect(int localClientNum, fx_system::FxEffectDef* remoteDef, int msecBegin, const float* origin, const float(*axis)[3], int markEntnum)
@@ -43,25 +51,27 @@ namespace components
 		fx_system::ed_playback_tick_old = playback_tick;
 
 		// quickly switch axis
-		const int AX = 0;
-		float v1[3], v2[3], v3[3];
+		//const int AX = 0;
+		//float v1[3], v2[3], v3[3];
 
-		v1[0] = spawn_axis[AX][0];
-		v1[1] = spawn_axis[AX][1];
-		v1[2] = spawn_axis[AX][2];
-		v3[0] = spawn_axis[AX + 5][0];
-		v3[1] = spawn_axis[AX + 5][1];
-		v3[2] = spawn_axis[AX + 5][2];
-		fx_system::Vec3Cross(v3, v1, v2);
+		//v1[0] = spawn_axis[AX][0];
+		//v1[1] = spawn_axis[AX][1];
+		//v1[2] = spawn_axis[AX][2];
+		//v3[0] = spawn_axis[AX + 5][0];
+		//v3[1] = spawn_axis[AX + 5][1];
+		//v3[2] = spawn_axis[AX + 5][2];
+		//fx_system::Vec3Cross(v3, v1, v2);
 
-		const float effect_axis[3][3] =
-		{
-			{ v1[0], v1[1], v1[2] },
-			{ v2[0], v2[1], v2[2] },
-			{ v3[0], v3[1], v3[2] },
-		};
+		//float effect_axis[3][3] =
+		//{
+		//	{ v1[0], v1[1], v1[2] },
+		//	{ v2[0], v2[1], v2[2] },
+		//	{ v3[0], v3[1], v3[2] },
+		//};
 
-		const auto effect = Editor_SpawnEffect(0, def, playback_tick, editor_origin_from_fx_origin, effect_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
+		utils::vector::angle_vectors(editor_angles_from_fx_origin, spawn_axis_rotated[2], spawn_axis_rotated[1], spawn_axis_rotated[0]);
+
+		const auto effect = Editor_SpawnEffect(0, def, playback_tick, editor_origin_from_fx_origin, spawn_axis_rotated, fx_system::FX_SPAWN_MARK_ENTNUM);
 		fx_system::ed_active_effect = effect;
 	}
 
@@ -184,9 +194,24 @@ namespace components
 				is_fx_origin_selected_ = true;
 
 				memcpy(editor_origin_from_fx_origin, edit_ent->origin, sizeof(game::vec3_t));
+
+				ggui::entity::Entity_GetVec3ForKey(reinterpret_cast<game::entity_s*>(edit_ent), editor_angles_from_fx_origin, "angles");
+
 				if (fx_system::ed_active_effect && (effects::effect_is_playing() || effects::effect_is_paused()))
 				{
+					// use "fx_origin" origin to update effect position 
+					memcpy(fx_system::ed_active_effect->frameAtSpawn.origin, edit_ent->origin, sizeof(game::vec3_t));
 					memcpy(fx_system::ed_active_effect->frameNow.origin, edit_ent->origin, sizeof(game::vec3_t));
+
+
+					// use "fx_origin" angles to update effect angles - update spawn axis
+					utils::vector::angle_vectors(editor_angles_from_fx_origin, spawn_axis_rotated[2], spawn_axis_rotated[1], spawn_axis_rotated[0]);
+
+					float quat[4] = {};
+					fx_system::AxisToQuat(spawn_axis_rotated, quat);
+
+					memcpy(fx_system::ed_active_effect->frameAtSpawn.quat, quat, sizeof(game::vec4_t));
+					memcpy(fx_system::ed_active_effect->frameNow.quat, quat, sizeof(game::vec4_t));
 				}
 
 				const auto fx_name = ggui::entity::ValueForKey(edit_ent->epairs, "fx");
@@ -349,6 +374,140 @@ namespace components
 
 		ImGui::End();
 	}
+
+	void effects::generate_createfx()
+	{
+		std::ofstream def;
+		std::ofstream createfx;
+		dvars::fs_homepath = game::Dvar_FindVar("fs_homepath");
+
+		if (dvars::fs_homepath)
+		{
+			std::string filepath = dvars::fs_homepath->current.string;
+						filepath += "\\IW3xRadiant\\createfx\\"s;
+
+			std::filesystem::create_directories(filepath + "createfx\\");
+
+			std::string mapname = "unnamed_map";
+			if(game::current_map_filepath)
+			{
+				mapname = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
+				utils::erase_substring(mapname, ".map");
+			}
+
+			const std::string fx_def_path = filepath + mapname + "_fx.gsc"s;
+			const std::string createfx_path = filepath + "createfx\\" + mapname + "_fx.gsc"s;
+
+			def.open(fx_def_path);
+			createfx.open(createfx_path);
+
+			if (!def.is_open() && !createfx.is_open())
+			{
+				game::printf_to_console("[!] failed to export createfx files\n");
+				return;
+			}
+
+			int effect_count = 0;
+
+			def << "main()" << std::endl << "{" << std::endl;
+			createfx << "//_createfx generated. Do not touch!!" << std::endl; // kek
+			createfx << "main()" << std::endl << "{" << std::endl;
+
+
+			for (auto sb = game::g_selected_brushes_next(); ; sb = sb->next)
+			{
+				if(sb && sb->def && sb->def->owner)
+				{
+					const auto owner = reinterpret_cast<game::entity_s_def*>(sb->def->owner);
+					if (utils::string_equals(owner->eclass->name, "fx_origin"))
+					{
+						float fx_angles[3] = {};
+						ggui::entity::Entity_GetVec3ForKey(reinterpret_cast<game::entity_s*>(owner), fx_angles, "angles");
+
+						float temp_rotation_matrix[3][3] = {};
+						utils::vector::angle_vectors(fx_angles, temp_rotation_matrix[2], temp_rotation_matrix[1], temp_rotation_matrix[0]);
+
+						float world_angles[3] = {};
+						game::AxisToAngles(temp_rotation_matrix, world_angles);
+
+						std::string fx_path = ggui::entity::ValueForKey(owner->epairs, "fx");
+						utils::replace(fx_path, "\\", "/");
+
+						def << "\tlevel._effect[ \"effect_" << effect_count << "\" ] = loadfx( \"" << fx_path << "\" );" << std::endl;
+
+						createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_count << "\" );" << std::endl;
+						createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << owner->origin[0] << ", " << owner->origin[1] << ", " << owner->origin[2] << " );" << std::endl;
+						createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << world_angles[0] << ", " << world_angles[1] << ", " << world_angles[2] << " );" << std::endl;
+						createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_count << "\";" << std::endl;
+						createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+
+						effect_count++;
+					}
+
+					if(sb == game::g_selected_brushes())
+					{
+						break;
+					}
+				}
+				else
+				{
+					break;
+				}
+			}
+
+
+			for (auto sb = game::g_active_brushes_next(); ; sb = sb->next)
+			{
+				if (sb && sb->def && sb->def->owner)
+				{
+					const auto owner = reinterpret_cast<game::entity_s_def*>(sb->def->owner);
+					if (utils::string_equals(owner->eclass->name, "fx_origin"))
+					{
+						float fx_angles[3] = {};
+						ggui::entity::Entity_GetVec3ForKey(reinterpret_cast<game::entity_s*>(owner), fx_angles, "angles");
+
+						float temp_rotation_matrix[3][3] = {};
+						utils::vector::angle_vectors(fx_angles, temp_rotation_matrix[2], temp_rotation_matrix[1], temp_rotation_matrix[0]);
+
+						float world_angles[3] = {};
+						game::AxisToAngles(temp_rotation_matrix, world_angles);
+
+						std::string fx_path = ggui::entity::ValueForKey(owner->epairs, "fx");
+						utils::replace(fx_path, "\\", "/");
+
+						def << "\tlevel._effect[ \"effect_" << effect_count << "\" ] = loadfx( \"" << fx_path << "\" );" << std::endl;
+
+						createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_count << "\" );" << std::endl;
+						createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << owner->origin[0] << ", " << owner->origin[1] << ", " << owner->origin[2] << " );" << std::endl;
+						createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << world_angles[0] << ", " << world_angles[1] << ", " << world_angles[2] << " );" << std::endl;
+						createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_count << "\";" << std::endl;
+						createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+
+						effect_count++;
+					}
+
+					if(sb == game::g_active_brushes())
+					{
+						break;
+					}
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			def << "}" << std::endl;
+			createfx << "}" << std::endl;
+
+			def.close();
+			createfx.close();
+
+			game::printf_to_console("[Generate Createfx] for [%d] effects", effect_count);
+			game::printf_to_console("|> createfx def file :: [%s]", fx_def_path.c_str());
+			game::printf_to_console("|> createfx file :: [%s]", createfx_path.c_str());
+		}
+	}
 	
 	effects::effects()
 	{
@@ -413,6 +572,11 @@ namespace components
 		command::register_command("fx_reload"s, [this](auto)
 		{
 			effects::load_test_effect(nullptr);
+		});
+
+		command::register_command("generate_createfx"s, [this](auto)
+		{
+			effects::generate_createfx();
 		});
 	}
 

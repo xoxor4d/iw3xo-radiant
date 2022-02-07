@@ -151,8 +151,6 @@ namespace ggui
 		imgui_context_menu m_preferences;
 		imgui_context_menu m_about;
 		imgui_context_menu m_camera_settings;
-		imgui_context_menu m_fakesun_settings;
-		imgui_context_menu m_effect_settings;
 		imgui_context_menu m_demo;
 		render_to_texture_window_s rtt_camerawnd;
 		render_to_texture_window_s rtt_gridwnd;

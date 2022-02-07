@@ -57,6 +57,7 @@ namespace game
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
 
+	const char* current_map_filepath = reinterpret_cast<const char*>(0x23F18D8);
 	
 	game::filter_material_t* filter_surfacetype_array = reinterpret_cast<game::filter_material_t*>(0x73AF80);
 	game::filter_material_t* filter_locale_array = reinterpret_cast<game::filter_material_t*>(0x73A780);
@@ -231,6 +232,19 @@ namespace game
 			pushad;
 			mov		ebx, key;
 			mov		eax, ent;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void AxisToAngles(const float(*axis)[3], float* angles)
+	{
+		const static uint32_t func_addr = 0x4A8A00;
+		__asm
+		{
+			pushad;
+			mov		eax, angles;
+			mov		ecx, axis;
 			call	func_addr;
 			popad;
 		}

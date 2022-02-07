@@ -855,7 +855,6 @@ namespace ggui::toolbar
 		register_element("sunpreview"s, false, []()
 			{
 				static bool hov_fakesunpreview;
-				const auto prefs = game::g_PrefsDlg();
 
 				if (image_togglebutton(
 					"sunpreview", 
@@ -870,7 +869,6 @@ namespace ggui::toolbar
 		register_element("fakesun_fog"s, false, []()
 			{
 				static bool hov_fakesun_fog;
-				const auto prefs = game::g_PrefsDlg();
 
 				if (image_togglebutton(
 					"fakesun_fog",

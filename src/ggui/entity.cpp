@@ -848,7 +848,7 @@ namespace ggui::entity
 		}
 	}
 
-	void gui_entprop_effect_fileprompt(const epair_wrapper& epw, int row)
+	void gui_entprop_effect_fileprompt(const epair_wrapper& epw, [[maybe_unused]] int row)
 	{
 		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
 		{
@@ -875,6 +875,9 @@ namespace ggui::entity
 				utils::erase_substring(loc_filepath, ".efx"s);
 
 				AddProp(epw.epair->key, loc_filepath.c_str());
+
+				// stop old effect
+				components::command::execute("fx_stop");
 			}
 			else
 			{
@@ -883,7 +886,7 @@ namespace ggui::entity
 		}
 	}
 
-	void gui_entprop_model_fileprompt(const epair_wrapper& epw, int row)
+	void gui_entprop_model_fileprompt(const epair_wrapper& epw, [[maybe_unused]] int row)
 	{
 		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
 		{

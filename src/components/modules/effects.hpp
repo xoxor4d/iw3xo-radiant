@@ -7,6 +7,7 @@ namespace components
 	public:
 		effects();
 		~effects();
+
 		const char* get_name() override { return "effects"; };
 
 		static bool load_test_effect(const char* effect_name);
@@ -28,6 +29,8 @@ namespace components
 		static void on_effect_stop();
 		static void reset_editor_effect();
 		static void radiant_init_fx();
+
+		static void export_createfx();
 
 		static inline bool			is_fx_origin_selected_;
 		static inline std::string	last_fx_name_;

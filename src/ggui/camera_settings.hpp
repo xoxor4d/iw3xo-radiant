@@ -24,7 +24,7 @@ namespace ggui::camera_settings
 	inline int	active_tab = -1;
 	inline bool refocus_active_tab = false;
 
-	inline void set_tabstate_effects(bool state) { tab_states[tab_state_effects] = state; }
+	inline void set_tabstate_effects(bool _state) { tab_states[tab_state_effects] = _state; }
 	inline bool get_tabstate_effects() { return tab_states[tab_state_effects]; }
 	inline bool is_tabstate_effects_active() { return active_tab == tab_state_effects; }
 
@@ -35,7 +35,7 @@ namespace ggui::camera_settings
 	}
 
 
-	inline void set_tabstate_fakesun(bool state) { tab_states[tab_state_fakesun] = state; }
+	inline void set_tabstate_fakesun(bool _state) { tab_states[tab_state_fakesun] = _state; }
 	inline bool get_tabstate_fakesun() { return tab_states[tab_state_fakesun]; }
 	inline bool is_tabstate_fakesun_active() { return active_tab == tab_state_fakesun; }
 

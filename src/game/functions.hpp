@@ -73,6 +73,8 @@ namespace game
 	
 	extern game::SCommandInfo*	g_Commands;
 	extern int		g_nCommandCount;
+
+	extern const char* current_map_filepath;
 	
 	extern game::filter_material_t* filter_surfacetype_array;
 	extern game::filter_material_t* filter_locale_array;
@@ -122,6 +124,8 @@ namespace game
 	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/);
 	void Checkkey_Model(entity_s* ent /*esi*/, const char* key);
 	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/);
+
+	void AxisToAngles(const float(*axis)[3], float* angles);
 
 	void SetSpawnFlags(int flag);
 	void UpdateSel(int wParam, game::eclass_t* e_class);
