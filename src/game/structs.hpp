@@ -1094,7 +1094,7 @@ namespace game
 		int plumeLimit;
 	};
 
-	struct GfxBackEndData
+	/*struct GfxBackEndData
 	{
 		char surfsBuffer[131072];
 		FxCodeMeshData codeMeshes[2048];
@@ -1115,7 +1115,10 @@ namespace game
 		int *staticModelLit;
 		DebugGlobals debugGlobals[1];
 		int drawType;
-	};
+	};*/
+
+	
+
 
 	/*struct IDirect3DSwapChain9Vtbl
 	{
@@ -1319,6 +1322,7 @@ namespace game
 		unsigned __int64 packed;
 	};
 
+	// #ENV_DEPENDENT
 	struct MaterialInfo
 	{
 		const char* name;
@@ -1326,10 +1330,11 @@ namespace game
 		char sortKey;
 		char textureAtlasRowCount;
 		char textureAtlasColumnCount;
-		GfxDrawSurf drawSurf;
+		game::GfxDrawSurf drawSurf;
 		unsigned int surfaceTypeBits;
 		unsigned __int16 hashIndex;
-	};
+		char pad[32];
+	}; STATIC_ASSERT_SIZE(MaterialInfo, 0x38);
 
 	struct GfxStateBits
 	{
@@ -1409,11 +1414,11 @@ namespace game
 		MaterialWorldVertexFormat worldVertFormat;
 		MaterialTechnique* techniques[34];
 	};
-	
+
+	// #ENV_DEPENDENT
 	struct Material
 	{
 		MaterialInfo info;
-		char pad[32];
 		char stateBitsEntry[34];
 		char textureCount;
 		char constantCount;
@@ -1424,7 +1429,7 @@ namespace game
 		MaterialTextureDef* textureTable;
 		MaterialConstantDef* constantTable;
 		GfxStateBits* stateBitsTable;
-	};
+	}; STATIC_ASSERT_SIZE(Material, 0x70);
 
 	struct Glyph
 	{
@@ -1860,38 +1865,112 @@ namespace game
 		float offset[3];
 		float radiusSquared;
 	};
+
+	struct cplane_s
+	{
+		float normal[3];
+		float dist;
+		char type;
+		char signbits;
+		char pad[2];
+	};
+
+	struct cbrushside_t
+	{
+		cplane_s* plane;
+		unsigned int materialNum;
+		__int16 firstAdjacentSideOffset;
+		char edgeCount;
+		bool pad[1];
+	};
+
+	struct BrushWrapper
+	{
+		float mins[3];
+		int contents;
+		float maxs[3];
+		unsigned int numsides;
+		cbrushside_t* sides;
+		__int16 axialMaterialNum[2][3];
+		char* baseAdjacentSide;
+		__int16 firstAdjacentSideOffsets[2][3];
+		char edgeCount[2][3];
+		int totalEdgeCount;
+		cplane_s* planes;
+	};
+
+	struct PhysGeomInfo
+	{
+		BrushWrapper* brush;
+		int type;
+		float orientation[3][3];
+		float offset[3];
+		float halfLengths[3];
+	};
+
+	struct PhysMass
+	{
+		float centerOfMass[3];
+		float momentsOfInertia[3];
+		float productsOfInertia[3];
+	};
+
+	struct PhysGeomList
+	{
+		unsigned int count;
+		PhysGeomInfo* geoms;
+		PhysMass mass;
+	};
+
+	struct PhysPreset
+	{
+		const char* name;
+		int type;
+		float mass;
+		float bounce;
+		float friction;
+		float bulletForceScale;
+		float explosiveForceScale;
+		const char* sndAliasPrefix;
+		float piecesSpreadFraction;
+		float piecesUpwardVelocity;
+		bool tempDefaultToCylinder;
+		char pad[3];
+	}; STATIC_ASSERT_SIZE(PhysPreset, 0x2C);
 	
+	// #ENV_DEPENDENT - size XModelLoadFile
 	struct XModel
 	{
-		const char* name; //0x0000 
-		std::int8_t numBones; //0x0004 
-		std::int8_t numRootBones; //0x0005 
-		std::int8_t numsurfs; //0x0006 
-		std::int8_t lodRampType; //0x0007 
-		unsigned __int16* boneNames; //0x0008 
-		char* parentList; //0x000C 
-		__int16* quats; //0x0010 
-		float* trans; //0x0014 
-		char* partClassification; //0x0018 
-		DObjAnimMat* baseMat; //0x001C 
-		XSurface* surfs; //0x0020 XSurface
-		Material** materialHandles; //0x0024  Material **
-		XModelLodInfo lodInfo[4]; //0x0028 XModelLodInfo
-		XModelCollSurf_s* collSurfs; //0x0088 XModelCollSurf_s
-		int numCollSurfs; //0x008C 
-		int contents; //0x0090 
-		XBoneInfo* boneInfo; //0x0094 XBoneInfo
-		float radius; //0x0098 
-		vec3_t mins; //0x009C 
-		vec3_t maxs; //0x00A8 
-		std::int16_t numLods; //0x00B4 
-		std::int16_t collLod; //0x00B6 
-		void* streamInfo; //0x00B8 
-		int memUsage; //0x00BC 
-		std::int8_t flags; //0x00C0 
-		bool bad; //0x00C1 C1
-		char pad_0x00C2[0x2]; //0x00C2
-	}; STATIC_ASSERT_SIZE(XModel, 0xC4); //Size=0x00C4
+		const char* name;
+		char numBones;
+		char numRootBones;
+		char numsurfs;
+		char lodRampType;
+		unsigned __int16* boneNames;
+		char* parentList;
+		__int16* quats;
+		float* trans;
+		char* partClassification;
+		DObjAnimMat* baseMat;
+		XSurface* surfs;
+		Material** materialHandles;
+		XModelLodInfo lodInfo[4];
+		XModelCollSurf_s* collSurfs;
+		int numCollSurfs;
+		int contents;
+		XBoneInfo* boneInfo;
+		float radius;
+		float mins[3];
+		float maxs[3];
+		__int16 numLods;
+		__int16 collLod;
+		void* streamInfo;
+		int memUsage;
+		char flags;
+		bool bad;
+		PhysPreset* physPreset;
+		PhysGeomList* physGeoms;
+	}; STATIC_ASSERT_SIZE(XModel, 0xCC); //Size=0x00C4
 
 	struct GfxVisibleLight
 	{
@@ -2240,10 +2319,10 @@ namespace game
 		VERTDECL_COUNT = 0x10,
 	};
 
-	struct gfxVertexSteamsUnk
+	struct $C6651C03833075F2AE4768F11066A2E3
 	{
 		unsigned int stride;
-		int* vb;
+		IDirect3DVertexBuffer9* vb;
 		unsigned int offset;
 	};
 
@@ -2252,7 +2331,7 @@ namespace game
 		IDirect3DDevice9* device;
 		IDirect3DIndexBuffer9* indexBuffer;
 		MaterialVertexDeclType vertDeclType;
-		gfxVertexSteamsUnk streams[2];
+		$C6651C03833075F2AE4768F11066A2E3 streams[2];
 		IDirect3DVertexDeclaration9* vertexDecl;
 	}; STATIC_ASSERT_SIZE(GfxCmdBufPrimState, 0x28);
 
@@ -2570,6 +2649,11 @@ namespace game
 		char reflectionProbeIndex;
 	};
 
+	struct GfxCmdBuf
+	{
+		IDirect3DDevice9* device;
+	};
+
 	struct modelLightGlobals_s
 	{
 		float invImageHeight;
@@ -2595,7 +2679,150 @@ namespace game
 		_D3DLOCKED_BOX lockedBox;
 	};
 
-	
+	/*struct GfxPlacement
+	{
+		float quat[4];
+		float origin[3];
+	};
+
+	struct GfxScaledPlacement
+	{
+		GfxPlacement base;
+		float scale;
+	};*/
+
+	struct GfxParticleCloud
+	{
+		GfxScaledPlacement placement;
+		float endpos[3];
+		GfxColor color;
+		float radius[2];
+		unsigned int pad[2];
+	};
+
+	//struct GfxDrawSurfFields
+	//{
+	//	unsigned __int64 objectId : 16;
+	//	unsigned __int64 reflectionProbeIndex : 8;
+	//	unsigned __int64 customIndex : 5;
+	//	unsigned __int64 materialSortedIndex : 11;
+	//	unsigned __int64 prepass : 2;
+	//	unsigned __int64 primaryLightIndex : 8;
+	//	unsigned __int64 surfType : 4;
+	//	unsigned __int64 primarySortKey : 6;
+	//	unsigned __int64 unused : 4;
+	//};
+
+	/*union GfxDrawSurf
+	{
+		GfxDrawSurfFields fields;
+		unsigned __int64 packed;
+	};*/
+
+	struct GfxModelLightingPatch
+	{
+		unsigned __int16 modelLightingIndex;
+		char primaryLightWeight;
+		char colorsCount;
+		char groundLighting[4];
+		unsigned __int16 colorsWeight[8];
+		unsigned __int16 colorsIndex[8];
+	};
+
+	struct GfxBackEndPrimitiveData
+	{
+		int hasSunDirChanged;
+	};
+
+	/*struct GfxEntity
+	{
+		unsigned int renderFxFlags;
+		float materialTime;
+	};*/
+
+	struct FxMarkMeshData
+	{
+		unsigned int triCount;
+		unsigned __int16* indices;
+		unsigned __int16 modelIndex;
+		char modelTypeAndSurf;
+		char pad0;
+		unsigned int pad1;
+	};
+
+	struct GfxBackEndData
+	{
+		char surfsBuffer[131072];
+		FxCodeMeshData codeMeshes[2048];
+		int primDrawSurfsBuf[65536];
+		GfxViewParms viewParms[28];
+		char primaryLightTechType[10][256];
+		float codeMeshArgs[256][4];
+		GfxParticleCloud clouds[256];
+		GfxDrawSurf drawSurfs[32768];
+		GfxMeshData codeMesh;
+		GfxModelLightingPatch modelLightingPatchList_0xAFD20[4096];
+		volatile int modelLightingPatchCount;
+		GfxBackEndPrimitiveData prim;
+		unsigned int shadowableLightHasShadowMap[8];
+		unsigned int frameCount;
+		int drawSurfCount;
+		volatile int surfPos_0xD7D50;
+		volatile int gfxEntCount;
+		GfxEntity gfxEnts[128];
+		volatile int cloudCount;
+		volatile int codeMeshCount;
+		volatile int codeMeshArgsCount;
+		volatile int markMeshCount;
+		FxMarkMeshData markMeshes[1536];
+		GfxMeshData markMesh;
+		GfxVertexBufferState* skinnedCacheVb;
+		IDirect3DQuery9* endFence;
+		int actual_tempskinbuf_pad_here_or_after_modelLightingPatchCount;
+		volatile int tempSkinPos;
+		int viewParmCount_0xDE198;
+		GfxFog fogSettings[1];
+		GfxCmdArray* commands;
+		int viewInfoIndex;
+		int viewInfoCount;
+		GfxViewInfo* viewInfo;
+		char execState_cmd[4];
+		GfxLight sunLight[1];
+		int hasApproxSunDirChanged;
+		int primDrawSurfPos;
+		int* staticModelLit;
+		DebugGlobals debugGlobals[1];
+		int drawType;
+		int align_padding[2];
+
+	}; STATIC_ASSERT_SIZE(GfxBackEndData, 0xDE270);
+
+	struct GfxVertex
+	{
+		float xyzw[4];
+		GfxColor color;
+		float texCoord[2];
+		PackedUnitVec normal;
+	};
+
+	struct materialCommands_t
+	{
+		GfxVertex verts[5450];
+		unsigned __int16 indices[32704];
+		MaterialVertexDeclType vertDeclType;
+		unsigned int vertexSize;
+		int indexCount;
+		int vertexCount;
+		int firstVertex;
+		int lastVertex;
+		bool finishedFilling;
+	};
+
+	struct GfxRenderCommandExecState
+	{
+		const void* cmd;
+	};
+
 	struct filter_material_t
 	{
 		const char* name;

@@ -2,10 +2,52 @@
 #include "vector.hpp"
 #include "cmath"
 
+#define	PITCH				0		// up / down
+#define	YAW					1		// left / right
+#define	ROLL				2		// fall over
+#define M_PI				3.14159265358979323846f
+
 namespace utils
 {
 	namespace vector // https://github.com/id-Software/Quake-III-Arena/blob/master/code/game/q_math.c
 	{
+		void angle_vectors(const game::vec3_t angles, game::vec3_t forward, game::vec3_t right, game::vec3_t up)
+		{
+			float angle;
+			static float sr, sp, sy, cr, cp, cy;
+
+			angle = angles[YAW] * (M_PI * 2 / 360);
+			sy = sin(angle);
+			cy = cos(angle);
+			angle = angles[PITCH] * (M_PI * 2 / 360);
+			sp = sin(angle);
+			cp = cos(angle);
+			angle = angles[ROLL] * (M_PI * 2 / 360);
+			sr = sin(angle);
+			cr = cos(angle);
+
+			if (forward)
+			{
+				forward[0] = cp * cy;
+				forward[1] = cp * sy;
+				forward[2] = -sp;
+			}
+
+			if (right)
+			{
+				right[0] = (-1 * sr * sp * cy + -1 * cr * -sy);
+				right[1] = (-1 * sr * sp * sy + -1 * cr * cy);
+				right[2] = -1 * sr * cp;
+			}
+
+			if (up)
+			{
+				up[0] = (cr * sp * cy + -sr * -sy);
+				up[1] = (cr * sp * sy + -sr * cy);
+				up[2] = cr * cp;
+			}
+		}
+
 		float q_rsqrt(float number)
 		{
 			long i;

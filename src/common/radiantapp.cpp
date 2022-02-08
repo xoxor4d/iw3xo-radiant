@@ -104,7 +104,8 @@ BOOL LoadRegistryInfo(const char* pszName, void* pvBuf, long* plSize)
 	}
 	else
 	{
-		RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\iw\\CoD4Radiant\\CoD4Radiant", 0, KEY_READ, &hKey);
+		//RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\iw\\CoD4Radiant\\CoD4Radiant", 0, KEY_READ, &hKey);
+		RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\iw\\IW3xRadiant\\IW3xRadiant", 0, KEY_READ, &hKey);
 	}
 
 	RegQueryValueExA(hKey, pszName, NULL, (unsigned long*)&lType, (unsigned char*)pvBuf, (unsigned long*)plSize);
@@ -161,6 +162,8 @@ void radiantapp::set_default_savedinfo_colors()
 
 void MFCCreate()
 {
+	components::effects::radiant_init_fx();
+
 	long savedinfo_size = sizeof(game::g_qeglobals->d_savedinfo);
 	LoadRegistryInfo("SavedInfo", &game::g_qeglobals->d_savedinfo, &savedinfo_size);
 
@@ -168,7 +171,7 @@ void MFCCreate()
 	if (game::g_qeglobals->d_savedinfo.iSize != sizeof(game::g_qeglobals->d_savedinfo))
 	{
 		game::g_qeglobals->d_savedinfo.iSize = sizeof(game::g_qeglobals->d_savedinfo);
-		game::g_qeglobals->d_savedinfo.iTextMenu = 32993;
+		game::g_qeglobals->d_savedinfo.iTextMenu = 32992; // NORMALFAKELIGHT
 		game::g_qeglobals->d_savedinfo.d_gridsize = 1.0f;
 		game::g_qeglobals->d_savedinfo.d_picmip = 0;
 		
@@ -328,11 +331,11 @@ void radiantapp::hooks()
 
 	utils::hook(0x450A27, on_exit_instance_stub, HOOK_JUMP).install()->quick();
 
-	// do not use or overwrite stock radiant registry keys
-	utils::hook::write_string(0x6EBA58, "Software\\iw\\IW3xRadiant\\IW3xRadiant"s);
-	utils::hook::write_string(0x6E2320, "iw\\IW3xRadiant"s);
-	utils::hook::write_string(0x6E22F0, "Software\iw\IW3xRadiant\IniPrefs"s);
-	utils::hook::write_string(0x6DC1EC, "Software\iw\IW3xRadiant\MRU"s);
+	// do not use or overwrite stock radiant registry keys - create seperate ones for IW3xRadiant
+	utils::hook::write_string(0x6EBA58, R"(Software\iw\IW3xRadiant\IW3xRadiant)"s);
+	utils::hook::write_string(0x6E2320, R"(iw\IW3xRadiant)"s);
+	utils::hook::write_string(0x6E22F0, R"(Software\iw\IW3xRadiant\IniPrefs)"s);
+	utils::hook::write_string(0x6DC1EC, R"(Software\iw\IW3xRadiant\MRU)"s);
 
 #ifdef HIDE_MAINFRAME_MENUBAR
 	// -----------------------------------------------------------------------

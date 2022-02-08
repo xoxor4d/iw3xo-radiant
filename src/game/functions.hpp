@@ -1,4 +1,5 @@
 #pragma once
+#include "fx_system/fx_structs.hpp"
 
 #define GET_PARENTWND (CMainFrame*) *(DWORD*)(game::g_pParentWnd_ptr)
 
@@ -45,7 +46,10 @@ namespace game
 		
 	}
 
+	extern game::vec3_t vec3_origin;
 	extern game::vec4_t color_white;
+
+	extern IDirect3DTexture9* framebuffer_test;
 	
 	// radiant globals
 	extern int&			g_nScaleHow;
@@ -69,6 +73,8 @@ namespace game
 	
 	extern game::SCommandInfo*	g_Commands;
 	extern int		g_nCommandCount;
+
+	extern const char* current_map_filepath;
 	
 	extern game::filter_material_t* filter_surfacetype_array;
 	extern game::filter_material_t* filter_locale_array;
@@ -80,12 +86,20 @@ namespace game
 	extern int& texWndGlob_usageCount;
 
 	extern bool& r_initiated;
+	extern game::GfxBackEndData* gfx_frontend_data;
 	extern game::GfxBackEndData* gfx_backend_data;
-	extern game::GfxCmdBufSourceState* gfx_cmd_buf_source_state;
+
+	extern game::GfxCmdBufSourceState* gfxCmdBufSourceState;
+	extern game::GfxCmdBufState* gfxCmdBufState;
+	extern game::GfxCmdBufInput* gfxCmdBufInput;
+
 	extern game::r_globals_t* rg;
 	extern game::r_global_permanent_t* rgp;
 	extern game::GfxScene* scene;
 	extern game::DxGlobals* dx;
+
+	extern game::GfxBackEndData* get_backenddata();
+	extern game::GfxBackEndData* get_frontenddata();
 
 	extern game::entity_s* g_world_entity();
 	extern game::selbrush_def_t* g_active_brushes();
@@ -111,11 +125,18 @@ namespace game
 	void Checkkey_Model(entity_s* ent /*esi*/, const char* key);
 	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/);
 
+	void AxisToAngles(const float(*axis)[3], float* angles);
+
 	void SetSpawnFlags(int flag);
 	void UpdateSel(int wParam, game::eclass_t* e_class);
 	static utils::function<void(bool)> Select_Deselect = 0x48E800;
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
+	void Brush_Create(float* maxs /*edx*/, float* mins /*ecx*/, game::brush_t_with_custom_def* brush, int unk);
+	void Brush_BuildWindings(game::brush_t_with_custom_def* brush /*ecx*/, int snap);
+	void Entity_LinkBrush(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world /*edi*/);
+	game::brush_t_with_custom_def* Brush_AddToList(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world);
+	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/);
 
 	static utils::function<void(game::entity_s* ent, const char* key, const char* value)> SetKeyValue = 0x483690;
 	static utils::function<void()> SetKeyValuePairs = 0x496CF0;
@@ -137,6 +158,8 @@ namespace game
 	extern int sortedDvarsAddonsCount;
 
 	static DWORD* frontEndDataOut_ptr = (DWORD*)(0x73D480);  // frontEndDataOut pointer
+	static DWORD* backEndDataOut_ptr = (DWORD*)(0x174F970);  // backendEndDataOut pointer
+
 	static DWORD* active_brushes_ptr = (DWORD*)(0x23F189C);
 	static DWORD* active_brushes_next_ptr = (DWORD*)(0x23F18A0);
 	static DWORD* currSelectedBrushes = (DWORD*)(0x23F1864); // (selected_brushes array pointer)
@@ -245,7 +268,33 @@ namespace game
 	game::GfxImage* Image_FindExisting(const char* name);
 	game::GfxImage* Image_RegisterHandle(const char* name);
 
-	game::GfxCmdHeader* R_GetCommandBuffer(int bytes /*ebx*/, int render_cmd /*edi*/);
+	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/);
 	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
-	
+
+
+	// * ------------------------- FX --------------------------------
+
+	extern int& g_processCodeMesh;
+
+	extern int I_strncmp(const char* s0, const char* s1, int n);
+	extern int I_strcmp(const char* s1, const char* s2);
+	extern void I_strncpyz(char* Dest, const char* Source, int destsize);
+	static utils::function<int(const char*, const char*)> I_stricmp = 0x4B9490;
+
+	static utils::function<Material* (const char*, int)> Material_RegisterHandle = 0x511BE0;
+
+
+	static utils::function<int* (int)> Z_Malloc = 0x438FD0;
+
+	static utils::function<unsigned int(const char*, void**)> FS_ReadFile = 0x4A0240;
+	static utils::function<void(void*)> FS_FreeFile = 0x4A0300;
+
+	static utils::function<void(const char*)> Com_BeginParseSession = 0x4B78D0;
+	static utils::function<void()> Com_EndParseSession = 0x4B79A0;
+	static utils::function<void(int)> Com_SetSpaceDelimited = 0x4B79D0;
+	static utils::function<void()> Com_SetParseNegativeNumbers = 0x4B7A30;
+
+	static utils::function<char* (const char**)> Com_Parse = 0x4B8390;
+	static utils::function<int(const char**, const char*, int)> Com_MatchToken = 0x4B8430;
+	static utils::function<void()> Com_UngetToken = 0x4B7C90;
 }

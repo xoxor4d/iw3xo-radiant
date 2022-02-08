@@ -424,8 +424,6 @@ namespace components
 		ImGui::PopStyleVar(_stylevars);
 	}
 
-	
-
 	// *
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
 	void gui::render_loop()
@@ -531,21 +529,22 @@ namespace components
 				ccamwnd::rtt_camera_window();
 			}
 
-			//auto modelLightGlob = reinterpret_cast<game::modelLightGlobals_s*>(0x150D500);
-			/*game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 
-			game::GfxRenderTarget* taget = &targets[5];
-			game::GfxRenderTarget* postSun = &targets[3];
-			
-			game::dx->device->StretchRect(taget->surface.color, NULL, postSun->surface.color, NULL, D3DTEXF_NONE);
-
-			ImGui::Begin("Debug", nullptr);
+			//game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
+			//game::GfxRenderTarget* depth = &targets[game::R_RENDERTARGET_FLOAT_Z];
+		
+			/*ImGui::Begin("Debug", nullptr);
 			ImGui::Image(postSun->image->texture.data, ImVec2(game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].width, game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].height));
 			ImGui::End();*/
 
-			/*ImGui::Begin("Debug", nullptr);
-			ImGui::Image(ggui::get_rtt_camerawnd()->scene_texture, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
-			ImGui::End();*/
+			//if(depth && depth->image && depth->image->texture.data)
+			//{
+			//	ImGui::Begin("Depthbuffer", nullptr);
+			//	ImGui::Image(depth->image->texture.data, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
+			//	ImGui::End();
+			//}
+
+			
 
 			// color menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_colors,
@@ -587,9 +586,9 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_about,
 				ggui::about::menu(ggui::state.czwnd.m_about), nullptr);
 
-			// fakesun settings menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_fakesun_settings,
-				ggui::fakesun_settings::menu(ggui::state.czwnd.m_fakesun_settings), nullptr);
+			// camera settings menu
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_camera_settings,
+				ggui::camera_settings::menu(ggui::state.czwnd.m_camera_settings), ggui::camera_settings::on_close());
 
 			// render to texture :: model selector / preview
 			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_modelselector(),

@@ -194,7 +194,9 @@ namespace dvars
 		ggui::entity::register_dvars();
 		ggui::surface_inspector::register_dvars();
 		ggui::preferences::register_dvars();
-		
+
+		fx_system::register_dvars();
+
 		game::printf_to_console("\n");
 	}
 }

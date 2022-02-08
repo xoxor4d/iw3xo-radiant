@@ -9,7 +9,7 @@ namespace ggui::about
 		ImGui::SetNextWindowSize(ImVec2(400.0f, 390.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		if(ImGui::Begin("About##window", &menu.menustate, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize))
+		if(ImGui::Begin("About##window", &menu.menustate, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking))
 		{
 			SPACING(0.0f, 2.0f);
 

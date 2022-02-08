@@ -213,10 +213,16 @@ namespace ggui::hotkeys
 		{
 			if (!_strcmpi(command, bind.cmd_name.c_str()))
 			{
-				return	(bind.modifier_shift == 1 ? "SHIFT-"s : "") +
+				if(bind.modifier_key.empty())
+				{
+					return "";
+				}
+
+				return	"[" +
+						(bind.modifier_shift == 1 ? "SHIFT-"s : "") +
 						(bind.modifier_alt   == 1 ? "ALT-"s : "") +
 						(bind.modifier_ctrl  == 1 ? "CTRL-"s : "") +
-						 bind.modifier_key;
+						 bind.modifier_key + "]";
 			}
 		}
 
@@ -235,11 +241,16 @@ namespace ggui::hotkeys
 				mod += (o_mod & 4 ? "CTRL-"s : "");
 				mod += cmdbinds_ascii_to_keystr(o_key);
 
-				return mod;
+				if(mod.empty())
+				{
+					return "";
+				}
+
+				return "[" + mod + "]";
 			}
 		}
 
-		return "UNBOUND";
+		return "";
 	}
 
 
@@ -499,7 +510,12 @@ namespace ggui::hotkeys
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		
 		ImGui::SetNextWindowSizeConstraints(ImVec2(450, 160), ImVec2(450, 160));
-		ImGui::Begin("Hotkeys Helper##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+
+		if(!ImGui::Begin("Hotkeys Helper##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
+		{
+			ImGui::End();
+			return;
+		}
 
 		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
 			fs_homepath)

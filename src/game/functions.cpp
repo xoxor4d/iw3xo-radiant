@@ -1,5 +1,8 @@
 #include "std_include.hpp"
 
+#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
+					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
+
 namespace game
 {
 	namespace glob
@@ -26,7 +29,10 @@ namespace game
 		
 	}
 
+	game::vec3_t vec3_origin = { 0.0f, 0.0f, 0.0f };
 	game::vec4_t color_white = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	IDirect3DTexture9* framebuffer_test = nullptr;
 	
 	// radiant globals
 	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
@@ -51,6 +57,7 @@ namespace game
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
 
+	const char* current_map_filepath = reinterpret_cast<const char*>(0x23F18D8);
 	
 	game::filter_material_t* filter_surfacetype_array = reinterpret_cast<game::filter_material_t*>(0x73AF80);
 	game::filter_material_t* filter_locale_array = reinterpret_cast<game::filter_material_t*>(0x73A780);
@@ -62,14 +69,31 @@ namespace game
 	int& texWndGlob_usageCount = *reinterpret_cast<int*>(0x25D7994); // amount of loaded usage filters
 
 	bool& r_initiated = *reinterpret_cast<bool*>(0x25D5A68);
+	game::GfxBackEndData* gfx_frontend_data = reinterpret_cast<game::GfxBackEndData*>(0x73D480);
 	game::GfxBackEndData* gfx_backend_data = reinterpret_cast<game::GfxBackEndData*>(0x73D500);
-	game::GfxCmdBufSourceState* gfx_cmd_buf_source_state = reinterpret_cast<game::GfxCmdBufSourceState*>(0x174D760);
+
+	game::GfxCmdBufSourceState* gfxCmdBufSourceState = reinterpret_cast<game::GfxCmdBufSourceState*>(0x174D760);
+	game::GfxCmdBufState* gfxCmdBufState = reinterpret_cast<game::GfxCmdBufState*>(0x174E660);
+	game::GfxCmdBufInput* gfxCmdBufInput = reinterpret_cast<game::GfxCmdBufInput*>(0x174F070);
+
 	game::r_globals_t* rg = reinterpret_cast<game::r_globals_t*>(0x13683F0);
 	game::r_global_permanent_t* rgp = reinterpret_cast<game::r_global_permanent_t*>(0x136C700);
 	game::GfxScene* scene = reinterpret_cast<game::GfxScene*>(0x1370980);
 	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
 
 	HWND* entitywnd_hwnds = reinterpret_cast<HWND*>(0x240A118);
+
+	game::GfxBackEndData* get_backenddata()
+	{
+		const auto out = reinterpret_cast<game::GfxBackEndData*>(*game::backEndDataOut_ptr);
+		return out;
+	}
+
+	game::GfxBackEndData* get_frontenddata()
+	{
+		const auto out = reinterpret_cast<game::GfxBackEndData*>(*game::frontEndDataOut_ptr);
+		return out;
+	}
 
 	game::entity_s* g_world_entity()
 	{
@@ -213,6 +237,19 @@ namespace game
 		}
 	}
 
+	void AxisToAngles(const float(*axis)[3], float* angles)
+	{
+		const static uint32_t func_addr = 0x4A8A00;
+		__asm
+		{
+			pushad;
+			mov		eax, angles;
+			mov		ecx, axis;
+			call	func_addr;
+			popad;
+		}
+	}
+
 	void SetSpawnFlags(int flag)
 	{
 		const static uint32_t func_addr = 0x496F00;
@@ -266,6 +303,87 @@ namespace game
 			call	func_addr;
 			add     esp, 12;
 			//popad;
+		}
+	}
+
+	void Brush_Create(float* maxs /*edx*/, float* mins /*ecx*/, game::brush_t_with_custom_def* brush, int unk)
+	{
+		const static uint32_t func_addr = 0x475300;
+		__asm
+		{
+			pushad;
+
+			push	unk;
+			push	brush;
+			mov		ecx, mins;
+			mov		edx, maxs;
+
+			call	func_addr;
+			add		esp, 8;
+
+			popad;
+		}
+	}
+
+	void Brush_BuildWindings(game::brush_t_with_custom_def* brush /*ecx*/, int snap)
+	{
+		const static uint32_t func_addr = 0x477AC0;
+		__asm
+		{
+			pushad;
+
+			push	snap;
+			mov		ecx, brush;
+
+			call	func_addr;
+			add		esp, 4;
+
+			popad;
+		}
+	}
+
+	void Entity_LinkBrush(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world /*edi*/)
+	{
+		const static uint32_t func_addr = 0x484FC0;
+		__asm
+		{
+			pushad;
+
+			mov		edi, world;
+			mov		eax, brush;
+
+			call	func_addr;
+
+			popad;
+		}
+	}
+
+	game::brush_t_with_custom_def* Brush_AddToList(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world)
+	{
+		const static uint32_t func_addr = 0x475980;
+		__asm
+		{
+			//pushad;
+			push	world;
+			mov		eax, brush;
+
+			call	func_addr;
+			add		esp, 4;
+			//popad;
+		}
+	}
+
+	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/)
+	{
+		const static uint32_t func_addr = 0x4765A0;
+		__asm
+		{
+			pushad;
+
+			mov		eax, brush;
+			call	func_addr;
+
+			popad;
 		}
 	}
 
@@ -335,7 +453,62 @@ namespace game
 	AnglesToAxis_t AnglesToAxis = reinterpret_cast<AnglesToAxis_t>(0x4ABEB0);
 	AngleVectors_t AngleVectors = reinterpret_cast<AngleVectors_t>(0x4ABD70);
 	OrientationConcatenate_t OrientationConcatenate = reinterpret_cast<OrientationConcatenate_t>(0x4BA7D0);
-	
+
+
+	// * --------------------- FX ----------------------------------
+
+	int& g_processCodeMesh = *reinterpret_cast<int*>(0x174F960);
+
+	int I_strncmp(const char* s0, const char* s1, int n)
+	{
+		int c0, c1;
+
+		if (!s0 || !s1)
+		{
+			Assert();
+			return s1 - s0;
+		}
+		do
+		{
+			c0 = *s0++;
+			c1 = *s1++;
+
+			if (!n--)
+			{
+				return 0;
+			}
+
+			if (c0 != c1)
+			{
+				return 2 * (c0 >= c1) - 1;
+			}
+
+		} while (c0);
+
+		return 0;
+	}
+
+	int I_strcmp(const char* s1, const char* s2)
+	{
+		if (!s1 || !s2)
+		{
+			Assert();
+		}
+		
+		return I_strncmp(s1, s2, 0x7FFFFFFF);
+	}
+
+	void I_strncpyz(char* Dest, const char* Source, int destsize)
+	{
+		if (!Source || !Dest || destsize < 1)
+		{
+			Assert();
+		}
+		
+		strncpy(Dest, Source, destsize - 1);
+		Dest[destsize - 1] = 0;
+	}
+
 	// -----------------------------------------------------------
 	// DVARS
 
@@ -549,7 +722,7 @@ namespace game
 		return image;
 	}
 
-	game::GfxCmdHeader* R_GetCommandBuffer(int bytes /*ebx*/, int render_cmd /*edi*/)
+	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/)
 	{
 		const static uint32_t R_RenderBufferCmdCheck_Func = 0x4FAEB0;
 		__asm
@@ -575,7 +748,7 @@ namespace game
 		d3dpp->MultiSampleType = _D3DMULTISAMPLE_TYPE::D3DMULTISAMPLE_NONE; // (D3DMULTISAMPLE_TYPE)game::dx->multiSampleType;
 		d3dpp->MultiSampleQuality = 0; // game::dx->multiSampleQuality
 		d3dpp->SwapEffect = D3DSWAPEFFECT_DISCARD;
-		d3dpp->EnableAutoDepthStencil = 0;
+		d3dpp->EnableAutoDepthStencil = 1; // test
 		d3dpp->AutoDepthStencilFormat = static_cast<D3DFORMAT>(game::dx->depthStencilFormat);
 		d3dpp->PresentationInterval = 0x80000000; //r_vsync->current.enabled ? 1 : 0x80000000;
 		d3dpp->hDeviceWindow = wnd->hwnd;
@@ -649,5 +822,5 @@ namespace game
 			}
 		}
 	}
-	
+
 }

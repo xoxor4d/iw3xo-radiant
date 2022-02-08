@@ -128,8 +128,14 @@ namespace ggui::menubar
 					ImGui::EndMenu(); // Open Recent
 				}
 
-				if (ImGui::BeginMenu("Misc"))
+				if (ImGui::BeginMenu("Generate File .."))
 				{
+					if (ImGui::MenuItem("Createfx"))
+					{
+						components::effects::generate_createfx();
+
+					} TT("Generate createfx files for current map.\n (bin\\IW3xRadiant\\createfx)");
+
 					if (ImGui::MenuItem("Save Region", "", nullptr, game::g_region_active)) {
 						mainframe_cdeclcall(void, 0x429020); //cmainframe::OnFileSaveregion
 					}
@@ -472,8 +478,25 @@ namespace ggui::menubar
 						dvars::set_bool(dvars::r_fakesun_fog_enabled, !dvars::r_fakesun_fog_enabled->current.enabled);
 					} TT("settings @preferences->developer");
 					
-					if (ImGui::MenuItem("Fake Sun Settings")) {
-						components::gui::toggle(ggui::state.czwnd.m_fakesun_settings, 0, true);
+					if (ImGui::MenuItem("Fake Sun Settings")) 
+					{
+						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
+						{
+							// close entire window if tab is in-front
+							components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+						}
+						else if (!ggui::state.czwnd.m_camera_settings.menustate)
+						{
+							// open window with focused fakesun tab
+							ggui::camera_settings::set_tabstate_fakesun(true);
+							components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+						}
+						else
+						{
+							// window is open but tab not focused
+							ggui::camera_settings::set_tabstate_fakesun(true);
+							ggui::camera_settings::focus_fakesun();
+						}
 					}
 
 					SEPERATORV(0.0f);

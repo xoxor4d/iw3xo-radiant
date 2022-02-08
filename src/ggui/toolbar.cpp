@@ -262,7 +262,7 @@ namespace ggui::toolbar
 				static bool hov_open;
 			
 				//CMainFrame::OnFileOpen
-				image_button("open", hov_open, MAINFRAME_CDECL, 0x423AE0, std::string("Open File [" + hotkeys::get_hotkey_for_command("FileOpen") + "]").c_str());
+				image_button("open", hov_open, MAINFRAME_CDECL, 0x423AE0, std::string("Open File " + hotkeys::get_hotkey_for_command("FileOpen")).c_str());
 			});
 
 		register_element("save"s, []()
@@ -270,7 +270,7 @@ namespace ggui::toolbar
 				static bool hov_save;
 			
 				//CMainFrame::OnFileSave
-				image_button("save", hov_save, MAINFRAME_CDECL, 0x423B80, std::string("Save File [" + hotkeys::get_hotkey_for_command("FileSave") + "]").c_str());
+				image_button("save", hov_save, MAINFRAME_CDECL, 0x423B80, std::string("Save File " + hotkeys::get_hotkey_for_command("FileSave")).c_str());
 			});
 
 		register_element("flip_x"s, []()
@@ -320,7 +320,7 @@ namespace ggui::toolbar
 				static bool hov_rotz;
 
 				// CMainFrame::OnBrushRotatez
-				image_button("rotate_z", hov_rotz, CDECLCALL, 0x425220, std::string("Rotate Brush Z-Axis [" + hotkeys::get_hotkey_for_command("RotateZ") + "]").c_str());
+				image_button("rotate_z", hov_rotz, CDECLCALL, 0x425220, std::string("Rotate Brush Z-Axis " + hotkeys::get_hotkey_for_command("RotateZ")).c_str());
 			});
 		
 		register_element(";"s, nullptr);
@@ -374,7 +374,7 @@ namespace ggui::toolbar
 				static bool hov_csg_merge;
 
 				// CMainFrame::OnSelectionCsgmerge
-				image_button("csg_merge", hov_csg_merge, CDECLCALL, 0x4255D0, std::string("CSG Merge [" + hotkeys::get_hotkey_for_command("CSGMerge") + "]").c_str());
+				image_button("csg_merge", hov_csg_merge, CDECLCALL, 0x4255D0, std::string("CSG Merge " + hotkeys::get_hotkey_for_command("CSGMerge")).c_str());
 			});
 
 		register_element("csg_hollow"s, []()
@@ -414,7 +414,7 @@ namespace ggui::toolbar
 				static bool hov_cycle_layer;
 
 				// CMainFrame::OnEditLayerCycle
-				image_button("cycle_layer", hov_cycle_layer, CDECLCALL, 0x424010, std::string("Cycle Texture Layer [" + hotkeys::get_hotkey_for_command("TexLayerCycle") + "]").c_str());
+				image_button("cycle_layer", hov_cycle_layer, CDECLCALL, 0x424010, std::string("Cycle Texture Layer " + hotkeys::get_hotkey_for_command("TexLayerCycle")).c_str());
 			});
 		
 		register_element(";"s, nullptr);
@@ -456,19 +456,9 @@ namespace ggui::toolbar
 			
 				// CMainFrame::OnViewCubicclipping
 				if (image_togglebutton("cubic_clip", hov_cubicclip, prefs->m_bCubicClipping,
-					std::string("Cubic Clipping [" + hotkeys::get_hotkey_for_command("ToggleCubicClip") + "]").c_str()))
+					std::string("Cubic Clipping" + hotkeys::get_hotkey_for_command("ToggleCubicClip")).c_str()))
 				{
 					mainframe_thiscall(LRESULT, 0x428F90);
-				}
-			});
-
-		register_element("gameview"s, false, []()
-			{
-				static bool hov_gameview;
-				if (image_togglebutton("gameview", hov_gameview, dvars::radiant_gameview->current.enabled,
-					std::string("Gameview [" + hotkeys::get_hotkey_for_command("xo_gameview") + "]").c_str()))
-				{
-					components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
 				}
 			});
 
@@ -480,7 +470,7 @@ namespace ggui::toolbar
 				ImGui::BeginGroup();
 				{
 					ImVec2	prebutton_cursor = ImGui::GetCursorScreenPos();
-					image_button("empty_hover", hov_cycle_xyz, MAINFRAME_THIS, 0x426DB0, std::string("Cycle Grid Window View [" + hotkeys::get_hotkey_for_command("NextView") + "]").c_str());
+					image_button("empty_hover", hov_cycle_xyz, MAINFRAME_THIS, 0x426DB0, std::string("Cycle Grid Window View " + hotkeys::get_hotkey_for_command("NextView")).c_str());
 
 					ImGui::PushFontFromIndex(REGULAR_18PX);
 					const auto viewtype = cmainframe::activewnd->m_pXYWnd->m_nViewType;
@@ -553,48 +543,13 @@ namespace ggui::toolbar
 				image_button("drop_entities_floor_relative", hov_drop_entities_relative_z, MAINFRAME_THIS, 0x425940, "Drop selection to the floor with relative Z heights");
 			});
 
-		register_element("guizmo_enable"s, false, []()
-			{
-				static bool hov_guizmo_enable;
-				if (image_togglebutton("guizmo_enable", hov_guizmo_enable, dvars::guizmo_enable->current.enabled, dvars::guizmo_enable->description))
-				{
-					dvars::set_bool(dvars::guizmo_enable, !dvars::guizmo_enable->current.enabled);
-				}
-			});
-
-		register_element("guizmo_grid_snapping"s, false, []()
-			{
-				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
-				{
-					static bool hov_guizmo_grid_snapping;
-					if (image_togglebutton("guizmo_grid_snapping", hov_guizmo_grid_snapping, dvars::guizmo_snapping->current.enabled, dvars::guizmo_snapping->description))
-					{
-						dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
-					}
-				}
-				ImGui::EndDisabled();
-			});
-
-		register_element("guizmo_brush_mode"s, false, []()
-			{
-				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
-				{
-					static bool hov_guizmo_brush_mode;
-					if (image_togglebutton("guizmo_brush_mode", hov_guizmo_brush_mode, dvars::guizmo_brush_mode->current.enabled, dvars::guizmo_brush_mode->description))
-					{
-						dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
-					}
-				}
-				ImGui::EndDisabled();
-			});
-		
 		register_element("free_rotate"s, []()
 			{
 				static bool hov_freerotate;
 			
 				// CMainFrame::OnSelectMouserotate
 				if (image_togglebutton("free_rotate", hov_freerotate, game::g_bRotateMode,
-					std::string("Free rotation [" + hotkeys::get_hotkey_for_command("MouseRotate") + "]").c_str()))
+					std::string("Free rotation " + hotkeys::get_hotkey_for_command("MouseRotate")).c_str()))
 				{
 					mainframe_thiscall(LRESULT, 0x428570);
 				}
@@ -689,7 +644,7 @@ namespace ggui::toolbar
 
 				// CMainFrame::OnRedistPatchPoints
 				image_button("redisperse_patch_points", hov_redisp_patch_pts, CDECLCALL, 0x42A270,
-					std::string("Redisperse Patch Points [" + hotkeys::get_hotkey_for_command("RedisperseVertices") + "]").c_str());
+					std::string("Redisperse Patch Points " + hotkeys::get_hotkey_for_command("RedisperseVertices")).c_str());
 			});
 
 		register_element("weld_equal_patches_move"s, []()
@@ -845,27 +800,198 @@ namespace ggui::toolbar
 				}
 			});
 
-		register_element("lightpreview"s, false, []()
+		register_element("guizmo_enable"s, false, []()
 			{
-				static bool hov_lightpreview;
-				const auto prefs = game::g_PrefsDlg();
-
-				if (image_togglebutton("lightpreview", hov_lightpreview, prefs->enable_light_preview, std::string("Lightpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewToggle") + "]").c_str()))
+				static bool hov_guizmo_enable;
+				if (image_togglebutton("guizmo_enable", hov_guizmo_enable, dvars::guizmo_enable->current.enabled, dvars::guizmo_enable->description))
 				{
-					mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
+					dvars::set_bool(dvars::guizmo_enable, !dvars::guizmo_enable->current.enabled);
+				}
+			});
+
+		register_element("guizmo_grid_snapping"s, false, []()
+			{
+				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
+				{
+					static bool hov_guizmo_grid_snapping;
+					if (image_togglebutton("guizmo_grid_snapping", hov_guizmo_grid_snapping, dvars::guizmo_snapping->current.enabled, dvars::guizmo_snapping->description))
+					{
+						dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
+					}
+				}
+				ImGui::EndDisabled();
+			});
+
+		register_element("guizmo_brush_mode"s, false, []()
+			{
+				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
+				{
+					static bool hov_guizmo_brush_mode;
+					if (image_togglebutton(
+						"guizmo_brush_mode", 
+						hov_guizmo_brush_mode, 
+						dvars::guizmo_brush_mode->current.enabled, 
+						dvars::guizmo_brush_mode->description))
+					{
+						dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
+					}
+				}
+				ImGui::EndDisabled();
+			});
+
+		register_element("gameview"s, false, []()
+			{
+				static bool hov_gameview;
+				if (image_togglebutton(
+					"gameview", 
+					hov_gameview, 
+					dvars::radiant_gameview->current.enabled,
+					std::string("Gameview " + hotkeys::get_hotkey_for_command("xo_gameview")).c_str()))
+				{
+					components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
 				}
 			});
 
 		register_element("sunpreview"s, false, []()
 			{
-				static bool hov_sunpreview;
-				const auto prefs = game::g_PrefsDlg();
+				static bool hov_fakesunpreview;
 
-				if (image_togglebutton("sunpreview", hov_sunpreview, prefs->preview_sun_aswell, std::string("Sunpreview [" + ggui::hotkeys::get_hotkey_for_command("LightPreviewSun") + "]\nNeeds Lightpreview!").c_str()))
+				if (image_togglebutton(
+					"sunpreview", 
+					hov_fakesunpreview, 
+					dvars::r_fakesun_preview->current.enabled, 
+					std::string("Fake sun preview " + ggui::hotkeys::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()))
 				{
-					mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun;
+					components::command::execute("fakesun_toggle");
 				}
 			});
+
+		register_element("fakesun_fog"s, false, []()
+			{
+				static bool hov_fakesun_fog;
+
+				if (image_togglebutton(
+					"fakesun_fog",
+					hov_fakesun_fog,
+					dvars::r_fakesun_fog_enabled->current.enabled,
+					std::string("Toggle Fog " + ggui::hotkeys::get_hotkey_for_command("fakesun_fog_toggle")).c_str()))
+				{
+					components::command::execute("fakesun_fog_toggle");
+				}
+			});
+
+		register_element("filmtweaks"s, false, []()
+			{
+				static bool hov_filmtweaks_settings;
+				const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
+
+				if (image_togglebutton(
+					"filmtweaks",
+					hov_filmtweaks_settings,
+					r_filmtweakenable->current.enabled,
+					std::string("Toggle filmtweaks " + ggui::hotkeys::get_hotkey_for_command("filmtweak_toggle")).c_str()))
+				{
+					components::command::execute("filmtweak_toggle");
+				}
+			});
+
+		register_element("fx_play"s, false, []()
+			{
+				static bool hov_fx_play;
+
+				ImVec4 overwrite_active_bg = ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+
+				const bool can_fx_play = components::effects::effect_can_play();
+				ImGui::BeginDisabled(!can_fx_play);
+
+				if (image_togglebutton(
+					"fx_play",
+					hov_fx_play,
+					can_fx_play,
+					std::string("Play Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_play")).c_str(),
+					nullptr, 
+					nullptr, 
+					&overwrite_active_bg))
+				{
+					components::command::execute("fx_play");
+				}
+
+				ImGui::EndDisabled();
+			});
+
+		register_element("fx_repeat"s, false, []()
+			{
+				static bool hov_fx_repeat;
+
+				ImVec4 overwrite_active_bg = ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+
+				const bool can_fx_play = components::effects::effect_can_play();
+				ImGui::BeginDisabled(!can_fx_play);
+
+				if (image_togglebutton(
+					"fx_repeat",
+					hov_fx_repeat,
+					can_fx_play,
+					std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_repeat")).c_str(),
+					nullptr,
+					nullptr,
+					&overwrite_active_bg))
+				{
+					components::command::execute("fx_repeat");
+				}
+
+				ImGui::EndDisabled();
+			});
+
+		register_element("fx_pause"s, false, []()
+			{
+				static bool hov_fx_pause;
+
+				ImVec4 overwrite_active_bg = ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+
+				const bool can_fx_play = components::effects::effect_can_play();
+				ImGui::BeginDisabled(!can_fx_play);
+
+				if (image_togglebutton(
+					"fx_pause",
+					hov_fx_pause,
+					can_fx_play,
+					std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_pause")).c_str(),
+					nullptr,
+					nullptr,
+					&overwrite_active_bg))
+				{
+					components::command::execute("fx_pause");
+				}
+
+				ImGui::EndDisabled();
+			});
+
+		register_element("fx_stop"s, false, []()
+			{
+				static bool hov_fx_stop;
+
+				ImVec4 overwrite_active_bg = ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+
+				const bool can_fx_play = components::effects::effect_can_play();
+				ImGui::BeginDisabled(!can_fx_play);
+
+				if (image_togglebutton(
+					"fx_stop",
+					hov_fx_stop,
+					can_fx_play,
+					std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_stop")).c_str(),
+					nullptr,
+					nullptr,
+					&overwrite_active_bg))
+				{
+					components::command::execute("fx_stop");
+				}
+
+				ImGui::EndDisabled();
+			});
+
+		
 
 #ifdef DEBUG
 		register_element(";"s, nullptr);
@@ -1309,11 +1435,11 @@ namespace ggui::toolbar
 		
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);							_stylevars++;
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3.0f, 4.0f));		_stylevars++;
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));	_stylevars++;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));		_stylevars++;
 
 		ImGui::PushStyleColor(ImGuiCol_Border, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(70, 70, 70, 70));		_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(70, 70, 70, 70));			_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 70));		_stylecolors++;
 
 		// loop amount of registered-sorted elements

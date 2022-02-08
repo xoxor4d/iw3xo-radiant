@@ -93,6 +93,21 @@
 #include "game/functions.hpp"
 #include "game/dvars.hpp"
 
+#include "fx_system/fx_dvars.hpp"
+#include "fx_system/fx_structs.hpp"
+#include "fx_system/fx_util.hpp"
+#include "fx_system/math.hpp"
+#include "fx_system/fx_system.hpp"
+#include "fx_system/fx_update.hpp"
+#include "fx_system/fx_update_util.hpp"
+#include "fx_system/fx_random.hpp"
+#include "fx_system/fx_sort.hpp"
+#include "fx_system/fx_draw.hpp"
+#include "fx_system/fx_cmd.hpp"
+#include "fx_system/fx_convert.hpp"
+#include "fx_system/fx_curves.hpp"
+#include "fx_system/fx_load.hpp"
+
 #include "ggui/_ggui.hpp"
 #include "ggui/hotkeys.hpp"
 #include "ggui/menubar.hpp"
@@ -104,7 +119,7 @@
 #include "ggui/preferences.hpp"
 #include "ggui/modelselector.hpp"
 #include "ggui/about.hpp"
-#include "ggui/fakesun_settings.hpp"
+#include "ggui/camera_settings.hpp"
 #include "ggui/surface_inspector.hpp"
 
 

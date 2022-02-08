@@ -1,38 +1,17 @@
-## IW3xRadiant - A Call of Duty 4 Radiant Modification using ImGui
+<h1 align="center">IW3xRadiant - A Call of Duty 4 Radiant Modification using ImGui</h3>
 
 <p align="center">
-	This project is aimed at developers and includes various modifications/additions and was built to be used with IW3xo.  
-Running both, IW3xRadiant and IW3xo, enables a live-link between CoD4 and Radiant. You can, however, just use it as a direct replacement for stock radiant.
-
+This project is aimed at developers and includes various modifications/additions and was built to be used with IW3xo. <br>
+Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You can, however, just use it as a direct replacement for stock radiant.
 </p>
 
 <br>
 
-### Goals:
-- replace most if not all of the MFC/Windows UI with Dear ImGui
-- extend functionalities across the board
-
-### New features not found within the original cod4 radiant:
-- switch/scale/place the individual windows however you want
-- preview xmodels and drag them directly into the scene using the model previewer/selector
-- custom lighting shader with normalmapping, specular highlights and reflections
-- guizmo to manipulate entities and brushes from within the camera window
-- live link (sync brushes, camera and worldspawn settings between cod4 and radiant)
-- realtime viewports
-- better property editor
-- zoom to cursor
-- editable toolbars, hotkeys, colors (all saved)
-- texture window toolbar for quick filtering
-- a proper console with dvar support (incl. dvar suggestions and autocomplete)
-- increased undo limit
-- alot of QOL features
-
-<br>
-
-![image](https://user-images.githubusercontent.com/45299104/136064749-f4dcde48-5e08-4d1e-8c9d-5ffc3e9e54cc.jpg)
-![image](https://user-images.githubusercontent.com/45299104/136065983-e049e9c6-eb5f-43bf-83a0-7c51f6394a16.jpg)
 ![image](https://user-images.githubusercontent.com/45299104/143088571-8a392c17-ed21-4639-9afb-f4fa492e3fca.jpg)
 
+![](readme/effects.gif)
+
+![image](https://user-images.githubusercontent.com/45299104/136064807-e08d54bd-e11a-48ae-a01d-1fe87fc4159c.jpg)
 
 <p align="center">
 	<b>^ build the layout you've always wanted</b><br>
@@ -42,12 +21,42 @@ Running both, IW3xRadiant and IW3xo, enables a live-link between CoD4 and Radian
 
 ___
 
-### Pre-build binaries
-https://github.com/xoxor4d/iw3xo-radiant/releases
+<br>
+
+### Goals:
+- replace most if not all of the MFC/Windows UI with Dear ImGui
+- extend functionalities across the board
+
+### New features not found within the original cod4 radiant:
+- __WIP:__ play, edit and export effects right from within radiant (makes effectsEd obsolete)
+- switch / scale / place the individual windows however you want
+- preview xmodels and drag them directly into the scene using the model previewer
+- custom lighting shader with normalmapping, specular highlights, reflections and fog
+- filmtweak support
+- guizmo to manipulate entities and brushes from within the camera window
+- live link (sync brushes, camera and worldspawn settings between cod4 and radiant)
+- realtime viewports
+- better surface / property editor
+- zoom to cursor
+- editable toolbars, hotkeys, colors (all saved)
+- texture window toolbar for quick filtering
+- a proper console with dvar support (incl. dvar suggestions and autocomplete)
+- increased undo limit
+- alot of QOL features
 
 <br>
 
-### How to build (Visual Studio)
+<p align="right">
+	<b>Pre-built binaries</b><br>
+    <a href="https://github.com/xoxor4d/iw3xo-radiant/releases">https://github.com/xoxor4d/iw3xo-radiant/releases</a><br>
+</p>
+
+
+___
+
+<br>
+
+### How to build the project using Visual Studio
 1. Clone the repo (zip does not include deps!)
 2. Copy everything within the assets folder into your cod4-root folder
 3. Use "update_submodules.bat" to update submodules
@@ -60,7 +69,7 @@ https://github.com/xoxor4d/iw3xo-radiant/releases
 
 <br>
 
-### How to build (VSCode)
+### How to build the project using VSCode
 1. Install C++ Build tools (msbuild)
 2. Add msbuild folder to the "PATH" environment variable (eg. "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin")
 3. Add "COD4_ROOT" environment variable with path to your cod4 directory (eg. "COD4_ROOT" "D:\COD4-Modtools")
@@ -80,13 +89,13 @@ ___
 
 <br>
 
-Optional:  
+### Optional:  
 https://github.com/xoxor4d/iw3xo-dev
 
-Project Page:  
+### Project Page:  
 https://xoxor4d.github.io/projects/iw3xo-radiant/
 
-Discord:  
+### Discord:  
 https://discord.gg/t5jRGbj
 
 <br>
@@ -98,6 +107,7 @@ https://discord.gg/t5jRGbj
 - https://github.com/Nukem9/LinkerMod
 - https://github.com/Nukem9/detours
 - https://github.com/ocornut/imgui
+- https://github.com/CedricGuillemet/ImGuizmo
 - https://github.com/devKlausS/dxsdk
 
 <br>
@@ -115,8 +125,6 @@ https://discord.gg/t5jRGbj
 ![image](https://user-images.githubusercontent.com/45299104/146609529-83dad70f-3427-4929-946a-dcbdd4bbbbff.jpg)
 ![image](https://user-images.githubusercontent.com/45299104/146609534-4ee6f687-b24e-4e44-8d9d-1b05ddeab2a8.jpg)
 
-
-![image](https://user-images.githubusercontent.com/45299104/136064807-e08d54bd-e11a-48ae-a01d-1fe87fc4159c.jpg)
 <br>
 
 ## Disclaimer
