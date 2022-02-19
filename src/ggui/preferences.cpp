@@ -249,6 +249,11 @@ namespace ggui::preferences
 			ImGui::Checkbox("Cull sky when using cubic clipping", &prefs->b_mCullSky);
 			ImGui::Checkbox("Draw shadowcaster materials on xmodels", &dvars::r_draw_model_shadowcaster->current.enabled); TT("Render black shadowcaster materials on xmodels.\nMostly seen/used on trees");
 
+			SPACING(0.0f, 4.0f);
+
+			ImGui::Checkbox("Sunpreview enable shadows", &dvars::r_sunpreview_shadow_enable->current.enabled);
+			ImGui::DragFloat("Shadow draw-distance", &dvars::r_sunpreview_shadow_dist->current.value, 25.0f, 0, FLT_MAX, "%.0f");
+
 			// -----------------
 			ImGui::title_with_seperator("Toolbar");
 			ImGui::Checkbox("Draw FPS within the camera window", &dvars::gui_draw_fps->current.enabled);
@@ -342,7 +347,7 @@ namespace ggui::preferences
 		height = pref_child_lambda(CAT_DEVELOPER, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
 			ImGui::DragInt("Int 01", &dev_num_01, 0.1f);
-			ImGui::DragFloat3("Vec4 01", dev_vec_01, 0.1f);
+			ImGui::DragFloat3("Vec4 01", dev_vec_01, 25.0f);
 			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 
 		});
