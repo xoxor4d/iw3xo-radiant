@@ -182,11 +182,11 @@ namespace components
 	
 	void __declspec(naked) fs_scan_base_directory_stub()
 	{
-		const static uint32_t FS_RegisterDvars_Func = 0x4A2310;
-		const static uint32_t retn_pt = 0x4A2457;
+		const static uint32_t Com_Printf_Func = 0x40B5D0;
+		const static uint32_t retn_pt = 0x4A29AC;
 		__asm
 		{
-			call	FS_RegisterDvars_Func;
+			call	Com_Printf_Func;
 			
 			pushad;
 			call	add_iw3xradiant_searchpath;
@@ -216,7 +216,7 @@ namespace components
 
 
 		// add iw3xradiant search path (imgui images)
-		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x4A29A7, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
 
 		// do not load "_glow" fonts (qerfont_glow)
 		utils::hook::nop(0x552806, 5);

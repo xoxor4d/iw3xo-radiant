@@ -467,8 +467,25 @@ namespace ggui::menubar
 					ImGui::EndMenu(); // Grid Window
 				}
 
-				if (ImGui::BeginMenu("Render Method"))
+				if (ImGui::BeginMenu("Render Method / Features"))
 				{
+					if (const auto	draw_water = game::Dvar_FindVar("r_drawWater");
+									draw_water)
+					{
+						if (ImGui::MenuItem("Draw Water", 0, draw_water->current.enabled)) {
+							dvars::set_bool(draw_water, !draw_water->current.enabled);
+						} TT("Toggle case-textured <> real water rendering");
+					}
+
+					if (const auto	filmtweaks = game::Dvar_FindVar("r_filmtweakenable");
+									filmtweaks)
+					{
+						if (ImGui::MenuItem("Filmtweaks", 0, filmtweaks->current.enabled)) {
+							dvars::set_bool(filmtweaks, !filmtweaks->current.enabled);
+						} TT("Toggle filmtweak usage");
+					}
+
+					SEPERATORV(0.0f);
 
 					if (ImGui::MenuItem("Fake Sun Preview", hotkeys::get_hotkey_for_command("fakesun_toggle").c_str(), dvars::r_fakesun_preview->current.enabled)) {
 						components::command::execute("fakesun_toggle");
