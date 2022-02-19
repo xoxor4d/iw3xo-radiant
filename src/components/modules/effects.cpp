@@ -79,6 +79,7 @@ namespace components
 	// Commandline_LoadEffect
 	bool effects::load_test_effect(const char* effect_name)
 	{
+		components::command::execute("fx_stop");
 		fx_system::FX_UnregisterAll();
 
 		std::string effect_to_load;
@@ -508,6 +509,11 @@ namespace components
 			game::printf_to_console("|> createfx file :: [%s]", createfx_path.c_str());
 		}
 	}
+
+	void effects::set_initial_state()
+	{
+		fx_system::g_warning_outdoor_material = false;
+	}
 	
 	effects::effects()
 	{
@@ -516,11 +522,13 @@ namespace components
 
 		command::register_command_with_hotkey("fx_play"s, [this](auto)
 		{
+			effects::set_initial_state();
 			effects::editor_on_effect_play_repeat();
 		});
 
 		command::register_command_with_hotkey("fx_repeat"s, [this](auto)
 		{
+			effects::set_initial_state();
 			fx_system::ed_is_paused = false;
 
 			if (components::effects::effect_is_repeating())
@@ -566,11 +574,13 @@ namespace components
 
 		command::register_command_with_hotkey("fx_stop"s, [this](auto)
 		{
+			effects::set_initial_state();
 			effects::on_effect_stop();
 		});
 
 		command::register_command("fx_reload"s, [this](auto)
 		{
+			effects::set_initial_state();
 			effects::load_test_effect(nullptr);
 		});
 

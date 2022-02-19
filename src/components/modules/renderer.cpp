@@ -741,7 +741,7 @@ namespace components
 
 			// 3D
 			if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
-				(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
+				(renderer::is_rendering_camerawnd() && dvars::r_fakesun_preview->current.enabled))
 			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
@@ -925,6 +925,7 @@ namespace components
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
 					const auto arg_def = &state->pass->args[arg];
+
 					if (arg_def && arg_def->type == 3)
 					{
 						if (state->pass->vertexShader)
@@ -1186,6 +1187,22 @@ namespace components
 							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
 								(0x538D70)(0, state, 1, 114, image);
 						}
+					}
+				}
+			}
+		}
+
+		if (renderer::is_rendering_camerawnd())
+		{
+			if (const auto draw_water = game::Dvar_FindVar("r_drawWater");
+				draw_water && draw_water->current.enabled)
+			{
+				if (utils::string_equals(state->material->techniqueSet->name, "wc_water"))
+				{
+					if (const auto	tech = Material_RegisterTechnique("water_l_sun", 1);
+						tech)
+					{
+						state->technique = tech;
 					}
 				}
 			}
@@ -1898,6 +1915,8 @@ namespace components
 		};
 
 		state->prim.device->SetScissorRect(&rect);
+
+		//auto& rg = *reinterpret_cast<game::r_globals_t*>(0x13683F0);
 
 		//R_DrawSurfs(source, state, 0, &viewInfo->emissiveInfo);
 		// int __cdecl R_DrawSurfs(GfxCmdBufSourceState *source, GfxCmdBufState *state, GfxCmdBufState *prepassstate, GfxDrawSurfListInfo *info)

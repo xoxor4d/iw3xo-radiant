@@ -9,3 +9,9 @@
 	path = deps/ImGuizmo
 	url = https://github.com/xoxor4d/ImGuizmo.git
 	branch = radiant
+[submodule "deps/discord-rpc"]
+	path = deps/discord-rpc
+	url = https://github.com/discord/discord-rpc.git
+[submodule "deps/rapidjson"]
+	path = deps/rapidjson
+	url = https://github.com/Tencent/rapidjson.git

@@ -665,6 +665,7 @@ void ccamwnd::rtt_camera_window()
 			ImGui::Image(camerawnd->scene_texture, camera_size);
 			camerawnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
+			static bool accepted_dragdrop = false;
 
 			// model selection drop target
 			if (ImGui::BeginDragDropTarget())
@@ -754,6 +755,8 @@ void ccamwnd::rtt_camera_window()
 
 						game::Undo_End();
 					}
+
+					accepted_dragdrop = true;
 				}
 
 				ImGui::EndDragDropTarget();
@@ -825,9 +828,15 @@ void ccamwnd::rtt_camera_window()
 					guizmo_capture_active = false;
 				}
 
-				if(guizmo_needs_activation)
+				if(guizmo_needs_activation && !accepted_dragdrop)
 				{
 					goto SKIP_GUIZMO;
+				}
+
+				if(accepted_dragdrop)
+				{
+					guizmo_needs_activation = false;
+					accepted_dragdrop = false;
 				}
 
 				game::GfxMatrix view = {};

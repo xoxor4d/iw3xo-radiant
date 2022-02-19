@@ -18,6 +18,7 @@ namespace components
 		loader::_register(new config());
 		loader::_register(new effects());
 		loader::_register(new main_module());
+		loader::_register(new discord());
 
 		if(ggui::_console)
 		{

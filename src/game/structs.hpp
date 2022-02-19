@@ -1699,6 +1699,23 @@ namespace game
 		bool valid;
 	};
 
+	//struct __declspec(align(8)) r_globals_t
+	//{
+	//	GfxViewParms identityViewParms;
+	//	bool inFrame;
+	//	bool registered;
+	//	bool forbidDelayLoadImages;
+	//	bool ignorePrecacheErrors;
+	//	float viewOrg[3];
+	//	float viewDir[3];
+	//	unsigned int frontEndFrameCount;
+	//	int totalImageMemory;
+	//	void* Material_materialHashTable[4096];
+	//	char pad[40];
+	//	GfxLodParms lodParms;
+	//	GfxLodParms correctedLodParms;
+	//};
+
 	struct __declspec(align(8)) r_globals_t
 	{
 		GfxViewParms identityViewParms;
@@ -1711,10 +1728,38 @@ namespace game
 		unsigned int frontEndFrameCount;
 		int totalImageMemory;
 		void* Material_materialHashTable[4096];
-		char pad[40];
+		char pad[120];
 		GfxLodParms lodParms;
 		GfxLodParms correctedLodParms;
+		bool hasAnyImageOverrides;
+		bool useSunLightOverride;
+		bool useSunDirOverride;
+		bool useSunDirLerp;
+		float sunLightOverride[3];
+		float sunDirOverride[3];
+		float sunDirOverrideTarget[3];
+		int sunDirLerpBeginTime;
+		int sunDirLerpEndTime;
+		GfxScaledPlacement identityPlacement;
+		GfxViewParms* debugViewParms;
+		int endTime;
+		bool distortion;
+		bool drawSModels;
+		bool drawXModels;
+		bool drawBModels;
+		bool drawUnk_plus_3_pad;
+		const char* codeImageNames[27];
+		unsigned int viewInfoCount_0x42E8;
+		int sunShadowFull;
+		float sunShadowmapScale;
+		float sunShadowmapScaleNum;
+		unsigned int sunShadowSize;
+		float sunShadowPartitionRatio;
+		int drawSunShadow;
+		int skinnedCacheReachedThreshold;
+		float waterFloatTime_0x4308_total;
 	};
+
 
 	struct r_global_permanent_t
 	{

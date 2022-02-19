@@ -1,5 +1,24 @@
 #include "std_include.hpp"
 
+// discord_rpc
+DWORD WINAPI discord_rpc(LPVOID)
+{
+	while (true)
+	{
+		Sleep(5000);
+
+		if(components::discord::g_enable_discord_rpc)
+		{
+			components::discord::init();
+			components::discord::update_discord();
+		}
+		else
+		{
+			components::discord::shutdown();
+		}
+	}
+}
+
 DWORD WINAPI paint_msg_loop(LPVOID)
 {
 	int base_time = 0;
@@ -141,6 +160,8 @@ BOOL init_threads()
 	// Create LiveRadiant thread (receiving commands from the server)
 	CreateThread(nullptr, 0, remote_net_receive_packet_thread, nullptr, 0, nullptr);
 
+	CreateThread(nullptr, 0, discord_rpc, nullptr, 0, nullptr);
+
 	game::glob::command_thread_running = false;
 	if (CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(components::command::command_thread), nullptr, 0, nullptr))
 	{
@@ -182,11 +203,11 @@ namespace components
 	
 	void __declspec(naked) fs_scan_base_directory_stub()
 	{
-		const static uint32_t FS_RegisterDvars_Func = 0x4A2310;
-		const static uint32_t retn_pt = 0x4A2457;
+		const static uint32_t Com_Printf_Func = 0x40B5D0;
+		const static uint32_t retn_pt = 0x4A29AC;
 		__asm
 		{
-			call	FS_RegisterDvars_Func;
+			call	Com_Printf_Func;
 			
 			pushad;
 			call	add_iw3xradiant_searchpath;
@@ -216,7 +237,7 @@ namespace components
 
 
 		// add iw3xradiant search path (imgui images)
-		utils::hook(0x4A2452, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x4A29A7, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
 
 		// do not load "_glow" fonts (qerfont_glow)
 		utils::hook::nop(0x552806, 5);

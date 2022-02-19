@@ -31,6 +31,7 @@ namespace components
 		static void radiant_init_fx();
 
 		static void generate_createfx();
+		static void set_initial_state();
 
 		static inline bool			is_fx_origin_selected_;
 		static inline std::string	last_fx_name_;

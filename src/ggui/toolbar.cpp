@@ -1194,6 +1194,9 @@ namespace ggui::toolbar
 				game::printf_to_console("out of bounds!\n");
 			}
 		}
+
+		ImGui::SameLine();
+		ImGui::HelpMarker("Rearrange elements by dragging them up and down the list using the left mousebutton");
 		
 		// this does not work with the way we order the list -> flickering
 		//ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(1.0f, 4.0f));
