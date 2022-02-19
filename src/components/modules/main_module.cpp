@@ -1,5 +1,24 @@
 #include "std_include.hpp"
 
+// discord_rpc
+DWORD WINAPI discord_rpc(LPVOID)
+{
+	while (true)
+	{
+		Sleep(5000);
+
+		if(components::discord::g_enable_discord_rpc)
+		{
+			components::discord::init();
+			components::discord::update_discord();
+		}
+		else
+		{
+			components::discord::shutdown();
+		}
+	}
+}
+
 DWORD WINAPI paint_msg_loop(LPVOID)
 {
 	int base_time = 0;
@@ -140,6 +159,8 @@ BOOL init_threads()
 
 	// Create LiveRadiant thread (receiving commands from the server)
 	CreateThread(nullptr, 0, remote_net_receive_packet_thread, nullptr, 0, nullptr);
+
+	CreateThread(nullptr, 0, discord_rpc, nullptr, 0, nullptr);
 
 	game::glob::command_thread_running = false;
 	if (CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(components::command::command_thread), nullptr, 0, nullptr))

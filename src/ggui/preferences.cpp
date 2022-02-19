@@ -171,6 +171,8 @@ namespace ggui::preferences
 			ImGui::DragInt("Max fps modelselector window", &dvars::radiant_maxfps_modelselector->current.integer, 0.1f, dvars::radiant_maxfps_modelselector->domain.integer.min, dvars::radiant_maxfps_modelselector->domain.integer.max);
 			ImGui::DragInt("Max fps gui", &dvars::radiant_maxfps_mainframe->current.integer, 0.1f, dvars::radiant_maxfps_mainframe->domain.integer.min, dvars::radiant_maxfps_mainframe->domain.integer.max);
 
+			ImGui::Checkbox("Discord Rich-Presence", &components::discord::g_enable_discord_rpc);
+
 			// -----------------
 			ImGui::title_with_seperator("Unordered Settings");
 			ImGui::Checkbox("Linking entities keeps selection", &prefs->linking_keeps_selection);

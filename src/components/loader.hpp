@@ -34,3 +34,4 @@ namespace components
 #include "modules/config.hpp"
 #include "modules/gameview.hpp"
 #include "modules/effects.hpp"
+#include "modules/discord.hpp"
