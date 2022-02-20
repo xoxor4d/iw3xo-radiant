@@ -7,7 +7,9 @@ namespace fx_system
 	int					Com_ParseInt(const char** buf_p);
 
 	game::Material*		Material_FromHandle(game::Material* handle);
+	const char*			Material_GetName(game::Material* handle);
 	void				Material_GetInfo(game::Material* handle, game::MaterialInfo* matInfo);
 
-	//void*				FX_AllocMem(size_t size);
+	FxEditorEffectDef*	get_editor_effect();
+	const char*			get_loaded_effect_string();
 }

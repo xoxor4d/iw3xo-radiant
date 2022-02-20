@@ -3,8 +3,16 @@
 #define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
 					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
 
+// #ENV_DEPENDENT
+#ifdef FXEDITOR
+#define Warning(unused, fmt, ...)	if(IsDebuggerPresent()) __debugbreak();	else {\
+											game::allow_warnings = true; \
+											game::Com_PrintError(unused, fmt, __VA_ARGS__); \
+											game::allow_warnings = false; }
+#else
 #define Warning(unused, fmt, ...)	if(IsDebuggerPresent()) __debugbreak(); \
-									game::printf_to_console(fmt, __VA_ARGS__);
+											game::printf_to_console(fmt, __VA_ARGS__);
+#endif
 
 #define SLODWORD(x)  (*((int*)&(x)))
 

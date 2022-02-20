@@ -463,5 +463,4 @@ namespace fx_system
 		(*out)[8] = (*in1)[7] * (*in2)[5] + (*in1)[6] * (*in2)[2] + (*in1)[8] * (*in2)[8];
 	}
 #pragma warning( pop )
-
 }

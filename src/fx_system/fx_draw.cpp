@@ -147,16 +147,18 @@ namespace fx_system
 					Assert();
 				}
 
-				if(visuals.material->techniqueSet->techniques[0] && utils::string_equals(visuals.material->techniqueSet->techniques[0]->name, "particle_cloud_outdoor"))
+#ifndef FXEDITOR
+				if (visuals.material->techniqueSet->techniques[0] && utils::string_equals(visuals.material->techniqueSet->techniques[0]->name, "particle_cloud_outdoor"))
 				{
-					if(!g_warning_outdoor_material)
+					if (!g_warning_outdoor_material)
 					{
 						game::printf_to_console("[RED][!] Not drawing material [%s] using the outdoor sampler!", visuals.material->info.name);
 						g_warning_outdoor_material = true;
 					}
-					
+
 					return;
 				}
+#endif
 
 #ifdef FXEDITOR // #ENV_DEPENDENT
 				// R_AddParticleCloudToScene(visuals);

@@ -5,6 +5,8 @@ namespace fx_system
 {
 	inline bool g_warning_outdoor_material = false;
 
+	// * ---------------------------------
+
 	void			FX_DrawElem_BillboardSprite(FxDrawState* draw);
 	void			FX_DrawElem_OrientedSprite(FxDrawState* draw);
 	void			FX_DrawElem_Tail(FxDrawState* draw);

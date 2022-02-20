@@ -1151,7 +1151,7 @@ namespace fx_system
 
 	bool FX_CullElemForSpawn(const float* origin, FxCamera* camera, FxElemDef* elemDef)
 	{
-		if (elemDef->spawnRange.amplitude != 0.0)
+		if (elemDef->spawnRange.amplitude != 0.0f)
 		{
 			const float dist = Vec3DistanceSq(origin, camera->origin);
 			if ((elemDef->spawnRange.base * elemDef->spawnRange.base) > dist)

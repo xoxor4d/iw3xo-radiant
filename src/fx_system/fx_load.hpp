@@ -4,7 +4,7 @@
 namespace fx_system
 {
 	extern $145C5CACE7A579404A9D7C1B73F29F79 fx_load;
-	extern const FxFlagDef s_allFlagDefs[];
+	extern const FxFlagDef s_allFlagDefs[41];
 
 	// * ----------------------
 

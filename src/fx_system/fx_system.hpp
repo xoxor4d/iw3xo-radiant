@@ -3,7 +3,7 @@
 
 namespace fx_system
 {
-	extern FxSystem			fx_systemPool;
+	extern FxSystem		fx_systemPool;
 	extern FxSystemBuffers	fx_systemBufferPool;
 
 	extern bool ed_is_paused;
@@ -24,8 +24,8 @@ namespace fx_system
 
 	// * ---------------
 
-	FxSystem*			FX_GetSystem(int localClientNum);
-	FxSystemBuffers*	FX_GetSystemBuffers(int localClientNum);
+	FxSystem*		FX_GetSystem(int localClientNum);
+	FxSystemBuffers* FX_GetSystemBuffers(int localClientNum);
 
 	bool			FX_GetEffectStatus(FxEffect* effect);
 	FxElemDef*		FX_GetEffectElemDef(const FxEffect* effect, int index);
@@ -106,6 +106,6 @@ namespace fx_system
 	void			FX_RunGarbageCollection_FreeTrails(FxSystem* system, FxEffect* effect);
 	void			FX_RunGarbageCollection_FreeSpotLight(FxSystem* system, unsigned __int16 effectHandle);
 	void			FX_RunGarbageCollectionAndPrioritySort(FxSystem* system);
-	
+
 	void			FX_InitSystem(int localClientNum);
 }

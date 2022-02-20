@@ -58,6 +58,9 @@ namespace fx_system
 	void				FX_TriggerOneShot(FxSystem* system, FxEffect* effect, int elemDefFirst, int elemDefCount, FxSpatialFrame* frameWhenPlayed, int msecWhenPlayed);
 
 	void				FX_SetNextUpdateTime(int localClientNum, int time);
+
+#ifndef FXEDITOR
 	void				FX_SetupCamera_Radiant();
+#endif
 
 }
