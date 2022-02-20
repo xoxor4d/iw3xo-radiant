@@ -17,6 +17,7 @@ namespace components
 		loader::_register(new remote_net());
 		loader::_register(new config());
 		loader::_register(new effects());
+		loader::_register(new effects_editor());
 		loader::_register(new main_module());
 		loader::_register(new discord());
 

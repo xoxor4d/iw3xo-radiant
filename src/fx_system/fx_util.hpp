@@ -11,5 +11,11 @@ namespace fx_system
 	void				Material_GetInfo(game::Material* handle, game::MaterialInfo* matInfo);
 
 	FxEditorEffectDef*	get_editor_effect();
+
+#ifdef FXEDITOR
 	const char*			get_loaded_effect_string();
+#else
+	std::string			get_loaded_effect_string();
+#endif
+
 }

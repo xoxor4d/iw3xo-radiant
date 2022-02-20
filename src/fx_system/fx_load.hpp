@@ -11,6 +11,8 @@ namespace fx_system
 	void*			FX_AllocMem(size_t size);
 	void			FX_UnregisterAll();
 	FxEffectDef*	FX_Register(const char* name);
+
+	FxCurve*		FxCurve_AllocAndCreateWithKeys(const float* keyArray, int dimensionCount, int keyCount);
 	bool			FX_LoadEditorEffect(const char* name, FxEditorEffectDef* edEffectDef);
 	FxEffectDef*	FX_Load(const char* name);
 }

@@ -111,6 +111,7 @@
 #include "fx_system/fx_convert.hpp"
 #include "fx_system/fx_curves.hpp"
 #include "fx_system/fx_load.hpp"
+#include "fx_system/fx_save.hpp"
 
 #include "ggui/_ggui.hpp"
 #include "ggui/hotkeys.hpp"
@@ -125,6 +126,7 @@
 #include "ggui/about.hpp"
 #include "ggui/camera_settings.hpp"
 #include "ggui/surface_inspector.hpp"
+#include "ggui/effects_editor_gui.hpp"
 
 
 #include "common/mainframe.hpp"

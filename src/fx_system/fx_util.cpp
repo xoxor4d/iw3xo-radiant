@@ -68,25 +68,29 @@ namespace fx_system
 #endif
 	}
 
+
+#ifdef FXEDITOR
 	// #ENV_DEPENDENT
 	const char* get_loaded_effect_string()
 	{
-#ifdef FXEDITOR
 		return reinterpret_cast<const char*>(0x63787C);
+	}
+
 #else
 
+	std::string get_loaded_effect_string()
+	{
 		if (const auto& fs_basepath = game::Dvar_FindVar("fs_basepath");
-						fs_basepath)
+						fs_basepath && ed_editor_effect.name)
 		{
 			std::string filepath = fs_basepath->current.string;
-						filepath += "\\raw\\fx\\"s;
-						filepath += ed_editor_effect.name + ".efx"s;
+			filepath += "\\raw\\fx\\"s;
+			filepath += ed_editor_effect.name + ".efx"s;
 
-			return filepath.c_str();
+			return filepath;
 		}
 
 		return "";
-		
-#endif
 	}
+#endif
 }

@@ -69,13 +69,18 @@ namespace ggui::camera_settings
 		// -----------------
 		ImGui::title_with_seperator("General Settings", false);
 
-		if (ImGui::Button("Fx Reload Last Def"))
+		if (ImGui::Button("Reload Effect"))
 		{
 			components::command::execute("fx_reload");
 		}
 
 		ImGui::SameLine();
+		if (ImGui::Button("Edit Effect"))
+		{
+			components::command::execute("fx_edit");
+		}
 
+		ImGui::SameLine();
 		if (ImGui::Button("Toggle Show Tris"))
 		{
 			auto tris = game::Dvar_FindVar("r_showTris");

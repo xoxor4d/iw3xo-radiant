@@ -33,6 +33,12 @@ namespace components
 		static void generate_createfx();
 		static void set_initial_state();
 
+		static void play();
+		static void repeat();
+		static void pause();
+		static void stop();
+
+
 		static inline bool			is_fx_origin_selected_;
 		static inline std::string	last_fx_name_;
 

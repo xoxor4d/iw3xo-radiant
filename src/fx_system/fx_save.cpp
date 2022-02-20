@@ -360,31 +360,27 @@ namespace fx_system
 		return 0;
 	}
 
-	void FX_SaveEditorEffect()
+	bool FX_SaveEditorEffect()
 	{
-		auto editor_effect = get_editor_effect();
-		std::string loaded_effect_string = get_loaded_effect_string();
+		const auto editor_effect = get_editor_effect();
+		const std::string loaded_effect_string = get_loaded_effect_string();
 
-		if(loaded_effect_string.empty())
+		if (loaded_effect_string.empty())
 		{
-			return;
+			return false;
 		}
 
-		//if (auto fs_homepath = game::Dvar_FindVar("fs_homepath");
-		//		 fs_homepath)
+		effect_file_buffer.open(loaded_effect_string);
+
+		if (effect_file_buffer.is_open())
 		{
-			//std::string filepath = fs_homepath->current.string;
-			utils::replace(loaded_effect_string, "/", "\\");
-			//filepath += "\\bin\\IW3xEffects\\test.efx"s;
+			FX_BuildEditorEffectString(editor_effect, 0x7FFFFFFF, effect_file_buffer);
+			effect_file_buffer.close();
 
-			effect_file_buffer.open(loaded_effect_string);
-
-			if (effect_file_buffer.is_open())
-			{
-				FX_BuildEditorEffectString(editor_effect, 0x7FFFFFFF, effect_file_buffer);
-				effect_file_buffer.close();
-			}
+			return true;
 		}
+
+		return false;
 	}
 
 }

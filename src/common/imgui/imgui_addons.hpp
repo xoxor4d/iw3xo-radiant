@@ -7,6 +7,7 @@ namespace ImGui
 	void	DockBuilderDockWindow_FirstUseOrSaved(const char* window_name, ImGuiID node_id);
 	void	PushStyleCompact();
 	void	PopStyleCompact();
+	bool	BeginTabItem_SmallGap(const char* label, bool* p_open = nullptr, ImGuiTabItemFlags flags = 0);
 	bool	IsItemHoveredDelay(float delay_in_seconds);
 	bool	IsResizing();
 	void	HandleKeyIO(HWND hwnd, UINT key, SHORT zDelta = 0, UINT nChar = 0);
