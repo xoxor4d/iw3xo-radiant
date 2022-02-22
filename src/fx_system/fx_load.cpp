@@ -142,12 +142,9 @@ namespace fx_system
 		return visuals->anonymous != nullptr;
 	}
 
-	bool FX_RegisterAsset_SoundAliasName([[maybe_unused]] const char* name, [[maybe_unused]] FxElemVisuals* visuals)
+	bool FX_RegisterAsset_SoundAliasName(const char* name, FxElemVisuals* visuals)
 	{
-		// #UNFINISHED
-		Assert();
-
-		//ReplaceString(visuals, name);
+		alloc_assign_string(&visuals->soundName, name);
 		return true;
 	}
 

@@ -58,6 +58,30 @@ namespace fx_system
 		memcpy(matInfo, Material_FromHandle(handle), sizeof(game::MaterialInfo));
 	}
 
+	void alloc_assign_string(const char** visuals, const char* in)
+	{
+		if (!visuals || !in)
+		{
+			Assert();
+		}
+
+		const auto len = strlen(in);
+		if (*visuals)
+		{
+			free((void*)*visuals);
+		}
+
+		*visuals = static_cast<const char*>(malloc(len + 1));
+		if(*visuals)
+		{
+			strcpy((char*)*visuals, in);
+		}
+		else
+		{
+			Assert();
+		}
+	}
+
 	// #ENV_DEPENDENT
 	FxEditorEffectDef* get_editor_effect()
 	{

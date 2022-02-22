@@ -3,6 +3,85 @@
 
 namespace ImGui
 {
+	bool Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ED_FLAG_ flag, bool* result)
+	{
+		bool flag_wrapper = elem->editorFlags & flag;
+		if (ImGui::Checkbox(name, &flag_wrapper))
+		{
+			if (flag_wrapper)
+			{
+				elem->editorFlags |= flag;
+			}
+			else
+			{
+				elem->editorFlags &= ~flag;
+			}
+
+			if (result)
+			{
+				*result = true;
+			}
+
+			return true;
+		}
+
+		if (result)
+		{
+			*result = flag_wrapper;
+		}
+
+		return false;
+	}
+
+	bool Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ELEM_ flag, bool* result)
+	{
+		bool flag_wrapper = elem->flags & flag;
+		if (ImGui::Checkbox(name, &flag_wrapper))
+		{
+			if (flag_wrapper)
+			{
+				elem->flags |= flag;
+			}
+			else
+			{
+				elem->flags &= ~flag;
+			}
+
+			if(result)
+			{
+				*result = true;
+			}
+
+			return true;
+		}
+
+		if (result)
+		{
+			*result = flag_wrapper;
+		}
+
+		return false;
+	}
+
+	bool DragFloat2_FxFloatRange(const char* name, fx_system::FxFloatRange* range, float speed, float min, float max, const char* format)
+	{
+		float range_wrapper[2] =
+		{
+			range->base,
+			range->base + range->amplitude
+		};
+
+		if (ImGui::DragFloat2(name, range_wrapper, speed, min, max, format))
+		{
+			range->base = range_wrapper[0];
+			range->amplitude = range_wrapper[1] - range_wrapper[0];
+
+			return true;
+		}
+
+		return false;
+	}
+
 	ImGuiID FindNodeByID(ImGuiID id)
 	{
 		if(const auto node = (ImGuiDockNode*)GImGui->DockContext.Nodes.GetVoidPtr(id);
@@ -250,7 +329,7 @@ namespace ImGui
 		}
 	}
 
-	void title_with_seperator(const char* title_text, bool pre_spacing, float width, float height)
+	void title_with_seperator(const char* title_text, bool pre_spacing, float width, float height, float post_spacing)
 	{
 		if (pre_spacing)
 		{
@@ -270,7 +349,7 @@ namespace ImGui
 		const ImVec2 seperator_pos = ImGui::GetCursorScreenPos();
 		ImGui::GetWindowDrawList()->AddLine(seperator_pos, ImVec2(seperator_pos.x + width, seperator_pos.y + height), ImGui::GetColorU32(ImGuiCol_Separator));
 
-		SPACING(0.0f, 2.0f);
+		SPACING(0.0f, post_spacing);
 	}
 
 	bool InputScalarDir(const char* label, ImGuiDataType data_type, void* p_data, int* dir, void* p_step, const void* p_step_fast, bool display_p_step, const char* format, ImGuiInputTextFlags flags)
