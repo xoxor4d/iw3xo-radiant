@@ -12,9 +12,20 @@ namespace fx_system
 
 namespace ImGui
 {
+	enum class CurveEditorFlags
+	{
+		NO_TANGENTS = 1 << 0,
+		SHOW_GRID = 1 << 1,
+		RESET = 1 << 2
+	};
+
+	bool	IsVertScollbarVisible();
+
 	bool	Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ED_FLAG_ flag, bool* result = nullptr);
 	bool	Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ELEM_ flag, bool* result = nullptr);
 	bool	DragFloat2_FxFloatRange(const char* name, fx_system::FxFloatRange* range, float speed, float min, float max, const char* format);
+
+	int		CurveEditor(const char* label, float* values, int points_count, const ImVec2& editor_size, ImU32 flags, int* new_count);
 
 	ImGuiID FindNodeByID(ImGuiID id);
 	void	DockBuilderDockWindow_FirstUseOrSaved(const char* window_name, ImGuiID node_id);

@@ -286,7 +286,7 @@ namespace ggui::effects_editor_gui
 
 	void tab_generation(fx_system::FxEditorElemDef* elem)
 	{
-		ImGui::BeginChild("##generation_child");
+		ImGui::BeginChild("##effect_properties_generation_child");
 
 		bool modified = false;
 
@@ -432,7 +432,163 @@ namespace ggui::effects_editor_gui
 
 	void tab_size([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
+		bool modified = false;
+
+		const ImGuiStyle& style = ImGui::GetStyle();
+		const int graph_flags = (int)ImGui::CurveEditorFlags::NO_TANGENTS | (int)ImGui::CurveEditorFlags::SHOW_GRID;
+
+		static bool scrollbar_visible = false;
+
+		const float graph_width = ImGui::GetWindowContentRegionWidth() - (style.FramePadding.x * 2) - (scrollbar_visible ? 12.0f : -2.0f);// - 24.0f;
+		float graph_height = graph_width;
+
+		if (graph_height > 320)
+		{
+			graph_height = 320;
+		}
+
+		ImGui::BeginChild("##effect_properties_size_child");
+
+		ImGui::Indent(8.0f);
+		ImGui::Spacing();
+		ImGui::title_with_seperator("Width / Diameter", false, 0, 2.0f, 8.0f);
+
+		if (elem && elem->sizeShape[0][0] && elem->sizeShape[0][0]->keyCount 
+			&& elem->sizeShape[0][1] && elem->sizeShape[0][1]->keyCount)
+		{
+			// false = graph 1, true = 2
+			static bool current_graph_scale = false;
+
+			const auto points = &elem->sizeShape[0][current_graph_scale]->keys[0];
+			int new_count = 0;
+
+			if (ImGui::CurveEditor("width_graph", points, elem->sizeShape[0][current_graph_scale]->keyCount, ImVec2(graph_width, graph_height), graph_flags,
+				&new_count))
+			{
+				elem->sizeShape[0][current_graph_scale]->keyCount = new_count;
+			};
+
+			if (ImGui::BeginPopupContextItem("width_graph##bg"))
+			{
+				if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+				{
+					current_graph_scale = false;
+				}
+
+				if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+				{
+					current_graph_scale = true;
+				}
+
+				ImGui::EndPopup();
+			}
+
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graph 1/2##width", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_0));
+			ImGui::SameLine(0, 14.0f);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+			ImGui::DragFloat("##width_scale", &elem->sizeScale[0], 0.5f, 0, 0, "%.1f"); TT("Scale");
+		}
+
+
+		// *------------------------------
+		ImGui::title_with_seperator("Height / Length", true, 0, 2.0f, 8.0f);
+
+		if (elem && elem->sizeShape[1][0] && elem->sizeShape[1][0]->keyCount && elem->sizeShape[1][1] && elem->sizeShape[1][1]->keyCount)
+		{
+			// false = graph 1, true = 2
+			static bool current_graph_scale = false;
+
+			const auto points = &elem->sizeShape[1][current_graph_scale]->keys[0];
+			int new_count = 0;
+
+			if (ImGui::CurveEditor("height_graph", points, elem->sizeShape[1][current_graph_scale]->keyCount, ImVec2(graph_width, graph_height), graph_flags,
+				&new_count))
+			{
+				elem->sizeShape[1][current_graph_scale]->keyCount = new_count;
+			};
+
+			if (ImGui::BeginPopupContextItem("height_graph##bg"))
+			{
+				if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+				{
+					current_graph_scale = false;
+				}
+
+				if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+				{
+					current_graph_scale = true;
+				}
+
+				ImGui::EndPopup();
+			}
+
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graph 1/2##height", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_1));
+			ImGui::SameLine(0, 14.0f);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+			ImGui::DragFloat("##height_scale", &elem->sizeScale[1], 0.5f, 0, 0, "%.1f"); TT("Scale");
+		}
+
+
+		// *------------------------------
+		ImGui::title_with_seperator("Scale", true, 0, 2.0f, 8.0f);
+
+		if(elem && elem->scaleShape[0] && elem->scaleShape[0]->keyCount && elem->scaleShape[1] && elem->scaleShape[1]->keyCount)
+		{
+			// false = graph 1, true = 2
+			static bool current_graph_scale = false;
+
+			const auto points = &elem->scaleShape[current_graph_scale]->keys[0];
+			int new_count = 0;
+
+			if (ImGui::CurveEditor("scale_graph", points, elem->scaleShape[current_graph_scale]->keyCount, ImVec2(graph_width, graph_height), graph_flags,
+				&new_count))
+			{
+				elem->scaleShape[current_graph_scale]->keyCount = new_count;
+			};
+
+			if (ImGui::BeginPopupContextItem("scale_graph##bg")) // BeginPopupContextWindow
+			{
+				if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+				{
+					current_graph_scale = false;
+				}
+
+				if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+				{
+					current_graph_scale = true;
+				}
+
+				ImGui::EndPopup();
+			}
+
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graph 1/2##scale", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SCALE));
+			ImGui::SameLine(0, 14.0f);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+			ImGui::DragFloat("##scale_scale", &elem->scaleScale, 0.5f, 0, 0, "%.1f"); TT("Scale");
+		}
+
 		
+
+		// width/dia
+		// graph1: elem->sizeShape[0][0], elem->sizeScale[0][0]
+		// graph2: elem->sizeShape[0][1], elem->sizeScale[0][1]
+
+		// height/len 
+		// graph1: elem->sizeShape[1][0], elem->sizeScale[1][0]
+		// graph2: elem->sizeShape[1][1], elem->sizeScale[1][1]
+
+		// scale (cloud)
+		// elem->scaleShape, elem->scaleScale
+
+		scrollbar_visible = ImGui::IsVertScollbarVisible();
+
+		ImGui::EndChild();
+
+		if (modified)
+		{
+			editor_effect_was_modified = true;
+			components::effects::play();
+		}
 	}
 
 	void tab_velocity([[maybe_unused]] fx_system::FxEditorElemDef* elem)
