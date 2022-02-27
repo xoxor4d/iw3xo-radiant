@@ -3,6 +3,8 @@
 
 namespace ggui::effects_editor_gui
 {
+	ImGradient gradient;
+
 	const char* s_elemTypeNames[11] =
 	{
 		"Billboard Sprite",
@@ -101,14 +103,14 @@ namespace ggui::effects_editor_gui
 	}
 
 	// Unsaved Changes
-	bool Modal_UnsavedChanges()
+	bool Modal_UnsavedChanges(const char* label)
 	{
 		bool result = false;
 
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-		if (ImGui::BeginPopupModal("Unsaved Changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(label, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			const char* str = "\nUnsaved Effect Changes!\nDo you want to continue?\n\n";
 			ImGui::SetCursorForCenteredText(str);
@@ -186,11 +188,12 @@ namespace ggui::effects_editor_gui
 		}
 
 		ImGui::SameLine();
+		const char* reload_fx_modal_str = "Unsaved Changes##fx_reload";
 		if (ImGui::Button("Reload Effect"))
 		{
 			if (editor_effect_was_modified)
 			{
-				ImGui::OpenPopup("Unsaved Changes");
+				ImGui::OpenPopup(reload_fx_modal_str);
 			}
 			else
 			{
@@ -198,11 +201,36 @@ namespace ggui::effects_editor_gui
 			}
 		}
 
-		if (Modal_UnsavedChanges()) // true if clicked OK ^
+		if (Modal_UnsavedChanges(reload_fx_modal_str)) // true if clicked OK ^
 		{
 			components::command::execute("fx_reload");
 			editor_effect_was_modified = false;
 		}
+
+		// ----
+
+		ImGui::SameLine();
+		const char* close_editor_modal_str = "Unsaved Changes##editor_close";
+		if (ImGui::Button("Close Editor"))
+		{
+			if (editor_effect_was_modified)
+			{
+				ImGui::OpenPopup(close_editor_modal_str);
+			}
+			else
+			{
+				components::command::execute("fx_edit");
+				components::command::execute("fx_reload");
+			}
+		}
+
+		if (Modal_UnsavedChanges(close_editor_modal_str)) // true if clicked OK ^
+		{
+			components::command::execute("fx_edit");
+			components::command::execute("fx_reload");
+			editor_effect_was_modified = false;
+		}
+
 
 		ImGui::PushFontFromIndex(ggui::BOLD_18PX);
 		const char* effect_name = ed_effect->name;
@@ -251,6 +279,7 @@ namespace ggui::effects_editor_gui
 	// ----
 
 #define MOD_CHECK(control) if((control)) modified = true
+#define MOD_CHECK_GRAPH(control) if((control) >= 0) modified = true
 
 	fx_system::FxEffectDef* effectdef_fileprompt()
 	{
@@ -283,6 +312,18 @@ namespace ggui::effects_editor_gui
 		return nullptr;
 	}
 
+	void on_modified(bool modified)
+	{
+		if (modified)
+		{
+			editor_effect_was_modified = true;
+
+			if(components::effects::effect_is_playing() || components::effects::effect_is_repeating() || components::effects::effect_is_paused())
+			{
+				components::effects::play();
+			}
+		}
+	}
 
 	void tab_generation(fx_system::FxEditorElemDef* elem)
 	{
@@ -419,15 +460,10 @@ namespace ggui::effects_editor_gui
 			}
 		}
 
-		if(modified)
-		{
-			editor_effect_was_modified = true;
-			components::effects::play();
-		}
-
 		ImGui::EndChild();
-	}
 
+		on_modified(modified);
+	}
 	
 
 	void tab_size([[maybe_unused]] fx_system::FxEditorElemDef* elem)
@@ -435,38 +471,35 @@ namespace ggui::effects_editor_gui
 		bool modified = false;
 
 		const ImGuiStyle& style = ImGui::GetStyle();
-		const int graph_flags = (int)ImGui::CurveEditorFlags::NO_TANGENTS | (int)ImGui::CurveEditorFlags::SHOW_GRID;
 
-		static bool scrollbar_visible = false;
-
-		const float graph_width = ImGui::GetWindowContentRegionWidth() - (style.FramePadding.x * 2) - (scrollbar_visible ? 12.0f : -2.0f);// - 24.0f;
+		const float graph_width = ImGui::GetWindowContentRegionWidth() - (style.FramePadding.x * 2) - 12.0f;
 		float graph_height = graph_width;
 
-		if (graph_height > 320)
-		{
+		if (graph_height > 320) {
 			graph_height = 320;
 		}
 
-		ImGui::BeginChild("##effect_properties_size_child");
+		ImGui::BeginChild("##effect_properties_size_child", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
-		ImGui::title_with_seperator("Width / Diameter", false, 0, 2.0f, 8.0f);
 
-		if (elem && elem->sizeShape[0][0] && elem->sizeShape[0][0]->keyCount 
-			&& elem->sizeShape[0][1] && elem->sizeShape[0][1]->keyCount)
+		ImGui::title_with_seperator("Width / Diameter", false, 0, 2.0f, 8.0f);
 		{
 			// false = graph 1, true = 2
 			static bool current_graph_scale = false;
 
-			const auto points = &elem->sizeShape[0][current_graph_scale]->keys[0];
 			int new_count = 0;
+			const auto curve = elem->sizeShape[0][current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
-			if (ImGui::CurveEditor("width_graph", points, elem->sizeShape[0][current_graph_scale]->keyCount, ImVec2(graph_width, graph_height), graph_flags,
-				&new_count))
+			MOD_CHECK_GRAPH(ImGui::CurveEditor("width_graph", curve->keys, curve->keyCount,
+				ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
+
+			if (new_count != curve->keyCount)
 			{
-				elem->sizeShape[0][current_graph_scale]->keyCount = new_count;
-			};
+				curve->keyCount = new_count;
+				modified = true;
+			}
 
 			if (ImGui::BeginPopupContextItem("width_graph##bg"))
 			{
@@ -483,29 +516,24 @@ namespace ggui::effects_editor_gui
 				ImGui::EndPopup();
 			}
 
-			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graph 1/2##width", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_0));
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##width", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_0));
 			ImGui::SameLine(0, 14.0f);
 			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
-			ImGui::DragFloat("##width_scale", &elem->sizeScale[0], 0.5f, 0, 0, "%.1f"); TT("Scale");
+			MOD_CHECK(ImGui::DragFloat("##width_scale", &elem->sizeScale[0], 0.5f, 0, 0, "%.1f")); TT("Scale");
 		}
 
 
 		// *------------------------------
 		ImGui::title_with_seperator("Height / Length", true, 0, 2.0f, 8.0f);
-
-		if (elem && elem->sizeShape[1][0] && elem->sizeShape[1][0]->keyCount && elem->sizeShape[1][1] && elem->sizeShape[1][1]->keyCount)
 		{
 			// false = graph 1, true = 2
 			static bool current_graph_scale = false;
 
-			const auto points = &elem->sizeShape[1][current_graph_scale]->keys[0];
 			int new_count = 0;
+			const auto curve = elem->sizeShape[1][current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
-			if (ImGui::CurveEditor("height_graph", points, elem->sizeShape[1][current_graph_scale]->keyCount, ImVec2(graph_width, graph_height), graph_flags,
-				&new_count))
-			{
-				elem->sizeShape[1][current_graph_scale]->keyCount = new_count;
-			};
+			MOD_CHECK_GRAPH(ImGui::CurveEditor("height_graph", curve->keys, curve->keyCount,
+				ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
 
 			if (ImGui::BeginPopupContextItem("height_graph##bg"))
 			{
@@ -522,29 +550,33 @@ namespace ggui::effects_editor_gui
 				ImGui::EndPopup();
 			}
 
-			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graph 1/2##height", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_1));
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##height", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_1));
 			ImGui::SameLine(0, 14.0f);
 			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
-			ImGui::DragFloat("##height_scale", &elem->sizeScale[1], 0.5f, 0, 0, "%.1f"); TT("Scale");
+			MOD_CHECK(ImGui::DragFloat("##height_scale", &elem->sizeScale[1], 0.5f, 0, 0, "%.1f")); TT("Scale");
 		}
 
 
 		// *------------------------------
 		ImGui::title_with_seperator("Scale", true, 0, 2.0f, 8.0f);
 
-		if(elem && elem->scaleShape[0] && elem->scaleShape[0]->keyCount && elem->scaleShape[1] && elem->scaleShape[1]->keyCount)
+		const bool is_scale_graph_aval = elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD || elem->elemType == fx_system::FX_ELEM_TYPE_MODEL;
+		ImGui::BeginDisabled(!is_scale_graph_aval);
 		{
 			// false = graph 1, true = 2
 			static bool current_graph_scale = false;
 
-			const auto points = &elem->scaleShape[current_graph_scale]->keys[0];
 			int new_count = 0;
+			const auto curve = elem->scaleShape[current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
-			if (ImGui::CurveEditor("scale_graph", points, elem->scaleShape[current_graph_scale]->keyCount, ImVec2(graph_width, graph_height), graph_flags,
-				&new_count))
+			MOD_CHECK_GRAPH(ImGui::CurveEditor("scale_graph", curve->keys, curve->keyCount,
+				ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
+
+			if (new_count != curve->keyCount)
 			{
-				elem->scaleShape[current_graph_scale]->keyCount = new_count;
-			};
+				curve->keyCount = new_count;
+				modified = true;
+			}
 
 			if (ImGui::BeginPopupContextItem("scale_graph##bg")) // BeginPopupContextWindow
 			{
@@ -561,39 +593,358 @@ namespace ggui::effects_editor_gui
 				ImGui::EndPopup();
 			}
 
-			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graph 1/2##scale", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SCALE));
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##scale", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SCALE));
 			ImGui::SameLine(0, 14.0f);
 			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
-			ImGui::DragFloat("##scale_scale", &elem->scaleScale, 0.5f, 0, 0, "%.1f"); TT("Scale");
+			MOD_CHECK(ImGui::DragFloat("##scale_scale", &elem->scaleScale, 0.5f, 0, 0, "%.1f")); TT("Scale");
 		}
 
-		
-
-		// width/dia
-		// graph1: elem->sizeShape[0][0], elem->sizeScale[0][0]
-		// graph2: elem->sizeShape[0][1], elem->sizeScale[0][1]
-
-		// height/len 
-		// graph1: elem->sizeShape[1][0], elem->sizeScale[1][0]
-		// graph2: elem->sizeShape[1][1], elem->sizeScale[1][1]
-
-		// scale (cloud)
-		// elem->scaleShape, elem->scaleScale
-
-		scrollbar_visible = ImGui::IsVertScollbarVisible();
-
+		ImGui::EndDisabled();
 		ImGui::EndChild();
 
-		if (modified)
-		{
-			editor_effect_was_modified = true;
-			components::effects::play();
-		}
+		on_modified(modified);
 	}
 
 	void tab_velocity([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
+		bool modified = false;
+		const ImGuiStyle& style = ImGui::GetStyle();
+
+		const float graph_width = ImGui::GetWindowContentRegionWidth() - (style.FramePadding.x * 2) - 12.0f;
+		float graph_height = graph_width;
+
+		if (graph_height > 320) {
+			graph_height = 320;
+		}
+
+		ImGui::BeginChild("##effect_properties_velocity_child", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+		ImGui::Indent(8.0f);
+		ImGui::Spacing();
+		ImGui::title_with_seperator("General", false, 0, 2.0f, 8.0f);
+
+		ImGui::TextUnformatted("Move relative to:");
+
+		int move_rel_to_flag = 0;
 		
+		if (const int masked_flag = elem->flags & fx_system::FX_ELEM_RUN_MASK; 
+					  masked_flag)
+		{
+			if(masked_flag == fx_system::FX_ELEM_RUN_RELATIVE_TO_SPAWN)
+			{
+				move_rel_to_flag = 1;
+			}
+			else if(masked_flag == fx_system::FX_ELEM_RUN_RELATIVE_TO_EFFECT)
+			{
+				move_rel_to_flag = 2;
+			}
+			else if(masked_flag == fx_system::FX_ELEM_RUN_RELATIVE_TO_OFFSET)
+			{
+				move_rel_to_flag = 3;
+			}
+		}
+
+		const float radio_same_line_offset = ImGui::GetContentRegionAvailWidth() * 0.55f;
+		bool move_rel_to_flag_modified = false;
+
+		if(ImGui::RadioButton("World", &move_rel_to_flag, 0)) {
+			move_rel_to_flag_modified = true;
+		}
+
+		ImGui::SameLine(radio_same_line_offset);
+		if(ImGui::RadioButton("Spawn Offset", &move_rel_to_flag, 3)) {
+			move_rel_to_flag_modified = true;
+		}
+	
+		if(ImGui::RadioButton("Effect at Spawn", &move_rel_to_flag, 1)) {
+			move_rel_to_flag_modified = true;
+		}
+
+		ImGui::SameLine(radio_same_line_offset);
+		if(ImGui::RadioButton("Effect Now", &move_rel_to_flag, 2)) {
+			move_rel_to_flag_modified = true;
+		}
+
+		// #
+		auto assign_movement_flag = [&](const int flag) -> void
+		{
+			elem->flags &= ~(fx_system::FX_ELEM_RUN_RELATIVE_TO_SPAWN | fx_system::FX_ELEM_RUN_RELATIVE_TO_EFFECT | fx_system::FX_ELEM_RUN_RELATIVE_TO_OFFSET);
+			elem->flags |= flag;
+		};
+
+		if(move_rel_to_flag_modified)
+		{
+			// movement flags are multiple of 64
+			assign_movement_flag(move_rel_to_flag * 64);
+			modified = true;
+		}
+
+		SPACING(0.0f, 8.0f);
+		MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Gravity", &elem->gravity, 0.1f, -32768.0f, 32768.0f, "%.2f"));
+
+		
+
+		// *------------------------------
+
+		auto get_velocity_graph_str = [&](const int i) -> const char*
+		{
+			switch(i)
+			{
+			case 0:
+				return "Graph 1 - Forward";
+			case 1:
+				return "Graph 1 - Right";
+			case 2:
+				return "Graph 1 - Up";
+			case 3:
+				return "Graph 2 - Forward";
+			case 4:
+				return "Graph 2 - Right";
+			case 5:
+				return "Graph 2 - Up";
+			default:
+				return "";
+			}
+		};
+
+		auto og_cursor_y = ImGui::GetCursorPosY();
+		const auto vert_center_offset = (ImGui::GetFrameHeight() - ImGui::CalcTextSize("A").y) * 0.4f;
+
+		// #
+		auto left_label_dragfloat = [&](const char* label) -> void
+		{
+			og_cursor_y = ImGui::GetCursorPosY();
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + vert_center_offset);
+			ImGui::TextUnformatted(label);
+			ImGui::SameLine(80.0f);
+			ImGui::SetCursorPosY(og_cursor_y);
+			ImGui::SetNextItemWidth(-style.FramePadding.x);
+		};
+
+		auto left_label_checkbox = [&](const char* label) -> void
+		{
+			og_cursor_y = ImGui::GetCursorPosY();
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + vert_center_offset);
+			ImGui::TextUnformatted(label);
+			ImGui::SameLine();
+			ImGui::SetCursorPosY(og_cursor_y);
+		};
+
+		{
+			// 0 = graph1, 1 = graph2
+			static int velocity_1_graph = 0;
+
+			// 0 = forward, 1 = right, 2 = up
+			static int velocity_1_vector = 0;
+
+			ImGui::title_with_seperator(utils::va("Velocity - %s", get_velocity_graph_str(3 * velocity_1_graph + velocity_1_vector)), true, 0, 2.0f, 8.0f);
+			{
+				int new_count = 0;
+				const auto curve = elem->velShape[0][velocity_1_vector][velocity_1_graph]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+
+				MOD_CHECK_GRAPH(ImGui::CurveEditor("velocity_1_graph", curve->keys, curve->keyCount,
+					ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
+
+				if (new_count != curve->keyCount)
+				{
+					curve->keyCount = new_count;
+					modified = true;
+				}
+
+				if (ImGui::BeginPopupContextItem("velocity_1_graph##bg"))
+				{
+					if (ImGui::MenuItem(get_velocity_graph_str(0), 0, !velocity_1_graph && !velocity_1_vector))
+					{
+						velocity_1_graph = 0;
+						velocity_1_vector = 0;
+					}
+
+					if (ImGui::MenuItem(get_velocity_graph_str(1), 0, !velocity_1_graph && velocity_1_vector == 1))
+					{
+						velocity_1_graph = 0;
+						velocity_1_vector = 1;
+					}
+
+					if (ImGui::MenuItem(get_velocity_graph_str(2), 0, !velocity_1_graph && velocity_1_vector == 2))
+					{
+						velocity_1_graph = 0;
+						velocity_1_vector = 2;
+					}
+
+					// -
+
+					if (ImGui::MenuItem(get_velocity_graph_str(3), 0, velocity_1_graph && !velocity_1_vector))
+					{
+						velocity_1_graph = 1;
+						velocity_1_vector = 0;
+					}
+
+					if (ImGui::MenuItem(get_velocity_graph_str(4), 0, velocity_1_graph && velocity_1_vector == 1))
+					{
+						velocity_1_graph = 1;
+						velocity_1_vector = 1;
+					}
+
+					if (ImGui::MenuItem(get_velocity_graph_str(5), 0, velocity_1_graph && velocity_1_vector == 2))
+					{
+						velocity_1_graph = 1;
+						velocity_1_vector = 2;
+					}
+
+					ImGui::EndPopup();
+				}
+
+				left_label_dragfloat("Forward");
+				MOD_CHECK(ImGui::DragFloat("##forward_velocity1", &elem->velScale[0][0], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
+
+				left_label_dragfloat("Right");
+				MOD_CHECK(ImGui::DragFloat("##right_velocity1", &elem->velScale[0][1], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
+
+				left_label_dragfloat("Up");
+				MOD_CHECK(ImGui::DragFloat("##up_velocity1", &elem->velScale[0][2], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
+
+				ImGui::Spacing();
+
+				static float checkbox1_width = 100.0f;
+				static float checkbox2_width = 100.0f;
+
+				ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - checkbox1_width - style.FramePadding.x);
+				ImGui::BeginGroup();
+				{
+					left_label_checkbox("Randomize between Graph 1 and 2");
+					MOD_CHECK(ImGui::Checkbox_FxElemFlag("##velocity1_random", elem, fx_system::FX_ED_FLAG_USE_RANDOM_VELOCITY_0));
+
+					ImGui::EndGroup();
+					checkbox1_width = ImGui::GetItemRectSize().x;
+				}
+
+				ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - checkbox2_width - style.FramePadding.x);
+				ImGui::BeginGroup();
+				{
+					left_label_checkbox("Relative to effect axis");
+					MOD_CHECK(ImGui::Checkbox_FxElemFlag("##velocity1_effect_axis", elem, fx_system::FX_ED_FLAG_ABSOLUTE_VELOCITY_0, nullptr, true));
+
+					ImGui::EndGroup();
+					checkbox2_width = ImGui::GetItemRectSize().x;
+				}
+			}
+		}
+		
+
+		// *------------------------------
+
+		{
+			// 0 = graph1, 1 = graph2
+			static int velocity_2_graph = 0;
+
+			// 0 = forward, 1 = right, 2 = up
+			static int velocity_2_vector = 0;
+
+			ImGui::title_with_seperator(utils::va("Velocity 2 - %s", get_velocity_graph_str(3 * velocity_2_graph + velocity_2_vector)), true, 0, 2.0f, 8.0f);
+
+			int new_count = 0;
+			const auto curve = elem->velShape[1][velocity_2_vector][velocity_2_graph]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+
+			MOD_CHECK_GRAPH(ImGui::CurveEditor("velocity_2_graph", curve->keys, curve->keyCount,
+				ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
+
+			if(new_count != curve->keyCount)
+			{
+				curve->keyCount = new_count;
+				modified = true;
+			}
+
+			if (ImGui::BeginPopupContextItem("velocity_2_graph##bg"))
+			{
+				if (ImGui::MenuItem(get_velocity_graph_str(0), 0, !velocity_2_graph && !velocity_2_vector))
+				{
+					velocity_2_graph = 0;
+					velocity_2_vector = 0;
+				}
+
+				if (ImGui::MenuItem(get_velocity_graph_str(1), 0, !velocity_2_graph && velocity_2_vector == 1))
+				{
+					velocity_2_graph = 0;
+					velocity_2_vector = 1;
+				}
+
+				if (ImGui::MenuItem(get_velocity_graph_str(2), 0, !velocity_2_graph && velocity_2_vector == 2))
+				{
+					velocity_2_graph = 0;
+					velocity_2_vector = 2;
+				}
+
+				// -
+
+				if (ImGui::MenuItem(get_velocity_graph_str(3), 0, velocity_2_graph && !velocity_2_vector))
+				{
+					velocity_2_graph = 1;
+					velocity_2_vector = 0;
+				}
+
+				if (ImGui::MenuItem(get_velocity_graph_str(4), 0, velocity_2_graph && velocity_2_vector == 1))
+				{
+					velocity_2_graph = 1;
+					velocity_2_vector = 1;
+				}
+
+				if (ImGui::MenuItem(get_velocity_graph_str(5), 0, velocity_2_graph && velocity_2_vector == 2))
+				{
+					velocity_2_graph = 1;
+					velocity_2_vector = 2;
+				}
+
+				ImGui::EndPopup();
+			}
+
+			left_label_dragfloat("Forward");
+			MOD_CHECK(ImGui::DragFloat("##forward_velocity2", &elem->velScale[1][0], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
+
+			left_label_dragfloat("Right");
+			MOD_CHECK(ImGui::DragFloat("##right_velocity2", &elem->velScale[1][1], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
+
+			left_label_dragfloat("Up");
+			MOD_CHECK(ImGui::DragFloat("##up_velocity2", &elem->velScale[1][2], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
+
+			ImGui::Spacing();
+
+			static float checkbox1_offset = 100.0f;
+			static float checkbox2_offset = 100.0f;
+			static float checkbox3_offset = 100.0f;
+
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - checkbox1_offset - style.FramePadding.x);
+			ImGui::BeginGroup();
+			{
+				left_label_checkbox("Randomize between Graph 1 and 2");
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("##velocity2_random", elem, fx_system::FX_ED_FLAG_USE_RANDOM_VELOCITY_1));
+
+				ImGui::EndGroup();
+				checkbox1_offset = ImGui::GetItemRectSize().x;
+			}
+
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - checkbox2_offset - style.FramePadding.x);
+			ImGui::BeginGroup();
+			{
+				left_label_checkbox("Use deprecated randomize behavior");
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("##velocity2_backcomp", elem, fx_system::FX_ED_FLAG_BACKCOMPAT_VELOCITY));
+
+				ImGui::EndGroup();
+				checkbox2_offset = ImGui::GetItemRectSize().x;
+			}
+
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - checkbox3_offset - style.FramePadding.x);
+			ImGui::BeginGroup();
+			{
+				left_label_checkbox("Relative to effect axis");
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("##velocity2_effect_axis", elem, fx_system::FX_ED_FLAG_ABSOLUTE_VELOCITY_1, nullptr, true));
+
+				ImGui::EndGroup();
+				checkbox3_offset = ImGui::GetItemRectSize().x;
+			}
+		}
+
+		ImGui::EndChild();
+		on_modified(modified);
 	}
 
 	void tab_rotation([[maybe_unused]] fx_system::FxEditorElemDef* elem)
@@ -608,7 +959,130 @@ namespace ggui::effects_editor_gui
 
 	void tab_color([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
-		
+		bool modified = false;
+		const ImGuiStyle& style = ImGui::GetStyle();
+
+		const float graph_width = ImGui::GetWindowContentRegionWidth() - (style.FramePadding.x * 2) - 12.0f;
+		float graph_height = graph_width;
+
+		if (graph_height > 320)
+		{
+			graph_height = 320;
+		}
+
+		ImGui::BeginChild("##effect_properties_color_child", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+		ImGui::Indent(8.0f);
+		ImGui::Spacing();
+		ImGui::title_with_seperator("RGB Color", false, 0, 2.0f, 8.0f);
+
+		if (elem && elem->color[0] && elem->color[0]->keyCount && elem->color[1] && elem->color[1]->keyCount)
+		{
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##color", elem, fx_system::FX_ED_FLAG_USE_RANDOM_COLOR));
+			ImGui::SameLine(0, 14.0f);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+
+			static int color_graph_idx = false;
+			ImGui::Combo("##graph_selection_color", &color_graph_idx, "Graph 1\0Graph 2\0");
+			ImGui::Spacing();
+
+			{
+				std::uint32_t key = 0;
+				for (auto& mark : gradient.getMarks())
+				{
+					const float* y_offset = &elem->color[color_graph_idx]->keys[key * 4];
+					const float* rgb = &elem->color[color_graph_idx]->keys[key * 4] + 1;
+
+					mark->position = *y_offset;
+
+					if (key == 0)
+					{
+						mark->position = 0.0f;
+					}
+					else if (key == gradient.getMarks().size() - 1)
+					{
+						mark->position = 1.0f;
+					}
+
+					mark->color[0] = rgb[0];
+					mark->color[1] = rgb[1];
+					mark->color[2] = rgb[2];
+					mark->color[3] = rgb[3];
+					key++;
+				}
+			}
+
+			if (ImGui::GradientEditor("test_bar", &gradient))
+			{
+				int key_idx = 0;
+				for (auto& mark : gradient.getMarks())
+				{
+					float* y_offset = &elem->color[color_graph_idx]->keys[key_idx * 4];
+					float* rgb = &elem->color[color_graph_idx]->keys[key_idx * 4] + 1;
+
+					*y_offset = mark->position;
+					rgb[0] = mark->color[0];
+					rgb[1] = mark->color[1];
+					rgb[2] = mark->color[2];
+
+					key_idx++;
+				}
+
+				if (elem->color[color_graph_idx]->keyCount != key_idx)
+				{
+					game::printf_to_console("graph keycount changed from [ %d ] to [ %d ]", elem->color[color_graph_idx]->keyCount, key_idx);
+				}
+
+				elem->color[color_graph_idx]->keyCount = key_idx;
+
+				modified = true;
+			}
+		}
+
+		// *------------------------------
+		ImGui::title_with_seperator("Alpha", true, 0, 2.0f, 8.0f);
+
+		if (elem && elem->alpha[0] && elem->alpha[0]->keyCount && elem->alpha[1] && elem->alpha[1]->keyCount)
+		{
+			// false = graph 1, true = 2
+			static bool current_graph_scale = false;
+
+			int new_count = 0;
+			const auto curve = elem->alpha[current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+
+			MOD_CHECK_GRAPH(ImGui::CurveEditor("alpha_graph", curve->keys, curve->keyCount, 
+				ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
+
+			if (new_count != curve->keyCount)
+			{
+				curve->keyCount = new_count;
+				modified = true;
+			}
+
+			if (ImGui::BeginPopupContextItem("alpha_graph##bg"))
+			{
+				if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+				{
+					current_graph_scale = false;
+				}
+
+				if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+				{
+					current_graph_scale = true;
+				}
+
+				ImGui::EndPopup();
+			}
+
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##alpha", elem, fx_system::FX_ED_FLAG_USE_RANDOM_ALPHA));
+		}
+
+		ImGui::SameLine(0, 14.0f);
+		ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+		ImGui::DragFloat("##lighting_fraction", &elem->scaleScale, 0.01f, 0, 1.0f, "%.1f"); TT("Lighting Fraction");
+
+		ImGui::EndChild();
+		on_modified(modified);
 	}
 
 	void tab_visuals([[maybe_unused]] fx_system::FxEditorElemDef* elem)

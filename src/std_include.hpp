@@ -75,6 +75,8 @@
 #pragma warning(pop)
 
 #include "common/imgui/imgui_addons.hpp"
+#include "common/imgui/imgui_color_gradient.hpp"
+#include "common/imgui/imgui_curves.hpp"
 #include "detours/Detours.h"
 #include "fifo_map.hpp"
 
