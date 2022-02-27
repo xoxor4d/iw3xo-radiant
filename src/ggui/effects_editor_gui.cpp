@@ -1085,9 +1085,237 @@ namespace ggui::effects_editor_gui
 		on_modified(modified);
 	}
 
+
+	const std::uint16_t indices_list_line[] = {  4, 0, 1, 1, 2 };
+	const std::uint16_t indices_list_tri[]  = {  6, 0, 1, 1, 2, 2, 3 };
+	const std::uint16_t indices_list_quad[] = {  8, 0, 1, 1, 2, 2, 3, 3, 4 };
+	const std::uint16_t indices_list_pent[] = { 10, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5 };
+	const std::uint16_t indices_list_hex[]  = { 12, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6 };
+	const std::uint16_t indices_list_sep[]  = { 14, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7 };
+	const std::uint16_t indices_list_oct[]  = { 16, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8 };
+	const std::uint16_t indices_list_non[]  = { 18, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9 };
+	const std::uint16_t indices_list_dec[]  = { 20, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10 };
+
+	const std::uint16_t* indices_list[] =
+	{
+		nullptr,			// 0
+		nullptr,			// 1
+		nullptr,			// 2
+		indices_list_line,	// 3
+		indices_list_tri,	// 4
+		indices_list_quad,	// 5
+		indices_list_pent,	// 6
+		indices_list_hex,	// 7
+		indices_list_sep,	// 8
+		indices_list_oct,	// 9
+		indices_list_non,	// 10
+		indices_list_dec	// 11
+	};
+
 	void tab_visuals([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
+		bool modified = false;
+		const ImGuiStyle& style = ImGui::GetStyle();
+
+		const float graph_width = ImGui::GetWindowContentRegionWidth() - (style.FramePadding.x * 2) - 12.0f;
+		float graph_height = graph_width;
+
+		if (graph_height > 320) {
+			graph_height = 320;
+		}
+
+		ImGui::BeginChild("##effect_properties_velocity_child", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+		ImGui::Indent(8.0f);
+		ImGui::Spacing();
+		ImGui::title_with_seperator("General", false, 0, 2.0f, 8.0f);
+
+
+		// max 64 verts
+		// max 128 indices
+
+		// copy verts into continuous array
+		float traildef_shape_vertices[2 * 64] = {};
+		for(auto vert = 0; vert < elem->trailDef.vertCount; vert++)
+		{
+			memcpy(&traildef_shape_vertices[vert * 2], elem->trailDef.verts[vert].pos, sizeof(float[2]));
+		}
+
+		int shape_vertex_count = 1;
+		int trail_shapes_count = 0;
+		ImGui::traildef_shape_s trail_shapes[8] = {};
+
+		for(auto ind_idx = 1; ind_idx < elem->trailDef.indCount; )
+		{
+			// end of inds ++ shape
+			if(ind_idx + 1 < elem->trailDef.indCount)
+			{
+				// if current vert == next vert
+				if (elem->trailDef.inds[ind_idx] == elem->trailDef.inds[ind_idx + 1])
+				{
+					shape_vertex_count++;
+					ind_idx += 2;
+					continue;
+				}
+			}
+
+			// +
+			// new shape
+
+			if (trail_shapes_count == 0)
+			{
+				auto shape_curr = &trail_shapes[trail_shapes_count];
+
+				shape_curr->index = trail_shapes_count;
+
+				shape_curr->offset_vertex = 0;
+				shape_curr->num_vertex = shape_vertex_count + 1;
+
+				shape_curr->offset_indices = 0;
+				shape_curr->num_indices = shape_vertex_count;
+
+				trail_shapes_count++;
+
+				// +
+				// prepare next shape
+
+				if (trail_shapes_count < 8)
+				{
+					shape_curr = &trail_shapes[trail_shapes_count];
+					const auto shape_prev = &trail_shapes[trail_shapes_count - 1];
+
+					shape_curr->index			= trail_shapes_count;
+					shape_curr->offset_vertex	= shape_prev->num_vertex;
+					shape_curr->offset_indices	= shape_prev->num_indices * 2;
+				}
+				else
+				{
+					break;
+				}
+
+				shape_vertex_count = 1; // reset
+				ind_idx += 2; // advance
+			}
+			else
+			{
+				auto shape_curr = &trail_shapes[trail_shapes_count];
+
+				shape_curr->num_vertex  = shape_vertex_count + 1;
+				shape_curr->num_indices = shape_vertex_count;
+
+				trail_shapes_count++;
+
+				if(shape_curr->offset_indices + (shape_curr->num_indices * 2) < elem->trailDef.indCount)
+				{
+					// +
+					// prepare next shape
+
+					if (trail_shapes_count < 8)
+					{
+						shape_curr = &trail_shapes[trail_shapes_count];
+						const auto shape_prev = &trail_shapes[trail_shapes_count - 1];
+
+						shape_curr->index = trail_shapes_count;
+						shape_curr->offset_vertex = shape_prev->offset_vertex + shape_prev->num_vertex;
+						shape_curr->offset_indices = shape_prev->offset_indices + shape_prev->num_indices;
+					}
+					else
+					{
+						break;
+					}
+				}
+
+				shape_vertex_count = 1; // reset
+				ind_idx += 2; // advance
+			}
+		}
+
+		// unused
+		int new_count[8] = {};
+
+		const auto hov_idx = (ImGui::CurveEditorShapes("traildef_shape", traildef_shape_vertices, trail_shapes, trail_shapes_count,
+			ImVec2(-1.0f, -1.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), new_count));
+
+		if(hov_idx > 0)
+		{
+			modified = true;
+		}
+
+		// update elem - ouch
+		for (auto shape = 0; shape < trail_shapes_count; shape++)
+		{
+			// if shape was marked for deletion (context menu inside CurveEditorShapes)
+			if(trail_shapes[shape].pending_deletion)
+			{
+				const int next = shape + 1;
+
+				// if last shape
+				if(next >= trail_shapes_count)
+				{
+					elem->trailDef.vertCount -= trail_shapes[shape].num_vertex;
+					elem->trailDef.indCount  -= (trail_shapes[shape].num_indices * 2);
+				}
+				else
+				{
+					// get amount of vertices after to-delete shape
+					int verts_to_move = 0;
+					for (auto c = next; c < trail_shapes_count; c++)
+					{
+						verts_to_move += trail_shapes[c].num_vertex;
+					}
+
+					// move vertices
+					for (auto v = 0; v < verts_to_move; v++)
+					{
+						memcpy(elem->trailDef.verts[trail_shapes[shape].offset_vertex + v].pos, ((ImVec2*)traildef_shape_vertices + (trail_shapes[next].offset_vertex + v)), sizeof(float[2]));
+						elem->trailDef.verts[trail_shapes[shape].offset_vertex + v].texCoord = elem->trailDef.verts[trail_shapes[next].offset_vertex + v].texCoord;
+					}
+
+					elem->trailDef.vertCount -= trail_shapes[shape].num_vertex;
+
+					memset(&elem->trailDef.inds, 0, sizeof(elem->trailDef.inds));
+					elem->trailDef.indCount = 0;
+
+
+					// rebuild indices
+					int shape_count = 0;
+
+					for (auto s = 0; s < trail_shapes_count; s++)
+					{
+						// skip deleted shape
+						if (trail_shapes[s].pending_deletion)
+						{
+							continue;
+						}
+
+						// get prebuilt list of indices for shape with X amout of vertices
+						const int indices_amount = indices_list[trail_shapes[s].num_vertex][0];
+						const int last_index = elem->trailDef.indCount > 0 ? elem->trailDef.inds[elem->trailDef.indCount - 1] + 1 : 0;
+
+						for (auto v = 0; v < indices_amount; v++)
+						{
+							elem->trailDef.inds[elem->trailDef.indCount++] = (indices_list[trail_shapes[s].num_vertex][v + 1] + (last_index));
+							
+						}
+
+						shape_count++;
+					}
+
+					break;
+				}
+			}
+			else
+			{
+				// copy (modified) vertices from continuous array back into elem
+				for (auto vert = 0; vert < trail_shapes[shape].num_vertex; vert++)
+				{
+					memcpy(elem->trailDef.verts[trail_shapes[shape].offset_vertex + vert].pos, ((ImVec2*)traildef_shape_vertices + (trail_shapes[shape].offset_vertex + vert)), sizeof(float[2]));
+				}
+			}
+		}
 		
+		ImGui::EndChild();
+		on_modified(modified);
 	}
 
 	void tab_emission([[maybe_unused]] fx_system::FxEditorElemDef* elem)

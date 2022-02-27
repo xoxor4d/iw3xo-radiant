@@ -152,7 +152,7 @@ namespace fx_system
 		{
 			for(int vert = 0; vert < trail->vertCount; vert++)
 			{
-				FX_WriteElemField(buff, "\t\t%g %g %g\n", trail->verts[0].pos[0], trail->verts[0].pos[1], trail->verts[0].normal[1]);
+				FX_WriteElemField(buff, "\t\t%g %g %g\n", trail->verts[vert].pos[0], trail->verts[vert].pos[1], trail->verts[vert].texCoord);
 			}
 		}
 
