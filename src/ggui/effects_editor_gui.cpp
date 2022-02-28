@@ -707,28 +707,28 @@ namespace ggui::effects_editor_gui
 			}
 		};
 
-		auto og_cursor_y = ImGui::GetCursorPosY();
+		//auto og_cursor_y = ImGui::GetCursorPosY();
 		const auto vert_center_offset = (ImGui::GetFrameHeight() - ImGui::CalcTextSize("A").y) * 0.4f;
 
 		// #
-		auto left_label_dragfloat = [&](const char* label) -> void
-		{
-			og_cursor_y = ImGui::GetCursorPosY();
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + vert_center_offset);
-			ImGui::TextUnformatted(label);
-			ImGui::SameLine(80.0f);
-			ImGui::SetCursorPosY(og_cursor_y);
-			ImGui::SetNextItemWidth(-style.FramePadding.x);
-		};
+		//auto left_label_drag = [&](const char* label) -> void
+		//{
+		//	og_cursor_y = ImGui::GetCursorPosY();
+		//	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + vert_center_offset);
+		//	ImGui::TextUnformatted(label);
+		//	ImGui::SameLine(80.0f);
+		//	ImGui::SetCursorPosY(og_cursor_y);
+		//	ImGui::SetNextItemWidth(-style.FramePadding.x);
+		//};
 
-		auto left_label_checkbox = [&](const char* label) -> void
-		{
-			og_cursor_y = ImGui::GetCursorPosY();
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + vert_center_offset);
-			ImGui::TextUnformatted(label);
-			ImGui::SameLine();
-			ImGui::SetCursorPosY(og_cursor_y);
-		};
+		//auto left_label_checkbox = [&](const char* label) -> void
+		//{
+		//	og_cursor_y = ImGui::GetCursorPosY();
+		//	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + vert_center_offset);
+		//	ImGui::TextUnformatted(label);
+		//	ImGui::SameLine();
+		//	ImGui::SetCursorPosY(og_cursor_y);
+		//};
 
 		{
 			// 0 = graph1, 1 = graph2
@@ -794,13 +794,13 @@ namespace ggui::effects_editor_gui
 					ImGui::EndPopup();
 				}
 
-				left_label_dragfloat("Forward");
+				ImGui::left_label_drag("Forward", vert_center_offset);
 				MOD_CHECK(ImGui::DragFloat("##forward_velocity1", &elem->velScale[0][0], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
 
-				left_label_dragfloat("Right");
+				ImGui::left_label_drag("Right", vert_center_offset);
 				MOD_CHECK(ImGui::DragFloat("##right_velocity1", &elem->velScale[0][1], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
 
-				left_label_dragfloat("Up");
+				ImGui::left_label_drag("Up", vert_center_offset);
 				MOD_CHECK(ImGui::DragFloat("##up_velocity1", &elem->velScale[0][2], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
 
 				ImGui::Spacing();
@@ -811,7 +811,7 @@ namespace ggui::effects_editor_gui
 				ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - checkbox1_width - style.FramePadding.x);
 				ImGui::BeginGroup();
 				{
-					left_label_checkbox("Randomize between Graph 1 and 2");
+					ImGui::left_label_checkbox("Randomize between Graph 1 and 2", vert_center_offset);
 					MOD_CHECK(ImGui::Checkbox_FxElemFlag("##velocity1_random", elem, fx_system::FX_ED_FLAG_USE_RANDOM_VELOCITY_0));
 
 					ImGui::EndGroup();
@@ -821,7 +821,7 @@ namespace ggui::effects_editor_gui
 				ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - checkbox2_width - style.FramePadding.x);
 				ImGui::BeginGroup();
 				{
-					left_label_checkbox("Relative to effect axis");
+					ImGui::left_label_checkbox("Relative to effect axis", vert_center_offset);
 					MOD_CHECK(ImGui::Checkbox_FxElemFlag("##velocity1_effect_axis", elem, fx_system::FX_ED_FLAG_ABSOLUTE_VELOCITY_0, nullptr, true));
 
 					ImGui::EndGroup();
@@ -897,13 +897,13 @@ namespace ggui::effects_editor_gui
 				ImGui::EndPopup();
 			}
 
-			left_label_dragfloat("Forward");
+			ImGui::left_label_drag("Forward", vert_center_offset);
 			MOD_CHECK(ImGui::DragFloat("##forward_velocity2", &elem->velScale[1][0], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
 
-			left_label_dragfloat("Right");
+			ImGui::left_label_drag("Right", vert_center_offset);
 			MOD_CHECK(ImGui::DragFloat("##right_velocity2", &elem->velScale[1][1], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
 
-			left_label_dragfloat("Up");
+			ImGui::left_label_drag("Up", vert_center_offset);
 			MOD_CHECK(ImGui::DragFloat("##up_velocity2", &elem->velScale[1][2], 0.1f, -32768.0f, 32768.0f, "%.2f")); TT("Scale");
 
 			ImGui::Spacing();
@@ -915,7 +915,7 @@ namespace ggui::effects_editor_gui
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - checkbox1_offset - style.FramePadding.x);
 			ImGui::BeginGroup();
 			{
-				left_label_checkbox("Randomize between Graph 1 and 2");
+				ImGui::left_label_checkbox("Randomize between Graph 1 and 2", vert_center_offset);
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("##velocity2_random", elem, fx_system::FX_ED_FLAG_USE_RANDOM_VELOCITY_1));
 
 				ImGui::EndGroup();
@@ -925,7 +925,7 @@ namespace ggui::effects_editor_gui
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - checkbox2_offset - style.FramePadding.x);
 			ImGui::BeginGroup();
 			{
-				left_label_checkbox("Use deprecated randomize behavior");
+				ImGui::left_label_checkbox("Use deprecated randomize behavior", vert_center_offset);
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("##velocity2_backcomp", elem, fx_system::FX_ED_FLAG_BACKCOMPAT_VELOCITY));
 
 				ImGui::EndGroup();
@@ -935,7 +935,7 @@ namespace ggui::effects_editor_gui
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - checkbox3_offset - style.FramePadding.x);
 			ImGui::BeginGroup();
 			{
-				left_label_checkbox("Relative to effect axis");
+				ImGui::left_label_checkbox("Relative to effect axis", vert_center_offset);
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("##velocity2_effect_axis", elem, fx_system::FX_ED_FLAG_ABSOLUTE_VELOCITY_1, nullptr, true));
 
 				ImGui::EndGroup();
@@ -1130,40 +1130,47 @@ namespace ggui::effects_editor_gui
 		ImGui::Spacing();
 		ImGui::title_with_seperator("General", false, 0, 2.0f, 8.0f);
 
+		// *
+		// prepare data for the shape editor
 
 		// max 64 verts
 		// max 128 indices
 
-		// copy verts into continuous array
-		float traildef_shape_vertices[2 * 64] = {};
+		// continuous array of geotrail points/vertices
+		float traildef_point_array[2 * 64] = {};
+
 		for(auto vert = 0; vert < elem->trailDef.vertCount; vert++)
 		{
-			memcpy(&traildef_shape_vertices[vert * 2], elem->trailDef.verts[vert].pos, sizeof(float[2]));
+			memcpy(&traildef_point_array[vert * 2], elem->trailDef.verts[vert].pos, sizeof(float[2]));
 		}
 
-		int shape_vertex_count = 1;
-		int trail_shapes_count = 0;
+		int trail_shapes_count = 0; // amount of individual shapes
+		int shape_vertex_count = 1; // vertex count for current shape in the loop
+
+		// individual shapes
 		ImGui::traildef_shape_s trail_shapes[8] = {};
 
 		for(auto ind_idx = 1; ind_idx < elem->trailDef.indCount; )
 		{
-			// end of inds ++ shape
+			// if reached end of indices -> last shape
 			if(ind_idx + 1 < elem->trailDef.indCount)
 			{
-				// if current vert == next vert
+				// count vertices of current shape or create the next shape
 				if (elem->trailDef.inds[ind_idx] == elem->trailDef.inds[ind_idx + 1])
 				{
-					shape_vertex_count++;
 					ind_idx += 2;
+					shape_vertex_count++;
+					
 					continue;
 				}
 			}
 
 			// +
-			// new shape
+			// new shape 
 
 			if (trail_shapes_count == 0)
 			{
+				// first shape
 				auto shape_curr = &trail_shapes[trail_shapes_count];
 
 				shape_curr->index = trail_shapes_count;
@@ -1176,28 +1183,21 @@ namespace ggui::effects_editor_gui
 
 				trail_shapes_count++;
 
-				// +
-				// prepare next shape
 
-				if (trail_shapes_count < 8)
-				{
-					shape_curr = &trail_shapes[trail_shapes_count];
-					const auto shape_prev = &trail_shapes[trail_shapes_count - 1];
+				// prepare second/next shape
+				shape_curr = &trail_shapes[trail_shapes_count];
+				const auto shape_prev = &trail_shapes[trail_shapes_count - 1];
 
-					shape_curr->index			= trail_shapes_count;
-					shape_curr->offset_vertex	= shape_prev->num_vertex;
-					shape_curr->offset_indices	= shape_prev->num_indices * 2;
-				}
-				else
-				{
-					break;
-				}
+				shape_curr->index			= trail_shapes_count;
+				shape_curr->offset_vertex	= shape_prev->num_vertex;
+				shape_curr->offset_indices	= shape_prev->num_indices * 2;
 
-				shape_vertex_count = 1; // reset
-				ind_idx += 2; // advance
+				ind_idx += 2; // advance indices
+				shape_vertex_count = 1; // reset vertex counter
 			}
 			else
 			{
+				// second shape and up
 				auto shape_curr = &trail_shapes[trail_shapes_count];
 
 				shape_curr->num_vertex  = shape_vertex_count + 1;
@@ -1225,21 +1225,18 @@ namespace ggui::effects_editor_gui
 					}
 				}
 
-				shape_vertex_count = 1; // reset
-				ind_idx += 2; // advance
+				ind_idx += 2; // advance indices
+				shape_vertex_count = 1; // reset vertex counter
 			}
 		}
 
 		// unused
 		int new_count[8] = {};
 
-		const auto hov_idx = (ImGui::CurveEditorShapes("traildef_shape", traildef_shape_vertices, trail_shapes, trail_shapes_count,
+
+		MOD_CHECK_GRAPH(ImGui::CurveEditorShapes("traildef_shape", traildef_point_array, trail_shapes, trail_shapes_count,
 			ImVec2(-1.0f, -1.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), new_count));
 
-		if(hov_idx > 0)
-		{
-			modified = true;
-		}
 
 		// update elem - ouch
 		for (auto shape = 0; shape < trail_shapes_count; shape++)
@@ -1267,7 +1264,7 @@ namespace ggui::effects_editor_gui
 					// move vertices
 					for (auto v = 0; v < verts_to_move; v++)
 					{
-						memcpy(elem->trailDef.verts[trail_shapes[shape].offset_vertex + v].pos, ((ImVec2*)traildef_shape_vertices + (trail_shapes[next].offset_vertex + v)), sizeof(float[2]));
+						memcpy(elem->trailDef.verts[trail_shapes[shape].offset_vertex + v].pos, ((ImVec2*)traildef_point_array + (trail_shapes[next].offset_vertex + v)), sizeof(float[2]));
 						elem->trailDef.verts[trail_shapes[shape].offset_vertex + v].texCoord = elem->trailDef.verts[trail_shapes[next].offset_vertex + v].texCoord;
 					}
 
@@ -1288,13 +1285,13 @@ namespace ggui::effects_editor_gui
 							continue;
 						}
 
-						// get prebuilt list of indices for shape with X amout of vertices
+						// get prebuilt list of indices for shape with X amount of vertices
 						const int indices_amount = indices_list[trail_shapes[s].num_vertex][0];
 						const int last_index = elem->trailDef.indCount > 0 ? elem->trailDef.inds[elem->trailDef.indCount - 1] + 1 : 0;
 
 						for (auto v = 0; v < indices_amount; v++)
 						{
-							elem->trailDef.inds[elem->trailDef.indCount++] = (indices_list[trail_shapes[s].num_vertex][v + 1] + (last_index));
+							elem->trailDef.inds[elem->trailDef.indCount++] = (indices_list[trail_shapes[s].num_vertex][v + 1] + static_cast<std::uint16_t>(last_index));
 							
 						}
 
@@ -1309,11 +1306,22 @@ namespace ggui::effects_editor_gui
 				// copy (modified) vertices from continuous array back into elem
 				for (auto vert = 0; vert < trail_shapes[shape].num_vertex; vert++)
 				{
-					memcpy(elem->trailDef.verts[trail_shapes[shape].offset_vertex + vert].pos, ((ImVec2*)traildef_shape_vertices + (trail_shapes[shape].offset_vertex + vert)), sizeof(float[2]));
+					memcpy(elem->trailDef.verts[trail_shapes[shape].offset_vertex + vert].pos, ((ImVec2*)traildef_point_array + (trail_shapes[shape].offset_vertex + vert)), sizeof(float[2]));
 				}
 			}
 		}
-		
+
+		const auto vert_center_offset = (ImGui::GetFrameHeight() - ImGui::CalcTextSize("A").y) * 0.4f;
+
+		ImGui::left_label_drag("Split Dist", vert_center_offset, 150.0f);
+		MOD_CHECK(ImGui::DragInt("##split_dist", &elem->trailSplitDist, 0.1f, 0, INT16_MAX));
+
+		ImGui::left_label_drag("Texture Repeate Dist", vert_center_offset, 150.0f);
+		MOD_CHECK(ImGui::DragInt("##tex_rep_dist", &elem->trailRepeatDist, 0.1f, 0, INT16_MAX));
+
+		ImGui::left_label_drag("Texture Scroll Time", vert_center_offset, 150.0f);
+		MOD_CHECK(ImGui::DragFloat("##tex_scroll_time", &elem->trailScrollTime, 0.1f, 0, 1024.0f, "%.2f"));
+
 		ImGui::EndChild();
 		on_modified(modified);
 	}

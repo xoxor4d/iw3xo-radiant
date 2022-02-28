@@ -533,7 +533,7 @@ namespace ImGui
 
 			const int cell_cols = static_cast<int>(width / step_x);
 
-			for (int i = -1; i < cell_cols + 2; ++i)
+			for (int i = 0; i < cell_cols + 1; ++i)
 			{
 				ImVec2 a = transform({ x + i * step_x, from_y });
 				ImVec2 b = transform({ x + i * step_x, from_y + height });
@@ -558,6 +558,11 @@ namespace ImGui
 					ImFormatString(buf, sizeof(buf), " %.2f", x + static_cast<float>(i) * step_x);
 				}
 
+				if(!i)
+				{
+					b.x += 8.0f;
+				}
+
 				window->DrawList->AddText(b, grid_text_color, buf);
 			}
 
@@ -568,7 +573,7 @@ namespace ImGui
 
 			const int cell_rows = static_cast<int>(height / step_y);
 
-			for (int i = -1; i < cell_rows + 2; ++i)
+			for (int i = 0; i < cell_rows + 1; ++i)
 			{
 				ImVec2 a = transform({ from_x, y + i * step_y });
 				ImVec2 b = transform({ from_x + width, y + i * step_y });
@@ -593,6 +598,11 @@ namespace ImGui
 					ImFormatString(buf, sizeof(buf), " %.2f", y + static_cast<float>(i) * step_y);
 				}
 
+				if (i + 1 > cell_rows)
+				{
+					a.y += 12.0f;
+				}
+
 				window->DrawList->AddText(a, grid_text_color, buf);
 			}
 		}
@@ -603,13 +613,14 @@ namespace ImGui
 		{
 			bool first_point = true;
 
+			int pp = 0;
 			for (int point_idx = shapes[shape].num_vertex - 2; point_idx >= 0; --point_idx)
 			{
 				ImVec2* points = ((ImVec2*)values) + (shapes[shape].offset_vertex + point_idx);
 				ImVec2  p_prev = points[0];
 				ImVec2  p = points[1];
 
-				auto handlePoint = [&](ImVec2& p, int idx, int idx_offset, bool _first_point = false) -> bool
+				auto handlePoint = [&](ImVec2& p, int idx, int idx_offset) -> bool
 				{
 					static const float SIZE = 4;
 
@@ -652,9 +663,12 @@ namespace ImGui
 
 					if (IsItemHovered())
 					{
-						hovered_idx = point_idx + (idx + (shape + 0) + idx_offset);
+						//hovered_idx = point_idx + (idx + (shape + 0) + idx_offset);
+						hovered_idx = idx_offset - pp;
 						//game::printf_to_console("hovered idx: %d", hovered_idx);
 					}
+
+					pp++;
 
 					bool changed = false;
 					if (IsItemActive() && IsMouseClicked(0))
@@ -665,9 +679,9 @@ namespace ImGui
 
 					if (IsItemHovered() || IsItemActive() && IsMouseDragging(0))
 					{
-						//const char* position_str = utils::va("%0.2f, %0.2f - SHAPE [%d] - ID [%d]", p.x, p.y, shape, hovered_idx);
+						const char* position_str = utils::va("%0.2f, %0.2f - [#%d S%d]", p.x, p.y, hovered_idx, shape);
 						ImGui::PushFontFromIndex(ggui::BOLD_18PX);
-						const char* position_str = utils::va("%0.2f, %0.2f", p.x, p.y);
+						//const char* position_str = utils::va("%0.2f, %0.2f", p.x, p.y);
 						const ImVec2 position_str_size = ImGui::CalcTextSize(position_str);
 
 						if (pos.x + position_str_size.x > inner_bb.Max.x)
@@ -710,7 +724,7 @@ namespace ImGui
 				PushID(point_idx + (shape + 0) + shapes[shape].num_indices + 1);
 				{
 					window->DrawList->AddLine(transform(p_prev), transform(p), GetColorU32(ImGuiCol_PlotLines), 1.0f);
-					if (handlePoint(p, 1, shape > 0 ? shapes[shape].num_indices + 1 : 0, first_point)) 
+					if (handlePoint(p, 1, shapes[shape].offset_vertex + shapes[shape].num_vertex - 1)) //shape > 0 ? shapes[shape].num_vertex : 0))  // num_indices + 1
 					{
 						points[1] = p;
 						changed_idx = hovered_idx;
@@ -718,7 +732,7 @@ namespace ImGui
 
 					if (point_idx == 0)
 					{
-						if (handlePoint(p_prev, 0, shape > 0 ? shapes[shape].num_indices + 1 : 0))
+						if (handlePoint(p_prev, 0, shapes[shape].offset_vertex + shapes[shape].num_vertex - 1)) //shape > 0 ? shapes[shape].num_vertex : 0)) // // num_indices + 1
 						{
 							points[0] = p_prev;
 							changed_idx = hovered_idx;
@@ -765,6 +779,15 @@ namespace ImGui
 						if(pt >= shapes[shape].offset_vertex && pt < shapes[shape].offset_vertex + shapes[shape].num_vertex)
 						{
 							//game::printf_to_console("about to delete shape %d using index %d", shape, hovered_index_on_context);
+							shapes[shape].pending_deletion = true;
+							changed_idx = hovered_index_on_context;
+
+							break;
+						}
+
+						// delete last shape if point is out of bounds
+						if(shape + 1 >= shape_count)
+						{
 							shapes[shape].pending_deletion = true;
 							changed_idx = hovered_index_on_context;
 

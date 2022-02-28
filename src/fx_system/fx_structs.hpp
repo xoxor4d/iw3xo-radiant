@@ -76,6 +76,8 @@ namespace fx_system
 		FX_CHAN_NONE = 0x6,
 	};
 
+#pragma warning(push)
+#pragma warning(disable: 4369)
 	enum FX_ED_FLAG_ //enum $88FA8A00277D7F476A2C7B0CBC574EE4
 	{
 		FX_ED_FLAG_LOOPING = 0x1,
@@ -98,6 +100,7 @@ namespace fx_system
 		FX_ED_FLAG_USE_ITEM_CLIP = 0x20000,
 		FX_ED_FLAG_DISABLED = 0x80000000,
 	};
+#pragma warning(pop)
 
 	enum FxRandKey
 	{

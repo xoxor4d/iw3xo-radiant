@@ -13,6 +13,8 @@ namespace fx_system
 namespace ImGui
 {
 	bool	IsVertScollbarVisible();
+	void	left_label_drag(const char* label, const float text_y_offset, const float sameline_offset = 80.0f);
+	void	left_label_checkbox(const char* label, const float text_y_offset);
 
 	bool	Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ED_FLAG_ flag, bool* result = nullptr, bool invert_selected = false);
 	bool	Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ELEM_ flag, bool* result = nullptr);

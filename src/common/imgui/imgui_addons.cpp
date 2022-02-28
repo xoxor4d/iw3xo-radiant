@@ -9,6 +9,26 @@ namespace ImGui
 		return window->ScrollbarY;
 	}
 
+	void left_label_drag(const char* label, const float text_y_offset, const float sameline_offset)
+	{
+		const auto og_cursor_y = ImGui::GetCursorPosY();
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + text_y_offset);
+		ImGui::TextUnformatted(label);
+		ImGui::SameLine(sameline_offset);
+		ImGui::SetCursorPosY(og_cursor_y);
+		ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
+	}
+
+	void left_label_checkbox(const char* label, const float text_y_offset)
+	{
+		const auto og_cursor_y = ImGui::GetCursorPosY();
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + text_y_offset);
+		ImGui::TextUnformatted(label);
+		ImGui::SameLine();
+		ImGui::SetCursorPosY(og_cursor_y);
+	};
+
+
 	bool Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ED_FLAG_ flag, bool* result, bool invert_selected)
 	{
 		bool flag_wrapper = elem->editorFlags & flag;
