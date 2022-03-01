@@ -194,7 +194,7 @@ namespace components
 	{
 		const auto edit_ent = game::g_edit_entity();
 
-		if(edit_ent && edit_ent->eclass->classtype == game::ECLASS_RADIANT_NODE)
+		if(edit_ent && edit_ent->eclass && edit_ent->eclass->classtype == game::ECLASS_RADIANT_NODE)
 		{
 			if(utils::string_equals(ggui::entity::ValueForKey(edit_ent->epairs, "classname"), "fx_origin"))
 			{
@@ -249,7 +249,7 @@ namespace components
 				return;
 			}
 		}
-		else if(edit_ent && utils::string_equals(edit_ent->eclass->name, "worldspawn"))
+		else if(edit_ent && edit_ent->eclass && utils::string_equals(edit_ent->eclass->name, "worldspawn"))
 		{
 			if(!game::g_selected_brushes()->def)
 			{

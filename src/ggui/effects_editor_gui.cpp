@@ -1130,6 +1130,19 @@ namespace ggui::effects_editor_gui
 		ImGui::Spacing();
 		ImGui::title_with_seperator("General", false, 0, 2.0f, 8.0f);
 
+
+		int elem_type = static_cast<std::uint8_t>(elem->elemType);
+		if (ImGui::Combo("Element Type", &elem_type, "Billboard\0Oriented Sprite\0Tail\0Geometry Trail\0Particle Cloud\0Model\0Light\0Spot Light\0Sound\0Decal\0FX Runner\0"))
+		{
+			elem->elemType = static_cast<char>(elem_type);
+			modified = true;
+		}
+
+		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Rotate randomly around forward axis", elem, fx_system::FX_ELEM_RUNNER_USES_RAND_ROT));
+
+		// *------------------------------
+		ImGui::title_with_seperator("Geometry Trail", true, 0, 2.0f, 8.0f);
+
 		// *
 		// prepare data for the shape editor
 
@@ -1321,6 +1334,109 @@ namespace ggui::effects_editor_gui
 
 		ImGui::left_label_drag("Texture Scroll Time", vert_center_offset, 150.0f);
 		MOD_CHECK(ImGui::DragFloat("##tex_scroll_time", &elem->trailScrollTime, 0.1f, 0, 1024.0f, "%.2f"));
+
+		// *------------------------------
+		ImGui::title_with_seperator("Sequence Control", true, 0, 2.0f, 8.0f);
+
+		int atlas_start_behavior = 0;
+		bool atlas_start_behavior_modified = false;
+
+		if (const int masked_flag = elem->atlas.behavior & fx_system::FX_ATLAS_START_MASK;
+					  masked_flag)
+		{
+			if (masked_flag == fx_system::FX_ATLAS_START_FIXED)
+			{
+				atlas_start_behavior = 0;
+			}
+			else if (masked_flag == fx_system::FX_ATLAS_START_RANDOM)
+			{
+				atlas_start_behavior = 1;
+			}
+			else if (masked_flag == fx_system::FX_ATLAS_START_INDEXED)
+			{
+				atlas_start_behavior = 2;
+			}
+		}
+
+		// Start Frame
+
+		ImGui::TextUnformatted("Start Frame:");
+
+		if (ImGui::RadioButton("Fixed Frame #", &atlas_start_behavior, 0)) {
+			atlas_start_behavior_modified = true;
+		}
+
+		ImGui::SameLine(150.0f);
+		ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
+
+		MOD_CHECK(ImGui::DragInt("##fixed_frame_idx", &elem->atlas.index, 1.0f, 0, 256));
+
+		if (ImGui::RadioButton("Random", &atlas_start_behavior, 1)) {
+			atlas_start_behavior_modified = true;
+		}
+
+		if (ImGui::RadioButton("Indexed", &atlas_start_behavior, 2)) {
+			atlas_start_behavior_modified = true;
+		}
+
+		// ----
+
+		int  atlas_play_behavior = 0; // Fixed FPS
+		int  altas_loop_behavior = 0; // Forever
+		bool atlas_play_behavior_modified = false;
+
+		if (elem->atlas.behavior & fx_system::FX_ATLAS_PLAY_OVER_LIFE)
+		{
+			atlas_play_behavior = 4;
+		}
+
+		if (elem->atlas.behavior & fx_system::FX_ATLAS_LOOP_ONLY_N_TIMES)
+		{
+			altas_loop_behavior = 8;
+		}
+
+		// Play Rate
+		SPACING(0.0f, 4.0f);
+		ImGui::TextUnformatted("Play Rate:");
+
+		if (ImGui::RadioButton("Fixed FPS", &atlas_play_behavior, 0)) {
+			atlas_play_behavior_modified = true;
+		}
+
+		ImGui::SameLine(150.0f);
+		ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
+
+		MOD_CHECK(ImGui::DragInt("##fixed_fps", &elem->atlas.fps, 1.0f, 0, 256));
+
+		if (ImGui::RadioButton("Sync to Particle Lifetime", &atlas_play_behavior, 4)) {
+			atlas_play_behavior_modified = true;
+		}
+
+		// Loop
+
+		SPACING(0.0f, 4.0f);
+		ImGui::TextUnformatted("Loop Settings:");
+
+		if (ImGui::RadioButton("Forever", &altas_loop_behavior, 0)) {
+			atlas_play_behavior_modified = true;
+		}
+
+		if (ImGui::RadioButton("Amount", &altas_loop_behavior, 8)) {
+			atlas_play_behavior_modified = true;
+		}
+
+		ImGui::SameLine(150.0f);
+		ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
+
+		MOD_CHECK(ImGui::DragInt("##loop_amount", &elem->atlas.loopCount, 1.0f, 0, 256));
+
+		if (atlas_start_behavior_modified || atlas_play_behavior_modified)
+		{
+			elem->atlas.behavior &= ~(fx_system::FX_ATLAS_START_RANDOM | fx_system::FX_ATLAS_START_INDEXED | fx_system::FX_ATLAS_PLAY_OVER_LIFE | fx_system::FX_ATLAS_LOOP_ONLY_N_TIMES);
+			elem->atlas.behavior |= (atlas_start_behavior | atlas_play_behavior | altas_loop_behavior);
+
+			modified = true;
+		}
 
 		ImGui::EndChild();
 		on_modified(modified);
