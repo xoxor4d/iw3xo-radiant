@@ -10,7 +10,7 @@ namespace ggui::effects_editor_gui
 		"Billboard Sprite",
 		"Oriented Sprite",
 		"Tail",
-		"Trail",
+		"Geo Trail",
 		"Cloud",
 		"Model",
 		"Light",
@@ -307,6 +307,68 @@ namespace ggui::effects_editor_gui
 			utils::replace(loc_filepath, "\\", "/");
 
 			return fx_system::FX_Register(loc_filepath.c_str());
+		}
+
+		return nullptr;
+	}
+
+	game::Material* material_fileprompt()
+	{
+		char filename[MAX_PATH];
+		OPENFILENAMEA ofn;
+		ZeroMemory(&filename, sizeof(filename));
+		ZeroMemory(&ofn, sizeof(ofn));
+
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = cmainframe::activewnd->GetWindow();
+		ofn.lpstrFilter = "Material\0*.*\0Effect Materials\0gfx_*\0";
+		ofn.lpstrFile = filename;
+		ofn.nMaxFile = MAX_PATH;
+		ofn.lpstrTitle = "Select a material ...";
+		ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
+
+		if (GetOpenFileNameA(&ofn))
+		{
+			const std::string filepath = filename;
+			const std::string replace_path = "raw\\materials\\";
+			const std::size_t pos = filepath.find(replace_path) + replace_path.length();
+
+			std::string loc_filepath = filepath.substr(pos);
+			//utils::erase_substring(loc_filepath, ".efx"s);
+			utils::replace(loc_filepath, "\\", "/");
+
+			return game::Material_RegisterHandle(loc_filepath.c_str(), 0);
+		}
+
+		return nullptr;
+	}
+
+	game::XModel* xmodel_fileprompt()
+	{
+		char filename[MAX_PATH];
+		OPENFILENAMEA ofn;
+		ZeroMemory(&filename, sizeof(filename));
+		ZeroMemory(&ofn, sizeof(ofn));
+
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = cmainframe::activewnd->GetWindow();
+		ofn.lpstrFilter = "XModel\0*.*\0";
+		ofn.lpstrFile = filename;
+		ofn.nMaxFile = MAX_PATH;
+		ofn.lpstrTitle = "Select a xmodel ...";
+		ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
+
+		if (GetOpenFileNameA(&ofn))
+		{
+			const std::string filepath = filename;
+			const std::string replace_path = "raw\\xmodel\\";
+			const std::size_t pos = filepath.find(replace_path) + replace_path.length();
+
+			std::string loc_filepath = filepath.substr(pos);
+			//utils::erase_substring(loc_filepath, ".efx"s);
+			utils::replace(loc_filepath, "\\", "/");
+
+			return game::R_RegisterModel(loc_filepath.c_str());
 		}
 
 		return nullptr;
@@ -1134,11 +1196,202 @@ namespace ggui::effects_editor_gui
 		int elem_type = static_cast<std::uint8_t>(elem->elemType);
 		if (ImGui::Combo("Element Type", &elem_type, "Billboard\0Oriented Sprite\0Tail\0Geometry Trail\0Particle Cloud\0Model\0Light\0Spot Light\0Sound\0Decal\0FX Runner\0"))
 		{
+			// do not erase visuals if old and new elem type uses materials
+			if((elem->elemType <= fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
+				&& (elem_type <= fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem_type == fx_system::FX_ELEM_TYPE_CLOUD))
+			{
+					elem->elemType = static_cast<char>(elem_type);
+					modified = true;
+			}
+			else
+			{
+				memset(&elem->u.visuals[0], 0, 32 * sizeof(fx_system::FxElemDefVisuals));
+				elem->visualCount = 0;
+			}
+
 			elem->elemType = static_cast<char>(elem_type);
 			modified = true;
 		}
 
 		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Rotate randomly around forward axis", elem, fx_system::FX_ELEM_RUNNER_USES_RAND_ROT));
+
+		// *------------------------------
+		ImGui::title_with_seperator("Visuals / Effect Materials", true, 0, 2.0f, 8.0f);
+
+		struct visuals_helper_s
+		{
+			const char* name;
+			int visual_index;
+		};
+
+		std::vector<visuals_helper_s> vis;
+		static std::uint32_t vis_current_idx = 0;
+
+		for (auto m = 0; m < elem->visualCount; m++)
+		{
+			if (elem->elemType <= fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
+			{
+				if (elem->u.visuals[m].material && elem->u.visuals[m].material->info.name)
+				{
+					vis.push_back({ elem->u.visuals[m].material->info.name, m });
+				}
+			}
+			else if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
+			{
+				if (elem->u.visuals[m].model && elem->u.visuals[m].model->name)
+				{
+					vis.push_back({ elem->u.visuals[m].model->name, m });
+				}
+			}
+			else if (elem->elemType == fx_system::FX_ELEM_TYPE_RUNNER)
+			{
+				if (elem->u.visuals[m].effectDef.handle && elem->u.visuals[m].effectDef.handle->name)
+				{
+					vis.push_back({ elem->u.visuals[m].effectDef.handle->name, m });
+				}
+			}
+			else if (elem->elemType == fx_system::FX_ELEM_TYPE_SOUND)
+			{
+				if (elem->u.visuals[m].soundName)
+				{
+					vis.push_back({ elem->u.visuals[m].soundName, m });
+				}
+			}
+			/*else if (elem->elemType == fx_system::FX_ELEM_TYPE_DECAL)
+			{
+				if (elem->u.markVisuals[m].materials[0] && elem->u.markVisuals[m].materials[0]->info.name)
+				{
+					vis.push_back({ elem->u.markVisuals[m].materials[0]->info.name, m });
+				}
+			}*/
+			else
+			{
+				//listbox_enabled = false;
+				break;
+			}
+		}
+
+		bool listbox_enabled = true;
+		if(elem->elemType == fx_system::FX_ELEM_TYPE_SOUND || elem->elemType == fx_system::FX_ELEM_TYPE_DECAL || elem->elemType == fx_system::FX_ELEM_TYPE_OMNI_LIGHT || elem->elemType == fx_system::FX_ELEM_TYPE_SPOT_LIGHT)
+		{
+			listbox_enabled = false;
+		}
+
+		const float listbox_height = 250.0f;
+
+		ImGui::BeginDisabled(!listbox_enabled);
+		{
+			if (ImGui::BeginListBox("##visuals_listbox", ImVec2(0, listbox_height)))
+			{
+				if (vis_current_idx >= vis.size())
+				{
+					vis_current_idx = 0;
+				}
+
+				for (std::uint32_t n = 0; n < vis.size(); n++)
+				{
+					const bool is_selected = (vis_current_idx == n);
+					if (ImGui::Selectable(vis[n].name, is_selected))
+					{
+						vis_current_idx = n;
+					}
+
+					// initial focus
+					if (is_selected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+
+				ImGui::EndListBox();
+			}
+
+			ImGui::EndDisabled();
+		}
+
+		ImGui::SameLine();
+
+		const auto post_listbox_cursor = ImGui::GetCursorPos();
+
+		const bool fileprompt_enabled = elem->visualCount < 32 && listbox_enabled;
+		ImGui::BeginDisabled(!fileprompt_enabled);
+		{
+			if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
+			{
+				if (elem->elemType <= fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
+				{
+					if (const auto  material = material_fileprompt();
+									material && elem->visualCount < 32)
+					{
+						elem->u.visuals[elem->visualCount].material = material;
+						elem->visualCount++;
+
+						modified = true;
+					}
+				}
+				else if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
+				{
+					if (const auto	model = xmodel_fileprompt();
+									model)
+					{
+						elem->u.visuals[elem->visualCount].model = model;
+						elem->visualCount++;
+
+						modified = true;
+					}
+				}
+				else if (elem->elemType == fx_system::FX_ELEM_TYPE_RUNNER)
+				{
+					if (const auto	effect_def = effectdef_fileprompt();
+									effect_def)
+					{
+						elem->u.visuals[elem->visualCount].effectDef.handle = effect_def;
+						elem->visualCount++;
+
+						modified = true;
+					}
+				}
+				
+			}
+
+			ImGui::EndDisabled();
+		}
+
+		ImGui::SetCursorPos(ImVec2(post_listbox_cursor.x, post_listbox_cursor.y + ImGui::GetFrameHeight() + 4.0f));
+
+		const bool can_delete_visuals = elem->visualCount > 0 && listbox_enabled;
+		ImGui::BeginDisabled(!can_delete_visuals);
+		{
+			if (ImGui::Button("x##delete_vis", ImVec2(28, ImGui::GetFrameHeight())))
+			{
+				if (vis_current_idx >= vis.size())
+				{
+					vis_current_idx = 0;
+				}
+
+				if(elem->visualCount > 0 && vis_current_idx < vis.size())
+				{
+					// if last
+					if(vis_current_idx == static_cast<std::uint32_t>(elem->visualCount - 1))
+					{
+						memset(&elem->u.visuals[vis_current_idx], 0, sizeof(fx_system::FxElemVisuals));
+						elem->visualCount--;
+					}
+					else
+					{
+						const auto amount_to_copy = elem->visualCount - 1 - vis_current_idx;
+						memcpy(&elem->u.visuals[vis_current_idx], &elem->u.visuals[vis_current_idx + 1], amount_to_copy * sizeof(fx_system::FxElemVisuals));
+						memset(&elem->u.visuals[vis_current_idx + amount_to_copy], 0, amount_to_copy * sizeof(fx_system::FxElemVisuals));
+						elem->visualCount--;
+					}
+				}
+			}
+
+			ImGui::EndDisabled();
+		}
+
+		ImGui::SetCursorPos(ImVec2(post_listbox_cursor.x, post_listbox_cursor.y + listbox_height));
+		
 
 		// *------------------------------
 		ImGui::title_with_seperator("Geometry Trail", true, 0, 2.0f, 8.0f);

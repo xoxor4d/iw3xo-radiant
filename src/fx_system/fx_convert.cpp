@@ -64,7 +64,7 @@ namespace fx_system
 				Material_GetInfo(edElemDef->u.visuals[visualIndex].material, &mtlInfo);
 				if (mtlInfo.textureAtlasRowCount != mtlInfoRef.textureAtlasRowCount || mtlInfo.textureAtlasColumnCount != mtlInfoRef.textureAtlasColumnCount)
 				{
-					Warning(21, "effect '%s' segment '%s':\nmaterial %s is a %i x %i atlas, but material %s is a %i x %i atlas\n", 
+					Warning(21, "effect '%s' segment '%s':\nmaterial %s is a %i x %i atlas, but material %s is a %i x %i atlas\n(You are probably using 2 atlas materials with unequal rows/columns)\n", 
 						editorEffect->name, 
 						edElemDef->name, 
 						mtlInfoRef.name, 
