@@ -137,8 +137,8 @@ namespace fx_system
 			Assert();
 		}
 
-		zrot[0][0] = cos(rad);
-		zrot[0][1] = sin(rad);
+		zrot[0][0] = cosf(rad);
+		zrot[0][1] = sinf(rad);
 
 		if (std::isnan(zrot[0][1]))
 		{
@@ -153,8 +153,10 @@ namespace fx_system
 		zrot[1][0] = -zrot[0][1];
 		zrot[1][1] =  zrot[0][0];
 
-		MatrixMultiply(m, zrot, zrot);
-		MatrixMultiply(zrot, im, m);
+		float temp[3][3] = {};
+
+		MatrixMultiply(m, zrot, temp);
+		MatrixMultiply(temp, im, m);
 
 		dst[0] = m[0][0] * point[0] + m[0][1] * point[1] + point[2] * m[0][2];
 		dst[1] = m[1][0] * point[0] + m[1][1] * point[1] + point[2] * m[1][2];
