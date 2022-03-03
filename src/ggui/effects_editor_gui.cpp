@@ -47,7 +47,10 @@ namespace ggui::effects_editor_gui
 					}
 
 					// restart effect
-					components::effects::play();
+					if (components::effects::effect_is_playing() || components::effects::effect_is_repeating() || components::effects::effect_is_paused())
+					{
+						components::effects::play();
+					}
 				}
 
 				ImGui::Indent(-6.0f);
@@ -389,141 +392,172 @@ namespace ggui::effects_editor_gui
 
 	void tab_generation(fx_system::FxEditorElemDef* elem)
 	{
-		ImGui::BeginChild("##effect_properties_generation_child");
-
 		bool modified = false;
+
+		ImGui::BeginChild("##effect_properties_generation_child");
 
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
+
 		ImGui::title_with_seperator("Spawning", false, 0, 2.0f, 8.0f);
-
-		int spawn_mode = (elem->editorFlags & fx_system::FX_ED_FLAG_LOOPING) != 0;
-		if (ImGui::Combo("Spawning Mode", &spawn_mode, "One-Shot\0Looping\0"))
 		{
-			// looping
-			if (spawn_mode)
+			int spawn_mode = (elem->editorFlags & fx_system::FX_ED_FLAG_LOOPING) != 0;
+			if (ImGui::Combo("Spawning Mode", &spawn_mode, "One-Shot\0Looping\0"))
 			{
-				elem->editorFlags |= fx_system::FX_ED_FLAG_LOOPING;
+				// looping
+				if (spawn_mode)
+				{
+					elem->editorFlags |= fx_system::FX_ED_FLAG_LOOPING;
+				}
+				else
+				{
+					elem->editorFlags &= ~fx_system::FX_ED_FLAG_LOOPING;
+				}
+
+				modified = true;
 			}
-			else
+
+			ImGui::BeginDisabled(spawn_mode);
 			{
-				elem->editorFlags &= ~fx_system::FX_ED_FLAG_LOOPING;
+				MOD_CHECK(ImGui::DragInt2("Count", reinterpret_cast<int*>(&elem->spawnOneShot.count), 0.25f, 0, UINT16_MAX));
+				ImGui::EndDisabled();
+			}
+			ImGui::BeginDisabled(!spawn_mode);
+			{
+				MOD_CHECK(ImGui::DragInt("Interval (ms)", &elem->spawnLooping.intervalMsec, 0.25f, 5, UINT16_MAX));
+				MOD_CHECK(ImGui::DragInt("Loop Count", &elem->spawnLooping.count, 0.1f, 0, UINT16_MAX));
+				ImGui::EndDisabled();
 			}
 
-			modified = true;
-		}
+			MOD_CHECK(ImGui::DragInt2("Life (ms)", reinterpret_cast<int*>(&elem->lifeSpanMsec), 0.25f, 0, UINT16_MAX));
+			MOD_CHECK(ImGui::DragInt2("Delay (ms)", reinterpret_cast<int*>(&elem->spawnDelayMsec), 0.25f, -UINT16_MAX, UINT16_MAX));
+			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Range Min/Max", &elem->spawnRange, 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
+			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("FadeIn Start/End", &elem->fadeInRange, 0.25f, 0, FLT_MAX, "%.2f"));
+			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("FadeOut Start/End", &elem->fadeOutRange, 0.25f, 0, FLT_MAX, "%.2f"));
 
-		ImGui::BeginDisabled(spawn_mode);
-		{
-			MOD_CHECK(ImGui::DragInt2("Count", reinterpret_cast<int*>(&elem->spawnOneShot.count), 0.25f, 0, UINT16_MAX));
-			
-			ImGui::EndDisabled();
-		}
-		ImGui::BeginDisabled(!spawn_mode);
-		{
-			MOD_CHECK(ImGui::DragInt("Interval (ms)", &elem->spawnLooping.intervalMsec, 0.25f, 5, UINT16_MAX));
-			MOD_CHECK(ImGui::DragInt("Loop Count", &elem->spawnLooping.count, 0.1f, 0, UINT16_MAX));
-			ImGui::EndDisabled();
-		}
+			bool frustum_cull_mode = false;
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable Frustum Cull Radius##2", elem, fx_system::FX_ELEM_SPAWN_FRUSTUM_CULL, &frustum_cull_mode));
 
-		MOD_CHECK(ImGui::DragInt2("Life (ms)", reinterpret_cast<int*>(&elem->lifeSpanMsec), 0.25f, 0, UINT16_MAX));
-		MOD_CHECK(ImGui::DragInt2("Delay (ms)", reinterpret_cast<int*>(&elem->spawnDelayMsec), 0.25f, -UINT16_MAX, UINT16_MAX));
-		MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Range Min/Max", &elem->spawnRange, 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
-		MOD_CHECK(ImGui::DragFloat2_FxFloatRange("FadeIn Start/End", &elem->fadeInRange, 0.25f, 0, FLT_MAX, "%.2f"));
-		MOD_CHECK(ImGui::DragFloat2_FxFloatRange("FadeOut Start/End", &elem->fadeOutRange, 0.25f, 0, FLT_MAX, "%.2f"));
-
-		bool frustum_cull_mode = false;
-		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable Frustum Cull Radius##2", elem, fx_system::FX_ELEM_SPAWN_FRUSTUM_CULL, &frustum_cull_mode));
-
-		ImGui::BeginDisabled(!frustum_cull_mode);
-		{
-			MOD_CHECK(ImGui::DragFloat("Frustum Cull Radius", &elem->spawnFrustumCullRadius, 0.25f, 0, UINT16_MAX, "%.2f"));
-			ImGui::EndDisabled();
+			ImGui::BeginDisabled(!frustum_cull_mode);
+			{
+				MOD_CHECK(ImGui::DragFloat("Frustum Cull Radius", &elem->spawnFrustumCullRadius, 0.25f, 0, UINT16_MAX, "%.2f"));
+				ImGui::EndDisabled();
+			}
 		}
 
 
 		// *------------------------------
 		ImGui::title_with_seperator("Origin", true, 0, 2.0f, 8.0f);
-
-		MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Forward", &elem->spawnOrigin[0], 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
-		MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Right", &elem->spawnOrigin[1], 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
-		MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Up", &elem->spawnOrigin[2], 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
-
-		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Origin Relative To Effect Axis", elem, fx_system::FX_ELEM_SPAWN_RELATIVE_TO_EFFECT));
-
-		int origin_offset_mode = 
-			elem->flags & fx_system::FX_ELEM_SPAWN_OFFSET_NONE ? 0 :
-			elem->flags & fx_system::FX_ELEM_SPAWN_OFFSET_SPHERE ? 1 :
-			elem->flags & fx_system::FX_ELEM_SPAWN_OFFSET_CYLINDER ? 2 : 0;
-
-		if (ImGui::Combo("Offset", &origin_offset_mode, "No Offset\0Spherical\0Cylindrical\0"))
 		{
-			switch(origin_offset_mode)
+			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Forward", &elem->spawnOrigin[0], 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
+			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Right", &elem->spawnOrigin[1], 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
+			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Up", &elem->spawnOrigin[2], 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
+
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Origin Relative To Effect Axis", elem, fx_system::FX_ELEM_SPAWN_RELATIVE_TO_EFFECT));
+
+			int origin_offset_mode =
+				elem->flags & fx_system::FX_ELEM_SPAWN_OFFSET_NONE ? 0 :
+				elem->flags & fx_system::FX_ELEM_SPAWN_OFFSET_SPHERE ? 1 :
+				elem->flags & fx_system::FX_ELEM_SPAWN_OFFSET_CYLINDER ? 2 : 0;
+
+			if (ImGui::Combo("Offset", &origin_offset_mode, "No Offset\0Spherical\0Cylindrical\0"))
 			{
-			case 0:
-				elem->flags &= ~(fx_system::FX_ELEM_SPAWN_OFFSET_SPHERE | fx_system::FX_ELEM_SPAWN_OFFSET_CYLINDER);
-				break;
+				switch (origin_offset_mode)
+				{
+				case 0:
+					elem->flags &= ~(fx_system::FX_ELEM_SPAWN_OFFSET_SPHERE | fx_system::FX_ELEM_SPAWN_OFFSET_CYLINDER);
+					break;
 
-			case 1:
-				elem->flags &= ~fx_system::FX_ELEM_SPAWN_OFFSET_CYLINDER;
-				elem->flags |= fx_system::FX_ELEM_SPAWN_OFFSET_SPHERE;
-				break;
+				case 1:
+					elem->flags &= ~fx_system::FX_ELEM_SPAWN_OFFSET_CYLINDER;
+					elem->flags |= fx_system::FX_ELEM_SPAWN_OFFSET_SPHERE;
+					break;
 
-			case 2:
-				elem->flags &= ~fx_system::FX_ELEM_SPAWN_OFFSET_SPHERE;
-				elem->flags |= fx_system::FX_ELEM_SPAWN_OFFSET_CYLINDER;
-				break;
+				case 2:
+					elem->flags &= ~fx_system::FX_ELEM_SPAWN_OFFSET_SPHERE;
+					elem->flags |= fx_system::FX_ELEM_SPAWN_OFFSET_CYLINDER;
+					break;
+				}
+
+				modified = true;
 			}
-			
-			modified = true;
-		}
 
-		ImGui::BeginDisabled(!origin_offset_mode);
-		{
-			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Radius/Width", &elem->spawnOffsetRadius, 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
-			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Height", &elem->spawnOffsetHeight, 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
-			ImGui::EndDisabled();
+			ImGui::BeginDisabled(!origin_offset_mode);
+			{
+				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Radius/Width", &elem->spawnOffsetRadius, 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
+				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Height", &elem->spawnOffsetHeight, 0.25f, -FLT_MAX, FLT_MAX, "%.2f"));
+				ImGui::EndDisabled();
+			}
 		}
 
 
 		// *------------------------------
 		ImGui::title_with_seperator("Misc", true, 0, 2.0f, 8.0f);
-
-		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Disable Far plane culling (Past Fog)", elem, fx_system::FX_ELEM_DRAW_PAST_FOG));
-		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Blocks Sight", elem, fx_system::FX_ELEM_BLOCK_SIGHT));
-		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Draw With Viewmodel", elem, fx_system::FX_ELEM_DRAW_WITH_VIEWMODEL));
-		MOD_CHECK(ImGui::DragInt("Sort Order", &elem->sortOrder, 0.1f, -UINT8_MAX, UINT8_MAX));
-
+		{
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Disable Far plane culling (Past Fog)", elem, fx_system::FX_ELEM_DRAW_PAST_FOG));
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Blocks Sight", elem, fx_system::FX_ELEM_BLOCK_SIGHT));
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Draw With Viewmodel", elem, fx_system::FX_ELEM_DRAW_WITH_VIEWMODEL));
+			MOD_CHECK(ImGui::DragInt("Sort Order", &elem->sortOrder, 0.1f, -UINT8_MAX, UINT8_MAX));
+		}
+		
 
 		// *------------------------------
 		ImGui::title_with_seperator("Death Effects", true, 0, 2.0f, 8.0f);
-
-		bool enable_death_effect = false;
-		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable Death Effects", elem, fx_system::FX_ED_FLAG_PLAY_ON_DEATH, &enable_death_effect));
-
-		if(enable_death_effect)
 		{
-			std::string death_effect_string;
-			if(elem->effectOnDeath && elem->effectOnDeath->name)
-			{
-				death_effect_string = elem->effectOnDeath->name;
-			}
+			bool enable_death_effect = false;
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable Death Effects", elem, fx_system::FX_ED_FLAG_PLAY_ON_DEATH, &enable_death_effect));
 
-			ImGui::InputText("##no_label", &death_effect_string, ImGuiInputTextFlags_ReadOnly);
-			ImGui::SameLine();
-			if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
+			if (enable_death_effect)
 			{
-				if(const auto death_elem = effectdef_fileprompt(); 
-							  death_elem)
+				std::string death_effect_string;
+				if (elem->effectOnDeath && elem->effectOnDeath->name)
 				{
-					elem->effectOnDeath = death_elem;
-					modified = true;
+					death_effect_string = elem->effectOnDeath->name;
+				}
+
+				ImGui::InputText("##no_label_death", &death_effect_string, ImGuiInputTextFlags_ReadOnly);
+				ImGui::SameLine();
+				if (ImGui::Button("..##filepromt_death", ImVec2(28, ImGui::GetFrameHeight())))
+				{
+					if (const auto	death_elem = effectdef_fileprompt();
+									death_elem)
+					{
+						elem->effectOnDeath = death_elem;
+						modified = true;
+					}
+				}
+			}
+		}
+
+		ImGui::title_with_seperator("Emitted Effects", true, 0, 2.0f, 8.0f);
+		{
+			bool enable_emission = false;
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Emit Effects", elem, fx_system::FX_ED_FLAG_PLAY_ON_RUN, &enable_emission));
+
+			if (enable_emission)
+			{
+				std::string emit_effect_string;
+				if (elem->emission && elem->emission->name)
+				{
+					emit_effect_string = elem->emission->name;
+				}
+
+				ImGui::InputText("##no_label_emission", &emit_effect_string, ImGuiInputTextFlags_ReadOnly);
+				ImGui::SameLine();
+
+				if (ImGui::Button("..##filepromt_emission", ImVec2(28, ImGui::GetFrameHeight())))
+				{
+					if (const auto	emit_elem = effectdef_fileprompt();
+									emit_elem)
+					{
+						elem->emission = emit_elem;
+						modified = true;
+					}
 				}
 			}
 		}
 
 		ImGui::EndChild();
-
 		on_modified(modified);
 	}
 	
@@ -531,7 +565,6 @@ namespace ggui::effects_editor_gui
 	void tab_size([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
 		bool modified = false;
-
 		const ImGuiStyle& style = ImGui::GetStyle();
 
 		const float graph_width = ImGui::GetWindowContentRegionWidth() - (style.FramePadding.x * 2) - 12.0f;
@@ -546,124 +579,145 @@ namespace ggui::effects_editor_gui
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
 
-		ImGui::title_with_seperator("Width / Diameter", false, 0, 2.0f, 8.0f);
+		bool pre_spacing = true;
+
+		if (elem->elemType != fx_system::FX_ELEM_TYPE_MODEL && elem->elemType != fx_system::FX_ELEM_TYPE_SOUND && elem->elemType != fx_system::FX_ELEM_TYPE_RUNNER)
 		{
+			ImGui::title_with_seperator("Width / Diameter", false, 0, 2.0f, 8.0f);
+			{
+				// false = graph 1, true = 2
+				static bool current_graph_scale = false;
+
+				int new_count = 0;
+				const auto curve = elem->sizeShape[0][current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+
+				MOD_CHECK_GRAPH(ImGui::CurveEditor("width_graph", curve->keys, curve->keyCount,
+					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
+
+				if (new_count != curve->keyCount)
+				{
+					curve->keyCount = new_count;
+					modified = true;
+				}
+
+				if (ImGui::BeginPopupContextItem("width_graph##bg"))
+				{
+					if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+					{
+						current_graph_scale = false;
+					}
+
+					if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+					{
+						current_graph_scale = true;
+					}
+
+					ImGui::EndPopup();
+				}
+
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##width", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_0));
+				ImGui::SameLine(0, 14.0f);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+				MOD_CHECK(ImGui::DragFloat("##width_scale", &elem->sizeScale[0], 0.5f, 0, 0, "%.1f")); TT("Scale");
+			}
+		}
+		else
+		{
+			pre_spacing = false;
+		}
+
+		if (elem->elemType < fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
+		{
+			// *------------------------------
+			ImGui::title_with_seperator("Height / Length", pre_spacing, 0, 2.0f, 8.0f);
+
 			// false = graph 1, true = 2
 			static bool current_graph_scale = false;
 
-			int new_count = 0;
-			const auto curve = elem->sizeShape[0][current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+			bool enable_height_graph = false;
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Non-uniform particle size", elem, fx_system::FX_ELEM_NONUNIFORM_SCALE, &enable_height_graph));
 
-			MOD_CHECK_GRAPH(ImGui::CurveEditor("width_graph", curve->keys, curve->keyCount,
-				ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-			if (new_count != curve->keyCount)
+			ImGui::BeginDisabled(!enable_height_graph);
 			{
-				curve->keyCount = new_count;
-				modified = true;
-			}
+				int new_count = 0;
+				const auto curve = elem->sizeShape[1][current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
-			if (ImGui::BeginPopupContextItem("width_graph##bg"))
-			{
-				if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+				MOD_CHECK_GRAPH(ImGui::CurveEditor("height_graph", curve->keys, curve->keyCount,
+					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
+
+				if (ImGui::BeginPopupContextItem("height_graph##bg"))
 				{
-					current_graph_scale = false;
+					if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+					{
+						current_graph_scale = false;
+					}
+
+					if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+					{
+						current_graph_scale = true;
+					}
+
+					ImGui::EndPopup();
 				}
 
-				if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
-				{
-					current_graph_scale = true;
-				}
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##height", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_1));
+				ImGui::SameLine(0, 14.0f);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+				MOD_CHECK(ImGui::DragFloat("##height_scale", &elem->sizeScale[1], 0.5f, 0, 0, "%.1f")); TT("Scale");
 
-				ImGui::EndPopup();
+				ImGui::EndDisabled();
 			}
 
-			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##width", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_0));
-			ImGui::SameLine(0, 14.0f);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
-			MOD_CHECK(ImGui::DragFloat("##width_scale", &elem->sizeScale[0], 0.5f, 0, 0, "%.1f")); TT("Scale");
+			pre_spacing = true;
 		}
 
-
-		// *------------------------------
-		ImGui::title_with_seperator("Height / Length", true, 0, 2.0f, 8.0f);
+		if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
 		{
-			// false = graph 1, true = 2
-			static bool current_graph_scale = false;
+			// *------------------------------
+			ImGui::title_with_seperator("Scale", pre_spacing, 0, 2.0f, 8.0f);
 
-			int new_count = 0;
-			const auto curve = elem->sizeShape[1][current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
-
-			MOD_CHECK_GRAPH(ImGui::CurveEditor("height_graph", curve->keys, curve->keyCount,
-				ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-			if (ImGui::BeginPopupContextItem("height_graph##bg"))
+			const bool is_scale_graph_aval = elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD || elem->elemType == fx_system::FX_ELEM_TYPE_MODEL;
+			ImGui::BeginDisabled(!is_scale_graph_aval);
 			{
-				if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+				// false = graph 1, true = 2
+				static bool current_graph_scale = false;
+
+				int new_count = 0;
+				const auto curve = elem->scaleShape[current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+
+				MOD_CHECK_GRAPH(ImGui::CurveEditor("scale_graph", curve->keys, curve->keyCount,
+					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
+
+				if (new_count != curve->keyCount)
 				{
-					current_graph_scale = false;
+					curve->keyCount = new_count;
+					modified = true;
 				}
 
-				if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+				if (ImGui::BeginPopupContextItem("scale_graph##bg")) // BeginPopupContextWindow
 				{
-					current_graph_scale = true;
+					if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+					{
+						current_graph_scale = false;
+					}
+
+					if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+					{
+						current_graph_scale = true;
+					}
+
+					ImGui::EndPopup();
 				}
 
-				ImGui::EndPopup();
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##scale", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SCALE));
+				ImGui::SameLine(0, 14.0f);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+				MOD_CHECK(ImGui::DragFloat("##scale_scale", &elem->scaleScale, 0.5f, 0, 0, "%.1f")); TT("Scale");
 			}
-
-			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##height", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_1));
-			ImGui::SameLine(0, 14.0f);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
-			MOD_CHECK(ImGui::DragFloat("##height_scale", &elem->sizeScale[1], 0.5f, 0, 0, "%.1f")); TT("Scale");
+			ImGui::EndDisabled();
 		}
 
-
-		// *------------------------------
-		ImGui::title_with_seperator("Scale", true, 0, 2.0f, 8.0f);
-
-		const bool is_scale_graph_aval = elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD || elem->elemType == fx_system::FX_ELEM_TYPE_MODEL;
-		ImGui::BeginDisabled(!is_scale_graph_aval);
-		{
-			// false = graph 1, true = 2
-			static bool current_graph_scale = false;
-
-			int new_count = 0;
-			const auto curve = elem->scaleShape[current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
-
-			MOD_CHECK_GRAPH(ImGui::CurveEditor("scale_graph", curve->keys, curve->keyCount,
-				ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-			if (new_count != curve->keyCount)
-			{
-				curve->keyCount = new_count;
-				modified = true;
-			}
-
-			if (ImGui::BeginPopupContextItem("scale_graph##bg")) // BeginPopupContextWindow
-			{
-				if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
-				{
-					current_graph_scale = false;
-				}
-
-				if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
-				{
-					current_graph_scale = true;
-				}
-
-				ImGui::EndPopup();
-			}
-
-			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##scale", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SCALE));
-			ImGui::SameLine(0, 14.0f);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
-			MOD_CHECK(ImGui::DragFloat("##scale_scale", &elem->scaleScale, 0.5f, 0, 0, "%.1f")); TT("Scale");
-		}
-
-		ImGui::EndDisabled();
 		ImGui::EndChild();
-
 		on_modified(modified);
 	}
 
@@ -683,68 +737,69 @@ namespace ggui::effects_editor_gui
 
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
+
 		ImGui::title_with_seperator("General", false, 0, 2.0f, 8.0f);
-
-		ImGui::TextUnformatted("Move relative to:");
-
-		int move_rel_to_flag = 0;
-		
-		if (const int masked_flag = elem->flags & fx_system::FX_ELEM_RUN_MASK; 
-					  masked_flag)
 		{
-			if(masked_flag == fx_system::FX_ELEM_RUN_RELATIVE_TO_SPAWN)
+			ImGui::TextUnformatted("Move relative to:");
+
+			int move_rel_to_flag = 0;
+
+			if (const int masked_flag = elem->flags & fx_system::FX_ELEM_RUN_MASK;
+				masked_flag)
 			{
-				move_rel_to_flag = 1;
+				if (masked_flag == fx_system::FX_ELEM_RUN_RELATIVE_TO_SPAWN)
+				{
+					move_rel_to_flag = 1;
+				}
+				else if (masked_flag == fx_system::FX_ELEM_RUN_RELATIVE_TO_EFFECT)
+				{
+					move_rel_to_flag = 2;
+				}
+				else if (masked_flag == fx_system::FX_ELEM_RUN_RELATIVE_TO_OFFSET)
+				{
+					move_rel_to_flag = 3;
+				}
 			}
-			else if(masked_flag == fx_system::FX_ELEM_RUN_RELATIVE_TO_EFFECT)
+
+			const float radio_same_line_offset = ImGui::GetContentRegionAvailWidth() * 0.55f;
+			bool move_rel_to_flag_modified = false;
+
+			if (ImGui::RadioButton("World", &move_rel_to_flag, 0)) {
+				move_rel_to_flag_modified = true;
+			}
+
+			ImGui::SameLine(radio_same_line_offset);
+			if (ImGui::RadioButton("Spawn Offset", &move_rel_to_flag, 3)) {
+				move_rel_to_flag_modified = true;
+			}
+
+			if (ImGui::RadioButton("Effect at Spawn", &move_rel_to_flag, 1)) {
+				move_rel_to_flag_modified = true;
+			}
+
+			ImGui::SameLine(radio_same_line_offset);
+			if (ImGui::RadioButton("Effect Now", &move_rel_to_flag, 2)) {
+				move_rel_to_flag_modified = true;
+			}
+
+			// #
+			auto assign_movement_flag = [&](const int flag) -> void
 			{
-				move_rel_to_flag = 2;
-			}
-			else if(masked_flag == fx_system::FX_ELEM_RUN_RELATIVE_TO_OFFSET)
+				elem->flags &= ~(fx_system::FX_ELEM_RUN_RELATIVE_TO_SPAWN | fx_system::FX_ELEM_RUN_RELATIVE_TO_EFFECT | fx_system::FX_ELEM_RUN_RELATIVE_TO_OFFSET);
+				elem->flags |= flag;
+			};
+
+			if (move_rel_to_flag_modified)
 			{
-				move_rel_to_flag = 3;
+				// movement flags are multiple of 64
+				assign_movement_flag(move_rel_to_flag * 64);
+				modified = true;
 			}
+
+			SPACING(0.0f, 8.0f);
+			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Gravity", &elem->gravity, 0.1f, -32768.0f, 32768.0f, "%.2f"));
 		}
 
-		const float radio_same_line_offset = ImGui::GetContentRegionAvailWidth() * 0.55f;
-		bool move_rel_to_flag_modified = false;
-
-		if(ImGui::RadioButton("World", &move_rel_to_flag, 0)) {
-			move_rel_to_flag_modified = true;
-		}
-
-		ImGui::SameLine(radio_same_line_offset);
-		if(ImGui::RadioButton("Spawn Offset", &move_rel_to_flag, 3)) {
-			move_rel_to_flag_modified = true;
-		}
-	
-		if(ImGui::RadioButton("Effect at Spawn", &move_rel_to_flag, 1)) {
-			move_rel_to_flag_modified = true;
-		}
-
-		ImGui::SameLine(radio_same_line_offset);
-		if(ImGui::RadioButton("Effect Now", &move_rel_to_flag, 2)) {
-			move_rel_to_flag_modified = true;
-		}
-
-		// #
-		auto assign_movement_flag = [&](const int flag) -> void
-		{
-			elem->flags &= ~(fx_system::FX_ELEM_RUN_RELATIVE_TO_SPAWN | fx_system::FX_ELEM_RUN_RELATIVE_TO_EFFECT | fx_system::FX_ELEM_RUN_RELATIVE_TO_OFFSET);
-			elem->flags |= flag;
-		};
-
-		if(move_rel_to_flag_modified)
-		{
-			// movement flags are multiple of 64
-			assign_movement_flag(move_rel_to_flag * 64);
-			modified = true;
-		}
-
-		SPACING(0.0f, 8.0f);
-		MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Gravity", &elem->gravity, 0.1f, -32768.0f, 32768.0f, "%.2f"));
-
-		
 
 		// *------------------------------
 
@@ -769,28 +824,7 @@ namespace ggui::effects_editor_gui
 			}
 		};
 
-		//auto og_cursor_y = ImGui::GetCursorPosY();
 		const auto vert_center_offset = (ImGui::GetFrameHeight() - ImGui::CalcTextSize("A").y) * 0.4f;
-
-		// #
-		//auto left_label_drag = [&](const char* label) -> void
-		//{
-		//	og_cursor_y = ImGui::GetCursorPosY();
-		//	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + vert_center_offset);
-		//	ImGui::TextUnformatted(label);
-		//	ImGui::SameLine(80.0f);
-		//	ImGui::SetCursorPosY(og_cursor_y);
-		//	ImGui::SetNextItemWidth(-style.FramePadding.x);
-		//};
-
-		//auto left_label_checkbox = [&](const char* label) -> void
-		//{
-		//	og_cursor_y = ImGui::GetCursorPosY();
-		//	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + vert_center_offset);
-		//	ImGui::TextUnformatted(label);
-		//	ImGui::SameLine();
-		//	ImGui::SetCursorPosY(og_cursor_y);
-		//};
 
 		{
 			// 0 = graph1, 1 = graph2
@@ -894,7 +928,6 @@ namespace ggui::effects_editor_gui
 		
 
 		// *------------------------------
-
 		{
 			// 0 = graph1, 1 = graph2
 			static int velocity_2_graph = 0;
@@ -1011,7 +1044,82 @@ namespace ggui::effects_editor_gui
 
 	void tab_rotation([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
-		
+		bool modified = false;
+		const ImGuiStyle& style = ImGui::GetStyle();
+
+		const float graph_width = ImGui::GetWindowContentRegionWidth() - (style.FramePadding.x * 2) - 12.0f;
+		float graph_height = graph_width;
+
+		if (graph_height > 320) {
+			graph_height = 320;
+		}
+
+		ImGui::BeginChild("##effect_properties_rotation_child", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+		ImGui::Indent(8.0f);
+		ImGui::Spacing();
+
+		ImGui::title_with_seperator("Rotation", false, 0, 2.0f, 8.0f);
+		{
+			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Initial Rotation", &elem->initialRotation, 0.1f, -360.0f, 360.0f, "%.2f"));
+
+			// false = graph 1, true = 2
+			static bool current_graph_scale = false;
+
+			int new_count = 0;
+			const auto curve = elem->rotationShape[current_graph_scale];
+
+			MOD_CHECK_GRAPH(ImGui::CurveEditor("rotation_graph", curve->keys, curve->keyCount,
+				ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
+
+			if (new_count != curve->keyCount)
+			{
+				curve->keyCount = new_count;
+				modified = true;
+			}
+
+			if (ImGui::BeginPopupContextItem("rotation_graph##bg"))
+			{
+				if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+				{
+					current_graph_scale = false;
+				}
+
+				if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+				{
+					current_graph_scale = true;
+				}
+
+				ImGui::EndPopup();
+			}
+
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##height", elem, fx_system::FX_ED_FLAG_USE_RANDOM_ROTATION_DELTA));
+			ImGui::SameLine(0, 14.0f);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+			MOD_CHECK(ImGui::DragFloat("##rotation_scale", &elem->rotationScale, 0.5f, 0, 0, "%.1f")); TT("Scale");
+		}
+
+		if(elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD || elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
+		{
+			// *------------------------------
+			ImGui::title_with_seperator("Spawn Angles", true, 0, 2.0f, 8.0f);
+			{
+				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Pitch", &elem->spawnAngles[0], 0.1f, -360.0f, 360.0f, "%.2f"));
+				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Yaw", &elem->spawnAngles[1], 0.1f, -360.0f, 360.0f, "%.2f"));
+				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Roll", &elem->spawnAngles[2], 0.1f, -360.0f, 360.0f, "%.2f"));
+			}
+
+			// *------------------------------
+			ImGui::title_with_seperator("Angle Delta / Angular Velocity", true, 0, 2.0f, 8.0f);
+			{
+				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Pitch", &elem->angularVelocity[0], 0.1f, -360.0f, 360.0f, "%.2f"));
+				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Yaw", &elem->angularVelocity[1], 0.1f, -360.0f, 360.0f, "%.2f"));
+				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Roll", &elem->angularVelocity[2], 0.1f, -360.0f, 360.0f, "%.2f"));
+			}
+		}
+
+		ImGui::EndChild();
+		on_modified(modified);
 	}
 
 	void tab_physics([[maybe_unused]] fx_system::FxEditorElemDef* elem)
@@ -1036,117 +1144,129 @@ namespace ggui::effects_editor_gui
 
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
+
+
 		ImGui::title_with_seperator("RGB Color", false, 0, 2.0f, 8.0f);
-
-		if (elem && elem->color[0] && elem->color[0]->keyCount && elem->color[1] && elem->color[1]->keyCount)
 		{
-			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##color", elem, fx_system::FX_ED_FLAG_USE_RANDOM_COLOR));
-			ImGui::SameLine(0, 14.0f);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
-
-			static int color_graph_idx = false;
-			ImGui::Combo("##graph_selection_color", &color_graph_idx, "Graph 1\0Graph 2\0");
-			ImGui::Spacing();
-
+			if (elem && elem->color[0] && elem->color[0]->keyCount && elem->color[1] && elem->color[1]->keyCount)
 			{
-				std::uint32_t key = 0;
-				for (auto& mark : gradient.getMarks())
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##color", elem, fx_system::FX_ED_FLAG_USE_RANDOM_COLOR));
+				ImGui::SameLine(0, 14.0f);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+
+				static int color_graph_idx = false;
+				ImGui::Combo("##graph_selection_color", &color_graph_idx, "Graph 1\0Graph 2\0");
+				ImGui::Spacing();
+
 				{
-					const float* y_offset = &elem->color[color_graph_idx]->keys[key * 4];
-					const float* rgb = &elem->color[color_graph_idx]->keys[key * 4] + 1;
-
-					mark->position = *y_offset;
-
-					if (key == 0)
+					std::uint32_t key = 0;
+					for (auto& mark : gradient.getMarks())
 					{
-						mark->position = 0.0f;
+						const float* y_offset = &elem->color[color_graph_idx]->keys[key * 4];
+						const float* rgb = &elem->color[color_graph_idx]->keys[key * 4] + 1;
+
+						mark->position = *y_offset;
+
+						if (key == 0)
+						{
+							mark->position = 0.0f;
+						}
+						else if (key == gradient.getMarks().size() - 1)
+						{
+							mark->position = 1.0f;
+						}
+
+						mark->color[0] = rgb[0];
+						mark->color[1] = rgb[1];
+						mark->color[2] = rgb[2];
+						mark->color[3] = rgb[3];
+						key++;
 					}
-					else if (key == gradient.getMarks().size() - 1)
+				}
+
+				if (ImGui::GradientEditor("test_bar", &gradient))
+				{
+					int key_idx = 0;
+					for (auto& mark : gradient.getMarks())
 					{
-						mark->position = 1.0f;
+						float* y_offset = &elem->color[color_graph_idx]->keys[key_idx * 4];
+						float* rgb = &elem->color[color_graph_idx]->keys[key_idx * 4] + 1;
+
+						*y_offset = mark->position;
+						rgb[0] = mark->color[0];
+						rgb[1] = mark->color[1];
+						rgb[2] = mark->color[2];
+
+						key_idx++;
 					}
 
-					mark->color[0] = rgb[0];
-					mark->color[1] = rgb[1];
-					mark->color[2] = rgb[2];
-					mark->color[3] = rgb[3];
-					key++;
+					if (elem->color[color_graph_idx]->keyCount != key_idx)
+					{
+						game::printf_to_console("graph keycount changed from [ %d ] to [ %d ]", elem->color[color_graph_idx]->keyCount, key_idx);
+					}
+
+					elem->color[color_graph_idx]->keyCount = key_idx;
+
+					modified = true;
 				}
-			}
-
-			if (ImGui::GradientEditor("test_bar", &gradient))
-			{
-				int key_idx = 0;
-				for (auto& mark : gradient.getMarks())
-				{
-					float* y_offset = &elem->color[color_graph_idx]->keys[key_idx * 4];
-					float* rgb = &elem->color[color_graph_idx]->keys[key_idx * 4] + 1;
-
-					*y_offset = mark->position;
-					rgb[0] = mark->color[0];
-					rgb[1] = mark->color[1];
-					rgb[2] = mark->color[2];
-
-					key_idx++;
-				}
-
-				if (elem->color[color_graph_idx]->keyCount != key_idx)
-				{
-					game::printf_to_console("graph keycount changed from [ %d ] to [ %d ]", elem->color[color_graph_idx]->keyCount, key_idx);
-				}
-
-				elem->color[color_graph_idx]->keyCount = key_idx;
-
-				modified = true;
 			}
 		}
+		
 
 		// *------------------------------
 		ImGui::title_with_seperator("Alpha", true, 0, 2.0f, 8.0f);
-
-		if (elem && elem->alpha[0] && elem->alpha[0]->keyCount && elem->alpha[1] && elem->alpha[1]->keyCount)
 		{
-			// false = graph 1, true = 2
-			static bool current_graph_scale = false;
-
-			int new_count = 0;
-			const auto curve = elem->alpha[current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
-
-			MOD_CHECK_GRAPH(ImGui::CurveEditor("alpha_graph", curve->keys, curve->keyCount, 
-				ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-			if (new_count != curve->keyCount)
+			if (elem && elem->alpha[0] && elem->alpha[0]->keyCount && elem->alpha[1] && elem->alpha[1]->keyCount)
 			{
-				curve->keyCount = new_count;
-				modified = true;
-			}
+				// false = graph 1, true = 2
+				static bool current_graph_scale = false;
 
-			if (ImGui::BeginPopupContextItem("alpha_graph##bg"))
-			{
-				if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+				int new_count = 0;
+				const auto curve = elem->alpha[current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+
+				MOD_CHECK_GRAPH(ImGui::CurveEditor("alpha_graph", curve->keys, curve->keyCount,
+					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
+
+				if (new_count != curve->keyCount)
 				{
-					current_graph_scale = false;
+					curve->keyCount = new_count;
+					modified = true;
 				}
 
-				if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+				if (ImGui::BeginPopupContextItem("alpha_graph##bg"))
 				{
-					current_graph_scale = true;
+					if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+					{
+						current_graph_scale = false;
+					}
+
+					if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+					{
+						current_graph_scale = true;
+					}
+
+					ImGui::EndPopup();
 				}
 
-				ImGui::EndPopup();
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##alpha", elem, fx_system::FX_ED_FLAG_USE_RANDOM_ALPHA));
 			}
 
-			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##alpha", elem, fx_system::FX_ED_FLAG_USE_RANDOM_ALPHA));
+			ImGui::SameLine(0, 14.0f);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+			MOD_CHECK(ImGui::DragFloat("##lighting_fraction", &elem->scaleScale, 0.01f, 0, 1.0f, "%.1f")); TT("Lighting Fraction");
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Modulate RGB values using alpha value", elem, fx_system::FX_ED_FLAG_MODULATE_COLOR_BY_ALPHA));
 		}
-
-		ImGui::SameLine(0, 14.0f);
-		ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
-		ImGui::DragFloat("##lighting_fraction", &elem->scaleScale, 0.01f, 0, 1.0f, "%.1f"); TT("Lighting Fraction");
 
 		ImGui::EndChild();
 		on_modified(modified);
 	}
 
+	const fx_system::FxTrailVertex geotrail_shape_line[] =
+	{
+		{ { 0.0f, -0.90625f} , { 0.0f, 0.0f}, 0.0f },
+		{ { 0.0f, 0.875f} , { 0.0f, 0.0f}, 1.0f },
+		{ { 0.0f, -0.90625f} , { 0.0f, 0.0f}, 2.0f },
+	};
 
 	const std::uint16_t indices_list_line[] = {  4, 0, 1, 1, 2 };
 	const std::uint16_t indices_list_tri[]  = {  6, 0, 1, 1, 2, 2, 3 };
@@ -1190,30 +1310,34 @@ namespace ggui::effects_editor_gui
 
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
+
 		ImGui::title_with_seperator("General", false, 0, 2.0f, 8.0f);
-
-
-		int elem_type = static_cast<std::uint8_t>(elem->elemType);
-		if (ImGui::Combo("Element Type", &elem_type, "Billboard\0Oriented Sprite\0Tail\0Geometry Trail\0Particle Cloud\0Model\0Light\0Spot Light\0Sound\0Decal\0FX Runner\0"))
 		{
-			// do not erase visuals if old and new elem type uses materials
-			if((elem->elemType <= fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
-				&& (elem_type <= fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem_type == fx_system::FX_ELEM_TYPE_CLOUD))
+			int elem_type = static_cast<std::uint8_t>(elem->elemType);
+			if (ImGui::Combo("Element Type", &elem_type, "Billboard\0Oriented Sprite\0Tail\0Geometry Trail\0Particle Cloud\0Model\0Light\0Spot Light\0Sound\0Decal\0FX Runner\0"))
 			{
+				// do not erase visuals if old and new elem type uses materials
+				if ((elem->elemType <= fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
+					&& (elem_type <= fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem_type == fx_system::FX_ELEM_TYPE_CLOUD))
+				{
 					elem->elemType = static_cast<char>(elem_type);
 					modified = true;
+				}
+				else
+				{
+					memset(&elem->u.visuals[0], 0, 32 * sizeof(fx_system::FxElemDefVisuals));
+					elem->visualCount = 0;
+				}
+
+				elem->elemType = static_cast<char>(elem_type);
+				modified = true;
 			}
-			else
+
+			if (elem->elemType == fx_system::FX_ELEM_TYPE_RUNNER)
 			{
-				memset(&elem->u.visuals[0], 0, 32 * sizeof(fx_system::FxElemDefVisuals));
-				elem->visualCount = 0;
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Rotate randomly around forward axis", elem, fx_system::FX_ELEM_RUNNER_USES_RAND_ROT));
 			}
-
-			elem->elemType = static_cast<char>(elem_type);
-			modified = true;
 		}
-
-		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Rotate randomly around forward axis", elem, fx_system::FX_ELEM_RUNNER_USES_RAND_ROT));
 
 		// *------------------------------
 		ImGui::title_with_seperator("Visuals / Effect Materials", true, 0, 2.0f, 8.0f);
@@ -1391,313 +1515,335 @@ namespace ggui::effects_editor_gui
 		}
 
 		ImGui::SetCursorPos(ImVec2(post_listbox_cursor.x, post_listbox_cursor.y + listbox_height));
-		
 
-		// *------------------------------
-		ImGui::title_with_seperator("Geometry Trail", true, 0, 2.0f, 8.0f);
-
-		// *
-		// prepare data for the shape editor
-
-		// max 64 verts
-		// max 128 indices
-
-		// continuous array of geotrail points/vertices
-		float traildef_point_array[2 * 64] = {};
-
-		for(auto vert = 0; vert < elem->trailDef.vertCount; vert++)
+		if (elem->elemType == fx_system::FX_ELEM_TYPE_TRAIL)
 		{
-			memcpy(&traildef_point_array[vert * 2], elem->trailDef.verts[vert].pos, sizeof(float[2]));
-		}
+			// *------------------------------
+			ImGui::title_with_seperator("Geometry Trail", true, 0, 2.0f, 8.0f);
 
-		int trail_shapes_count = 0; // amount of individual shapes
-		int shape_vertex_count = 1; // vertex count for current shape in the loop
+			// *
+			// prepare data for the shape editor
 
-		// individual shapes
-		ImGui::traildef_shape_s trail_shapes[8] = {};
+			// max 64 verts
+			// max 128 indices
 
-		for(auto ind_idx = 1; ind_idx < elem->trailDef.indCount; )
-		{
-			// if reached end of indices -> last shape
-			if(ind_idx + 1 < elem->trailDef.indCount)
+			// continuous array of geotrail points/vertices
+			float traildef_point_array[2 * 64] = {};
+
+			for (auto vert = 0; vert < elem->trailDef.vertCount; vert++)
 			{
-				// count vertices of current shape or create the next shape
-				if (elem->trailDef.inds[ind_idx] == elem->trailDef.inds[ind_idx + 1])
-				{
-					ind_idx += 2;
-					shape_vertex_count++;
-					
-					continue;
-				}
+				memcpy(&traildef_point_array[vert * 2], elem->trailDef.verts[vert].pos, sizeof(float[2]));
 			}
 
-			// +
-			// new shape 
+			int trail_shapes_count = 0; // amount of individual shapes
+			int shape_vertex_count = 1; // vertex count for current shape in the loop
 
-			if (trail_shapes_count == 0)
+			// individual shapes
+			ImGui::traildef_shape_s trail_shapes[8] = {};
+
+			for (auto ind_idx = 1; ind_idx < elem->trailDef.indCount; )
 			{
-				// first shape
-				auto shape_curr = &trail_shapes[trail_shapes_count];
-
-				shape_curr->index = trail_shapes_count;
-
-				shape_curr->offset_vertex = 0;
-				shape_curr->num_vertex = shape_vertex_count + 1;
-
-				shape_curr->offset_indices = 0;
-				shape_curr->num_indices = shape_vertex_count;
-
-				trail_shapes_count++;
-
-
-				// prepare second/next shape
-				shape_curr = &trail_shapes[trail_shapes_count];
-				const auto shape_prev = &trail_shapes[trail_shapes_count - 1];
-
-				shape_curr->index			= trail_shapes_count;
-				shape_curr->offset_vertex	= shape_prev->num_vertex;
-				shape_curr->offset_indices	= shape_prev->num_indices * 2;
-
-				ind_idx += 2; // advance indices
-				shape_vertex_count = 1; // reset vertex counter
-			}
-			else
-			{
-				// second shape and up
-				auto shape_curr = &trail_shapes[trail_shapes_count];
-
-				shape_curr->num_vertex  = shape_vertex_count + 1;
-				shape_curr->num_indices = shape_vertex_count;
-
-				trail_shapes_count++;
-
-				if(shape_curr->offset_indices + (shape_curr->num_indices * 2) < elem->trailDef.indCount)
+				// if reached end of indices -> last shape
+				if (ind_idx + 1 < elem->trailDef.indCount)
 				{
-					// +
-					// prepare next shape
-
-					if (trail_shapes_count < 8)
+					// count vertices of current shape or create the next shape
+					if (elem->trailDef.inds[ind_idx] == elem->trailDef.inds[ind_idx + 1])
 					{
-						shape_curr = &trail_shapes[trail_shapes_count];
-						const auto shape_prev = &trail_shapes[trail_shapes_count - 1];
+						ind_idx += 2;
+						shape_vertex_count++;
 
-						shape_curr->index = trail_shapes_count;
-						shape_curr->offset_vertex = shape_prev->offset_vertex + shape_prev->num_vertex;
-						shape_curr->offset_indices = shape_prev->offset_indices + shape_prev->num_indices;
-					}
-					else
-					{
-						break;
+						continue;
 					}
 				}
 
-				ind_idx += 2; // advance indices
-				shape_vertex_count = 1; // reset vertex counter
-			}
-		}
+				// +
+				// new shape 
 
-		// unused
-		int new_count[8] = {};
-
-
-		MOD_CHECK_GRAPH(ImGui::CurveEditorShapes("traildef_shape", traildef_point_array, trail_shapes, trail_shapes_count,
-			ImVec2(-1.0f, -1.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), new_count));
-
-
-		// update elem - ouch
-		for (auto shape = 0; shape < trail_shapes_count; shape++)
-		{
-			// if shape was marked for deletion (context menu inside CurveEditorShapes)
-			if(trail_shapes[shape].pending_deletion)
-			{
-				const int next = shape + 1;
-
-				// if last shape
-				if(next >= trail_shapes_count)
+				if (trail_shapes_count == 0)
 				{
-					elem->trailDef.vertCount -= trail_shapes[shape].num_vertex;
-					elem->trailDef.indCount  -= (trail_shapes[shape].num_indices * 2);
+					// first shape
+					auto shape_curr = &trail_shapes[trail_shapes_count];
+
+					shape_curr->index = trail_shapes_count;
+
+					shape_curr->offset_vertex = 0;
+					shape_curr->num_vertex = shape_vertex_count + 1;
+
+					shape_curr->offset_indices = 0;
+					shape_curr->num_indices = shape_vertex_count;
+
+					trail_shapes_count++;
+
+
+					// prepare second/next shape
+					shape_curr = &trail_shapes[trail_shapes_count];
+					const auto shape_prev = &trail_shapes[trail_shapes_count - 1];
+
+					shape_curr->index = trail_shapes_count;
+					shape_curr->offset_vertex = shape_prev->num_vertex;
+					shape_curr->offset_indices = shape_prev->num_indices * 2;
+
+					ind_idx += 2; // advance indices
+					shape_vertex_count = 1; // reset vertex counter
 				}
 				else
 				{
-					// get amount of vertices after to-delete shape
-					int verts_to_move = 0;
-					for (auto c = next; c < trail_shapes_count; c++)
+					// second shape and up
+					auto shape_curr = &trail_shapes[trail_shapes_count];
+
+					shape_curr->num_vertex = shape_vertex_count + 1;
+					shape_curr->num_indices = shape_vertex_count;
+
+					trail_shapes_count++;
+
+					if (shape_curr->offset_indices + (shape_curr->num_indices * 2) < elem->trailDef.indCount)
 					{
-						verts_to_move += trail_shapes[c].num_vertex;
-					}
+						// +
+						// prepare next shape
 
-					// move vertices
-					for (auto v = 0; v < verts_to_move; v++)
-					{
-						memcpy(elem->trailDef.verts[trail_shapes[shape].offset_vertex + v].pos, ((ImVec2*)traildef_point_array + (trail_shapes[next].offset_vertex + v)), sizeof(float[2]));
-						elem->trailDef.verts[trail_shapes[shape].offset_vertex + v].texCoord = elem->trailDef.verts[trail_shapes[next].offset_vertex + v].texCoord;
-					}
-
-					elem->trailDef.vertCount -= trail_shapes[shape].num_vertex;
-
-					memset(&elem->trailDef.inds, 0, sizeof(elem->trailDef.inds));
-					elem->trailDef.indCount = 0;
-
-
-					// rebuild indices
-					int shape_count = 0;
-
-					for (auto s = 0; s < trail_shapes_count; s++)
-					{
-						// skip deleted shape
-						if (trail_shapes[s].pending_deletion)
+						if (trail_shapes_count < 8)
 						{
-							continue;
+							shape_curr = &trail_shapes[trail_shapes_count];
+							const auto shape_prev = &trail_shapes[trail_shapes_count - 1];
+
+							shape_curr->index = trail_shapes_count;
+							shape_curr->offset_vertex = shape_prev->offset_vertex + shape_prev->num_vertex;
+							shape_curr->offset_indices = shape_prev->offset_indices + shape_prev->num_indices;
 						}
-
-						// get prebuilt list of indices for shape with X amount of vertices
-						const int indices_amount = indices_list[trail_shapes[s].num_vertex][0];
-						const int last_index = elem->trailDef.indCount > 0 ? elem->trailDef.inds[elem->trailDef.indCount - 1] + 1 : 0;
-
-						for (auto v = 0; v < indices_amount; v++)
+						else
 						{
-							elem->trailDef.inds[elem->trailDef.indCount++] = (indices_list[trail_shapes[s].num_vertex][v + 1] + static_cast<std::uint16_t>(last_index));
-							
+							break;
 						}
-
-						shape_count++;
 					}
 
-					break;
+					ind_idx += 2; // advance indices
+					shape_vertex_count = 1; // reset vertex counter
 				}
 			}
-			else
+
+			// unused
+			int new_count[8] = {};
+
+
+			MOD_CHECK_GRAPH(ImGui::CurveEditorShapes("traildef_shape", traildef_point_array, trail_shapes, trail_shapes_count,
+				ImVec2(-1.0f, -1.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), new_count));
+
+
+			// update elem - ouch
+			for (auto shape = 0; shape < trail_shapes_count; shape++)
 			{
-				// copy (modified) vertices from continuous array back into elem
-				for (auto vert = 0; vert < trail_shapes[shape].num_vertex; vert++)
+				// if shape was marked for deletion (context menu inside CurveEditorShapes)
+				if (trail_shapes[shape].pending_deletion)
 				{
-					memcpy(elem->trailDef.verts[trail_shapes[shape].offset_vertex + vert].pos, ((ImVec2*)traildef_point_array + (trail_shapes[shape].offset_vertex + vert)), sizeof(float[2]));
+					const int next = shape + 1;
+
+					// if last shape
+					if (next >= trail_shapes_count)
+					{
+						elem->trailDef.vertCount -= trail_shapes[shape].num_vertex;
+						elem->trailDef.indCount -= (trail_shapes[shape].num_indices * 2);
+					}
+					else
+					{
+						// get amount of vertices after to-delete shape
+						int verts_to_move = 0;
+						for (auto c = next; c < trail_shapes_count; c++)
+						{
+							verts_to_move += trail_shapes[c].num_vertex;
+						}
+
+						// move vertices
+						for (auto v = 0; v < verts_to_move; v++)
+						{
+							memcpy(elem->trailDef.verts[trail_shapes[shape].offset_vertex + v].pos, ((ImVec2*)traildef_point_array + (trail_shapes[next].offset_vertex + v)), sizeof(float[2]));
+							elem->trailDef.verts[trail_shapes[shape].offset_vertex + v].texCoord = elem->trailDef.verts[trail_shapes[next].offset_vertex + v].texCoord;
+						}
+
+						elem->trailDef.vertCount -= trail_shapes[shape].num_vertex;
+
+						memset(&elem->trailDef.inds, 0, sizeof(elem->trailDef.inds));
+						elem->trailDef.indCount = 0;
+
+
+						// rebuild indices
+						int shape_count = 0;
+
+						for (auto s = 0; s < trail_shapes_count; s++)
+						{
+							// skip deleted shape
+							if (trail_shapes[s].pending_deletion)
+							{
+								continue;
+							}
+
+							// get prebuilt list of indices for shape with X amount of vertices
+							const int indices_amount = indices_list[trail_shapes[s].num_vertex][0];
+							const int last_index = elem->trailDef.indCount > 0 ? elem->trailDef.inds[elem->trailDef.indCount - 1] + 1 : 0;
+
+							for (auto v = 0; v < indices_amount; v++)
+							{
+								elem->trailDef.inds[elem->trailDef.indCount++] = (indices_list[trail_shapes[s].num_vertex][v + 1] + static_cast<std::uint16_t>(last_index));
+							}
+
+							shape_count++;
+						}
+
+						break;
+					}
+				}
+				else
+				{
+					// copy (modified) vertices from continuous array back into elem
+					for (auto vert = 0; vert < trail_shapes[shape].num_vertex; vert++)
+					{
+						memcpy(elem->trailDef.verts[trail_shapes[shape].offset_vertex + vert].pos, ((ImVec2*)traildef_point_array + (trail_shapes[shape].offset_vertex + vert)), sizeof(float[2]));
+					}
 				}
 			}
+
+			// TODO! move to imgui_curves
+
+			//if (ImGui::BeginPopupContextItem("traildef_shape##context"))
+			//{
+			//	if (ImGui::MenuItem("New two-sided line shape"))
+			//	{
+			//		memcpy(&elem->trailDef.verts[elem->trailDef.vertCount], &geotrail_shape_line, sizeof(geotrail_shape_line));
+
+			//		// get prebuilt list of indices for shape with X amount of vertices
+			//		const int indices_amount = indices_list[3][0];
+			//		const int last_index = elem->trailDef.indCount > 0 ? elem->trailDef.inds[elem->trailDef.indCount - 1] + 1 : 0;
+
+			//		for (auto v = 0; v < indices_amount; v++)
+			//		{
+			//			elem->trailDef.inds[elem->trailDef.indCount++] = (indices_list[3][v + 1] + static_cast<std::uint16_t>(last_index));
+			//		}
+
+			//		elem->trailDef.vertCount += 3;
+			//	}
+
+			//	ImGui::EndPopup();
+			//}
+
+			const auto vert_center_offset = (ImGui::GetFrameHeight() - ImGui::CalcTextSize("A").y) * 0.4f;
+
+			ImGui::left_label_drag("Split Dist", vert_center_offset, 150.0f);
+			MOD_CHECK(ImGui::DragInt("##split_dist", &elem->trailSplitDist, 0.1f, 0, INT16_MAX));
+
+			ImGui::left_label_drag("Texture Repeate Dist", vert_center_offset, 150.0f);
+			MOD_CHECK(ImGui::DragInt("##tex_rep_dist", &elem->trailRepeatDist, 0.1f, 0, INT16_MAX));
+
+			ImGui::left_label_drag("Texture Scroll Time", vert_center_offset, 150.0f);
+			MOD_CHECK(ImGui::DragFloat("##tex_scroll_time", &elem->trailScrollTime, 0.1f, 0, 1024.0f, "%.2f"));
 		}
 
-		const auto vert_center_offset = (ImGui::GetFrameHeight() - ImGui::CalcTextSize("A").y) * 0.4f;
-
-		ImGui::left_label_drag("Split Dist", vert_center_offset, 150.0f);
-		MOD_CHECK(ImGui::DragInt("##split_dist", &elem->trailSplitDist, 0.1f, 0, INT16_MAX));
-
-		ImGui::left_label_drag("Texture Repeate Dist", vert_center_offset, 150.0f);
-		MOD_CHECK(ImGui::DragInt("##tex_rep_dist", &elem->trailRepeatDist, 0.1f, 0, INT16_MAX));
-
-		ImGui::left_label_drag("Texture Scroll Time", vert_center_offset, 150.0f);
-		MOD_CHECK(ImGui::DragFloat("##tex_scroll_time", &elem->trailScrollTime, 0.1f, 0, 1024.0f, "%.2f"));
-
-		// *------------------------------
-		ImGui::title_with_seperator("Sequence Control", true, 0, 2.0f, 8.0f);
-
-		int atlas_start_behavior = 0;
-		bool atlas_start_behavior_modified = false;
-
-		if (const int masked_flag = elem->atlas.behavior & fx_system::FX_ATLAS_START_MASK;
-					  masked_flag)
+		if (elem->elemType <= fx_system::FX_ELEM_TYPE_CLOUD)
 		{
-			if (masked_flag == fx_system::FX_ATLAS_START_FIXED)
+			// *------------------------------
+			ImGui::title_with_seperator("Sequence Control", true, 0, 2.0f, 8.0f);
+
+			int atlas_start_behavior = 0;
+			bool atlas_start_behavior_modified = false;
+
+			if (const int masked_flag = elem->atlas.behavior & fx_system::FX_ATLAS_START_MASK;
+				masked_flag)
 			{
-				atlas_start_behavior = 0;
+				if (masked_flag == fx_system::FX_ATLAS_START_FIXED)
+				{
+					atlas_start_behavior = 0;
+				}
+				else if (masked_flag == fx_system::FX_ATLAS_START_RANDOM)
+				{
+					atlas_start_behavior = 1;
+				}
+				else if (masked_flag == fx_system::FX_ATLAS_START_INDEXED)
+				{
+					atlas_start_behavior = 2;
+				}
 			}
-			else if (masked_flag == fx_system::FX_ATLAS_START_RANDOM)
+
+			// Start Frame
+
+			ImGui::TextUnformatted("Start Frame:");
+
+			if (ImGui::RadioButton("Fixed Frame #", &atlas_start_behavior, 0)) {
+				atlas_start_behavior_modified = true;
+			}
+
+			ImGui::SameLine(150.0f);
+			ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
+
+			MOD_CHECK(ImGui::DragInt("##fixed_frame_idx", &elem->atlas.index, 1.0f, 0, 256));
+
+			if (ImGui::RadioButton("Random", &atlas_start_behavior, 1)) {
+				atlas_start_behavior_modified = true;
+			}
+
+			if (ImGui::RadioButton("Indexed", &atlas_start_behavior, 2)) {
+				atlas_start_behavior_modified = true;
+			}
+
+			// ----
+
+			int  atlas_play_behavior = 0; // Fixed FPS
+			int  altas_loop_behavior = 0; // Forever
+			bool atlas_play_behavior_modified = false;
+
+			if (elem->atlas.behavior & fx_system::FX_ATLAS_PLAY_OVER_LIFE)
 			{
-				atlas_start_behavior = 1;
+				atlas_play_behavior = 4;
 			}
-			else if (masked_flag == fx_system::FX_ATLAS_START_INDEXED)
+
+			if (elem->atlas.behavior & fx_system::FX_ATLAS_LOOP_ONLY_N_TIMES)
 			{
-				atlas_start_behavior = 2;
+				altas_loop_behavior = 8;
 			}
-		}
 
-		// Start Frame
+			// Play Rate
+			SPACING(0.0f, 4.0f);
+			ImGui::TextUnformatted("Play Rate:");
 
-		ImGui::TextUnformatted("Start Frame:");
+			if (ImGui::RadioButton("Fixed FPS", &atlas_play_behavior, 0)) {
+				atlas_play_behavior_modified = true;
+			}
 
-		if (ImGui::RadioButton("Fixed Frame #", &atlas_start_behavior, 0)) {
-			atlas_start_behavior_modified = true;
-		}
+			ImGui::SameLine(150.0f);
+			ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
 
-		ImGui::SameLine(150.0f);
-		ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
+			MOD_CHECK(ImGui::DragInt("##fixed_fps", &elem->atlas.fps, 1.0f, 0, 256));
 
-		MOD_CHECK(ImGui::DragInt("##fixed_frame_idx", &elem->atlas.index, 1.0f, 0, 256));
+			if (ImGui::RadioButton("Sync to Particle Lifetime", &atlas_play_behavior, 4)) {
+				atlas_play_behavior_modified = true;
+			}
 
-		if (ImGui::RadioButton("Random", &atlas_start_behavior, 1)) {
-			atlas_start_behavior_modified = true;
-		}
+			// Loop
 
-		if (ImGui::RadioButton("Indexed", &atlas_start_behavior, 2)) {
-			atlas_start_behavior_modified = true;
-		}
+			SPACING(0.0f, 4.0f);
+			ImGui::TextUnformatted("Loop Settings:");
 
-		// ----
+			if (ImGui::RadioButton("Forever", &altas_loop_behavior, 0)) {
+				atlas_play_behavior_modified = true;
+			}
 
-		int  atlas_play_behavior = 0; // Fixed FPS
-		int  altas_loop_behavior = 0; // Forever
-		bool atlas_play_behavior_modified = false;
+			if (ImGui::RadioButton("Amount", &altas_loop_behavior, 8)) {
+				atlas_play_behavior_modified = true;
+			}
 
-		if (elem->atlas.behavior & fx_system::FX_ATLAS_PLAY_OVER_LIFE)
-		{
-			atlas_play_behavior = 4;
-		}
+			ImGui::SameLine(150.0f);
+			ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
 
-		if (elem->atlas.behavior & fx_system::FX_ATLAS_LOOP_ONLY_N_TIMES)
-		{
-			altas_loop_behavior = 8;
-		}
+			MOD_CHECK(ImGui::DragInt("##loop_amount", &elem->atlas.loopCount, 1.0f, 0, 256));
 
-		// Play Rate
-		SPACING(0.0f, 4.0f);
-		ImGui::TextUnformatted("Play Rate:");
+			if (atlas_start_behavior_modified || atlas_play_behavior_modified)
+			{
+				elem->atlas.behavior &= ~(fx_system::FX_ATLAS_START_RANDOM | fx_system::FX_ATLAS_START_INDEXED | fx_system::FX_ATLAS_PLAY_OVER_LIFE | fx_system::FX_ATLAS_LOOP_ONLY_N_TIMES);
+				elem->atlas.behavior |= (atlas_start_behavior | atlas_play_behavior | altas_loop_behavior);
 
-		if (ImGui::RadioButton("Fixed FPS", &atlas_play_behavior, 0)) {
-			atlas_play_behavior_modified = true;
-		}
-
-		ImGui::SameLine(150.0f);
-		ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
-
-		MOD_CHECK(ImGui::DragInt("##fixed_fps", &elem->atlas.fps, 1.0f, 0, 256));
-
-		if (ImGui::RadioButton("Sync to Particle Lifetime", &atlas_play_behavior, 4)) {
-			atlas_play_behavior_modified = true;
-		}
-
-		// Loop
-
-		SPACING(0.0f, 4.0f);
-		ImGui::TextUnformatted("Loop Settings:");
-
-		if (ImGui::RadioButton("Forever", &altas_loop_behavior, 0)) {
-			atlas_play_behavior_modified = true;
-		}
-
-		if (ImGui::RadioButton("Amount", &altas_loop_behavior, 8)) {
-			atlas_play_behavior_modified = true;
-		}
-
-		ImGui::SameLine(150.0f);
-		ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
-
-		MOD_CHECK(ImGui::DragInt("##loop_amount", &elem->atlas.loopCount, 1.0f, 0, 256));
-
-		if (atlas_start_behavior_modified || atlas_play_behavior_modified)
-		{
-			elem->atlas.behavior &= ~(fx_system::FX_ATLAS_START_RANDOM | fx_system::FX_ATLAS_START_INDEXED | fx_system::FX_ATLAS_PLAY_OVER_LIFE | fx_system::FX_ATLAS_LOOP_ONLY_N_TIMES);
-			elem->atlas.behavior |= (atlas_start_behavior | atlas_play_behavior | altas_loop_behavior);
-
-			modified = true;
+				modified = true;
+			}
 		}
 
 		ImGui::EndChild();
 		on_modified(modified);
-	}
-
-	void tab_emission([[maybe_unused]] fx_system::FxEditorElemDef* elem)
-	{
-		
 	}
 
 	void effect_property_window()
@@ -1766,11 +1912,7 @@ namespace ggui::effects_editor_gui
 				ImGui::EndTabItem();
 			}
 
-			if (ImGui::BeginTabItem_SmallGap("Emission"))
-			{
-				tab_emission(&ed_effect->elems[selected_editor_elemdef]);
-				ImGui::EndTabItem();
-			}
+			// moved emission to generation
 
 			ImGui::EndTabBar();
 		}
