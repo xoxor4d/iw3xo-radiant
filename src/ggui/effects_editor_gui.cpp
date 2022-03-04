@@ -1261,40 +1261,40 @@ namespace ggui::effects_editor_gui
 		on_modified(modified);
 	}
 
-	const fx_system::FxTrailVertex geotrail_shape_line[] =
-	{
-		{ { 0.0f, -0.90625f} , { 0.0f, 0.0f}, 0.0f },
-		{ { 0.0f, 0.875f} , { 0.0f, 0.0f}, 1.0f },
-		{ { 0.0f, -0.90625f} , { 0.0f, 0.0f}, 2.0f },
-	};
+	//const fx_system::FxTrailVertex geotrail_shape_line[] =
+	//{
+	//	{ { 0.0f, -0.90625f} , { 0.0f, 0.0f}, 0.0f },
+	//	{ { 0.0f, 0.875f} , { 0.0f, 0.0f}, 1.0f },
+	//	{ { 0.0f, -0.90625f} , { 0.0f, 0.0f}, 2.0f },
+	//};
 
-	const std::uint16_t indices_list_line[] = {  4, 0, 1, 1, 2 };
-	const std::uint16_t indices_list_tri[]  = {  6, 0, 1, 1, 2, 2, 3 };
-	const std::uint16_t indices_list_quad[] = {  8, 0, 1, 1, 2, 2, 3, 3, 4 };
-	const std::uint16_t indices_list_pent[] = { 10, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5 };
-	const std::uint16_t indices_list_hex[]  = { 12, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6 };
-	const std::uint16_t indices_list_sep[]  = { 14, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7 };
-	const std::uint16_t indices_list_oct[]  = { 16, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8 };
-	const std::uint16_t indices_list_non[]  = { 18, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9 };
-	const std::uint16_t indices_list_dec[]  = { 20, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10 };
+	//const std::uint16_t indices_list_line[] = {  4, 0, 1, 1, 2 };
+	//const std::uint16_t indices_list_tri[]  = {  6, 0, 1, 1, 2, 2, 3 };
+	//const std::uint16_t indices_list_quad[] = {  8, 0, 1, 1, 2, 2, 3, 3, 4 };
+	//const std::uint16_t indices_list_pent[] = { 10, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5 };
+	//const std::uint16_t indices_list_hex[]  = { 12, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6 };
+	//const std::uint16_t indices_list_sep[]  = { 14, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7 };
+	//const std::uint16_t indices_list_oct[]  = { 16, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8 };
+	//const std::uint16_t indices_list_non[]  = { 18, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9 };
+	//const std::uint16_t indices_list_dec[]  = { 20, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10 };
 
-	const std::uint16_t* indices_list[] =
-	{
-		nullptr,			// 0
-		nullptr,			// 1
-		nullptr,			// 2
-		indices_list_line,	// 3
-		indices_list_tri,	// 4
-		indices_list_quad,	// 5
-		indices_list_pent,	// 6
-		indices_list_hex,	// 7
-		indices_list_sep,	// 8
-		indices_list_oct,	// 9
-		indices_list_non,	// 10
-		indices_list_dec	// 11
-	};
+	//const std::uint16_t* indices_list[] =
+	//{
+	//	nullptr,			// 0
+	//	nullptr,			// 1
+	//	nullptr,			// 2
+	//	indices_list_line,	// 3
+	//	indices_list_tri,	// 4
+	//	indices_list_quad,	// 5
+	//	indices_list_pent,	// 6
+	//	indices_list_hex,	// 7
+	//	indices_list_sep,	// 8
+	//	indices_list_oct,	// 9
+	//	indices_list_non,	// 10
+	//	indices_list_dec	// 11
+	//};
 
-	void tab_visuals([[maybe_unused]] fx_system::FxEditorElemDef* elem)
+	void tab_visuals(fx_system::FxEditorElemDef* elem)
 	{
 		bool modified = false;
 		const ImGuiStyle& style = ImGui::GetStyle();
@@ -1530,7 +1530,7 @@ namespace ggui::effects_editor_gui
 			// continuous array of geotrail points/vertices
 			float traildef_point_array[2 * 64] = {};
 
-			for (auto vert = 0; vert < elem->trailDef.vertCount; vert++)
+			for (auto vert = 0; vert < elem->trailDef.vertCount && vert < 64; vert++)
 			{
 				memcpy(&traildef_point_array[vert * 2], elem->trailDef.verts[vert].pos, sizeof(float[2]));
 			}
@@ -1541,7 +1541,7 @@ namespace ggui::effects_editor_gui
 			// individual shapes
 			ImGui::traildef_shape_s trail_shapes[8] = {};
 
-			for (auto ind_idx = 1; ind_idx < elem->trailDef.indCount; )
+			for (auto ind_idx = 1; ind_idx < elem->trailDef.indCount && ind_idx < 128; )
 			{
 				// if reached end of indices -> last shape
 				if (ind_idx + 1 < elem->trailDef.indCount)
@@ -1621,15 +1621,80 @@ namespace ggui::effects_editor_gui
 				}
 			}
 
-			// unused
-			int new_count[8] = {};
 
+			// currently hovered graph point
+			int hovered_point = -1;
 
 			MOD_CHECK_GRAPH(ImGui::CurveEditorShapes("traildef_shape", traildef_point_array, trail_shapes, trail_shapes_count,
-				ImVec2(-1.0f, -1.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), new_count));
+				ImVec2(-1.0f, -1.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &hovered_point));
+
+			
+			bool context_menu_open = ImGui::BeginPopupContextItem("traildef_shape##context");
+
+			// logic to capture the first active context-menu frame
+			static int  saved_hovered_point_on_context = -1;
+			static bool context_menu_tracked_state = false;
+			bool		context_menu_initial_frame = false;
+
+			if(context_menu_open != context_menu_tracked_state)
+			{
+				context_menu_initial_frame = true;
+			}
+
+			context_menu_tracked_state = context_menu_open;
+
+			// --
+
+			if(context_menu_open)
+			{
+				if(hovered_point >= 0 || saved_hovered_point_on_context >= 0)
+				{
+					// only save the hovered point within the first context-menu frame to avoid shape switching
+					// if the user hovers another point while the context menu is open
+					if(saved_hovered_point_on_context < 0 && context_menu_initial_frame)
+					{
+						saved_hovered_point_on_context = hovered_point;
+					}
+
+					if(saved_hovered_point_on_context >= 0)
+					{
+						if (ImGui::MenuItem("Remove Shape"))
+						{
+							for (auto shape = 0; shape < trail_shapes_count; shape++)
+							{
+								if (saved_hovered_point_on_context >= trail_shapes[shape].offset_vertex
+									&& saved_hovered_point_on_context < trail_shapes[shape].offset_vertex + trail_shapes[shape].num_vertex)
+								{
+									trail_shapes[shape].pending_deletion = true;
+									modified = true;
+									break;
+								}
+
+								// delete last shape if point is out of bounds
+								if (shape + 1 >= trail_shapes_count)
+								{
+									trail_shapes[shape].pending_deletion = true;
+									modified = true;
+									break;
+								}
+							}
+
+							// reset after action
+							saved_hovered_point_on_context = -1;
+						}
+
+						SEPERATORV(0.0f);
+					}
+				}
+			}
+			else
+			{
+				// reset saved point when context menu is not open
+				saved_hovered_point_on_context = -1;
+			}
 
 
-			// update elem - ouch
+			// update effect element
 			for (auto shape = 0; shape < trail_shapes_count; shape++)
 			{
 				// if shape was marked for deletion (context menu inside CurveEditorShapes)
@@ -1701,28 +1766,77 @@ namespace ggui::effects_editor_gui
 				}
 			}
 
-			// TODO! move to imgui_curves
 
-			//if (ImGui::BeginPopupContextItem("traildef_shape##context"))
-			//{
-			//	if (ImGui::MenuItem("New two-sided line shape"))
-			//	{
-			//		memcpy(&elem->trailDef.verts[elem->trailDef.vertCount], &geotrail_shape_line, sizeof(geotrail_shape_line));
+			// add new shapes via context-menu
+			if (context_menu_open)
+			{
+				// #
+				auto add_new_shape = [&](int new_shape_vertcount, const fx_system::FxTrailVertex* new_shape_vertices) -> void
+				{
+					const int indices_amount = indices_list[new_shape_vertcount][0]; // get prebuilt list of indices for shape with X amount of vertices
 
-			//		// get prebuilt list of indices for shape with X amount of vertices
-			//		const int indices_amount = indices_list[3][0];
-			//		const int last_index = elem->trailDef.indCount > 0 ? elem->trailDef.inds[elem->trailDef.indCount - 1] + 1 : 0;
+					if(elem->trailDef.vertCount + new_shape_vertcount < 64 
+						&& elem->trailDef.indCount + indices_amount < 128)
+					{
+						memcpy(&elem->trailDef.verts[elem->trailDef.vertCount], new_shape_vertices, new_shape_vertcount * sizeof(fx_system::FxTrailVertex));
 
-			//		for (auto v = 0; v < indices_amount; v++)
-			//		{
-			//			elem->trailDef.inds[elem->trailDef.indCount++] = (indices_list[3][v + 1] + static_cast<std::uint16_t>(last_index));
-			//		}
+						const int last_index = elem->trailDef.indCount > 0 ? elem->trailDef.inds[elem->trailDef.indCount - 1] + 1 : 0;
 
-			//		elem->trailDef.vertCount += 3;
-			//	}
+						for (auto v = 0; v < indices_amount; v++)
+						{
+							elem->trailDef.inds[elem->trailDef.indCount++] = (indices_list[new_shape_vertcount][v + 1] + static_cast<std::uint16_t>(last_index));
+						}
 
-			//	ImGui::EndPopup();
-			//}
+						elem->trailDef.vertCount += new_shape_vertcount;
+
+						modified = true;
+					}
+					else
+					{
+						game::printf_to_console("Cannot add shape. Would result in [%d/64] Vertices and [%d/128] Indices", elem->trailDef.vertCount + new_shape_vertcount, elem->trailDef.indCount + indices_amount);
+					}
+				};
+
+				// --
+
+				if (ImGui::MenuItem("New two-sided line shape")) {
+					add_new_shape(3, geotrail_shape_line);
+				}
+
+				if (ImGui::MenuItem("New triangle shape")) {
+					add_new_shape(4, geotrail_shape_triangle);
+				}
+
+				if (ImGui::MenuItem("New quadrilateral shape")) {
+					add_new_shape(5, geotrail_shape_quad);
+				}
+
+				if (ImGui::MenuItem("New pentagon shape")) {
+					add_new_shape(6, geotrail_shape_pentagon);
+				}
+
+				if (ImGui::MenuItem("New hexagon shape")) {
+					add_new_shape(7, geotrail_shape_hexagon);
+				}
+
+				if (ImGui::MenuItem("New septagon shape")) {
+					add_new_shape(8, geotrail_shape_septagon);
+				}
+
+				if (ImGui::MenuItem("New octagon shape")) {
+					add_new_shape(9, geotrail_shape_octagon);
+				}
+
+				if (ImGui::MenuItem("New nonagon shape")) {
+					add_new_shape(10, geotrail_shape_nonagon);
+				}
+
+				if (ImGui::MenuItem("New decagon shape")) {
+					add_new_shape(11, geotrail_shape_decagon);
+				}
+
+				ImGui::EndPopup();
+			}
 
 			const auto vert_center_offset = (ImGui::GetFrameHeight() - ImGui::CalcTextSize("A").y) * 0.4f;
 

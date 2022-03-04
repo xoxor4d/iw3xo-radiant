@@ -402,7 +402,7 @@ namespace ImGui
 
 
 
-	int CurveEditorShapes(const char* label, float* values, traildef_shape_s* shapes, int shape_count, const ImVec2& grid_mins, const ImVec2& grid_maxs, const ImVec2& editor_size, ImU32 flags, int* new_count)
+	int CurveEditorShapes(const char* label, float* values, traildef_shape_s* shapes, int shape_count, const ImVec2& grid_mins, const ImVec2& grid_maxs, const ImVec2& editor_size, ImU32 flags, int* hovered_point)
 	{
 		enum class StorageValues : ImGuiID
 		{
@@ -414,14 +414,6 @@ namespace ImGui
 			POINT_START_X,
 			POINT_START_Y
 		};
-
-		if (new_count)
-		{
-			for(auto shape = 0; shape < shape_count; shape++)
-			{
-				new_count[shape] = shapes[shape].num_vertex;
-			}
-		}
 
 		int color_vars = 0;
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.21f, 0.21f, 0.21f, 1.0f)); color_vars++;
@@ -661,9 +653,8 @@ namespace ImGui
 					window->DrawList->AddLine(pos_for_drawing + ImVec2(SIZE, 0), pos_for_drawing + ImVec2(0, -SIZE), col);
 					window->DrawList->AddLine(pos_for_drawing + ImVec2(-SIZE, 0), pos_for_drawing + ImVec2(0, -SIZE), col);
 
-					if (IsItemHovered())
+					if (IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
 					{
-						//hovered_idx = point_idx + (idx + (shape + 0) + idx_offset);
 						hovered_idx = idx_offset - pp;
 						//game::printf_to_console("hovered idx: %d", hovered_idx);
 					}
@@ -724,7 +715,7 @@ namespace ImGui
 				PushID(point_idx + (shape + 0) + shapes[shape].num_indices + 1);
 				{
 					window->DrawList->AddLine(transform(p_prev), transform(p), GetColorU32(ImGuiCol_PlotLines), 1.0f);
-					if (handlePoint(p, 1, shapes[shape].offset_vertex + shapes[shape].num_vertex - 1)) //shape > 0 ? shapes[shape].num_vertex : 0))  // num_indices + 1
+					if (handlePoint(p, 1, shapes[shape].offset_vertex + shapes[shape].num_vertex - 1))
 					{
 						points[1] = p;
 						changed_idx = hovered_idx;
@@ -732,7 +723,7 @@ namespace ImGui
 
 					if (point_idx == 0)
 					{
-						if (handlePoint(p_prev, 0, shapes[shape].offset_vertex + shapes[shape].num_vertex - 1)) //shape > 0 ? shapes[shape].num_vertex : 0)) // // num_indices + 1
+						if (handlePoint(p_prev, 0, shapes[shape].offset_vertex + shapes[shape].num_vertex - 1))
 						{
 							points[0] = p_prev;
 							changed_idx = hovered_idx;
@@ -753,58 +744,59 @@ namespace ImGui
 		ImGui::PopStyleColor(color_vars);
 		EndChild();
 
-		static int hovered_index_on_context = -1;
+		*hovered_point = hovered_idx;
 
-		if (hovered_idx >= 0 || hovered_index_on_context >= 0)
-		{
-			if (ImGui::BeginPopupContextItem("geotrail_graph##context"))
-			{
-				// save hover id on context open
-				if(hovered_index_on_context < 0)
-				{
-					//game::printf_to_console("saved hovered idx: %d", hovered_idx);
-					hovered_index_on_context = hovered_idx;
-				}
+		//static int hovered_index_on_context = -1;
 
-				if (ImGui::MenuItem("Remove Shape"))
-				{
-					for (auto shape = 0; shape < shape_count; shape++)
-					{
-						const int pt = hovered_index_on_context;// - 1;
-						if(pt < 0)
-						{
-							game::Com_Error("hovered_index_on_context < 0");
-						}
+		//if (hovered_idx >= 0 || hovered_index_on_context >= 0)
+		//{
+			//if (ImGui::BeginPopupContextItem("geotrail_graph##context"))
+			//{
+			//	// save hover id on context open
+			//	if(hovered_index_on_context < 0)
+			//	{
+			//		//game::printf_to_console("saved hovered idx: %d", hovered_idx);
+			//		hovered_index_on_context = hovered_idx;
+			//	}
 
-						if(pt >= shapes[shape].offset_vertex && pt < shapes[shape].offset_vertex + shapes[shape].num_vertex)
-						{
-							//game::printf_to_console("about to delete shape %d using index %d", shape, hovered_index_on_context);
-							shapes[shape].pending_deletion = true;
-							changed_idx = hovered_index_on_context;
+			//	if (ImGui::MenuItem("Remove Shape"))
+			//	{
+			//		for (auto shape = 0; shape < shape_count; shape++)
+			//		{
+			//			const int pt = hovered_index_on_context;// - 1;
+			//			if(pt < 0)
+			//			{
+			//				game::Com_Error("hovered_index_on_context < 0");
+			//			}
 
-							break;
-						}
+			//			if(pt >= shapes[shape].offset_vertex && pt < shapes[shape].offset_vertex + shapes[shape].num_vertex)
+			//			{
+			//				//game::printf_to_console("about to delete shape %d using index %d", shape, hovered_index_on_context);
+			//				shapes[shape].pending_deletion = true;
+			//				changed_idx = hovered_index_on_context;
 
-						// delete last shape if point is out of bounds
-						if(shape + 1 >= shape_count)
-						{
-							shapes[shape].pending_deletion = true;
-							changed_idx = hovered_index_on_context;
+			//				break;
+			//			}
 
-							break;
-						}
-					}
+			//			// delete last shape if point is out of bounds
+			//			if(shape + 1 >= shape_count)
+			//			{
+			//				shapes[shape].pending_deletion = true;
+			//				changed_idx = hovered_index_on_context;
 
-					
-				}
-				ImGui::EndPopup();
-			}
-			else if(hovered_index_on_context >= 0)
-			{
-				//game::printf_to_console("RESET: hovered idx was: %d", hovered_index_on_context);
-				hovered_index_on_context = -1;
-			}
-		}
+			//				break;
+			//			}
+			//		}
+			//	}
+
+			//	ImGui::EndPopup();
+			//}
+			//else if(hovered_index_on_context >= 0)
+			//{
+			//	//game::printf_to_console("RESET: hovered idx was: %d", hovered_index_on_context);
+			//	hovered_index_on_context = -1;
+			//}
+		//}
 
 		return changed_idx;
 	}
