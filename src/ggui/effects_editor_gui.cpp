@@ -526,6 +526,14 @@ namespace ggui::effects_editor_gui
 						modified = true;
 					}
 				}
+
+				ImGui::BeginDisabled(!elem->effectOnDeath);
+				ImGui::SameLine();
+				if (ImGui::Button("x##delete_death", ImVec2(28, ImGui::GetFrameHeight())))
+				{
+					elem->effectOnDeath = nullptr;
+				}
+				ImGui::EndDisabled();
 			}
 		}
 
@@ -554,6 +562,14 @@ namespace ggui::effects_editor_gui
 						modified = true;
 					}
 				}
+
+				ImGui::BeginDisabled(!elem->emission);
+				ImGui::SameLine();
+				if (ImGui::Button("x##delete_emission", ImVec2(28, ImGui::GetFrameHeight())))
+				{
+					elem->emission = nullptr;
+				}
+				ImGui::EndDisabled();
 			}
 		}
 
@@ -583,13 +599,12 @@ namespace ggui::effects_editor_gui
 
 		if (elem->elemType != fx_system::FX_ELEM_TYPE_MODEL && elem->elemType != fx_system::FX_ELEM_TYPE_SOUND && elem->elemType != fx_system::FX_ELEM_TYPE_RUNNER)
 		{
-			ImGui::title_with_seperator("Width / Diameter", false, 0, 2.0f, 8.0f);
+			// false = graph 1, true = 2
+			static bool current_graph_width = false;
+			ImGui::title_with_seperator(utils::va("Width / Diameter - Graph %d", current_graph_width + 1), false, 0, 2.0f, 8.0f);
 			{
-				// false = graph 1, true = 2
-				static bool current_graph_scale = false;
-
 				int new_count = 0;
-				const auto curve = elem->sizeShape[0][current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+				const auto curve = elem->sizeShape[0][current_graph_width]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
 				MOD_CHECK_GRAPH(ImGui::CurveEditor("width_graph", curve->keys, curve->keyCount,
 					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
@@ -602,14 +617,14 @@ namespace ggui::effects_editor_gui
 
 				if (ImGui::BeginPopupContextItem("width_graph##bg"))
 				{
-					if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+					if (ImGui::MenuItem("Graph 1", 0, !current_graph_width))
 					{
-						current_graph_scale = false;
+						current_graph_width = false;
 					}
 
-					if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+					if (ImGui::MenuItem("Graph 2", 0, current_graph_width))
 					{
-						current_graph_scale = true;
+						current_graph_width = true;
 					}
 
 					ImGui::EndPopup();
@@ -629,10 +644,10 @@ namespace ggui::effects_editor_gui
 		if (elem->elemType < fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
 		{
 			// *------------------------------
-			ImGui::title_with_seperator("Height / Length", pre_spacing, 0, 2.0f, 8.0f);
 
 			// false = graph 1, true = 2
-			static bool current_graph_scale = false;
+			static bool current_graph_height = false;
+			ImGui::title_with_seperator(utils::va("Height / Length - Graph %d", current_graph_height + 1), pre_spacing, 0, 2.0f, 8.0f);
 
 			bool enable_height_graph = false;
 			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Non-uniform particle size", elem, fx_system::FX_ELEM_NONUNIFORM_SCALE, &enable_height_graph));
@@ -640,21 +655,21 @@ namespace ggui::effects_editor_gui
 			ImGui::BeginDisabled(!enable_height_graph);
 			{
 				int new_count = 0;
-				const auto curve = elem->sizeShape[1][current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+				const auto curve = elem->sizeShape[1][current_graph_height]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
 				MOD_CHECK_GRAPH(ImGui::CurveEditor("height_graph", curve->keys, curve->keyCount,
 					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
 
 				if (ImGui::BeginPopupContextItem("height_graph##bg"))
 				{
-					if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+					if (ImGui::MenuItem("Graph 1", 0, !current_graph_height))
 					{
-						current_graph_scale = false;
+						current_graph_height = false;
 					}
 
-					if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+					if (ImGui::MenuItem("Graph 2", 0, current_graph_height))
 					{
-						current_graph_scale = true;
+						current_graph_height = true;
 					}
 
 					ImGui::EndPopup();
@@ -674,14 +689,14 @@ namespace ggui::effects_editor_gui
 		if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
 		{
 			// *------------------------------
-			ImGui::title_with_seperator("Scale", pre_spacing, 0, 2.0f, 8.0f);
+
+			// false = graph 1, true = 2
+			static bool current_graph_scale = false;
+			ImGui::title_with_seperator(utils::va("Scale - Graph %d", current_graph_scale + 1), pre_spacing, 0, 2.0f, 8.0f);
 
 			const bool is_scale_graph_aval = elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD || elem->elemType == fx_system::FX_ELEM_TYPE_MODEL;
 			ImGui::BeginDisabled(!is_scale_graph_aval);
 			{
-				// false = graph 1, true = 2
-				static bool current_graph_scale = false;
-
 				int new_count = 0;
 				const auto curve = elem->scaleShape[current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
@@ -1059,15 +1074,14 @@ namespace ggui::effects_editor_gui
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
 
-		ImGui::title_with_seperator("Rotation", false, 0, 2.0f, 8.0f);
+		// false = graph 1, true = 2
+		static bool current_graph_rotation = false;
+		ImGui::title_with_seperator(utils::va("Rotation - Graph %d", current_graph_rotation + 1), false, 0, 2.0f, 8.0f);
 		{
 			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Initial Rotation", &elem->initialRotation, 0.1f, -360.0f, 360.0f, "%.2f"));
 
-			// false = graph 1, true = 2
-			static bool current_graph_scale = false;
-
 			int new_count = 0;
-			const auto curve = elem->rotationShape[current_graph_scale];
+			const auto curve = elem->rotationShape[current_graph_rotation];
 
 			MOD_CHECK_GRAPH(ImGui::CurveEditor("rotation_graph", curve->keys, curve->keyCount,
 				ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
@@ -1080,14 +1094,14 @@ namespace ggui::effects_editor_gui
 
 			if (ImGui::BeginPopupContextItem("rotation_graph##bg"))
 			{
-				if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+				if (ImGui::MenuItem("Graph 1", 0, !current_graph_rotation))
 				{
-					current_graph_scale = false;
+					current_graph_rotation = false;
 				}
 
-				if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+				if (ImGui::MenuItem("Graph 2", 0, current_graph_rotation))
 				{
-					current_graph_scale = true;
+					current_graph_rotation = true;
 				}
 
 				ImGui::EndPopup();
@@ -1124,7 +1138,84 @@ namespace ggui::effects_editor_gui
 
 	void tab_physics([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
+		bool modified = false;
+		const ImGuiStyle& style = ImGui::GetStyle();
+
+		ImGui::BeginChild("##effect_properties_color_child", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+		ImGui::Indent(8.0f);
+		ImGui::Spacing();
+
+		bool phys_enabled = false;
+		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable Physics", elem, fx_system::FX_ELEM_USE_COLLISION, &phys_enabled));
+
+		if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
+		{
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable model physics simulation", elem, fx_system::FX_ELEM_USE_MODEL_PHYSICS));
+		}
+
+		if (phys_enabled)
+		{
+			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Bounce / Elasticity", &elem->elasticity, 0.1f, 0.0f, 360.0f, "%.2f"));
+
+			ImGui::title_with_seperator("Impacts", false, 0, 2.0f, 8.0f);
+			{
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Kill effect on impact", elem, fx_system::FX_ELEM_DIE_ON_TOUCH));
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Collide with item clip", elem, fx_system::FX_ED_FLAG_USE_ITEM_CLIP));
+
+				bool play_on_impact = false;
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Play new effect on impact", elem, fx_system::FX_ED_FLAG_PLAY_ON_TOUCH, &play_on_impact));
+
+				if (play_on_impact)
+				{
+					std::string impact_effect_string;
+					if (elem->effectOnImpact && elem->effectOnImpact->name)
+					{
+						impact_effect_string = elem->effectOnImpact->name;
+					}
+
+					ImGui::InputText("##no_label_impact", &impact_effect_string, ImGuiInputTextFlags_ReadOnly);
+					ImGui::SameLine();
+
+					if (ImGui::Button("..##filepromt_impact", ImVec2(28, ImGui::GetFrameHeight())))
+					{
+						if (const auto	impact_elem = effectdef_fileprompt();
+										impact_elem)
+						{
+							elem->effectOnImpact = impact_elem;
+							modified = true;
+						}
+					}
+					
+					ImGui::BeginDisabled(!elem->effectOnImpact);
+					ImGui::SameLine();
+					if (ImGui::Button("x##delete_impact", ImVec2(28, ImGui::GetFrameHeight())))
+					{
+						elem->effectOnImpact = nullptr;
+					}
+					ImGui::EndDisabled();
+				}
+			}
+
+			// *------------------------------
+			ImGui::title_with_seperator("Bounding Box", true, 0, 2.0f, 8.0f);
+			{
+				bool bounding_box_enabled = false;
+				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable physics bounding sphere", elem, fx_system::FX_ED_FLAG_BOUNDING_SPHERE, &bounding_box_enabled));
+
+				if(bounding_box_enabled)
+				{
+					MOD_CHECK(ImGui::DragFloat3("Origin", elem->collOffset, 0.1f, -FLT_MIN, FLT_MAX, "%.2f"));
+					MOD_CHECK(ImGui::DragFloat("Radius", &elem->collRadius, 0.1f, 0.0f, 2048.0f, "%.2f"));
+				}
+			}
+		}
+
+
 		
+
+		ImGui::EndChild();
+		on_modified(modified);
 	}
 
 	void tab_color([[maybe_unused]] fx_system::FxEditorElemDef* elem)
@@ -1214,15 +1305,15 @@ namespace ggui::effects_editor_gui
 		
 
 		// *------------------------------
-		ImGui::title_with_seperator("Alpha", true, 0, 2.0f, 8.0f);
+
+		// false = graph 1, true = 2
+		static bool current_graph_alpha = false;
+		ImGui::title_with_seperator(utils::va("Alpha - Graph %d", current_graph_alpha + 1), true, 0, 2.0f, 8.0f);
 		{
 			if (elem && elem->alpha[0] && elem->alpha[0]->keyCount && elem->alpha[1] && elem->alpha[1]->keyCount)
 			{
-				// false = graph 1, true = 2
-				static bool current_graph_scale = false;
-
 				int new_count = 0;
-				const auto curve = elem->alpha[current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+				const auto curve = elem->alpha[current_graph_alpha]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
 				MOD_CHECK_GRAPH(ImGui::CurveEditor("alpha_graph", curve->keys, curve->keyCount,
 					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
@@ -1235,14 +1326,14 @@ namespace ggui::effects_editor_gui
 
 				if (ImGui::BeginPopupContextItem("alpha_graph##bg"))
 				{
-					if (ImGui::MenuItem("Graph 1", 0, !current_graph_scale))
+					if (ImGui::MenuItem("Graph 1", 0, !current_graph_alpha))
 					{
-						current_graph_scale = false;
+						current_graph_alpha = false;
 					}
 
-					if (ImGui::MenuItem("Graph 2", 0, current_graph_scale))
+					if (ImGui::MenuItem("Graph 2", 0, current_graph_alpha))
 					{
-						current_graph_scale = true;
+						current_graph_alpha = true;
 					}
 
 					ImGui::EndPopup();
@@ -1261,38 +1352,6 @@ namespace ggui::effects_editor_gui
 		on_modified(modified);
 	}
 
-	//const fx_system::FxTrailVertex geotrail_shape_line[] =
-	//{
-	//	{ { 0.0f, -0.90625f} , { 0.0f, 0.0f}, 0.0f },
-	//	{ { 0.0f, 0.875f} , { 0.0f, 0.0f}, 1.0f },
-	//	{ { 0.0f, -0.90625f} , { 0.0f, 0.0f}, 2.0f },
-	//};
-
-	//const std::uint16_t indices_list_line[] = {  4, 0, 1, 1, 2 };
-	//const std::uint16_t indices_list_tri[]  = {  6, 0, 1, 1, 2, 2, 3 };
-	//const std::uint16_t indices_list_quad[] = {  8, 0, 1, 1, 2, 2, 3, 3, 4 };
-	//const std::uint16_t indices_list_pent[] = { 10, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5 };
-	//const std::uint16_t indices_list_hex[]  = { 12, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6 };
-	//const std::uint16_t indices_list_sep[]  = { 14, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7 };
-	//const std::uint16_t indices_list_oct[]  = { 16, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8 };
-	//const std::uint16_t indices_list_non[]  = { 18, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9 };
-	//const std::uint16_t indices_list_dec[]  = { 20, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10 };
-
-	//const std::uint16_t* indices_list[] =
-	//{
-	//	nullptr,			// 0
-	//	nullptr,			// 1
-	//	nullptr,			// 2
-	//	indices_list_line,	// 3
-	//	indices_list_tri,	// 4
-	//	indices_list_quad,	// 5
-	//	indices_list_pent,	// 6
-	//	indices_list_hex,	// 7
-	//	indices_list_sep,	// 8
-	//	indices_list_oct,	// 9
-	//	indices_list_non,	// 10
-	//	indices_list_dec	// 11
-	//};
 
 	void tab_visuals(fx_system::FxEditorElemDef* elem)
 	{
