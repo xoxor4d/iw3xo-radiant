@@ -154,6 +154,25 @@ void on_createclient()
 		dvars::set_bool(r_vsync, false);
 	}
 
+	// disable debug plumes drawing (only effect xmodels)
+	if (const auto& r_showTriCounts = game::Dvar_FindVar("r_showTriCounts");
+					r_showTriCounts && r_showTriCounts->current.enabled)
+	{
+		dvars::set_bool(r_showTriCounts, false);
+	}
+
+	if (const auto& r_showVertCounts = game::Dvar_FindVar("r_showVertCounts");
+					r_showVertCounts && r_showVertCounts->current.enabled) 
+	{
+		dvars::set_bool(r_showVertCounts, false);
+	}
+
+	if (const auto& r_showSurfCounts = game::Dvar_FindVar("r_showSurfCounts");
+					r_showSurfCounts && r_showSurfCounts->current.enabled)
+	{
+		dvars::set_bool(r_showSurfCounts, false);
+	}
+
 	// hide original windows and show the z-view (rendering canvas for imgui)
 	if(cmainframe::activewnd)
 	{

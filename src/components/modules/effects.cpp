@@ -490,6 +490,9 @@ namespace components
 		on_effect_stop();
 		reset_editor_effect();
 		fx_system::FX_InitSystem(0);
+
+		
+		
 	}
 
 	void camera_onpaint_intercept()

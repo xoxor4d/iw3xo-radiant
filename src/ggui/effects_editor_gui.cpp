@@ -202,6 +202,7 @@ namespace ggui::effects_editor_gui
 		const char* reload_fx_modal_str = "Unsaved Changes##fx_reload";
 		if (ImGui::Button("Reload Effect") || editor_pending_reload)
 		{
+			editor_pending_reload = false;
 			if (editor_effect_was_modified)
 			{
 				ImGui::OpenPopup(reload_fx_modal_str);
@@ -209,8 +210,6 @@ namespace ggui::effects_editor_gui
 			else
 			{
 				editor_pending_close = false;
-				editor_pending_reload = false;
-
 				components::command::execute("fx_reload");
 			}
 		}
@@ -218,8 +217,6 @@ namespace ggui::effects_editor_gui
 		if (Modal_UnsavedChanges(reload_fx_modal_str)) // true if clicked OK ^
 		{
 			editor_effect_was_modified = false;
-			editor_pending_reload = false;
-
 			components::command::execute("fx_reload");
 		}
 
@@ -229,6 +226,7 @@ namespace ggui::effects_editor_gui
 		const char* close_editor_modal_str = "Unsaved Changes##editor_close";
 		if (ImGui::Button("Close Editor") || editor_pending_close)
 		{
+			editor_pending_close = false;
 			if (editor_effect_was_modified)
 			{
 				ImGui::OpenPopup(close_editor_modal_str);
@@ -236,7 +234,6 @@ namespace ggui::effects_editor_gui
 			else
 			{
 				editor_effect_was_modified = false;
-				editor_pending_close = false;
 
 				components::effects::edit();
 				components::command::execute("fx_reload");
@@ -246,7 +243,6 @@ namespace ggui::effects_editor_gui
 		if (Modal_UnsavedChanges(close_editor_modal_str)) // true if clicked OK ^
 		{
 			editor_effect_was_modified = false;
-			editor_pending_close = false;
 
 			components::effects::edit();
 			components::command::execute("fx_reload");
@@ -1919,10 +1915,10 @@ namespace ggui::effects_editor_gui
 			const auto vert_center_offset = (ImGui::GetFrameHeight() - ImGui::CalcTextSize("A").y) * 0.4f;
 
 			ImGui::left_label_drag("Split Dist", vert_center_offset, 150.0f);
-			MOD_CHECK(ImGui::DragInt("##split_dist", &elem->trailSplitDist, 0.1f, 0, INT16_MAX));
+			MOD_CHECK(ImGui::DragInt("##split_dist", &elem->trailSplitDist, 0.1f, 1, INT16_MAX));
 
-			ImGui::left_label_drag("Texture Repeate Dist", vert_center_offset, 150.0f);
-			MOD_CHECK(ImGui::DragInt("##tex_rep_dist", &elem->trailRepeatDist, 0.1f, 0, INT16_MAX));
+			ImGui::left_label_drag("Texture Repeat Dist", vert_center_offset, 150.0f);
+			MOD_CHECK(ImGui::DragInt("##tex_rep_dist", &elem->trailRepeatDist, 0.1f, 1, INT16_MAX));
 
 			ImGui::left_label_drag("Texture Scroll Time", vert_center_offset, 150.0f);
 			MOD_CHECK(ImGui::DragFloat("##tex_scroll_time", &elem->trailScrollTime, 0.1f, 0, 1024.0f, "%.2f"));
