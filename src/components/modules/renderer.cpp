@@ -1270,6 +1270,90 @@ namespace components
 		}
 	}
 
+	bool sunpreview_filter_brush(game::selbrush_def_t* brush /*esi*/, int unk)
+	{
+		const static uint32_t func_addr = 0x46A1F0;
+		__asm
+		{
+			mov		esi, brush;
+			push	unk;
+			call	func_addr;
+			add		esp, 4;
+		}
+	}
+
+	void sunpreview_entity_get_orientation(game::entity_s_def* ent /*eax*/, game::orientation_t* orient /*ebx*/, game::orientation_t* orient_out /*edi*/)
+	{
+		const static uint32_t func_addr = 0x482A70;
+		__asm
+		{
+			pushad;
+			mov		eax, ent;
+			mov		ebx, orient;
+			mov		edi, orient_out;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	bool sunpreview_draw_brush_shadow(float* sundir /*eax*/, game::selbrush_def_t* brush /*edx*/, game::orientation_t* orient /*ecx*/)
+	{
+		const static uint32_t func_addr = 0x47B2A0;
+		__asm
+		{
+			pushad;
+			mov		eax, sundir;
+			mov		edx, brush;
+			mov		ecx, orient;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void sunpreview_brush_shadow(DWORD* sb, game::orientation_t* orient, float* sundir)
+	{
+		game::selbrush_def_t* sb_test = (game::selbrush_def_t*)sb;
+		game::orientation_t orient_out = {};
+
+		game::selbrush_def_t* x_sb = sb_test;
+		game::selbrush_def_t* sb_next = sb_test->next;
+
+		if (sb_next != sb_test)
+		{
+			do
+			{
+				if(sb_next->def)
+				{
+					const game::vec3_t brush_center =
+					{
+						((sb_next->def->mins[0] + sb_next->def->maxs[0]) * 0.5f),
+						((sb_next->def->mins[1] + sb_next->def->maxs[1]) * 0.5f),
+						((sb_next->def->mins[2] + sb_next->def->maxs[2]) * 0.5f)
+					};
+
+					if (utils::vector::distance(brush_center, cmainframe::activewnd->m_pCamWnd->camera.origin) < dvars::r_sunpreview_shadow_dist->current.value)
+					{
+						if (!sunpreview_filter_brush(sb_next, 0))
+						{
+							if (sb_next->owner->prefab)
+							{
+								sunpreview_entity_get_orientation(reinterpret_cast<game::entity_s_def*>(sb_next->owner->firstActive), orient, &orient_out);
+								sunpreview_brush_shadow((DWORD*)(sb_next->owner->prefab + 12), &orient_out, sundir);
+								x_sb = sb_test;
+							}
+							else
+							{
+								sunpreview_draw_brush_shadow(sundir, sb_next, orient);
+							}
+						}
+					}
+					sb_next = sb_next->next;
+				}
+
+			} while (sb_next != x_sb);
+		}
+	}
+
 	void renderer::R_AddCmdSetCustomShaderConstant(game::ShaderCodeConstants constant, float x, float y, float z, float w)
 	{
 		auto setconstant_cmd = reinterpret_cast<game::GfxCmdSetCustomConstant*>(game::R_GetCommandBuffer(sizeof(game::GfxCmdSetCustomConstant), game::GfxRenderCommand::RC_SET_CUSTOM_CONSTANT));
@@ -1349,7 +1433,8 @@ namespace components
 	// draws brushes and entities with "sunpre_" techniques, would normally show rudimentary shadows (they kill fps tho)
 	bool sunpreview()
 	{
-		if(!sunpreview_set_shader_constants(nullptr))
+		float sun_dir_from_worldspawn[4] = {};
+		if(!sunpreview_set_shader_constants(sun_dir_from_worldspawn))
 		{
 			return false;
 		}
@@ -1360,19 +1445,30 @@ namespace components
 			projection_cmd->projection = game::GfxProjectionTypes::GFX_PROJECTION_2D;
 		}
 
-		// this was within the original func, only here for reference
-		//game::R_AddCmdDrawFullScreenColoredQuad(0.0f, 0.0f, 1.0f, 1.0f, some_color_from_func_above, material_white_multiply);
+		// + shadow related +
+		const auto material_white_multiply = reinterpret_cast<game::Material*>(*(DWORD*)0x23F15C4);
+		game::R_AddCmdDrawFullScreenColoredQuad(0.0f, 0.0f, 1.0f, 1.0f, nullptr, material_white_multiply);
+		
+
+		// sunpreview related
 		game::R_AddCmdDrawFullScreenColoredQuad(0.0f, 0.0f, 1.0f, 1.0f, game::color_white, game::rgp->clearAlphaStencilMaterial);
 
-		// + shadow related +
-		// int& active_sunpreview01 = *reinterpret_cast<int*>(0x23F15B8); active_sunpreview01 = 3;
-		// int& active_sunpreview02 = *reinterpret_cast<int*>(0x23F15B4); active_sunpreview02 = 3;
+		if (dvars::r_sunpreview_shadow_enable->current.enabled)
+		{
+			// + shadow related +
+			int& active_sunpreview01 = *reinterpret_cast<int*>(0x23F15B8); active_sunpreview01 = 6;
+			int& active_sunpreview02 = *reinterpret_cast<int*>(0x23F15B4); active_sunpreview02 = 6;
 
-		// SunLightPreview_BrushShadow(&active_brushes, cam_some_matrix, sundir);// nop to disable shadows ++ MUCH FPS
-		// SunLightPreview_BrushShadow(&selected_brushes, cam_some_matrix, sundir);// nop to disable shadows ++ MUCH FPS
-		// SunLightPreview_PolyOffsetShadows();
-		game::R_SortMaterials(); // needed when shadows are active
-		
+			const auto orient = reinterpret_cast<game::orientation_t*>(0x6DE290);
+			sunpreview_brush_shadow(&*game::active_brushes_ptr, orient, sun_dir_from_worldspawn);
+			sunpreview_brush_shadow(&*game::currSelectedBrushes, orient, sun_dir_from_worldspawn);
+
+			// SunLightPreview_PolyOffsetShadows
+			utils::hook::call<void(__cdecl)()>(0x4561B0)();
+		}
+
+		game::R_SortMaterials();
+
 		sunpreview_drawbrush(game::g_selected_brushes());
 		sunpreview_drawbrush(game::g_active_brushes());
 
@@ -2460,6 +2556,20 @@ namespace components
 			/* maxVal	*/ 1.0f,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "fog color");
+
+		dvars::r_sunpreview_shadow_enable = dvars::register_bool(
+			/* name		*/ "r_sunpreview_shadow_enable",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "draw shadows when using sunpreview (SLOW!)");
+
+		dvars::r_sunpreview_shadow_dist = dvars::register_float(
+			/* name		*/ "r_sunpreview_shadow_dist",
+			/* default	*/ 500.0f,
+			/* mins		*/ 0.0f,
+			/* maxs		*/ FLT_MAX,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "shadow drawing distance (camera to center of brush)");
 	}
 
 	renderer::renderer()

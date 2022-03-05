@@ -726,6 +726,12 @@ namespace ggui::menubar
 						mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun
 					}
 
+					if (ImGui::MenuItem("Enable Sun Shadows", 0, dvars::r_sunpreview_shadow_enable->current.enabled)) {
+						game::Dvar_SetBool(dvars::r_sunpreview_shadow_enable, !dvars::r_sunpreview_shadow_enable->current.enabled);
+					}
+
+					IMGUI_MENU_WIDGET_SINGLE("Sun Shadow Distance", ImGui::DragFloat("", &dvars::r_sunpreview_shadow_dist->current.value, 25.0f, 0, FLT_MAX, "%.0f"));
+
 					SEPERATORV(0.0f);
 
 					if (ImGui::MenuItem("Start Previewing Selected", hotkeys::get_hotkey_for_command("LightPreviewStart").c_str())) {

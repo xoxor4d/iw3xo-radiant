@@ -58,7 +58,10 @@ namespace dvars
 	game::dvar_s* r_fakesun_fog_start = nullptr;
 	game::dvar_s* r_fakesun_fog_half = nullptr;
 	game::dvar_s* r_fakesun_fog_color = nullptr;
-	
+
+	game::dvar_s* r_sunpreview_shadow_dist = nullptr;
+	game::dvar_s* r_sunpreview_shadow_enable = nullptr;
+
 	game::dvar_s* guizmo_enable = nullptr;
 	game::dvar_s* guizmo_snapping = nullptr;
 	game::dvar_s* guizmo_brush_mode = nullptr;
