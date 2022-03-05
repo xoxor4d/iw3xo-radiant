@@ -2760,6 +2760,7 @@ namespace components
 		utils::hook::nop(0x52A6E8, 5);
 		utils::hook::nop(0x52A6FF, 5);
 		utils::hook::nop(0x52A6F7, 3);
+		utils::hook::nop(0x500F4C, 5); // < on shutdown
 
 		// * ------
 
