@@ -7,8 +7,14 @@ namespace fx_system
 	extern FxSystemBuffers	fx_systemBufferPool;
 
 	extern bool ed_is_paused;
+	extern bool ed_is_paused_old;
+
 	extern bool ed_is_playing;
+	extern bool ed_is_playing_old;
+
 	extern bool ed_is_repeating;
+	extern bool ed_is_repeating_old;
+
 	extern bool ed_is_filename_valid;
 	extern bool ed_is_editor_effect_valid;
 
@@ -21,6 +27,8 @@ namespace fx_system
 	extern int ed_playback_tick;
 	extern int ed_playback_tick_old;
 	extern int ed_repeat_tickcount;
+	extern int ed_onspawn_tick;
+	extern int ed_onspawn_rand;
 
 	// * ---------------
 

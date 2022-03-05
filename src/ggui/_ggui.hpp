@@ -31,13 +31,13 @@ namespace ggui
 
 
 	// left label menu widget, eg. "dragfloat"
-	#define IMGUI_MENU_WIDGET_SINGLE(label, func)                                                       \
+	#define IMGUI_MENU_WIDGET_SINGLE(label, func) {                                                     \
 		ImGui::Text(label); ImGui::SameLine();                                                          \
 		const ImGuiMenuColumns* offsets = &ImGui::GetCurrentWindow()->DC.MenuColumns;                   \
 		ImGui::SetCursorPosX(static_cast<float>(offsets->OffsetShortcut + 5));                          \
 		ImGui::PushItemWidth(static_cast<float>(offsets->Widths[2] + offsets->Widths[3] + 5));          \
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, 0));   \
-		func; ImGui::PopItemWidth(); ImGui::PopStyleVar();
+		func; ImGui::PopItemWidth(); ImGui::PopStyleVar(); }
 	
 	
 	// show tooltip after x seconds

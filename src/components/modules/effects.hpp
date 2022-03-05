@@ -10,7 +10,7 @@ namespace components
 
 		const char* get_name() override { return "effects"; };
 
-		static bool load_test_effect(const char* effect_name);
+		static bool load_effect(const char* effect_name);
 
 		static void editor_on_effect_play_repeat();
 		static void editor_trigger_effect(int msecBegin);
@@ -34,9 +34,12 @@ namespace components
 		static void set_initial_state();
 
 		static void play();
+		static void play_retrigger();
+		static void apply_changes();
 		static void repeat();
 		static void pause();
 		static void stop();
+		static void edit();
 
 
 		static inline bool			is_fx_origin_selected_;

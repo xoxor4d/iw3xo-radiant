@@ -1250,6 +1250,11 @@ namespace components
 		}
 	}
 
+	void r_setup_pass_surflists(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
+	{
+		r_setup_pass_general(source, state, passIndex);
+	}
+
 	// *
 	// sun preview
 
@@ -1969,6 +1974,12 @@ namespace components
 
 		if (game::dx->device && (effects::effect_is_playing() || fx_system::ed_is_paused && !effects::effect_is_playing()))
 		{
+			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
+			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];
+
+			renderer::copy_scene_to_texture(ggui::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			game::gfxCmdBufSourceState->input.codeImages[10] = resolved_post_sun->image;
+
 			R_DrawEmissive(&cmdBuf, viewInfo);
 		}
 
@@ -2492,6 +2503,8 @@ namespace components
 		utils::hook(0x53AC4F, r_setup_pass_xmodel, HOOK_CALL).install()->quick();
 		utils::hook(0x4FE646, r_setup_pass_brush, HOOK_CALL).install()->quick();
 		utils::hook(0x53A7BA, r_setup_pass_2d, HOOK_CALL).install()->quick(); // 2d and translucent
+		utils::hook(0x532376, r_setup_pass_surflists, HOOK_CALL).install()->quick(); // effects
+		utils::hook(0x53238F, r_setup_pass_surflists, HOOK_CALL).install()->quick(); // effects
 
 		// * ------
 

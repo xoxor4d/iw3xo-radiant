@@ -5,6 +5,11 @@ namespace ggui::effects_editor_gui
 {
 	ImGradient gradient;
 
+	int selected_editor_elemdef = 0;
+	bool editor_effect_was_modified = false;
+	bool editor_pending_close = false;
+	bool editor_pending_reload = false;
+
 	const char* s_elemTypeNames[11] =
 	{
 		"Billboard Sprite",
@@ -49,7 +54,10 @@ namespace ggui::effects_editor_gui
 					// restart effect
 					if (components::effects::effect_is_playing() || components::effects::effect_is_repeating() || components::effects::effect_is_paused())
 					{
-						components::effects::play();
+						//components::effects::play();
+
+						components::effects::stop();
+						components::effects::apply_changes();
 					}
 				}
 
@@ -192,7 +200,7 @@ namespace ggui::effects_editor_gui
 
 		ImGui::SameLine();
 		const char* reload_fx_modal_str = "Unsaved Changes##fx_reload";
-		if (ImGui::Button("Reload Effect"))
+		if (ImGui::Button("Reload Effect") || editor_pending_reload)
 		{
 			if (editor_effect_was_modified)
 			{
@@ -200,21 +208,26 @@ namespace ggui::effects_editor_gui
 			}
 			else
 			{
+				editor_pending_close = false;
+				editor_pending_reload = false;
+
 				components::command::execute("fx_reload");
 			}
 		}
 
 		if (Modal_UnsavedChanges(reload_fx_modal_str)) // true if clicked OK ^
 		{
-			components::command::execute("fx_reload");
 			editor_effect_was_modified = false;
+			editor_pending_reload = false;
+
+			components::command::execute("fx_reload");
 		}
 
 		// ----
 
 		ImGui::SameLine();
 		const char* close_editor_modal_str = "Unsaved Changes##editor_close";
-		if (ImGui::Button("Close Editor"))
+		if (ImGui::Button("Close Editor") || editor_pending_close)
 		{
 			if (editor_effect_was_modified)
 			{
@@ -222,16 +235,21 @@ namespace ggui::effects_editor_gui
 			}
 			else
 			{
-				components::command::execute("fx_edit");
+				editor_effect_was_modified = false;
+				editor_pending_close = false;
+
+				components::effects::edit();
 				components::command::execute("fx_reload");
 			}
 		}
 
 		if (Modal_UnsavedChanges(close_editor_modal_str)) // true if clicked OK ^
 		{
-			components::command::execute("fx_edit");
-			components::command::execute("fx_reload");
 			editor_effect_was_modified = false;
+			editor_pending_close = false;
+
+			components::effects::edit();
+			components::command::execute("fx_reload");
 		}
 
 
@@ -385,7 +403,9 @@ namespace ggui::effects_editor_gui
 
 			if(components::effects::effect_is_playing() || components::effects::effect_is_repeating() || components::effects::effect_is_paused())
 			{
-				components::effects::play();
+				components::effects::stop();
+				components::effects::apply_changes();
+
 			}
 		}
 	}
@@ -1139,7 +1159,6 @@ namespace ggui::effects_editor_gui
 	void tab_physics([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
 		bool modified = false;
-		const ImGuiStyle& style = ImGui::GetStyle();
 
 		ImGui::BeginChild("##effect_properties_color_child", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 

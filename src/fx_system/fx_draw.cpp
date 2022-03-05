@@ -1570,7 +1570,12 @@ namespace fx_system
 	{
 		R_BeginCodeMeshVerts();
 
-		if (cmd->system->msecDraw >= 0 && game::Dvar_FindVar("fx_enable")->current.enabled && game::Dvar_FindVar("fx_draw")->current.enabled)
+		const auto fx_enable = game::Dvar_FindVar("fx_enable");
+		const auto fx_draw = game::Dvar_FindVar("fx_draw");
+
+		if (cmd->system->msecDraw >= 0 && 
+			fx_enable && fx_enable->current.enabled && 
+			fx_draw && fx_draw->current.enabled)
 		{
 			FX_DrawSpriteElems(cmd->system, cmd->system->msecDraw);
 		}

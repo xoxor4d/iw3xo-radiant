@@ -70,7 +70,8 @@ namespace components
 			free_elem->trailSplitDist = 100;
 			free_elem->trailRepeatDist = 10;
 
-			effects::play();
+			//effects::play();
+			components::effects::apply_changes();
 		}
 	}
 
@@ -106,12 +107,18 @@ namespace components
 
 		memcpy(elem, &editor_effect->elems[index + 1], sizeof(fx_system::FxEditorElemDef) * (--editor_effect->elemCount - index));
 
-		effects::play();
+		//effects::play();
+		components::effects::apply_changes();
 	}
 
 	bool effects_editor::is_editor_active()
 	{
 		return ggui::state.czwnd.m_effects_editor.menustate;
+	}
+
+	bool effects_editor::has_unsaved_changes()
+	{
+		return ggui::effects_editor_gui::editor_effect_was_modified;
 	}
 
 	effects_editor::effects_editor()

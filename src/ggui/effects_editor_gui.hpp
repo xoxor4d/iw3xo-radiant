@@ -3,8 +3,13 @@
 
 namespace ggui::effects_editor_gui
 {
-	static inline int selected_editor_elemdef = 0;
-	static inline bool editor_effect_was_modified = false;
+	//static inline int selected_editor_elemdef = 0;
+	//static inline bool editor_effect_was_modified = false;
+
+	extern int selected_editor_elemdef;
+	extern bool editor_effect_was_modified;
+	extern bool editor_pending_close;
+	extern bool editor_pending_reload;
 
 	static inline const fx_system::FxTrailVertex geotrail_shape_line[] =
 	{

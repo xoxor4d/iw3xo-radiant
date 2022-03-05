@@ -16,6 +16,7 @@ namespace components
 		static void editor_delete_segment(int index);
 
 		static bool		is_editor_active();
+		static bool		has_unsaved_changes();
 
 	private:
 

@@ -15,9 +15,10 @@ namespace ggui::camera_settings
 	void fakesun_settings()
 	{
 		ImGui::Indent(8.0f);
+		ImGui::Spacing();
 
 		// -----------------
-		ImGui::title_with_seperator("Fakesun Settings", false);
+		ImGui::title_with_seperator("Fakesun Settings", false, 0, 2, 6.0f);
 
 		ImGui::Checkbox("Use Worldspawn Settings", &dvars::r_fakesun_use_worldspawn->current.enabled);
 		TT("Uses some of the default values below if a required worldspawn key can not be found");
@@ -64,21 +65,31 @@ namespace ggui::camera_settings
 
 	void effect_settings()
 	{
+		const auto& style = ImGui::GetStyle();
+
 		ImGui::Indent(8.0f);
+		ImGui::Spacing();
 
 		// -----------------
-		ImGui::title_with_seperator("General Settings", false);
+		ImGui::title_with_seperator("General", false, 0, 2, 6.0f);
 
-		if (ImGui::Button("Reload Effect"))
+		ImGui::BeginDisabled(!components::effects::effect_can_play());
 		{
-			components::command::execute("fx_reload");
-		}
+			if (ImGui::Button("Reload Effect"))
+			{
+				if (components::effects_editor::is_editor_active())
+				{
+					effects_editor_gui::editor_pending_reload = true;
+				}
+				else
+				{
+					components::command::execute("fx_reload");
+				}
+			}
 
-		ImGui::SameLine();
-		if (ImGui::Button("Edit Effect"))
-		{
-			components::command::execute("fx_edit");
+			ImGui::EndDisabled();
 		}
+		
 
 		ImGui::SameLine();
 		if (ImGui::Button("Toggle Show Tris"))
@@ -90,8 +101,46 @@ namespace ggui::camera_settings
 			}
 		}
 
-		ImGui::DragFloat("Fx Timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f);
+		ImGui::DragFloat("Timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f);
+		ImGui::DragFloat("Repeat Delay", &fx_system::ed_looppause, 0.01f, 0.05f, FLT_MAX, "%.2f");
 
+		ImGui::BeginDisabled(!components::effects::effect_can_play());
+		{
+			static int tick_rate = 50;
+			static int held_timeout = 0;
+
+			if (ImGui::Button("Advance Tick")) 
+			{
+				fx_system::ed_playback_tick += tick_rate;
+			}
+			else if(ImGui::IsItemHovered())
+			{
+				if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
+				{ 
+					if(held_timeout > 50)
+					{
+						fx_system::ed_playback_tick += tick_rate;
+					}
+					else
+					{
+						held_timeout++;
+					}
+				}
+				else
+				{
+					held_timeout = 0;
+				}
+			}
+
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(-style.FramePadding.x);
+			ImGui::DragInt("##tick_rate", &tick_rate, 1, 1, INT16_MAX);
+			TT("Tick Increase Amount\nIncrease effect ticks by hand. Useful when effect is paused");
+
+			ImGui::EndDisabled();
+		}
+
+		
 	}
 
 	void menu(ggui::imgui_context_menu& menu)
