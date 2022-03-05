@@ -199,6 +199,15 @@ namespace ggui::effects_editor_gui
 		}
 
 		ImGui::SameLine();
+		if(ImGui::Button("Save Effect As"))
+		{
+			if(components::effects_editor::save_as())
+			{
+				editor_effect_was_modified = false;
+			}
+		}
+
+		ImGui::SameLine();
 		const char* reload_fx_modal_str = "Unsaved Changes##fx_reload";
 		if (ImGui::Button("Reload Effect") || editor_pending_reload)
 		{

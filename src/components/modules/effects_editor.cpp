@@ -1,4 +1,5 @@
 #include "std_include.hpp"
+#include "commdlg.h"
 
 namespace components
 {
@@ -109,6 +110,45 @@ namespace components
 
 		//effects::play();
 		components::effects::apply_changes();
+	}
+
+	bool effects_editor::save_as()
+	{
+		char filename[MAX_PATH];
+		OPENFILENAMEA ofn;
+		ZeroMemory(&filename, sizeof(filename));
+		ZeroMemory(&ofn, sizeof(ofn));
+
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = cmainframe::activewnd->GetWindow();
+		ofn.lpstrFilter = "Effect Files\0*.efx\0";
+		ofn.lpstrFile = filename;
+		ofn.lpstrDefExt = ".efx";
+		ofn.nMaxFile = MAX_PATH;
+		ofn.lpstrTitle = "Save effect as ...";
+		ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+
+		if (GetSaveFileNameA(&ofn))
+		{
+			if(fx_system::FX_SaveEditorEffect(filename))
+			{
+				/*const std::string filepath = filename;
+				const std::string replace_path = "raw\\fx\\";
+				const std::size_t pos = filepath.find(replace_path) + replace_path.length();
+
+				std::string loc_filepath = filepath.substr(pos);
+				utils::erase_substring(loc_filepath, ".efx"s);
+				utils::replace(loc_filepath, "\\", "/");
+
+				effects::load_effect(loc_filepath.c_str());*/
+
+				game::printf_to_console("[*] Successfully saved effect: %s", filename);
+
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	bool effects_editor::is_editor_active()

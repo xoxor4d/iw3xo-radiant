@@ -219,9 +219,54 @@ void __declspec(naked) hk_on_createclient()
 	}
 }
 
+// auto load iw3xradiant.prj
+void create_qe_children(cmainframe* mainframe)
+{
+	char app_path[_MAX_PATH + 1];
+	GetModuleFileNameA(nullptr, app_path, _MAX_PATH);
 
+	std::string project_path = app_path;
+	utils::replace(project_path, ".exe", ".prj");
 
+	const bool bProjectLoaded = utils::hook::call<bool(__fastcall)(const char*)>(0x48BAB0)(project_path.c_str());
 
+	if(!bProjectLoaded)
+	{
+		game::Com_Error("Unable to load project file <iw3xradiant.prj>");
+	}
+
+	auto* m_camera_origin = reinterpret_cast<float*>(0x241A5A4);
+	float& z_scale = *reinterpret_cast<float*>(0x241A5B0);
+
+	m_camera_origin[0] = 0.0f;
+	m_camera_origin[1] = 0.0f;
+	m_camera_origin[2] = 0.0f;
+	z_scale = 0.0f;
+
+	game::g_qeglobals->d_gridsize = 5;
+	game::g_qeglobals->d_showgrid = true;
+
+	game::printf_to_console("Entering message loop");
+
+	mainframe->m_bDoLoop = true;
+	SetTimer(mainframe->GetWindow(), 1u, 1000u, 0);
+}
+
+void __declspec(naked) hk_create_qe_children_stub()
+{
+	const static uint32_t retn_pt = 0x422989;
+	__asm
+	{
+		pushad;
+		push    edi;
+		call	create_qe_children;
+		add		esp, 4;
+		popad;
+
+		add		esp, 4;
+		jmp		retn_pt;
+	}
+}
 
 void cmainframe::update_windows(int nBits)
 {
@@ -830,6 +875,9 @@ void cmainframe::hooks()
 
 	// handle wm_char events for non-focused subwindows
 	utils::hook(0x421A7B, cmainframe::windowproc, HOOK_CALL).install()->quick();
+
+	// automatically load iw3xradiant.prj
+	utils::hook(0x422984, hk_create_qe_children_stub, HOOK_JUMP).install()->quick();
 
 	// hook end of createclient
 	utils::hook(0x4232EE, hk_on_createclient, HOOK_JUMP).install()->quick();

@@ -14,9 +14,10 @@ namespace components
 
 		static void editor_add_new_segment();
 		static void editor_delete_segment(int index);
+		static bool save_as();
 
-		static bool		is_editor_active();
-		static bool		has_unsaved_changes();
+		static bool	is_editor_active();
+		static bool	has_unsaved_changes();
 
 	private:
 

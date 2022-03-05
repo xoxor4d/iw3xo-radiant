@@ -360,17 +360,24 @@ namespace fx_system
 		return 0;
 	}
 
-	bool FX_SaveEditorEffect()
+	bool FX_SaveEditorEffect(const char* save_as_path)
 	{
 		const auto editor_effect = get_editor_effect();
-		const std::string loaded_effect_string = get_loaded_effect_string();
 
-		if (loaded_effect_string.empty())
+		if(save_as_path)
 		{
-			return false;
+			effect_file_buffer.open(save_as_path);
 		}
+		else
+		{
+			const std::string loaded_effect_string = get_loaded_effect_string();
+			if (loaded_effect_string.empty())
+			{
+				return false;
+			}
 
-		effect_file_buffer.open(loaded_effect_string);
+			effect_file_buffer.open(loaded_effect_string);
+		}
 
 		if (effect_file_buffer.is_open())
 		{
