@@ -58,6 +58,9 @@ namespace dvars
 	extern game::dvar_s* r_fakesun_fog_start;
 	extern game::dvar_s* r_fakesun_fog_half;
 	extern game::dvar_s* r_fakesun_fog_color;
+
+	extern game::dvar_s* r_sunpreview_shadow_dist;
+	extern game::dvar_s* r_sunpreview_shadow_enable;
 	
 	extern game::dvar_s* guizmo_enable;
 	extern game::dvar_s* guizmo_snapping;

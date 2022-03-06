@@ -9,10 +9,19 @@ namespace fx_system
 	FxSystemBuffers fx_systemBufferPool = {};
 
 	bool ed_is_paused = false;
+	bool ed_is_paused_old = false;
+
 	bool ed_is_playing = false;
+	bool ed_is_playing_old = false;
+
 	bool ed_is_repeating = false;
+	bool ed_is_repeating_old = false;
+
 	bool ed_is_filename_valid = false;
 	bool ed_is_editor_effect_valid = false;
+
+	
+	
 
 	fx_system::FxEffect* ed_active_effect = nullptr;
 	fx_system::FxEditorEffectDef ed_editor_effect = {};
@@ -23,6 +32,8 @@ namespace fx_system
 	int ed_playback_tick = 0;
 	int ed_playback_tick_old = 0;
 	int ed_repeat_tickcount = 0;
+	int ed_onspawn_tick = 0;
+	int ed_onspawn_rand = 0;
 
 	// * --------------------------------
 
@@ -1151,7 +1162,7 @@ namespace fx_system
 
 	bool FX_CullElemForSpawn(const float* origin, FxCamera* camera, FxElemDef* elemDef)
 	{
-		if (elemDef->spawnRange.amplitude != 0.0)
+		if (elemDef->spawnRange.amplitude != 0.0f)
 		{
 			const float dist = Vec3DistanceSq(origin, camera->origin);
 			if ((elemDef->spawnRange.base * elemDef->spawnRange.base) > dist)

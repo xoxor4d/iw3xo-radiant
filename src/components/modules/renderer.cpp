@@ -1250,6 +1250,11 @@ namespace components
 		}
 	}
 
+	void r_setup_pass_surflists(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
+	{
+		r_setup_pass_general(source, state, passIndex);
+	}
+
 	// *
 	// sun preview
 
@@ -1262,6 +1267,90 @@ namespace components
 			mov		edi, brush;
 			call	func_addr;
 			popad;
+		}
+	}
+
+	bool sunpreview_filter_brush(game::selbrush_def_t* brush /*esi*/, int unk)
+	{
+		const static uint32_t func_addr = 0x46A1F0;
+		__asm
+		{
+			mov		esi, brush;
+			push	unk;
+			call	func_addr;
+			add		esp, 4;
+		}
+	}
+
+	void sunpreview_entity_get_orientation(game::entity_s_def* ent /*eax*/, game::orientation_t* orient /*ebx*/, game::orientation_t* orient_out /*edi*/)
+	{
+		const static uint32_t func_addr = 0x482A70;
+		__asm
+		{
+			pushad;
+			mov		eax, ent;
+			mov		ebx, orient;
+			mov		edi, orient_out;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	bool sunpreview_draw_brush_shadow(float* sundir /*eax*/, game::selbrush_def_t* brush /*edx*/, game::orientation_t* orient /*ecx*/)
+	{
+		const static uint32_t func_addr = 0x47B2A0;
+		__asm
+		{
+			pushad;
+			mov		eax, sundir;
+			mov		edx, brush;
+			mov		ecx, orient;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void sunpreview_brush_shadow(DWORD* sb, game::orientation_t* orient, float* sundir)
+	{
+		game::selbrush_def_t* sb_test = (game::selbrush_def_t*)sb;
+		game::orientation_t orient_out = {};
+
+		game::selbrush_def_t* x_sb = sb_test;
+		game::selbrush_def_t* sb_next = sb_test->next;
+
+		if (sb_next != sb_test)
+		{
+			do
+			{
+				if(sb_next->def)
+				{
+					const game::vec3_t brush_center =
+					{
+						((sb_next->def->mins[0] + sb_next->def->maxs[0]) * 0.5f),
+						((sb_next->def->mins[1] + sb_next->def->maxs[1]) * 0.5f),
+						((sb_next->def->mins[2] + sb_next->def->maxs[2]) * 0.5f)
+					};
+
+					if (utils::vector::distance(brush_center, cmainframe::activewnd->m_pCamWnd->camera.origin) < dvars::r_sunpreview_shadow_dist->current.value)
+					{
+						if (!sunpreview_filter_brush(sb_next, 0))
+						{
+							if (sb_next->owner->prefab)
+							{
+								sunpreview_entity_get_orientation(reinterpret_cast<game::entity_s_def*>(sb_next->owner->firstActive), orient, &orient_out);
+								sunpreview_brush_shadow((DWORD*)(sb_next->owner->prefab + 12), &orient_out, sundir);
+								x_sb = sb_test;
+							}
+							else
+							{
+								sunpreview_draw_brush_shadow(sundir, sb_next, orient);
+							}
+						}
+					}
+					sb_next = sb_next->next;
+				}
+
+			} while (sb_next != x_sb);
 		}
 	}
 
@@ -1344,7 +1433,8 @@ namespace components
 	// draws brushes and entities with "sunpre_" techniques, would normally show rudimentary shadows (they kill fps tho)
 	bool sunpreview()
 	{
-		if(!sunpreview_set_shader_constants(nullptr))
+		float sun_dir_from_worldspawn[4] = {};
+		if(!sunpreview_set_shader_constants(sun_dir_from_worldspawn))
 		{
 			return false;
 		}
@@ -1355,19 +1445,30 @@ namespace components
 			projection_cmd->projection = game::GfxProjectionTypes::GFX_PROJECTION_2D;
 		}
 
-		// this was within the original func, only here for reference
-		//game::R_AddCmdDrawFullScreenColoredQuad(0.0f, 0.0f, 1.0f, 1.0f, some_color_from_func_above, material_white_multiply);
+		// + shadow related +
+		const auto material_white_multiply = reinterpret_cast<game::Material*>(*(DWORD*)0x23F15C4);
+		game::R_AddCmdDrawFullScreenColoredQuad(0.0f, 0.0f, 1.0f, 1.0f, nullptr, material_white_multiply);
+		
+
+		// sunpreview related
 		game::R_AddCmdDrawFullScreenColoredQuad(0.0f, 0.0f, 1.0f, 1.0f, game::color_white, game::rgp->clearAlphaStencilMaterial);
 
-		// + shadow related +
-		// int& active_sunpreview01 = *reinterpret_cast<int*>(0x23F15B8); active_sunpreview01 = 3;
-		// int& active_sunpreview02 = *reinterpret_cast<int*>(0x23F15B4); active_sunpreview02 = 3;
+		if (dvars::r_sunpreview_shadow_enable->current.enabled)
+		{
+			// + shadow related +
+			int& active_sunpreview01 = *reinterpret_cast<int*>(0x23F15B8); active_sunpreview01 = 6;
+			int& active_sunpreview02 = *reinterpret_cast<int*>(0x23F15B4); active_sunpreview02 = 6;
 
-		// SunLightPreview_BrushShadow(&active_brushes, cam_some_matrix, sundir);// nop to disable shadows ++ MUCH FPS
-		// SunLightPreview_BrushShadow(&selected_brushes, cam_some_matrix, sundir);// nop to disable shadows ++ MUCH FPS
-		// SunLightPreview_PolyOffsetShadows();
-		game::R_SortMaterials(); // needed when shadows are active
-		
+			const auto orient = reinterpret_cast<game::orientation_t*>(0x6DE290);
+			sunpreview_brush_shadow(&*game::active_brushes_ptr, orient, sun_dir_from_worldspawn);
+			sunpreview_brush_shadow(&*game::currSelectedBrushes, orient, sun_dir_from_worldspawn);
+
+			// SunLightPreview_PolyOffsetShadows
+			utils::hook::call<void(__cdecl)()>(0x4561B0)();
+		}
+
+		game::R_SortMaterials();
+
 		sunpreview_drawbrush(game::g_selected_brushes());
 		sunpreview_drawbrush(game::g_active_brushes());
 
@@ -1691,6 +1792,41 @@ namespace components
 		viewInfo->sceneViewport = viewport;
 		viewInfo->displayViewport = viewport;
 
+
+		// needed for debug plumes (3D text in space)
+		game::rg->debugViewParms = viewParms;
+
+		// R_DrawAllSceneEnt - add/draw effect xmodels 
+		utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523E50)(viewInfo);
+
+		// R_AddAllSceneEntSurfacesCamera (Worker CMD) - add/draw effect xmodels 
+		utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523660)(viewInfo);
+
+		// *
+		// lit drawlist (effect xmodels)
+
+		R_InitDrawSurfListInfo(&viewInfo->litInfo);
+
+		viewInfo->litInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL; 
+		viewInfo->litInfo.viewInfo = viewInfo;
+		viewInfo->litInfo.viewOrigin[0] = viewParms->origin[0];
+		viewInfo->litInfo.viewOrigin[1] = viewParms->origin[1];
+		viewInfo->litInfo.viewOrigin[2] = viewParms->origin[2];
+		viewInfo->litInfo.viewOrigin[3] = viewParms->origin[3];
+		viewInfo->litInfo.cameraView = 1;
+
+		int initial_lit_drawSurfCount = frontEndDataOut->drawSurfCount;
+
+		// R_MergeAndEmitDrawSurfLists
+		utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(0, 3);
+
+		viewInfo->litInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_lit_drawSurfCount];
+		viewInfo->litInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_lit_drawSurfCount;
+
+
+		// *
+		// emissive drawlist (effects)
+
 		auto emissiveList = &viewInfo->emissiveInfo;
 		R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
 
@@ -1702,16 +1838,16 @@ namespace components
 		viewInfo->emissiveInfo.viewOrigin[3] = viewParms->origin[3];
 		viewInfo->emissiveInfo.cameraView = 1;
 
-		int initial_drawSurfCount = frontEndDataOut->drawSurfCount;
+		int initial_emissive_drawSurfCount = frontEndDataOut->drawSurfCount;
 
 		// R_MergeAndEmitDrawSurfLists
 		utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(9, 6);
 
-		emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_drawSurfCount];
+		emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_emissive_drawSurfCount];
 
 		renderer::effect_drawsurf_count_ = frontEndDataOut->drawSurfCount;
 
-		viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_drawSurfCount;
+		viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
 	}
 
 	void __declspec(naked) setup_viewinfo_stub()
@@ -1897,6 +2033,34 @@ namespace components
 		}
 	}
 
+	void R_DrawLitCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
+	{
+		R_Set3D(source);
+
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
+
+		const RECT rect =
+		{
+			viewInfo->sceneViewport.x,
+			viewInfo->sceneViewport.y,
+			viewInfo->sceneViewport.x + viewInfo->sceneViewport.width,
+			viewInfo->sceneViewport.y + viewInfo->sceneViewport.height
+		};
+
+		state->prim.device->SetScissorRect(&rect);
+
+		//R_DrawSurfs(source, state, 0, &viewInfo->emissiveInfo);
+		// int __cdecl R_DrawSurfs(GfxCmdBufSourceState *source, GfxCmdBufState *state, GfxCmdBufState *prepassstate, GfxDrawSurfListInfo *info)
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x5324E0)
+			(source, state, nullptr, &viewInfo->litInfo);
+
+		//R_ShowTris(source, state, &viewInfo->emissiveInfo);
+		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState* a1, game::GfxCmdBufState* a2, game::GfxDrawSurfListInfo*)>(0x55B100)
+		//	(source, state, &viewInfo->emissiveInfo);
+
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
+	}
+
 	void R_DrawEmissiveCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
 		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
@@ -1945,6 +2109,24 @@ namespace components
 		memcpy(game::gfxCmdBufState, &state1, sizeof(game::GfxCmdBufState));
 	}
 
+	void R_DrawLit(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
+	{
+		game::GfxCmdBufSourceState source = {};
+
+		//R_InitCmdBufSourceState(GfxCmdBufSourceState *source, GfxCmdBufInput *input, int a3)
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput* input, int)>(0x53CB20)(&source, &viewinfo->input, 1);
+
+		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
+
+		// R_SetSceneViewport
+		source.sceneViewport = viewinfo->sceneViewport;
+		source.viewMode = game::VIEW_MODE_NONE;
+		source.viewportIsDirty = true;
+
+		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DrawLitCallback, viewinfo, &source, viewinfo, &viewinfo->litInfo, viewinfo, cmdbuf, 0);
+	}
+
 	void R_DrawEmissive(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
 	{
 		game::GfxCmdBufSourceState source = {};
@@ -1969,6 +2151,13 @@ namespace components
 
 		if (game::dx->device && (effects::effect_is_playing() || fx_system::ed_is_paused && !effects::effect_is_playing()))
 		{
+			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
+			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];
+
+			renderer::copy_scene_to_texture(ggui::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			game::gfxCmdBufSourceState->input.codeImages[10] = resolved_post_sun->image;
+
+			R_DrawLit(&cmdBuf, viewInfo);
 			R_DrawEmissive(&cmdBuf, viewInfo);
 		}
 
@@ -2382,6 +2571,18 @@ namespace components
 		}
 	}
 
+	void renderer_init()
+	{
+		// RB_InitBackendGlobalStructs (original func)
+		utils::hook::call<void(__cdecl)()>(0x536040)();
+	}
+
+	void post_render_init()
+	{
+		// R_InitFonts - register fonts/smalldevfont
+		utils::hook::call<void(__cdecl)()>(0x535F10)();
+	}
+
 	// *
 	// *
 
@@ -2449,6 +2650,20 @@ namespace components
 			/* maxVal	*/ 1.0f,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "fog color");
+
+		dvars::r_sunpreview_shadow_enable = dvars::register_bool(
+			/* name		*/ "r_sunpreview_shadow_enable",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "draw shadows when using sunpreview (SLOW!)");
+
+		dvars::r_sunpreview_shadow_dist = dvars::register_float(
+			/* name		*/ "r_sunpreview_shadow_dist",
+			/* default	*/ 500.0f,
+			/* mins		*/ 0.0f,
+			/* maxs		*/ FLT_MAX,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "shadow drawing distance (camera to center of brush)");
 	}
 
 	renderer::renderer()
@@ -2492,6 +2707,8 @@ namespace components
 		utils::hook(0x53AC4F, r_setup_pass_xmodel, HOOK_CALL).install()->quick();
 		utils::hook(0x4FE646, r_setup_pass_brush, HOOK_CALL).install()->quick();
 		utils::hook(0x53A7BA, r_setup_pass_2d, HOOK_CALL).install()->quick(); // 2d and translucent
+		utils::hook(0x532376, r_setup_pass_surflists, HOOK_CALL).install()->quick(); // effects
+		utils::hook(0x53238F, r_setup_pass_surflists, HOOK_CALL).install()->quick(); // effects
 
 		// * ------
 
@@ -2532,6 +2749,18 @@ namespace components
 		// change vertex offset in RB_DrawLinesCmd because depth_test var was added to GfxCmdDrawLines
 		utils::hook::set<BYTE>(0x533669 + 2, 12);
 		utils::hook::set<BYTE>(0x5336B5 + 2, 12);
+
+		// hook R_InitBackendGlobalStructs somewhere within R_Init
+		utils::hook(0x500742, renderer_init, HOOK_CALL).install()->quick();
+
+		// register smalldevfont
+		utils::hook(0x5011B8, post_render_init, HOOK_CALL).install()->quick();
+
+		// nop rpg world related stuff when drawing gfx-scene-entities (effect xmodels)
+		utils::hook::nop(0x52A6E8, 5);
+		utils::hook::nop(0x52A6FF, 5);
+		utils::hook::nop(0x52A6F7, 3);
+		utils::hook::nop(0x500F4C, 5); // < on shutdown
 
 		// * ------
 

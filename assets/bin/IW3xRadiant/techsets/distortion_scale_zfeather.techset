@@ -1,0 +1,11 @@
+"solid wireframe":
+	wireframe_solid_dtex;
+
+"fakelight normal":
+"fakelight view":
+"unlit":
+	radiant_effect_distortion;
+
+"emissive shadow":
+"emissive":
+	radiant_effect_distortion;

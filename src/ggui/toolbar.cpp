@@ -913,7 +913,7 @@ namespace ggui::toolbar
 					nullptr, 
 					&overwrite_active_bg))
 				{
-					components::command::execute("fx_play");
+					components::effects::play();
 				}
 
 				ImGui::EndDisabled();
@@ -937,7 +937,7 @@ namespace ggui::toolbar
 					nullptr,
 					&overwrite_active_bg))
 				{
-					components::command::execute("fx_repeat");
+					components::effects::repeat();
 				}
 
 				ImGui::EndDisabled();
@@ -961,7 +961,7 @@ namespace ggui::toolbar
 					nullptr,
 					&overwrite_active_bg))
 				{
-					components::command::execute("fx_pause");
+					components::effects::pause();
 				}
 
 				ImGui::EndDisabled();
@@ -985,7 +985,31 @@ namespace ggui::toolbar
 					nullptr,
 					&overwrite_active_bg))
 				{
-					components::command::execute("fx_stop");
+					components::effects::stop();
+				}
+
+				ImGui::EndDisabled();
+			});
+
+		register_element("fx_edit"s, false, []()
+			{
+				static bool hov_fx_edit;
+
+				ImVec4 overwrite_active_bg = ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+
+				const bool can_fx_play = components::effects::effect_can_play();
+				ImGui::BeginDisabled(!can_fx_play);
+
+				if (image_togglebutton(
+					"fx_edit",
+					hov_fx_edit,
+					hov_fx_edit,
+					"Edit Effect for last selected fx_origin",
+					nullptr,
+					nullptr,
+					&overwrite_active_bg))
+				{
+					components::effects::edit();
 				}
 
 				ImGui::EndDisabled();

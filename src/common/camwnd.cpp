@@ -416,69 +416,90 @@ void rtt_camera_window_toolbar()
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 				{
 					const bool can_fx_play = components::effects::effect_can_play();
-					ImGui::BeginDisabled(!can_fx_play);
 					ImGui::BeginGroup();
 					{
-						static bool hov_fx_play;
-						if (ggui::toolbar::image_togglebutton("fx_play"
-							, hov_fx_play
-							, can_fx_play
-							, std::string("Play Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_play")).c_str()
-							, &toolbar_button_background
-							, &toolbar_button_background_hovered
-							, &toolbar_button_background_active
-							, &toolbar_button_size))
+						ImGui::BeginDisabled(!can_fx_play || components::effects::effect_is_repeating());
 						{
-							components::command::execute("fx_play");
+							static bool hov_fx_play;
+							if (ggui::toolbar::image_togglebutton("fx_play"
+								, hov_fx_play
+								, can_fx_play && !components::effects::effect_is_repeating()
+								, std::string("Play Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_play")).c_str()
+								, &toolbar_button_background
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								components::effects::play();
 
-						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+							} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 
+							ImGui::EndDisabled();
+						}
 
-						static bool hov_fx_repeat;
-						if (ggui::toolbar::image_togglebutton("fx_repeat"
-							, hov_fx_repeat
-							, can_fx_play
-							, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_repeat")).c_str()
-							, &toolbar_button_background
-							, &toolbar_button_background_hovered
-							, &toolbar_button_background_active
-							, &toolbar_button_size))
+						ImGui::BeginDisabled(!can_fx_play);
 						{
-							components::command::execute("fx_repeat");
+							static bool hov_fx_repeat;
+							if (ggui::toolbar::image_togglebutton("fx_repeat"
+								, hov_fx_repeat
+								, components::effects::effect_is_repeating()
+								, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_repeat")).c_str()
+								, &toolbar_button_background
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								components::effects::repeat();
 
-						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
-
-
-						static bool hov_fx_pause;
-						if (ggui::toolbar::image_togglebutton("fx_pause"
-							, hov_fx_pause
-							, can_fx_play
-							, std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_pause")).c_str()
-							, &toolbar_button_background
-							, &toolbar_button_background_hovered
-							, &toolbar_button_background_active
-							, &toolbar_button_size))
-						{
-							components::command::execute("fx_pause");
-
-						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+							} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 
 
-						static bool hov_fx_stop;
-						if (ggui::toolbar::image_togglebutton("fx_stop"
-							, hov_fx_stop
-							, can_fx_play
-							, std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_stop")).c_str()
-							, &toolbar_button_background
-							, &toolbar_button_background_hovered
-							, &toolbar_button_background_active
-							, &toolbar_button_size))
-						{
-							components::command::execute("fx_stop");
+							static bool hov_fx_pause;
+							if (ggui::toolbar::image_togglebutton("fx_pause"
+								, hov_fx_pause
+								, can_fx_play
+								, std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_pause")).c_str()
+								, &toolbar_button_background
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								components::effects::pause();
 
-						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+							} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
 
-						ImGui::EndDisabled();
+
+							static bool hov_fx_stop;
+							if (ggui::toolbar::image_togglebutton("fx_stop"
+								, hov_fx_stop
+								, can_fx_play
+								, std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_stop")).c_str()
+								, &toolbar_button_background
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								components::effects::stop();
+
+							} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+							static bool hov_fx_edit;
+							if (ggui::toolbar::image_togglebutton("fx_edit"
+								, hov_fx_edit
+								, hov_fx_edit
+								, "Edit Effect for last selected fx_origin"
+								, &toolbar_button_background
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								components::effects::edit();
+
+							} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+
+							ImGui::EndDisabled();
+						}
+						
 						ImGui::EndGroup();
 
 						if(!can_fx_play)

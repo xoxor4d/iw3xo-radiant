@@ -75,6 +75,8 @@
 #pragma warning(pop)
 
 #include "common/imgui/imgui_addons.hpp"
+#include "common/imgui/imgui_color_gradient.hpp"
+#include "common/imgui/imgui_curves.hpp"
 #include "detours/Detours.h"
 #include "fifo_map.hpp"
 
@@ -111,6 +113,7 @@
 #include "fx_system/fx_convert.hpp"
 #include "fx_system/fx_curves.hpp"
 #include "fx_system/fx_load.hpp"
+#include "fx_system/fx_save.hpp"
 
 #include "ggui/_ggui.hpp"
 #include "ggui/hotkeys.hpp"
@@ -125,6 +128,7 @@
 #include "ggui/about.hpp"
 #include "ggui/camera_settings.hpp"
 #include "ggui/surface_inspector.hpp"
+#include "ggui/effects_editor_gui.hpp"
 
 
 #include "common/mainframe.hpp"

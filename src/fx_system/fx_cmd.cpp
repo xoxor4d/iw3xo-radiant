@@ -54,16 +54,20 @@ namespace fx_system
 
 
 		case WRKCMD_DPVS_CELL_STATIC:
-
+#ifdef FXEDITOR
 			// #ENV_DEPENDENT - not effect related
-			//utils::hook::call<void(__cdecl)(void*)>(0x4EC670)(cmd); //	R_AddCellStaticSurfacesInFrustumCmd((DpvsStaticCellCmd *)cmd);
+			utils::hook::call<void(__cdecl)(void*)>(0x4EC670)(cmd); //	R_AddCellStaticSurfacesInFrustumCmd((DpvsStaticCellCmd *)cmd);
+#endif
+
 			break;
 
 
 		case WRKCMD_DPVS_CELL_SCENE_ENT:
-
+#ifdef FXEDITOR
 			// #ENV_DEPENDENT - not effect related
-			//utils::hook::call<void(__cdecl)(void*)>(0x4FDD70)(cmd); // R_AddCellSceneEntSurfacesInFrustumCmd((GfxWorldDpvsPlanes *)cmd);
+			utils::hook::call<void(__cdecl)(void*)>(0x4FDD70)(cmd); // R_AddCellSceneEntSurfacesInFrustumCmd((GfxWorldDpvsPlanes *)cmd);
+#endif
+
 			break;
 
 
@@ -72,51 +76,66 @@ namespace fx_system
 
 
 		case WRKCMD_DPVS_CELL_DYN_BRUSH:
-			
+#ifdef FXEDITOR
 			// #ENV_DEPENDENT - not effect related
-			//utils::hook::call<void(__cdecl)(void*)>(0x4C0100)(cmd); // R_AddCellDynBrushSurfacesInFrustumCmd((DpvsDynamicCellCmd *)cmd);
+			utils::hook::call<void(__cdecl)(void*)>(0x4C0100)(cmd); // R_AddCellDynBrushSurfacesInFrustumCmd((DpvsDynamicCellCmd *)cmd);
+#endif
+
 			break;
 
 
 		case WRKCMD_DPVS_ENTITY:
-			
+
+#ifdef FXEDITOR
 			// #ENV_DEPENDENT - not effect related
-			//utils::hook::call<void(__cdecl)(void*)>(0x4FDC00)(cmd); // R_AddEntitySurfacesInFrustumCmd((DpvsEntityCmd *)cmd);
+			utils::hook::call<void(__cdecl)(void*)>(0x4FDC00)(cmd); // R_AddEntitySurfacesInFrustumCmd((DpvsEntityCmd *)cmd);
+#endif
+
 			break;
 
 
 		case WRKCMD_ADD_SCENE_ENT:
-			
+#ifdef FXEDITOR
 			// #ENV_DEPENDENT - not effect related
-			//utils::hook::call<void(__cdecl)(void*)>(0x4BDFA0)(cmd); // R_AddAllSceneEntSurfacesCamera(*(GfxViewInfo **)cmd);
+			utils::hook::call<void(__cdecl)(void*)>(0x4BDFA0)(cmd); // R_AddAllSceneEntSurfacesCamera(*(GfxViewInfo **)cmd);
+#endif
+
 			break;
 
 
 		case WRKCMD_SPOT_SHADOW_ENT:
-			
+#ifdef FXEDITOR
 			// #ENV_DEPENDENT - not effect related
-			//utils::hook::call<void(__cdecl)(void*)>(0x4DD400)(cmd); // R_AddSpotShadowEntCmd((GfxSpotShadowEntCmd *)cmd);
+			utils::hook::call<void(__cdecl)(void*)>(0x4DD400)(cmd); // R_AddSpotShadowEntCmd((GfxSpotShadowEntCmd *)cmd);
+#endif
+
 			break;
 
 
 		case WRKCMD_SHADOW_COOKIE:
-			
+#ifdef FXEDITOR
 			// #ENV_DEPENDENT - not effect related
-			//utils::hook::call<void(__cdecl)(void*)>(0x4E2FD0)(cmd);// R_GenerateShadowCookiesCmd((ShadowCookieCmd *)cmd);
+			utils::hook::call<void(__cdecl)(void*)>(0x4E2FD0)(cmd);// R_GenerateShadowCookiesCmd((ShadowCookieCmd *)cmd);
+#endif
+
 			break;
 
 
 		case WRKCMD_BOUNDS_ENT_DELAYED:
-			
+#ifdef FXEDITOR
 			// #ENV_DEPENDENT - not effect related
-			//utils::hook::call<void(__cdecl)(void*)>(0x4EB580)(cmd); // R_UpdateGfxEntityBoundsCmd(cmd);
+			utils::hook::call<void(__cdecl)(void*)>(0x4EB580)(cmd); // R_UpdateGfxEntityBoundsCmd(cmd);
+#endif
+
 			break;
 
 
 		case WRKCMD_SKIN_ENT_DELAYED:
-			
+#ifdef FXEDITOR
 			// #ENV_DEPENDENT - not effect related
-			//utils::hook::call<void(__cdecl)(void*)>(0x4EAA20)(cmd); // R_SkinGfxEntityCmd(cmd);
+			utils::hook::call<void(__cdecl)(void*)>(0x4EAA20)(cmd); // R_SkinGfxEntityCmd(cmd);
+#endif
+
 			break;
 
 
@@ -148,9 +167,11 @@ namespace fx_system
 			break;*/
 
 		case WRKCMD_SKIN_CACHED_STATICMODEL:
-
+#ifdef FXEDITOR
 			// #ENV_DEPENDENT
-			//utils::hook::call<void(__cdecl)(int)>(0x4FD230)(0); // R_SkinXModelCmd(cmd);
+			utils::hook::call<void(__cdecl)(int)>(0x4FD230)(0); // R_SkinXModelCmd(cmd);
+#endif
+
 			break;
 
 
