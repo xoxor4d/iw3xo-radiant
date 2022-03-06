@@ -342,62 +342,66 @@ namespace components
 
 	void effects::fx_origin_frame()
 	{
-		const auto edit_ent = game::g_edit_entity();
+		// edit_entity is unsave and can point to junk memory when transitioning into and out of prefabs
+		// use selected_brushes->def->owner instead
 
-		if(edit_ent && edit_ent->eclass && edit_ent->eclass->classtype == game::ECLASS_RADIANT_NODE)
+		const auto b = game::g_selected_brushes();
+
+		if(b && b->def && b->def->owner)
 		{
-			if(utils::string_equals(ggui::entity::ValueForKey(edit_ent->epairs, "classname"), "fx_origin"))
+			const auto edit_ent = b->def->owner;
+
+			if(edit_ent->eclass && edit_ent->eclass->classtype == game::ECLASS_RADIANT_NODE)
 			{
-				is_fx_origin_selected_ = true;
-
-				memcpy(editor_origin_from_fx_origin, edit_ent->origin, sizeof(game::vec3_t));
-
-				ggui::entity::Entity_GetVec3ForKey(reinterpret_cast<game::entity_s*>(edit_ent), editor_angles_from_fx_origin, "angles");
-
-				const auto fx_name = ggui::entity::ValueForKey(edit_ent->epairs, "fx");
-
-
-				if (fx_name && !utils::string_equals(fx_system::ed_editor_effect.name, fx_name))
+				
+				if (utils::string_equals(ggui::entity::ValueForKey(edit_ent->epairs, "classname"), "fx_origin"))
 				{
-					if (!effects_editor::has_unsaved_changes())
+					is_fx_origin_selected_ = true;
+
+					memcpy(editor_origin_from_fx_origin, edit_ent->origin, sizeof(game::vec3_t));
+
+					ggui::entity::Entity_GetVec3ForKey(reinterpret_cast<game::entity_s*>(edit_ent), editor_angles_from_fx_origin, "angles");
+
+					const auto fx_name = ggui::entity::ValueForKey(edit_ent->epairs, "fx");
+
+
+					if (fx_name && !utils::string_equals(fx_system::ed_editor_effect.name, fx_name))
 					{
-						effects::load_effect(fx_name);
+						if (!effects_editor::has_unsaved_changes())
+						{
+							effects::load_effect(fx_name);
+						}
 					}
+					else if (fx_system::ed_active_effect && (effects::effect_is_playing() || effects::effect_is_paused()))
+					{
+						// use "fx_origin" origin to update effect position 
+						memcpy(fx_system::ed_active_effect->frameAtSpawn.origin, edit_ent->origin, sizeof(game::vec3_t));
+						memcpy(fx_system::ed_active_effect->frameNow.origin, edit_ent->origin, sizeof(game::vec3_t));
+
+
+						// use "fx_origin" angles to update effect angles - update spawn axis
+						utils::vector::angle_vectors(editor_angles_from_fx_origin, spawn_axis_rotated[2], spawn_axis_rotated[1], spawn_axis_rotated[0]);
+
+						float quat[4] = {};
+						fx_system::AxisToQuat(spawn_axis_rotated, quat);
+
+						memcpy(fx_system::ed_active_effect->frameAtSpawn.quat, quat, sizeof(game::vec4_t));
+						memcpy(fx_system::ed_active_effect->frameNow.quat, quat, sizeof(game::vec4_t));
+					}
+
+					return;
 				}
-				else if (fx_system::ed_active_effect && (effects::effect_is_playing() || effects::effect_is_paused()))
-				{
-					// use "fx_origin" origin to update effect position 
-					memcpy(fx_system::ed_active_effect->frameAtSpawn.origin, edit_ent->origin, sizeof(game::vec3_t));
-					memcpy(fx_system::ed_active_effect->frameNow.origin, edit_ent->origin, sizeof(game::vec3_t));
-
-
-					// use "fx_origin" angles to update effect angles - update spawn axis
-					utils::vector::angle_vectors(editor_angles_from_fx_origin, spawn_axis_rotated[2], spawn_axis_rotated[1], spawn_axis_rotated[0]);
-
-					float quat[4] = {};
-					fx_system::AxisToQuat(spawn_axis_rotated, quat);
-
-					memcpy(fx_system::ed_active_effect->frameAtSpawn.quat, quat, sizeof(game::vec4_t));
-					memcpy(fx_system::ed_active_effect->frameNow.quat, quat, sizeof(game::vec4_t));
-				}
-
-				return;
 			}
-		}
-		else if(edit_ent && edit_ent->eclass && utils::string_equals(edit_ent->eclass->name, "worldspawn"))
-		{
-			if(!game::g_selected_brushes()->def)
+			else if (edit_ent->eclass && utils::string_equals(edit_ent->eclass->name, "worldspawn"))
 			{
-				return;
+				if (effects::effect_is_playing())
+				{
+					effects::on_effect_stop();
+				}
+
+				is_fx_origin_selected_ = false;
 			}
 		}
-
-		if(effects::effect_is_playing())
-		{
-			effects::on_effect_stop();
-		}
-
-		is_fx_origin_selected_ = false;
 	}
 
 	void effects::tick_playback()
