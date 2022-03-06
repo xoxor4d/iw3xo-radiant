@@ -346,6 +346,17 @@ namespace ggui::preferences
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_DEVELOPER, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
 		{
+			if(ImGui::Button("Enter Prefab"))
+			{
+				cdeclcall(void, 0x42BF70);
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Leave Prefab"))
+			{
+				cdeclcall(void, 0x42BF80);
+			}
+
 			ImGui::DragInt("Int 01", &dev_num_01, 0.1f);
 			ImGui::DragFloat3("Vec4 01", dev_vec_01, 25.0f);
 			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
