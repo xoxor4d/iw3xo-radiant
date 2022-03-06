@@ -1,21 +1,29 @@
 #include "std_include.hpp"
 
 #define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
-					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
+						game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
 
 #define AssertS(str)	if(IsDebuggerPresent()) __debugbreak();	else {	\
-					game::Com_Error("%s\nLine %d :: %s\n%s ", str, __LINE__, __func__, __FILE__); }
+							game::Com_Error("%s\nLine %d :: %s\n%s ", str, __LINE__, __func__, __FILE__); }
 
-#define Warning(unused, fmt, ...)	if(IsDebuggerPresent()) __debugbreak(); \
-									game::printf_to_console(fmt, __VA_ARGS__);
+// #ENV_DEPENDENT
+#ifdef FXEDITOR
+	#define Warning(unused, fmt, ...)	if(IsDebuggerPresent()) __debugbreak();	else {\
+											game::allow_warnings = true; \
+											game::Com_PrintError(unused, fmt, __VA_ARGS__); \
+											game::allow_warnings = false; }
+#else
+	#define Warning(unused, fmt, ...)	if(IsDebuggerPresent()) __debugbreak(); \
+											game::printf_to_console(fmt, __VA_ARGS__);
+#endif
 
 namespace fx_system
 {
 	$145C5CACE7A579404A9D7C1B73F29F79 fx_load = {};
 
-	const FxFlagDef s_allFlagDefs[] =
+	const FxFlagDef s_allFlagDefs[41] =
 	{
-		{"looping", 0, 1, 1 },
+		{ "looping", 0, 1, 1 },
 		{ "useRandColor", 0, 2, 2 },
 		{ "useRandAlpha", 0, 4, 4 },
 		{ "useRandSize0", 0, 8, 8 },
@@ -134,12 +142,9 @@ namespace fx_system
 		return visuals->anonymous != nullptr;
 	}
 
-	bool FX_RegisterAsset_SoundAliasName([[maybe_unused]] const char* name, [[maybe_unused]] FxElemVisuals* visuals)
+	bool FX_RegisterAsset_SoundAliasName(const char* name, FxElemVisuals* visuals)
 	{
-		// #UNFINISHED
-		Assert();
-
-		//ReplaceString(visuals, name);
+		alloc_assign_string(&visuals->soundName, name);
 		return true;
 	}
 
@@ -1265,7 +1270,12 @@ namespace fx_system
 
 		game::Com_BeginParseSession(parseSessionName);
 		game::Com_SetSpaceDelimited(0);
-		game::Com_SetParseNegativeNumbers(); // 1
+
+#ifdef FXEDITOR
+		game::Com_SetParseNegativeNumbers(1);
+#else
+		game::Com_SetParseNegativeNumbers();
+#endif
 
 		const char* parse = buffer;
 		const char* token = game::Com_Parse(&parse);

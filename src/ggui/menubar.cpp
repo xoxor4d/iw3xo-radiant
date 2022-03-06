@@ -485,6 +485,27 @@ namespace ggui::menubar
 						} TT("Toggle filmtweak usage");
 					}
 
+					if (ImGui::MenuItem("Filmtweak Settings"))
+					{
+						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
+						{
+							// close entire window if tab is in-front
+							components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+						}
+						else if (!ggui::state.czwnd.m_camera_settings.menustate)
+						{
+							// open window with focused fakesun tab
+							ggui::camera_settings::set_tabstate_fakesun(true);
+							components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+						}
+						else
+						{
+							// window is open but tab not focused
+							ggui::camera_settings::set_tabstate_fakesun(true);
+							ggui::camera_settings::focus_fakesun();
+						}
+					}
+
 					SEPERATORV(0.0f);
 
 					if (ImGui::MenuItem("Fake Sun Preview", hotkeys::get_hotkey_for_command("fakesun_toggle").c_str(), dvars::r_fakesun_preview->current.enabled)) {
@@ -756,6 +777,41 @@ namespace ggui::menubar
 				
 				ImGui::EndMenu(); // Renderer
 			}
+
+
+			if (ImGui::BeginMenu("Effects"))
+			{
+				if (ImGui::MenuItem("Edit Current Effect", 0, nullptr, components::effects::effect_can_play()))
+				{
+					components::effects::edit();
+				}
+
+				if (ImGui::MenuItem("Reload Current Effect", 0, nullptr, components::effects::effect_can_play())) 
+				{
+					if(components::effects_editor::is_editor_active())
+					{
+						effects_editor_gui::editor_pending_reload = true;
+					}
+					else
+					{
+						components::command::execute("fx_reload");
+					}
+				}
+
+				SEPERATORV(0.0f);
+
+				const auto r_showTris = game::Dvar_FindVar("r_showTris");
+				if (ImGui::MenuItem("Draw Debug Tris", 0, r_showTris->current.enabled)) {
+					dvars::set_int(r_showTris, r_showTris->current.integer ? 0 : 1);
+				}
+
+				SEPERATORV(0.0f);
+
+				IMGUI_MENU_WIDGET_SINGLE("Timescale", ImGui::DragFloat("##timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f));
+				IMGUI_MENU_WIDGET_SINGLE("Repeat Delay", ImGui::DragFloat("##repeatdelay", &fx_system::ed_looppause, 0.01f, 0.05f, FLT_MAX, "%.2f"));
+				ImGui::EndMenu(); // Effects
+			}
+
 
 			if (ImGui::BeginMenu("Selection"))
 			{

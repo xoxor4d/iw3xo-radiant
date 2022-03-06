@@ -1,7 +1,7 @@
 <h1 align="center">IW3xRadiant - A Call of Duty 4 Radiant Modification using ImGui</h3>
 
 <p align="center">
-This project is aimed at developers and includes various modifications/additions and was built to be used with IW3xo. <br>
+This project is aimed at developers and includes various modifications/additions and was initially built to be used with IW3xo.
 Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You can, however, just use it as a direct replacement for stock radiant.
 </p>
 
@@ -11,7 +11,7 @@ Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You 
 
 ![](readme/effects.gif)
 
-![image](https://user-images.githubusercontent.com/45299104/136064807-e08d54bd-e11a-48ae-a01d-1fe87fc4159c.jpg)
+![image](https://xoxor4d.github.io/assets/img/iw3xo-radiant/gif/feat_ui.gif)
 
 <p align="center">
 	<b>^ build the layout you've always wanted</b><br>
@@ -28,13 +28,15 @@ ___
 - extend functionalities across the board
 
 ### New features not found within the original cod4 radiant:
-- __WIP:__ play, edit and export effects right from within radiant (makes effectsEd obsolete)
+- __WIP:__ play, edit and export effects right from within radiant (makes effectsEd _almost_ obsolete)
 - switch / scale / place the individual windows however you want
 - preview xmodels and drag them directly into the scene using the model previewer
-- custom lighting shader with normalmapping, specular highlights, reflections and fog
+- custom lighting shader with normal-mapping, specular highlights, reflections and fog
+- ability to limit shadow drawing distance when using stock sunpreview (++FPS)
 - filmtweak support
+- render actual water instead of case-textures 
 - guizmo to manipulate entities and brushes from within the camera window
-- live link (sync brushes, camera and worldspawn settings between cod4 and radiant)
+- live link (sync. brushes (with collision), camera and worldspawn settings between cod4 and radiant)
 - realtime viewports
 - better surface / property editor
 - zoom to cursor
@@ -101,9 +103,8 @@ https://discord.gg/t5jRGbj
 <br>
 
 ## Credits
-- The IW4x Team (especially Snake)
-- The Plutonium Project Team (especially Rektinator)
-- Nukem
+- [X Labs](https://github.com/XLabsProject) (especially [Snake](https://github.com/momo5502))
+- [The Plutonium Project Team](https://plutonium.pw/) (especially [Rektinator](https://github.com/RektInator))
 - https://github.com/Nukem9/LinkerMod
 - https://github.com/Nukem9/detours
 - https://github.com/ocornut/imgui
@@ -122,8 +123,7 @@ https://discord.gg/t5jRGbj
 ![image](https://user-images.githubusercontent.com/45299104/146609441-50255d3c-0dc0-4f9a-894e-373abf4eafc6.jpg)
 ![image](https://user-images.githubusercontent.com/45299104/146609445-e11ae289-641e-4979-915b-bbb0c6b4942b.jpg)
 
-![image](https://user-images.githubusercontent.com/45299104/146609529-83dad70f-3427-4929-946a-dcbdd4bbbbff.jpg)
-![image](https://user-images.githubusercontent.com/45299104/146609534-4ee6f687-b24e-4e44-8d9d-1b05ddeab2a8.jpg)
+![image](https://xoxor4d.github.io/assets/img/iw3xo-radiant/gif/radiant_effect_leaves.gif)
 
 <br>
 

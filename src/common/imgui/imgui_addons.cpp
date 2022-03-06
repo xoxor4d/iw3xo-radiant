@@ -3,6 +3,117 @@
 
 namespace ImGui
 {
+	bool IsVertScollbarVisible()
+	{
+		ImGuiWindow* window = GImGui->CurrentWindow;
+		return window->ScrollbarY;
+	}
+
+	void left_label_drag(const char* label, const float text_y_offset, const float sameline_offset)
+	{
+		const auto og_cursor_y = ImGui::GetCursorPosY();
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + text_y_offset);
+		ImGui::TextUnformatted(label);
+		ImGui::SameLine(sameline_offset);
+		ImGui::SetCursorPosY(og_cursor_y);
+		ImGui::SetNextItemWidth(-ImGui::GetStyle().FramePadding.x);
+	}
+
+	void left_label_checkbox(const char* label, const float text_y_offset)
+	{
+		const auto og_cursor_y = ImGui::GetCursorPosY();
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + text_y_offset);
+		ImGui::TextUnformatted(label);
+		ImGui::SameLine();
+		ImGui::SetCursorPosY(og_cursor_y);
+	};
+
+
+	bool Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ED_FLAG_ flag, bool* result, bool invert_selected)
+	{
+		bool flag_wrapper = elem->editorFlags & flag;
+
+		if(invert_selected)
+		{
+			flag_wrapper = !flag_wrapper;
+		}
+
+		if (ImGui::Checkbox(name, &flag_wrapper))
+		{
+			if (!invert_selected ? flag_wrapper : !flag_wrapper)
+			{
+				elem->editorFlags |= flag;
+			}
+			else
+			{
+				elem->editorFlags &= ~flag;
+			}
+
+			if (result)
+			{
+				*result = true;
+			}
+
+			return true;
+		}
+
+		if (result)
+		{
+			*result = flag_wrapper;
+		}
+
+		return false;
+	}
+
+	bool Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ELEM_ flag, bool* result)
+	{
+		bool flag_wrapper = elem->flags & flag;
+		if (ImGui::Checkbox(name, &flag_wrapper))
+		{
+			if (flag_wrapper)
+			{
+				elem->flags |= flag;
+			}
+			else
+			{
+				elem->flags &= ~flag;
+			}
+
+			if(result)
+			{
+				*result = true;
+			}
+
+			return true;
+		}
+
+		if (result)
+		{
+			*result = flag_wrapper;
+		}
+
+		return false;
+	}
+
+	bool DragFloat2_FxFloatRange(const char* name, fx_system::FxFloatRange* range, float speed, float min, float max, const char* format)
+	{
+		float range_wrapper[2] =
+		{
+			range->base,
+			range->base + range->amplitude
+		};
+
+		if (ImGui::DragFloat2(name, range_wrapper, speed, min, max, format))
+		{
+			range->base = range_wrapper[0];
+			range->amplitude = range_wrapper[1] - range_wrapper[0];
+
+			return true;
+		}
+
+		return false;
+	}
+
 	ImGuiID FindNodeByID(ImGuiID id)
 	{
 		if(const auto node = (ImGuiDockNode*)GImGui->DockContext.Nodes.GetVoidPtr(id);
@@ -54,6 +165,14 @@ namespace ImGui
 	void PopStyleCompact()
 	{
 		ImGui::PopStyleVar(2);
+	}
+
+	bool BeginTabItem_SmallGap(const char* label, bool* p_open, ImGuiTabItemFlags flags)
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(1, 4));
+		const bool result = ImGui::BeginTabItem(label, p_open, flags);
+		ImGui::PopStyleVar();
+		return result;
 	}
 	
 	bool IsItemHoveredDelay(float delay_in_seconds)
@@ -242,7 +361,7 @@ namespace ImGui
 		}
 	}
 
-	void title_with_seperator(const char* title_text, bool pre_spacing, float width, float height)
+	void title_with_seperator(const char* title_text, bool pre_spacing, float width, float height, float post_spacing)
 	{
 		if (pre_spacing)
 		{
@@ -262,7 +381,7 @@ namespace ImGui
 		const ImVec2 seperator_pos = ImGui::GetCursorScreenPos();
 		ImGui::GetWindowDrawList()->AddLine(seperator_pos, ImVec2(seperator_pos.x + width, seperator_pos.y + height), ImGui::GetColorU32(ImGuiCol_Separator));
 
-		SPACING(0.0f, 2.0f);
+		SPACING(0.0f, post_spacing);
 	}
 
 	bool InputScalarDir(const char* label, ImGuiDataType data_type, void* p_data, int* dir, void* p_step, const void* p_step_fast, bool display_p_step, const char* format, ImGuiInputTextFlags flags)

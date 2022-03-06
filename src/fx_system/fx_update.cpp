@@ -1447,6 +1447,7 @@ namespace fx_system
 		camera->isValid = 1;
 	}
 
+#ifndef FXEDITOR
 	// radiant setup
 	void FX_SetupCamera_Radiant()
 	{
@@ -1469,8 +1470,6 @@ namespace fx_system
 
 		FX_SetupCamera(&system->camera, cam->origin, axis, halfTanX, halfTanY, 0.0f);
 	}
-
-
-	
+#endif
 
 }

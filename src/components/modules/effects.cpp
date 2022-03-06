@@ -48,7 +48,15 @@ namespace components
 	{
 		fx_system::FxEffectDef* def = fx_system::FX_Convert(&fx_system::ed_editor_effect, fx_system::FX_AllocMem);
 
+		if(!def)
+		{
+			// can happen if all elemdefs are disabled
+			return;
+		}
+
 		fx_system::ed_playback_tick_old = playback_tick;
+		fx_system::ed_onspawn_tick = playback_tick;
+		fx_system::ed_onspawn_rand = rand;
 
 		// quickly switch axis
 		//const int AX = 0;
@@ -77,20 +85,27 @@ namespace components
 
 
 	// Commandline_LoadEffect
-	bool effects::load_test_effect(const char* effect_name)
+	bool effects::load_effect(const char* effect_name)
 	{
-		components::command::execute("fx_stop");
+		effects::stop();
 		fx_system::FX_UnregisterAll();
 
 		std::string effect_to_load;
-
 		if(!effect_name && !effects::last_fx_name_.empty())
 		{
 			effect_to_load = effects::last_fx_name_;
 		}
 		else
 		{
-			effect_to_load = effect_name;
+			if(effect_name)
+			{
+				effect_to_load = effect_name;
+			}
+			else
+			{
+				return false;
+			}
+			
 		}
 
 		if (fx_system::FX_LoadEditorEffect(effect_to_load.c_str(), &fx_system::ed_editor_effect))
@@ -105,15 +120,14 @@ namespace components
 
 		fx_system::ed_is_editor_effect_valid = false;
 		game::printf_to_console("[FX] failed to load editor effect [%s]", effect_to_load.c_str());
-		reset_editor_effect();
 
+		reset_editor_effect();
 		return false;
 		
 	}
 
 	void effects::editor_on_effect_play_repeat()
 	{
-		
 		if(effects::effect_is_paused()) // un-pause effect
 		{
 			if(effects::effect_can_play())
@@ -124,15 +138,17 @@ namespace components
 			}
 		}
 
-		if(effects::effect_is_playing()) // restart effect when it was not paused
+		if(effects::effect_is_playing())
 		{
-			on_effect_stop();
+			// re-trigger effect without stopping already spawned elements
+			effects::editor_trigger_effect(fx_system::ed_playback_tick);
 		}
 
 		if(effects::effect_is_repeating())
 		{
-			__debugbreak();
-			game::Com_Error("Already repeating effect?");
+			// should not happen
+			fx_system::ed_is_repeating = false;
+			fx_system::ed_is_repeating_old = false;
 		}
 
 		fx_system::ed_is_playing = true;
@@ -155,8 +171,148 @@ namespace components
 			game::Com_Error("no active editor effect to trigger!");
 		}
 
-		// would normally check moving spawn origin here?
 		fx_system::FX_RetriggerEffect(0, fx_system::ed_active_effect, msecBegin);
+	}
+
+	void effects::play_retrigger()
+	{
+		if (effects::effect_can_play())
+		{
+			if (effects::effect_is_playing())
+			{
+				fx_system::FX_RetriggerEffect(0, fx_system::ed_active_effect, fx_system::ed_playback_tick);
+			}
+			else
+			{
+				effects::set_initial_state();
+
+				fx_system::ed_is_playing = true;
+				fx_system::ed_repeat_tickcount = GetTickCount();
+
+				if (!fx_system::ed_active_effect)
+				{
+					Editor_SetupAndSpawnEffect(rand(), fx_system::ed_playback_tick);
+					if (!fx_system::ed_active_effect)
+					{
+						fx_system::ed_is_playing = false;
+					}
+				}
+			}
+		}
+	}
+
+	void effects::apply_changes()
+	{
+		if (fx_system::ed_is_editor_effect_valid)
+		{
+			Editor_SetupAndSpawnEffect(fx_system::ed_onspawn_rand, fx_system::ed_onspawn_tick);
+
+			if (effects::effect_is_playing())
+			{
+				__debugbreak();
+			}
+
+			if (effects::effect_is_repeating())
+			{
+				__debugbreak();
+			}
+
+			if (fx_system::ed_is_playing_old)
+			{
+				effects::play_retrigger();
+			}
+
+			// re-set if effect was paused while it was edited (effect not visible otherwise)
+			if (fx_system::ed_is_paused_old && fx_system::ed_active_effect)
+			{
+				fx_system::ed_is_paused = true;
+			}
+
+			if (fx_system::ed_is_repeating_old && fx_system::ed_active_effect)
+			{
+				fx_system::ed_is_repeating = true;
+			}
+		}
+	}
+
+	void effects::play()
+	{
+		effects::set_initial_state();
+		effects::editor_on_effect_play_repeat();
+	}
+
+	void effects::repeat()
+	{
+		effects::set_initial_state();
+		fx_system::ed_is_paused = false;
+
+		if (components::effects::effect_is_repeating())
+		{
+			fx_system::ed_is_repeating = false;
+
+		}
+		else if (components::effects::effect_is_playing())
+		{
+			fx_system::ed_is_repeating = true;
+		}
+		else
+		{
+			effects::play();
+
+			if (components::effects::effect_is_playing() && !components::effects::effect_is_repeating())
+			{
+				fx_system::ed_is_repeating = true;
+			}
+			else
+			{
+				fx_system::ed_is_repeating = false;
+			}
+		}
+	}
+
+	void effects::pause()
+	{
+		if (fx_system::ed_is_playing)
+		{
+			fx_system::ed_is_playing = false;
+			fx_system::ed_is_paused = true;
+		}
+		else
+		{
+			if (components::effects::effect_can_play() && fx_system::ed_active_effect)
+			{
+				fx_system::ed_is_playing = true;
+				fx_system::ed_is_paused = false;
+			}
+		}
+	}
+
+	void effects::stop()
+	{
+		effects::set_initial_state();
+		effects::on_effect_stop();
+	}
+
+	void effects::edit()
+	{
+		// on open
+		if(!ggui::state.czwnd.m_effects_editor.menustate)
+		{
+			ggui::state.czwnd.m_effects_editor.menustate = true;
+		}
+
+		// on close
+		else
+		{
+			if(effects_editor::has_unsaved_changes())
+			{
+				ggui::effects_editor_gui::editor_pending_close = true;
+			}
+			else
+			{
+				ggui::state.czwnd.m_effects_editor.menustate = false;
+			}
+		}
 	}
 
 	bool effects::effect_is_paused()
@@ -176,7 +332,7 @@ namespace components
 
 	bool effects::effect_can_play()
 	{
-		return fx_system::ed_is_editor_effect_valid && effects::is_fx_origin_selected();
+		return fx_system::ed_is_editor_effect_valid && (effects::is_fx_origin_selected() || effects_editor::is_editor_active());
 	}
 
 	bool effects::is_fx_origin_selected()
@@ -188,7 +344,7 @@ namespace components
 	{
 		const auto edit_ent = game::g_edit_entity();
 
-		if(edit_ent && edit_ent->eclass->classtype == game::ECLASS_RADIANT_NODE)
+		if(edit_ent && edit_ent->eclass && edit_ent->eclass->classtype == game::ECLASS_RADIANT_NODE)
 		{
 			if(utils::string_equals(ggui::entity::ValueForKey(edit_ent->epairs, "classname"), "fx_origin"))
 			{
@@ -198,7 +354,17 @@ namespace components
 
 				ggui::entity::Entity_GetVec3ForKey(reinterpret_cast<game::entity_s*>(edit_ent), editor_angles_from_fx_origin, "angles");
 
-				if (fx_system::ed_active_effect && (effects::effect_is_playing() || effects::effect_is_paused()))
+				const auto fx_name = ggui::entity::ValueForKey(edit_ent->epairs, "fx");
+
+
+				if (fx_name && !utils::string_equals(fx_system::ed_editor_effect.name, fx_name))
+				{
+					if (!effects_editor::has_unsaved_changes())
+					{
+						effects::load_effect(fx_name);
+					}
+				}
+				else if (fx_system::ed_active_effect && (effects::effect_is_playing() || effects::effect_is_paused()))
 				{
 					// use "fx_origin" origin to update effect position 
 					memcpy(fx_system::ed_active_effect->frameAtSpawn.origin, edit_ent->origin, sizeof(game::vec3_t));
@@ -215,16 +381,10 @@ namespace components
 					memcpy(fx_system::ed_active_effect->frameNow.quat, quat, sizeof(game::vec4_t));
 				}
 
-				const auto fx_name = ggui::entity::ValueForKey(edit_ent->epairs, "fx");
-				if(fx_name && !utils::string_equals(fx_system::ed_editor_effect.name, fx_name))
-				{
-					effects::load_test_effect(fx_name);
-				}
-
 				return;
 			}
 		}
-		else if(edit_ent && utils::string_equals(edit_ent->eclass->name, "worldspawn"))
+		else if(edit_ent && edit_ent->eclass && utils::string_equals(edit_ent->eclass->name, "worldspawn"))
 		{
 			if(!game::g_selected_brushes()->def)
 			{
@@ -285,23 +445,33 @@ namespace components
 
 	void effects::on_effect_stop()
 	{
-		fx_system::ed_is_playing = false;
-		fx_system::ed_is_repeating = false;
-		fx_system::ed_is_paused = false;
-
-		const auto system = fx_system::FX_GetSystem(0);
-
-		if(fx_system::ed_active_effect)
+		if (fx_system::ed_active_effect)
 		{
-			const auto stat = fx_system::FX_GetEffectStatus(fx_system::ed_active_effect);
-			fx_system::FX_DelRefToEffect(system, fx_system::ed_active_effect);
+			// save in case effect is getting recompiled and retriggered
+			fx_system::ed_is_paused_old = fx_system::ed_is_paused;
+			fx_system::ed_is_playing_old = fx_system::ed_is_playing;
+			fx_system::ed_is_repeating_old = fx_system::ed_is_repeating;
 
-			if(!stat)
+			// -
+
+			fx_system::ed_is_playing = false;
+			fx_system::ed_is_repeating = false;
+			fx_system::ed_is_paused = false;
+
+			const auto system = fx_system::FX_GetSystem(0);
+
+			if (fx_system::ed_active_effect)
 			{
-				fx_system::FX_KillEffect(system, fx_system::ed_active_effect);
-			}
+				const auto stat = fx_system::FX_GetEffectStatus(fx_system::ed_active_effect);
+				fx_system::FX_DelRefToEffect(system, fx_system::ed_active_effect);
 
-			fx_system::ed_active_effect = nullptr;
+				if (!stat)
+				{
+					fx_system::FX_KillEffect(system, fx_system::ed_active_effect);
+				}
+
+				fx_system::ed_active_effect = nullptr;
+			}
 		}
 	}
 
@@ -320,6 +490,9 @@ namespace components
 		on_effect_stop();
 		reset_editor_effect();
 		fx_system::FX_InitSystem(0);
+
+		
+		
 	}
 
 	void camera_onpaint_intercept()
@@ -514,7 +687,7 @@ namespace components
 	{
 		fx_system::g_warning_outdoor_material = false;
 	}
-	
+
 	effects::effects()
 	{
 		// hook nop'd r_clear in CCamWnd::OnPaint to integrate fx
@@ -522,66 +695,33 @@ namespace components
 
 		command::register_command_with_hotkey("fx_play"s, [this](auto)
 		{
-			effects::set_initial_state();
-			effects::editor_on_effect_play_repeat();
+				effects::play();
 		});
 
 		command::register_command_with_hotkey("fx_repeat"s, [this](auto)
 		{
-			effects::set_initial_state();
-			fx_system::ed_is_paused = false;
-
-			if (components::effects::effect_is_repeating())
-			{
-				fx_system::ed_is_repeating = false;
-
-			}
-			else if (components::effects::effect_is_playing())
-			{
-				fx_system::ed_is_repeating = true;
-			}
-			else
-			{
-				components::command::execute("fx_play");
-
-				if (components::effects::effect_is_playing() && !components::effects::effect_is_repeating())
-				{
-					fx_system::ed_is_repeating = true;
-				}
-				else
-				{
-					fx_system::ed_is_repeating = false;
-				}
-			}
+				effects::repeat();
 		});
 
 		command::register_command_with_hotkey("fx_pause"s, [this](auto)
 		{
-			if (fx_system::ed_is_playing)
-			{
-				fx_system::ed_is_playing = false;
-				fx_system::ed_is_paused = true;
-			}
-			else
-			{
-				if (components::effects::effect_can_play() && fx_system::ed_active_effect)
-				{
-					fx_system::ed_is_playing = true;
-					fx_system::ed_is_paused = false;
-				}
-			}
+				effects::pause();
 		});
 
 		command::register_command_with_hotkey("fx_stop"s, [this](auto)
 		{
-			effects::set_initial_state();
-			effects::on_effect_stop();
+				effects::stop();
 		});
 
 		command::register_command("fx_reload"s, [this](auto)
 		{
 			effects::set_initial_state();
-			effects::load_test_effect(nullptr);
+			effects::load_effect(nullptr);
+		});
+
+		command::register_command("fx_edit"s, [this](auto)
+		{
+			effects::edit();
 		});
 
 		command::register_command("generate_createfx"s, [this](auto)

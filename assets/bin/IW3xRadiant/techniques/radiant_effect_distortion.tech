@@ -1,0 +1,20 @@
+{
+	stateMap "default";
+
+	vertexShader 3.0 "radiant_effect_distortion"
+	{
+		distortionScale = material.distortionScale;
+	}
+
+	pixelShader 3.0 "radiant_effect_distortion"
+	{
+		colorMapSampler = sampler.resolvedPostSun;
+		normalMapSampler = material.colorMap;
+	}
+
+	vertex.position = code.position;
+	vertex.normal = code.normal;
+	vertex.color[0] = code.color;
+	vertex.texcoord[0] = code.texcoord[0];
+	vertex.texcoord[1] = code.tangent;
+}
