@@ -79,16 +79,16 @@ namespace ggui::modelselector
 		
 		const auto window_size = ImGui::GetWindowSize();
 		const bool split_horizontal = window_size.x >= 700.0f;
-		const auto listbox_width = split_horizontal ? ImClamp(window_size.x * 0.25f, 200.0f, FLT_MAX) : ImGui::GetContentRegionAvailWidth();
+		const auto listbox_width = split_horizontal ? ImClamp(window_size.x * 0.25f, 200.0f, FLT_MAX) : ImGui::GetContentRegionAvail().x;
 
 		ImGui::BeginGroup();
 		{
 			// filter widget
 			const auto screenpos_prefilter = ImGui::GetCursorScreenPos();
-			m_filter.Draw("##xmodel_filter", listbox_width - 32);
+			m_filter.Draw("##xmodel_filter", listbox_width - 32.0f);
 			const auto screenpos_postfilter = ImGui::GetCursorScreenPos();
 
-			ImGui::SameLine(listbox_width - 27);
+			ImGui::SameLine(listbox_width - 27.0f);
 			if (ImGui::ButtonEx("x##clear_filter"))
 			{
 				m_filter.Clear();

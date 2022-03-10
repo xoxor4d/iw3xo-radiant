@@ -730,7 +730,7 @@ namespace ggui::menubar
 						game::Dvar_SetBool(dvars::r_sunpreview_shadow_enable, !dvars::r_sunpreview_shadow_enable->current.enabled);
 					}
 
-					IMGUI_MENU_WIDGET_SINGLE("Sun Shadow Distance", ImGui::DragFloat("", &dvars::r_sunpreview_shadow_dist->current.value, 25.0f, 0, FLT_MAX, "%.0f"));
+					IMGUI_MENU_WIDGET_SINGLE("Sun Shadow Distance", ImGui::DragFloat("#sunshadow_dist_scalar", &dvars::r_sunpreview_shadow_dist->current.value, 25.0f, 0, FLT_MAX, "%.0f"));
 
 					SEPERATORV(0.0f);
 
@@ -769,7 +769,7 @@ namespace ggui::menubar
 				//	mainframe_thiscall(void, 0x428F50); // cmainframe::OnViewCubeout
 				//}
 
-				IMGUI_MENU_WIDGET_SINGLE("Cubic Scale", ImGui::DragInt("", &prefs->m_nCubicScale, 1, 1, 220));
+				IMGUI_MENU_WIDGET_SINGLE("Cubic Scale", ImGui::DragInt("##cubic_scalar", &prefs->m_nCubicScale, 1, 1, 220));
 
 				if (ImGui::MenuItem("Cubic Clipping", hotkeys::get_hotkey_for_command("ToggleCubicClip").c_str(), prefs->m_bCubicClipping)) {
 					mainframe_thiscall(void, 0x428F90); // cmainframe::OnViewCubicclipping

@@ -1331,12 +1331,20 @@ void __fastcall ccamwnd::on_mouse_move(ccamwnd* pThis, [[maybe_unused]] void* ed
 
 void __stdcall ccamwnd::on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
+#ifdef DEBUG_KEYS
+	game::printf_to_console("cam keydown: %s -> mainframe", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
+#endif
+
 	// original function :: CMainFrame::OnKeyDown
 	__on_keydown_cam(nChar, nRepCnt, nFlags);
 }
 
 void __stdcall ccamwnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
+#ifdef DEBUG_KEYS
+	game::printf_to_console("cam keyup: %s -> mainframe", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
+#endif
+
 	// original function :: CMainFrame::OnKeyUp
 	__on_keyup_cam(nChar, nRepCnt, nFlags);
 }
@@ -1357,7 +1365,15 @@ BOOL WINAPI ccamwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			// set cz context (in-case we use multiple imgui context's)
 			IMGUI_BEGIN_CZWND;
 
+			// not sure why I did this
 			if (!ggui::get_rtt_camerawnd()->window_hovered && ImGui::GetIO().WantCaptureMouse)
+			{
+				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
+				return true;
+			}
+
+			// handle text input 
+			if(ImGui::GetIO().WantTextInput)
 			{
 				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
 				return true;

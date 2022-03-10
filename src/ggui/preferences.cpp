@@ -60,7 +60,7 @@ namespace ggui::preferences
 
 		const std::string child_str = "[ "s + child_name + " ]"s;
 		const float child_indent = 8.0f;
-		const float child_width = ImGui::GetContentRegionAvailWidth() - child_indent;
+		const float child_width = ImGui::GetContentRegionAvail().x - child_indent;
 
 		const auto min = ImGui::GetCursorScreenPos();
 		const auto max = ImVec2(min.x + child_width, min.y + child_height);
