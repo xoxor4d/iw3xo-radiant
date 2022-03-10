@@ -365,9 +365,21 @@ namespace ggui::modelselector
 
 					ImGui::PushStyleCompact();
 
-					if (ImGui::Button(m_selector->overwrite_selection ? "Overwrite selection: On" : "Overwrite selection: Off", ImVec2(168.0f, 0))) {
-						m_selector->overwrite_selection = !m_selector->overwrite_selection;
-					} TT("On: swap model for selected entity\nOff: spawn a new entity");
+					ImGui::BeginGroup();
+					{
+						if (ImGui::Button(m_selector->overwrite_selection ? "Overwrite selection: On" : "Overwrite selection: Off", ImVec2(168.0f, 0))) {
+							m_selector->overwrite_selection = !m_selector->overwrite_selection;
+						} TT("On: swap model for selected entity\nOff: spawn a new entity");
+
+						ImGui::SameLine();
+						if (ImGui::Button("Refresh List")) 
+						{
+							m_selector->one_time_init = false;
+							m_selector->xmodel_selection = -1;
+						}
+
+						ImGui::EndGroup();
+					}
 
 					const float second_row_button_width = ImGui::GetItemRectSize().x;
 
