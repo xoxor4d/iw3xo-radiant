@@ -567,6 +567,13 @@ LRESULT WINAPI cxywnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
 				return true;
 			}
+
+			// handle text input 
+			if (ImGui::GetIO().WantTextInput)
+			{
+				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
+				return true;
+			}
 		}
 	}
 	

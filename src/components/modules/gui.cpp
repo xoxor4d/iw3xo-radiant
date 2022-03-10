@@ -609,12 +609,14 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
 				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
 
+//#ifndef DEBUG
 			// close external console
 			if(static bool close_console = true; close_console)
 			{
 				PostMessage(GetConsoleWindow(), WM_QUIT, 0, 0);
 				close_console = false;
 			}
+//#endif
 
 			// end the current context frame
 			goto END_FRAME;

@@ -522,13 +522,13 @@ void ctexwnd::rtt_texture_window()
 				const ImRect bb = ImRect(ImMax(outer_rect.Min.x, outer_rect.Max.x - border_size - scrollbar_size), inner_rect.Min.y, outer_rect.Max.x, inner_rect.Max.y);
 				const ImDrawFlags rounding_corners = ImDrawFlags_RoundCornersTopRight | ImDrawFlags_RoundCornersBottomRight;
 
-				float scroll = (float)g_texwnd->nPos;
+				ImS64 scroll = g_texwnd->nPos;
 				const float size_avail = window->InnerRect.Max[ImGuiAxis_Y] - window->InnerRect.Min[ImGuiAxis_Y];
 				const float size_contents = (float)g_texwnd->nPosMax + 110.0f;
-				
-				ImGui::ScrollbarEx(bb, id, ImGuiAxis_Y, &scroll, size_avail, size_contents, rounding_corners);
 
-				g_texwnd->nPos = (int)scroll;
+				ImGui::ScrollbarEx(bb, id, ImGuiAxis_Y, &scroll, static_cast<ImS64>(size_avail), static_cast<ImS64>(size_contents), rounding_corners);
+
+				g_texwnd->nPos = static_cast<int>(scroll);
 			}
 
 			ImGui::EndChild();

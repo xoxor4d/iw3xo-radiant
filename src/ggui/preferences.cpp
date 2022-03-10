@@ -60,7 +60,7 @@ namespace ggui::preferences
 
 		const std::string child_str = "[ "s + child_name + " ]"s;
 		const float child_indent = 8.0f;
-		const float child_width = ImGui::GetContentRegionAvailWidth() - child_indent;
+		const float child_width = ImGui::GetContentRegionAvail().x - child_indent;
 
 		const auto min = ImGui::GetCursorScreenPos();
 		const auto max = ImVec2(min.x + child_width, min.y + child_height);
@@ -206,7 +206,6 @@ namespace ggui::preferences
 
 			ImGui::title_with_seperator("Mouse", false);
 			ImGui::Checkbox("Zoom to cursor", &dvars::grid_zoom_to_cursor->current.enabled);
-			ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
 			ImGui::Checkbox("Disable grid snapping", &prefs->m_bNoClamp); TT("Org: Don't clamp plane points");
 
 
@@ -241,7 +240,7 @@ namespace ggui::preferences
 			ImGui::title_with_seperator("Mouse");
 			ImGui::SliderInt("Camera speed", &prefs->m_nMoveSpeed, 10, 5000);
 			ImGui::SliderInt("Camera angle speed", &prefs->m_nAngleSpeed, 1, 1000);
-			ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
+			ImGui::Checkbox("Enable right-click context menu##camera", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)\nAlso disables grid window context menu");
 
 
 			// -----------------

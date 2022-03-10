@@ -5,6 +5,7 @@ namespace ggui::hotkeys
 {
 	void			menu(ggui::imgui_context_menu& menu);
 	void			helper_menu(ggui::imgui_context_menu& menu);
+	std::string		cmdbinds_ascii_to_keystr(int key);
 	std::string		get_hotkey_for_command(const char* command);
 	void			on_close();
 	void			hooks();

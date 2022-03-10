@@ -1022,7 +1022,7 @@ namespace ggui::entity
 		const float line_height		= ImGui::GetFrameHeight();
 		const auto  button_size		= ImVec2(line_height, line_height);
 		const float widget_spacing	= 4.0f;
-		const float widget_width	= (ImGui::GetContentRegionAvailWidth() - (3.0f * button_size.x) - (2.0f * widget_spacing)) * 0.33333f;
+		const float widget_width	= (ImGui::GetContentRegionAvail().x - (3.0f * button_size.x) - (2.0f * widget_spacing)) * 0.33333f;
 
 		const float window_width	= ImGui::GetWindowWidth();
 		const bool  min_window_width_origin = window_width < 460.0f;

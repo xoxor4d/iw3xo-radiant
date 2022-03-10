@@ -5,7 +5,7 @@ namespace ggui::hotkeys
 {
 	const char* radiant_keybind_array[] =
 	{
-		"",
+		"##empty_label",
 		"Space",
 		"Backspace",
 		"Escape",
@@ -201,6 +201,8 @@ namespace ggui::hotkeys
 		if (key == 0x0DC) return "\\"s;
 		if (key == 0x0C0) return "~"s;
 		if (key == 0x5B)  return "LWin"s;
+		if (key == 0x11)  return "LCtrl"s;
+		if (key == 0x12)  return "LAlt";
 
 		std::string out; out += (char)key;
 		return out;

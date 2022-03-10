@@ -103,7 +103,7 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 
 		// fixes stuck keys
 		ImGuiIO& io = ImGui::GetIO();
-		memset(io.MouseDown, 0, sizeof(io.MouseDown));
+		io.ClearInputKeys();
 	}
 
 	// we dont need the original functionality
