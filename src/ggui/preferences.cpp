@@ -206,7 +206,6 @@ namespace ggui::preferences
 
 			ImGui::title_with_seperator("Mouse", false);
 			ImGui::Checkbox("Zoom to cursor", &dvars::grid_zoom_to_cursor->current.enabled);
-			ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
 			ImGui::Checkbox("Disable grid snapping", &prefs->m_bNoClamp); TT("Org: Don't clamp plane points");
 
 
@@ -241,7 +240,7 @@ namespace ggui::preferences
 			ImGui::title_with_seperator("Mouse");
 			ImGui::SliderInt("Camera speed", &prefs->m_nMoveSpeed, 10, 5000);
 			ImGui::SliderInt("Camera angle speed", &prefs->m_nAngleSpeed, 1, 1000);
-			ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
+			ImGui::Checkbox("Enable right-click context menu##camera", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)\nAlso disables grid window context menu");
 
 
 			// -----------------
