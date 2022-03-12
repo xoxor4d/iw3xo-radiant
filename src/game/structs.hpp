@@ -9,6 +9,18 @@ namespace game
 	typedef vec_t vec3_t[3];
 	typedef vec_t vec4_t[4];
 
+	enum PATCH_TYPE
+	{
+		PATCH_GENERIC =		0x0,	// generic curve patch
+		PATCH_CYLINDER =	0x1,
+		PATCH_BEVEL =		0x2,
+		PATCH_ENDCAP =		0x4,
+		PATCH_HEMISPHERE =	0x8,	// unknown, unused?
+		PATCH_CONE =		0x10,
+		PATCH_TRIANGLE =	0x20,	// unused?
+		PATCH_TERRAIN =		0x40	
+	};
+
 	enum RadiantCommandType
 	{
 		RADIANT_COMMAND_SELECT = 0,

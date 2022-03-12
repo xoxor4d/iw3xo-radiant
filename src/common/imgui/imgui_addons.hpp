@@ -20,6 +20,8 @@ namespace ImGui
 	bool	Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ELEM_ flag, bool* result = nullptr);
 	bool	DragFloat2_FxFloatRange(const char* name, fx_system::FxFloatRange* range, float speed, float min, float max, const char* format);
 
+	bool	MenuItemFlags(const char* label, bool selected, bool enabled, ImGuiSelectableFlags flags);
+
 	ImGuiID FindNodeByID(ImGuiID id);
 	void	DockBuilderDockWindow_FirstUseOrSaved(const char* window_name, ImGuiID node_id);
 	void	PushStyleCompact();

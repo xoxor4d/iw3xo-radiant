@@ -469,6 +469,8 @@ namespace ggui::camera
 				{
 					if (!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##camera"))
 					{
+						ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+
 						cam_context_menu_open = true;
 						cam_context_menu_pending_open = false;
 
@@ -485,7 +487,18 @@ namespace ggui::camera
 							{
 								auto material_name = fx_system::Material_GetName(cam_trace[t].face->visArray->handle);
 
-								if (ImGui::MenuItem(material_name, 0, cam_trace[t].selected))
+								bool b_selection = false;
+
+								if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+								{
+									b_selection = ImGui::MenuItemFlags(material_name, cam_trace[t].selected, true, ImGuiSelectableFlags_DontClosePopups);
+								}
+								else
+								{
+									b_selection = ImGui::MenuItem(material_name, 0, cam_trace[t].selected);
+								}
+
+								if(b_selection)
 								{
 									if (cam_trace[t].selected)
 									{
@@ -503,9 +516,7 @@ namespace ggui::camera
 							}
 						}
 
-						ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
 						SEPERATORV(0.0f);
-						ImGui::PopStyleColor();
 
 						if (ImGui::MenuItem("Select All"))
 						{
@@ -528,6 +539,54 @@ namespace ggui::camera
 							}
 						}
 
+						if (any_selected)
+						{
+							if (!game::multiple_edit_entities)
+							{
+								if (const auto selbrush = game::g_selected_brushes();
+									(selbrush && selbrush->def && selbrush->patch))
+								{
+									if(selbrush->patch->def->type != game::PATCH_TERRAIN)
+									{
+										SEPERATORV(0.0f);
+
+										if(ImGui::Selectable("Subdivision ++", false, ImGuiSelectableFlags_DontClosePopups))
+										{
+											// CMainFrame::OnOverBrightShiftUp
+											cdeclcall(void, 0x428EB0);
+										}
+
+										if (ImGui::Selectable("Subdivision --", false, ImGuiSelectableFlags_DontClosePopups))
+										{
+											// CMainFrame::OnOverBrightShiftDown
+											cdeclcall(void, 0x428EE0);
+										}
+									}
+
+									SEPERATORV(0.0f);
+
+									if (ImGui::MenuItem("Texture - Fit"))
+									{
+										//Brush_FitTexture
+										utils::hook::call<void(__cdecl)(float _x, float _y, int _unk)>(0x4939E0)(1.0f, 1.0f, 0);
+									}
+
+									if (ImGui::MenuItem("Texture - Lmap"))
+									{
+										//Patch_Lightmap_Texturing
+										utils::hook::call<void(__cdecl)()>(0x448110)();
+									}
+									
+								}
+							}
+						}
+						
+
+						
+
+						/* || is_worldspawn)*/
+
+						ImGui::PopStyleColor();
 						ImGui::EndPopup();
 					}
 					else

@@ -114,6 +114,91 @@ namespace ImGui
 		return false;
 	}
 
+	static bool IsRootOfOpenMenuSet()
+	{
+		ImGuiContext& g = *GImGui;
+		ImGuiWindow* window = g.CurrentWindow;
+		if ((g.OpenPopupStack.Size <= g.BeginPopupStack.Size) || (window->Flags & ImGuiWindowFlags_ChildMenu))
+			return false;
+
+		// Initially we used 'OpenParentId' to differentiate multiple menu sets from each others (e.g. inside menu bar vs loose menu items) based on parent ID.
+		// This would however prevent the use of e.g. PuhsID() user code submitting menus.
+		// Previously this worked between popup and a first child menu because the first child menu always had the _ChildWindow flag,
+		// making  hovering on parent popup possible while first child menu was focused - but this was generally a bug with other side effects.
+		// Instead we don't treat Popup specifically (in order to consistently support menu features in them), maybe the first child menu of a Popup
+		// doesn't have the _ChildWindow flag, and we rely on this IsRootOfOpenMenuSet() check to allow hovering between root window/popup and first chilld menu.
+		const ImGuiPopupData* upper_popup = &g.OpenPopupStack[g.BeginPopupStack.Size];
+		return (/*upper_popup->OpenParentId == window->IDStack.back() &&*/ upper_popup->Window && (upper_popup->Window->Flags & ImGuiWindowFlags_ChildMenu));
+	}
+
+	bool MenuItemFlags(const char* label, bool selected, bool enabled, ImGuiSelectableFlags flags)
+	{
+		ImGuiWindow* window = GetCurrentWindow();
+		if (window->SkipItems)
+			return false;
+
+		ImGuiContext& g = *GImGui;
+		ImGuiStyle& style = g.Style;
+		ImVec2 pos = window->DC.CursorPos;
+		ImVec2 label_size = CalcTextSize(label, NULL, true);
+
+		const bool menuset_is_open = IsRootOfOpenMenuSet();
+		ImGuiWindow* backed_nav_window = g.NavWindow;
+		if (menuset_is_open)
+			g.NavWindow = window;
+
+		// We've been using the equivalent of ImGuiSelectableFlags_SetNavIdOnHover on all Selectable() since early Nav system days (commit 43ee5d73),
+		// but I am unsure whether this should be kept at all. For now moved it to be an opt-in feature used by menus only.
+		bool pressed;
+		PushID(label);
+		if (!enabled)
+			BeginDisabled();
+
+		const ImGuiSelectableFlags selectable_flags = ImGuiSelectableFlags_SelectOnRelease | ImGuiSelectableFlags_SetNavIdOnHover | flags;
+		const ImGuiMenuColumns* offsets = &window->DC.MenuColumns;
+		if (window->DC.LayoutType == ImGuiLayoutType_Horizontal)
+		{
+			// Mimic the exact layout spacing of BeginMenu() to allow MenuItem() inside a menu bar, which is a little misleading but may be useful
+			// Note that in this situation: we don't render the shortcut, we render a highlight instead of the selected tick mark.
+			float w = label_size.x;
+			window->DC.CursorPos.x += IM_FLOOR(style.ItemSpacing.x * 0.5f);
+			ImVec2 text_pos(window->DC.CursorPos.x + offsets->OffsetLabel, window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset);
+			PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(style.ItemSpacing.x * 2.0f, style.ItemSpacing.y));
+			pressed = Selectable("", selected, selectable_flags, ImVec2(w, 0.0f));
+			PopStyleVar();
+			RenderText(text_pos, label);
+			window->DC.CursorPos.x += IM_FLOOR(style.ItemSpacing.x * (-1.0f + 0.5f)); // -1 spacing to compensate the spacing added when Selectable() did a SameLine(). It would also work to call SameLine() ourselves after the PopStyleVar().
+		}
+		else
+		{
+			// Menu item inside a vertical menu
+			// (In a typical menu window where all items are BeginMenu() or MenuItem() calls, extra_w will always be 0.0f.
+			//  Only when they are other items sticking out we're going to add spacing, yet only register minimum width into the layout system.
+			float icon_w = 0.0f;
+			float shortcut_w = 0.0f;
+			float checkmark_w = IM_FLOOR(g.FontSize * 1.20f);
+			float min_w = window->DC.MenuColumns.DeclColumns(icon_w, label_size.x, shortcut_w, checkmark_w); // Feedback for next frame
+			float stretch_w = ImMax(0.0f, GetContentRegionAvail().x - min_w);
+			pressed = Selectable("", false, selectable_flags | ImGuiSelectableFlags_SpanAvailWidth, ImVec2(min_w, 0.0f));
+			RenderText(pos + ImVec2(offsets->OffsetLabel, 0.0f), label);
+
+			if (selected)
+				RenderCheckMark(window->DrawList, pos + ImVec2(offsets->OffsetMark + stretch_w + g.FontSize * 0.40f, g.FontSize * 0.134f * 0.5f), GetColorU32(ImGuiCol_Text), g.FontSize * 0.866f);
+		}
+
+		IMGUI_TEST_ENGINE_ITEM_INFO(g.LastItemData.ID, label, g.LastItemData.StatusFlags | ImGuiItemStatusFlags_Checkable | (selected ? ImGuiItemStatusFlags_Checked : 0));
+
+		if (!enabled)
+			EndDisabled();
+
+		PopID();
+
+		if (menuset_is_open)
+			g.NavWindow = backed_nav_window;
+
+		return pressed;
+	}
+
 	ImGuiID FindNodeByID(ImGuiID id)
 	{
 		if(const auto node = (ImGuiDockNode*)GImGui->DockContext.Nodes.GetVoidPtr(id);

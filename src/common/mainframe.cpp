@@ -658,8 +658,8 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
-			ImGuiIO& io = ImGui::GetIO();
-			io.ClearInputKeys();
+			//ImGuiIO& io = ImGui::GetIO();
+			//io.ClearInputKeys();
 			
 			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
 		}
