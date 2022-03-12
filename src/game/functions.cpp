@@ -387,6 +387,34 @@ namespace game
 		}
 	}
 
+	void Brush_Deselect(game::brush_t* b /*esi*/)
+	{
+		const static uint32_t func_addr = 0x48DC60;
+		__asm
+		{
+			pushad;
+			mov		esi, b;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void Brush_Select(game::brush_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection)
+	{
+		const static uint32_t func_addr = 0x48DCC0;
+		__asm
+		{
+			pushad;
+			mov		ecx, b;
+			push	center_grid_on_selection;
+			push	update_status;
+			push	some_overwrite;
+			call	func_addr;
+			add		esp, 12;
+			popad;
+		}
+	}
+
 	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count)
 	{
 		const static uint32_t func_addr = 0x4A11A0;

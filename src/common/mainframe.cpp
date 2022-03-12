@@ -631,21 +631,19 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
+		// handles "special" keys like return and shift
+		ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
+
 		if (ImGui::GetIO().WantTextInput)
 		{
-			// handles "special" keys like return and shift
-			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
 			return;
 		}
-
-		//ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
 
 		// if mouse is inside imgui-cxy window
 		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
 						gridwnd->window_hovered)
 		{
 			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
-			//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 			return;
 		}
 
@@ -654,12 +652,9 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
 						camerawnd->window_hovered)
 		{
-			// calls the original on_keydown function
 			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
-			//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 			return;
 		}
-
 
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
@@ -679,18 +674,6 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 				return;
 			}
 		}
-
-		/* // backup ^
-		if (ImGui::GetIO().WantCaptureMouse)
-		{
-			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
-			// return;
-		}
-
-		// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
-		ImGuiIO& io = ImGui::GetIO();
-		memset(io.KeysDown, 0, sizeof(io.KeysDown));
-		*/
 	}
 
 	on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
@@ -709,15 +692,14 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
+		// handles "special" keys like return and shift
+		ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
+
 		if (ImGui::GetIO().WantTextInput)
 		{
-			// handles "special" keys like return and shift
-			ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
 			return;
 		}
 
-		//ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
-		
 		// if mouse is inside imgui-cxy window
 		if (auto gridwnd = ggui::get_rtt_gridwnd();
 				 gridwnd->window_hovered)
@@ -731,16 +713,8 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 		if (auto camerawnd = ggui::get_rtt_camerawnd();
 				 camerawnd->window_hovered)
 		{
-			//ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_KEYUP, 0, nChar);
 			mainframe::__on_keyup(cmainframe::activewnd, nChar);
 			return;
-		}
-
-		
-		if (ImGui::GetIO().WantCaptureMouse)
-		{
-			ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
-			//return;
 		}
 	}
 

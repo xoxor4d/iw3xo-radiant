@@ -686,6 +686,135 @@ void ccamwnd::rtt_camera_window()
 			ImGui::Image(camerawnd->scene_texture, camera_size);
 			camerawnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
+
+			// -- CONTEXT MENU BEGIN --
+
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
+
+			static game::trace_t cam_trace[20] = {};
+			static bool cam_context_menu_open = false;
+			static bool cam_context_menu_pending_open = false;
+
+			if (cmainframe::activewnd->m_pCamWnd->cam_was_not_dragged)
+			{
+				if (ImGui::IsMouseDown(ImGuiMouseButton_Right) || cam_context_menu_open || cam_context_menu_pending_open)
+				{
+					if (!cam_context_menu_open)
+					{
+						cam_context_menu_pending_open = true;
+
+						float dir[3];
+						CameraCalcRayDir(camerawnd->cursor_pos_pt.x, static_cast<int>(camerawnd->scene_size_imgui.y) - camerawnd->cursor_pos_pt.y, dir);
+
+						// trace
+						utils::hook::call<void(__cdecl)(float* _start, float* _dir, int _contents, game::trace_t* _trace, int _num_traces)>(0x48D7C0)
+							(cmainframe::activewnd->m_pCamWnd->camera.origin, dir, 0, cam_trace, 20);
+
+						if (cam_trace[0].brush)
+						{
+							// sort traces by drawsurf order
+							auto trace_array_end = (DWORD)&cam_trace[21];
+							const static uint32_t sort_traces_func = 0x408CA0;
+							__asm
+							{
+								pushad;
+								mov		esi, trace_array_end;
+								mov		edi, offset cam_trace;
+								call	sort_traces_func;
+								popad;
+							}
+						}
+					}
+
+					if (cam_trace[0].brush)
+					{
+						if (!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##camera"))
+						{
+							cam_context_menu_open = true;
+							cam_context_menu_pending_open = false;
+
+							bool any_selected = false;
+
+							for (auto t = 0; t < 20 && cam_trace[t].brush; t++)
+							{
+								if(cam_trace[t].selected)
+								{
+									any_selected = true;
+								}
+
+								ImGui::PushID(t);
+								{
+									auto material_name = fx_system::Material_GetName(cam_trace[t].face->visArray->handle);
+
+									if (ImGui::MenuItem(material_name, 0, cam_trace[t].selected))
+									{
+										if (cam_trace[t].selected)
+										{
+											game::Brush_Deselect((game::brush_t*)cam_trace[t].brush);
+											cam_trace[t].selected = false;
+										}
+										else
+										{
+											game::Brush_Select((game::brush_t*)cam_trace[t].brush, false, false, false);
+											cam_trace[t].selected = true;
+										}
+									}
+
+									ImGui::PopID();
+								}
+							}
+
+							ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+							SEPERATORV(0.0f);
+							ImGui::PopStyleColor();
+
+							if (ImGui::MenuItem("Select All"))
+							{
+								for (auto t = 0; t < 20 && cam_trace[t].brush; t++)
+								{
+									game::Brush_Select((game::brush_t*)cam_trace[t].brush, false, false, false);
+									cam_trace[t].selected = true;
+								}
+							}
+
+							if(any_selected)
+							{
+								if (ImGui::MenuItem("Deselect All"))
+								{
+									for (auto t = 0; t < 20 && cam_trace[t].brush; t++)
+									{
+										game::Brush_Deselect((game::brush_t*)cam_trace[t].brush);
+										cam_trace[t].selected = false;
+									}
+								}
+							}
+
+							ImGui::EndPopup();
+						}
+						else
+						{
+							if (cam_context_menu_open)
+							{
+								cam_context_menu_pending_open = false;
+							}
+
+							cam_context_menu_open = false;
+						}
+					}
+					else
+					{
+						cam_context_menu_open = false;
+						cam_context_menu_pending_open = false;
+					}
+				}
+			}
+
+			ImGui::PopStyleVar(2);
+
+			// -- CONTEXT MENU END --
+
+
 			static bool accepted_dragdrop = false;
 
 			// model selection drop target
@@ -1505,8 +1634,9 @@ void ccamwnd::hooks()
 	// disable entity dragging with mouse in camerawnd
 	//utils::hook::set<BYTE>(0x40539D, 0xEB);
 	utils::hook(0x480238, move_selection_stub, HOOK_JUMP).install()->quick();
-	
-	//utils::hook::nop(0x404AD1, 23);
+
+	// disable original context menu ~ handled in czwnd
+	//utils::hook::nop(0x403340, 5);
 	
 	__on_lbutton_down   = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x403160, ccamwnd::on_lbutton_down, HK_JUMP));
     __on_lbutton_up     = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x4031D0, ccamwnd::on_lbutton_up, HK_JUMP));

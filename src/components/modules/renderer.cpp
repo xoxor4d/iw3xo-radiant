@@ -2486,19 +2486,28 @@ namespace components
 	// spot where a depthbuffer clear command would be added
 	void __declspec(naked) disable_line_depth_testing()
 	{
-		// add target->targetname connection lines before disabling line depth testing
-		const static uint32_t draw_target_connection_lines_func = 0x40C9F0;
-		const static uint32_t sort_and_add_func = 0x4FDA10;
-
+		// disable depth testing for outlines
 		const static uint32_t retn_addr = 0x4084D7;
 		__asm
 		{
+			mov		g_line_depth_testing, 0;
+			jmp		retn_addr;
+		}
+	}
+
+	void __declspec(naked) disable_line_depth_testing2()
+	{
+		// enable depth testing for connection lines
+		const static uint32_t draw_target_connection_lines_func = 0x46A2C0;
+		const static uint32_t retn_addr = 0x40CC26;
+		__asm
+		{
+			mov		g_line_depth_testing, 1;
+
 			pushad;
 			call	draw_target_connection_lines_func;
-			call	sort_and_add_func;
 			popad;
 
-			mov		g_line_depth_testing, 0;
 			jmp		retn_addr;
 		}
 	}
@@ -2563,7 +2572,7 @@ namespace components
 		const static uint32_t retn_addr = 0x5336B5;
 		__asm
 		{
-			movsx   eax, word ptr[esi + 8]; // depth test offset
+			movsx   eax, dword ptr[esi + 8]; // depth test offset
 			push	eax;
 
 			movsx   eax, word ptr[esi + 4]; // og
@@ -2735,7 +2744,8 @@ namespace components
 		utils::hook(0x4084D2, disable_line_depth_testing, HOOK_JUMP).install()->quick(); // disable depth testing for lines (same result as clearing the depthbuffer)
 
 		// ^ nop call that adds connection lines (target->targetname) (after disabled depth testing) and call it before disabling depth testing
-		utils::hook::nop(0x408645, 5);
+		//utils::hook::nop(0x408645, 5);
+		utils::hook(0x40CC21, disable_line_depth_testing2, HOOK_JUMP).install()->quick(); // disable depth testing for lines (same result as clearing the depthbuffer)
 
 		// * ------
 

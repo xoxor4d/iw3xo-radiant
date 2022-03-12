@@ -215,6 +215,8 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			SetCapture(ccam->GetWindow());
 			CamWnd__DropModelsToPlane(ccam, camerawnd->cursor_pos_pt.x, ccam->camera.height - camerawnd->cursor_pos_pt.y - 1, nFlags);
 
+			ImGui::HandleKeyIO(ccam->GetWindow(), WM_RBUTTONDOWN);
+
 			return;
 		}
 
@@ -271,25 +273,27 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 			auto cursor_pos_point = ggui::get_rtt_camerawnd()->cursor_pos_pt;
 			
 			// context menu
-			const static uint32_t CCamWnd__ContextMenu_Func = 0x404D40;
-			__asm
-			{
-				pushad;
+			//const static uint32_t CCamWnd__ContextMenu_Func = 0x404D40;
+			//__asm
+			//{
+			//	pushad;
 
-				push	cursor_point_y;
-				push	cursor_pos_point.x;
-				mov     ebx, ccam;
-				call	CCamWnd__ContextMenu_Func; // cleans the stack
+			//	push	cursor_point_y;
+			//	push	cursor_pos_point.x;
+			//	mov     ebx, ccam;
+			//	call	CCamWnd__ContextMenu_Func; // cleans the stack
 
-				popad;
-			}
+			//	popad;
+			//}
 
 			ccamwnd::mouse_up(cmainframe::activewnd->m_pCamWnd, nFlags);
 			if ((nFlags & (MK_MBUTTON | MK_RBUTTON | MK_LBUTTON)) == 0)
 			{
 				ReleaseCapture();
 			}
-			
+
+			ImGui::HandleKeyIO(ccam->GetWindow(), WM_RBUTTONUP);
+
 			return;
 		}
 

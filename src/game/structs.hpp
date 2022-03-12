@@ -2901,10 +2901,24 @@ namespace game
 		unsigned int m_nModifiers;
 	};
 
+	struct __declspec(align(4)) faceVisuals_s
+	{
+		game::Material* handle;
+		int vertHandle;
+		int visuals;
+	};
+
+	struct __declspec(align(4)) faceVis_s
+	{
+		int vertcount;
+		int visCount;
+		faceVisuals_s* visArray;
+	};
+
 	struct trace_t
 	{
-		brush_t* brush;
-		face_t* face;
+		selbrush_def_t* brush;
+		faceVis_s* face; //face_t* face;
 		int xx1;
 		int xx2;
 		int xx3;
@@ -2916,14 +2930,15 @@ namespace game
 		int xx9;
 		int xx10;
 		int xx11;
-		int xx12;
+		__int16 xx12;
+		__int16 xx12_2;
 		int xx13;
 		int xx14;
 		int xx15;
 		float dist;
 		bool selected;
 		vec3_t some_point;
-	};
+	}; STATIC_ASSERT_SIZE(trace_t, 0x58);
 
 	struct orientation_t
 	{

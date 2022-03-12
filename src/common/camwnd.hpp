@@ -33,7 +33,7 @@ public:
 	camera_s camera;
 	int m_nCambuttonstate;
 	CPoint m_ptButton;
-	int x32;
+	int cam_was_not_dragged;
 	CPoint m_ptCursor;
 	CPoint m_ptLastCursor;
 	int x33;
