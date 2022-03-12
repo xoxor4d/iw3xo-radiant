@@ -214,6 +214,9 @@ namespace game
 	typedef void(*MatrixInverse44_t)(game::GfxMatrix* a, game::GfxMatrix* b);
 		extern MatrixInverse44_t MatrixInverse44;
 
+	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/);
+	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis);
+
 	typedef void(*CopyAxis_t)(float* src, float* dest);
 		extern CopyAxis_t CopyAxis;
 

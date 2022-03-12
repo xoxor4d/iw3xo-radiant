@@ -94,7 +94,7 @@ namespace ggui::hotkeys
 	// get ascii fror keybind key
 	int cmdbinds_key_to_ascii(std::string key)
 	{
-		if (key.length() > 1)
+		if (key.length() > 0)
 		{
 			if (key == "Space"s)		return 0x20;
 			if (key == "Backspace"s)	return 0x8;
@@ -144,8 +144,8 @@ namespace ggui::hotkeys
 			if (key == "~"s)			return 0x0C0;
 			if (key == "LWin"s)			return 0x5B;
 
-			game::printf_to_console("[Hotkeys] Unkown key '%s'", key.c_str());
-			return 0;
+			//game::printf_to_console("[Hotkeys] Unkown key '%s'", key.c_str());
+			//return 0;
 		}
 
 		return key[0];

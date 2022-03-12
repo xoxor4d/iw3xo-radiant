@@ -615,7 +615,7 @@ void on_keydown_intercept(cmainframe* pThis, UINT nChar, UINT nRepCnt, UINT nFla
 			}
 		}
 	}
-	
+
 	mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 }
 

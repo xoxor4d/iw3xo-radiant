@@ -520,13 +520,15 @@ namespace components
 			czwnd_gui(ggui::state.czwnd);
 
 			// seperate windows for grid/camera if not used as background
-			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 1) {
+			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 1) 
+			{
 				cxywnd::rtt_grid_window();
 			}
 
 			// ^
-			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 2) {
-				ccamwnd::rtt_camera_window();
+			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 2) 
+			{
+				ggui::camera::gui();
 			}
 
 

@@ -18,9 +18,6 @@ struct camera_s
 	game::vec3_t vright;
 };
 
-extern void CameraCalcRayDir(int x, int y, float* dir);
-extern bool cam_test;
-
 class ccamwnd : public CWnd
 {
 private:
@@ -53,11 +50,11 @@ public:
 	int x47;
 	int x48;
 
-	static void				rtt_camera_window();
-	
 	void					mouse_control(float dtime);
 	static void				mouse_up(ccamwnd* cam, int flags);
 	static void				mouse_moved(ccamwnd* wnd, int buttons, int x, int y);
+
+	static void				calculate_ray_direction(int x, int y, float* dir);
 
 	static void				register_dvars();
 	static void				hooks();

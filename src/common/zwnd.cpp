@@ -268,10 +268,9 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 				 camerawnd->window_hovered)
 		{
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
-			const int cursor_point_y = ccam->camera.height - camerawnd->cursor_pos_pt.y - 1;
 
-			auto cursor_pos_point = ggui::get_rtt_camerawnd()->cursor_pos_pt;
-			
+			//const int cursor_point_y = ccam->camera.height - camerawnd->cursor_pos_pt.y - 1;
+			//auto cursor_pos_point = ggui::get_rtt_camerawnd()->cursor_pos_pt;
 			// context menu
 			//const static uint32_t CCamWnd__ContextMenu_Func = 0x404D40;
 			//__asm
