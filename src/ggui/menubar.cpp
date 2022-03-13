@@ -302,12 +302,12 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("ImGui Demo")) {
 						components::gui::toggle(context.m_demo, 0, true);
 					}
-					
-#ifdef DEBUG					
+
 					SEPERATORV(0.0f);
 
 					if (ImGui::BeginMenu("Original Windows"))
 					{
+#ifdef DEBUG
 						if (ImGui::MenuItem("Menubar", 0, ggui::mainframe_menubar_enabled))
 						{
 							if (!ggui::mainframe_menubar_enabled)
@@ -346,6 +346,7 @@ namespace ggui::menubar
 						if (ImGui::MenuItem("XY View (Original)", hotkeys::get_hotkey_for_command("ToggleView").c_str(), nullptr, cmainframe::is_combined_view())) {
 							mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
 						}
+#endif
 
 						if (ImGui::MenuItem("Surface Inspector (Original)"))
 						{
@@ -353,10 +354,23 @@ namespace ggui::menubar
 							// SurfaceInspector::DoSurface
 							cdeclcall(void, 0x4585D0);
 						}
+
+						if (ImGui::MenuItem("Vert Edit Dialog (Original)"))
+						{
+							CWnd* vEdit = reinterpret_cast<CWnd*>(0x25D65B0);
+
+							if (IsWindowVisible(vEdit->GetWindow()))
+							{
+								utils::hook::call<void(__fastcall)(CWnd*, int, int)>(0x58EA4F)(vEdit, 0, SW_HIDE);
+							}
+							else
+							{
+								utils::hook::call<void(__fastcall)(CWnd*, int, int)>(0x58EA4F)(vEdit, 0, SW_SHOW);
+							}
+						}
 						
 						ImGui::EndMenu(); // Original Windows
 					}
-#endif
 
 					ImGui::EndMenu(); // Toggle
 				}
@@ -1442,10 +1456,6 @@ namespace ggui::menubar
 
 				if (ImGui::MenuItem("Vert Edit Dialog", hotkeys::get_hotkey_for_command("VertEdit").c_str())) {
 					cdeclcall(void, 0x42BCD0); // CMainFrame::OnVertexEditDlg
-				}
-
-				if (ImGui::MenuItem("Noise Dialog")) {
-					components::gui::toggle(context.m_vertex_edit_dialog, 0, true);
 				}
 
 				if (ImGui::MenuItem("Advanced Edit Dialog", hotkeys::get_hotkey_for_command("AdvancedCurveEdit").c_str())) {
