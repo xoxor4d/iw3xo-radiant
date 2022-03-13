@@ -151,22 +151,26 @@ namespace ggui::menubar
 					ImGui::EndMenu(); // Misc
 				}
 
-				if (ImGui::BeginMenu("Project Settings"))
-				{
-					if (ImGui::MenuItem("New Project")) {
-						mainframe_cdeclcall(void, 0x426E80); //cmainframe::OnFileNewproject
-					}
-
-					if (ImGui::MenuItem("Set Startup Project")) {
-						mainframe_cdeclcall(void, 0x427010); //cmainframe::OnSetStartupProject
-					}
-
-					if (ImGui::MenuItem("Project Settings")) {
-						mainframe_cdeclcall(void, 0x428DE0); //cmainframe::OnFileProjectsettings
-					}
-
-					ImGui::EndMenu(); // Project Settings
+				if (ImGui::MenuItem("Project Settings")) {
+					mainframe_cdeclcall(void, 0x428DE0); //cmainframe::OnFileProjectsettings
 				}
+
+				//if (ImGui::BeginMenu("Project Settings"))
+				//{
+				//	if (ImGui::MenuItem("New Project")) {
+				//		mainframe_cdeclcall(void, 0x426E80); //cmainframe::OnFileNewproject
+				//	}
+
+				//	if (ImGui::MenuItem("Set Startup Project")) {
+				//		mainframe_cdeclcall(void, 0x427010); //cmainframe::OnSetStartupProject
+				//	}
+
+				//	if (ImGui::MenuItem("Project Settings")) {
+				//		mainframe_cdeclcall(void, 0x428DE0); //cmainframe::OnFileProjectsettings
+				//	}
+
+				//	ImGui::EndMenu(); // Project Settings
+				//}
 
 				SEPERATORV(0.0f);
 

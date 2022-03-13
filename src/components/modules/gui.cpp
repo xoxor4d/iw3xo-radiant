@@ -615,13 +615,20 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
 				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
 
+			if(const auto con = GetConsoleWindow(); 
+				IsWindowVisible(con))
+			{
+				ShowWindow(con, SW_HIDE);
+			}
+
+
 //#ifndef DEBUG
 			// close external console
-			if(static bool close_console = true; close_console)
-			{
-				PostMessage(GetConsoleWindow(), WM_QUIT, 0, 0);
-				close_console = false;
-			}
+			//if(static bool close_console = true; close_console)
+			//{
+			//	PostMessage(GetConsoleWindow(), WM_QUIT, 0, 0);
+			//	close_console = false;
+			//}
 //#endif
 
 			// end the current context frame
@@ -769,7 +776,30 @@ namespace components
 		ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
 	}
 
-	
+	void on_map_load()
+	{
+		if (const auto con = GetConsoleWindow();
+			!IsWindowVisible(con))
+		{
+			ShowWindow(con, SW_SHOW);
+		}
+	}
+
+	__declspec(naked) void on_map_load_stub()
+	{
+		const static uint32_t func_addr = 0x485E50;
+		const static uint32_t retn_addr = 0x4866BD;
+		__asm
+		{
+			pushad;
+			call	on_map_load;
+			popad;
+
+			call	func_addr; // og
+			jmp		retn_addr;
+		}
+	}
+
 	// *
 	// register_addon_dvars()
 	void gui::register_dvars()
@@ -984,6 +1014,8 @@ namespace components
 	// *
 	gui::gui()
 	{
+		utils::hook(0x4866B8, on_map_load_stub, HOOK_JUMP).install()->quick();
+
 		ggui::entity::hooks();
 		ggui::filter::hooks();
 		ggui::hotkeys::hooks();
