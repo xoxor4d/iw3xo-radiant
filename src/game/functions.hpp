@@ -73,6 +73,7 @@ namespace game
 	extern int&		g_undoMaxSize;
 
 	extern float*	g_vRotateOrigin;
+	extern int&		g_prefab_stack_level;
 	
 	extern game::SCommandInfo*	g_Commands;
 	extern int		g_nCommandCount;

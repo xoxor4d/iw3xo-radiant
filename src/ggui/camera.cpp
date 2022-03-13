@@ -451,7 +451,7 @@ namespace ggui::camera
 
 					if (cam_trace[0].brush)
 					{
-						// sort traces by drawsurf order
+						// sort traced objects by drawsurf order
 						auto trace_array_end = (DWORD)&cam_trace[21];
 						const static uint32_t sort_traces_func = 0x408CA0;
 						__asm
@@ -465,7 +465,7 @@ namespace ggui::camera
 					}
 				}
 
-				if (cam_trace[0].brush)
+				if (cam_trace[0].brush || game::g_prefab_stack_level)
 				{
 					if (!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##camera"))
 					{
@@ -474,117 +474,178 @@ namespace ggui::camera
 						cam_context_menu_open = true;
 						cam_context_menu_pending_open = false;
 
-						bool any_selected = false;
-
-						for (auto t = 0; t < 20 && cam_trace[t].brush; t++)
+						if(cam_trace[0].brush)
 						{
-							if (cam_trace[t].selected)
+							bool any_selected = false;
+
+							// list all brushes / objects by their material name or similar
+							for (auto t = 0; t < 20 && cam_trace[t].brush; t++)
 							{
-								any_selected = true;
+								if (cam_trace[t].selected)
+								{
+									any_selected = true;
+								}
+
+								ImGui::PushID(t);
+								{
+									// get material name for brushes / patches
+									auto vis_name = fx_system::Material_GetName(cam_trace[t].face->visArray->handle);
+
+									// get prefab / model or classname for entities
+									if (const auto  tb = cam_trace[t].brush;
+													tb->def && tb->def->owner)
+									{
+										if (auto val = entity::ValueForKey(tb->def->owner->epairs, "classname");
+												 val && (val == "misc_prefab"s || val == "misc_model"s))
+										{
+											if (auto prefab_str = entity::ValueForKey(tb->def->owner->epairs, "model");
+													 prefab_str)
+											{
+												vis_name = prefab_str;
+											}
+										}
+										else if(tb->def->owner->eclass && tb->def->owner->eclass->name != "worldspawn"s)
+										{
+											vis_name = tb->def->owner->eclass->name;
+										}
+									}
+
+									bool b_selection = false;
+
+									if (ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+									{
+										b_selection = ImGui::MenuItemFlags(vis_name, cam_trace[t].selected, true, ImGuiSelectableFlags_DontClosePopups);
+									}
+									else
+									{
+										b_selection = ImGui::MenuItem(vis_name, 0, cam_trace[t].selected);
+									}
+
+									if (b_selection)
+									{
+										if (cam_trace[t].selected)
+										{
+											game::Brush_Deselect((game::brush_t*)cam_trace[t].brush);
+											cam_trace[t].selected = false;
+										}
+										else
+										{
+											game::Brush_Select((game::brush_t*)cam_trace[t].brush, false, false, false);
+											cam_trace[t].selected = true;
+										}
+									}
+
+									ImGui::PopID();
+								}
 							}
 
-							ImGui::PushID(t);
+							SEPERATORV(0.0f);
+
+							if (ImGui::MenuItem("Select All"))
 							{
-								auto material_name = fx_system::Material_GetName(cam_trace[t].face->visArray->handle);
-
-								bool b_selection = false;
-
-								if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+								for (auto t = 0; t < 20 && cam_trace[t].brush; t++)
 								{
-									b_selection = ImGui::MenuItemFlags(material_name, cam_trace[t].selected, true, ImGuiSelectableFlags_DontClosePopups);
+									game::Brush_Select((game::brush_t*)cam_trace[t].brush, false, false, false);
+									cam_trace[t].selected = true;
 								}
-								else
-								{
-									b_selection = ImGui::MenuItem(material_name, 0, cam_trace[t].selected);
-								}
+							}
 
-								if(b_selection)
+							if (any_selected)
+							{
+								if (ImGui::MenuItem("Deselect All"))
 								{
-									if (cam_trace[t].selected)
+									for (auto t = 0; t < 20 && cam_trace[t].brush; t++)
 									{
 										game::Brush_Deselect((game::brush_t*)cam_trace[t].brush);
 										cam_trace[t].selected = false;
 									}
-									else
-									{
-										game::Brush_Select((game::brush_t*)cam_trace[t].brush, false, false, false);
-										cam_trace[t].selected = true;
-									}
-								}
-
-								ImGui::PopID();
-							}
-						}
-
-						SEPERATORV(0.0f);
-
-						if (ImGui::MenuItem("Select All"))
-						{
-							for (auto t = 0; t < 20 && cam_trace[t].brush; t++)
-							{
-								game::Brush_Select((game::brush_t*)cam_trace[t].brush, false, false, false);
-								cam_trace[t].selected = true;
-							}
-						}
-
-						if (any_selected)
-						{
-							if (ImGui::MenuItem("Deselect All"))
-							{
-								for (auto t = 0; t < 20 && cam_trace[t].brush; t++)
-								{
-									game::Brush_Deselect((game::brush_t*)cam_trace[t].brush);
-									cam_trace[t].selected = false;
 								}
 							}
-						}
 
-						if (any_selected)
-						{
+							// prefab
+
 							if (!game::multiple_edit_entities)
 							{
-								if (const auto selbrush = game::g_selected_brushes();
-									(selbrush && selbrush->def && selbrush->patch))
+								if (const auto tb = cam_trace[0].brush;
+									tb->def && tb->def->owner)
 								{
-									if(selbrush->patch->def->type != game::PATCH_TERRAIN)
+									if (auto val = entity::ValueForKey(tb->def->owner->epairs, "classname");
+										val && val == "misc_prefab"s)
 									{
 										SEPERATORV(0.0f);
 
-										if(ImGui::Selectable("Subdivision ++", false, ImGuiSelectableFlags_DontClosePopups))
+										if (ImGui::MenuItem("Enter Prefab"))
 										{
-											// CMainFrame::OnOverBrightShiftUp
-											cdeclcall(void, 0x428EB0);
+											if (!cam_trace[0].selected)
+											{
+												game::Brush_Select((game::brush_t*)cam_trace[0].brush, false, false, false);
+											}
+
+											cdeclcall(void, 0x42BF70);
 										}
 
-										if (ImGui::Selectable("Subdivision --", false, ImGuiSelectableFlags_DontClosePopups))
+										if(game::g_prefab_stack_level)
 										{
-											// CMainFrame::OnOverBrightShiftDown
-											cdeclcall(void, 0x428EE0);
+											if (ImGui::MenuItem("Leave Prefab"))
+											{
+												cdeclcall(void, 0x42BF80);
+											}
 										}
 									}
+								}
+							}
 
-									SEPERATORV(0.0f);
+							// subdivision and texture operations
 
-									if (ImGui::MenuItem("Texture - Fit"))
+							if (any_selected)
+							{
+								if (!game::multiple_edit_entities)
+								{
+									if (const auto selbrush = game::g_selected_brushes();
+										(selbrush && selbrush->def && selbrush->patch))
 									{
-										//Brush_FitTexture
-										utils::hook::call<void(__cdecl)(float _x, float _y, int _unk)>(0x4939E0)(1.0f, 1.0f, 0);
-									}
+										if (selbrush->patch->def->type != game::PATCH_TERRAIN)
+										{
+											SEPERATORV(0.0f);
 
-									if (ImGui::MenuItem("Texture - Lmap"))
-									{
-										//Patch_Lightmap_Texturing
-										utils::hook::call<void(__cdecl)()>(0x448110)();
+											if (ImGui::Selectable("Subdivision ++", false, ImGuiSelectableFlags_DontClosePopups))
+											{
+												// CMainFrame::OnOverBrightShiftUp
+												cdeclcall(void, 0x428EB0);
+											}
+
+											if (ImGui::Selectable("Subdivision --", false, ImGuiSelectableFlags_DontClosePopups))
+											{
+												// CMainFrame::OnOverBrightShiftDown
+												cdeclcall(void, 0x428EE0);
+											}
+										}
+
+										SEPERATORV(0.0f);
+
+										if (ImGui::MenuItem("Texture - Fit"))
+										{
+											//Brush_FitTexture
+											utils::hook::call<void(__cdecl)(float _x, float _y, int _unk)>(0x4939E0)(1.0f, 1.0f, 0);
+										}
+
+										if (ImGui::MenuItem("Texture - Lmap"))
+										{
+											//Patch_Lightmap_Texturing
+											utils::hook::call<void(__cdecl)()>(0x448110)();
+										}
+
 									}
-									
 								}
 							}
 						}
-						
-
-						
-
-						/* || is_worldspawn)*/
+						else if(game::g_prefab_stack_level) // within prefab
+						{
+							if (ImGui::MenuItem("Leave Prefab"))
+							{
+								cdeclcall(void, 0x42BF80);
+							}
+						}
 
 						ImGui::PopStyleColor();
 						ImGui::EndPopup();
