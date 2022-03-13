@@ -168,6 +168,31 @@ namespace game
 		return redo;
 	}
 
+	bool is_single_brush_selected(bool print_warning)
+	{
+		if ((DWORD*)g_selected_brushes_next() == game::currSelectedBrushes || (DWORD*)g_selected_brushes_next()->next != game::currSelectedBrushes)
+		{
+			if(print_warning)
+			{
+				game::printf_to_console("Error: you must have a single brush selected");
+			}
+			
+			return false;
+		}
+
+		if (auto n = g_selected_brushes_next(); n && n->owner && n->owner->firstActive && n->owner->firstActive->eclass->fixedsize)
+		{
+			if (print_warning)
+			{
+				game::printf_to_console("Error: you cannot manipulate fixed size entities");
+			}
+
+			return false;
+		}
+
+		return true;
+	}
+
 	void Undo_GeneralStart(const char* operation /*eax*/)
 	{
 #ifdef DEBUG
@@ -272,6 +297,20 @@ namespace game
 			mov		eax, e_class;
 			call	func_addr;
 			popad;
+		}
+	}
+
+	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, bool unk)
+	{
+		int unkown = unk;
+
+		const static uint32_t patch_update_selected_func_addr = 0x438D80;
+		__asm
+		{
+			mov		esi, p;
+			push	unkown;
+			call	patch_update_selected_func_addr;
+			add     esp, 4;
 		}
 	}
 

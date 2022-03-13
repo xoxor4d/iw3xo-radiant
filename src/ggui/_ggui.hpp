@@ -139,6 +139,7 @@ namespace ggui
 		bool context_initialized;
 		ImGuiContext* context;
 		game::GfxWindowTarget* dx_window;
+
 		imgui_context_menu m_toolbar;
 		imgui_context_menu m_toolbar_edit;
 		imgui_context_menu m_colors;
@@ -148,11 +149,13 @@ namespace ggui
 		imgui_context_menu m_filter;
 		imgui_context_menu m_entity;
 		imgui_context_menu m_surface_inspector;
+		imgui_context_menu m_vertex_edit_dialog;
 		imgui_context_menu m_preferences;
 		imgui_context_menu m_about;
 		imgui_context_menu m_camera_settings;
 		imgui_context_menu m_effects_editor;
 		imgui_context_menu m_demo;
+
 		render_to_texture_window_s rtt_camerawnd;
 		render_to_texture_window_s rtt_gridwnd;
 		render_to_texture_window_s rtt_texwnd;

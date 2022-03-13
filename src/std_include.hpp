@@ -131,6 +131,8 @@
 #include "ggui/camera_guizmo.hpp"
 #include "ggui/camera_settings.hpp"
 
+#include "ggui/mesh.hpp"
+
 #include "ggui/surface_inspector.hpp"
 #include "ggui/effects_editor_gui.hpp"
 

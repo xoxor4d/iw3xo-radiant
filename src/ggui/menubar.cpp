@@ -1444,6 +1444,10 @@ namespace ggui::menubar
 					cdeclcall(void, 0x42BCD0); // CMainFrame::OnVertexEditDlg
 				}
 
+				if (ImGui::MenuItem("Noise Dialog")) {
+					components::gui::toggle(context.m_vertex_edit_dialog, 0, true);
+				}
+
 				if (ImGui::MenuItem("Advanced Edit Dialog", hotkeys::get_hotkey_for_command("AdvancedCurveEdit").c_str())) {
 					cdeclcall(void, 0x42BC90); // CMainFrame::OnAdvancedEditDlg
 				}

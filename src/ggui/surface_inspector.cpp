@@ -90,8 +90,6 @@ namespace ggui::surface_inspector
 		}
 	}
 
-#define FOR_ALL_SELECTED_BRUSHES(B) for (auto B = reinterpret_cast<game::selbrush_def_t*>(game::g_selected_brushes_next()); (DWORD*)B != game::currSelectedBrushes; B = reinterpret_cast<game::selbrush_def_t*>(B->next)) //for (auto B = game::g_selected_brushes_next(); (DWORD*)B != game::currSelectedBrushes; B = B->next)
-
 	typedef int TEXMODE;
 	enum TEXMODE_
 	{

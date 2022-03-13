@@ -628,6 +628,31 @@ namespace ImGui
 		SPACING(0.0f, post_spacing);
 	}
 
+	void title_with_seperator_helpmark(const char* title_text, bool pre_spacing, float width, float height, float post_spacing, const char* helper_text)
+	{
+		if (pre_spacing)
+		{
+			SPACING(0.0f, 12.0f);
+		}
+
+		if (width == 0.0f)
+		{
+			width = ImGui::GetContentRegionAvail().x - 16.0f;
+		}
+
+		ImGui::PushFontFromIndex(ggui::BOLD_18PX);
+		ImGui::TextUnformatted(title_text);
+		ImGui::PopFont();
+
+		const ImVec2 seperator_pos = ImGui::GetCursorScreenPos();
+		ImGui::GetWindowDrawList()->AddLine(seperator_pos, ImVec2(seperator_pos.x + width, seperator_pos.y + height), ImGui::GetColorU32(ImGuiCol_Separator));
+
+		ImGui::SameLine(width - 6.0f);
+		ImGui::HelpMarker(helper_text);
+
+		SPACING(0.0f, post_spacing);
+	}
+
 	bool InputScalarDir(const char* label, ImGuiDataType data_type, void* p_data, int* dir, void* p_step, const void* p_step_fast, bool display_p_step, const char* format, ImGuiInputTextFlags flags)
 	{
 		if (GetCurrentWindow()->SkipItems)

@@ -580,6 +580,10 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_surface_inspector,
 				ggui::surface_inspector::menu(ggui::state.czwnd.m_surface_inspector), nullptr);
 
+			// vertex edit dialog
+			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_vertex_edit_dialog,
+				ggui::mesh::vertex_edit_dialog(ggui::state.czwnd.m_vertex_edit_dialog), nullptr);
+
 			// preferences menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_preferences,
 				ggui::preferences::menu(ggui::state.czwnd.m_preferences), nullptr);

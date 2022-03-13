@@ -20,6 +20,9 @@
 #define W_MEDIA			0x1000 
 #define W_ALL			0xFFFFFFFF
 
+#define FOR_ALL_SELECTED_BRUSHES(B) for (auto (B) = game::g_selected_brushes_next(); (DWORD*)(B) != game::currSelectedBrushes; (B) = (B)->next)
+#define FOR_ALL_ACTIVE_BRUSHES(B) for (auto (B) = game::g_active_brushes_next(); (DWORD*)(B) != game::active_brushes_ptr; (B) = (B)->next)
+
 namespace game
 {
 	namespace glob
@@ -116,6 +119,9 @@ namespace game
 
 	extern game::undo_s* g_lastundo();
 	extern game::undo_s* g_lastredo();
+
+	extern bool is_single_brush_selected(bool print_warning = false);
+
 	static utils::function<void()> Undo_ClearRedo = 0x45DF20;
 	void Undo_GeneralStart(const char* operation /*eax*/);
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/);
@@ -129,6 +135,7 @@ namespace game
 
 	void SetSpawnFlags(int flag);
 	void UpdateSel(int wParam, game::eclass_t* e_class);
+	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, bool unk);
 	static utils::function<void(bool)> Select_Deselect = 0x48E800;
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
