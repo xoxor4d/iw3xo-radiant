@@ -3,9 +3,9 @@
 
 namespace ggui::mesh
 {
-	void noise()
+	void feature_noise()
 	{
-		ImGui::title_with_seperator_helpmark("Noise", false, 0, 2.0f, 8.0f, 
+		ImGui::title_with_seperator_helpmark("Noise", true, 0, 2.0f, 8.0f, 
 			"[1] Select a single patch\n[2] Select vertices you want to apply noise to");
 
 		static game::vec3_t noise_scale = { 0.0f, 0.0f, 10.0f };
@@ -31,17 +31,20 @@ namespace ggui::mesh
 
 				for (auto pt = 0; pt < game::g_qeglobals->d_num_move_points; pt++)
 				{
-					const auto vec3 = game::g_qeglobals->d_move_points[pt];
+					const auto vert = game::g_qeglobals->d_move_points[pt];
 
 					const float rand1 = distr(gen) * 0.01f;
 					const float rand2 = distr(gen) * 0.01f;
 
-					vec3[0] += (rand1 * noise_scale[0]);
-					vec3[1] += (rand2 * noise_scale[1]);
-					vec3[2] += (rand1 * noise_scale[2]);
+					vert->xyz[0] += (rand1 * noise_scale[0]);
+					vert->xyz[1] += (rand2 * noise_scale[1]);
+					vert->xyz[2] += (rand1 * noise_scale[2]);
 				}
 
-				Patch_UpdateSelected(patch->def, true);
+				if(patch && patch->def)
+				{
+					game::Patch_UpdateSelected(patch->def, true);
+				}
 			}
 
 			ImGui::EndDisabled();
@@ -69,8 +72,78 @@ namespace ggui::mesh
 		ImGui::Indent(4.0f);
 		SPACING(0.0f, 2.0f);
 
-		noise();
+		ImGui::title_with_seperator_helpmark("Vertex Color", false, 0, 2.0f, 8.0f,
+			"Select vertices to enable feature");
+
+		static float vertex_edit_color[4] = {};
+
+		const bool enable_vert_color_edit = game::g_qeglobals->d_num_move_points > 0;
+
+		ImGui::BeginDisabled(!enable_vert_color_edit);
+		{
+			if(ImGui::ColorPicker4("Vertex Color", vertex_edit_color, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_DisplayRGB))
+			{
+				for (auto pt = 0; pt < game::g_qeglobals->d_num_move_points; pt++)
+				{
+					const auto vert = game::g_qeglobals->d_move_points[pt];
+					vert->vert_color.r = utils::pack_float(vertex_edit_color[0]);
+					vert->vert_color.g = utils::pack_float(vertex_edit_color[1]);
+					vert->vert_color.b = utils::pack_float(vertex_edit_color[2]);
+					vert->vert_color.a = utils::pack_float(vertex_edit_color[3]);
+				}
+
+				FOR_ALL_SELECTED_BRUSHES(sb)
+				{
+					if (sb->patch && sb->patch->def)
+					{
+						game::Patch_UpdateSelected(sb->patch->def, true);
+					}
+				}
+			}
+
+			ImGui::EndDisabled();
+		}
+		
+		// add random noise to selected vertices
+		feature_noise();
 
 		ImGui::End();
+	}
+
+	void on_vertex_edit_dialog_command()
+	{
+		if(dvars::gui_use_new_vertedit_dialog->current.enabled)
+		{
+			components::gui::toggle(ggui::state.czwnd.m_vertex_edit_dialog, 0, true);
+			return;
+		}
+
+		// original
+
+		CWnd* vEdit = reinterpret_cast<CWnd*>(0x25D65B0);
+
+		if (IsWindowVisible(vEdit->GetWindow()))
+		{
+			utils::hook::call<void(__fastcall)(CWnd*, int, int)>(0x58EA4F)(vEdit, 0, SW_HIDE);
+		}
+		else
+		{
+			utils::hook::call<void(__fastcall)(CWnd*, int, int)>(0x58EA4F)(vEdit, 0, SW_SHOW);
+		}
+	}
+
+	void hooks()
+	{
+		utils::hook::detour(0x42BCD0, on_vertex_edit_dialog_command, HK_JUMP);
+	}
+
+	void register_dvars()
+	{
+		dvars::gui_use_new_vertedit_dialog = dvars::register_bool(
+			/* name		*/ "gui_use_new_vertedit_dialog",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "Overwrites default hotkey");
+
 	}
 }

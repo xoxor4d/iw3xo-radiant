@@ -31,6 +31,7 @@ namespace dvars
 	game::dvar_s* gui_props_spawnflags_defaultopen = nullptr;
 	game::dvar_s* gui_props_surfinspector = nullptr;
 	game::dvar_s* gui_use_new_surfinspector = nullptr;
+	game::dvar_s* gui_use_new_vertedit_dialog = nullptr;
 
 	game::dvar_s* gui_camera_toolbar_defaultopen = nullptr;
 	
@@ -193,10 +194,11 @@ namespace dvars
 		ccamwnd::register_dvars();
 		ctexwnd::register_dvars();
 		
-		ggui::toolbar::register_dvars();
 		ggui::entity::register_dvars();
-		ggui::surface_inspector::register_dvars();
+		ggui::mesh::register_dvars();
 		ggui::preferences::register_dvars();
+		ggui::surface_inspector::register_dvars();
+		ggui::toolbar::register_dvars();
 
 		fx_system::register_dvars();
 

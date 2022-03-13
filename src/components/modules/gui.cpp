@@ -984,12 +984,13 @@ namespace components
 	// *
 	gui::gui()
 	{
-		ggui::hotkeys::hooks();
-		ggui::filter::hooks();
 		ggui::entity::hooks();
-		ggui::surface_inspector::hooks();
+		ggui::filter::hooks();
+		ggui::hotkeys::hooks();
+		ggui::mesh::hooks();
 		ggui::modelselector::init();
 		ggui::preferences::hooks();
+		ggui::surface_inspector::hooks();
 
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{

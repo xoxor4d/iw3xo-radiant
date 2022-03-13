@@ -47,6 +47,21 @@ namespace utils
 			utils::vector::scale(src, length, dest);
 		}
 	}
+
+	char pack_float(const float from)
+	{
+		double pack = (float)(255.0 * from) + 9.313225746154785e-10;
+
+		if ((signed int)pack < 0) {
+			pack = 0.0;
+		}
+
+		if ((signed int)pack > 255) {
+			pack = 255.0;
+		}
+
+		return (char)pack;
+	}
 	
 	// ----------------
 	

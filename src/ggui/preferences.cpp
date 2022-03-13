@@ -122,6 +122,10 @@ namespace ggui::preferences
 			const char* background_str = (dvars::gui_mainframe_background->current.integer >= 0 && dvars::gui_mainframe_background->current.integer <= 2) ? background_names[dvars::gui_mainframe_background->current.integer] : "Unknown";
 			ImGui::SliderInt("Dockspace Background", &dvars::gui_mainframe_background->current.integer, 0, 2, background_str);
 
+			// -----------------
+			ImGui::title_with_seperator("New / Ported Features");
+			ImGui::Checkbox("Use new experimental surfaceinspector", &dvars::gui_use_new_surfinspector->current.enabled); TT(dvars::gui_use_new_surfinspector->description);
+			ImGui::Checkbox("Use new vertex edit dialog", &dvars::gui_use_new_vertedit_dialog->current.enabled); TT(dvars::gui_use_new_vertedit_dialog->description);
 
 			// -----------------
 			ImGui::title_with_seperator("Property Editor");
@@ -269,10 +273,6 @@ namespace ggui::preferences
 			ImGui::title_with_seperator("General", false);
 			ImGui::Checkbox("Draw scrollbar", &dvars::gui_texwnd_draw_scrollbar->current.enabled);
 			ImGui::Checkbox("Show scroll position in percent", &dvars::gui_texwnd_draw_scrollpercent->current.enabled);
-
-			ImGui::title_with_seperator("Surface Inspector");
-			ImGui::Checkbox("Use new experimental surfaceinspector", &dvars::gui_use_new_surfinspector->current.enabled); TT(dvars::gui_use_new_surfinspector->description);
-			ImGui::Checkbox("Incorporate Surface Inspector into property window##2", &dvars::gui_props_surfinspector->current.enabled); TT(dvars::gui_props_surfinspector->description);
 
 			ImGui::title_with_seperator("Quality");
 

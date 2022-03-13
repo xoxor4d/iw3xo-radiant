@@ -75,12 +75,12 @@ namespace ggui::camera_guizmo
 					game::g_qeglobals->d_move_points[p][v];
 
 					// mins :: find the closest point on each axis
-					if (mins[v] > game::g_qeglobals->d_move_points[p][v])
-						mins[v] = game::g_qeglobals->d_move_points[p][v];
+					if (mins[v] > game::g_qeglobals->d_move_points[p]->xyz[v])
+						mins[v] = game::g_qeglobals->d_move_points[p]->xyz[v];
 
 					// maxs :: find the furthest point on each axis
-					if (maxs[v] < game::g_qeglobals->d_move_points[p][v])
-						maxs[v] = game::g_qeglobals->d_move_points[p][v];
+					if (maxs[v] < game::g_qeglobals->d_move_points[p]->xyz[v])
+						maxs[v] = game::g_qeglobals->d_move_points[p]->xyz[v];
 				}
 			}
 
@@ -334,7 +334,7 @@ namespace ggui::camera_guizmo
 									{
 										if (in_vertex_mode)
 										{
-											end_vec_valid &= game::Brush_MoveVertex(delta_origin, brushes, game::g_qeglobals->d_move_points[0], end_vec);
+											end_vec_valid &= game::Brush_MoveVertex(delta_origin, brushes, game::g_qeglobals->d_move_points[0]->xyz, end_vec);
 										}
 										else
 										{
