@@ -703,7 +703,7 @@ namespace ggui
 			return;
 		}
 		
-		components::gui::toggle(ggui::state.czwnd.m_console, 0, true);
+		components::gui::toggle(ggui::state.czwnd.m_console);
 	}
 
 	void console::hooks()

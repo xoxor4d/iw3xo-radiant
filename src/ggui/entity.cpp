@@ -1641,7 +1641,7 @@ namespace ggui::entity
 			return;
 		}
 		
-		components::gui::toggle(ggui::state.czwnd.m_entity, 0, true);
+		components::gui::toggle(ggui::state.czwnd.m_entity);
 	}
 
 	void register_dvars()

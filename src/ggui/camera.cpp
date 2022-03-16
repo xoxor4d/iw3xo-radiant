@@ -255,13 +255,13 @@ namespace ggui::camera
 						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
 						{
 							// close entire window if tab is in-front
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
 						}
 						else if (!ggui::state.czwnd.m_camera_settings.menustate)
 						{
 							// open window with focused fakesun tab
 							ggui::camera_settings::set_tabstate_fakesun(true);
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
 						}
 						else
 						{
@@ -387,13 +387,13 @@ namespace ggui::camera
 								if (ggui::camera_settings::get_tabstate_effects() && ggui::camera_settings::is_tabstate_effects_active())
 								{
 									// close entire window if tab is in-front
-									components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+									components::gui::toggle(ggui::state.czwnd.m_camera_settings);
 								}
 								else if (!ggui::state.czwnd.m_camera_settings.menustate)
 								{
 									// open window with focused effects tab
 									ggui::camera_settings::set_tabstate_effects(true);
-									components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+									components::gui::toggle(ggui::state.czwnd.m_camera_settings);
 								}
 								else
 								{

@@ -544,11 +544,11 @@ namespace ggui::surface_inspector
 		{
 			if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
 			{
-				components::gui::toggle(ggui::state.czwnd.m_entity, 0, true);
+				components::gui::toggle(ggui::state.czwnd.m_entity);
 			}
 			else
 			{
-				components::gui::toggle(ggui::state.czwnd.m_surface_inspector, 0, true);
+				components::gui::toggle(ggui::state.czwnd.m_surface_inspector);
 			}
 		}
 		else

@@ -442,7 +442,7 @@ namespace ggui::filter
 			return;
 		}
 		
-		components::gui::toggle(ggui::state.czwnd.m_filter, 0, true);
+		components::gui::toggle(ggui::state.czwnd.m_filter);
 	}
 
 	void hooks()

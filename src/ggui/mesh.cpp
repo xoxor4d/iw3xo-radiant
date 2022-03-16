@@ -114,7 +114,7 @@ namespace ggui::mesh
 	{
 		if(dvars::gui_use_new_vertedit_dialog->current.enabled)
 		{
-			components::gui::toggle(ggui::state.czwnd.m_vertex_edit_dialog, 0, true);
+			components::gui::toggle(ggui::state.czwnd.m_vertex_edit_dialog);
 			return;
 		}
 

@@ -450,7 +450,7 @@ namespace ggui::preferences
 	// CMainFrame::OnPrefs
 	void on_prefsdialog_command()
 	{
-		components::gui::toggle(ggui::state.czwnd.m_preferences, 0, true);
+		components::gui::toggle(ggui::state.czwnd.m_preferences);
 	}
 
 	void register_dvars()

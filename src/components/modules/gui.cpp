@@ -54,13 +54,13 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
 #define SEPERATORV(spacing) SPACING(0.0f, spacing); ImGui::Separator(); SPACING(0.0f, spacing) 
 
 
-	/* ---- ref -----
-	 * auto vtable = reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable);
-	 * reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable)->SetStatusText(&cmainframe::activewnd->m_wndStatusBar, 0x75);
-	 *
-	 * auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
-	 * vtable->RecalcLayout(&cmainframe::activewnd->m_wndSplit);
-	 */
+/* ---- ref -----
+ * auto vtable = reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable);
+ * reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable)->SetStatusText(&cmainframe::activewnd->m_wndStatusBar, 0x75);
+ *
+ * auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
+ * vtable->RecalcLayout(&cmainframe::activewnd->m_wndSplit);
+ */
 
 
 namespace components
@@ -391,14 +391,14 @@ namespace components
 					if (auto texwnd = ggui::get_rtt_texturewnd();
 							!texwnd->one_time_init)
 					{
-						components::gui::toggle(texwnd, 0, true);
+						components::gui::toggle(texwnd);
 						texwnd->one_time_init = true;
 					}
 					
 					// ^ open console on initial startup
 					if (!ggui::state.czwnd.m_console.one_time_init)
 					{
-						components::gui::toggle(ggui::state.czwnd.m_console, 0, true);
+						components::gui::toggle(ggui::state.czwnd.m_console);
 						ggui::state.czwnd.m_console.one_time_init = true;
 					}
 				}
@@ -424,13 +424,15 @@ namespace components
 		ImGui::PopStyleVar(_stylevars);
 	}
 
+
 	// *
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
+
 	void gui::render_loop()
 	{
 
-		/* - radiant draws multiple windows using d3d => multiple endscene / present calls
-		 * - each window should have its own imgui context
+		/* - radiant draws multiple windows using d3d
+		 *   => multiple endscene / present calls
 		 * - use dx->targetWindowIndex to distinguish between windows
 		 */
 
@@ -454,7 +456,7 @@ namespace components
 		// | -------------------- Grid Window ------------------------
 		// *
 		
-		if (game::dx->targetWindowIndex == ggui::CXYWND) //if (game::glob::gui_present.cxywnd)
+		if (game::dx->targetWindowIndex == ggui::CXYWND)
 		{
 			// copy scene to texture
 			renderer::copy_scene_to_texture(ggui::CXYWND, ggui::get_rtt_gridwnd()->scene_texture);
@@ -467,20 +469,23 @@ namespace components
 
 		if(game::dx->targetWindowIndex == ggui::CTEXWND)
 		{
+			// copy scene to texture
 			renderer::copy_scene_to_texture(ggui::CTEXWND, ggui::get_rtt_texturewnd()->scene_texture);
 		}
 
 
 		// *
-		// | ------------- Layered Materials Window -----------------
+		// | ------------- Layered Materials Window (Model Preview) -----------------
 		// *
 		
 		if (game::dx->targetWindowIndex == ggui::LAYERED)
-		{ }
+		{
+			// so empty
+		}
 
 		
 		// *
-		// | --------------------- Z Window ------------------------
+		// | --------------------- Z Window (ImGui Host Window) ------------------------
 		// *
 		
 		if (game::dx->targetWindowIndex == ggui::CZWND)
@@ -505,7 +510,6 @@ namespace components
 
 			style.FrameBorderSize = 0.0f;
 			style.WindowMenuButtonPosition = 1;
-			//style.TabBorderSize = 0.0f;
 
 			// begin context frame
 			gui::begin_frame();
@@ -519,13 +523,14 @@ namespace components
 			// docking, default layout ... 
 			czwnd_gui(ggui::state.czwnd);
 
+			// -
 			// seperate windows for grid/camera if not used as background
+
 			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 1) 
 			{
-				cxywnd::rtt_grid_window();
+				ggui::grid::gui();
 			}
 
-			// ^
 			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 2) 
 			{
 				ggui::camera::gui();
@@ -596,11 +601,9 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_camera_settings,
 				ggui::camera_settings::menu(ggui::state.czwnd.m_camera_settings), ggui::camera_settings::on_close());
 
-
-			// effects -------------
+			// effects editor
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_effects_editor,
 				ggui::effects_editor_gui::menu(ggui::state.czwnd.m_effects_editor), nullptr);
-
 
 			// render to texture :: model selector / preview
 			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_modelselector(),
@@ -608,28 +611,18 @@ namespace components
 			
 			// render to texture :: texture window
 			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_texturewnd(),
-				ctexwnd::rtt_texture_window(), nullptr);
+				ggui::textures::gui(), nullptr);
 
-			
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
 				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
 
+			// hide external console if it is visible
 			if(const auto con = GetConsoleWindow(); 
 				IsWindowVisible(con))
 			{
 				ShowWindow(con, SW_HIDE);
 			}
-
-
-//#ifndef DEBUG
-			// close external console
-			//if(static bool close_console = true; close_console)
-			//{
-			//	PostMessage(GetConsoleWindow(), WM_QUIT, 0, 0);
-			//	close_console = false;
-			//}
-//#endif
 
 			// end the current context frame
 			goto END_FRAME;
@@ -652,6 +645,7 @@ namespace components
 		}
 	}
 
+
 	// *
 	// shutdown imgui (d3d9ex::d3d9device::Release)
 	void gui::shutdown()
@@ -659,8 +653,7 @@ namespace components
 		if (ggui::state.czwnd.context_initialized)
 		{
 			IMGUI_BEGIN_CZWND;
-			
-			// Shutdown calls d3dDevice->Release D:
+
 			// ImGui_ImplDX9_Shutdown();
 
 			ImGui::DestroyPlatformWindows();
@@ -720,42 +713,33 @@ namespace components
 
 	// *
 	// toggle a imgui menu by command (or key (scheduler))
-	void gui::toggle(ggui::imgui_context_menu& menu, [[maybe_unused]] int keycatcher, bool onCommand = false)
+	void gui::toggle(ggui::imgui_context_menu& menu)
 	{
 		if(!ggui::cz_context_ready())
 		{
 			return;
 		}
 
-		// TODO! fix me
-		// toggle menu by key or command
-		if (onCommand)
-		{
-			menu.menustate = !menu.menustate;
+		menu.menustate = !menu.menustate;
 
-			// on close
-			if (!menu.menustate)
-			{}
-		}
+		// on close
+		if (!menu.menustate)
+		{ }
+		
 	}
 
-	void gui::toggle(ggui::render_to_texture_window_s* menu, [[maybe_unused]] int keycatcher, bool onCommand = false)
+	void gui::toggle(ggui::render_to_texture_window_s* menu)
 	{
 		if (!ggui::cz_context_ready() || !menu) 
 		{
 			return;
 		}
 
-		// TODO! fix me
-		// toggle menu by key or command
-		if (onCommand)
-		{
-			menu->menustate = !menu->menustate;
+		menu->menustate = !menu->menustate;
 
-			// on close
-			if (!menu->menustate) 
-			{}
-		}
+		// on close
+		if (!menu->menustate) 
+		{ }
 	}
 
 
@@ -970,6 +954,7 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "draw gui fps within the camera window");
 
+
 		// *
 		// gui::saved_windowstates()
 		
@@ -1014,6 +999,7 @@ namespace components
 	// *
 	gui::gui()
 	{
+		// show external console on map load
 		utils::hook(0x4866B8, on_map_load_stub, HOOK_JUMP).install()->quick();
 
 		ggui::entity::hooks();
@@ -1026,7 +1012,7 @@ namespace components
 
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{
-			gui::toggle(ggui::state.czwnd.m_demo, 0, true);
+			gui::toggle(ggui::state.czwnd.m_demo);
 		});
 	}
 
