@@ -11,6 +11,8 @@ namespace ggui::entity
 		bool is_color;
 		bool add_undo;
 	};
+
+	extern	std::vector<game::eclass_t*> classlist;
 	
 	void	AddProp(const char* key, const char* value, addprop_helper_s* helper = nullptr);
 	char*	ValueForKey(game::epair_t*& e, const char* key);

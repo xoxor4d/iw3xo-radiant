@@ -198,7 +198,9 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 				 gridwnd->window_hovered)
 		{
 			gridwnd->should_set_focus = true;
-			
+
+			ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_RBUTTONDOWN);
+
 			xywnd::__on_rbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
 			return;
 		}
@@ -216,7 +218,6 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			CamWnd__DropModelsToPlane(ccam, camerawnd->cursor_pos_pt.x, ccam->camera.height - camerawnd->cursor_pos_pt.y - 1, nFlags);
 
 			ImGui::HandleKeyIO(ccam->GetWindow(), WM_RBUTTONDOWN);
-
 			return;
 		}
 
@@ -259,6 +260,13 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 		if (auto gridwnd = ggui::get_rtt_gridwnd();
 				 gridwnd->window_hovered)
 		{
+			const auto cxywnd = cmainframe::activewnd->m_pXYWnd;
+			ImGui::HandleKeyIO(cxywnd->GetWindow(), WM_RBUTTONUP);
+
+			// use ptDrag as the point where rbutton was released (ggui::grid::context_menu)
+			cxywnd->m_ptDrag.x = point.x;
+			cxywnd->m_ptDrag.y = point.y;
+
 			xywnd::__on_rbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
 			return;
 		}
@@ -292,7 +300,6 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 			}
 
 			ImGui::HandleKeyIO(ccam->GetWindow(), WM_RBUTTONUP);
-
 			return;
 		}
 

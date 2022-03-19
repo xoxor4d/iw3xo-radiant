@@ -211,6 +211,8 @@ namespace components
 
 		// init internal console class
 		static ggui::console console;
+		console.m_scroll_to_bottom = true;
+
 		ggui::console::hooks();
 		
 		radiantapp::hooks();

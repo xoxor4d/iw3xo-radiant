@@ -193,6 +193,11 @@ namespace game
 		return true;
 	}
 
+	bool is_any_brush_selected()
+	{
+		return (DWORD*)game::g_selected_brushes_next() != game::currSelectedBrushes;
+	}
+
 	void Undo_GeneralStart(const char* operation /*eax*/)
 	{
 #ifdef DEBUG
@@ -483,6 +488,22 @@ namespace game
 			mov		eax, height;
 			call	func_addr;
 			add     esp, 4;
+			popad;
+		}
+	}
+
+	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y)
+	{
+		const static uint32_t func_addr = 0x466480;
+		__asm
+		{
+			pushad;
+			push	y;
+			push	x;
+			mov		esi, name;
+			mov		edi, cxywnd;
+			call	func_addr;
+			add     esp, 8;
 			popad;
 		}
 	}

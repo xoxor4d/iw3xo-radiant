@@ -3,8 +3,7 @@
 namespace ggui::camera
 {
 	constexpr float CAM_DEBUG_TEXT_Y_OFFS = 180.0f;
-
-	bool	g_camera_toolbar_state = false;
+	bool g_camera_toolbar_state = false;
 
 	// right hand side toolbar
 	void toolbar()
@@ -421,6 +420,22 @@ namespace ggui::camera
 		toolbar_line_width = ImGui::GetItemRectSize().x;
 	}
 
+	void sort_camera_traces(game::trace_t* traces, DWORD trace_array_end)
+	{
+#pragma warning(push)
+#pragma warning(disable: 4731)
+		const static uint32_t sort_traces_func = 0x408CA0;
+		__asm
+		{
+			pushad;
+			mov		esi, trace_array_end;
+			mov		edi, traces;
+			call	sort_traces_func;
+			popad;
+		}
+#pragma warning(pop)
+	}
+
 
 	// right click context menu
 	void context_menu()
@@ -452,16 +467,7 @@ namespace ggui::camera
 					if (cam_trace[0].brush)
 					{
 						// sort traced objects by drawsurf order
-						auto trace_array_end = (DWORD)&cam_trace[21];
-						const static uint32_t sort_traces_func = 0x408CA0;
-						__asm
-						{
-							pushad;
-							mov		esi, trace_array_end;
-							mov		edi, offset cam_trace;
-							call	sort_traces_func;
-							popad;
-						}
+						sort_camera_traces(cam_trace, (DWORD)&cam_trace[21]);
 					}
 				}
 
@@ -581,6 +587,7 @@ namespace ggui::camera
 												game::Brush_Select((game::brush_t*)cam_trace[0].brush, false, false, false);
 											}
 
+											// CMainFrame::OnPrefabEnter
 											cdeclcall(void, 0x42BF70);
 										}
 
@@ -588,6 +595,7 @@ namespace ggui::camera
 										{
 											if (ImGui::MenuItem("Leave Prefab"))
 											{
+												// CMainFrame::OnPrefabLeave
 												cdeclcall(void, 0x42BF80);
 											}
 										}
@@ -643,6 +651,7 @@ namespace ggui::camera
 						{
 							if (ImGui::MenuItem("Leave Prefab"))
 							{
+								// CMainFrame::OnPrefabLeave
 								cdeclcall(void, 0x42BF80);
 							}
 						}

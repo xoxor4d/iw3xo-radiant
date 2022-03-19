@@ -145,10 +145,12 @@ void __fastcall cxywnd::on_rbutton_down(cxywnd* pThis, [[maybe_unused]] void* ed
 	xywnd::__on_rbutton_down(pThis, nFlags, point);
 }
 
-void __fastcall cxywnd::on_rbutton_up(cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+void __fastcall cxywnd::on_rbutton_up([[maybe_unused]] cxywnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
 {
 	// pass input to the xywindow
-	xywnd::__on_rbutton_up(pThis, nFlags, point);
+	//xywnd::__on_rbutton_up(pThis, nFlags, point);
+
+	czwnd::on_rbutton_up(cmainframe::activewnd->m_pZWnd, nullptr, nFlags, point); // redirect
 }
 
 

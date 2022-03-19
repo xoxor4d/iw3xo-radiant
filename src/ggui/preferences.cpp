@@ -127,6 +127,11 @@ namespace ggui::preferences
 			ImGui::Checkbox("Use new experimental surfaceinspector", &dvars::gui_use_new_surfinspector->current.enabled); TT(dvars::gui_use_new_surfinspector->description);
 			ImGui::Checkbox("Use new vertex edit dialog", &dvars::gui_use_new_vertedit_dialog->current.enabled); TT(dvars::gui_use_new_vertedit_dialog->description);
 
+			if(ImGui::Checkbox("Use new grid context menu", &dvars::gui_use_new_context_menu->current.enabled))
+			{
+				game::g_PrefsDlg()->m_bRightClick = !dvars::gui_use_new_context_menu->current.enabled;
+			}
+
 			// -----------------
 			ImGui::title_with_seperator("Property Editor");
 			ImGui::Checkbox("Default Open - Classlist", &dvars::gui_props_classlist_defaultopen->current.enabled); TT(dvars::gui_props_classlist_defaultopen->description);
@@ -244,7 +249,6 @@ namespace ggui::preferences
 			ImGui::title_with_seperator("Mouse");
 			ImGui::SliderInt("Camera speed", &prefs->m_nMoveSpeed, 10, 5000);
 			ImGui::SliderInt("Camera angle speed", &prefs->m_nAngleSpeed, 1, 1000);
-			ImGui::Checkbox("Enable right-click context menu##camera", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)\nAlso disables grid window context menu");
 
 
 			// -----------------
@@ -494,6 +498,12 @@ namespace ggui::preferences
 			/* maxVal	*/ 250,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "redraw the main window x frames/second (main gui)");
+
+		dvars::gui_use_new_context_menu = dvars::register_bool(
+			/* name		*/ "gui_use_new_context_menu",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "Use new grid context menu");
 		
 	}
 	

@@ -32,6 +32,7 @@ namespace dvars
 	extern game::dvar_s* gui_props_surfinspector;
 	extern game::dvar_s* gui_use_new_surfinspector;
 	extern game::dvar_s* gui_use_new_vertedit_dialog;
+	extern game::dvar_s* gui_use_new_context_menu;
 
 	extern game::dvar_s* gui_camera_toolbar_defaultopen;
 	

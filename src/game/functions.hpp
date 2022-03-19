@@ -122,6 +122,7 @@ namespace game
 	extern game::undo_s* g_lastredo();
 
 	extern bool is_single_brush_selected(bool print_warning = false);
+	extern bool is_any_brush_selected();
 
 	static utils::function<void()> Undo_ClearRedo = 0x45DF20;
 	void Undo_GeneralStart(const char* operation /*eax*/);
@@ -152,6 +153,8 @@ namespace game
 	static utils::function<void(game::entity_s* ent, const char* key, const char* value)> SetKeyValue = 0x483690;
 	static utils::function<void()> SetKeyValuePairs = 0x496CF0;
 	static utils::function<void()> CreateEntity = 0x497300;
+
+	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y);
 
 	// world bounds, not local
 	static utils::function<void(game::XModel* model, float* axis, float* mins, float* maxs)> R_GetXModelBounds = 0x4C9150;
