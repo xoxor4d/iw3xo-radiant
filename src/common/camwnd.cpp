@@ -133,6 +133,7 @@ typedef void(__thiscall* on_ccamwnd_msg)(ccamwnd*, UINT, CPoint);
     on_ccamwnd_msg __on_lbutton_up;
     on_ccamwnd_msg __on_rbutton_down;
     on_ccamwnd_msg __on_rbutton_up;
+	on_ccamwnd_msg __on_mbutton_up;
 	on_ccamwnd_msg __on_mouse_move;
 
 
@@ -157,6 +158,9 @@ void __fastcall ccamwnd::on_lbutton_up([[maybe_unused]] ccamwnd* pThis, [[maybe_
 	// original function
 	//__on_lbutton_up(pThis, nFlags, point);
 
+	// use unsed CPoint in czwnd::on_lbutton_up to differentiate which function called it
+	point.x = 251;
+
 	czwnd::on_lbutton_up(cmainframe::activewnd->m_pZWnd, nullptr, nFlags, point); // redirect
 }
 
@@ -176,7 +180,23 @@ void __fastcall ccamwnd::on_rbutton_up([[maybe_unused]] ccamwnd* pThis, [[maybe_
 	// original function
 	//__on_rbutton_up(pThis, nFlags, point);
 
+	// use unsed CPoint in czwnd::on_rbutton_up to differentiate which function called it
+	point.x = 253;
+
 	czwnd::on_rbutton_up(cmainframe::activewnd->m_pZWnd, nullptr, nFlags, point); // redirect
+}
+
+
+// *
+// | ----------------- Middle Mouse Button ---------------------
+// *
+
+void __fastcall ccamwnd::on_mbutton_up([[maybe_unused]] ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point)
+{
+	// use unsed CPoint in czwnd::on_mbutton_up to differentiate which function called it
+	point.x = 255;
+
+	czwnd::on_mbutton_up(cmainframe::activewnd->m_pZWnd, nullptr, nFlags, point);
 }
 
 
@@ -380,6 +400,8 @@ void ccamwnd::hooks()
 
     __on_rbutton_down   = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x4032B0, ccamwnd::on_rbutton_down, HK_JUMP));
     __on_rbutton_up     = reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x403310, ccamwnd::on_rbutton_up, HK_JUMP));
+
+	__on_mbutton_up		= reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x403270, ccamwnd::on_mbutton_up, HK_JUMP));
 
 	__on_mouse_move		= reinterpret_cast<on_ccamwnd_msg>(utils::hook::detour(0x403100, ccamwnd::on_mouse_move, HK_JUMP));
 

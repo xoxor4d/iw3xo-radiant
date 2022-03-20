@@ -58,9 +58,7 @@ namespace ggui::camera_guizmo
 
 	void get_selection_center_movepoints(float* center_point)
 	{
-		const auto num_points = game::g_qeglobals->d_num_move_points;
-
-		if (num_points)
+		if (game::g_qeglobals->d_num_move_points)
 		{
 			// get bounds of selection
 			game::vec3_t mins, maxs;
@@ -68,12 +66,10 @@ namespace ggui::camera_guizmo
 			utils::vector::set_vec3(maxs, -131072.0f);
 
 			// get bounds from windings
-			for (auto p = 0; p < num_points; p++)
+			for (auto p = 0; p < game::g_qeglobals->d_num_move_points; p++)
 			{
 				for (auto v = 0; v < 3; v++)
 				{
-					game::g_qeglobals->d_move_points[p][v];
-
 					// mins :: find the closest point on each axis
 					if (mins[v] > game::g_qeglobals->d_move_points[p]->xyz[v])
 						mins[v] = game::g_qeglobals->d_move_points[p]->xyz[v];
@@ -169,11 +165,13 @@ namespace ggui::camera_guizmo
 			ImGuizmo::SetDrawlist();
 			ImGuizmo::SetRect(camerawnd->scene_pos_imgui.x, camerawnd->scene_pos_imgui.y, camera_size.x, camera_size.y);
 
-			const auto guizmo_mode = game::g_bRotateMode ? ImGuizmo::OPERATION::ROTATE : ImGuizmo::OPERATION::TRANSLATE;
+			auto guizmo_mode = game::g_bRotateMode ? ImGuizmo::OPERATION::ROTATE : ImGuizmo::OPERATION::TRANSLATE;
 
 			float mtx_scale[3] = { 1.0f, 1.0f, 1.0f };
 			float angles[3] = { 0.0f, 0.0f, 0.0f };
 			float snap[3] = { 0.0f, 0.0f, 0.0f };
+
+#define VERTEX_GUIZMO
 
 			if (dvars::guizmo_snapping->current.enabled)
 			{
@@ -210,14 +208,21 @@ namespace ggui::camera_guizmo
 					// guizmo position
 					game::vec3_t selection_center = {};
 
-					//#define VERTEX_GUIZMO
-#ifdef VERTEX_GUIZMO
+					
 					const auto num_move_points = game::g_qeglobals->d_num_move_points;
 					const auto selection_mode = game::g_qeglobals->d_select_mode;
-					const bool in_vertex_mode = num_move_points && (selection_mode == game::sel_curvepoint || selection_mode == game::sel_area);
-#else
-					const bool in_vertex_mode = false;
-#endif
+					bool in_vertex_mode = false;
+
+					// check for vertex edit mode
+					if(selection_mode == game::sel_curvepoint || selection_mode == game::sel_area)
+					{
+						if(!num_move_points)
+						{
+							return;
+						}
+
+						in_vertex_mode = true;
+					}
 
 					if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
 					{
@@ -242,10 +247,12 @@ namespace ggui::camera_guizmo
 
 					// build guizmo matrix from components
 					ImGuizmo::RecomposeMatrixFromComponents(selection_center, angles, mtx_scale, tmp_matrix);
-					//#define BOUNDS_TEST					
+
+//#define BOUNDS_TEST					
 #ifdef BOUNDS_TEST
-						// *
-						// bounds 
+					// *
+					// bounds
+
 					game::vec3_t local_mins;
 					game::vec3_t local_maxs;
 
@@ -258,12 +265,19 @@ namespace ggui::camera_guizmo
 						local_maxs[0], local_maxs[1], local_maxs[2]
 					};
 
+					guizmo_mode = ImGuizmo::OPERATION::BOUNDS;
+
 					// draw guizmo / manipulate
 					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap, bounds))
 #else
 					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap))
 #endif
 					{
+						/*if (guizmo_mode == ImGuizmo::OPERATION::BOUNDS)
+						{
+							utils::hook::call<void(__cdecl)(game::brush_t_with_custom_def*, float*, float*)>(0x438760)(b, bounds, &bounds[3]);
+						}*/
+
 						if (ImGuizmo::IsOver())
 						{
 							float delta_origin[3], delta_angles[3];
@@ -273,7 +287,8 @@ namespace ggui::camera_guizmo
 
 							if (guizmo_mode == ImGuizmo::OPERATION::ROTATE)
 							{
-#if 0								// original way of getting the rotation matrix (here to stay to check against the one below)
+#if 0
+								// original way of getting the rotation matrix (here to stay to check against the one below)
 								float rotate_axis_org[4][4] = {};
 								rotate_axis_org[0][0] = game::g_vRotateOrigin[0];
 								rotate_axis_org[0][1] = game::g_vRotateOrigin[1];
@@ -322,39 +337,43 @@ namespace ggui::camera_guizmo
 
 							else if (guizmo_mode == ImGuizmo::OPERATION::TRANSLATE)
 							{
-								game::vec3_t end_vec = {};
-								int end_vec_valid = true;
-
-								// move all selected brushes using the delta
-								for (auto	sb = game::g_selected_brushes_next();
-									(DWORD*)sb != game::currSelectedBrushes;
-											sb = sb->next)
+								if (in_vertex_mode)
 								{
-									if (const auto brushes = sb->def; brushes)
+									for (auto pt = 0; pt < game::g_qeglobals->d_num_move_points; pt++)
 									{
-										if (in_vertex_mode)
+										const auto vert = game::g_qeglobals->d_move_points[pt];
+
+										vert->xyz[0] += delta_origin[0];
+										vert->xyz[1] += delta_origin[1];
+										vert->xyz[2] += delta_origin[2];
+									}
+
+									FOR_ALL_SELECTED_BRUSHES(sb)
+									{
+										if (sb->patch && sb->patch->def)
 										{
-											end_vec_valid &= game::Brush_MoveVertex(delta_origin, brushes, game::g_qeglobals->d_move_points[0]->xyz, end_vec);
+											game::Patch_UpdateSelected(sb->patch->def, true);
 										}
-										else
+									}
+								}
+								else
+								{
+									// move all selected brushes using the delta
+									FOR_ALL_SELECTED_BRUSHES(sb)
+									{
+										if (const auto	brush = sb->def; 
+														brush)
 										{
-											game::Brush_Move(delta_origin, brushes, true);
+											game::Brush_Move(delta_origin, brush, true);
 											components::remote_net::cmd_send_brush_select_deselect(true);
 										}
 									}
 								}
-#ifdef VERTEX_GUIZMO
-								if (end_vec_valid)
-								{
-									utils::vector::copy(end_vec, game::g_qeglobals->d_move_points[0]);
-								}
-#endif
 							}
 						}
 					}
 				}
 			}
-
 #if 0 // bounds
 
 			game::vec3_t local_mins;
@@ -382,10 +401,16 @@ namespace ggui::camera_guizmo
 			// entities (static models / lights / spawns etc)
 			// actually handled pretty good via "Select_ApplyMatrix" above .. will still keep it for now
 
-			else if (const auto edit_entity = game::g_edit_entity();
-								edit_entity && edit_entity->epairs)
+			// edit_entity is unsave and can point to junk memory when transitioning into and out of prefabs
+			// use selected_brushes->def->owner instead
+
+			//else if (const auto edit_entity = game::g_edit_entity(); edit_entity && edit_entity->epairs)
+			else if(const auto	b = game::g_selected_brushes();
+								b && b->def && b->def->owner)
 			{
-				if (_stricmp(edit_entity->eclass->name, "worldspawn"))
+				const auto edit_entity = b->def->owner;
+
+				if (edit_entity->eclass->name == "worldspawn"s)
 				{
 					// pass mouse input to imgui if guizmo is hovered (TODO: only pass left click)
 					if (ImGuizmo::IsOver())
@@ -434,7 +459,6 @@ namespace ggui::camera_guizmo
 								ggui::entity::AddProp("angles", org_str, &helper);
 							}
 						}
-
 					}
 				}
 			}

@@ -66,6 +66,8 @@ public:
 	static void __fastcall	on_rbutton_down(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 	static void __fastcall	on_rbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 
+	static void __fastcall	on_mbutton_up(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
+
 	static void __fastcall	on_mouse_move(ccamwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, CPoint point);
 
 	static void __stdcall	on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags);
