@@ -1,6 +1,7 @@
 #include "std_include.hpp"
 
 #define HIDE_STATUSBAR
+//#define DEBUG_KEYS
 
 IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 cmainframe* cmainframe::activewnd;
@@ -246,7 +247,7 @@ void create_qe_children(cmainframe* mainframe)
 	game::g_qeglobals->d_gridsize = 5;
 	game::g_qeglobals->d_showgrid = true;
 
-	game::printf_to_console("Entering message loop");
+	game::printf_to_console("Entering message loop\n");
 
 	mainframe->m_bDoLoop = true;
 	SetTimer(mainframe->GetWindow(), 1u, 1000u, 0);
@@ -371,6 +372,16 @@ typedef LRESULT(__thiscall* wndproc_t)(cmainframe*, UINT Msg, WPARAM wParam, LPA
 // handle wm_char events for non-focused subwindows, see above msg
 LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	if(ggui::cz_context_ready() && (Msg == WM_ACTIVATE || Msg == WM_SETFOCUS || Msg == WM_KILLFOCUS))
+	{
+		ImGuiIO& io = ImGui::GetIO();
+		io.ClearInputKeys();
+
+#ifdef DEBUG_KEYS
+		game::printf_to_console("mainframe wndproc: reset keys (WM_ACTIVATE, SETFOCUS / KILLFOCUS");
+#endif
+	}
+
 	if (Msg == WM_MOVE || Msg == WM_SIZE)
 	{
 		if(!IsIconic(pThis->GetWindow()))
@@ -440,7 +451,7 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 
 						// reset keys when mouse leaves the mainframe
 						ImGuiIO& io = ImGui::GetIO();
-						memset(io.KeysDown, 0, sizeof(io.KeysDown));
+						io.ClearInputKeys();
 					}
 				}
 			}
@@ -453,9 +464,15 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 		}
 	}
 
-	
-	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
+
+	// only handle chars and keyup here (keyup not handled via event when mouse not within mainframe)
+	if (Msg == WM_CHAR || Msg == WM_KEYUP)
 	{
+#ifdef DEBUG_KEYS
+		game::printf_to_console("mainframe wndproc: %s %s", Msg == WM_CHAR ? "WM_CHAR" : Msg == WM_KEYDOWN ? "KEYDOWN" : "KEYUP",
+			ggui::hotkeys::cmdbinds_ascii_to_keystr(wParam).c_str());
+#endif
+
 		if (ggui::cz_context_ready())
 		{
 			IMGUI_BEGIN_CZWND;
@@ -468,7 +485,7 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 			// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
 			{
 				ImGuiIO& io = ImGui::GetIO();
-				memset(io.KeysDown, 0, sizeof(io.KeysDown));
+				io.ClearInputKeys();
 			}
 		}
 	}
@@ -598,20 +615,27 @@ void on_keydown_intercept(cmainframe* pThis, UINT nChar, UINT nRepCnt, UINT nFla
 			}
 		}
 	}
-	
+
 	mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 }
 
 void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
 {
+
+#ifdef DEBUG_KEYS
+	game::printf_to_console("mainframe keydown: %s", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
+#endif
+
 	if (ggui::cz_context_ready())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
+		// handles "special" keys like return and shift
+		ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
+
 		if (ImGui::GetIO().WantTextInput)
 		{
-			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar); // hwnd is only needed for mouse inputs
 			return;
 		}
 
@@ -620,7 +644,6 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 						gridwnd->window_hovered)
 		{
 			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
-			//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 			return;
 		}
 
@@ -629,17 +652,14 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
 						camerawnd->window_hovered)
 		{
-			// calls the original on_keydown function
 			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
-			//mainframe::__on_keydown(pThis, nChar, nRepCnt, nFlags);
 			return;
 		}
 
-
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
-			ImGuiIO& io = ImGui::GetIO();
-			memset(io.KeysDown, 0, sizeof(io.KeysDown));
+			//ImGuiIO& io = ImGui::GetIO();
+			//io.ClearInputKeys();
 			
 			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
 		}
@@ -654,18 +674,6 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 				return;
 			}
 		}
-
-		/* // backup ^
-		if (ImGui::GetIO().WantCaptureMouse)
-		{
-			ImGui::HandleKeyIO(cmainframe::activewnd->m_pZWnd->GetWindow(), WM_KEYDOWN, 0, nChar);
-			// return;
-		}
-
-		// reset io.KeysDown if cursor moved out of imgui window (fixes stuck keys)
-		ImGuiIO& io = ImGui::GetIO();
-		memset(io.KeysDown, 0, sizeof(io.KeysDown));
-		*/
 	}
 
 	on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
@@ -675,17 +683,23 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 
 void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 {
+#ifdef DEBUG_KEYS
+	game::printf_to_console("mainframe keyup: %s", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
+#endif
+
 	if (ggui::cz_context_ready())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
+		// handles "special" keys like return and shift
+		ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
+
 		if (ImGui::GetIO().WantTextInput)
 		{
-			ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
 			return;
 		}
-		
+
 		// if mouse is inside imgui-cxy window
 		if (auto gridwnd = ggui::get_rtt_gridwnd();
 				 gridwnd->window_hovered)
@@ -701,13 +715,6 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 		{
 			mainframe::__on_keyup(cmainframe::activewnd, nChar);
 			return;
-		}
-
-		
-		if (ImGui::GetIO().WantCaptureMouse)
-		{
-			ImGui::HandleKeyIO(nullptr, WM_KEYUP, 0, nChar);
-			//return;
 		}
 	}
 

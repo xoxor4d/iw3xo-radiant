@@ -9,13 +9,19 @@
 SOCKET g_RemoteSocket;
 int g_RemoteSocketStatus = -1;
 
-// g_qeglobals_d_select_mode 
-// 0 :: normal draging / skewing
-// 1 :: vertex
-// 2 :: edge
-// 3 ::
-// 4 ::
-// 5 ::
+/* g_qeglobals_d_select_mode 
+ *	sel_brush = 0x0,
+ *	sel_vertex = 0x1,
+ *	sel_edge = 0x2,
+ *	sel_singlevertex = 0x3,
+ *	sel_curvepoint = 0x4,
+ *	sel_area = 0x5,
+ *	sel_terrainpoint = 0x6,
+ *	sel_terraintexture = 0x7,
+ *	sel_addpoint = 0x8,
+ *	sel_cycle_edge_direction_quad = 0x9,
+ *	sel_editpoint = 0xA,
+ */
 
 // *
 // Constantly search for a server radiant can connect to
@@ -23,11 +29,11 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 {
 	WSADATA wsaData;
 
-	game::printf_to_console("[LiveRadiant]: Initiating ...");
+	game::printf_to_console("[Live-Link]: Initiating ...");
 	
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != NO_ERROR)
 	{
-		game::printf_to_console("[LiveRadiant]: WSAStartup ERROR!\n");
+		game::printf_to_console("[Live-Link]: WSAStartup ERROR!\n");
 		return false;
 	}
 
@@ -57,7 +63,7 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 
 		
 	INIT_DEFAULT:
-		game::printf_to_console("[LiveRadiant]: Listening for game server on localhost:%d ...\n", dvars::radiant_livePort ? dvars::radiant_livePort->current.integer : 3700);
+		game::printf_to_console("[Live-Link]: Listening for game server on localhost:%d ...\n", dvars::radiant_livePort ? dvars::radiant_livePort->current.integer : 3700);
 		
 		Sleep(200);
 
@@ -66,7 +72,7 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 
 		if (g_RemoteSocket == INVALID_SOCKET)
 		{
-			game::printf_to_console("[LiveRadiant]: Failed to initialize client TCP socket!\n");
+			game::printf_to_console("[Live-Link]: Failed to initialize client TCP socket!\n");
 			return 0;
 		}
 
@@ -105,7 +111,7 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 		}
 
 		// Send updates until the game exits/connection is terminated
-		game::printf_to_console("[LiveRadiant]: Game connected!\n");
+		game::printf_to_console("[Live-Link]: Game connected!\n");
 		g_RemoteSocketStatus = 1;
 
 		game::glob::live_connected = true;
@@ -147,7 +153,7 @@ DWORD WINAPI remote_net_search_server_thread(LPVOID)
 		closesocket(g_RemoteSocket);
 		g_RemoteSocketStatus = INVALID_SOCKET;
 
-		game::printf_to_console("[LiveRadiant]: Game disconnected!\n");
+		game::printf_to_console("[Live-Link]: Game disconnected!\n");
 	}
 
 	return 0;
@@ -214,7 +220,7 @@ DWORD WINAPI remote_net_receive_packet_thread(LPVOID)
 				closesocket(g_RemoteSocket);
 
 				g_RemoteSocket = INVALID_SOCKET;
-				game::printf_to_console("[LiveRadiant]: Failed to process server command! Shutting down socket ...\n");
+				game::printf_to_console("[Live-Link]: Failed to process server command! Shutting down socket ...\n");
 
 				g_RemoteSocketStatus = INVALID_SOCKET;
 				break;
@@ -410,7 +416,7 @@ namespace components
 		if (int ret = send(g_RemoteSocket, (const char*)Command, sizeof(game::RadiantCommand), 0); 
 				ret == SOCKET_ERROR)
 		{
-			printf("[LiveRadiant]: Socket ERROR");
+			printf("[Live-Link]: Socket ERROR");
 			
 			closesocket(g_RemoteSocket);
 			g_RemoteSocket = INVALID_SOCKET;

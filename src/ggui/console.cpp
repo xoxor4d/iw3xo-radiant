@@ -244,7 +244,7 @@ namespace ggui
 		
 		ImGui::SameLine(0, 6.0f);
 		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
-		m_filter.Draw("#console_filter", ImGui::GetContentRegionAvailWidth());
+		m_filter.Draw("#console_filter", ImGui::GetContentRegionAvail().x); //ImGui::GetContentRegionAvailWidth());
 
 		if (!m_filter.IsActive())
 		{
@@ -703,7 +703,7 @@ namespace ggui
 			return;
 		}
 		
-		components::gui::toggle(ggui::state.czwnd.m_console, 0, true);
+		components::gui::toggle(ggui::state.czwnd.m_console);
 	}
 
 	void console::hooks()

@@ -51,9 +51,9 @@ namespace game
 	bool&	g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
 	int&	g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
 	int&	g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
-
 	float*	g_vRotateOrigin = reinterpret_cast<float*>(0x23F1658);
-	
+	int&	g_prefab_stack_level = *reinterpret_cast<int*>(0x25D5B34);
+
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
 
@@ -168,6 +168,36 @@ namespace game
 		return redo;
 	}
 
+	bool is_single_brush_selected(bool print_warning)
+	{
+		if ((DWORD*)g_selected_brushes_next() == game::currSelectedBrushes || (DWORD*)g_selected_brushes_next()->next != game::currSelectedBrushes)
+		{
+			if(print_warning)
+			{
+				game::printf_to_console("Error: you must have a single brush selected");
+			}
+			
+			return false;
+		}
+
+		if (auto n = g_selected_brushes_next(); n && n->owner && n->owner->firstActive && n->owner->firstActive->eclass->fixedsize)
+		{
+			if (print_warning)
+			{
+				game::printf_to_console("Error: you cannot manipulate fixed size entities");
+			}
+
+			return false;
+		}
+
+		return true;
+	}
+
+	bool is_any_brush_selected()
+	{
+		return (DWORD*)game::g_selected_brushes_next() != game::currSelectedBrushes;
+	}
+
 	void Undo_GeneralStart(const char* operation /*eax*/)
 	{
 #ifdef DEBUG
@@ -272,6 +302,20 @@ namespace game
 			mov		eax, e_class;
 			call	func_addr;
 			popad;
+		}
+	}
+
+	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, bool unk)
+	{
+		int unkown = unk;
+
+		const static uint32_t patch_update_selected_func_addr = 0x438D80;
+		__asm
+		{
+			mov		esi, p;
+			push	unkown;
+			call	patch_update_selected_func_addr;
+			add     esp, 4;
 		}
 	}
 
@@ -387,6 +431,38 @@ namespace game
 		}
 	}
 
+	void Brush_Deselect(game::brush_t* b /*esi*/)
+	{
+		const static uint32_t func_addr = 0x48DC60;
+		__asm
+		{
+			pushad;
+			mov		esi, b;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void Brush_Select(game::brush_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection)
+	{
+		const int overwrite = some_overwrite;
+		const int status = update_status;
+		const int center_grid = center_grid_on_selection;
+
+		const static uint32_t func_addr = 0x48DCC0;
+		__asm
+		{
+			pushad;
+			mov		ecx, b;
+			push	center_grid;
+			push	status;
+			push	overwrite;
+			call	func_addr;
+			add		esp, 12;
+			popad;
+		}
+	}
+
 	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count)
 	{
 		const static uint32_t func_addr = 0x4A11A0;
@@ -412,6 +488,22 @@ namespace game
 			mov		eax, height;
 			call	func_addr;
 			add     esp, 4;
+			popad;
+		}
+	}
+
+	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y)
+	{
+		const static uint32_t func_addr = 0x466480;
+		__asm
+		{
+			pushad;
+			push	y;
+			push	x;
+			mov		esi, name;
+			mov		edi, cxywnd;
+			call	func_addr;
+			add     esp, 8;
 			popad;
 		}
 	}
@@ -449,6 +541,50 @@ namespace game
 	MatrixForViewer_t MatrixForViewer = reinterpret_cast<MatrixForViewer_t>(0x4A7A70);
 	MatrixMultiply44_t MatrixMultiply44 = reinterpret_cast<MatrixMultiply44_t>(0x4A6180);
 	MatrixInverse44_t MatrixInverse44 = reinterpret_cast<MatrixInverse44_t>(0x4A6670);
+
+	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/)
+	{
+		const static uint32_t func_addr = 0x47CDE0;
+		__asm
+		{
+			pushad;
+			push	unk;
+			push	0; // ecx?
+
+			fld		degree;
+			fstp    dword ptr[esp];
+
+			push	snap;
+			push	brush;
+
+			mov		eax, rotate_axis; // lea
+
+			call	func_addr;
+			add		esp, 16;
+			popad;
+		}
+	}
+
+	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis)
+	{
+		const static uint32_t func_addr = 0x48FF40;
+		__asm
+		{
+			pushad;
+			push	rotate_axis;
+			push	0; // ecx?
+
+			mov		eax, axis;
+
+			fld		degree;
+			fstp    dword ptr[esp];
+
+			call	func_addr;
+			add		esp, 8;
+			popad;
+		}
+	}
+
 	CopyAxis_t CopyAxis = reinterpret_cast<CopyAxis_t>(0x4A8860);
 	AnglesToAxis_t AnglesToAxis = reinterpret_cast<AnglesToAxis_t>(0x4ABEB0);
 	AngleVectors_t AngleVectors = reinterpret_cast<AngleVectors_t>(0x4ABD70);

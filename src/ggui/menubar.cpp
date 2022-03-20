@@ -151,22 +151,26 @@ namespace ggui::menubar
 					ImGui::EndMenu(); // Misc
 				}
 
-				if (ImGui::BeginMenu("Project Settings"))
-				{
-					if (ImGui::MenuItem("New Project")) {
-						mainframe_cdeclcall(void, 0x426E80); //cmainframe::OnFileNewproject
-					}
-
-					if (ImGui::MenuItem("Set Startup Project")) {
-						mainframe_cdeclcall(void, 0x427010); //cmainframe::OnSetStartupProject
-					}
-
-					if (ImGui::MenuItem("Project Settings")) {
-						mainframe_cdeclcall(void, 0x428DE0); //cmainframe::OnFileProjectsettings
-					}
-
-					ImGui::EndMenu(); // Project Settings
+				if (ImGui::MenuItem("Project Settings")) {
+					mainframe_cdeclcall(void, 0x428DE0); //cmainframe::OnFileProjectsettings
 				}
+
+				//if (ImGui::BeginMenu("Project Settings"))
+				//{
+				//	if (ImGui::MenuItem("New Project")) {
+				//		mainframe_cdeclcall(void, 0x426E80); //cmainframe::OnFileNewproject
+				//	}
+
+				//	if (ImGui::MenuItem("Set Startup Project")) {
+				//		mainframe_cdeclcall(void, 0x427010); //cmainframe::OnSetStartupProject
+				//	}
+
+				//	if (ImGui::MenuItem("Project Settings")) {
+				//		mainframe_cdeclcall(void, 0x428DE0); //cmainframe::OnFileProjectsettings
+				//	}
+
+				//	ImGui::EndMenu(); // Project Settings
+				//}
 
 				SEPERATORV(0.0f);
 
@@ -227,19 +231,19 @@ namespace ggui::menubar
 				SEPERATORV(0.0f);
 
 				if (ImGui::MenuItem("Edit Colors ...")) {
-					components::gui::toggle(context.m_colors, 0, true);
+					components::gui::toggle(context.m_colors);
 				}
 				
 				if (ImGui::MenuItem("Edit Toolbar ...")) {
-					components::gui::toggle(context.m_toolbar_edit, 0, true);
+					components::gui::toggle(context.m_toolbar_edit);
 				}
 
 				if (ImGui::MenuItem("Edit Hotkeys ...")) {
-					components::gui::toggle(context.m_cmdbinds, 0, true);
+					components::gui::toggle(context.m_cmdbinds);
 				}
 
 				if (ImGui::MenuItem("Preferences", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
-					components::gui::toggle(context.m_preferences, 0, true);
+					components::gui::toggle(context.m_preferences);
 				}
 
 				ImGui::EndMenu(); // Edit
@@ -254,15 +258,15 @@ namespace ggui::menubar
 					}
 					
 					if (ImGui::MenuItem("Console", hotkeys::get_hotkey_for_command("ViewConsole").c_str())) {
-						components::gui::toggle(context.m_console, 0, true);
+						components::gui::toggle(context.m_console);
 					}
 
 					if (ImGui::MenuItem("Filter", hotkeys::get_hotkey_for_command("ViewFilters").c_str())) {
-						components::gui::toggle(context.m_filter, 0, true);
+						components::gui::toggle(context.m_filter);
 					}
 
 					if (ImGui::MenuItem("Entity", hotkeys::get_hotkey_for_command("ViewEntityInfo").c_str())) {
-						components::gui::toggle(context.m_entity, 0, true);
+						components::gui::toggle(context.m_entity);
 					}
 
 					if (ImGui::MenuItem("Surface Inspector", hotkeys::get_hotkey_for_command("SurfaceInspector").c_str())) 
@@ -271,11 +275,11 @@ namespace ggui::menubar
 						{
 							if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
 							{
-								components::gui::toggle(ggui::state.czwnd.m_entity, 0, true);
+								components::gui::toggle(ggui::state.czwnd.m_entity);
 							}
 							else
 							{
-								components::gui::toggle(ggui::state.czwnd.m_surface_inspector, 0, true);
+								components::gui::toggle(ggui::state.czwnd.m_surface_inspector);
 							}
 						}
 						else
@@ -290,7 +294,7 @@ namespace ggui::menubar
 					}
 
 					if (ImGui::MenuItem("Textures", hotkeys::get_hotkey_for_command("ViewTextures").c_str())) {
-						components::gui::toggle(ggui::get_rtt_texturewnd(), 0, true);
+						components::gui::toggle(ggui::get_rtt_texturewnd());
 					}
 
 					if (ImGui::MenuItem("Model Selector", hotkeys::get_hotkey_for_command("xo_modelselector").c_str()))
@@ -300,14 +304,14 @@ namespace ggui::menubar
 					}
 
 					if (ImGui::MenuItem("ImGui Demo")) {
-						components::gui::toggle(context.m_demo, 0, true);
+						components::gui::toggle(context.m_demo);
 					}
-					
-#ifdef DEBUG					
+
 					SEPERATORV(0.0f);
 
 					if (ImGui::BeginMenu("Original Windows"))
 					{
+#ifdef DEBUG
 						if (ImGui::MenuItem("Menubar", 0, ggui::mainframe_menubar_enabled))
 						{
 							if (!ggui::mainframe_menubar_enabled)
@@ -346,6 +350,7 @@ namespace ggui::menubar
 						if (ImGui::MenuItem("XY View (Original)", hotkeys::get_hotkey_for_command("ToggleView").c_str(), nullptr, cmainframe::is_combined_view())) {
 							mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
 						}
+#endif
 
 						if (ImGui::MenuItem("Surface Inspector (Original)"))
 						{
@@ -353,10 +358,23 @@ namespace ggui::menubar
 							// SurfaceInspector::DoSurface
 							cdeclcall(void, 0x4585D0);
 						}
+
+						if (ImGui::MenuItem("Vert Edit Dialog (Original)"))
+						{
+							CWnd* vEdit = reinterpret_cast<CWnd*>(0x25D65B0);
+
+							if (IsWindowVisible(vEdit->GetWindow()))
+							{
+								utils::hook::call<void(__fastcall)(CWnd*, int, int)>(0x58EA4F)(vEdit, 0, SW_HIDE);
+							}
+							else
+							{
+								utils::hook::call<void(__fastcall)(CWnd*, int, int)>(0x58EA4F)(vEdit, 0, SW_SHOW);
+							}
+						}
 						
 						ImGui::EndMenu(); // Original Windows
 					}
-#endif
 
 					ImGui::EndMenu(); // Toggle
 				}
@@ -490,13 +508,13 @@ namespace ggui::menubar
 						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
 						{
 							// close entire window if tab is in-front
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
 						}
 						else if (!ggui::state.czwnd.m_camera_settings.menustate)
 						{
 							// open window with focused fakesun tab
 							ggui::camera_settings::set_tabstate_fakesun(true);
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
 						}
 						else
 						{
@@ -521,13 +539,13 @@ namespace ggui::menubar
 						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
 						{
 							// close entire window if tab is in-front
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
 						}
 						else if (!ggui::state.czwnd.m_camera_settings.menustate)
 						{
 							// open window with focused fakesun tab
 							ggui::camera_settings::set_tabstate_fakesun(true);
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings, 0, true);
+							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
 						}
 						else
 						{
@@ -730,7 +748,7 @@ namespace ggui::menubar
 						game::Dvar_SetBool(dvars::r_sunpreview_shadow_enable, !dvars::r_sunpreview_shadow_enable->current.enabled);
 					}
 
-					IMGUI_MENU_WIDGET_SINGLE("Sun Shadow Distance", ImGui::DragFloat("", &dvars::r_sunpreview_shadow_dist->current.value, 25.0f, 0, FLT_MAX, "%.0f"));
+					IMGUI_MENU_WIDGET_SINGLE("Sun Shadow Distance", ImGui::DragFloat("#sunshadow_dist_scalar", &dvars::r_sunpreview_shadow_dist->current.value, 25.0f, 0, FLT_MAX, "%.0f"));
 
 					SEPERATORV(0.0f);
 
@@ -769,7 +787,7 @@ namespace ggui::menubar
 				//	mainframe_thiscall(void, 0x428F50); // cmainframe::OnViewCubeout
 				//}
 
-				IMGUI_MENU_WIDGET_SINGLE("Cubic Scale", ImGui::DragInt("", &prefs->m_nCubicScale, 1, 1, 220));
+				IMGUI_MENU_WIDGET_SINGLE("Cubic Scale", ImGui::DragInt("##cubic_scalar", &prefs->m_nCubicScale, 1, 1, 220));
 
 				if (ImGui::MenuItem("Cubic Clipping", hotkeys::get_hotkey_for_command("ToggleCubicClip").c_str(), prefs->m_bCubicClipping)) {
 					mainframe_thiscall(void, 0x428F90); // cmainframe::OnViewCubicclipping
@@ -1608,7 +1626,7 @@ namespace ggui::menubar
 
 				if (ImGui::MenuItem("About / Version"))
 				{
-					components::gui::toggle(context.m_about, 0, true);
+					components::gui::toggle(context.m_about);
 				}
 
 				ImGui::EndMenu(); // Help

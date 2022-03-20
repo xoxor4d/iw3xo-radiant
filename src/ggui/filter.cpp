@@ -261,7 +261,7 @@ namespace ggui::filter
 		
 		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
 		
-		imgui_filter.Draw("#filter_filter", ImGui::GetContentRegionAvailWidth());
+		imgui_filter.Draw("#filter_filter", ImGui::GetContentRegionAvail().x);
 		input_focused = ImGui::IsItemFocused();
 
 		if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0) && !ImGui::IsWindowAppearing())
@@ -280,7 +280,7 @@ namespace ggui::filter
 		
 		if(!imgui_filter.IsActive())
 		{
-			ImGui::SetCursorScreenPos(ImVec2(pre_filter_pos.x + (ImGui::GetContentRegionAvailWidth() * 0.48f), pre_filter_pos.y + 4.0f));
+			ImGui::SetCursorScreenPos(ImVec2(pre_filter_pos.x + (ImGui::GetContentRegionAvail().x * 0.48f), pre_filter_pos.y + 4.0f));
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
 			ImGui::TextUnformatted("Filter");
 			ImGui::PopStyleColor();
@@ -442,7 +442,7 @@ namespace ggui::filter
 			return;
 		}
 		
-		components::gui::toggle(ggui::state.czwnd.m_filter, 0, true);
+		components::gui::toggle(ggui::state.czwnd.m_filter);
 	}
 
 	void hooks()

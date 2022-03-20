@@ -177,7 +177,7 @@ namespace ggui::camera_settings
 			return;
 		}
 
-		if (!ImGui::Begin("Cam Toolbar Settings##cam_settings_window", &menu.menustate, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar))
+		if (!ImGui::Begin("Cam Toolbar Settings##cam_settings_window", &menu.menustate, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings /*| ImGuiWindowFlags_NoTitleBar*/))
 		{
 			ImGui::End();
 			return;

@@ -5,7 +5,7 @@ namespace ggui::hotkeys
 {
 	const char* radiant_keybind_array[] =
 	{
-		"",
+		"##empty_label",
 		"Space",
 		"Backspace",
 		"Escape",
@@ -94,7 +94,7 @@ namespace ggui::hotkeys
 	// get ascii fror keybind key
 	int cmdbinds_key_to_ascii(std::string key)
 	{
-		if (key.length() > 1)
+		if (key.length() > 0)
 		{
 			if (key == "Space"s)		return 0x20;
 			if (key == "Backspace"s)	return 0x8;
@@ -144,8 +144,8 @@ namespace ggui::hotkeys
 			if (key == "~"s)			return 0x0C0;
 			if (key == "LWin"s)			return 0x5B;
 
-			game::printf_to_console("[Hotkeys] Unkown key '%s'", key.c_str());
-			return 0;
+			//game::printf_to_console("[Hotkeys] Unkown key '%s'", key.c_str());
+			//return 0;
 		}
 
 		return key[0];
@@ -201,6 +201,8 @@ namespace ggui::hotkeys
 		if (key == 0x0DC) return "\\"s;
 		if (key == 0x0C0) return "~"s;
 		if (key == 0x5B)  return "LWin"s;
+		if (key == 0x11)  return "LCtrl"s;
+		if (key == 0x12)  return "LAlt";
 
 		std::string out; out += (char)key;
 		return out;
@@ -566,7 +568,7 @@ namespace ggui::hotkeys
 		{
 			if (!cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
 			{
-				components::gui::toggle(ggui::state.czwnd.m_cmdbinds_helper, 0, true);
+				components::gui::toggle(ggui::state.czwnd.m_cmdbinds_helper);
 				menu.menustate = false;
 			}
 		}

@@ -79,16 +79,16 @@ namespace ggui::modelselector
 		
 		const auto window_size = ImGui::GetWindowSize();
 		const bool split_horizontal = window_size.x >= 700.0f;
-		const auto listbox_width = split_horizontal ? ImClamp(window_size.x * 0.25f, 200.0f, FLT_MAX) : ImGui::GetContentRegionAvailWidth();
+		const auto listbox_width = split_horizontal ? ImClamp(window_size.x * 0.25f, 200.0f, FLT_MAX) : ImGui::GetContentRegionAvail().x;
 
 		ImGui::BeginGroup();
 		{
 			// filter widget
 			const auto screenpos_prefilter = ImGui::GetCursorScreenPos();
-			m_filter.Draw("##xmodel_filter", listbox_width - 32);
+			m_filter.Draw("##xmodel_filter", listbox_width - 32.0f);
 			const auto screenpos_postfilter = ImGui::GetCursorScreenPos();
 
-			ImGui::SameLine(listbox_width - 27);
+			ImGui::SameLine(listbox_width - 27.0f);
 			if (ImGui::ButtonEx("x##clear_filter"))
 			{
 				m_filter.Clear();
@@ -365,9 +365,21 @@ namespace ggui::modelselector
 
 					ImGui::PushStyleCompact();
 
-					if (ImGui::Button(m_selector->overwrite_selection ? "Overwrite selection: On" : "Overwrite selection: Off", ImVec2(168.0f, 0))) {
-						m_selector->overwrite_selection = !m_selector->overwrite_selection;
-					} TT("On: swap model for selected entity\nOff: spawn a new entity");
+					ImGui::BeginGroup();
+					{
+						if (ImGui::Button(m_selector->overwrite_selection ? "Overwrite selection: On" : "Overwrite selection: Off", ImVec2(168.0f, 0))) {
+							m_selector->overwrite_selection = !m_selector->overwrite_selection;
+						} TT("On: swap model for selected entity\nOff: spawn a new entity");
+
+						ImGui::SameLine();
+						if (ImGui::Button("Refresh List")) 
+						{
+							m_selector->one_time_init = false;
+							m_selector->xmodel_selection = -1;
+						}
+
+						ImGui::EndGroup();
+					}
 
 					const float second_row_button_width = ImGui::GetItemRectSize().x;
 

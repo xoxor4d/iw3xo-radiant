@@ -60,7 +60,7 @@ namespace ggui::preferences
 
 		const std::string child_str = "[ "s + child_name + " ]"s;
 		const float child_indent = 8.0f;
-		const float child_width = ImGui::GetContentRegionAvailWidth() - child_indent;
+		const float child_width = ImGui::GetContentRegionAvail().x - child_indent;
 
 		const auto min = ImGui::GetCursorScreenPos();
 		const auto max = ImVec2(min.x + child_width, min.y + child_height);
@@ -122,6 +122,15 @@ namespace ggui::preferences
 			const char* background_str = (dvars::gui_mainframe_background->current.integer >= 0 && dvars::gui_mainframe_background->current.integer <= 2) ? background_names[dvars::gui_mainframe_background->current.integer] : "Unknown";
 			ImGui::SliderInt("Dockspace Background", &dvars::gui_mainframe_background->current.integer, 0, 2, background_str);
 
+			// -----------------
+			ImGui::title_with_seperator("New / Ported Features");
+			ImGui::Checkbox("Use new experimental surfaceinspector", &dvars::gui_use_new_surfinspector->current.enabled); TT(dvars::gui_use_new_surfinspector->description);
+			ImGui::Checkbox("Use new vertex edit dialog", &dvars::gui_use_new_vertedit_dialog->current.enabled); TT(dvars::gui_use_new_vertedit_dialog->description);
+
+			if(ImGui::Checkbox("Use new grid context menu", &dvars::gui_use_new_context_menu->current.enabled))
+			{
+				game::g_PrefsDlg()->m_bRightClick = !dvars::gui_use_new_context_menu->current.enabled;
+			}
 
 			// -----------------
 			ImGui::title_with_seperator("Property Editor");
@@ -206,7 +215,6 @@ namespace ggui::preferences
 
 			ImGui::title_with_seperator("Mouse", false);
 			ImGui::Checkbox("Zoom to cursor", &dvars::grid_zoom_to_cursor->current.enabled);
-			ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
 			ImGui::Checkbox("Disable grid snapping", &prefs->m_bNoClamp); TT("Org: Don't clamp plane points");
 
 
@@ -241,7 +249,6 @@ namespace ggui::preferences
 			ImGui::title_with_seperator("Mouse");
 			ImGui::SliderInt("Camera speed", &prefs->m_nMoveSpeed, 10, 5000);
 			ImGui::SliderInt("Camera angle speed", &prefs->m_nAngleSpeed, 1, 1000);
-			ImGui::Checkbox("Enable right-click context menu", &prefs->m_bRightClick); TT("Org: Right click to drop entities (really wrong)");
 
 
 			// -----------------
@@ -270,10 +277,6 @@ namespace ggui::preferences
 			ImGui::title_with_seperator("General", false);
 			ImGui::Checkbox("Draw scrollbar", &dvars::gui_texwnd_draw_scrollbar->current.enabled);
 			ImGui::Checkbox("Show scroll position in percent", &dvars::gui_texwnd_draw_scrollpercent->current.enabled);
-
-			ImGui::title_with_seperator("Surface Inspector");
-			ImGui::Checkbox("Use new experimental surfaceinspector", &dvars::gui_use_new_surfinspector->current.enabled); TT(dvars::gui_use_new_surfinspector->description);
-			ImGui::Checkbox("Incorporate Surface Inspector into property window##2", &dvars::gui_props_surfinspector->current.enabled); TT(dvars::gui_props_surfinspector->description);
 
 			ImGui::title_with_seperator("Quality");
 
@@ -340,7 +343,6 @@ namespace ggui::preferences
 		});
 	}
 
-	
 	void child_developer()
 	{
 		static float height = 0.0f;
@@ -356,7 +358,7 @@ namespace ggui::preferences
 			{
 				cdeclcall(void, 0x42BF80);
 			}
-
+			
 			ImGui::DragInt("Int 01", &dev_num_01, 0.1f);
 			ImGui::DragFloat3("Vec4 01", dev_vec_01, 25.0f);
 			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
@@ -452,7 +454,7 @@ namespace ggui::preferences
 	// CMainFrame::OnPrefs
 	void on_prefsdialog_command()
 	{
-		components::gui::toggle(ggui::state.czwnd.m_preferences, 0, true);
+		components::gui::toggle(ggui::state.czwnd.m_preferences);
 	}
 
 	void register_dvars()
@@ -496,6 +498,12 @@ namespace ggui::preferences
 			/* maxVal	*/ 250,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "redraw the main window x frames/second (main gui)");
+
+		dvars::gui_use_new_context_menu = dvars::register_bool(
+			/* name		*/ "gui_use_new_context_menu",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "Use new grid context menu");
 		
 	}
 	

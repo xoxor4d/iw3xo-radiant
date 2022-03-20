@@ -9,6 +9,18 @@ namespace game
 	typedef vec_t vec3_t[3];
 	typedef vec_t vec4_t[4];
 
+	enum PATCH_TYPE
+	{
+		PATCH_GENERIC =		0x0,	// generic curve patch
+		PATCH_CYLINDER =	0x1,
+		PATCH_BEVEL =		0x2,
+		PATCH_ENDCAP =		0x4,
+		PATCH_HEMISPHERE =	0x8,	// unknown, unused?
+		PATCH_CONE =		0x10,
+		PATCH_TRIANGLE =	0x20,	// unused?
+		PATCH_TERRAIN =		0x40	
+	};
+
 	enum RadiantCommandType
 	{
 		RADIANT_COMMAND_SELECT = 0,
@@ -530,18 +542,29 @@ namespace game
 		int sideIndex[3];
 	};
 
+	struct rgba_4byte
+	{
+		char r;
+		char g;
+		char b;
+		char a;
+	};
+
+	struct pmesh_texcoord
+	{
+		vec2_t st;
+		vec2_t lightmap;
+		vec2_t smoothing;
+	};
+
 	struct drawVert_t
 	{
 		vec3_t xyz;
-		float st;
-		float lightmap;
-		float smoothing;
+		pmesh_texcoord texCoord;
 		vec3_t normal;
-		char pad_0x0030[4];
-		float idk1;
-		vec3_t idk2;
-		char pad_0x0044[12];
-	};
+		rgba_4byte vert_color;
+		pmesh_texcoord savedTexCoord;
+	}; STATIC_ASSERT_SIZE(drawVert_t, 0x4C);
 
 	struct patchMesh_t
 	{
@@ -560,21 +583,13 @@ namespace game
 		char pad_0x0030[4];
 		texdef_t* mat_unk;
 		drawVert_t ctrl[16][16];
-		int xx00;
-		int xx0;
-		int xx1;
-		int xx2;
-		int xx3;
-		int xx4;
-		int xx5;
-		int xx6;
-		int xx7;
-		int xx8;
-		int xx9;
-		int xx10;
-		char pad_0x4468[3028];
+		char pad_0x4468[1024];
+		int pad_unk;
 		brush_t* pSymbiot;
-		int xx20;
+		bool xx20b;
+		bool xx21b;
+		bool xx22b;
+		bool xx23b;
 		int xx21;
 		int size_of_struct_0x504C;
 	}; STATIC_ASSERT_SIZE(patchMesh_t, 0x504C);
@@ -1604,7 +1619,7 @@ namespace game
 		pedge_t d_edges[512];
 		int d_numedges;
 		int d_num_move_points;
-		float* d_move_points[4096];
+		drawVert_t* d_move_points[4096];
 		int d_numterrapoints;
 		terrainVert_t* d_terrapoints[4096];
 		vec3_t d_select_translate_unk;
@@ -2901,10 +2916,24 @@ namespace game
 		unsigned int m_nModifiers;
 	};
 
+	struct __declspec(align(4)) faceVisuals_s
+	{
+		game::Material* handle;
+		int vertHandle;
+		int visuals;
+	};
+
+	struct __declspec(align(4)) faceVis_s
+	{
+		int vertcount;
+		int visCount;
+		faceVisuals_s* visArray;
+	};
+
 	struct trace_t
 	{
-		brush_t* brush;
-		face_t* face;
+		selbrush_def_t* brush;
+		faceVis_s* face; //face_t* face;
 		int xx1;
 		int xx2;
 		int xx3;
@@ -2916,14 +2945,15 @@ namespace game
 		int xx9;
 		int xx10;
 		int xx11;
-		int xx12;
+		__int16 xx12;
+		__int16 xx12_2;
 		int xx13;
 		int xx14;
 		int xx15;
 		float dist;
 		bool selected;
 		vec3_t some_point;
-	};
+	}; STATIC_ASSERT_SIZE(trace_t, 0x58);
 
 	struct orientation_t
 	{

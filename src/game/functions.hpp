@@ -20,6 +20,9 @@
 #define W_MEDIA			0x1000 
 #define W_ALL			0xFFFFFFFF
 
+#define FOR_ALL_SELECTED_BRUSHES(B) for (auto (B) = game::g_selected_brushes_next(); (DWORD*)(B) != game::currSelectedBrushes; (B) = (B)->next)
+#define FOR_ALL_ACTIVE_BRUSHES(B) for (auto (B) = game::g_active_brushes_next(); (DWORD*)(B) != game::active_brushes_ptr; (B) = (B)->next)
+
 namespace game
 {
 	namespace glob
@@ -70,6 +73,7 @@ namespace game
 	extern int&		g_undoMaxSize;
 
 	extern float*	g_vRotateOrigin;
+	extern int&		g_prefab_stack_level;
 	
 	extern game::SCommandInfo*	g_Commands;
 	extern int		g_nCommandCount;
@@ -116,6 +120,10 @@ namespace game
 
 	extern game::undo_s* g_lastundo();
 	extern game::undo_s* g_lastredo();
+
+	extern bool is_single_brush_selected(bool print_warning = false);
+	extern bool is_any_brush_selected();
+
 	static utils::function<void()> Undo_ClearRedo = 0x45DF20;
 	void Undo_GeneralStart(const char* operation /*eax*/);
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/);
@@ -129,6 +137,7 @@ namespace game
 
 	void SetSpawnFlags(int flag);
 	void UpdateSel(int wParam, game::eclass_t* e_class);
+	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, bool unk);
 	static utils::function<void(bool)> Select_Deselect = 0x48E800;
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
@@ -138,9 +147,14 @@ namespace game
 	game::brush_t_with_custom_def* Brush_AddToList(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world);
 	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/);
 
+	void Brush_Deselect(game::brush_t* b /*esi*/);
+	void Brush_Select(game::brush_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection);
+
 	static utils::function<void(game::entity_s* ent, const char* key, const char* value)> SetKeyValue = 0x483690;
 	static utils::function<void()> SetKeyValuePairs = 0x496CF0;
 	static utils::function<void()> CreateEntity = 0x497300;
+
+	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y);
 
 	// world bounds, not local
 	static utils::function<void(game::XModel* model, float* axis, float* mins, float* maxs)> R_GetXModelBounds = 0x4C9150;
@@ -210,6 +224,9 @@ namespace game
 	
 	typedef void(*MatrixInverse44_t)(game::GfxMatrix* a, game::GfxMatrix* b);
 		extern MatrixInverse44_t MatrixInverse44;
+
+	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/);
+	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis);
 
 	typedef void(*CopyAxis_t)(float* src, float* dest);
 		extern CopyAxis_t CopyAxis;

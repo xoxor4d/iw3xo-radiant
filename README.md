@@ -28,7 +28,7 @@ ___
 - extend functionalities across the board
 
 ### New features not found within the original cod4 radiant:
-- __WIP:__ play, edit and export effects right from within radiant (makes effectsEd _almost_ obsolete)
+- play, edit and export effects right from within radiant (makes effectsEd _almost_ obsolete)
 - switch / scale / place the individual windows however you want
 - preview xmodels and drag them directly into the scene using the model previewer
 - custom lighting shader with normal-mapping, specular highlights, reflections and fog
@@ -39,6 +39,8 @@ ___
 - live link (sync. brushes (with collision), camera and worldspawn settings between cod4 and radiant)
 - realtime viewports
 - better surface / property editor
+- context aware grid and camera context menus with QoL features
+- better vertex edit dialog
 - zoom to cursor
 - editable toolbars, hotkeys, colors (all saved)
 - texture window toolbar for quick filtering
@@ -123,7 +125,19 @@ https://discord.gg/t5jRGbj
 ![image](https://user-images.githubusercontent.com/45299104/146609441-50255d3c-0dc0-4f9a-894e-373abf4eafc6.jpg)
 ![image](https://user-images.githubusercontent.com/45299104/146609445-e11ae289-641e-4979-915b-bbb0c6b4942b.jpg)
 
+### Effect Playback
 ![image](https://xoxor4d.github.io/assets/img/iw3xo-radiant/gif/radiant_effect_leaves.gif)
+
+<br>
+
+### Effects Editor
+<p float="left">
+  <img src="https://user-images.githubusercontent.com/45299104/159173092-10d91c68-094d-464d-ade4-ea90cdcd387a.jpg" width="49%" />
+  <img src="https://user-images.githubusercontent.com/45299104/159173144-1fd8e23e-2d39-4621-918e-884f37e83968.jpg" width="49%" align="right" /> 
+</p>
+
+![image](https://user-images.githubusercontent.com/45299104/159173151-f54c7bb6-6b1f-438b-b667-f04747147a97.jpg)
+
 
 <br>
 

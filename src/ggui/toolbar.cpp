@@ -1535,7 +1535,7 @@ namespace ggui::toolbar
 			
 			if (ImGui::MenuItem("Edit Toolbar ...")) 
 			{
-				components::gui::toggle(toolbar_edit, 0, true);
+				components::gui::toggle(toolbar_edit);
 			}
 			
 			ImGui::EndPopup();

@@ -90,8 +90,6 @@ namespace ggui::surface_inspector
 		}
 	}
 
-#define FOR_ALL_SELECTED_BRUSHES(B) for (auto B = reinterpret_cast<game::selbrush_def_t*>(game::g_selected_brushes_next()); (DWORD*)B != game::currSelectedBrushes; B = reinterpret_cast<game::selbrush_def_t*>(B->next)) //for (auto B = game::g_selected_brushes_next(); (DWORD*)B != game::currSelectedBrushes; B = B->next)
-
 	typedef int TEXMODE;
 	enum TEXMODE_
 	{
@@ -546,11 +544,11 @@ namespace ggui::surface_inspector
 		{
 			if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
 			{
-				components::gui::toggle(ggui::state.czwnd.m_entity, 0, true);
+				components::gui::toggle(ggui::state.czwnd.m_entity);
 			}
 			else
 			{
-				components::gui::toggle(ggui::state.czwnd.m_surface_inspector, 0, true);
+				components::gui::toggle(ggui::state.czwnd.m_surface_inspector);
 			}
 		}
 		else

@@ -91,18 +91,6 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 					hwnd != nullptr)
 				{
 					SendMessageA(hwnd, WM_PAINT, 0, 0);
-
-					/*if (components::effects::effect_can_play())
-					{
-						if (components::effects::effect_is_playing())
-						{
-							components::effects::editor_trigger_effect(fx_system::ed_playback_tick);
-						}
-						else
-						{
-							components::effects::editor_on_effect_play_repeat();
-						}
-					}*/
 				}
 				timer_camera += maxfps_camera;
 			}
@@ -182,7 +170,7 @@ BOOL init_threads()
 		freopen_s(&file, "CONOUT$", "w", stdout);
 		freopen_s(&file, "CONOUT$", "w", stderr);
 
-		SetConsoleTitleA("IW3R Console");
+		SetConsoleTitleA("IW3xRadiant Console");
 	}
 	
 	return TRUE;
@@ -223,6 +211,8 @@ namespace components
 
 		// init internal console class
 		static ggui::console console;
+		console.m_scroll_to_bottom = true;
+
 		ggui::console::hooks();
 		
 		radiantapp::hooks();

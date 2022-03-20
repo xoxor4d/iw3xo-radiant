@@ -345,7 +345,7 @@ namespace ImGui
         ImGui::PushID(str_id);
         
         const ImVec2 widget_pos = ImGui::GetCursorScreenPos();
-        const float maxWidth = ImMax(250.0f, ImGui::GetContentRegionAvailWidth() - 100.0f);
+        const float maxWidth = ImMax(250.0f, ImGui::GetContentRegionAvail().x - 100.0f);
         const bool clicked = ImGui::InvisibleButton("InvisibleButton", ImVec2(maxWidth, GRADIENT_BAR_WIDGET_HEIGHT));
         
         DrawGradientBar(gradient, widget_pos, maxWidth, GRADIENT_BAR_WIDGET_HEIGHT);
@@ -372,7 +372,7 @@ namespace ImGui
 		bar_pos.x -= indent;
 		bar_pos.x += style.FramePadding.x;
 
-		const float maxWidth = ImGui::GetContentRegionAvailWidth() - (style.FramePadding.x * 2.0f) + indent;
+		const float maxWidth = ImGui::GetContentRegionAvail().x - (style.FramePadding.x * 2.0f) + indent;
         const float barBottom = bar_pos.y + GRADIENT_BAR_EDITOR_HEIGHT;
 
         ImGui::PushID(str_id);

@@ -657,7 +657,7 @@ namespace ggui::effects_editor_gui
 
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##width", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_0));
 				ImGui::SameLine(0, 14.0f);
-				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
 				MOD_CHECK(ImGui::DragFloat("##width_scale", &elem->sizeScale[0], 0.5f, 0, 0, "%.1f")); TT("Scale");
 			}
 		}
@@ -702,7 +702,7 @@ namespace ggui::effects_editor_gui
 
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##height", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_1));
 				ImGui::SameLine(0, 14.0f);
-				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
 				MOD_CHECK(ImGui::DragFloat("##height_scale", &elem->sizeScale[1], 0.5f, 0, 0, "%.1f")); TT("Scale");
 
 				ImGui::EndDisabled();
@@ -751,7 +751,7 @@ namespace ggui::effects_editor_gui
 
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##scale", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SCALE));
 				ImGui::SameLine(0, 14.0f);
-				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
 				MOD_CHECK(ImGui::DragFloat("##scale_scale", &elem->scaleScale, 0.5f, 0, 0, "%.1f")); TT("Scale");
 			}
 			ImGui::EndDisabled();
@@ -801,7 +801,7 @@ namespace ggui::effects_editor_gui
 				}
 			}
 
-			const float radio_same_line_offset = ImGui::GetContentRegionAvailWidth() * 0.55f;
+			const float radio_same_line_offset = ImGui::GetContentRegionAvail().x * 0.55f;
 			bool move_rel_to_flag_modified = false;
 
 			if (ImGui::RadioButton("World", &move_rel_to_flag, 0)) {
@@ -1134,7 +1134,7 @@ namespace ggui::effects_editor_gui
 
 			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##height", elem, fx_system::FX_ED_FLAG_USE_RANDOM_ROTATION_DELTA));
 			ImGui::SameLine(0, 14.0f);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
 			MOD_CHECK(ImGui::DragFloat("##rotation_scale", &elem->rotationScale, 0.5f, 0, 0, "%.1f")); TT("Scale");
 		}
 
@@ -1267,7 +1267,7 @@ namespace ggui::effects_editor_gui
 			{
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##color", elem, fx_system::FX_ED_FLAG_USE_RANDOM_COLOR));
 				ImGui::SameLine(0, 14.0f);
-				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
 
 				static int color_graph_idx = false;
 				ImGui::Combo("##graph_selection_color", &color_graph_idx, "Graph 1\0Graph 2\0");
@@ -1367,7 +1367,7 @@ namespace ggui::effects_editor_gui
 			}
 
 			ImGui::SameLine(0, 14.0f);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvailWidth() - style.FramePadding.x);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
 			MOD_CHECK(ImGui::DragFloat("##lighting_fraction", &elem->scaleScale, 0.01f, 0, 1.0f, "%.1f")); TT("Lighting Fraction");
 			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Modulate RGB values using alpha value", elem, fx_system::FX_ED_FLAG_MODULATE_COLOR_BY_ALPHA));
 		}
