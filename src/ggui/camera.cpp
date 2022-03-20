@@ -420,22 +420,6 @@ namespace ggui::camera
 		toolbar_line_width = ImGui::GetItemRectSize().x;
 	}
 
-	void sort_camera_traces(game::trace_t* traces, DWORD trace_array_end)
-	{
-#pragma warning(push)
-#pragma warning(disable: 4731)
-		const static uint32_t sort_traces_func = 0x408CA0;
-		__asm
-		{
-			pushad;
-			mov		esi, trace_array_end;
-			mov		edi, traces;
-			call	sort_traces_func;
-			popad;
-		}
-#pragma warning(pop)
-	}
-
 
 	// right click context menu
 	void context_menu()
@@ -445,7 +429,7 @@ namespace ggui::camera
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
 
-		static game::trace_t cam_trace[20] = {};
+		static game::trace_t cam_trace[21] = {};
 		static bool cam_context_menu_open = false;
 		static bool cam_context_menu_pending_open = false;
 
@@ -466,8 +450,13 @@ namespace ggui::camera
 
 					if (cam_trace[0].brush)
 					{
-						// sort traced objects by drawsurf order
-						sort_camera_traces(cam_trace, (DWORD)&cam_trace[21]);
+						// sort traces by drawsurf order
+
+						const auto trace_array_end = (DWORD)&cam_trace[21];
+						const auto compare_func = reinterpret_cast<void*>(0x404BA0);
+
+						utils::hook::call<void(__cdecl)(game::trace_t*, DWORD _trace_array_end, int _size_trace_array, void*)>(0x408CE0)
+							(cam_trace, trace_array_end, 20, compare_func);
 					}
 				}
 
