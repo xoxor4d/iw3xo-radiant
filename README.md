@@ -11,7 +11,7 @@ Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You 
 
 ![](readme/effects.gif)
 
-![image](https://xoxor4d.github.io/assets/img/iw3xo-radiant/gif/feat_ui.gif)
+![image](readme/feat_ui.gif)
 
 <p align="center">
 	<b>^ build the layout you've always wanted</b><br>
@@ -132,8 +132,8 @@ https://discord.gg/t5jRGbj
 
 ### Effects Editor
 <p float="left">
-  <img src="https://user-images.githubusercontent.com/45299104/159173092-10d91c68-094d-464d-ade4-ea90cdcd387a.jpg" width="49%" />
-  <img src="https://user-images.githubusercontent.com/45299104/159173144-1fd8e23e-2d39-4621-918e-884f37e83968.jpg" width="49%" align="right" /> 
+  <img src="https://user-images.githubusercontent.com/45299104/159173092-10d91c68-094d-464d-ade4-ea90cdcd387a.jpg" width="47%" />
+  <img src="https://user-images.githubusercontent.com/45299104/159173144-1fd8e23e-2d39-4621-918e-884f37e83968.jpg" width="47%" align="right" /> 
 </p>
 
 ![image](https://user-images.githubusercontent.com/45299104/159173151-f54c7bb6-6b1f-438b-b667-f04747147a97.jpg)
