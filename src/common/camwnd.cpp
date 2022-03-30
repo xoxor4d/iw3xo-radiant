@@ -39,7 +39,7 @@ void cam_rotate()
 		//cam->camera.angles[0] = cam->camera.angles[0] - prefs->m_nMoveSpeed / 500.0 * (point.y - cam->m_ptCursor.y);
 
 		SetCursorPos(cam->m_ptCursor.x, cam->m_ptCursor.y);
-		cam->x48 = 0;
+		cam->cursor_visible = false;
 
 		ShowCursor(0);
 	}
@@ -69,7 +69,7 @@ void cam_positiondrag()
 		//cam->camera.origin[2] = cam->camera.origin[2];
 
 		SetCursorPos(cam->m_ptCursor.x, cam->m_ptCursor.y);
-		cam->x48 = 0;
+		cam->cursor_visible = false;
 		
 		ShowCursor(0);
 	}
@@ -96,7 +96,7 @@ void ccamwnd::mouse_up(ccamwnd* cam, int flags)
 	game::Drag_MouseUp(flags);
 	cam->prob_some_cursor = 0;
 	cam->x47 = 0;
-	cam->x48 = 1; // prob. int16
+	cam->cursor_visible = true; // prob. int16
 
 	int sw_cur;
 	do {

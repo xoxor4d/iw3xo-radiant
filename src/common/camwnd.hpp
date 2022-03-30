@@ -48,7 +48,8 @@ public:
 	int x45;
 	int prob_some_cursor;
 	int x47;
-	int x48;
+	bool cursor_visible;
+	char z_pad[3];
 
 	void					mouse_control(float dtime);
 	static void				mouse_up(ccamwnd* cam, int flags);
@@ -76,3 +77,4 @@ public:
 STATIC_ASSERT_OFFSET(ccamwnd, camera.origin, 0x64);
 STATIC_ASSERT_OFFSET(ccamwnd, camera.angles, 0x70);
 STATIC_ASSERT_OFFSET(ccamwnd, m_nCambuttonstate, 0xD4);
+STATIC_ASSERT_OFFSET(ccamwnd, cursor_visible, 0x130);

@@ -358,7 +358,11 @@ namespace ggui::preferences
 			{
 				cdeclcall(void, 0x42BF80);
 			}
-			
+
+			ImGui::Text("camera - cambuttonstate: %d", cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate);
+			ImGui::Text("camera - cursor_visible: %d", cmainframe::activewnd->m_pCamWnd->cursor_visible);
+			ImGui::Text("camera - window hovered: %d", ggui::get_rtt_camerawnd()->window_hovered);
+
 			ImGui::DragInt("Int 01", &dev_num_01, 0.1f);
 			ImGui::DragFloat3("Vec4 01", dev_vec_01, 25.0f);
 			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);

@@ -845,6 +845,32 @@ namespace ggui::camera
 
 				static bool accepted_dragdrop = false;
 
+
+				// hack to show mouse cursor when using ALT+TAB whilst moving the camera
+				// needed because there is no mousebutton "up" event in that case ^
+				// gridwindow is fine for whatever reason
+
+				CURSORINFO ci = { sizeof(CURSORINFO) };
+				if (GetCursorInfo(&ci))
+				{
+					if(ci.cbSize == 0)
+					{
+						if(cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate != 2
+							&& !cmainframe::activewnd->m_pCamWnd->cursor_visible)
+						{
+							int sw_cur;
+							do 
+							{
+								sw_cur = ShowCursor(1);
+							} while (sw_cur < 0);
+
+							cmainframe::activewnd->m_pCamWnd->cursor_visible = true;
+						}
+					}
+				}
+
+				// --------------------
+
 				// right click context menu
 				context_menu();
 
