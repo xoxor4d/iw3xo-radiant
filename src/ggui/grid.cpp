@@ -410,7 +410,7 @@ namespace ggui::grid
 				gridwnd->cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
 				gridwnd->cursor_pos_pt = CPoint((LONG)gridwnd->cursor_pos.x, (LONG)gridwnd->cursor_pos.y);
 
-				ggui::FixDockingTabbarTriangle(wnd, gridwnd);
+				ggui::redraw_undocking_triangle(wnd, gridwnd);
 
 				ImGui::EndChild();
 			}

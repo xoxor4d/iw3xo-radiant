@@ -1,7 +1,5 @@
 #include "std_include.hpp"
 
-#define IW3XO_CHANGELOG_TITLE_FMT	
-
 namespace ggui::about
 {
 	void menu(ggui::imgui_context_menu& menu)

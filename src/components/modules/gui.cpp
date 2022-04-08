@@ -388,11 +388,18 @@ namespace components
 					ImGui::DockBuilderFinish(dockspace_id);
 
 					// ^ open texture window on initial startup
-					if (auto texwnd = ggui::get_rtt_texturewnd();
+					/*if (auto texwnd = ggui::get_rtt_texturewnd();
 							!texwnd->one_time_init)
 					{
 						components::gui::toggle(texwnd);
 						texwnd->one_time_init = true;
+					}*/
+
+					if(const auto tex = GET_GUI(ggui::texture_dialog);
+								 !tex->is_first_frame())
+					{
+						tex->toggle();
+						tex->set_first_frame_bool();
 					}
 					
 					// ^ open console on initial startup
@@ -470,7 +477,9 @@ namespace components
 		if(game::dx->targetWindowIndex == ggui::CTEXWND)
 		{
 			// copy scene to texture
-			renderer::copy_scene_to_texture(ggui::CTEXWND, ggui::get_rtt_texturewnd()->scene_texture);
+			//renderer::copy_scene_to_texture(ggui::CTEXWND, ggui::get_rtt_texturewnd()->scene_texture);
+
+			renderer::copy_scene_to_texture(ggui::CTEXWND, GET_GUI(ggui::texture_dialog)->rtt_get_texture());
 		}
 
 
@@ -610,12 +619,20 @@ namespace components
 				ggui::modelselector::menu(), nullptr);
 			
 			// render to texture :: texture window
-			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_texturewnd(),
-				ggui::textures::gui(), nullptr);
+			//IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_texturewnd(),
+			//	ggui::textures::gui(), nullptr);
 
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
 				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
+
+			for (const auto& module : ggui::loader::get_modules())
+			{
+				if(module)
+				{
+					module->frame();
+				}
+			}
 
 			// hide external console if it is visible
 			if(const auto con = GetConsoleWindow(); 
@@ -693,7 +710,13 @@ namespace components
 			SAVED_STATE_INIT(m_entity,				dvars::gui_saved_state_entity);
 			SAVED_STATE_INIT(m_surface_inspector,	dvars::gui_saved_state_surfinspector);
 
-			SAVED_STATE_INIT_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
+			//SAVED_STATE_INIT_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
+			if (dvars::gui_saved_state_textures)
+			{
+				GET_GUI(ggui::texture_dialog)->toggle(true, dvars::gui_saved_state_textures->current.enabled);
+			}
+
+
 			SAVED_STATE_INIT_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
 
 			ggui::saved_states_init = true;
@@ -707,7 +730,13 @@ namespace components
 		SAVED_STATE_UPDATE(m_entity,			dvars::gui_saved_state_entity);
 		SAVED_STATE_UPDATE(m_surface_inspector, dvars::gui_saved_state_surfinspector);
 
-		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
+		//SAVED_STATE_UPDATE_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
+		if (dvars::gui_saved_state_textures && GET_GUI(ggui::texture_dialog)->is_active() != dvars::gui_saved_state_textures->current.enabled)
+		{
+			dvars::set_bool(dvars::gui_saved_state_textures, GET_GUI(ggui::texture_dialog)->is_active());
+		}
+
+
 		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
 	}
 

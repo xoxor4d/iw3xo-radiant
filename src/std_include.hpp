@@ -116,6 +116,7 @@
 #include "fx_system/fx_save.hpp"
 
 #include "ggui/_ggui.hpp"
+#include "ggui/_template_dialog.hpp"
 #include "ggui/about.hpp"
 #include "ggui/camera.hpp"
 #include "ggui/camera_guizmo.hpp"

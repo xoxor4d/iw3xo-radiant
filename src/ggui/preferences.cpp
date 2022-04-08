@@ -359,6 +359,11 @@ namespace ggui::preferences
 				cdeclcall(void, 0x42BF80);
 			}
 
+			if(ImGui::Button("Toggle template gui"))
+			{
+				GET_GUI(template_dialog)->toggle();
+			}
+
 			ImGui::Text("camera - cambuttonstate: %d", cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate);
 			ImGui::Text("camera - cursor_visible: %d", cmainframe::activewnd->m_pCamWnd->cursor_visible);
 			ImGui::Text("camera - window hovered: %d", ggui::get_rtt_camerawnd()->window_hovered);

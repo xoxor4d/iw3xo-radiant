@@ -887,7 +887,7 @@ namespace ggui::camera
 				camerawnd->cursor_pos_pt = CPoint((LONG)camerawnd->cursor_pos.x, (LONG)camerawnd->cursor_pos.y);
 
 				// fix top left undock triangle
-				ggui::FixDockingTabbarTriangle(wnd, camerawnd);
+				ggui::redraw_undocking_triangle(wnd, camerawnd);
 
 				// 3d guizmo
 				ggui::camera_guizmo::guizmo(camera_size, accepted_dragdrop);

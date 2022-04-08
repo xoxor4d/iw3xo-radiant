@@ -1,10 +1,39 @@
 #include "std_include.hpp"
+#include "_ggui.hpp"
 
 namespace ggui
 {
 	// *
 	// | -------------------- Variables ------------------------
 	// *
+
+
+	std::vector<std::unique_ptr<ggui_module>>* loader::modules_ = nullptr;
+
+	void loader::register_gui(std::unique_ptr<ggui_module>&& module_)
+	{
+		if (!modules_)
+		{
+			modules_ = new std::vector<std::unique_ptr<ggui_module>>();
+			atexit(destroy_modules);
+		}
+
+		modules_->push_back(std::move(module_));
+	}
+
+	void loader::destroy_modules()
+	{
+		if (!modules_)
+		{
+			return;
+		}
+
+		delete modules_;
+		modules_ = nullptr;
+	}
+
+
+
 
     imgui_state_t state = imgui_state_t();
 	bool		saved_states_init = false;
@@ -72,21 +101,28 @@ namespace ggui
 		return ggui::state.czwnd.context_initialized;
 	}
 
-	// handles "window_hovered" for widgets drawn over rtt windows
-	// needs to be called after every widget
-	bool rtt_handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd)
+	// handles "window_hovered" for widgets drawn over rtt windows (needs to be called after every widget)
+	bool rtt_handle_windowfocus_overlaywidget(bool* gui_hover_state)
 	{
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_None))
 		{
-			wnd->window_hovered = false;
+			*gui_hover_state = false;
 			return true;
 		}
 
 		return false;
 	}
 
+	// ^
+	// handles "window_hovered" for widgets drawn over rtt windows (needs to be called after every widget)
+	bool rtt_handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd)
+	{
+		return rtt_handle_windowfocus_overlaywidget(&wnd->window_hovered);
+	}
+
+
 	// redraw tabbar triangle -> blocking mouse input for that area so one can actually use the triangle to unhide the tabbar
-	void FixDockingTabbarTriangle(ImGuiWindow* wnd, ggui::render_to_texture_window_s* rtt)
+	void redraw_undocking_triangle(ImGuiWindow* wnd, bool* gui_hover_state)
 	{
 		if (wnd->DockIsActive && wnd->DockNode->IsHiddenTabBar() && !wnd->DockNode->IsNoTabBar())
 		{
@@ -96,10 +132,10 @@ namespace ggui
 
 			ImGui::InvisibleButton("##unhide_hack", ImVec2(unhide_sz_hit, unhide_sz_hit));
 
-			const bool hovered = ggui::rtt_handle_windowfocus_overlaywidget(rtt);
-			
+			const bool hovered = ggui::rtt_handle_windowfocus_overlaywidget(gui_hover_state);
 
-			if(dvars::gui_rtt_padding_enabled && !dvars::gui_rtt_padding_enabled->current.enabled)
+
+			if (dvars::gui_rtt_padding_enabled && !dvars::gui_rtt_padding_enabled->current.enabled)
 			{
 				const auto col_hover = ImGui::GetColorU32(ImGuiCol_ButtonActive);
 				const auto col_bg = ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));
@@ -116,6 +152,13 @@ namespace ggui
 			//ImGui::Indent(8.0f);
 			//ImGui::Text("Hovered Triangle? %d", hovered);
 		}
+	}
+
+	// ^
+	// redraw tabbar triangle -> blocking mouse input for that area so one can actually use the triangle to unhide the tabbar
+	void redraw_undocking_triangle(ImGuiWindow* wnd, ggui::render_to_texture_window_s* rtt)
+	{
+		redraw_undocking_triangle(wnd, &rtt->window_hovered);
 	}
 
 	void dragdrop_overwrite_leftmouse_capture()

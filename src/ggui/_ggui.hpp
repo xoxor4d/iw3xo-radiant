@@ -133,6 +133,390 @@ namespace ggui
 		bool was_open;
 		bool one_time_init;
 	};
+
+#define GUI_CHECK_RTT	ASSERT_MSG(GUI_TYPE == GUI_TYPE_RTT, "GUI Class not of type RTT")
+
+	enum GUI_TYPE_
+	{
+		GUI_TYPE_DEF = 0,
+		GUI_TYPE_RTT = 1,
+	};
+
+	class ggui_module
+	{
+		struct default_context_s
+		{
+			bool _active;
+			bool _was_active;
+			bool _one_time_init;
+			bool _inactive_tab;
+			bool _bring_tab_to_front;
+			float _position[2];
+			float _size[2];
+		};
+
+		struct render_to_texture_context_s
+		{
+			IDirect3DTexture9* _scene_texture;
+			ImVec2 _scene_size_imgui;
+			ImVec2 _scene_pos_imgui;
+			ImVec2 _cursor_pos;
+			CPoint _cursor_pos_pt;
+			const char* _window_name;
+			bool _window_hovered;
+			bool _should_set_focus;
+			bool _capture_left_mousebutton;
+
+			bool _active;
+			bool _was_active;
+			bool _one_time_init;
+			bool _inactive_tab;
+			bool _bring_tab_to_front;
+		};
+
+		union vars_u
+		{
+			default_context_s def;
+			render_to_texture_context_s rtt;
+		};
+
+		vars_u vars = {};
+		GUI_TYPE_ GUI_TYPE = GUI_TYPE_DEF;
+
+	public:
+		ggui_module() = default;
+		virtual ~ggui_module() = default;
+		virtual void gui() {}
+
+		void set_gui_type(GUI_TYPE_ type)
+		{
+			GUI_TYPE = type;
+		}
+
+		// called each frame :: components::gui::render_loop()
+		void frame()
+		{
+			if (is_active())
+			{
+				gui();
+				set_was_active(true);
+			}
+			else if (was_active())
+			{
+				set_was_active(false);
+			}
+		}
+
+		// returns true if gui is open / in use
+		[[nodiscard]] bool is_active() const
+		{
+			switch(GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: return vars.def._active;
+			case GUI_TYPE_RTT: return vars.rtt._active;
+			}
+
+			return false;
+		}
+
+		void toggle(bool manuell = false, bool n_state = false)
+		{
+			if(!manuell)
+			{
+				switch (GUI_TYPE)
+				{
+				case GUI_TYPE_DEF: vars.def._active = !vars.def._active; break;
+				case GUI_TYPE_RTT: vars.rtt._active = !vars.rtt._active; break;
+				}
+			}
+			else
+			{
+				switch (GUI_TYPE)
+				{
+				case GUI_TYPE_DEF: vars.def._active = n_state; break;
+				case GUI_TYPE_RTT: vars.rtt._active = n_state; break;
+				}
+			}
+			
+		}
+
+		void open()
+		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: vars.def._active = true; break;
+			case GUI_TYPE_RTT: vars.rtt._active = true; break;
+			}
+		}
+
+		void close()
+		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: vars.def._active = false; break;
+			case GUI_TYPE_RTT: vars.rtt._active = false; break;
+			}
+		}
+
+		// returns ptr to gui window-state bool used by ImGui::Begin 
+		bool* get_p_open()
+		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: return &vars.def._active;
+			case GUI_TYPE_RTT: return &vars.rtt._active;
+			}
+
+			return nullptr;
+		}
+
+		[[nodiscard]] auto*& rtt_get_texture()
+		{
+			GUI_CHECK_RTT;
+			return vars.rtt._scene_texture;
+		}
+
+		// *
+		// no desc
+		[[nodiscard]] bool is_inactive_tab() const
+		{
+
+			return vars.rtt._inactive_tab;
+		}
+
+		// 
+		void set_inactive_tab(const bool n_state)
+		{
+			vars.rtt._inactive_tab = n_state;
+		}
+
+
+		// *
+		// internal on-init bool
+		[[nodiscard]] bool is_first_frame() const
+		{
+
+			return vars.rtt._one_time_init;
+		}
+
+		// 
+		void set_first_frame_bool()
+		{
+			vars.rtt._one_time_init = true;
+		}
+
+
+		// *
+		// is pending bring-to-front within next frame (docked windows)
+		[[nodiscard]] bool is_bring_to_front_pending() const
+		{
+
+			return vars.rtt._bring_tab_to_front;
+		}
+
+		// bring gui to the front within next frame (docked windows)
+		void set_bring_to_front(const bool n_state)
+		{
+			vars.rtt._bring_tab_to_front = n_state;
+		}
+
+
+		// *
+		// get render-to-texture size
+		auto& rtt_get_size()
+		{
+			GUI_CHECK_RTT;
+			return vars.rtt._scene_size_imgui;
+		}
+
+		// update render-to-texture size (does not resize the gui, used for legacy functions)
+		void rtt_set_size(const ImVec2& new_size)
+		{
+			GUI_CHECK_RTT;
+			vars.rtt._scene_size_imgui = new_size;
+		}
+
+
+		// *
+		// get gui position
+		auto& rtt_get_position()
+		{
+			GUI_CHECK_RTT;
+			return vars.rtt._scene_pos_imgui;
+		}
+
+		// update gui position (does not move the gui, used for legacy functions and mouse offset calculations)
+		void rtt_set_position(const ImVec2& new_pos)
+		{
+			GUI_CHECK_RTT;
+			vars.rtt._scene_pos_imgui = new_pos;
+		}
+
+
+		// *
+		// [ImVec2] get cursor position in relation to gui position AS 
+		auto& rtt_get_cursor_pos()
+		{
+			GUI_CHECK_RTT;
+			return vars.rtt._cursor_pos;
+		}
+
+		// [ImVec2] update cursor position
+		void rtt_set_cursor_pos(const ImVec2& new_pos)
+		{
+			GUI_CHECK_RTT;
+			vars.rtt._cursor_pos = new_pos;
+			vars.rtt._cursor_pos_pt.x = static_cast<LONG>(new_pos.x);
+			vars.rtt._cursor_pos_pt.y = static_cast<LONG>(new_pos.y);
+		}
+
+
+		// *
+		// [CPoint] get cursor position in relation to gui position AS 
+		auto& rtt_get_cursor_pos_cpoint()
+		{
+			GUI_CHECK_RTT;
+
+			// update the CPoint variant
+			vars.rtt._cursor_pos_pt.x = static_cast<LONG>(vars.rtt._cursor_pos.x);
+			vars.rtt._cursor_pos_pt.y = static_cast<LONG>(vars.rtt._cursor_pos.y);
+
+			return vars.rtt._cursor_pos_pt;
+		}
+
+		// [CPoint] update cursor position
+		void rtt_set_cursor_pos_cpoint(const CPoint& new_pos)
+		{
+			GUI_CHECK_RTT;
+			vars.rtt._cursor_pos_pt = new_pos;
+		}
+
+
+		// *
+		// is gui hovered
+		[[nodiscard]] bool rtt_is_hovered() const
+		{
+			GUI_CHECK_RTT;
+			return vars.rtt._window_hovered;
+		}
+
+		// get ptr to hovered state bool
+		auto* rtt_get_hovered_state()
+		{
+			GUI_CHECK_RTT;
+			return &vars.rtt._window_hovered;
+		}
+
+		// update hovered state
+		void rtt_set_hovered_state(const bool n_state)
+		{
+			GUI_CHECK_RTT;
+			vars.rtt._window_hovered = n_state;
+		}
+
+
+		// *
+		// is pending focus within next frame
+		[[nodiscard]] bool rtt_is_focus_pending() const
+		{
+			GUI_CHECK_RTT;
+			return vars.rtt._should_set_focus;
+		}
+
+		// focus gui within the next frame
+		void rtt_set_focus_state(const bool n_state)
+		{
+			GUI_CHECK_RTT;
+			vars.rtt._should_set_focus = n_state;
+		}
+
+
+		// *
+		// is imgui capturing the left mouse button
+		[[nodiscard]] bool rtt_is_capturing_lmb() const
+		{
+			GUI_CHECK_RTT;
+			return vars.rtt._capture_left_mousebutton;
+		}
+
+		// imgui: capture the left mouse button (for the current / next frame)
+		void rtt_set_lmb_capturing(const bool n_state)
+		{
+			GUI_CHECK_RTT;
+			vars.rtt._capture_left_mousebutton = n_state;
+		}
+
+	private:
+		[[nodiscard]] bool was_active() const
+		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: return vars.def._was_active;
+			case GUI_TYPE_RTT: return vars.rtt._was_active;
+			}
+
+			return false;
+		}
+
+		void set_was_active(const bool s)
+		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: vars.def._was_active = s; break;
+			case GUI_TYPE_RTT: vars.rtt._was_active = s; break;
+			}
+		}
+	};
+
+	class loader final
+	{
+	public:
+		
+		template <typename T>
+		class installer final
+		{
+			static_assert(std::is_base_of_v<ggui_module, T>, "Module has invalid base class");
+
+		public:
+			installer()
+			{
+				register_gui(std::make_unique<T>());
+			}
+		};
+
+		template <typename T>
+		static T* get()
+		{
+			for (const auto& module_ : *modules_)
+			{
+				if (typeid(*module_.get()) == typeid(T))
+				{
+					return reinterpret_cast<T*>(module_.get());
+				}
+			}
+
+			return nullptr;
+		}
+
+		static const std::vector<std::unique_ptr<ggui_module>>& get_modules()
+		{
+			return *modules_;
+		}
+
+		static void register_gui(std::unique_ptr<ggui_module>&& module_);
+
+	private:
+		static std::vector<std::unique_ptr<ggui_module>>* modules_;
+		static void destroy_modules();
+	};
+
+#define GET_GUI(name) ggui::loader::get<name>()
+#define REGISTER_GUI(name)							\
+namespace											\
+{													\
+	static ggui::loader::installer<name> $_##name;	\
+}
+
 	
 	struct imgui_context_cz
 	{
@@ -158,7 +542,7 @@ namespace ggui
 
 		render_to_texture_window_s rtt_camerawnd;
 		render_to_texture_window_s rtt_gridwnd;
-		render_to_texture_window_s rtt_texwnd;
+		//render_to_texture_window_s rtt_texwnd;
 		model_selector_s rtt_model_selector;
 	};
 
@@ -210,8 +594,10 @@ namespace ggui
 	extern void set_next_window_initial_pos_and_constraints(ImVec2 mins, ImVec2 initial_size, ImVec2 overwrite_pos = ImVec2(0.0f, 0.0f));
 	extern bool cz_context_ready();
 
+	extern bool rtt_handle_windowfocus_overlaywidget(bool* gui_hover_state);
 	extern bool rtt_handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd);
-	extern void	FixDockingTabbarTriangle(ImGuiWindow* wnd, ggui::render_to_texture_window_s* rtt);
+	extern void redraw_undocking_triangle(ImGuiWindow* wnd, bool* gui_hover_state);
+	extern void	redraw_undocking_triangle(ImGuiWindow* wnd, ggui::render_to_texture_window_s* rtt);
 
 	extern void dragdrop_overwrite_leftmouse_capture();
 	extern void dragdrop_reset_leftmouse_capture();
@@ -226,10 +612,10 @@ namespace ggui
 		return &state.czwnd.rtt_camerawnd;
 	}
 
-	inline render_to_texture_window_s* get_rtt_texturewnd()
+	/*inline render_to_texture_window_s* get_rtt_texturewnd()
 	{
 		return &state.czwnd.rtt_texwnd;
-	}
+	}*/
 
 	inline model_selector_s* get_rtt_modelselector()
 	{

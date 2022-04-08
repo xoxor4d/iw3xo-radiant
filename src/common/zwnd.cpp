@@ -81,10 +81,13 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		}
 
 		// if mouse is inside imgui texture window & cursor not at window border (resizing)
-		if (auto texwnd = ggui::get_rtt_texturewnd();
-				 texwnd->window_hovered && !ImGui::IsResizing())
+		//if (auto texwnd = ggui::get_rtt_texturewnd();
+		//		 texwnd->window_hovered && !ImGui::IsResizing())
+		if (const auto  tex = GET_GUI(ggui::texture_dialog);
+						tex->rtt_is_hovered())
 		{
-			texwnd->should_set_focus = true;
+			tex->rtt_set_focus_state(true);
+			//texwnd->should_set_focus = true;
 			ctexwnd::on_mousebutton_down(nFlags);
 
 			// handle IO because we have an overlay toolbar within the texture window
@@ -159,8 +162,9 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 		}
 
 		// if mouse is inside imgui texture window
-		if (const auto  texwnd = ggui::get_rtt_texturewnd();
-						texwnd->window_hovered)
+		//if (const auto  texwnd = ggui::get_rtt_texturewnd();
+		//				texwnd->window_hovered)
+		if(GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			ctexwnd::on_mousebutton_up(nFlags);
 
@@ -227,10 +231,13 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		}
 
 		// if mouse is inside imgui texture window
-		if (const auto	texwnd = ggui::get_rtt_texturewnd();
-						texwnd->window_hovered)
+		//if (const auto	texwnd = ggui::get_rtt_texturewnd();
+		//				texwnd->window_hovered)
+		if (const auto	tex = GET_GUI(ggui::texture_dialog);
+						tex->rtt_is_hovered())
 		{
-			texwnd->should_set_focus = true;
+			tex->rtt_set_focus_state(true);
+			//texwnd->should_set_focus = true;
 			ctexwnd::on_mousebutton_down(nFlags);
 
 			// fake left click to unfocus inputtext widgets
@@ -311,8 +318,9 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 		}
 
 		// if mouse is inside imgui texture window
-		if (const auto	texwnd = ggui::get_rtt_texturewnd();
-						texwnd->window_hovered)
+		//if (const auto	texwnd = ggui::get_rtt_texturewnd();
+		//				texwnd->window_hovered)
+		if (GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			ctexwnd::on_mousebutton_up(nFlags);
 
@@ -376,10 +384,13 @@ void __fastcall czwnd::on_mbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		}
 
 		// if mouse is inside imgui texture window
-		if (const auto	texwnd = ggui::get_rtt_texturewnd();
-						texwnd->window_hovered)
+		//if (const auto	texwnd = ggui::get_rtt_texturewnd();
+		//				texwnd->window_hovered)
+		if (const auto  tex = GET_GUI(ggui::texture_dialog);
+						tex->rtt_is_hovered())
 		{
-			texwnd->should_set_focus = true;
+			tex->rtt_set_focus_state(true);
+			//texwnd->should_set_focus = true;
 			ctexwnd::on_mousebutton_down(nFlags);
 			return;
 		}
@@ -433,8 +444,9 @@ void __fastcall czwnd::on_mbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 		}
 
 		// if mouse is inside imgui texture window
-		if (const auto	texwnd = ggui::get_rtt_texturewnd(); 
-						texwnd->window_hovered)
+		//if (const auto	texwnd = ggui::get_rtt_texturewnd(); 
+		//				texwnd->window_hovered)
+		if (GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			ctexwnd::on_mousebutton_up(nFlags);
 			return;
@@ -486,8 +498,9 @@ void __fastcall czwnd::on_mouse_move([[maybe_unused]] czwnd* pThis, [[maybe_unus
 			return;
 		}
 
-		if(const auto	texwnd = ggui::get_rtt_texturewnd();
-						texwnd->window_hovered)
+		//if(const auto	texwnd = ggui::get_rtt_texturewnd();
+		//				texwnd->window_hovered)
+		if (GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			ctexwnd::on_mousemove(nFlags);
 			return;
@@ -533,7 +546,8 @@ LRESULT WINAPI czwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			}
 
 			// if mouse is inside imgui-texture window
-			if (ggui::get_rtt_texturewnd()->window_hovered)
+			//if (ggui::get_rtt_texturewnd()->window_hovered)
+			if(GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 			{
 				return DefWindowProcA(hWnd, Msg, wParam, lParam);
 			}
