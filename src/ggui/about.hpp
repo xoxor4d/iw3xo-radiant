@@ -1,8 +1,11 @@
 #pragma once
-#include "_ggui.hpp"
 
-namespace ggui::about
+namespace ggui
 {
-	void	menu(ggui::imgui_context_menu& menu);
-
+	class about_dialog final : public ggui::ggui_module
+	{
+	public:
+		about_dialog() { set_gui_type(GUI_TYPE_DEF); }
+		void gui() override;
+	};
 }

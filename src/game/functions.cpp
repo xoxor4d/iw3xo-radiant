@@ -764,9 +764,10 @@ namespace game
 		vsprintf(text_out, _format, va);
 		_result = _vfprintf_l(stdout, _format, NULL, va);
 
-		if (ggui::_console)
+		if (const auto	con = GET_GUI(ggui::console_dialog); 
+						con)
 		{
-			ggui::_console->addline_no_format(text_out);
+			con->addline_no_format(text_out);
 		}
 
 		return _result;
@@ -783,9 +784,10 @@ namespace game
 		_result = _vfprintf_l(stdout, _format, NULL, _arglist);
 		__crt_va_end(_arglist);
 
-		if(ggui::_console)
+		if (const auto	con = GET_GUI(ggui::console_dialog);
+						con)
 		{
-			ggui::_console->addline_no_format(text_out);
+			con->addline_no_format(text_out);
 		}
 		
 		return _result;
@@ -801,9 +803,10 @@ namespace game
 		_vfprintf_l(stdout, _format, NULL, _arglist);
 		__crt_va_end(_arglist);
 
-		if (ggui::_console)
+		if (const auto	con = GET_GUI(ggui::console_dialog);
+						con)
 		{
-			ggui::_console->addline_no_format(text_out);
+			con->addline_no_format(text_out);
 		}
 	}
 
@@ -812,9 +815,10 @@ namespace game
 		std::string err = "[!] " + msg + "\n";
 		printf(err.c_str());
 
-		if (ggui::_console)
+		if (const auto	con = GET_GUI(ggui::console_dialog);
+						con)
 		{
-			ggui::_console->addline_no_format(err.c_str());
+			con->addline_no_format(err.c_str());
 		}
 	}
 

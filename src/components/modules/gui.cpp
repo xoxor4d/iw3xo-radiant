@@ -389,17 +389,18 @@ namespace components
 
 					// ^ open texture window on initial startup
 					if(const auto tex = GET_GUI(ggui::texture_dialog);
-								 !tex->is_first_frame())
+								 !tex->is_initiated())
 					{
-						tex->toggle();
-						tex->set_first_frame_bool();
+						tex->open();
+						tex->set_initiated();
 					}
 					
 					// ^ open console on initial startup
-					if (!ggui::state.czwnd.m_console.one_time_init)
+					if(const auto con = GET_GUI(ggui::console_dialog); 
+								 !con->is_initiated())
 					{
-						components::gui::toggle(ggui::state.czwnd.m_console);
-						ggui::state.czwnd.m_console.one_time_init = true;
+						con->open();
+						con->set_initiated();
 					}
 				}
 
@@ -553,12 +554,6 @@ namespace components
 			//	ImGui::End();
 			//}
 
-			
-
-			// color menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_colors,
-				ggui::colors::menu(ggui::state.czwnd.m_colors), nullptr);
-
 			// toolbar edit menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_toolbar_edit,
 				ggui::toolbar::menu_toolbar_edit(ggui::state.czwnd.m_toolbar_edit), ggui::toolbar::save_settings_ini());
@@ -570,10 +565,6 @@ namespace components
 			// command bind helper menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_cmdbinds_helper,
 				ggui::hotkeys::helper_menu(ggui::state.czwnd.m_cmdbinds_helper), nullptr);
-
-			// console
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_console,
-				ggui::console::menu(ggui::state.czwnd.m_console), nullptr);
 
 			// filter menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_filter,
@@ -594,10 +585,6 @@ namespace components
 			// preferences menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_preferences,
 				ggui::preferences::menu(ggui::state.czwnd.m_preferences), nullptr);
-
-			// about menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_about,
-				ggui::about::menu(ggui::state.czwnd.m_about), nullptr);
 
 			// camera settings menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_camera_settings,
@@ -707,7 +694,6 @@ namespace components
 		// startup only
 		if (!ggui::saved_states_init)
 		{
-			SAVED_STATE_INIT(m_console,				dvars::gui_saved_state_console);
 			SAVED_STATE_INIT(m_filter,				dvars::gui_saved_state_filter);
 			SAVED_STATE_INIT(m_entity,				dvars::gui_saved_state_entity);
 			SAVED_STATE_INIT(m_surface_inspector,	dvars::gui_saved_state_surfinspector);
@@ -717,7 +703,6 @@ namespace components
 		// *
 		// every frame
 
-		SAVED_STATE_UPDATE(m_console,			dvars::gui_saved_state_console);
 		SAVED_STATE_UPDATE(m_filter,			dvars::gui_saved_state_filter);
 		SAVED_STATE_UPDATE(m_entity,			dvars::gui_saved_state_entity);
 		SAVED_STATE_UPDATE(m_surface_inspector, dvars::gui_saved_state_surfinspector);
@@ -725,6 +710,7 @@ namespace components
 
 
 		// now handles init and update
+		HANDLE_SAVED_STATE_REFACTOR(ggui::console_dialog, dvars::gui_saved_state_console, ggui::saved_states_init);
 		HANDLE_SAVED_STATE_REFACTOR(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::saved_states_init);
 
 		ggui::saved_states_init = true;

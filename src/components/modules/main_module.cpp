@@ -209,12 +209,7 @@ namespace components
 	{
 		init_threads();
 
-		// init internal console class
-		static ggui::console console;
-		console.m_scroll_to_bottom = true;
-
-		ggui::console::hooks();
-		
+		GET_GUI(ggui::console_dialog)->hooks();
 		radiantapp::hooks();
 		cmainframe::hooks();
 		czwnd::hooks();

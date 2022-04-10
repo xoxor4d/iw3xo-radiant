@@ -231,7 +231,7 @@ namespace ggui::menubar
 				SEPERATORV(0.0f);
 
 				if (ImGui::MenuItem("Edit Colors ...")) {
-					components::gui::toggle(context.m_colors);
+					GET_GUI(gui_colors_dialog)->toggle();
 				}
 				
 				if (ImGui::MenuItem("Edit Toolbar ...")) {
@@ -258,7 +258,7 @@ namespace ggui::menubar
 					}
 					
 					if (ImGui::MenuItem("Console", hotkeys::get_hotkey_for_command("ViewConsole").c_str())) {
-						components::gui::toggle(context.m_console);
+						GET_GUI(console_dialog)->toggle();
 					}
 
 					if (ImGui::MenuItem("Filter", hotkeys::get_hotkey_for_command("ViewFilters").c_str())) {
@@ -1626,7 +1626,7 @@ namespace ggui::menubar
 
 				if (ImGui::MenuItem("About / Version"))
 				{
-					components::gui::toggle(context.m_about);
+					GET_GUI(about_dialog)->toggle();
 				}
 
 				ImGui::EndMenu(); // Help

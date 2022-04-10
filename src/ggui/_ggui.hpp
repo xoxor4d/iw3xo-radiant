@@ -294,14 +294,14 @@ namespace ggui
 
 		// *
 		// internal on-init bool
-		[[nodiscard]] bool is_first_frame() const
+		[[nodiscard]] bool is_initiated() const
 		{
 
 			return vars.rtt._one_time_init;
 		}
 
 		// 
-		void set_first_frame_bool()
+		void set_initiated()
 		{
 			vars.rtt._one_time_init = true;
 		}
@@ -528,23 +528,20 @@ namespace											\
 
 		imgui_context_menu m_toolbar;
 		imgui_context_menu m_toolbar_edit;
-		imgui_context_menu m_colors;
 		imgui_context_menu m_cmdbinds;
 		imgui_context_menu m_cmdbinds_helper;
-		imgui_context_menu m_console;
+		//imgui_context_menu m_console;
 		imgui_context_menu m_filter;
 		imgui_context_menu m_entity;
 		imgui_context_menu m_surface_inspector;
 		imgui_context_menu m_vertex_edit_dialog;
 		imgui_context_menu m_preferences;
-		imgui_context_menu m_about;
 		imgui_context_menu m_camera_settings;
 		imgui_context_menu m_effects_editor;
 		imgui_context_menu m_demo;
 
 		render_to_texture_window_s rtt_camerawnd;
 		render_to_texture_window_s rtt_gridwnd;
-		//render_to_texture_window_s rtt_texwnd;
 		model_selector_s rtt_model_selector;
 	};
 
