@@ -557,22 +557,12 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 		}
 
 		// if mouse is inside texture window
-
 		if(GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			// CTexWnd::Scroll
 			utils::hook::call<void(__cdecl)(std::int16_t _zDelta)>(0x45DD80)(zDelta);
 		}
-		
 
-		//if (auto texwnd = ggui::get_rtt_texturewnd();
-		//		 texwnd->window_hovered)
-		//{
-		//	// CTexWnd::Scroll
-		//	utils::hook::call<void(__cdecl)(std::int16_t _zDelta)>(0x45DD80)(zDelta);
-		//}
-		
-		
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
 			ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);

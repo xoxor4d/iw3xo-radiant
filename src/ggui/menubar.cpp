@@ -294,7 +294,6 @@ namespace ggui::menubar
 					}
 
 					if (ImGui::MenuItem("Textures", hotkeys::get_hotkey_for_command("ViewTextures").c_str())) {
-						//components::gui::toggle(ggui::get_rtt_texturewnd());
 						GET_GUI(ggui::texture_dialog)->toggle();
 					}
 

@@ -157,21 +157,22 @@ namespace ggui
 
 		struct render_to_texture_context_s
 		{
-			IDirect3DTexture9* _scene_texture;
-			ImVec2 _scene_size_imgui;
+			bool _active;
+			bool _was_active;
+			bool _one_time_init;
+			bool _inactive_tab;
+			bool _bring_tab_to_front;
+
 			ImVec2 _scene_pos_imgui;
+			ImVec2 _scene_size_imgui;
+
+			IDirect3DTexture9* _scene_texture;
 			ImVec2 _cursor_pos;
 			CPoint _cursor_pos_pt;
 			const char* _window_name;
 			bool _window_hovered;
 			bool _should_set_focus;
 			bool _capture_left_mousebutton;
-
-			bool _active;
-			bool _was_active;
-			bool _one_time_init;
-			bool _inactive_tab;
-			bool _bring_tab_to_front;
 		};
 
 		union vars_u
@@ -219,9 +220,9 @@ namespace ggui
 			return false;
 		}
 
-		void toggle(bool manuell = false, bool n_state = false)
+		void toggle(bool manually = false, bool n_state = false)
 		{
-			if(!manuell)
+			if(!manually)
 			{
 				switch (GUI_TYPE)
 				{
@@ -509,6 +510,7 @@ namespace ggui
 		static std::vector<std::unique_ptr<ggui_module>>* modules_;
 		static void destroy_modules();
 	};
+
 
 #define GET_GUI(name) ggui::loader::get<name>()
 #define REGISTER_GUI(name)							\

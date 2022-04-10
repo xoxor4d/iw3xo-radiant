@@ -4,9 +4,7 @@ texwnd_s* g_texwnd = reinterpret_cast<texwnd_s*>(0x25D7990);
 
 void ctexwnd::on_mousebutton_down(UINT nFlags)
 {
-	//auto point = ggui::get_rtt_texturewnd()->cursor_pos_pt;
 	auto point = GET_GUI(ggui::texture_dialog)->rtt_get_cursor_pos_cpoint();
-
 	const static uint32_t CTexWnd_OnButtonDown_func = 0x45C9A0;
 	__asm
 	{
@@ -101,17 +99,10 @@ bool texwnd_textfilter(const char* iter_material_name)
 		}
 	}
 
-	/*if (ggui::textures::imgui_filter_last_len)
-	{
-		if (std::string(iter_material_name).find(ggui::textures::imgui_filter.InputBuf) != std::string::npos) 
-		{
-			return true;
-		}
-	}*/
-
 	return false;
 }
 
+// asm helper function
 int texwnd_get_filter_length()
 {
 	return GET_GUI(ggui::texture_dialog)->get_filter_length();
@@ -125,7 +116,6 @@ void __declspec(naked) texwnd_listmaterials_intercept()
 	__asm
 	{
 		// test if textbox filter is enabled (textlen > 0)
-		//mov		eax, ggui::textures::imgui_filter_last_len;
 		call	texwnd_get_filter_length;
 		test	eax, eax;
 		jz		NO_FILTER;
@@ -163,16 +153,6 @@ void on_viewtextures_command()
 	}
 
 	tex->toggle();
-
-	/*const auto texwnd = ggui::get_rtt_texturewnd();
-	if(texwnd->inactive_tab && texwnd->menustate)
-	{
-		texwnd->bring_tab_to_front = true;
-		return;
-	}
-
-	components::gui::toggle(ggui::get_rtt_texturewnd());*/
-
 }
 
 // CMainFrame::OnTexturesShowinuse
@@ -182,10 +162,6 @@ void on_textures_show_in_use_command()
 	tex->set_bring_to_front(true);
 	tex->open();
 
-	/*const auto texwnd = ggui::get_rtt_texturewnd();
-	texwnd->bring_tab_to_front = true;
-	texwnd->menustate = true;*/
-	
 	// Texture_ShowInuse
 	cdeclcall(void, 0x45B850);
 }
@@ -197,10 +173,6 @@ void on_textures_show_all_command_intercept()
 	const auto tex = GET_GUI(ggui::texture_dialog);
 	tex->set_bring_to_front(true);
 	tex->open();
-
-	/*const auto texwnd = ggui::get_rtt_texturewnd();
-	texwnd->bring_tab_to_front = true;
-	texwnd->menustate = true;*/
 }
 
 void __declspec(naked) on_textures_show_all_command_stub()
@@ -248,8 +220,8 @@ void ctexwnd::hooks()
 	// disable texture tab insertion in entitywnd :: CTabCtrl::InsertItem(&g_wndTabsEntWnd, 1u, 1u, "&Textures", 0, 0);
 	utils::hook::nop(0x49672A, 23);
 
-	// TODO! :: why does the default OnPaint function induces lag on all windows (even outside radiant) calling it at 250fps
-	// -- rewritten one runs fine
+	// TODO! :: why does the default OnPaint function induces lag on all windows (even outside radiant) when calling it 250 times a second?
+	// -- rewritten one runs fine (EndPaint?)
 	utils::hook::detour(0x45DB20, ctexwnd::on_paint, HK_JUMP);
 
 	// detour the view textures hotkey (CMainFrame::OnViewTexture) to open the imgui texture window

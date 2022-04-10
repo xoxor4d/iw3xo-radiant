@@ -13,8 +13,6 @@ namespace ggui
 			SPACING(0.0f, 2.0f);
 			ImGui::Indent(8.0f);
 
-			auto test = this->rtt_get_texture();
-
 			ImGui::Text("Test");
 			ImGui::End();
 		}

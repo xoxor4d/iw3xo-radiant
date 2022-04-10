@@ -388,13 +388,6 @@ namespace components
 					ImGui::DockBuilderFinish(dockspace_id);
 
 					// ^ open texture window on initial startup
-					/*if (auto texwnd = ggui::get_rtt_texturewnd();
-							!texwnd->one_time_init)
-					{
-						components::gui::toggle(texwnd);
-						texwnd->one_time_init = true;
-					}*/
-
 					if(const auto tex = GET_GUI(ggui::texture_dialog);
 								 !tex->is_first_frame())
 					{
@@ -494,7 +487,7 @@ namespace components
 
 		
 		// *
-		// | --------------------- Z Window (ImGui Host Window) ------------------------
+		// | --------------------- Z Window (Dear ImGui Canvas) ------------------------
 		// *
 		
 		if (game::dx->targetWindowIndex == ggui::CZWND)
@@ -518,7 +511,7 @@ namespace components
 			style.Colors[ImGuiCol_DockingPreview] = ImGui::ToImVec4(dvars::gui_dockingpreview_color->current.vector);
 
 			style.FrameBorderSize = 0.0f;
-			style.WindowMenuButtonPosition = 1;
+			style.WindowMenuButtonPosition = 0;
 
 			// begin context frame
 			gui::begin_frame();
@@ -617,10 +610,6 @@ namespace components
 			// render to texture :: model selector / preview
 			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_modelselector(),
 				ggui::modelselector::menu(), nullptr);
-			
-			// render to texture :: texture window
-			//IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_texturewnd(),
-			//	ggui::textures::gui(), nullptr);
 
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
@@ -696,7 +685,20 @@ namespace components
 #define SAVED_STATE_UPDATE_RTT(menu, dvar) \
 	if (dvar && menu->menustate != dvar->current.enabled) \
 		dvars::set_bool(dvar, menu->menustate)
-	
+
+
+#define HANDLE_SAVED_STATE_REFACTOR(_GUI_CLASS, _DVAR, _STARTUP)							\
+		if(!(_STARTUP))																		\
+		{																					\
+			if ((_DVAR))																	\
+				GET_GUI(_GUI_CLASS)->toggle(true, (_DVAR)->current.enabled);				\
+		}																					\
+		else																				\
+		{																					\
+			if ((_DVAR) && GET_GUI(_GUI_CLASS)->is_active() != (_DVAR)->current.enabled)	\
+				dvars::set_bool((_DVAR), GET_GUI(_GUI_CLASS)->is_active());					\
+		}																					\
+
 	// *
 	// handles opened/closed states of windows via dvars
 	// register dvars @ gui::register_dvars()
@@ -709,17 +711,7 @@ namespace components
 			SAVED_STATE_INIT(m_filter,				dvars::gui_saved_state_filter);
 			SAVED_STATE_INIT(m_entity,				dvars::gui_saved_state_entity);
 			SAVED_STATE_INIT(m_surface_inspector,	dvars::gui_saved_state_surfinspector);
-
-			//SAVED_STATE_INIT_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
-			if (dvars::gui_saved_state_textures)
-			{
-				GET_GUI(ggui::texture_dialog)->toggle(true, dvars::gui_saved_state_textures->current.enabled);
-			}
-
-
 			SAVED_STATE_INIT_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
-
-			ggui::saved_states_init = true;
 		}
 
 		// *
@@ -729,15 +721,13 @@ namespace components
 		SAVED_STATE_UPDATE(m_filter,			dvars::gui_saved_state_filter);
 		SAVED_STATE_UPDATE(m_entity,			dvars::gui_saved_state_entity);
 		SAVED_STATE_UPDATE(m_surface_inspector, dvars::gui_saved_state_surfinspector);
-
-		//SAVED_STATE_UPDATE_RTT(ggui::get_rtt_texturewnd(), dvars::gui_saved_state_textures);
-		if (dvars::gui_saved_state_textures && GET_GUI(ggui::texture_dialog)->is_active() != dvars::gui_saved_state_textures->current.enabled)
-		{
-			dvars::set_bool(dvars::gui_saved_state_textures, GET_GUI(ggui::texture_dialog)->is_active());
-		}
-
-
 		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
+
+
+		// now handles init and update
+		HANDLE_SAVED_STATE_REFACTOR(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::saved_states_init);
+
+		ggui::saved_states_init = true;
 	}
 
 	// *
