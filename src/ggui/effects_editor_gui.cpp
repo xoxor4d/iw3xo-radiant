@@ -1,48 +1,33 @@
 #include "std_include.hpp"
 #include "commdlg.h"
 
-namespace ggui::effects_editor_gui
+namespace ggui
 {
-	ImGradient gradient;
+	//ImGradient gradient;
 
-	int selected_editor_elemdef = 0;
-	bool editor_effect_was_modified = false;
-	bool editor_pending_close = false;
-	bool editor_pending_reload = false;
+	//int selected_editor_elemdef = 0;
+	//bool m_effect_was_modified = false;
+	//bool m_pending_close = false;
+	//bool m_pending_reload = false;
 
-	const char* s_elemTypeNames[11] =
-	{
-		"Billboard Sprite",
-		"Oriented Sprite",
-		"Tail",
-		"Geo Trail",
-		"Cloud",
-		"Model",
-		"Light",
-		"SpotLight",
-		"Sound",
-		"Decal",
-		"FX Runner"
-	};
-
-	void elemdef_elem(fx_system::FxEditorElemDef* elemdef, int row, int* selected_index)
+	void effects_editor_dialog::elemdef_elem(fx_system::FxEditorElemDef* elemdef, int row, int* selected_index)
 	{
 		// enabled / disabled state
 		bool elem_enabled = !((elemdef->editorFlags & fx_system::FX_ED_FLAG_DISABLED) != 0);
 
-		for(auto column = 0; column < 6; column++)
+		for (auto column = 0; column < 6; column++)
 		{
 			ImGui::PushID(column);
 			ImGui::TableNextColumn();
 
-			switch(column)
+			switch (column)
 			{
 			case 0: // Enable/Disable
 				ImGui::Indent(6.0f);
-				
-				if(ImGui::Checkbox("##enabled_flag", &elem_enabled))
+
+				if (ImGui::Checkbox("##enabled_flag", &elem_enabled))
 				{
-					if(elem_enabled)
+					if (elem_enabled)
 					{
 						elemdef->editorFlags &= ~fx_system::FX_ED_FLAG_DISABLED;
 					}
@@ -88,7 +73,7 @@ namespace ggui::effects_editor_gui
 				}
 				else
 				{
-					if(elemdef->spawnOneShot.count.amplitude)
+					if (elemdef->spawnOneShot.count.amplitude)
 					{
 						ImGui::Text("%d - %d", elemdef->spawnOneShot.count.base, elemdef->spawnOneShot.count.base + elemdef->spawnOneShot.count.amplitude);
 					}
@@ -96,7 +81,7 @@ namespace ggui::effects_editor_gui
 					{
 						ImGui::Text("%d", elemdef->spawnOneShot.count.base);
 					}
-					
+
 				}
 				break;
 
@@ -114,7 +99,7 @@ namespace ggui::effects_editor_gui
 	}
 
 	// Unsaved Changes
-	bool Modal_UnsavedChanges(const char* label)
+	bool effects_editor_dialog::modal_unsaved_changes(const char* label)
 	{
 		bool result = false;
 
@@ -150,7 +135,7 @@ namespace ggui::effects_editor_gui
 	}
 
 	// 0x402AB0
-	void effect_elemdef_list()
+	void effects_editor_dialog::effect_elemdef_list()
 	{
 		const auto ed_effect = fx_system::get_editor_effect();
 		if (!ed_effect)
@@ -176,56 +161,56 @@ namespace ggui::effects_editor_gui
 			selected_editor_elemdef = ed_effect->elemCount - 1;
 		}
 
-		if(ImGui::Button("Add Segment"))
+		if (ImGui::Button("Add Segment"))
 		{
 			components::effects_editor::editor_add_new_segment();
-			editor_effect_was_modified = true;
+			m_effect_was_modified = true;
 		}
 
 		ImGui::SameLine();
-		if(ImGui::Button("Delete Segment"))
+		if (ImGui::Button("Delete Segment"))
 		{
 			components::effects_editor::editor_delete_segment(selected_editor_elemdef);
-			editor_effect_was_modified = true;
+			m_effect_was_modified = true;
 		}
 
 		ImGui::SameLine();
 		if (ImGui::Button("Save Effect"))
 		{
-			if(fx_system::FX_SaveEditorEffect())
+			if (fx_system::FX_SaveEditorEffect())
 			{
-				editor_effect_was_modified = false;
+				m_effect_was_modified = false;
 			}
 		}
 
 		ImGui::SameLine();
-		if(ImGui::Button("Save Effect As"))
+		if (ImGui::Button("Save Effect As"))
 		{
-			if(components::effects_editor::save_as())
+			if (components::effects_editor::save_as())
 			{
-				editor_effect_was_modified = false;
+				m_effect_was_modified = false;
 			}
 		}
 
 		ImGui::SameLine();
 		const char* reload_fx_modal_str = "Unsaved Changes##fx_reload";
-		if (ImGui::Button("Reload Effect") || editor_pending_reload)
+		if (ImGui::Button("Reload Effect") || m_pending_reload)
 		{
-			editor_pending_reload = false;
-			if (editor_effect_was_modified)
+			m_pending_reload = false;
+			if (m_effect_was_modified)
 			{
 				ImGui::OpenPopup(reload_fx_modal_str);
 			}
 			else
 			{
-				editor_pending_close = false;
+				m_pending_close = false;
 				components::command::execute("fx_reload");
 			}
 		}
 
-		if (Modal_UnsavedChanges(reload_fx_modal_str)) // true if clicked OK ^
+		if (modal_unsaved_changes(reload_fx_modal_str)) // true if clicked OK ^
 		{
-			editor_effect_was_modified = false;
+			m_effect_was_modified = false;
 			components::command::execute("fx_reload");
 		}
 
@@ -233,25 +218,25 @@ namespace ggui::effects_editor_gui
 
 		ImGui::SameLine();
 		const char* close_editor_modal_str = "Unsaved Changes##editor_close";
-		if (ImGui::Button("Close Editor") || editor_pending_close)
+		if (ImGui::Button("Close Editor") || m_pending_close)
 		{
-			editor_pending_close = false;
-			if (editor_effect_was_modified)
+			m_pending_close = false;
+			if (m_effect_was_modified)
 			{
 				ImGui::OpenPopup(close_editor_modal_str);
 			}
 			else
 			{
-				editor_effect_was_modified = false;
+				m_effect_was_modified = false;
 
 				components::effects::edit();
 				components::command::execute("fx_reload");
 			}
 		}
 
-		if (Modal_UnsavedChanges(close_editor_modal_str)) // true if clicked OK ^
+		if (modal_unsaved_changes(close_editor_modal_str)) // true if clicked OK ^
 		{
-			editor_effect_was_modified = false;
+			m_effect_was_modified = false;
 
 			components::effects::edit();
 			components::command::execute("fx_reload");
@@ -262,7 +247,7 @@ namespace ggui::effects_editor_gui
 		const char* effect_name = ed_effect->name;
 		const auto width = ImGui::CalcTextSize(effect_name).x + 16.0f;
 		ImGui::SameLine(ImGui::GetWindowWidth() - width);
-		ImGui::Text("%s %s", effect_name, editor_effect_was_modified ? "*" : "");
+		ImGui::Text("%s %s", effect_name, m_effect_was_modified ? "*" : "");
 		ImGui::PopFont();
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 0));
@@ -283,7 +268,7 @@ namespace ggui::effects_editor_gui
 
 			ImGui::TableHeadersRow();
 
-			for(int row = 0; row < ed_effect->elemCount; row++)
+			for (int row = 0; row < ed_effect->elemCount; row++)
 			{
 				// unique widget id's for each row (we get collisions otherwise)
 				ImGui::PushID(row);
@@ -307,7 +292,7 @@ namespace ggui::effects_editor_gui
 #define MOD_CHECK(control) if((control)) modified = true
 #define MOD_CHECK_GRAPH(control) if((control) >= 0) modified = true
 
-	fx_system::FxEffectDef* effectdef_fileprompt()
+	fx_system::FxEffectDef* effects_editor_dialog::effectdef_fileprompt()
 	{
 		char filename[MAX_PATH];
 		OPENFILENAMEA ofn;
@@ -338,7 +323,7 @@ namespace ggui::effects_editor_gui
 		return nullptr;
 	}
 
-	game::Material* material_fileprompt()
+	game::Material* effects_editor_dialog::material_fileprompt()
 	{
 		char filename[MAX_PATH];
 		OPENFILENAMEA ofn;
@@ -369,7 +354,7 @@ namespace ggui::effects_editor_gui
 		return nullptr;
 	}
 
-	game::XModel* xmodel_fileprompt()
+	game::XModel* effects_editor_dialog::xmodel_fileprompt()
 	{
 		char filename[MAX_PATH];
 		OPENFILENAMEA ofn;
@@ -400,13 +385,13 @@ namespace ggui::effects_editor_gui
 		return nullptr;
 	}
 
-	void on_modified(bool modified)
+	void effects_editor_dialog::on_modified(bool modified)
 	{
 		if (modified)
 		{
-			editor_effect_was_modified = true;
+			m_effect_was_modified = true;
 
-			if(components::effects::effect_is_playing() || components::effects::effect_is_repeating() || components::effects::effect_is_paused())
+			if (components::effects::effect_is_playing() || components::effects::effect_is_repeating() || components::effects::effect_is_paused())
 			{
 				components::effects::stop();
 				components::effects::apply_changes();
@@ -415,7 +400,7 @@ namespace ggui::effects_editor_gui
 		}
 	}
 
-	void tab_generation(fx_system::FxEditorElemDef* elem)
+	void effects_editor_dialog::tab_generation(fx_system::FxEditorElemDef* elem)
 	{
 		bool modified = false;
 
@@ -524,7 +509,7 @@ namespace ggui::effects_editor_gui
 			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Draw With Viewmodel", elem, fx_system::FX_ELEM_DRAW_WITH_VIEWMODEL));
 			MOD_CHECK(ImGui::DragInt("Sort Order", &elem->sortOrder, 0.1f, -UINT8_MAX, UINT8_MAX));
 		}
-		
+
 
 		// *------------------------------
 		ImGui::title_with_seperator("Death Effects", true, 0, 2.0f, 8.0f);
@@ -545,7 +530,7 @@ namespace ggui::effects_editor_gui
 				if (ImGui::Button("..##filepromt_death", ImVec2(28, ImGui::GetFrameHeight())))
 				{
 					if (const auto	death_elem = effectdef_fileprompt();
-									death_elem)
+						death_elem)
 					{
 						elem->effectOnDeath = death_elem;
 						modified = true;
@@ -581,7 +566,7 @@ namespace ggui::effects_editor_gui
 				if (ImGui::Button("..##filepromt_emission", ImVec2(28, ImGui::GetFrameHeight())))
 				{
 					if (const auto	emit_elem = effectdef_fileprompt();
-									emit_elem)
+						emit_elem)
 					{
 						elem->emission = emit_elem;
 						modified = true;
@@ -601,9 +586,8 @@ namespace ggui::effects_editor_gui
 		ImGui::EndChild();
 		on_modified(modified);
 	}
-	
 
-	void tab_size([[maybe_unused]] fx_system::FxEditorElemDef* elem)
+	void effects_editor_dialog::tab_size([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
 		bool modified = false;
 		const ImGuiStyle& style = ImGui::GetStyle();
@@ -761,7 +745,7 @@ namespace ggui::effects_editor_gui
 		on_modified(modified);
 	}
 
-	void tab_velocity([[maybe_unused]] fx_system::FxEditorElemDef* elem)
+	void effects_editor_dialog::tab_velocity([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
 		bool modified = false;
 		const ImGuiStyle& style = ImGui::GetStyle();
@@ -845,7 +829,7 @@ namespace ggui::effects_editor_gui
 
 		auto get_velocity_graph_str = [&](const int i) -> const char*
 		{
-			switch(i)
+			switch (i)
 			{
 			case 0:
 				return "Graph 1 - Forward";
@@ -965,7 +949,7 @@ namespace ggui::effects_editor_gui
 				}
 			}
 		}
-		
+
 
 		// *------------------------------
 		{
@@ -983,7 +967,7 @@ namespace ggui::effects_editor_gui
 			MOD_CHECK_GRAPH(ImGui::CurveEditor("velocity_2_graph", curve->keys, curve->keyCount,
 				ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
 
-			if(new_count != curve->keyCount)
+			if (new_count != curve->keyCount)
 			{
 				curve->keyCount = new_count;
 				modified = true;
@@ -1082,7 +1066,7 @@ namespace ggui::effects_editor_gui
 		on_modified(modified);
 	}
 
-	void tab_rotation([[maybe_unused]] fx_system::FxEditorElemDef* elem)
+	void effects_editor_dialog::tab_rotation([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
 		bool modified = false;
 		const ImGuiStyle& style = ImGui::GetStyle();
@@ -1138,7 +1122,7 @@ namespace ggui::effects_editor_gui
 			MOD_CHECK(ImGui::DragFloat("##rotation_scale", &elem->rotationScale, 0.5f, 0, 0, "%.1f")); TT("Scale");
 		}
 
-		if(elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD || elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
+		if (elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD || elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
 		{
 			// *------------------------------
 			ImGui::title_with_seperator("Spawn Angles", true, 0, 2.0f, 8.0f);
@@ -1161,7 +1145,7 @@ namespace ggui::effects_editor_gui
 		on_modified(modified);
 	}
 
-	void tab_physics([[maybe_unused]] fx_system::FxEditorElemDef* elem)
+	void effects_editor_dialog::tab_physics([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
 		bool modified = false;
 
@@ -1204,13 +1188,13 @@ namespace ggui::effects_editor_gui
 					if (ImGui::Button("..##filepromt_impact", ImVec2(28, ImGui::GetFrameHeight())))
 					{
 						if (const auto	impact_elem = effectdef_fileprompt();
-										impact_elem)
+							impact_elem)
 						{
 							elem->effectOnImpact = impact_elem;
 							modified = true;
 						}
 					}
-					
+
 					ImGui::BeginDisabled(!elem->effectOnImpact);
 					ImGui::SameLine();
 					if (ImGui::Button("x##delete_impact", ImVec2(28, ImGui::GetFrameHeight())))
@@ -1227,7 +1211,7 @@ namespace ggui::effects_editor_gui
 				bool bounding_box_enabled = false;
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable physics bounding sphere", elem, fx_system::FX_ED_FLAG_BOUNDING_SPHERE, &bounding_box_enabled));
 
-				if(bounding_box_enabled)
+				if (bounding_box_enabled)
 				{
 					MOD_CHECK(ImGui::DragFloat3("Origin", elem->collOffset, 0.1f, -FLT_MIN, FLT_MAX, "%.2f"));
 					MOD_CHECK(ImGui::DragFloat("Radius", &elem->collRadius, 0.1f, 0.0f, 2048.0f, "%.2f"));
@@ -1236,13 +1220,13 @@ namespace ggui::effects_editor_gui
 		}
 
 
-		
+
 
 		ImGui::EndChild();
 		on_modified(modified);
 	}
 
-	void tab_color([[maybe_unused]] fx_system::FxEditorElemDef* elem)
+	void effects_editor_dialog::tab_color([[maybe_unused]] fx_system::FxEditorElemDef* elem)
 	{
 		bool modified = false;
 		const ImGuiStyle& style = ImGui::GetStyle();
@@ -1326,7 +1310,7 @@ namespace ggui::effects_editor_gui
 				}
 			}
 		}
-		
+
 
 		// *------------------------------
 
@@ -1376,8 +1360,7 @@ namespace ggui::effects_editor_gui
 		on_modified(modified);
 	}
 
-
-	void tab_visuals(fx_system::FxEditorElemDef* elem)
+	void effects_editor_dialog::tab_visuals(fx_system::FxEditorElemDef* elem)
 	{
 		bool modified = false;
 		const ImGuiStyle& style = ImGui::GetStyle();
@@ -1479,7 +1462,7 @@ namespace ggui::effects_editor_gui
 		}
 
 		bool listbox_enabled = true;
-		if(elem->elemType == fx_system::FX_ELEM_TYPE_SOUND || elem->elemType == fx_system::FX_ELEM_TYPE_DECAL || elem->elemType == fx_system::FX_ELEM_TYPE_OMNI_LIGHT || elem->elemType == fx_system::FX_ELEM_TYPE_SPOT_LIGHT)
+		if (elem->elemType == fx_system::FX_ELEM_TYPE_SOUND || elem->elemType == fx_system::FX_ELEM_TYPE_DECAL || elem->elemType == fx_system::FX_ELEM_TYPE_OMNI_LIGHT || elem->elemType == fx_system::FX_ELEM_TYPE_SPOT_LIGHT)
 		{
 			listbox_enabled = false;
 		}
@@ -1528,7 +1511,7 @@ namespace ggui::effects_editor_gui
 				if (elem->elemType <= fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
 				{
 					if (const auto  material = material_fileprompt();
-									material && elem->visualCount < 32)
+						material && elem->visualCount < 32)
 					{
 						elem->u.visuals[elem->visualCount].material = material;
 						elem->visualCount++;
@@ -1539,7 +1522,7 @@ namespace ggui::effects_editor_gui
 				else if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
 				{
 					if (const auto	model = xmodel_fileprompt();
-									model)
+						model)
 					{
 						elem->u.visuals[elem->visualCount].model = model;
 						elem->visualCount++;
@@ -1550,7 +1533,7 @@ namespace ggui::effects_editor_gui
 				else if (elem->elemType == fx_system::FX_ELEM_TYPE_RUNNER)
 				{
 					if (const auto	effect_def = effectdef_fileprompt();
-									effect_def)
+						effect_def)
 					{
 						elem->u.visuals[elem->visualCount].effectDef.handle = effect_def;
 						elem->visualCount++;
@@ -1558,7 +1541,7 @@ namespace ggui::effects_editor_gui
 						modified = true;
 					}
 				}
-				
+
 			}
 
 			ImGui::EndDisabled();
@@ -1576,10 +1559,10 @@ namespace ggui::effects_editor_gui
 					vis_current_idx = 0;
 				}
 
-				if(elem->visualCount > 0 && vis_current_idx < vis.size())
+				if (elem->visualCount > 0 && vis_current_idx < vis.size())
 				{
 					// if last
-					if(vis_current_idx == static_cast<std::uint32_t>(elem->visualCount - 1))
+					if (vis_current_idx == static_cast<std::uint32_t>(elem->visualCount - 1))
 					{
 						memset(&elem->u.visuals[vis_current_idx], 0, sizeof(fx_system::FxElemVisuals));
 						elem->visualCount--;
@@ -1711,7 +1694,7 @@ namespace ggui::effects_editor_gui
 			MOD_CHECK_GRAPH(ImGui::CurveEditorShapes("traildef_shape", traildef_point_array, trail_shapes, trail_shapes_count,
 				ImVec2(-1.0f, -1.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &hovered_point));
 
-			
+
 			bool context_menu_open = ImGui::BeginPopupContextItem("traildef_shape##context");
 
 			// logic to capture the first active context-menu frame
@@ -1719,7 +1702,7 @@ namespace ggui::effects_editor_gui
 			static bool context_menu_tracked_state = false;
 			bool		context_menu_initial_frame = false;
 
-			if(context_menu_open != context_menu_tracked_state)
+			if (context_menu_open != context_menu_tracked_state)
 			{
 				context_menu_initial_frame = true;
 			}
@@ -1728,18 +1711,18 @@ namespace ggui::effects_editor_gui
 
 			// --
 
-			if(context_menu_open)
+			if (context_menu_open)
 			{
-				if(hovered_point >= 0 || saved_hovered_point_on_context >= 0)
+				if (hovered_point >= 0 || saved_hovered_point_on_context >= 0)
 				{
 					// only save the hovered point within the first context-menu frame to avoid shape switching
 					// if the user hovers another point while the context menu is open
-					if(saved_hovered_point_on_context < 0 && context_menu_initial_frame)
+					if (saved_hovered_point_on_context < 0 && context_menu_initial_frame)
 					{
 						saved_hovered_point_on_context = hovered_point;
 					}
 
-					if(saved_hovered_point_on_context >= 0)
+					if (saved_hovered_point_on_context >= 0)
 					{
 						if (ImGui::MenuItem("Remove Shape"))
 						{
@@ -1858,7 +1841,7 @@ namespace ggui::effects_editor_gui
 				{
 					const int indices_amount = indices_list[new_shape_vertcount][0]; // get prebuilt list of indices for shape with X amount of vertices
 
-					if(elem->trailDef.vertCount + new_shape_vertcount < 64 
+					if (elem->trailDef.vertCount + new_shape_vertcount < 64
 						&& elem->trailDef.indCount + indices_amount < 128)
 					{
 						memcpy(&elem->trailDef.verts[elem->trailDef.vertCount], new_shape_vertices, new_shape_vertcount * sizeof(fx_system::FxTrailVertex));
@@ -2043,7 +2026,7 @@ namespace ggui::effects_editor_gui
 		on_modified(modified);
 	}
 
-	void effect_property_window()
+	void effects_editor_dialog::effect_property_window()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(360.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(580.0f, 400.0f);
@@ -2078,7 +2061,7 @@ namespace ggui::effects_editor_gui
 				tab_size(&ed_effect->elems[selected_editor_elemdef]);
 				ImGui::EndTabItem();
 			}
-			
+
 			if (ImGui::BeginTabItem_SmallGap("Velocity"))
 			{
 				tab_velocity(&ed_effect->elems[selected_editor_elemdef]);
@@ -2117,9 +2100,11 @@ namespace ggui::effects_editor_gui
 		ImGui::End();
 	}
 
-	void menu([[maybe_unused]] ggui::imgui_context_menu& menu)
+	void effects_editor_dialog::gui()
 	{
 		effect_elemdef_list();
-		effect_property_window();
+		effects_editor_dialog::effect_property_window();
 	}
+
+	REGISTER_GUI(effects_editor_dialog);
 }

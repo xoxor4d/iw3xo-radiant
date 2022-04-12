@@ -79,7 +79,7 @@ namespace ggui::camera_settings
 			{
 				if (components::effects_editor::is_editor_active())
 				{
-					effects_editor_gui::editor_pending_reload = true;
+					GET_GUI(ggui::effects_editor_dialog)->m_pending_reload = true;
 				}
 				else
 				{

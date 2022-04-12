@@ -295,22 +295,21 @@ namespace components
 
 	void effects::edit()
 	{
-		// on open
-		if(!ggui::state.czwnd.m_effects_editor.menustate)
-		{
-			ggui::state.czwnd.m_effects_editor.menustate = true;
-		}
+		const auto gui = GET_GUI(ggui::effects_editor_dialog);
 
-		// on close
+		if(!gui->is_active()) 
+		{
+			gui->open();
+		}
 		else
 		{
-			if(effects_editor::has_unsaved_changes())
+			if (effects_editor::has_unsaved_changes())
 			{
-				ggui::effects_editor_gui::editor_pending_close = true;
+				gui->m_pending_close = true;
 			}
 			else
 			{
-				ggui::state.czwnd.m_effects_editor.menustate = false;
+				gui->close();
 			}
 		}
 	}

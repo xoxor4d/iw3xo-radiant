@@ -591,8 +591,8 @@ namespace components
 				ggui::camera_settings::menu(ggui::state.czwnd.m_camera_settings), ggui::camera_settings::on_close());
 
 			// effects editor
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_effects_editor,
-				ggui::effects_editor_gui::menu(ggui::state.czwnd.m_effects_editor), nullptr);
+			//IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_effects_editor,
+			//	ggui::effects_editor_gui::menu(ggui::state.czwnd.m_effects_editor), nullptr);
 
 			// render to texture :: model selector / preview
 			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_modelselector(),
