@@ -79,5 +79,8 @@ namespace afx
 	CWnd_FromHandle_t CWnd_FromHandle = reinterpret_cast<CWnd_FromHandle_t>(0x5871BD);
 
 	get_module_state_t get_module_state = reinterpret_cast<get_module_state_t>(0x59390E);
+
+	CCheckListBox__SetCheck_t CCheckListBox__SetCheck = reinterpret_cast<CCheckListBox__SetCheck_t>(0x599D88);
+	CCheckListBox__GetCheck_t CCheckListBox__GetCheck = reinterpret_cast<CCheckListBox__GetCheck_t>(0x598A0F);
 	
 }

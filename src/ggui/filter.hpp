@@ -1,23 +1,65 @@
 #pragma once
-#include "_ggui.hpp"
 
-namespace ggui::filter
+namespace ggui
 {
-	enum E_FILTERS
+	class filter_dialog final : public ggui::ggui_module
 	{
-		GEOMETRY,
-		ENTITY,
-		TRIGGER,
-		OTHER,
-	};
+		ImGuiTextFilter	imgui_filter;
 
-	extern	bool input_focused;
-	extern	bool window_hovered;
-	
-	extern	std::vector<game::filter_entry_s*> _geofilters, _entityfilters, _triggerfilters, _otherfilters;
-	
-	bool	toggle_by_name(const char* name, E_FILTERS filter_type, bool on_off);
-	
-	void	menu(ggui::imgui_context_menu& menu);
-	void	hooks();
+		bool input_focused;
+		bool window_hovered;
+		bool needs_window_hovered_once;
+
+		bool _geofilters_initialized;
+		bool _entityfilters_initialized;
+		bool _triggerfilters_initialized;
+		bool _otherfilters_initialized;
+
+
+	public:
+		enum E_FILTERS
+		{
+			GEOMETRY,
+			ENTITY,
+			TRIGGER,
+			OTHER,
+		};
+
+		std::vector<game::filter_entry_s*> _geofilters, _entityfilters, _triggerfilters, _otherfilters;
+
+		filter_dialog()
+		{
+			set_gui_type(GUI_TYPE_DEF);
+
+			input_focused = false;
+			window_hovered = false;
+			needs_window_hovered_once = false;
+			_geofilters_initialized = false;
+			_entityfilters_initialized = false;
+			_triggerfilters_initialized = false;
+			_otherfilters_initialized = false;
+		}
+
+		// *
+		// public member functions
+
+		void gui() override;
+		bool toggle_by_name(const char* name, E_FILTERS filter_type, bool on_off);
+
+		// *
+		// asm related
+
+		static void on_filterdialog_command(); // not a callable method
+
+		// *
+		// init
+
+		void hooks();
+
+
+	private:
+		void build_radiant_filterlists();
+		void handle_radiant_filter(CCheckListBox* checklist, game::filter_entry_s* filter, int index);
+	};
 }
+

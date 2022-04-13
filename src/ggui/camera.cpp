@@ -490,10 +490,10 @@ namespace ggui::camera
 									if (const auto  tb = cam_trace[t].brush;
 													tb->def && tb->def->owner)
 									{
-										if (auto val = entity::ValueForKey(tb->def->owner->epairs, "classname");
+										if (auto val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "classname");
 												 val && (val == "misc_prefab"s || val == "misc_model"s))
 										{
-											if (auto prefab_str = entity::ValueForKey(tb->def->owner->epairs, "model");
+											if (auto prefab_str = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "model");
 													 prefab_str)
 											{
 												vis_name = prefab_str;
@@ -564,8 +564,8 @@ namespace ggui::camera
 								if (const auto tb = cam_trace[0].brush;
 									tb->def && tb->def->owner)
 								{
-									if (auto val = entity::ValueForKey(tb->def->owner->epairs, "classname");
-										val && val == "misc_prefab"s)
+									if (auto val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "classname");
+											 val && val == "misc_prefab"s)
 									{
 										SEPERATORV(0.0f);
 
@@ -678,11 +678,13 @@ namespace ggui::camera
 		{
 			if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 			{
+				const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
 				// reset manual left mouse capture
 				ggui::dragdrop_reset_leftmouse_capture();
 
 				const auto m_selector = ggui::get_rtt_modelselector();
-				ggui::entity::addprop_helper_s no_undo = {};
+				ggui::entity_dialog::addprop_helper_s no_undo = {};
 
 				if (m_selector->overwrite_selection)
 				{
@@ -701,7 +703,7 @@ namespace ggui::camera
 						goto SPAWN_AWAY;
 					}
 
-					ggui::entity::AddProp("model", m_selector->preview_model_name.c_str(), &no_undo);
+					entity_gui->add_prop("model", m_selector->preview_model_name.c_str(), &no_undo);
 					game::Undo_End();
 				}
 				else
@@ -724,7 +726,7 @@ namespace ggui::camera
 
 					g_block_radiant_modeldialog = false;
 
-					ggui::entity::AddProp("model", m_selector->preview_model_name.c_str(), &no_undo);
+					entity_gui->add_prop("model", m_selector->preview_model_name.c_str(), &no_undo);
 					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
 
 					const auto camerawnd = ggui::get_rtt_camerawnd();
@@ -758,7 +760,7 @@ namespace ggui::camera
 					char origin_str_buf[64] = {};
 					if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", origin[0], origin[1], origin[2]))
 					{
-						ggui::entity::AddProp("origin", origin_str_buf, &no_undo);
+						entity_gui->add_prop("origin", origin_str_buf, &no_undo);
 					}
 
 					game::Undo_End();

@@ -444,19 +444,21 @@ namespace ggui::camera_guizmo
 							ImGuizmo::DecomposeMatrixToComponents(tmp_matrix, t_origin, t_angles, mtx_scale);
 
 							char org_str[64] = {};
-							ggui::entity::addprop_helper_s helper = {};
 
+							ggui::entity_dialog::addprop_helper_s helper = {};
 							helper.add_undo = false;
 
-							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_origin[0], t_origin[1], t_origin[2])) {
+							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_origin[0], t_origin[1], t_origin[2])) 
+							{
 								helper.is_origin = true;
-								ggui::entity::AddProp("origin", org_str, &helper);
+								GET_GUI(ggui::entity_dialog)->add_prop("origin", org_str, &helper);
 							}
 
 							// switch axis
-							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_angles[1], t_angles[2], t_angles[0])) {
+							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_angles[1], t_angles[2], t_angles[0])) 
+							{
 								helper.is_angle = true;
-								ggui::entity::AddProp("angles", org_str, &helper);
+								GET_GUI(ggui::entity_dialog)->add_prop("angles", org_str, &helper);
 							}
 						}
 					}

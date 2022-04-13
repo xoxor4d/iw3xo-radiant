@@ -787,7 +787,7 @@ namespace components
 								if(dvars::r_fakesun_use_worldspawn->current.enabled)
 								{
 									const auto world_ent = game::g_world_entity();
-									if(world_ent && world_ent->firstActive && ggui::entity::Entity_GetVec3ForKey(world_ent->firstActive, sun_dir, "sundirection"))
+									if(world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_dir, "sundirection"))
 									{
 										worldspawn_valid = true;
 									}
@@ -812,9 +812,9 @@ namespace components
 									float sunlight = 0.0f;
 									game::vec3_t suncolor = {};
 
-									if(world_ent && world_ent->firstActive && ggui::entity::Entity_GetVec3ForKey(world_ent->firstActive, suncolor, "suncolor"))
+									if(world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, suncolor, "suncolor"))
 									{
-										if (!ggui::entity::Entity_GetValueForKey(world_ent->firstActive, &sunlight, "sunlight"))
+										if (!GET_GUI(ggui::entity_dialog)->get_value_for_key_from_entity(world_ent->firstActive, &sunlight, "sunlight"))
 										{
 											// default value
 											sunlight = 1.35f;
@@ -839,7 +839,7 @@ namespace components
 								if (dvars::r_fakesun_use_worldspawn->current.enabled)
 								{
 									const auto world_ent = game::g_world_entity();
-									if (world_ent && world_ent->firstActive && ggui::entity::Entity_GetVec3ForKey(world_ent->firstActive, sun_specular, "suncolor"))
+									if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_specular, "suncolor"))
 									{
 										// worldspawn suncolor
 										utils::vector::ma(game::vec3_t(1.0f, 1.0f, 1.0f), 2.0f, sun_specular, sun_specular);
@@ -1370,24 +1370,26 @@ namespace components
 	// parses worldspawn and light settings, sets custom shader constants and returns the sun direction in "sun_dir"
 	bool sunpreview_set_shader_constants(float* sun_dir)
 	{
+		const auto entity_gui = GET_GUI(ggui::entity_dialog);
 		const auto prefs = game::g_PrefsDlg();
 		const auto world_ent = reinterpret_cast<game::entity_s_def*>(game::g_world_entity()->firstActive);
 
-		if (!ggui::entity::HasKeyValuePair(world_ent, "sundirection"))
+
+		if (!entity_gui->has_key_value_pair(world_ent, "sundirection"))
 		{
 			game::printf_to_console("[Sunpreview] disabled. Missing worldspawn kvp: \"sundirection\"");
 			prefs->preview_sun_aswell = false;
 			return false;
 		}
 
-		if (!ggui::entity::HasKeyValuePair(world_ent, "sunlight"))
+		if (!entity_gui->has_key_value_pair(world_ent, "sunlight"))
 		{
 			game::printf_to_console("[Sunpreview] disabled. Missing worldspawn kvp: \"sunlight\"");
 			prefs->preview_sun_aswell = false;
 			return false;
 		}
 
-		if (!ggui::entity::HasKeyValuePair(world_ent, "suncolor"))
+		if (!entity_gui->has_key_value_pair(world_ent, "suncolor"))
 		{
 			game::printf_to_console("[Sunpreview] disabled. Missing worldspawn kvp: \"suncolor\"");
 			prefs->preview_sun_aswell = false;

@@ -194,8 +194,8 @@ namespace dvars
 		cxywnd::register_dvars();
 		ccamwnd::register_dvars();
 		ctexwnd::register_dvars();
-		
-		ggui::entity::register_dvars();
+
+		GET_GUI(ggui::entity_dialog)->register_dvars();
 		ggui::mesh::register_dvars();
 		ggui::preferences::register_dvars();
 		ggui::surface_inspector::register_dvars();

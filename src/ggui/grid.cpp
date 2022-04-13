@@ -13,11 +13,12 @@ namespace ggui::grid
 
 	void build_eclass_context()
 	{
+		const auto entity_gui = GET_GUI(ggui::entity_dialog);
 		int current_dir_idx = 0;
 
-		for (size_t i = 0; i < entity::classlist.size(); ++i)
+		for (size_t i = 0; i < entity_gui->m_classlist.size(); ++i)
 		{
-			std::string class_str = entity::classlist[i]->name;
+			std::string class_str = entity_gui->m_classlist[i]->name;
 			std::vector<std::string> split = utils::split(class_str, '_');
 
 			// first element
@@ -30,7 +31,7 @@ namespace ggui::grid
 				continue;
 			}
 
-			std::string class_str_prev = entity::classlist[i - 1]->name;
+			std::string class_str_prev = entity_gui->m_classlist[i - 1]->name;
 			std::vector<std::string> split_prev = utils::split(class_str_prev, '_');
 
 			if(split[0] == split_prev[0])
@@ -51,7 +52,7 @@ namespace ggui::grid
 				eclass_context_menus[current_dir_idx].childs.push_back(class_str);
 
 				// check if current element is the last element
-				if(i + 1 >= entity::classlist.size())
+				if(i + 1 >= entity_gui->m_classlist.size())
 				{
 					// check for single element group
 					if (eclass_context_menus[current_dir_idx].childs.size() <= 1)
@@ -71,7 +72,7 @@ namespace ggui::grid
 		static bool grid_context_open = false;
 		static bool grid_context_pending_open = false;
 
-		static std::string grid_context_last_spawned_entity = "";
+		static std::string grid_context_last_spawned_entity;
 
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
 		{
@@ -149,7 +150,7 @@ namespace ggui::grid
 
 					if (sb && sb->def && sb->def->owner)
 					{
-						if (const auto  val = entity::ValueForKey(sb->def->owner->epairs, "classname");
+						if (const auto  val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(sb->def->owner->epairs, "classname");
 										val && val == "misc_prefab"s)
 						{
 							if (ImGui::MenuItem("Enter Prefab"))
@@ -271,11 +272,13 @@ namespace ggui::grid
 		{
 			if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 			{
+				const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
 				// reset manual left mouse capture
 				ggui::dragdrop_reset_leftmouse_capture();
 
 				const auto m_selector = ggui::get_rtt_modelselector();
-				ggui::entity::addprop_helper_s no_undo = {};
+				ggui::entity_dialog::addprop_helper_s no_undo = {};
 
 				if (m_selector->overwrite_selection)
 				{
@@ -294,7 +297,7 @@ namespace ggui::grid
 						goto SPAWN_AWAY;
 					}
 
-					ggui::entity::AddProp("model", m_selector->preview_model_name.c_str(), &no_undo);
+					entity_gui->add_prop("model", m_selector->preview_model_name.c_str(), &no_undo);
 					game::Undo_End();
 				}
 				else
@@ -318,7 +321,7 @@ namespace ggui::grid
 
 					g_block_radiant_modeldialog = false;
 
-					ggui::entity::AddProp("model", ggui::get_rtt_modelselector()->preview_model_name.c_str(), &no_undo);
+					entity_gui->add_prop("model", ggui::get_rtt_modelselector()->preview_model_name.c_str(), &no_undo);
 					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
 
 					game::Undo_End();

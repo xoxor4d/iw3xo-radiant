@@ -6,6 +6,21 @@ namespace ggui
 	{
 	public:
 		gui_colors_dialog() { set_gui_type(GUI_TYPE_DEF); }
+
+		// *
+		// public member functions
+
 		void gui() override;
+
+
+		// *
+		// asm related
+
+
+
+		// *
+		// init
+
+
 	};
 }

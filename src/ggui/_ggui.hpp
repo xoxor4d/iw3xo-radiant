@@ -531,7 +531,7 @@ namespace											\
 		imgui_context_menu m_cmdbinds;
 		imgui_context_menu m_cmdbinds_helper;
 		imgui_context_menu m_filter;
-		imgui_context_menu m_entity;
+		//imgui_context_menu m_entity;
 		imgui_context_menu m_surface_inspector;
 		imgui_context_menu m_vertex_edit_dialog;
 		imgui_context_menu m_preferences;

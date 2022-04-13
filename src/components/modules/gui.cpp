@@ -566,14 +566,6 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_cmdbinds_helper,
 				ggui::hotkeys::helper_menu(ggui::state.czwnd.m_cmdbinds_helper), nullptr);
 
-			// filter menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_filter,
-				ggui::filter::menu(ggui::state.czwnd.m_filter), nullptr);
-
-			// entity menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_entity,
-				ggui::entity::menu(ggui::state.czwnd.m_entity), nullptr);
-
 			// surface inspector menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_surface_inspector,
 				ggui::surface_inspector::menu(ggui::state.czwnd.m_surface_inspector), nullptr);
@@ -589,10 +581,6 @@ namespace components
 			// camera settings menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_camera_settings,
 				ggui::camera_settings::menu(ggui::state.czwnd.m_camera_settings), ggui::camera_settings::on_close());
-
-			// effects editor
-			//IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_effects_editor,
-			//	ggui::effects_editor_gui::menu(ggui::state.czwnd.m_effects_editor), nullptr);
 
 			// render to texture :: model selector / preview
 			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_modelselector(),
@@ -695,7 +683,6 @@ namespace components
 		if (!ggui::saved_states_init)
 		{
 			SAVED_STATE_INIT(m_filter,				dvars::gui_saved_state_filter);
-			SAVED_STATE_INIT(m_entity,				dvars::gui_saved_state_entity);
 			SAVED_STATE_INIT(m_surface_inspector,	dvars::gui_saved_state_surfinspector);
 			SAVED_STATE_INIT_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
 		}
@@ -704,13 +691,13 @@ namespace components
 		// every frame
 
 		SAVED_STATE_UPDATE(m_filter,			dvars::gui_saved_state_filter);
-		SAVED_STATE_UPDATE(m_entity,			dvars::gui_saved_state_entity);
 		SAVED_STATE_UPDATE(m_surface_inspector, dvars::gui_saved_state_surfinspector);
 		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
 
 
 		// now handles init and update
 		HANDLE_SAVED_STATE_REFACTOR(ggui::console_dialog, dvars::gui_saved_state_console, ggui::saved_states_init);
+		HANDLE_SAVED_STATE_REFACTOR(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::saved_states_init);
 		HANDLE_SAVED_STATE_REFACTOR(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::saved_states_init);
 
 		ggui::saved_states_init = true;
@@ -1007,8 +994,9 @@ namespace components
 		// show external console on map load
 		utils::hook(0x4866B8, on_map_load_stub, HOOK_JUMP).install()->quick();
 
-		ggui::entity::hooks();
-		ggui::filter::hooks();
+		GET_GUI(ggui::entity_dialog)->hooks();
+		GET_GUI(ggui::filter_dialog)->hooks();
+
 		ggui::hotkeys::hooks();
 		ggui::mesh::hooks();
 		ggui::modelselector::init();

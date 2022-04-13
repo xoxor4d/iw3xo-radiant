@@ -42,16 +42,25 @@ namespace ggui
 
 		~console_dialog() override;
 
-		void gui() override;
+		// *
+		// public member functions
 
-		void		clear_log();
-		int			text_edit_callback(ImGuiInputTextCallbackData* data);
-		void		addline_no_format(const char* text);
-		void		addline(const char* fmt, ...) IM_FMTARGS(2);
+		void	gui() override;
+		void	clear_log();
+		int		text_edit_callback(ImGuiInputTextCallbackData* data);
+		void	addline_no_format(const char* text);
+		void	addline(const char* fmt, ...) IM_FMTARGS(2);
+
+		// *
+		// asm related
 
 		static void load_raw_materials_progressbar(int index, int material_total_count);
 		static void load_raw_materials_progressbar_stub();
-		static void	hooks();
+
+		// *
+		// init
+
+		void	hooks();
 
 	private:
 		static void	strtrim(char* s);

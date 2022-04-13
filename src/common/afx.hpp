@@ -1549,5 +1549,7 @@ namespace afx
 	typedef void(__thiscall* CWnd_SetFocus_t)(CWnd*); extern CWnd_SetFocus_t CWnd_SetFocus;
 	typedef void(__stdcall* CWnd_FromHandle_t)(HWND); extern CWnd_FromHandle_t CWnd_FromHandle;
 	typedef AFX_MODULE_STATE* (__stdcall* get_module_state_t)();  extern get_module_state_t get_module_state;
-	
+
+	typedef void(__thiscall* CCheckListBox__SetCheck_t)(CCheckListBox*, int nIndex, int nCheck); extern CCheckListBox__SetCheck_t CCheckListBox__SetCheck;
+	typedef int(__thiscall* CCheckListBox__GetCheck_t)(CCheckListBox*, int nIndex); extern CCheckListBox__GetCheck_t CCheckListBox__GetCheck;
 }

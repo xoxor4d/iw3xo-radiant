@@ -124,7 +124,8 @@ namespace game
 		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*(DWORD*)0x23F1868);
 		return brush;
 	}
-	
+
+	// pot. unsafe, do not use in loops
 	game::entity_s_def* g_edit_entity()
 	{
 		const auto ent = reinterpret_cast<game::entity_s_def*>(*(DWORD*)0x240A108);

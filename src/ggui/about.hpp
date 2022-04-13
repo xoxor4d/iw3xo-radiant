@@ -6,6 +6,21 @@ namespace ggui
 	{
 	public:
 		about_dialog() { set_gui_type(GUI_TYPE_DEF); }
+
+		// *
+		// public member functions
+
 		void gui() override;
+
+
+		// *
+		// asm related
+
+
+
+		// *
+		// init
+
+
 	};
 }

@@ -266,7 +266,7 @@ namespace ggui::menubar
 					}
 
 					if (ImGui::MenuItem("Entity", hotkeys::get_hotkey_for_command("ViewEntityInfo").c_str())) {
-						components::gui::toggle(context.m_entity);
+						GET_GUI(ggui::entity_dialog)->toggle();
 					}
 
 					if (ImGui::MenuItem("Surface Inspector", hotkeys::get_hotkey_for_command("SurfaceInspector").c_str())) 
@@ -275,7 +275,7 @@ namespace ggui::menubar
 						{
 							if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
 							{
-								components::gui::toggle(ggui::state.czwnd.m_entity);
+								GET_GUI(ggui::entity_dialog)->toggle();
 							}
 							else
 							{

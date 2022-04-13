@@ -165,16 +165,33 @@ namespace ggui
 		};
 
 	public:
+		bool m_effect_was_modified;
+		bool m_pending_close;
+		bool m_pending_reload;
+
 		effects_editor_dialog()
 		{
 			set_gui_type(GUI_TYPE_DEF);
+
+			m_effect_was_modified = false;
+			m_pending_close = false;
+			m_pending_reload = false;
 		}
+
+		// *
+		// public member functions
 
 		void gui() override;
 
-		bool m_effect_was_modified = false;
-		bool m_pending_close = false;
-		bool m_pending_reload = false;
+
+		// *
+		// asm related
+
+
+
+		// *
+		// init
+
 
 
 	private:
