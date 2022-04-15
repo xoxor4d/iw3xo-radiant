@@ -148,6 +148,12 @@ void on_createclient()
 		}
 	}
 
+	// ensure prefs are up to date
+	if (dvars::gui_use_new_context_menu)
+	{
+		prefs->m_bRightClick = !dvars::gui_use_new_context_menu->current.enabled;
+	}
+
 	// disable r_vsync
 	if (const auto& r_vsync = game::Dvar_FindVar("r_vsync");
 					r_vsync && r_vsync->current.enabled)
