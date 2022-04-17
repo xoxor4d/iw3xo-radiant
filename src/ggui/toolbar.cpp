@@ -1366,7 +1366,8 @@ namespace ggui::toolbar
 		
 		if(is_floating_toolbar)
 		{
-			ImGui::SetNextWindowPos(ImVec2(5.0f, ggui::menubar_height + 5.0f), ImGuiCond_FirstUseEver);
+			const float menubar_height = GET_GUI(ggui::menubar_dialog)->get_height();
+			ImGui::SetNextWindowPos(ImVec2(5.0f, menubar_height + 5.0f), ImGuiCond_FirstUseEver);
 		}
 
 		if(ggui::toolbar_reset)
@@ -1386,7 +1387,8 @@ namespace ggui::toolbar
 			// reset to default floating state
 			else
 			{
-				ImGui::SetNextWindowPos(ImVec2(5.0f, ggui::menubar_height + 5.0f));
+				const float menubar_height = GET_GUI(ggui::menubar_dialog)->get_height();
+				ImGui::SetNextWindowPos(ImVec2(5.0f, menubar_height + 5.0f));
 			}
 
 			ggui::toolbar_reset = false;

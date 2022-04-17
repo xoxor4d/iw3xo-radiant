@@ -41,7 +41,6 @@ namespace ggui
 	ImGuiID		dockspace_outer_left_node;
 	bool		reset_dockspace = false;
 	bool		mainframe_menubar_enabled = false;
-	float		menubar_height;
 	
 	ImVec2		toolbar_pos;
 	ImVec2		toolbar_size;

@@ -603,7 +603,6 @@ namespace											\
 	extern ImGuiID		dockspace_outer_left_node;
 	extern bool			reset_dockspace;
 	extern bool			mainframe_menubar_enabled;
-	extern float		menubar_height;
 	
 	extern ImVec2		toolbar_pos;
 	extern ImVec2		toolbar_size;

@@ -2,26 +2,15 @@
 
 namespace ggui::menubar
 {
-	/*const float GRID_SIZES[11] =
-	{ 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f, 128.0f, 256.0f, 512.0f };
-
-	enum E_GRID_SIZES : int
-	{
-		GRID_05,
-		GRID_1,
-		GRID_2,
-		GRID_4,
-		GRID_8,
-		GRID_16,
-		GRID_32,
-		GRID_64,
-		GRID_128,
-		GRID_256,
-		GRID_512,
-	};*/
+	
 
 	
-	void set_grid_size(const xywnd::E_GRID_SIZES size)
+	
+}
+
+namespace ggui
+{
+	void menubar_dialog::set_grid_size(const xywnd::E_GRID_SIZES size)
 	{
 		game::g_qeglobals->d_gridsize = size;
 		if (game::g_PrefsDlg()->m_bSnapTToGrid)
@@ -32,8 +21,8 @@ namespace ggui::menubar
 		mainframe_thiscall(void, 0x428A00); // CMainFrame::SetGridStatus
 		game::g_nUpdateBits |= W_Z | W_XY;
 	}
-	
-	void set_render_method(const game::RENDER_METHOD_E meth)
+
+	void menubar_dialog::set_render_method(const game::RENDER_METHOD_E meth)
 	{
 		switch (meth)
 		{
@@ -51,8 +40,7 @@ namespace ggui::menubar
 		}
 	}
 
-	
-	void set_texture_resolution(int picmip)
+	void menubar_dialog::set_texture_resolution(int picmip)
 	{
 		game::g_qeglobals->d_savedinfo.d_picmip = picmip;
 
@@ -68,21 +56,20 @@ namespace ggui::menubar
 		game::g_nUpdateBits = -1;
 	}
 
-	
-	void menu(ggui::imgui_context_cz& context)
+	void menubar_dialog::menubar()
 	{
 		const auto prefs = game::g_PrefsDlg();
-		
+
 		// *
 		// menu bar within dockspace
-		
+
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12, 6));
 
 		if (ImGui::BeginMenuBar())
 		{
 			ImGui::BeginGroup();
-			
+
 			if (ImGui::BeginMenu("File"))
 			{
 				if (ImGui::MenuItem("New Map")) {
@@ -233,9 +220,9 @@ namespace ggui::menubar
 				if (ImGui::MenuItem("Edit Colors ...")) {
 					GET_GUI(gui_colors_dialog)->toggle();
 				}
-				
+
 				if (ImGui::MenuItem("Edit Toolbar ...")) {
-					components::gui::toggle(context.m_toolbar_edit);
+					components::gui::toggle(ggui::state.czwnd.m_toolbar_edit);
 				}
 
 				if (ImGui::MenuItem("Edit Hotkeys ...")) {
@@ -243,7 +230,7 @@ namespace ggui::menubar
 				}
 
 				if (ImGui::MenuItem("Preferences", ggui::hotkey_dialog::get_hotkey_for_command("Preferences").c_str())) {
-					components::gui::toggle(context.m_preferences);
+					components::gui::toggle(ggui::state.czwnd.m_preferences);
 				}
 
 				ImGui::EndMenu(); // Edit
@@ -256,7 +243,7 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("Game View", ggui::hotkey_dialog::get_hotkey_for_command("xo_gameview").c_str(), dvars::radiant_gameview->current.enabled)) {
 						components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
 					}
-					
+
 					if (ImGui::MenuItem("Console", ggui::hotkey_dialog::get_hotkey_for_command("ViewConsole").c_str())) {
 						GET_GUI(console_dialog)->toggle();
 					}
@@ -269,7 +256,7 @@ namespace ggui::menubar
 						GET_GUI(ggui::entity_dialog)->toggle();
 					}
 
-					if (ImGui::MenuItem("Surface Inspector", ggui::hotkey_dialog::get_hotkey_for_command("SurfaceInspector").c_str())) 
+					if (ImGui::MenuItem("Surface Inspector", ggui::hotkey_dialog::get_hotkey_for_command("SurfaceInspector").c_str()))
 					{
 						if (dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
 						{
@@ -304,7 +291,7 @@ namespace ggui::menubar
 					}
 
 					if (ImGui::MenuItem("ImGui Demo")) {
-						components::gui::toggle(context.m_demo);
+						components::gui::toggle(ggui::state.czwnd.m_demo);
 					}
 
 					SEPERATORV(0.0f);
@@ -354,7 +341,7 @@ namespace ggui::menubar
 
 						if (ImGui::MenuItem("Surface Inspector (Original)"))
 						{
-							
+
 							// SurfaceInspector::DoSurface
 							cdeclcall(void, 0x4585D0);
 						}
@@ -372,7 +359,7 @@ namespace ggui::menubar
 								utils::hook::call<void(__fastcall)(CWnd*, int, int)>(0x58EA4F)(vEdit, 0, SW_SHOW);
 							}
 						}
-						
+
 						ImGui::EndMenu(); // Original Windows
 					}
 
@@ -416,7 +403,7 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("XZ")) {
 						mainframe_thiscall(void, 0x424A80); // cmainframe::OnViewXz
 					}
-					
+
 					ImGui::EndMenu(); // Grid Window
 				}
 
@@ -464,7 +451,7 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("Draw Model Origins", 0, dvars::r_draw_model_origin->current.enabled)) {
 						dvars::set_bool(dvars::r_draw_model_origin, !dvars::r_draw_model_origin->current.enabled);
 					} TT("Draw small boxes around entity origins (size can be set in preferences/general \"Model origin size\"");
-					
+
 					ImGui::EndMenu(); // General
 				}
 
@@ -488,7 +475,7 @@ namespace ggui::menubar
 				if (ImGui::BeginMenu("Render Method / Features"))
 				{
 					if (const auto	draw_water = game::Dvar_FindVar("r_drawWater");
-									draw_water)
+						draw_water)
 					{
 						if (ImGui::MenuItem("Draw Water", 0, draw_water->current.enabled)) {
 							dvars::set_bool(draw_water, !draw_water->current.enabled);
@@ -496,7 +483,7 @@ namespace ggui::menubar
 					}
 
 					if (const auto	filmtweaks = game::Dvar_FindVar("r_filmtweakenable");
-									filmtweaks)
+						filmtweaks)
 					{
 						if (ImGui::MenuItem("Filmtweaks", 0, filmtweaks->current.enabled)) {
 							dvars::set_bool(filmtweaks, !filmtweaks->current.enabled);
@@ -533,8 +520,8 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("Fake Sun Fog", 0, dvars::r_fakesun_fog_enabled->current.enabled)) {
 						dvars::set_bool(dvars::r_fakesun_fog_enabled, !dvars::r_fakesun_fog_enabled->current.enabled);
 					} TT("settings @preferences->developer");
-					
-					if (ImGui::MenuItem("Fake Sun Settings")) 
+
+					if (ImGui::MenuItem("Fake Sun Settings"))
 					{
 						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
 						{
@@ -556,7 +543,7 @@ namespace ggui::menubar
 					}
 
 					SEPERATORV(0.0f);
-					
+
 					if (ImGui::MenuItem("Wireframe", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == game::RM_WIREFRAME)) {
 						set_render_method(game::RM_WIREFRAME);
 					}
@@ -627,7 +614,7 @@ namespace ggui::menubar
 				if (ImGui::BeginMenu("Specular Texture Resolution"))
 				{
 					const auto r_picmip_spec = game::Dvar_FindVar("r_picmip_spec");
-					
+
 					if (ImGui::MenuItem("Maximum", 0, r_picmip_spec->current.integer == 0)) {
 						game::Dvar_SetInt(r_picmip_spec, 0);
 					}
@@ -675,7 +662,7 @@ namespace ggui::menubar
 				}
 
 				SEPERATORV(0.0f);
-				
+
 				if (ImGui::BeginMenu("Show Patches As"))
 				{
 					// dvars::r_draw_patch_backface_wireframe
@@ -683,7 +670,7 @@ namespace ggui::menubar
 					{
 						game::Dvar_SetBool(dvars::r_draw_patch_backface_wireframe, !dvars::r_draw_patch_backface_wireframe->current.enabled);
 					}
-					
+
 					if (ImGui::MenuItem("Textured", 0, !prefs->g_nPatchAsWireframe))
 					{
 						prefs->g_nPatchAsWireframe = 0;
@@ -792,7 +779,7 @@ namespace ggui::menubar
 				if (ImGui::MenuItem("Cubic Clipping", ggui::hotkey_dialog::get_hotkey_for_command("ToggleCubicClip").c_str(), prefs->m_bCubicClipping)) {
 					mainframe_thiscall(void, 0x428F90); // cmainframe::OnViewCubicclipping
 				}
-				
+
 				ImGui::EndMenu(); // Renderer
 			}
 
@@ -804,9 +791,9 @@ namespace ggui::menubar
 					components::effects::edit();
 				}
 
-				if (ImGui::MenuItem("Reload Current Effect", 0, nullptr, components::effects::effect_can_play())) 
+				if (ImGui::MenuItem("Reload Current Effect", 0, nullptr, components::effects::effect_can_play()))
 				{
-					if(components::effects_editor::is_editor_active())
+					if (components::effects_editor::is_editor_active())
 					{
 						GET_GUI(ggui::effects_editor_dialog)->m_pending_reload = true;
 					}
@@ -889,7 +876,7 @@ namespace ggui::menubar
 				if (ImGui::MenuItem("Clone", ggui::hotkey_dialog::get_hotkey_for_command("CloneSelection").c_str())) {
 					cdeclcall(void, 0x425480); // CMainFrame::OnSelectionClone
 				}
-				
+
 				if (ImGui::MenuItem("Invert", ggui::hotkey_dialog::get_hotkey_for_command("InvertSelection").c_str())) {
 					cdeclcall(void, 0x42B6F0); // CMainFrame::OnSelectionInvert
 				}
@@ -1007,7 +994,7 @@ namespace ggui::menubar
 
 					ImGui::EndMenu(); // Clipper
 				}
-				
+
 				SEPERATORV(0.0f);
 
 				if (ImGui::MenuItem("Connect Entities", ggui::hotkey_dialog::get_hotkey_for_command("ConnectSelection").c_str())) {
@@ -1130,7 +1117,7 @@ namespace ggui::menubar
 				if (ImGui::MenuItem("Find / Replace")) {
 					cdeclcall(void, 0x428B40); // CMainFrame::OnTextureReplaceall
 				}
-				
+
 				if (ImGui::BeginMenu("Texture Window Scale"))
 				{
 					if (ImGui::MenuItem("200%", 0, prefs->m_nTextureWindowScale == 200)) {
@@ -1188,7 +1175,7 @@ namespace ggui::menubar
 
 				//	ImGui::EndMenu(); // Layered Materials
 				//}
-				
+
 				if (ImGui::BeginMenu("Edit Layer"))
 				{
 					if (ImGui::MenuItem("Cycle", ggui::hotkey_dialog::get_hotkey_for_command("TexLayerCycle").c_str())) {
@@ -1562,7 +1549,7 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("Weld to Prefab Vertices", 0, prefs->m_bVertSnapPrefab)) {
 						mainframe_thiscall(void, 0x42A220); // CMainFrame::OnVertSnapPrefab
 					} TT("Allows welding of patch verts to prefab vertices");
-					
+
 					ImGui::EndMenu(); // Weld
 				}
 
@@ -1633,7 +1620,7 @@ namespace ggui::menubar
 			}
 			ImGui::EndGroup(); // used to calculate total width below
 
-			if(dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
+			if (dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
 			{
 				const auto menubar_width = ImGui::GetItemRectSize().x + 24.0f;
 				const auto gridpos_text_width = ImGui::CalcTextSize(cmainframe::activewnd->m_strStatus[1]).x;
@@ -1656,4 +1643,6 @@ namespace ggui::menubar
 			ImGui::EndMenuBar();
 		}
 	}
+
+	REGISTER_GUI(menubar_dialog);
 }

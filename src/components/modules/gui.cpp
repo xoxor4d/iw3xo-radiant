@@ -255,8 +255,8 @@ namespace components
 			current_window->DC.MenuBarOffset.x = 10.0f;
 		}
 
-		ggui::menubar::menu(context);
-		ggui::menubar_height = ImGui::GetCurrentWindow()->MenuBarHeight();
+		GET_GUI(ggui::menubar_dialog)->menubar();
+		GET_GUI(ggui::menubar_dialog)->set_height(ImGui::GetCurrentWindow()->MenuBarHeight());
 
 
 		// *
