@@ -2,60 +2,36 @@
 
 namespace ggui::preferences
 {
-	int		dev_num_01 = 0;
-	float	dev_vec_01[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	float	dev_color_01[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	
-	// --------------------------------------
-	
-	const std::string CAT_GUI = "Gui";
-	const std::string CAT_GENERAL = "General";
-	const std::string CAT_GRID = "Grid";
-	const std::string CAT_CAMERA = "Camera";
-	const std::string CAT_TEXTURES = "Textures";
-	const std::string CAT_LIVELINK = "Live Link";
-	const std::string CAT_DEVELOPER = "Developer";
 
-	bool _pref_update_scroll = false;
-	
-	int _pref_child_current = -1;
-	unsigned int _pref_child_count = 0;
-	
-	const float _pref_child_bg_col[4] = { 0.1f, 0.1f, 0.1f, 0.2f };
-	const float _pref_child_bg_highlight_col[4] = { 0.7f, 0.7f, 0.7f, 0.1f };
-	
-	struct pref_child_s
-	{
-		unsigned int index;
-		std::function<void()> callback;
-	};
-	
-	nlohmann::fifo_map<std::string, pref_child_s> _pref_childs;
+}
 
-	void register_child(const std::string& _child_name, std::function<void()> _callback)
+namespace ggui
+{
+	void preferences_dialog::register_child(const std::string& _child_name, const std::function<void()>& _callback)
 	{
 		_pref_childs[_child_name] = pref_child_s
 		(
-			_pref_child_count,
+			m_child_count,
 			_callback
 		);
 
-		_pref_child_count++;
+		m_child_count++;
 	}
 
-	float pref_child_lambda(const std::string& child_name, const float child_height, const float* bg_color, const float* border_color, const std::function<void()>& cb)
+	float preferences_dialog::pref_child_lambda(const std::string& child_name, const float child_height, const float* bg_color, const float* border_color, const std::function<void()>& cb)
 	{
 		auto background_color = bg_color;
 
 		// do not offset the first child
-		if(_pref_childs[child_name].index)
+		if (_pref_childs[child_name].index)
 		{
 			SPACING(0.0f, 24.0f);
 		}
 
-		if ((int)_pref_childs[child_name].index == _pref_child_current)
+		if ((int)_pref_childs[child_name].index == m_child_current)
 		{
-			background_color = _pref_child_bg_highlight_col;
+			background_color = m_child_bg_highlight_col;
 		}
 
 		const std::string child_str = "[ "s + child_name + " ]"s;
@@ -70,12 +46,12 @@ namespace ggui::preferences
 		ImGui::BeginGroup();
 		ImGui::title_with_background(child_str.c_str(), min, child_width, 38.0f, dvars::gui_window_bg_color->current.vector, dvars::gui_border_color->current.vector, false, child_indent);
 
-		if (_pref_update_scroll)
+		if (m_update_scroll)
 		{
-			if ((int)_pref_childs[child_name].index == _pref_child_current)
+			if ((int)_pref_childs[child_name].index == m_child_current)
 			{
 				ImGui::SetScrollHereY(0.0f);
-				_pref_update_scroll = false;
+				m_update_scroll = false;
 			}
 		}
 
@@ -90,10 +66,12 @@ namespace ggui::preferences
 		return ImGui::GetItemRectSize().y;
 	}
 
-	void child_gui()
+	// ---
+
+	void preferences_dialog::child_gui()
 	{
 		static float height = 0.0f;
-		height = pref_child_lambda(CAT_GUI, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
+		height = pref_child_lambda(CAT_GUI, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
 		{
 			ImGui::title_with_seperator("General", false);
 
@@ -111,7 +89,7 @@ namespace ggui::preferences
 			}
 
 			ImGui::SameLine();
-			
+
 			ImGui::BeginDisabled(!dvars::gui_floating_toolbar->current.enabled);
 			{
 				ImGui::Checkbox("Resize Dockspace for floating toolbar", &dvars::gui_resize_dockspace->current.enabled);
@@ -127,7 +105,7 @@ namespace ggui::preferences
 			ImGui::Checkbox("Use new experimental surfaceinspector", &dvars::gui_use_new_surfinspector->current.enabled); TT(dvars::gui_use_new_surfinspector->description);
 			ImGui::Checkbox("Use new vertex edit dialog", &dvars::gui_use_new_vertedit_dialog->current.enabled); TT(dvars::gui_use_new_vertedit_dialog->description);
 
-			if(ImGui::Checkbox("Use new grid context menu", &dvars::gui_use_new_context_menu->current.enabled))
+			if (ImGui::Checkbox("Use new grid context menu", &dvars::gui_use_new_context_menu->current.enabled))
 			{
 				game::g_PrefsDlg()->m_bRightClick = !dvars::gui_use_new_context_menu->current.enabled;
 			}
@@ -141,12 +119,12 @@ namespace ggui::preferences
 		});
 	}
 
-	void child_general()
+	void preferences_dialog::child_general()
 	{
 		static float height = 0.0f;
-		height = pref_child_lambda(CAT_GENERAL, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
+		height = pref_child_lambda(CAT_GENERAL, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
 		{
-			auto prefs = game::g_PrefsDlg();
+			const auto prefs = game::g_PrefsDlg();
 
 			ImGui::title_with_seperator("Load / Save", false);
 
@@ -206,12 +184,12 @@ namespace ggui::preferences
 		});
 	}
 
-	void child_grid()
+	void preferences_dialog::child_grid()
 	{
 		static float height = 0.0f;
-		height = pref_child_lambda(CAT_GRID, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
+		height = pref_child_lambda(CAT_GRID, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
 		{
-			auto prefs = game::g_PrefsDlg();
+			const auto prefs = game::g_PrefsDlg();
 
 			ImGui::title_with_seperator("Mouse", false);
 			ImGui::Checkbox("Zoom to cursor", &dvars::grid_zoom_to_cursor->current.enabled);
@@ -232,13 +210,13 @@ namespace ggui::preferences
 			ImGui::Checkbox("Texture meshes", &prefs->texture_mesh_2d);
 		});
 	}
-	
-	void child_camera()
+
+	void preferences_dialog::child_camera()
 	{
 		static float height = 0.0f;
-		height = pref_child_lambda(CAT_CAMERA, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
+		height = pref_child_lambda(CAT_CAMERA, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
 		{
-			auto prefs = game::g_PrefsDlg();
+			const auto prefs = game::g_PrefsDlg();
 
 			ImGui::title_with_seperator("General", false);
 			ImGui::SliderInt("Camera mode", &prefs->camera_mode, 0, 2);
@@ -269,10 +247,10 @@ namespace ggui::preferences
 		});
 	}
 
-	void child_textures()
+	void preferences_dialog::child_textures()
 	{
 		static float height = 0.0f;
-		height = pref_child_lambda(CAT_TEXTURES, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
+		height = pref_child_lambda(CAT_TEXTURES, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
 		{
 			ImGui::title_with_seperator("General", false);
 			ImGui::Checkbox("Draw scrollbar", &dvars::gui_texwnd_draw_scrollbar->current.enabled);
@@ -281,10 +259,10 @@ namespace ggui::preferences
 			ImGui::title_with_seperator("Quality");
 
 			// actual picmip vars the renderer is using (used to check if quality was changed)
-			auto& r_picmip_renderer_val = *reinterpret_cast<int*>(0x14E6CF8);
-			auto& r_picmip_spec_renderer_val = *reinterpret_cast<int*>(0x14E6D00);
-			auto& r_picmip_bump_renderer_val = *reinterpret_cast<int*>(0x14E6CFC);
-			
+			const auto& r_picmip_renderer_val = *reinterpret_cast<int*>(0x14E6CF8);
+			const auto& r_picmip_spec_renderer_val = *reinterpret_cast<int*>(0x14E6D00);
+			const auto& r_picmip_bump_renderer_val = *reinterpret_cast<int*>(0x14E6CFC);
+
 			// 3 = Low, 0 = Maximum
 
 			const auto r_picmip = game::Dvar_FindVar("r_picmip");
@@ -292,7 +270,7 @@ namespace ggui::preferences
 			const auto r_picmip_bump = game::Dvar_FindVar("r_picmip_bump");
 
 			const char* quality_names[4] = { "Low", "Normal", "High", "Maximum" };
-			const char* quality_col  = (r_picmip->current.integer >= 0 && r_picmip->current.integer <= 3) ? quality_names[3 - r_picmip->current.integer] : "Unknown";
+			const char* quality_col = (r_picmip->current.integer >= 0 && r_picmip->current.integer <= 3) ? quality_names[3 - r_picmip->current.integer] : "Unknown";
 			const char* quality_spec = (r_picmip_spec->current.integer >= 0 && r_picmip_spec->current.integer <= 3) ? quality_names[3 - r_picmip_spec->current.integer] : "Unknown";
 			const char* quality_bump = (r_picmip_bump->current.integer >= 0 && r_picmip_bump->current.integer <= 3) ? quality_names[3 - r_picmip_bump->current.integer] : "Unknown";
 
@@ -303,7 +281,7 @@ namespace ggui::preferences
 			ImGui::SliderInt("Color Texture Quality", &r_picmip_proxy, 0, 3, quality_col);
 			r_picmip->current.integer = 3 - r_picmip_proxy;
 			game::g_qeglobals->d_savedinfo.d_picmip = r_picmip->current.integer;
-			
+
 			ImGui::SliderInt("Specular Texture Quality", &r_picmip_spec_proxy, 0, 3, quality_spec);
 			r_picmip_spec->current.integer = 3 - r_picmip_spec_proxy;
 
@@ -314,7 +292,7 @@ namespace ggui::preferences
 			const bool needs_reload = r_picmip_renderer_val != r_picmip->current.integer || r_picmip_spec_renderer_val != r_picmip_spec->current.integer || r_picmip_bump_renderer_val != r_picmip_bump->current.integer;
 
 			ImGui::BeginDisabled(!needs_reload);
-			if(ImGui::Button("Apply / Reload Textures", ImVec2(ImGui::CalcItemWidth(), 0.0f))) //ImVec2(sliderint_size.x - 145.0f, 0.0f)))
+			if (ImGui::Button("Apply / Reload Textures", ImVec2(ImGui::CalcItemWidth(), 0.0f))) //ImVec2(sliderint_size.x - 145.0f, 0.0f)))
 			{
 				// R_UpdateMipMap
 				cdeclcall(void, 0x5139A0);
@@ -324,10 +302,10 @@ namespace ggui::preferences
 		});
 	}
 
-	void child_livelink()
+	void preferences_dialog::child_livelink()
 	{
 		static float height = 0.0f;
-		height = pref_child_lambda(CAT_LIVELINK, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
+		height = pref_child_lambda(CAT_LIVELINK, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
 		{
 			ImGui::title_with_seperator("General", false);
 			ImGui::Checkbox("Enable live-link", &dvars::radiant_live->current.enabled);
@@ -343,12 +321,12 @@ namespace ggui::preferences
 		});
 	}
 
-	void child_developer()
+	void preferences_dialog::child_developer()
 	{
 		static float height = 0.0f;
-		height = pref_child_lambda(CAT_DEVELOPER, height, _pref_child_bg_col, dvars::gui_border_color->current.vector, []
+		height = pref_child_lambda(CAT_DEVELOPER, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
 		{
-			if(ImGui::Button("Enter Prefab"))
+			if (ImGui::Button("Enter Prefab"))
 			{
 				cdeclcall(void, 0x42BF70);
 			}
@@ -359,14 +337,19 @@ namespace ggui::preferences
 				cdeclcall(void, 0x42BF80);
 			}
 
-			if(ImGui::Button("Toggle template gui"))
+			ImGui::SameLine();
+			if (ImGui::Button("Toggle template gui"))
 			{
 				GET_GUI(template_dialog)->toggle();
 			}
 
+			SPACING(0.0f, 4.0f);
+
 			ImGui::Text("camera - cambuttonstate: %d", cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate);
 			ImGui::Text("camera - cursor_visible: %d", cmainframe::activewnd->m_pCamWnd->cursor_visible);
 			ImGui::Text("camera - window hovered: %d", ggui::get_rtt_camerawnd()->window_hovered);
+
+			SPACING(0.0f, 4.0f);
 
 			ImGui::DragInt("Int 01", &dev_num_01, 0.1f);
 			ImGui::DragFloat3("Vec4 01", dev_vec_01, 25.0f);
@@ -374,34 +357,31 @@ namespace ggui::preferences
 
 		});
 	}
-	
-	void menu(ggui::imgui_context_menu& menu)
-	{
-		if(!menu.one_time_init)
-		{
-			register_child(CAT_GENERAL, child_general);
-			register_child(CAT_GUI, child_gui);
-			register_child(CAT_GRID, child_grid);
-			register_child(CAT_CAMERA, child_camera);
-			register_child(CAT_TEXTURES, child_textures);
-			register_child(CAT_LIVELINK, child_livelink);
 
-//#ifdef DEBUG
-			register_child(CAT_DEVELOPER, child_developer);
-//#endif
-			
-			menu.one_time_init = true;
+	void preferences_dialog::gui()
+	{
+		if (!this->is_initiated())
+		{
+			register_child(CAT_GENERAL, std::bind(&preferences_dialog::child_general, this));
+			register_child(CAT_GUI, std::bind(&preferences_dialog::child_gui, this));
+			register_child(CAT_GRID, std::bind(&preferences_dialog::child_grid, this));
+			register_child(CAT_CAMERA, std::bind(&preferences_dialog::child_camera, this));
+			register_child(CAT_TEXTURES, std::bind(&preferences_dialog::child_textures, this));
+			register_child(CAT_LIVELINK, std::bind(&preferences_dialog::child_livelink, this));
+			register_child(CAT_DEVELOPER, std::bind(&preferences_dialog::child_developer, this));
+
+			this->set_initiated();
 		}
-		
+
 		const auto MIN_WINDOW_SIZE = ImVec2(800.0f, 400.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(800.0f, 600.0f);
-        ggui::set_next_window_initial_pos_and_constraints(MIN_WINDOW_SIZE, INITIAL_WINDOW_SIZE);
+		ggui::set_next_window_initial_pos_and_constraints(MIN_WINDOW_SIZE, INITIAL_WINDOW_SIZE);
 
 		int stylevars = 0, stylecolors = 0;
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f)); stylevars++;
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.08f, 0.08f, 0.08f, 0.31f)); stylecolors++;
 
-		if (!ImGui::Begin("Preferences##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
+		if (!ImGui::Begin("Preferences##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
 			ImGui::PopStyleColor(stylecolors);
 			ImGui::PopStyleVar(stylevars);
@@ -414,11 +394,11 @@ namespace ggui::preferences
 			int i = 0;
 			for (const auto& child : _pref_childs)
 			{
-				const bool is_selected = (_pref_child_current == i);
+				const bool is_selected = (m_child_current == i);
 				if (ImGui::Selectable(child.first.c_str(), is_selected))
 				{
-					_pref_child_current = i;
-					_pref_update_scroll = true;
+					m_child_current = i;
+					m_update_scroll = true;
 				}
 
 				if (is_selected)
@@ -455,18 +435,24 @@ namespace ggui::preferences
 
 		ImGui::PopStyleColor(stylecolors);
 		ImGui::PopStyleVar(stylevars);
-		
+
 		// end "Preferences##window"
 		ImGui::End();
 	}
 
 	// CMainFrame::OnPrefs
-	void on_prefsdialog_command()
+	void preferences_dialog::on_prefsdialog_command()
 	{
-		components::gui::toggle(ggui::state.czwnd.m_preferences);
+		GET_GUI(ggui::preferences_dialog)->toggle();
 	}
 
-	void register_dvars()
+	void preferences_dialog::hooks()
+	{
+		// detour CMainFrame::OnPrefs (hotkey to open the original dialog)
+		utils::hook::detour(0x426950, preferences_dialog::on_prefsdialog_command, HK_JUMP);
+	}
+
+	void preferences_dialog::register_dvars()
 	{
 		dvars::radiant_maxfps_grid = dvars::register_int(
 			/* name		*/ "radiant_maxfps_grid",
@@ -513,12 +499,8 @@ namespace ggui::preferences
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "Use new grid context menu");
-		
 	}
-	
-	void hooks()
-	{
-		// detour CMainFrame::OnPrefs (hotkey to open the original dialog)
-		utils::hook::detour(0x426950, on_prefsdialog_command, HK_JUMP);
-	}
+
+	REGISTER_GUI(preferences_dialog);
 }
+

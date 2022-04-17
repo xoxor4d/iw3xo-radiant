@@ -562,10 +562,6 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_surface_inspector,
 				ggui::surface_inspector::menu(ggui::state.czwnd.m_surface_inspector), nullptr);
 
-			// preferences menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_preferences,
-				ggui::preferences::menu(ggui::state.czwnd.m_preferences), nullptr);
-
 			// camera settings menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_camera_settings,
 				ggui::camera_settings::menu(ggui::state.czwnd.m_camera_settings), ggui::camera_settings::on_close());
@@ -984,10 +980,10 @@ namespace components
 		GET_GUI(ggui::entity_dialog)->hooks();
 		GET_GUI(ggui::filter_dialog)->hooks();
 		GET_GUI(ggui::hotkey_dialog)->hooks();
+		GET_GUI(ggui::preferences_dialog)->hooks();
 		GET_GUI(ggui::vertex_edit_dialog)->hooks();
 
 		ggui::modelselector::init();
-		ggui::preferences::hooks();
 		ggui::surface_inspector::hooks();
 
 		command::register_command("demo"s, [](std::vector<std::string> args)

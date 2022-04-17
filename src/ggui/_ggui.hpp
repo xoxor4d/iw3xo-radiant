@@ -563,7 +563,7 @@ namespace											\
 		imgui_context_menu m_toolbar;
 		imgui_context_menu m_toolbar_edit;
 		imgui_context_menu m_surface_inspector;
-		imgui_context_menu m_preferences;
+		//imgui_context_menu m_preferences;
 		imgui_context_menu m_camera_settings;
 		imgui_context_menu m_demo;
 

@@ -230,7 +230,7 @@ namespace ggui
 				}
 
 				if (ImGui::MenuItem("Preferences", ggui::hotkey_dialog::get_hotkey_for_command("Preferences").c_str())) {
-					components::gui::toggle(ggui::state.czwnd.m_preferences);
+					GET_GUI(ggui::preferences_dialog)->toggle();
 				}
 
 				ImGui::EndMenu(); // Edit
