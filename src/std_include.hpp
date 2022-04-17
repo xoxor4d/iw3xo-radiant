@@ -129,7 +129,7 @@
 #include "ggui/grid.hpp"
 #include "ggui/hotkeys.hpp"
 #include "ggui/menubar.hpp"
-#include "ggui/mesh.hpp"
+#include "ggui/vertex_edit.hpp"
 #include "ggui/modelselector.hpp"
 #include "ggui/preferences.hpp"
 #include "ggui/surface_inspector.hpp"

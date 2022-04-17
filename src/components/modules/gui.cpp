@@ -558,21 +558,9 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_toolbar_edit,
 				ggui::toolbar::menu_toolbar_edit(ggui::state.czwnd.m_toolbar_edit), ggui::toolbar::save_settings_ini());
 
-			// command bind menu
-			/*IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_cmdbinds,
-				ggui::hotkeys::menu(ggui::state.czwnd.m_cmdbinds), ggui::hotkeys::on_close());*/
-
-			// command bind helper menu
-			/*IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_cmdbinds_helper,
-				ggui::hotkeys::helper_menu(ggui::state.czwnd.m_cmdbinds_helper), nullptr);*/
-
 			// surface inspector menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_surface_inspector,
 				ggui::surface_inspector::menu(ggui::state.czwnd.m_surface_inspector), nullptr);
-
-			// vertex edit dialog
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_vertex_edit_dialog,
-				ggui::mesh::vertex_edit_dialog(ggui::state.czwnd.m_vertex_edit_dialog), nullptr);
 
 			// preferences menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_preferences,
@@ -996,8 +984,8 @@ namespace components
 		GET_GUI(ggui::entity_dialog)->hooks();
 		GET_GUI(ggui::filter_dialog)->hooks();
 		GET_GUI(ggui::hotkey_dialog)->hooks();
+		GET_GUI(ggui::vertex_edit_dialog)->hooks();
 
-		ggui::mesh::hooks();
 		ggui::modelselector::init();
 		ggui::preferences::hooks();
 		ggui::surface_inspector::hooks();

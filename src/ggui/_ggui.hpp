@@ -562,15 +562,9 @@ namespace											\
 
 		imgui_context_menu m_toolbar;
 		imgui_context_menu m_toolbar_edit;
-		//imgui_context_menu m_cmdbinds;
-		//imgui_context_menu m_cmdbinds_helper;
-		//imgui_context_menu m_filter;
-		//imgui_context_menu m_entity;
 		imgui_context_menu m_surface_inspector;
-		imgui_context_menu m_vertex_edit_dialog;
 		imgui_context_menu m_preferences;
 		imgui_context_menu m_camera_settings;
-		//imgui_context_menu m_effects_editor;
 		imgui_context_menu m_demo;
 
 		render_to_texture_window_s rtt_camerawnd;
