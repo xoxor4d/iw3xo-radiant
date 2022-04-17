@@ -262,7 +262,7 @@ namespace ggui::toolbar
 				static bool hov_open;
 			
 				//CMainFrame::OnFileOpen
-				image_button("open", hov_open, MAINFRAME_CDECL, 0x423AE0, std::string("Open File " + hotkeys::get_hotkey_for_command("FileOpen")).c_str());
+				image_button("open", hov_open, MAINFRAME_CDECL, 0x423AE0, std::string("Open File " + ggui::hotkey_dialog::get_hotkey_for_command("FileOpen")).c_str());
 			});
 
 		register_element("save"s, []()
@@ -270,7 +270,7 @@ namespace ggui::toolbar
 				static bool hov_save;
 			
 				//CMainFrame::OnFileSave
-				image_button("save", hov_save, MAINFRAME_CDECL, 0x423B80, std::string("Save File " + hotkeys::get_hotkey_for_command("FileSave")).c_str());
+				image_button("save", hov_save, MAINFRAME_CDECL, 0x423B80, std::string("Save File " + ggui::hotkey_dialog::get_hotkey_for_command("FileSave")).c_str());
 			});
 
 		register_element("flip_x"s, []()
@@ -320,7 +320,7 @@ namespace ggui::toolbar
 				static bool hov_rotz;
 
 				// CMainFrame::OnBrushRotatez
-				image_button("rotate_z", hov_rotz, CDECLCALL, 0x425220, std::string("Rotate Brush Z-Axis " + hotkeys::get_hotkey_for_command("RotateZ")).c_str());
+				image_button("rotate_z", hov_rotz, CDECLCALL, 0x425220, std::string("Rotate Brush Z-Axis " + ggui::hotkey_dialog::get_hotkey_for_command("RotateZ")).c_str());
 			});
 		
 		register_element(";"s, nullptr);
@@ -374,7 +374,7 @@ namespace ggui::toolbar
 				static bool hov_csg_merge;
 
 				// CMainFrame::OnSelectionCsgmerge
-				image_button("csg_merge", hov_csg_merge, CDECLCALL, 0x4255D0, std::string("CSG Merge " + hotkeys::get_hotkey_for_command("CSGMerge")).c_str());
+				image_button("csg_merge", hov_csg_merge, CDECLCALL, 0x4255D0, std::string("CSG Merge " + ggui::hotkey_dialog::get_hotkey_for_command("CSGMerge")).c_str());
 			});
 
 		register_element("csg_hollow"s, []()
@@ -414,7 +414,7 @@ namespace ggui::toolbar
 				static bool hov_cycle_layer;
 
 				// CMainFrame::OnEditLayerCycle
-				image_button("cycle_layer", hov_cycle_layer, CDECLCALL, 0x424010, std::string("Cycle Texture Layer " + hotkeys::get_hotkey_for_command("TexLayerCycle")).c_str());
+				image_button("cycle_layer", hov_cycle_layer, CDECLCALL, 0x424010, std::string("Cycle Texture Layer " + ggui::hotkey_dialog::get_hotkey_for_command("TexLayerCycle")).c_str());
 			});
 		
 		register_element(";"s, nullptr);
@@ -456,7 +456,7 @@ namespace ggui::toolbar
 			
 				// CMainFrame::OnViewCubicclipping
 				if (image_togglebutton("cubic_clip", hov_cubicclip, prefs->m_bCubicClipping,
-					std::string("Cubic Clipping" + hotkeys::get_hotkey_for_command("ToggleCubicClip")).c_str()))
+					std::string("Cubic Clipping" + ggui::hotkey_dialog::get_hotkey_for_command("ToggleCubicClip")).c_str()))
 				{
 					mainframe_thiscall(LRESULT, 0x428F90);
 				}
@@ -470,7 +470,7 @@ namespace ggui::toolbar
 				ImGui::BeginGroup();
 				{
 					ImVec2	prebutton_cursor = ImGui::GetCursorScreenPos();
-					image_button("empty_hover", hov_cycle_xyz, MAINFRAME_THIS, 0x426DB0, std::string("Cycle Grid Window View " + hotkeys::get_hotkey_for_command("NextView")).c_str());
+					image_button("empty_hover", hov_cycle_xyz, MAINFRAME_THIS, 0x426DB0, std::string("Cycle Grid Window View " + ggui::hotkey_dialog::get_hotkey_for_command("NextView")).c_str());
 
 					ImGui::PushFontFromIndex(REGULAR_18PX);
 					const auto viewtype = cmainframe::activewnd->m_pXYWnd->m_nViewType;
@@ -549,7 +549,7 @@ namespace ggui::toolbar
 			
 				// CMainFrame::OnSelectMouserotate
 				if (image_togglebutton("free_rotate", hov_freerotate, game::g_bRotateMode,
-					std::string("Free rotation " + hotkeys::get_hotkey_for_command("MouseRotate")).c_str()))
+					std::string("Free rotation " + ggui::hotkey_dialog::get_hotkey_for_command("MouseRotate")).c_str()))
 				{
 					mainframe_thiscall(LRESULT, 0x428570);
 				}
@@ -644,7 +644,7 @@ namespace ggui::toolbar
 
 				// CMainFrame::OnRedistPatchPoints
 				image_button("redisperse_patch_points", hov_redisp_patch_pts, CDECLCALL, 0x42A270,
-					std::string("Redisperse Patch Points " + hotkeys::get_hotkey_for_command("RedisperseVertices")).c_str());
+					std::string("Redisperse Patch Points " + ggui::hotkey_dialog::get_hotkey_for_command("RedisperseVertices")).c_str());
 			});
 
 		register_element("weld_equal_patches_move"s, []()
@@ -846,7 +846,7 @@ namespace ggui::toolbar
 					"gameview", 
 					hov_gameview, 
 					dvars::radiant_gameview->current.enabled,
-					std::string("Gameview " + hotkeys::get_hotkey_for_command("xo_gameview")).c_str()))
+					std::string("Gameview " + ggui::hotkey_dialog::get_hotkey_for_command("xo_gameview")).c_str()))
 				{
 					components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
 				}
@@ -860,7 +860,7 @@ namespace ggui::toolbar
 					"sunpreview", 
 					hov_fakesunpreview, 
 					dvars::r_fakesun_preview->current.enabled, 
-					std::string("Fake sun preview " + ggui::hotkeys::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()))
+					std::string("Fake sun preview " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()))
 				{
 					components::command::execute("fakesun_toggle");
 				}
@@ -874,7 +874,7 @@ namespace ggui::toolbar
 					"fakesun_fog",
 					hov_fakesun_fog,
 					dvars::r_fakesun_fog_enabled->current.enabled,
-					std::string("Toggle Fog " + ggui::hotkeys::get_hotkey_for_command("fakesun_fog_toggle")).c_str()))
+					std::string("Toggle Fog " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_fog_toggle")).c_str()))
 				{
 					components::command::execute("fakesun_fog_toggle");
 				}
@@ -889,7 +889,7 @@ namespace ggui::toolbar
 					"filmtweaks",
 					hov_filmtweaks_settings,
 					r_filmtweakenable->current.enabled,
-					std::string("Toggle filmtweaks " + ggui::hotkeys::get_hotkey_for_command("filmtweak_toggle")).c_str()))
+					std::string("Toggle filmtweaks " + ggui::hotkey_dialog::get_hotkey_for_command("filmtweak_toggle")).c_str()))
 				{
 					components::command::execute("filmtweak_toggle");
 				}
@@ -908,7 +908,7 @@ namespace ggui::toolbar
 					"fx_play",
 					hov_fx_play,
 					can_fx_play,
-					std::string("Play Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_play")).c_str(),
+					std::string("Play Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_play")).c_str(),
 					nullptr, 
 					nullptr, 
 					&overwrite_active_bg))
@@ -932,7 +932,7 @@ namespace ggui::toolbar
 					"fx_repeat",
 					hov_fx_repeat,
 					can_fx_play,
-					std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_repeat")).c_str(),
+					std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_repeat")).c_str(),
 					nullptr,
 					nullptr,
 					&overwrite_active_bg))
@@ -956,7 +956,7 @@ namespace ggui::toolbar
 					"fx_pause",
 					hov_fx_pause,
 					can_fx_play,
-					std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_pause")).c_str(),
+					std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str(),
 					nullptr,
 					nullptr,
 					&overwrite_active_bg))
@@ -980,7 +980,7 @@ namespace ggui::toolbar
 					"fx_stop",
 					hov_fx_stop,
 					can_fx_play,
-					std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_stop")).c_str(),
+					std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_stop")).c_str(),
 					nullptr,
 					nullptr,
 					&overwrite_active_bg))

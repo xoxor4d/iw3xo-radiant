@@ -129,7 +129,7 @@ namespace ggui::camera
 					if (ggui::toolbar::image_togglebutton("cubic_clip"
 						, hov_cubicclip
 						, prefs->m_bCubicClipping
-						, std::string("Cubic Clipping " + ggui::hotkeys::get_hotkey_for_command("ToggleCubicClip")).c_str()
+						, std::string("Cubic Clipping " + ggui::hotkey_dialog::get_hotkey_for_command("ToggleCubicClip")).c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
@@ -174,7 +174,7 @@ namespace ggui::camera
 					if (ggui::toolbar::image_togglebutton("gameview"
 						, hov_gameview
 						, dvars::radiant_gameview->current.enabled
-						, std::string("Gameview " + ggui::hotkeys::get_hotkey_for_command("xo_gameview")).c_str()
+						, std::string("Gameview " + ggui::hotkey_dialog::get_hotkey_for_command("xo_gameview")).c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
@@ -195,7 +195,7 @@ namespace ggui::camera
 					if (ggui::toolbar::image_togglebutton("sunpreview"
 						, hov_fakesunpreview
 						, dvars::r_fakesun_preview->current.enabled
-						, std::string("Fake sun preview " + ggui::hotkeys::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()
+						, std::string("Fake sun preview " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
@@ -212,7 +212,7 @@ namespace ggui::camera
 						if (ggui::toolbar::image_togglebutton("fakesun_fog"
 							, hov_fakesun_fog
 							, dvars::r_fakesun_fog_enabled->current.enabled
-							, std::string("Toggle Fog " + ggui::hotkeys::get_hotkey_for_command("fakesun_fog_toggle")).c_str()
+							, std::string("Toggle Fog " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_fog_toggle")).c_str()
 							, &toolbar_button_background
 							, &toolbar_button_background_hovered
 							, &toolbar_button_background_active
@@ -230,7 +230,7 @@ namespace ggui::camera
 					if (ggui::toolbar::image_togglebutton("filmtweaks"
 						, hov_filmtweaks_settings
 						, r_filmtweakenable->current.enabled
-						, std::string("Toggle filmtweaks " + ggui::hotkeys::get_hotkey_for_command("filmtweak_toggle")).c_str()
+						, std::string("Toggle filmtweaks " + ggui::hotkey_dialog::get_hotkey_for_command("filmtweak_toggle")).c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
@@ -289,7 +289,7 @@ namespace ggui::camera
 								if (ggui::toolbar::image_togglebutton("fx_play"
 									, hov_fx_play
 									, can_fx_play && !components::effects::effect_is_repeating()
-									, std::string("Play Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_play")).c_str()
+									, std::string("Play Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_play")).c_str()
 									, &toolbar_button_background
 									, &toolbar_button_background_hovered
 									, &toolbar_button_background_active
@@ -308,7 +308,7 @@ namespace ggui::camera
 								if (ggui::toolbar::image_togglebutton("fx_repeat"
 									, hov_fx_repeat
 									, components::effects::effect_is_repeating()
-									, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_repeat")).c_str()
+									, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_repeat")).c_str()
 									, &toolbar_button_background
 									, &toolbar_button_background_hovered
 									, &toolbar_button_background_active
@@ -323,7 +323,7 @@ namespace ggui::camera
 								if (ggui::toolbar::image_togglebutton("fx_pause"
 									, hov_fx_pause
 									, can_fx_play
-									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_pause")).c_str()
+									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str()
 									, &toolbar_button_background
 									, &toolbar_button_background_hovered
 									, &toolbar_button_background_active
@@ -338,7 +338,7 @@ namespace ggui::camera
 								if (ggui::toolbar::image_togglebutton("fx_stop"
 									, hov_fx_stop
 									, can_fx_play
-									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_stop")).c_str()
+									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_stop")).c_str()
 									, &toolbar_button_background
 									, &toolbar_button_background_hovered
 									, &toolbar_button_background_active

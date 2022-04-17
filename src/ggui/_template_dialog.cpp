@@ -18,5 +18,11 @@ namespace ggui
 		}
 	}
 
+	void template_dialog::on_open()
+	{ }
+
+	void template_dialog::on_close()
+	{ }
+
 	REGISTER_GUI(template_dialog);
 }

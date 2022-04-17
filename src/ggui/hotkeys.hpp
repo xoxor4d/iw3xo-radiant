@@ -1,14 +1,53 @@
 #pragma once
-#include "_ggui.hpp"
 
-namespace ggui::hotkeys
+namespace ggui
 {
-	void			menu(ggui::imgui_context_menu& menu);
-	void			helper_menu(ggui::imgui_context_menu& menu);
-	std::string		cmdbinds_ascii_to_keystr(int key);
-	int				cmdbinds_key_to_ascii(std::string key);
-	std::string		get_hotkey_for_command(const char* command);
-	void			on_close();
-	void			hooks();
-	
+	class hotkey_helper_dialog final : public ggui::ggui_module
+	{
+	public:
+		hotkey_helper_dialog() { set_gui_type(GUI_TYPE_DEF); }
+
+
+		// *
+		// public member functions
+
+		void gui() override;
+	};
+
+
+	// * ---------------------
+
+
+	class hotkey_dialog final : public ggui::ggui_module
+	{
+	public:
+		hotkey_dialog() { set_gui_type(GUI_TYPE_DEF); }
+
+
+		// *
+		// public member functions
+
+		void gui() override;
+		void on_open() override;
+		void on_close() override;
+
+		static int cmdbinds_key_to_ascii(std::string key);
+		static std::string cmdbinds_ascii_to_keystr(int key);
+		static bool cmdbinds_load_from_file(std::string file);
+		static std::string get_hotkey_for_command(const char* command);
+
+		// *
+		// asm related
+
+		static void load_commandmap();
+		static void load_default_commandmap();
+
+		// *
+		// init
+
+		void hooks();
+
+	private:
+		bool cmdbinds_check_dupe(commandbinds& bind, std::string& o_dupebind);
+	};
 }

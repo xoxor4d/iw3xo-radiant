@@ -1,7 +1,40 @@
 #include "std_include.hpp"
 #include <iomanip>
 
-namespace ggui::hotkeys
+namespace ggui
+{
+	void hotkey_helper_dialog::gui()
+	{
+		const auto MIN_WINDOW_SIZE = ImVec2(450, 160);
+
+		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, MIN_WINDOW_SIZE);
+		ImGui::SetNextWindowSize(MIN_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+
+		ImGui::SetNextWindowSizeConstraints(ImVec2(450, 160), ImVec2(450, 160));
+
+		if (!ImGui::Begin("Hotkeys Helper##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
+		{
+			ImGui::End();
+			return;
+		}
+
+		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
+						fs_homepath)
+		{
+			const char* apply_hint = utils::va("Could not find file 'iw3r_hotkeys.ini' in\n'%s'.", fs_homepath->current.string);
+			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - ImGui::CalcTextSize(apply_hint).x) * 0.5f);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetWindowHeight() * 0.5f - ImGui::CalcTextSize(apply_hint).y);
+			ImGui::TextUnformatted(apply_hint);
+		}
+
+		ImGui::End();
+	}
+
+	REGISTER_GUI(hotkey_helper_dialog);
+}
+
+namespace ggui
 {
 	const char* radiant_keybind_array[] =
 	{
@@ -92,7 +125,7 @@ namespace ggui::hotkeys
 	};
 
 	// get ascii fror keybind key
-	int cmdbinds_key_to_ascii(std::string key)
+	int hotkey_dialog::cmdbinds_key_to_ascii(std::string key)
 	{
 		if (key.length() > 0)
 		{
@@ -152,7 +185,7 @@ namespace ggui::hotkeys
 	}
 
 	// get ascii fror keybind key
-	std::string cmdbinds_ascii_to_keystr(int key)
+	std::string hotkey_dialog::cmdbinds_ascii_to_keystr(int key)
 	{
 		if (key == 0x20)  return "Space"s;
 		if (key == 0x8)   return "Backspace"s;
@@ -208,23 +241,23 @@ namespace ggui::hotkeys
 		return out;
 	}
 
-	std::string get_hotkey_for_command(const char* command)
+	std::string hotkey_dialog::get_hotkey_for_command(const char* command)
 	{
 		// find command in cmd_hotkeys (ini)
 		for (const auto& bind : cmd_hotkeys)
 		{
 			if (!_strcmpi(command, bind.cmd_name.c_str()))
 			{
-				if(bind.modifier_key.empty())
+				if (bind.modifier_key.empty())
 				{
 					return "";
 				}
 
 				return	"[" +
-						(bind.modifier_shift == 1 ? "SHIFT-"s : "") +
-						(bind.modifier_alt   == 1 ? "ALT-"s : "") +
-						(bind.modifier_ctrl  == 1 ? "CTRL-"s : "") +
-						 bind.modifier_key + "]";
+					(bind.modifier_shift == 1 ? "SHIFT-"s : "") +
+					(bind.modifier_alt == 1 ? "ALT-"s : "") +
+					(bind.modifier_ctrl == 1 ? "CTRL-"s : "") +
+					bind.modifier_key + "]";
 			}
 		}
 
@@ -243,7 +276,7 @@ namespace ggui::hotkeys
 				mod += (o_mod & 4 ? "CTRL-"s : "");
 				mod += cmdbinds_ascii_to_keystr(o_key);
 
-				if(mod.empty())
+				if (mod.empty())
 				{
 					return "";
 				}
@@ -255,15 +288,14 @@ namespace ggui::hotkeys
 		return "";
 	}
 
-
 	// populates std::vector<commandbinds> cmd_hotkeys
-	bool cmdbinds_load_from_file(std::string file)
+	bool hotkey_dialog::cmdbinds_load_from_file(std::string file)
 	{
 		cmd_hotkeys.clear();
 		std::string home_path;
 
-		const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
-		if (fs_homepath)
+		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath"); 
+						fs_homepath)
 		{
 			home_path = fs_homepath->current.string;
 		}
@@ -280,10 +312,10 @@ namespace ggui::hotkeys
 			home_path = path.substr(0, path.find_last_of("\\/"));
 		}
 
-		std::ifstream ini;
 		std::string ini_path = home_path;
 					ini_path += "\\" + file;
 
+		std::ifstream ini;
 		ini.open(ini_path.c_str());
 
 		if (!ini.is_open())
@@ -329,6 +361,7 @@ namespace ggui::hotkeys
 
 			// split keys on space
 			std::vector<std::string> keys;
+
 			if (args[1].find(' ') != std::string::npos)
 			{
 				// multiple keys
@@ -355,7 +388,6 @@ namespace ggui::hotkeys
 		return true;
 	}
 
-
 	// g_commandmap m_nModifiers
 	// 1u = shift
 	// 2u = alt
@@ -363,7 +395,7 @@ namespace ggui::hotkeys
 	// 8u = lwin
 
 	// overwrite hardcoded hotkeys with our own
-	void load_commandmap()
+	void hotkey_dialog::load_commandmap()
 	{
 		if (!cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
 		{
@@ -394,13 +426,13 @@ namespace ggui::hotkeys
 					//printf("|-> m_nModifiers '%d' to ", game::g_Commands[i].m_nModifiers);
 
 					game::g_Commands[i].m_nModifiers = hotkey.modifier_shift
-													| (hotkey.modifier_alt  == 1 ? 2 : 0)
-													| (hotkey.modifier_ctrl == 1 ? 4 : 0);
+						| (hotkey.modifier_alt == 1 ? 2 : 0)
+						| (hotkey.modifier_ctrl == 1 ? 4 : 0);
 
 					//printf("'%d'\n\n", game::g_Commands[i].m_nModifiers);
 
-					if (o_key != game::g_Commands[i].m_nKey ||
-						o_mod != game::g_Commands[i].m_nModifiers)
+					if (   o_key != game::g_Commands[i].m_nKey 
+						|| o_mod != game::g_Commands[i].m_nModifiers)
 					{
 						game::printf_to_console("|-> modified hotkey '%s'\n", hotkey.cmd_name.c_str());
 						commands_overwritten++;
@@ -412,16 +444,16 @@ namespace ggui::hotkeys
 		}
 
 		// exec cmainframe::on_keydown()
-		for(auto& addon_bind : ggui::cmd_addon_hotkeys_builtin)
+		for (auto& addon_bind : ggui::cmd_addon_hotkeys_builtin)
 		{
 			for (commandbinds& hotkey : cmd_hotkeys)
 			{
 				if (!_strcmpi(addon_bind.m_strCommand, hotkey.cmd_name.c_str()))
 				{
 					addon_bind.m_nKey = cmdbinds_key_to_ascii(hotkey.modifier_key);
-					addon_bind.m_nModifiers =  hotkey.modifier_shift
-											| (hotkey.modifier_alt  == 1 ? 2 : 0)
-											| (hotkey.modifier_ctrl == 1 ? 4 : 0);
+					addon_bind.m_nModifiers = hotkey.modifier_shift
+						| (hotkey.modifier_alt == 1 ? 2 : 0)
+						| (hotkey.modifier_ctrl == 1 ? 4 : 0);
 				}
 			}
 		}
@@ -433,9 +465,9 @@ namespace ggui::hotkeys
 				if (addon_bind.m_strCommand == hotkey.cmd_name)
 				{
 					addon_bind.m_nKey = cmdbinds_key_to_ascii(hotkey.modifier_key);
-					addon_bind.m_nModifiers =  hotkey.modifier_shift
-											| (hotkey.modifier_alt == 1 ? 2 : 0)
-											| (hotkey.modifier_ctrl == 1 ? 4 : 0);
+					addon_bind.m_nModifiers = hotkey.modifier_shift
+						| (hotkey.modifier_alt == 1 ? 2 : 0)
+						| (hotkey.modifier_ctrl == 1 ? 4 : 0);
 				}
 			}
 		}
@@ -451,9 +483,8 @@ namespace ggui::hotkeys
 		cdeclcall(void, 0x420140);
 	}
 
-
 	// load the default commandmap if we did not load our own (ini)
-	void load_default_commandmap()
+	void hotkey_dialog::load_default_commandmap()
 	{
 		if (cmd_hotkeys.empty())
 		{
@@ -461,82 +492,13 @@ namespace ggui::hotkeys
 		}
 	}
 
-
-	// triggered when the imgui hotkey menu gets closed
-	void on_close()
-	{
-		if (cmd_hotkeys.empty())
-		{
-			return;
-		}
-
-		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
-						fs_homepath)
-		{
-			std::ofstream ini;
-			std::string ini_path = fs_homepath->current.string;
-						ini_path += "\\iw3r_hotkeys.ini";
-
-			ini.open(ini_path.c_str());
-
-			if (!ini.is_open())
-			{
-				printf("[Hotkeys] Could not write to \"iw3r_hotkeys.ini\" in \"%s\"", fs_homepath->current.string);
-				return;
-			}
-
-			ini << "[Commands]" << std::endl;
-
-			for (commandbinds& bind : cmd_hotkeys)
-			{
-				ini << std::left << std::setw(26) << bind.cmd_name << " = ";
-
-				ini << (bind.modifier_shift == 0 ? "" : "+shift ");
-				ini << (bind.modifier_alt == 0 ? "" : "+alt ");
-				ini << (bind.modifier_ctrl == 0 ? "" : "+ctrl ");
-				ini <<  bind.modifier_key << std::endl;
-			}
-
-			load_commandmap();
-		}
-	}
-
-
-	// show help text in case there is no hotkeys file
-	void helper_menu(ggui::imgui_context_menu& menu)
-	{
-		const auto MIN_WINDOW_SIZE = ImVec2(450, 160);
-
-		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, MIN_WINDOW_SIZE);
-		ImGui::SetNextWindowSize(MIN_WINDOW_SIZE, ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
-		
-		ImGui::SetNextWindowSizeConstraints(ImVec2(450, 160), ImVec2(450, 160));
-
-		if(!ImGui::Begin("Hotkeys Helper##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
-		{
-			ImGui::End();
-			return;
-		}
-
-		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
-			fs_homepath)
-		{
-			const char* apply_hint = utils::va("Could not find file 'iw3r_hotkeys.ini' in\n'%s'.", fs_homepath->current.string);
-			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - ImGui::CalcTextSize(apply_hint).x) * 0.5f);
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetWindowHeight() * 0.5f - ImGui::CalcTextSize(apply_hint).y);
-			ImGui::TextUnformatted(apply_hint);
-		}
-
-		ImGui::End();
-	}
-
-	bool cmdbinds_check_dupe(commandbinds& bind, std::string& o_dupebind)
+	bool hotkey_dialog::cmdbinds_check_dupe(commandbinds& bind, std::string& o_dupebind)
 	{
 		for (commandbinds& binds : cmd_hotkeys)
 		{
 			// ignore "self"
-			if (bind.cmd_name == binds.cmd_name) {
+			if (bind.cmd_name == binds.cmd_name) 
+			{
 				continue;
 			}
 
@@ -547,7 +509,7 @@ namespace ggui::hotkeys
 				continue;
 			}
 
-			if (bind.modifier_shift == binds.modifier_shift
+			if (   bind.modifier_shift == binds.modifier_shift
 				&& bind.modifier_ctrl == binds.modifier_ctrl
 				&& bind.modifier_alt == binds.modifier_alt
 				&& bind.modifier_key == binds.modifier_key)
@@ -560,28 +522,17 @@ namespace ggui::hotkeys
 		return false;
 	}
 
-	// hotkey menu
-	void menu(ggui::imgui_context_menu& menu)
+	void hotkey_dialog::gui()
 	{
-		// on first open, load ini
-		if (!menu.was_open)
-		{
-			if (!cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
-			{
-				components::gui::toggle(ggui::state.czwnd.m_cmdbinds_helper);
-				menu.menustate = false;
-			}
-		}
+		const auto MIN_WINDOW_SIZE = ImVec2(450.0f, 342.0f);
+		const auto INITIAL_WINDOW_SIZE = ImVec2(450.0f, 800.0f);
 
-		const auto MIN_WINDOW_SIZE		= ImVec2(450.0f, 342.0f);
-		const auto INITIAL_WINDOW_SIZE	= ImVec2(450.0f, 800.0f);
-		
 		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(1.0f, 4.0f));
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
-		
-		ImGui::Begin("Hotkeys##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
+
+		ImGui::Begin("Hotkeys##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse);
 
 		const char* apply_hint = "Changes will apply upon closing the window.";
 		ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(apply_hint).x) * 0.5f);
@@ -606,14 +557,14 @@ namespace ggui::hotkeys
 			while (clipper.Step())
 			{
 				// for (commandbinds& bind : cmd_hotkeys)
-				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) 
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 				{
 					commandbinds& bind = cmd_hotkeys[i];
 
 					std::string str_dupe_bind = bind.cmd_name;
-					bool found_dupe = cmdbinds_check_dupe(bind, str_dupe_bind);
+					const bool found_dupe = cmdbinds_check_dupe(bind, str_dupe_bind);
 
-					// unique widget id's for each row (we get collisions otherwise)
+					// unique widget id's for each row
 					ImGui::PushID(row); row++;
 					ImGui::TableNextRow();
 
@@ -650,8 +601,7 @@ namespace ggui::hotkeys
 							ImGui::Checkbox("##1", (bool*)&bind.modifier_ctrl);
 							break;
 						case 4:
-							float w = ImGui::GetColumnWidth();//ImGui::CalcItemWidth();
-							ImGui::PushItemWidth(w - 6.0f);
+							ImGui::PushItemWidth(ImGui::GetColumnWidth() - 6.0f);
 
 							if (ImGui::BeginCombo("##combokey", bind.modifier_key.c_str(), ImGuiComboFlags_NoArrowButton)) // The second parameter is the label previewed before opening the combo.
 							{
@@ -687,7 +637,7 @@ namespace ggui::hotkeys
 					ImGui::PopID();
 				}
 			} clipper.End();
-			
+
 			ImGui::EndTable();
 		}
 
@@ -695,14 +645,61 @@ namespace ggui::hotkeys
 		ImGui::End();
 	}
 
-	// -------------
+	void hotkey_dialog::on_open()
+	{
+		if (!hotkey_dialog::cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
+		{
+			GET_GUI(hotkey_helper_dialog)->open();
+			this->close();
+		}
+	}
 
-	void hooks()
+	void hotkey_dialog::on_close()
+	{
+		if (cmd_hotkeys.empty())
+		{
+			return;
+		}
+
+		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
+						fs_homepath)
+		{
+			std::ofstream ini;
+			std::string ini_path = fs_homepath->current.string;
+						ini_path += "\\iw3r_hotkeys.ini";
+
+			ini.open(ini_path.c_str());
+
+			if (!ini.is_open())
+			{
+				printf("[Hotkeys] Could not write to \"iw3r_hotkeys.ini\" in \"%s\"", fs_homepath->current.string);
+				return;
+			}
+
+			ini << "[Commands]" << std::endl;
+
+			for (commandbinds& bind : cmd_hotkeys)
+			{
+				ini << std::left << std::setw(26) << bind.cmd_name << " = ";
+
+				ini << (bind.modifier_shift == 0 ? "" : "+shift ");
+				ini << (bind.modifier_alt == 0 ? "" : "+alt ");
+				ini << (bind.modifier_ctrl == 0 ? "" : "+ctrl ");
+				ini <<  bind.modifier_key << std::endl;
+			}
+
+			hotkey_dialog::load_commandmap();
+		}
+	}
+
+	void hotkey_dialog::hooks()
 	{
 		// replace hardcoded hotkeys with our own (ini)
-		utils::hook(0x420A4F, load_commandmap, HOOK_CALL).install()->quick();
+		utils::hook(0x420A4F, hotkey_dialog::load_commandmap, HOOK_CALL).install()->quick();
 
 		// load/skip the original commandmap (depends if iw3r_hotkeys.ini exists or not)
-		utils::hook(0x4210BF, load_default_commandmap, HOOK_CALL).install()->quick();
+		utils::hook(0x4210BF, hotkey_dialog::load_default_commandmap, HOOK_CALL).install()->quick();
 	}
+
+	REGISTER_GUI(hotkey_dialog);
 }

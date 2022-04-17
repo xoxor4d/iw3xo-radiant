@@ -188,6 +188,8 @@ namespace ggui
 		ggui_module() = default;
 		virtual ~ggui_module() = default;
 		virtual void gui() {}
+		virtual void on_open() {}
+		virtual void on_close() {}
 
 		void set_gui_type(GUI_TYPE_ type)
 		{
@@ -199,11 +201,17 @@ namespace ggui
 		{
 			if (is_active())
 			{
+				if(!was_active())
+				{
+					on_open();
+				}
+
 				gui();
 				set_was_active(true);
 			}
 			else if (was_active())
 			{
+				on_close();
 				set_was_active(false);
 			}
 		}
@@ -281,14 +289,23 @@ namespace ggui
 		// no desc
 		[[nodiscard]] bool is_inactive_tab() const
 		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: return vars.def._inactive_tab;
+			case GUI_TYPE_RTT: return vars.rtt._inactive_tab;
+			}
 
-			return vars.rtt._inactive_tab;
+			return false;
 		}
 
 		// 
 		void set_inactive_tab(const bool n_state)
 		{
-			vars.rtt._inactive_tab = n_state;
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: vars.def._inactive_tab = n_state; break;
+			case GUI_TYPE_RTT: vars.rtt._inactive_tab = n_state; break;
+			}
 		}
 
 
@@ -296,14 +313,23 @@ namespace ggui
 		// internal on-init bool
 		[[nodiscard]] bool is_initiated() const
 		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: return vars.def._one_time_init;
+			case GUI_TYPE_RTT: return vars.rtt._one_time_init;
+			}
 
-			return vars.rtt._one_time_init;
+			return false;
 		}
 
 		// 
 		void set_initiated()
 		{
-			vars.rtt._one_time_init = true;
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: vars.def._one_time_init = true; break;
+			case GUI_TYPE_RTT: vars.rtt._one_time_init = true; break;
+			}
 		}
 
 
@@ -311,14 +337,23 @@ namespace ggui
 		// is pending bring-to-front within next frame (docked windows)
 		[[nodiscard]] bool is_bring_to_front_pending() const
 		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: return vars.def._bring_tab_to_front;
+			case GUI_TYPE_RTT: return vars.rtt._bring_tab_to_front;
+			}
 
-			return vars.rtt._bring_tab_to_front;
+			return false;
 		}
 
 		// bring gui to the front within next frame (docked windows)
 		void set_bring_to_front(const bool n_state)
 		{
-			vars.rtt._bring_tab_to_front = n_state;
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: vars.def._bring_tab_to_front = n_state; break;
+			case GUI_TYPE_RTT: vars.rtt._bring_tab_to_front = n_state; break;
+			}
 		}
 
 
@@ -447,7 +482,6 @@ namespace ggui
 			vars.rtt._capture_left_mousebutton = n_state;
 		}
 
-	private:
 		[[nodiscard]] bool was_active() const
 		{
 			switch (GUI_TYPE)
@@ -528,9 +562,9 @@ namespace											\
 
 		imgui_context_menu m_toolbar;
 		imgui_context_menu m_toolbar_edit;
-		imgui_context_menu m_cmdbinds;
-		imgui_context_menu m_cmdbinds_helper;
-		imgui_context_menu m_filter;
+		//imgui_context_menu m_cmdbinds;
+		//imgui_context_menu m_cmdbinds_helper;
+		//imgui_context_menu m_filter;
 		//imgui_context_menu m_entity;
 		imgui_context_menu m_surface_inspector;
 		imgui_context_menu m_vertex_edit_dialog;

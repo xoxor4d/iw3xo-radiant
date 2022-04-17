@@ -559,12 +559,12 @@ namespace components
 				ggui::toolbar::menu_toolbar_edit(ggui::state.czwnd.m_toolbar_edit), ggui::toolbar::save_settings_ini());
 
 			// command bind menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_cmdbinds,
-				ggui::hotkeys::menu(ggui::state.czwnd.m_cmdbinds), ggui::hotkeys::on_close());
+			/*IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_cmdbinds,
+				ggui::hotkeys::menu(ggui::state.czwnd.m_cmdbinds), ggui::hotkeys::on_close());*/
 
 			// command bind helper menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_cmdbinds_helper,
-				ggui::hotkeys::helper_menu(ggui::state.czwnd.m_cmdbinds_helper), nullptr);
+			/*IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_cmdbinds_helper,
+				ggui::hotkeys::helper_menu(ggui::state.czwnd.m_cmdbinds_helper), nullptr);*/
 
 			// surface inspector menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_surface_inspector,
@@ -682,7 +682,6 @@ namespace components
 		// startup only
 		if (!ggui::saved_states_init)
 		{
-			SAVED_STATE_INIT(m_filter,				dvars::gui_saved_state_filter);
 			SAVED_STATE_INIT(m_surface_inspector,	dvars::gui_saved_state_surfinspector);
 			SAVED_STATE_INIT_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
 		}
@@ -690,7 +689,6 @@ namespace components
 		// *
 		// every frame
 
-		SAVED_STATE_UPDATE(m_filter,			dvars::gui_saved_state_filter);
 		SAVED_STATE_UPDATE(m_surface_inspector, dvars::gui_saved_state_surfinspector);
 		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
 
@@ -698,6 +696,7 @@ namespace components
 		// now handles init and update
 		HANDLE_SAVED_STATE_REFACTOR(ggui::console_dialog, dvars::gui_saved_state_console, ggui::saved_states_init);
 		HANDLE_SAVED_STATE_REFACTOR(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::saved_states_init);
+		HANDLE_SAVED_STATE_REFACTOR(ggui::filter_dialog, dvars::gui_saved_state_filter, ggui::saved_states_init);
 		HANDLE_SAVED_STATE_REFACTOR(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::saved_states_init);
 
 		ggui::saved_states_init = true;
@@ -996,8 +995,8 @@ namespace components
 
 		GET_GUI(ggui::entity_dialog)->hooks();
 		GET_GUI(ggui::filter_dialog)->hooks();
+		GET_GUI(ggui::hotkey_dialog)->hooks();
 
-		ggui::hotkeys::hooks();
 		ggui::mesh::hooks();
 		ggui::modelselector::init();
 		ggui::preferences::hooks();
