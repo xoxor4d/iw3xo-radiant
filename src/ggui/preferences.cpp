@@ -96,9 +96,9 @@ namespace ggui
 			}
 			ImGui::EndDisabled();
 
-			const char* background_names[] = { "None", "Grid", "Camera" };
-			const char* background_str = (dvars::gui_mainframe_background->current.integer >= 0 && dvars::gui_mainframe_background->current.integer <= 2) ? background_names[dvars::gui_mainframe_background->current.integer] : "Unknown";
-			ImGui::SliderInt("Dockspace Background", &dvars::gui_mainframe_background->current.integer, 0, 2, background_str);
+			//const char* background_names[] = { "None", "Grid", "Camera" };
+			//const char* background_str = (dvars::gui_mainframe_background->current.integer >= 0 && dvars::gui_mainframe_background->current.integer <= 2) ? background_names[dvars::gui_mainframe_background->current.integer] : "Unknown";
+			//ImGui::SliderInt("Dockspace Background", &dvars::gui_mainframe_background->current.integer, 0, 2, background_str);
 
 			// -----------------
 			ImGui::title_with_seperator("New / Ported Features");
@@ -347,7 +347,7 @@ namespace ggui
 
 			ImGui::Text("camera - cambuttonstate: %d", cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate);
 			ImGui::Text("camera - cursor_visible: %d", cmainframe::activewnd->m_pCamWnd->cursor_visible);
-			ImGui::Text("camera - window hovered: %d", ggui::get_rtt_camerawnd()->window_hovered);
+			ImGui::Text("camera - window hovered: %d", GET_GUI(ggui::camera_dialog)->rtt_is_hovered());
 
 			SPACING(0.0f, 4.0f);
 

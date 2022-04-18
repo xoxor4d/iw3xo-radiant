@@ -150,10 +150,12 @@ namespace ggui::camera_settings
 		
 		auto initial_window_pos = ggui::get_initial_window_pos();
 		
-		if(auto camerawnd = ggui::get_rtt_camerawnd(); 
+		if(auto camerawnd = GET_GUI(ggui::camera_dialog);
 				camerawnd)
 		{
-			initial_window_pos = ImVec2(camerawnd->scene_pos_imgui.x + camerawnd->scene_size_imgui.x - INITIAL_WINDOW_SIZE.x - 48.0f, camerawnd->scene_pos_imgui.y + 32.0f);
+			initial_window_pos = ImVec2(
+				camerawnd->rtt_get_position().x + camerawnd->rtt_get_size().x - INITIAL_WINDOW_SIZE.x - 48.0f,
+				camerawnd->rtt_get_position().y + 32.0f);
 		}
 
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));

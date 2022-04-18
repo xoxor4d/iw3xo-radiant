@@ -173,8 +173,9 @@ namespace components
 
 
 		// *
-		// render backgrounds
-		
+		// render backgrounds (makes no sense currently)
+
+#if 0
 		if(dvars::gui_mainframe_background)
 		{
 			if (dvars::gui_mainframe_background->current.integer == 1)
@@ -214,7 +215,7 @@ namespace components
 				if (game::g_PrefsDlg()->m_nView == 1)
 				{
 					SetWindowPos(cmainframe::activewnd->m_pCamWnd->m_hWnd, HWND_BOTTOM, 0, 0, zwnd->width, zwnd->height, SWP_NOZORDER);
-					auto camera_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.width), static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.height));
+					const auto camera_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.width), static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.height));
 
 					ImGui::SetNextWindowPos(ImVec2(0, 0));
 					ImGui::SetNextWindowSize(camera_size);
@@ -222,17 +223,15 @@ namespace components
 					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
 					ImGui::Begin("mainview_camera", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus);
 					{
-						if (auto camerawnd = ggui::get_rtt_camerawnd();
-							camerawnd->scene_texture)
+						if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+										camerawnd->rtt_get_texture())
 						{
 							const auto IO = ImGui::GetIO();
 							const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
 
-							ImGui::Image(camerawnd->scene_texture, camera_size);
-							camerawnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_None);
-
-							camerawnd->cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
-							camerawnd->cursor_pos_pt = CPoint((LONG)camerawnd->cursor_pos.x, (LONG)camerawnd->cursor_pos.y);
+							ImGui::Image(camerawnd->rtt_get_texture(), camera_size);
+							camerawnd->rtt_set_hovered_state(ImGui::IsItemHovered(ImGuiHoveredFlags_None));
+							camerawnd->rtt_set_cursor_pos(ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y));
 						}
 					}
 					ImGui::PopStyleVar(2);
@@ -240,6 +239,7 @@ namespace components
 				}
 			}
 		}
+#endif
 
 		
 		// *
@@ -448,7 +448,7 @@ namespace components
 
 			if (!renderer::postfx::is_any_active())
 			{
-				renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
+				renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 			}
 		}
 
@@ -536,7 +536,7 @@ namespace components
 
 			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 2) 
 			{
-				ggui::camera::gui();
+				GET_GUI(ggui::camera_dialog)->camera_gui();
 			}
 
 

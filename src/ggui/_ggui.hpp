@@ -397,7 +397,7 @@ namespace ggui
 			return vars.rtt._cursor_pos;
 		}
 
-		// [ImVec2] update cursor position
+		// [ImVec2] update cursor position (incl. CPoint)
 		void rtt_set_cursor_pos(const ImVec2& new_pos)
 		{
 			GUI_CHECK_RTT;
@@ -565,7 +565,7 @@ namespace											\
 		imgui_context_menu m_camera_settings;
 		imgui_context_menu m_demo;
 
-		render_to_texture_window_s rtt_camerawnd;
+		//render_to_texture_window_s rtt_camerawnd;
 		render_to_texture_window_s rtt_gridwnd;
 		model_selector_s rtt_model_selector;
 	};
@@ -630,10 +630,10 @@ namespace											\
 		return &state.czwnd.rtt_gridwnd;
 	}
 	
-	inline render_to_texture_window_s* get_rtt_camerawnd()
+	/*inline render_to_texture_window_s* get_rtt_camerawnd()
 	{
 		return &state.czwnd.rtt_camerawnd;
-	}
+	}*/
 
 	/*inline render_to_texture_window_s* get_rtt_texturewnd()
 	{

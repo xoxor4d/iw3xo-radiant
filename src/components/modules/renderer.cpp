@@ -1238,11 +1238,11 @@ namespace components
 			// filmtweaks :: set colorMapPostSunSampler (uses pre-postfx scene texture)
 			if (is_filmtweak_tech)
 			{
-				if (const auto	cam = ggui::get_rtt_camerawnd();
-								cam && cam->scene_texture)
+				if (const auto	cam = GET_GUI(ggui::camera_dialog);
+								cam && cam->rtt_get_texture())
 				{
 					game::GfxImage postsun = {};
-					postsun.texture.data = cam->scene_texture;
+					postsun.texture.data = cam->rtt_get_texture();
 
 					game::R_SetSampler(0, state, 4, (char)114, &postsun);
 				}
@@ -1510,7 +1510,7 @@ namespace components
 		if(renderer::postfx::is_any_active())
 		{
 			// get scene without postfx -> used for colorMapPostSunSampler
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
+			renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 		}
 
 		// register_material
@@ -1523,7 +1523,7 @@ namespace components
 			utils::hook::call<void(__cdecl)(game::Material* _material)>(0x531450)(game::rgp->pixelCostColorCodeMaterial);
 
 			// get scene with postfx -> render with imgui
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
+			renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 		}
 	}
 

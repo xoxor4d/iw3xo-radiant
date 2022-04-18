@@ -252,7 +252,7 @@ BOOL WINAPI ccamwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 			IMGUI_BEGIN_CZWND;
 
 			// not sure why I did this
-			if (!ggui::get_rtt_camerawnd()->window_hovered && ImGui::GetIO().WantCaptureMouse)
+			if (!GET_GUI(ggui::camera_dialog)->rtt_is_hovered() && ImGui::GetIO().WantCaptureMouse)
 			{
 				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
 				return true;

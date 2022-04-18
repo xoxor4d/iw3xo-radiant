@@ -59,19 +59,19 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		}
 
 		// if mouse is inside imgui camera window & cursor not at window border (resizing)
-		if (auto camerawnd = ggui::get_rtt_camerawnd();
-				 camerawnd->window_hovered && !ImGui::IsResizing())
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered() && !ImGui::IsResizing())
 		{
-			camerawnd->should_set_focus = true;
-			
+			camerawnd->rtt_set_focus_state(true);
+
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
 
-			ccam->m_ptLastCursor = camerawnd->cursor_pos_pt;
+			ccam->m_ptLastCursor = camerawnd->rtt_get_cursor_pos_cpoint();
 			SetFocus(ccam->GetWindow());
 			SetCapture(ccam->GetWindow());
 			CamWnd__DropModelsToPlane(ccam, ccam->m_ptLastCursor.x, ccam->camera.height - ccam->m_ptLastCursor.y - 1, nFlags);
 
-			if(camerawnd->capture_left_mousebutton)
+			if(camerawnd->rtt_is_capturing_lmb())
 			{
 				ImGui::HandleKeyIO(ccam->GetWindow(), WM_LBUTTONDOWN);
 				//camerawnd->capture_left_mousebutton = false;
@@ -141,7 +141,7 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 		// check if func was called from ccamwnd::on_lbutton_up
 		if (point.x == 251)
 		{
-			const auto camerawnd = ggui::get_rtt_camerawnd();
+			const auto camerawnd = GET_GUI(ggui::camera_dialog);
 
 			ccamwnd::mouse_up(cmainframe::activewnd->m_pCamWnd, nFlags);
 			if ((nFlags & (MK_MBUTTON | MK_RBUTTON | MK_LBUTTON)) == 0)
@@ -149,10 +149,10 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 				ReleaseCapture();
 			}
 
-			if (camerawnd->capture_left_mousebutton)
+			if (camerawnd->rtt_is_capturing_lmb())
 			{
 				ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_LBUTTONUP);
-				camerawnd->capture_left_mousebutton = false;
+				camerawnd->rtt_set_lmb_capturing(false);
 			}
 			
 			return;
@@ -210,16 +210,20 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		}
 
 		// if mouse is inside imgui camera window
-		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
-						camerawnd->window_hovered)
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered())
 		{
-			camerawnd->should_set_focus = true;
-			
+			camerawnd->rtt_set_focus_state(true);
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
 
 			SetFocus(ccam->GetWindow());
 			SetCapture(ccam->GetWindow());
-			CamWnd__DropModelsToPlane(ccam, camerawnd->cursor_pos_pt.x, ccam->camera.height - camerawnd->cursor_pos_pt.y - 1, nFlags);
+
+			CamWnd__DropModelsToPlane(
+				ccam, 
+				camerawnd->rtt_get_cursor_pos_cpoint().x, 
+				ccam->camera.height - camerawnd->rtt_get_cursor_pos_cpoint().y - 1,
+				nFlags);
 
 			ImGui::HandleKeyIO(ccam->GetWindow(), WM_RBUTTONDOWN);
 			return;
@@ -359,16 +363,21 @@ void __fastcall czwnd::on_mbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		}
 
 		// if mouse is inside imgui camera window
-		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
-						camerawnd->window_hovered)
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered())
 		{
-			camerawnd->should_set_focus = true;
+			camerawnd->rtt_set_focus_state(true);
 			
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
 
 			SetFocus(ccam->GetWindow());
 			SetCapture(ccam->GetWindow());
-			CamWnd__DropModelsToPlane(ccam, camerawnd->cursor_pos_pt.x, ccam->camera.height - camerawnd->cursor_pos_pt.y - 1, nFlags);
+
+			CamWnd__DropModelsToPlane(
+				ccam, 
+				camerawnd->rtt_get_cursor_pos_cpoint().x, 
+				ccam->camera.height - camerawnd->rtt_get_cursor_pos_cpoint().y - 1,
+				nFlags);
 
 			return;
 		}
@@ -474,12 +483,17 @@ void __fastcall czwnd::on_mouse_move([[maybe_unused]] czwnd* pThis, [[maybe_unus
 		}
 
 		// if mouse is inside imgui-camera window
-		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
-						camerawnd->window_hovered)
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered())
 		{
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
 
-			ccamwnd::mouse_moved(ccam, nFlags, camerawnd->cursor_pos_pt.x, ccam->camera.height - camerawnd->cursor_pos_pt.y - 1);
+			ccamwnd::mouse_moved(
+				ccam, 
+				nFlags, 
+				camerawnd->rtt_get_cursor_pos_cpoint().x, 
+				ccam->camera.height - camerawnd->rtt_get_cursor_pos_cpoint().y - 1);
+
 			return;
 		}
 
@@ -523,7 +537,7 @@ LRESULT WINAPI czwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			}
 
 			// if mouse is inside imgui-camera window
-			if (ggui::get_rtt_camerawnd()->window_hovered)
+			if (GET_GUI(ggui::camera_dialog)->rtt_is_hovered())
 			{
 				return DefWindowProcA(hWnd, Msg, wParam, lParam);
 			}

@@ -540,12 +540,12 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 		}
 
 		// if mouse is inside imgui-camera window
-		if (auto camerawnd = ggui::get_rtt_camerawnd();
-				 camerawnd->window_hovered)
+		if (auto camerawnd = GET_GUI(ggui::camera_dialog);
+				 camerawnd->rtt_is_hovered())
 		{
 			float scroll_dir = zDelta <= 0 ? 1.0f : -1.0f;
 
-			const static uint32_t CCamWnd__Scroll_Func = 0x4248A0;
+			const static uint32_t CCamWnd__Scroll_func = 0x4248A0;
 			__asm
 			{
 				pushad;
@@ -554,7 +554,7 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 				push	cmainframe::activewnd;		// ^
 				fld		scroll_dir;
 				fstp    dword ptr[esp];
-				call	CCamWnd__Scroll_Func; // cleans the stack
+				call	CCamWnd__Scroll_func; // cleans the stack
 
 				popad;
 			}
@@ -653,8 +653,8 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 
 		// handle imgui-camera window (only triggers when czwnd is focused)
 		// cmainframe::on_keydown handles input if imgui-camera window is focused 
-		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
-						camerawnd->window_hovered)
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered())
 		{
 			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
 			return;
@@ -705,8 +705,8 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 		}
 
 		// if mouse is inside imgui-cxy window
-		if (auto gridwnd = ggui::get_rtt_gridwnd();
-				 gridwnd->window_hovered)
+		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
+						gridwnd->window_hovered)
 		{
 			mainframe::__on_keyup(cmainframe::activewnd, nChar);
 			return;
@@ -714,8 +714,8 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 
 		// handle imgui-camera window (only triggers when xywnd is focused)
 		// cmainframe::on_keyup handles input if imgui-camera window is focused 
-		if (auto camerawnd = ggui::get_rtt_camerawnd();
-				 camerawnd->window_hovered)
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered())
 		{
 			mainframe::__on_keyup(cmainframe::activewnd, nChar);
 			return;
