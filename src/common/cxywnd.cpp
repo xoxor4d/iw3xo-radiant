@@ -419,7 +419,7 @@ LRESULT WINAPI cxywnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 			// set cz context (in-case we use multiple imgui context's)
 			IMGUI_BEGIN_CZWND;
 
-			if (!ggui::get_rtt_gridwnd()->window_hovered && ImGui::GetIO().WantCaptureMouse)
+			if (!GET_GUI(ggui::grid_dialog)->rtt_is_hovered() && ImGui::GetIO().WantCaptureMouse)
 			{
 				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
 				return true;

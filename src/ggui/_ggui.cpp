@@ -163,13 +163,13 @@ namespace ggui
 	void dragdrop_overwrite_leftmouse_capture()
 	{
 		GET_GUI(ggui::camera_dialog)->rtt_set_lmb_capturing(true);
-		get_rtt_gridwnd()->capture_left_mousebutton = true;
+		GET_GUI(ggui::grid_dialog)->rtt_set_lmb_capturing(true);
 	}
 
 	void dragdrop_reset_leftmouse_capture()
 	{
 		GET_GUI(ggui::camera_dialog)->rtt_set_lmb_capturing(false);
-		get_rtt_gridwnd()->capture_left_mousebutton = false;
+		GET_GUI(ggui::grid_dialog)->rtt_set_lmb_capturing(false);
 	}
 	
 }

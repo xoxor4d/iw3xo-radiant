@@ -1,29 +1,9 @@
 #include "std_include.hpp"
 
-namespace ggui::grid
+namespace ggui
 {
-	struct eclass_context_ent
-	{
-		std::string token;
-		std::string ent_str;
-	};
-
-	struct eclass_context_group
-	{
-		std::string group_name;
-		std::string path_including_group;
-		std::vector<eclass_context_group> childs;
-		std::vector<eclass_context_ent> ents;
-	};
-
-	std::vector<eclass_context_group> eclass_context_groups; // grouped entities
-	std::vector<eclass_context_ent> eclass_context_ents; // single ungrouped entities
-
-	eclass_context_group* eclass_ctr_curr;
-	eclass_context_group* eclass_ctr_prev;
-
 	// ouch
-	void build_eclass_context_new()
+	void grid_dialog::build_eclass_context_new()
 	{
 		const auto entity_gui = GET_GUI(ggui::entity_dialog);
 
@@ -212,7 +192,7 @@ namespace ggui::grid
 
 
 	// right click context menu
-	void context_menu()
+	void grid_dialog::context_menu()
 	{
 		const auto cxywnd = cmainframe::activewnd->m_pXYWnd;
 
@@ -376,46 +356,26 @@ namespace ggui::grid
 														{
 															if (ImGui::BeginMenu(ac.group_name.c_str())) // not needed since group depth is capped at 4
 															{
-																/*for (const auto& str : ac.ents)
-																{
-																	ImGui::MenuItem(str.ent_str.c_str());
-																}*/
 																handle_menu_item(ac);
 																ImGui::EndMenu();
 															}
 														}
 
-														/*for (const auto& str : ab.ents)
-														{
-															ImGui::MenuItem(str.ent_str.c_str());
-														}*/
 														handle_menu_item(ab);
 														ImGui::EndMenu();
 													}
 												}
 
-												/*for (const auto& str : aa.ents)
-												{
-													ImGui::MenuItem(str.ent_str.c_str());
-												}*/
 												handle_menu_item(aa);
 												ImGui::EndMenu();
 											}
 										}
 
-										/*for (const auto& str : child.ents)
-										{
-											ImGui::MenuItem(str.ent_str.c_str());
-										}*/
 										handle_menu_item(child);
 										ImGui::EndMenu();
 									}
 								}
 
-								/*for (const auto& str : ca.ents)
-								{
-									ImGui::MenuItem(str.ent_str.c_str());
-								}*/
 								handle_menu_item(ca);
 								ImGui::EndMenu();
 							}
@@ -472,7 +432,7 @@ namespace ggui::grid
 	}
 
 	// drag-drop target
-	void drag_drop_target()
+	void grid_dialog::drag_drop_target()
 	{
 		if (ImGui::BeginDragDropTarget())
 		{
@@ -515,8 +475,10 @@ namespace ggui::grid
 					if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
 					{
 					SPAWN_AWAY:
-						const auto gridwnd = ggui::get_rtt_gridwnd();
-						game::CreateEntityBrush(static_cast<int>(gridwnd->scene_size_imgui.y) - gridwnd->cursor_pos_pt.y, gridwnd->cursor_pos_pt.x, cmainframe::activewnd->m_pXYWnd);
+						game::CreateEntityBrush(
+							static_cast<int>(this->rtt_get_size().y) - this->rtt_get_cursor_pos_cpoint().y, 
+							this->rtt_get_cursor_pos_cpoint().x,
+							cmainframe::activewnd->m_pXYWnd);
 					}
 
 					// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
@@ -539,7 +501,7 @@ namespace ggui::grid
 	// gui::render_loop()
 	// render to texture - imgui grid window
 
-	void gui()
+	void grid_dialog::grid_gui()
 	{
 		int p_styles = 0;
 		int p_colors = 0;
@@ -565,16 +527,15 @@ namespace ggui::grid
 		ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); p_colors++;
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_rtt_padding_color->current.vector)); p_colors++;
 
-		const auto gridwnd = ggui::get_rtt_gridwnd();
-		if (gridwnd->should_set_focus)
+		if (this->rtt_is_focus_pending())
 		{
 			ImGui::SetNextWindowFocus();
-			gridwnd->should_set_focus = false;
+			this->rtt_set_focus_state(false);
 		}
 
 		ImGui::Begin("Grid Window##rtt", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 
-		if (gridwnd->scene_texture)
+		if (this->rtt_get_texture())
 		{
 			bool tabbar_visible = true;
 			const auto wnd = ImGui::GetCurrentWindow();
@@ -588,18 +549,26 @@ namespace ggui::grid
 			}
 
 			const float frame_height = tabbar_visible ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
-			gridwnd->scene_size_imgui = ImGui::GetWindowSize() - ImVec2(0.0f, frame_height) - window_padding_both;
+			this->rtt_set_size(ImGui::GetWindowSize() - ImVec2(0.0f, frame_height) - window_padding_both);
 
 			// hack to disable left mouse window movement
 			ImGui::BeginChild("scene_child_cxy", ImVec2(cxy_size.x, cxy_size.y + frame_height) + window_padding_both, false, ImGuiWindowFlags_NoMove);
 			{
 				const auto screenpos = ImGui::GetCursorScreenPos();
-				SetWindowPos(cmainframe::activewnd->m_pXYWnd->m_hWnd, HWND_BOTTOM, (int)screenpos.x, (int)screenpos.y, (int)gridwnd->scene_size_imgui.x, (int)gridwnd->scene_size_imgui.y, SWP_NOZORDER);
+
+				SetWindowPos(
+					cmainframe::activewnd->m_pXYWnd->m_hWnd, 
+					HWND_BOTTOM, 
+					(int)screenpos.x, 
+					(int)screenpos.y,
+					static_cast<int>(this->rtt_get_size().x), 
+					static_cast<int>(this->rtt_get_size().y),
+					SWP_NOZORDER);
 
 				const auto pre_image_cursor = ImGui::GetCursorPos();
 
-				ImGui::Image(gridwnd->scene_texture, cxy_size);
-				gridwnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+				ImGui::Image(this->rtt_get_texture(), cxy_size);
+				this->rtt_set_hovered_state(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
 
 				// right click context menu
 				if(dvars::gui_use_new_context_menu->current.enabled)
@@ -614,12 +583,11 @@ namespace ggui::grid
 				ImGui::PopStyleVar(); p_styles--;
 
 				ImGui::SetCursorPos(pre_image_cursor);
+
 				const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
+				this->rtt_set_cursor_pos(ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y));
 
-				gridwnd->cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
-				gridwnd->cursor_pos_pt = CPoint((LONG)gridwnd->cursor_pos.x, (LONG)gridwnd->cursor_pos.y);
-
-				ggui::redraw_undocking_triangle(wnd, gridwnd);
+				ggui::redraw_undocking_triangle(wnd, this->rtt_get_hovered_state());
 
 				ImGui::EndChild();
 			}
@@ -629,4 +597,15 @@ namespace ggui::grid
 		ImGui::PopStyleVar(p_styles);
 		ImGui::End();
 	}
+
+	void grid_dialog::gui()
+	{ }
+
+	void grid_dialog::on_open()
+	{ }
+
+	void grid_dialog::on_close()
+	{ }
+
+	REGISTER_GUI(grid_dialog);
 }

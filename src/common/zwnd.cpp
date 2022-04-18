@@ -42,17 +42,17 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		
 
 		// if mouse is inside imgui grid window & cursor not at window border (resizing)
-		if (auto gridwnd = ggui::get_rtt_gridwnd();
-				 gridwnd->window_hovered && !ImGui::IsResizing())
+		if (auto gridwnd = GET_GUI(ggui::grid_dialog);
+				 gridwnd->rtt_is_hovered() && !ImGui::IsResizing())
 		{
-			gridwnd->should_set_focus = true;
+			gridwnd->rtt_set_focus_state(true);
 
-			xywnd::__on_lbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_lbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 
-			if (gridwnd->capture_left_mousebutton)
+			if (gridwnd->rtt_is_capturing_lmb())
 			{
 				ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_LBUTTONDOWN);
-				gridwnd->capture_left_mousebutton = false;
+				gridwnd->rtt_set_lmb_capturing(false);
 			}
 
 			return;
@@ -120,15 +120,15 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 
 
 		// if mouse is inside imgui grid window
-		if (auto gridwnd = ggui::get_rtt_gridwnd();
-				 gridwnd->window_hovered)
+		if (auto gridwnd = GET_GUI(ggui::grid_dialog);
+				 gridwnd->rtt_is_hovered())
 		{
-			xywnd::__on_lbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_lbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 
-			if (gridwnd->capture_left_mousebutton)
+			if (gridwnd->rtt_is_capturing_lmb())
 			{
 				ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_LBUTTONUP);
-				gridwnd->capture_left_mousebutton = false;
+				gridwnd->rtt_set_lmb_capturing(false);
 			}
 			
 			return;
@@ -198,14 +198,14 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 
 		
 		// if mouse is inside imgui grid window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
-			gridwnd->should_set_focus = true;
+			gridwnd->rtt_set_focus_state(true);
 
 			ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_RBUTTONDOWN);
 
-			xywnd::__on_rbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_rbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 			return;
 		}
 
@@ -265,8 +265,8 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 
 
 		// if mouse is inside imgui grid window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
 			const auto cxywnd = cmainframe::activewnd->m_pXYWnd;
 			ImGui::HandleKeyIO(cxywnd->GetWindow(), WM_RBUTTONUP);
@@ -275,7 +275,7 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 			cxywnd->m_ptDrag.x = point.x;
 			cxywnd->m_ptDrag.y = point.y;
 
-			xywnd::__on_rbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_rbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 			return;
 		}
 
@@ -353,12 +353,12 @@ void __fastcall czwnd::on_mbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 
 
 		// if mouse is inside imgui grid window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
-			gridwnd->should_set_focus = true;
+			gridwnd->rtt_set_focus_state(true);
 			
-			xywnd::__on_mbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_mbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 			return;
 		}
 
@@ -416,10 +416,10 @@ void __fastcall czwnd::on_mbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 
 
 		// if mouse is inside imgui grid window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
-			xywnd::__on_mbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_mbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 			return;
 		}
 
@@ -475,10 +475,10 @@ void __fastcall czwnd::on_mouse_move([[maybe_unused]] czwnd* pThis, [[maybe_unus
 		IMGUI_BEGIN_CZWND;
 
 		// if mouse is inside imgui-cxy window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
-			xywnd::__on_mouse_move(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_mouse_move(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 			return;
 		}
 
@@ -531,7 +531,7 @@ LRESULT WINAPI czwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 			IMGUI_BEGIN_CZWND;
 
 			// if mouse is inside imgui-cxy window
-			if (ggui::get_rtt_gridwnd()->window_hovered)
+			if (GET_GUI(ggui::grid_dialog)->rtt_is_hovered())
 			{
 				return DefWindowProcA(hWnd, Msg, wParam, lParam);
 			}

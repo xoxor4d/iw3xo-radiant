@@ -565,8 +565,6 @@ namespace											\
 		imgui_context_menu m_camera_settings;
 		imgui_context_menu m_demo;
 
-		//render_to_texture_window_s rtt_camerawnd;
-		render_to_texture_window_s rtt_gridwnd;
 		model_selector_s rtt_model_selector;
 	};
 
@@ -624,21 +622,6 @@ namespace											\
 
 	extern void dragdrop_overwrite_leftmouse_capture();
 	extern void dragdrop_reset_leftmouse_capture();
-	
-	inline render_to_texture_window_s* get_rtt_gridwnd()
-	{
-		return &state.czwnd.rtt_gridwnd;
-	}
-	
-	/*inline render_to_texture_window_s* get_rtt_camerawnd()
-	{
-		return &state.czwnd.rtt_camerawnd;
-	}*/
-
-	/*inline render_to_texture_window_s* get_rtt_texturewnd()
-	{
-		return &state.czwnd.rtt_texwnd;
-	}*/
 
 	inline model_selector_s* get_rtt_modelselector()
 	{

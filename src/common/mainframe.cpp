@@ -533,10 +533,10 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 
 
 		// if mouse is inside imgui-cxy window
-		if (auto gridwnd = ggui::get_rtt_gridwnd();
-				 gridwnd->window_hovered)
+		if (auto gridwnd = GET_GUI(ggui::grid_dialog);
+				 gridwnd->rtt_is_hovered())
 		{
-			return mainframe::__on_mscroll(pThis, nFlags, zDelta, gridwnd->cursor_pos_pt);
+			return mainframe::__on_mscroll(pThis, nFlags, zDelta, gridwnd->rtt_get_cursor_pos_cpoint());
 		}
 
 		// if mouse is inside imgui-camera window
@@ -644,8 +644,8 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		}
 
 		// if mouse is inside imgui-cxy window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
 			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
 			return;
@@ -705,8 +705,8 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 		}
 
 		// if mouse is inside imgui-cxy window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
 			mainframe::__on_keyup(cmainframe::activewnd, nChar);
 			return;
@@ -773,8 +773,36 @@ void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* ed
 			CZWND_POS_ONCE_ON_STARTUP = true;
 		}
 	}
-	
+
 	__on_size(pThis, nFlags, x, y);
+
+	// immediately re-paint the rtt windows upon resizing (can make resizing smoother if FPS are high enough)
+	if(cmainframe::activewnd)
+	{
+		if (const auto	hwnd = cmainframe::activewnd->m_pZWnd->GetWindow();
+						hwnd != nullptr)
+		{
+			SendMessageA(hwnd, WM_PAINT, 0, 0);
+		}
+
+		if (const auto	hwnd = cmainframe::activewnd->m_pXYWnd->GetWindow();
+						hwnd != nullptr)
+		{
+			SendMessageA(hwnd, WM_PAINT, 0, 0);
+		}
+
+		if (const auto	hwnd = cmainframe::activewnd->m_pCamWnd->GetWindow();
+						hwnd != nullptr)
+		{
+			SendMessageA(hwnd, WM_PAINT, 0, 0);
+		}
+
+		if (const auto	hwnd = cmainframe::activewnd->m_pTexWnd->GetWindow();
+						hwnd != nullptr)
+		{
+			SendMessageA(hwnd, WM_PAINT, 0, 0);
+		}
+	}
 }
 
 

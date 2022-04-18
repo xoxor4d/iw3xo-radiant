@@ -460,7 +460,7 @@ namespace components
 		if (game::dx->targetWindowIndex == ggui::CXYWND)
 		{
 			// copy scene to texture
-			renderer::copy_scene_to_texture(ggui::CXYWND, ggui::get_rtt_gridwnd()->scene_texture);
+			renderer::copy_scene_to_texture(ggui::CXYWND, GET_GUI(ggui::grid_dialog)->rtt_get_texture());
 		}
 
 		
@@ -527,8 +527,9 @@ namespace components
 			czwnd_gui(ggui::state.czwnd);
 
 			// -
-			// seperate windows for grid/camera if not used as background
+			// separate windows for grid/camera if not used as background
 
+#if 0
 			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 1) 
 			{
 				ggui::grid::gui();
@@ -538,7 +539,13 @@ namespace components
 			{
 				GET_GUI(ggui::camera_dialog)->camera_gui();
 			}
+#else
+			// non-closable windows 
+			GET_GUI(ggui::grid_dialog)->grid_gui();
+			GET_GUI(ggui::camera_dialog)->camera_gui();
+#endif
 
+			// debug
 
 			//game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			//game::GfxRenderTarget* depth = &targets[game::R_RENDERTARGET_FLOAT_Z];
@@ -570,6 +577,7 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
 				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
 
+			// draw/handle gui classes
 			for (const auto& module : ggui::loader::get_modules())
 			{
 				if(module)
