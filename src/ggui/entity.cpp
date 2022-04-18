@@ -1491,7 +1491,7 @@ namespace ggui
 			if (ImGui::TreeNodeEx("Surface Inspector", dvars::gui_props_classlist_defaultopen->current.enabled ? ImGuiTreeNodeFlags_DefaultOpen : 0))
 			{
 				SPACING(0.0f, 0.01f);
-				ggui::surface_inspector::controls();
+				GET_GUI(ggui::surface_dialog)->inspector_controls();
 
 				ImGui::TreePop();
 			}

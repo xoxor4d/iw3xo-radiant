@@ -266,7 +266,7 @@ namespace ggui
 							}
 							else
 							{
-								components::gui::toggle(ggui::state.czwnd.m_surface_inspector);
+								GET_GUI(ggui::surface_dialog)->toggle();
 							}
 						}
 						else

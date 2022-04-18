@@ -110,11 +110,13 @@ namespace game
 	extern game::selbrush_def_t* g_active_brushes_next();
 	extern game::selbrush_def_t* g_selected_brushes();
 	extern game::selbrush_def_t* g_selected_brushes_next();
+	extern game::selface_t* g_selected_faces();
 	extern game::entity_s_def* g_edit_entity();
 	extern int& multiple_edit_entities;
 	extern HWND* entitywnd_hwnds;
 	
 	extern game::eclass_t* g_eclass();
+	extern CSurfaceDlg* get_surfacedialog();
 	extern CPrefsDlg* g_PrefsDlg();
 	extern void CPrefsDlg_SavePrefs();
 
@@ -138,6 +140,8 @@ namespace game
 	void SetSpawnFlags(int flag);
 	void UpdateSel(int wParam, game::eclass_t* e_class);
 	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, bool unk);
+	void Patch_SetTextureInfo(game::texdef_sub_t* texdef /*ebx*/);
+	void Patch_ShiftTexture(game::patchMesh_t* def, float shift_horz, float shift_vert);
 	static utils::function<void(bool)> Select_Deselect = 0x48E800;
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);

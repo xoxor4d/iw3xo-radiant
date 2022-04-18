@@ -125,6 +125,13 @@ namespace game
 		return brush;
 	}
 
+	// g_selected_faces is a CArray
+	game::selface_t* g_selected_faces()
+	{
+		const auto selfaces = reinterpret_cast<game::selface_t*>(*(DWORD*)0x73C710);
+		return selfaces;
+	}
+
 	// pot. unsafe, do not use in loops
 	game::entity_s_def* g_edit_entity()
 	{
@@ -138,6 +145,12 @@ namespace game
 	{
 		const auto eclass = reinterpret_cast<game::eclass_t*>(*(DWORD*)0x25D5B20);
 		return eclass;
+	}
+
+	CSurfaceDlg* get_surfacedialog()
+	{
+		const auto g_dlgSurface = reinterpret_cast<CSurfaceDlg*>(0x25D7668);
+		return g_dlgSurface;
 	}
 	
 	CPrefsDlg* g_PrefsDlg()
@@ -320,6 +333,40 @@ namespace game
 		}
 	}
 
+	void Patch_SetTextureInfo(game::texdef_sub_t* texdef /*ebx*/)
+	{
+		const static uint32_t func_addr = 0x447760;
+		__asm
+		{
+			pushad;
+			mov		ebx, texdef;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void Patch_ShiftTexture(game::patchMesh_t* def, float shift_horz, float shift_vert)
+	{
+		const static uint32_t func_addr = 0x446170;
+		__asm
+		{
+			pushad;
+			sub		esp, 8;
+
+			mov		edi, def;
+
+			fld		shift_vert;
+			fstp    dword ptr[esp + 4];
+
+			fld		shift_horz;
+			fstp    dword ptr[esp];
+
+			call	func_addr;
+			add		esp, 8;
+			popad;
+		}
+	}
+
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap)
 	{
 		const static uint32_t func_addr = 0x47BA40;
@@ -376,13 +423,10 @@ namespace game
 		__asm
 		{
 			pushad;
-
 			push	snap;
 			mov		ecx, brush;
-
 			call	func_addr;
 			add		esp, 4;
-
 			popad;
 		}
 	}

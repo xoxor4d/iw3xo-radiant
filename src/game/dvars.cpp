@@ -196,10 +196,10 @@ namespace dvars
 		ctexwnd::register_dvars();
 
 		GET_GUI(ggui::entity_dialog)->register_dvars();
-		GET_GUI(ggui::vertex_edit_dialog)->register_dvars();
 		GET_GUI(ggui::preferences_dialog)->register_dvars();
+		GET_GUI(ggui::surface_dialog)->register_dvars();
+		GET_GUI(ggui::vertex_edit_dialog)->register_dvars();
 
-		ggui::surface_inspector::register_dvars();
 		ggui::toolbar::register_dvars();
 
 		fx_system::register_dvars();

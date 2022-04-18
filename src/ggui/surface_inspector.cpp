@@ -1,107 +1,23 @@
 #include "std_include.hpp"
 
-namespace ggui::surface_inspector
+// typedef game::MaterialDef*(__thiscall* csurfdlg_call_t)(CSurfaceDlg*);
+//auto brush_get_materialdef = reinterpret_cast<csurfdlg_call_t>(0x457950);
+
+// Select_SetTexture_2 - NEEDS SurfaceInspector
+// auto selection_update_textureinfo = reinterpret_cast<csurfdlg_call_t>(0x4572D0);
+
+// Brush_SetTexture (does indeed set the texture defined in mat_def
+// utils::hook::call<void(__cdecl)(MaterialDef* _def, int _unk)>(0x48F170)(mat_def, 0);
+
+// Brush_SetTextureMapping (keeps diff. textures but applies scaling)
+// utils::hook::call<void(__cdecl)(texdef_sub_t* _texdef)>(0x48F4F0)(mat_def->mat_texDef);
+
+// SurfaceInspector::SetTexMods
+// cdeclcall(void, 0x458270);
+
+namespace ggui
 {
-	//utils::hook::call<return_val(__fastcall)(cmainframe*)>(addr)(cmainframe::activewnd)
-
-	typedef game::MaterialDef*(__thiscall* csurfdlg_call_t)(CSurfaceDlg*);
-	auto brush_get_materialdef = reinterpret_cast<csurfdlg_call_t>(0x457950);
-
-	// Select_SetTexture_2 - NEEDS SurfaceInspector
-	auto selection_update_textureinfo = reinterpret_cast<csurfdlg_call_t>(0x4572D0);
-
-	// Brush_SetTexture (does indeed set the texture defined in mat_def
-	// utils::hook::call<void(__cdecl)(MaterialDef* _def, int _unk)>(0x48F170)(mat_def, 0);
-
-	// Brush_SetTextureMapping (keeps diff. textures but applies scaling)
-	// utils::hook::call<void(__cdecl)(texdef_sub_t* _texdef)>(0x48F4F0)(mat_def->mat_texDef);
-
-	// SurfaceInspector::SetTexMods
-	// cdeclcall(void, 0x458270);
-
-	//static float _samplesize = 0.25f;
-	//static float _rotate = 15.0f;
-
-	//static game::vec2_t _shift = { 0.25f, 0.25f };
-	//static game::vec2_t _size = { 0.25f, 0.25f };
-
-	//static float _repeat_x = 1.0f;
-	//static float _repeat_y = 1.0f;
-
-
-	CSurfaceDlg* get_surfacedialog()
-	{
-		const auto g_dlgSurface = reinterpret_cast<CSurfaceDlg*>(0x25D7668);
-		return g_dlgSurface;
-	}
-
-	// g_selected_faces is a CArray
-	game::selface_t* g_selected_faces()
-	{
-		const auto selfaces = reinterpret_cast<game::selface_t*>(*(DWORD*)0x73C710);
-		return selfaces;
-	}
-
-	void Brush_BuildWindings(game::brush_t_with_custom_def* def, int snap)
-	{
-		const static uint32_t func_addr = 0x477AC0;
-		__asm
-		{
-			pushad;
-			push	snap;
-			mov		ecx, def;
-			call	func_addr;
-			add		esp, 4;
-			popad;
-		}
-	}
-
-	void Patch_SetTextureInfo(game::texdef_sub_t* texdef /*ebx*/)
-	{
-		const static uint32_t func_addr = 0x447760;
-		__asm
-		{
-			pushad;
-			mov		ebx, texdef;
-			call	func_addr;
-			popad;
-		}
-	}
-
-	void Patch_ShiftTexture(game::patchMesh_t* def, float shift_horz, float shift_vert)
-	{
-		const static uint32_t func_addr = 0x446170;
-		__asm
-		{
-			pushad;
-			sub		esp, 8;
-
-			mov		edi, def;
-
-			fld		shift_vert;
-			fstp    dword ptr[esp + 4];
-
-			fld		shift_horz;
-			fstp    dword ptr[esp];
-
-			call	func_addr;
-			add		esp, 8;
-			popad;
-		}
-	}
-
-	typedef int TEXMODE;
-	enum TEXMODE_
-	{
-		TEXMODE_NONE = 0,
-		TEXMODE_SIZE_HORZ = 1 << 0,
-		TEXMODE_SIZE_VERT = 1 << 1,
-		TEXMODE_SHIFT_HORZ = 1 << 2,
-		TEXMODE_SHIFT_VERT = 1 << 3,
-		TEXMODE_ROTATE = 1 << 4
-	};
-
-	void edit_texture_info(game::texdef_sub_t* texdef, bool set_specific = false, TEXMODE mode = TEXMODE_NONE, int dir = 0)
+	void surface_dialog::edit_texture_info(game::texdef_sub_t* texdef, bool set_specific, TEXMODE mode, int dir)
 	{
 		const float PATCH_SCALAR = 0.005f;
 		//auto& g_patch_texdef = *reinterpret_cast<patch_texdef_t*>(0x23F15F8);
@@ -111,7 +27,7 @@ namespace ggui::surface_inspector
 			// selection is patch
 			if (sb->patch)
 			{
-				if(set_specific)
+				if (set_specific)
 				{
 					game::printf_to_console("[!] specific texture edits are not supported for patches. skipping patch ...");
 					continue;
@@ -120,7 +36,7 @@ namespace ggui::surface_inspector
 				//texdef->shift[0] *= PATCH_SCALAR;
 				//texdef->shift[1] *= PATCH_SCALAR;
 
-				if(dir != 0)
+				if (dir != 0)
 				{
 					if ((mode & TEXMODE_SHIFT_HORZ) != 0)
 					{
@@ -149,7 +65,7 @@ namespace ggui::surface_inspector
 					texdef->shift[0] *= PATCH_SCALAR;
 					texdef->shift[1] *= PATCH_SCALAR;
 				}
-				
+
 				//texdef->rotate	 *= PATCH_SCALAR;
 
 				// increases version itself
@@ -167,7 +83,7 @@ namespace ggui::surface_inspector
 
 						if (set_specific)
 						{
-							if((mode & TEXMODE_SIZE_HORZ) != 0)
+							if ((mode & TEXMODE_SIZE_HORZ) != 0)
 							{
 								mat_def->mat_texDef->size[0] = texdef->size[0];
 							}
@@ -196,9 +112,9 @@ namespace ggui::surface_inspector
 						{
 							mat_def->mat_texDef->shift[0] += texdef->shift[0];
 							mat_def->mat_texDef->shift[1] += texdef->shift[1];
-							mat_def->mat_texDef->size[0]  += texdef->size[0];
-							mat_def->mat_texDef->size[1]  += texdef->size[1];
-							mat_def->mat_texDef->rotate   += texdef->rotate;
+							mat_def->mat_texDef->size[0] += texdef->size[0];
+							mat_def->mat_texDef->size[1] += texdef->size[1];
+							mat_def->mat_texDef->rotate += texdef->rotate;
 						}
 
 						++sb->def->version;
@@ -207,8 +123,8 @@ namespace ggui::surface_inspector
 			}
 		}
 
-		const int selected_faces_count = *reinterpret_cast<int*>(0x73C714);
-		const auto selected_faces = g_selected_faces();
+		const int  selected_faces_count = *reinterpret_cast<int*>(0x73C714);
+		const auto selected_faces = game::g_selected_faces();
 
 		if (selected_faces_count > 0)
 		{
@@ -250,9 +166,9 @@ namespace ggui::surface_inspector
 				{
 					mat_def->mat_texDef->shift[0] += texdef->shift[0];
 					mat_def->mat_texDef->shift[1] += texdef->shift[1];
-					mat_def->mat_texDef->size[0]  += texdef->size[0];
-					mat_def->mat_texDef->size[1]  += texdef->size[1];
-					mat_def->mat_texDef->rotate   += texdef->rotate;
+					mat_def->mat_texDef->size[0] += texdef->size[0];
+					mat_def->mat_texDef->size[1] += texdef->size[1];
+					mat_def->mat_texDef->rotate += texdef->rotate;
 				}
 
 				++face_brush->version;
@@ -260,7 +176,7 @@ namespace ggui::surface_inspector
 		}
 	}
 
-	void controls()
+	void surface_dialog::inspector_controls()
 	{
 		//ImGui::Indent(8.0f);
 
@@ -280,34 +196,34 @@ namespace ggui::surface_inspector
 
 		if (selected_faces_count > 0)
 		{
-			const auto selected_faces = g_selected_faces();
+			const auto selected_faces = game::g_selected_faces();
 
-			if(selected_faces && selected_faces->brush && selected_faces->brush->def)
+			if (selected_faces && selected_faces->brush && selected_faces->brush->def)
 			{
 				const auto mat_def = &selected_faces->brush->def->brush_faces[selected_faces->index].mtldef[game::g_qeglobals->current_edit_layer];
 
-				texhelp.size_horz	= mat_def->mat_texDef->size[0];
-				texhelp.size_vert	= mat_def->mat_texDef->size[1];
-				texhelp.shift_horz	= mat_def->mat_texDef->shift[0];
-				texhelp.shift_vert	= mat_def->mat_texDef->shift[1];
-				texhelp.rotation	= mat_def->mat_texDef->rotate;
+				texhelp.size_horz = mat_def->mat_texDef->size[0];
+				texhelp.size_vert = mat_def->mat_texDef->size[1];
+				texhelp.shift_horz = mat_def->mat_texDef->shift[0];
+				texhelp.shift_vert = mat_def->mat_texDef->shift[1];
+				texhelp.rotation = mat_def->mat_texDef->rotate;
 			}
 		}
-		else if(const auto	sb = game::g_selected_brushes();
+		else if (const auto	sb = game::g_selected_brushes();
 							sb)
 		{
-			if(sb->patch)
+			if (sb->patch)
 			{
 				texhelp.reset_values();
 				//texhelp.rotation = g_patch_texdef.def.mat_texDef->rotate;
 			}
-			else if(sb->def && sb->def->brush_faces)
+			else if (sb->def && sb->def->brush_faces)
 			{
-				texhelp.size_horz	= sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[0];
-				texhelp.size_vert	= sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[1];
-				texhelp.shift_horz	= sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[0];
-				texhelp.shift_vert	= sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[1];
-				texhelp.rotation	= sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->rotate;
+				texhelp.size_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[0];
+				texhelp.size_vert = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[1];
+				texhelp.shift_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[0];
+				texhelp.shift_vert = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[1];
+				texhelp.rotation = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->rotate;
 			}
 		}
 
@@ -316,9 +232,9 @@ namespace ggui::surface_inspector
 			const float amount_specific = texhelp.shift_horz;
 			const float amount_inc = texhelp.amount_shift;
 
-			const float edit_amount = texhelp.specific_mode ? amount_specific :
-				texhelp.scalar_direction == -1 ? -amount_inc :
-				texhelp.scalar_direction ==  1 ?  amount_inc : 0.0f;
+			const float edit_amount = texhelp.specific_mode ? amount_specific
+				: texhelp.scalar_direction == -1 ? -amount_inc
+				: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 			game::texdef_sub_t texdef_edit = {};
 			texdef_edit.shift[0] = edit_amount;
@@ -331,9 +247,9 @@ namespace ggui::surface_inspector
 			const float amount_specific = texhelp.shift_vert;
 			const float amount_inc = texhelp.amount_shift;
 
-			const float edit_amount = texhelp.specific_mode ? amount_specific :
-				texhelp.scalar_direction == -1 ? -amount_inc :
-				texhelp.scalar_direction ==  1 ?  amount_inc : 0.0f;
+			const float edit_amount = texhelp.specific_mode ? amount_specific
+				: texhelp.scalar_direction == -1 ? -amount_inc
+				: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 			game::texdef_sub_t texdef_edit = {};
 			texdef_edit.shift[1] = edit_amount;
@@ -348,9 +264,9 @@ namespace ggui::surface_inspector
 			const float amount_specific = texhelp.size_horz;
 			const float amount_inc = texhelp.amount_size;
 
-			const float edit_amount = texhelp.specific_mode ? amount_specific :
-				texhelp.scalar_direction == -1 ? -amount_inc :
-				texhelp.scalar_direction ==  1 ?  amount_inc : 0.0f;
+			const float edit_amount = texhelp.specific_mode ? amount_specific
+				: texhelp.scalar_direction == -1 ? -amount_inc
+				: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 			game::texdef_sub_t texdef_edit = {};
 			texdef_edit.size[0] = edit_amount;
@@ -363,9 +279,9 @@ namespace ggui::surface_inspector
 			const float amount_specific = texhelp.size_vert;
 			const float amount_inc = texhelp.amount_size;
 
-			const float edit_amount = texhelp.specific_mode ? amount_specific :
-				texhelp.scalar_direction == -1 ? -amount_inc :
-				texhelp.scalar_direction ==  1 ?  amount_inc : 0.0f;
+			const float edit_amount = texhelp.specific_mode ? amount_specific
+				: texhelp.scalar_direction == -1 ? -amount_inc
+				: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 			game::texdef_sub_t texdef_edit = {};
 			texdef_edit.size[1] = edit_amount;
@@ -375,14 +291,14 @@ namespace ggui::surface_inspector
 
 		SPACING(0.0f, 4.0f);
 
-		if(ImGui::InputScalarDir("Rotation", ImGuiDataType_Float, &texhelp.rotation, &texhelp.scalar_direction, &texhelp.amount_rotate, nullptr, true, nullptr, !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
+		if (ImGui::InputScalarDir("Rotation", ImGuiDataType_Float, &texhelp.rotation, &texhelp.scalar_direction, &texhelp.amount_rotate, nullptr, true, nullptr, !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
 		{
 			const float amount_specific = texhelp.rotation;
 			const float amount_inc = texhelp.amount_rotate;
 
-			const float edit_amount =	texhelp.specific_mode ? amount_specific :
-										texhelp.scalar_direction == -1 ? -amount_inc :
-										texhelp.scalar_direction ==  1 ?  amount_inc : 0.0f;
+			const float edit_amount = texhelp.specific_mode ? amount_specific
+				: texhelp.scalar_direction == -1 ? -amount_inc
+				: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 			game::texdef_sub_t texdef_edit = {};
 			texdef_edit.rotate = edit_amount;
@@ -392,7 +308,8 @@ namespace ggui::surface_inspector
 
 		if (ImGui::InputScalarDir("Sample Size", ImGuiDataType_Float, &g_patch_texdef.sample_size, nullptr, &texhelp.amount_sample, nullptr, true))
 		{
-			if (g_patch_texdef.sample_size < 4.0f) {
+			if (g_patch_texdef.sample_size < 4.0f) 
+			{
 				g_patch_texdef.sample_size = 4.0f;
 			}
 
@@ -440,7 +357,7 @@ namespace ggui::surface_inspector
 
 			//Patch_NaturalizeSelected
 			utils::hook::call<void(__cdecl)(bool _unk, bool cap, float _x, float _y)>(0x447FD0)(false, false, texhelp.repeatx * sample_size, texhelp.repeaty * sample_size);
-		} 
+		}
 
 
 		if (ImGui::Button("Fit", ImVec2(button_size, ImGui::GetFrameHeight())))
@@ -463,7 +380,7 @@ namespace ggui::surface_inspector
 
 		SPACING(0.0f, 12.0f);
 
-		const char* set_mode_items[] = { "2D", "2D - Auto Set", "3D", "3D - Auto Set", "Patch Curve", "Patch Curve - Auto Set"};
+		const char* set_mode_items[] = { "2D", "2D - Auto Set", "3D", "3D - Auto Set", "Patch Curve", "Patch Curve - Auto Set" };
 		static int set_mode_current = 1;
 
 		ImGui::SetNextItemWidth(clamped_min_widget_width);
@@ -471,12 +388,13 @@ namespace ggui::surface_inspector
 
 		if (ImGui::InputScalarDir("Repeat X", ImGuiDataType_Float, &texhelp.repeatx, nullptr, &texhelp.amount_repeatx, nullptr, true))
 		{
-			if (texhelp.amount_repeatx < 0.0f) {
+			if (texhelp.amount_repeatx < 0.0f) 
+			{
 				texhelp.amount_repeatx = 0.0f;
 			}
 
 			// if auto set mode
-			if(set_mode_current == 1 || set_mode_current == 3 || set_mode_current == 5)
+			if (set_mode_current == 1 || set_mode_current == 3 || set_mode_current == 5)
 			{
 				// Patch_SetTexturing
 				utils::hook::call<void(__cdecl)(float _x, float _y, int _unk)>(0x446B60)(texhelp.repeatx, texhelp.repeaty, set_mode_current == 1 ? 0 : set_mode_current == 3 ? 1 : 2);
@@ -485,7 +403,8 @@ namespace ggui::surface_inspector
 
 		if (ImGui::InputScalarDir("Repeat Y", ImGuiDataType_Float, &texhelp.repeaty, nullptr, &texhelp.amount_repeaty, nullptr, true))
 		{
-			if (texhelp.amount_repeaty < 0.0f) {
+			if (texhelp.amount_repeaty < 0.0f) 
+			{
 				texhelp.amount_repeaty = 0.0f;
 			}
 
@@ -507,9 +426,9 @@ namespace ggui::surface_inspector
 		//ImGui::PopItemWidth();
 	}
 
-	void menu([[maybe_unused]] ggui::imgui_context_menu& menu)
+	void surface_dialog::gui()
 	{
-		if(dvars::gui_props_surfinspector && !dvars::gui_props_surfinspector->current.enabled)
+		if (dvars::gui_props_surfinspector && !dvars::gui_props_surfinspector->current.enabled)
 		{
 			const auto MIN_WINDOW_SIZE = ImVec2(210.0f, 290.0f);
 			const auto INITIAL_WINDOW_SIZE = ImVec2(345.0f, 510.0f);
@@ -519,7 +438,7 @@ namespace ggui::surface_inspector
 			//ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f)); stylevars++;
 			//ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.08f, 0.08f, 0.08f, 0.31f)); stylecolors++;
 
-			if (!ImGui::Begin("Surface Inspector##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
+			if (!ImGui::Begin("Surface Inspector##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 			{
 				ImGui::PopStyleColor(stylecolors);
 				ImGui::PopStyleVar(stylevars);
@@ -529,7 +448,7 @@ namespace ggui::surface_inspector
 
 			ImGui::Indent(8.0f);
 			SPACING(0.0f, 4.0f);
-			controls();
+			surface_dialog::inspector_controls();
 
 			ImGui::PopStyleColor(stylecolors);
 			ImGui::PopStyleVar(stylevars);
@@ -537,10 +456,16 @@ namespace ggui::surface_inspector
 		}
 	}
 
+	void surface_dialog::on_open()
+	{ }
+
+	void surface_dialog::on_close()
+	{ }
+
 	// CMainFrame::OnTexturesInspector
-	void on_surfaceinspector_command()
+	void surface_dialog::on_surfaceinspector_command()
 	{
-		if(dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
+		if (dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
 		{
 			if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
 			{
@@ -548,7 +473,7 @@ namespace ggui::surface_inspector
 			}
 			else
 			{
-				components::gui::toggle(ggui::state.czwnd.m_surface_inspector);
+				GET_GUI(ggui::surface_dialog)->toggle();
 			}
 		}
 		else
@@ -558,7 +483,13 @@ namespace ggui::surface_inspector
 		}
 	}
 
-	void register_dvars()
+	void surface_dialog::hooks()
+	{
+		// detour CMainFrame::OnPrefs (hotkey to open the original dialog)
+		utils::hook::detour(0x424B60, surface_dialog::on_surfaceinspector_command, HK_JUMP);
+	}
+
+	void surface_dialog::register_dvars()
 	{
 		dvars::gui_props_surfinspector = dvars::register_bool(
 			/* name		*/ "gui_props_surfinspector",
@@ -573,10 +504,5 @@ namespace ggui::surface_inspector
 			/* desc		*/ "use the new experimental surface inspector window (replaces the original hotkey)");
 	}
 
-	void hooks()
-	{
-		// detour CMainFrame::OnPrefs (hotkey to open the original dialog)
-		utils::hook::detour(0x424B60, on_surfaceinspector_command, HK_JUMP);
-	}
-
+	REGISTER_GUI(surface_dialog);
 }
