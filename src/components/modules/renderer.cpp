@@ -796,7 +796,7 @@ namespace components
 								game::vec4_t temp = { 0.0f, 0.0f, 0.0f, 0.0f };
 								
 								// AngleVectors(float* angles, float* vpn, float* right, float* up)
-								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : ggui::camera_settings::sun_dir, temp, nullptr, nullptr);
+								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : GET_GUI(ggui::camera_settings_dialog)->sun_dir, temp, nullptr, nullptr);
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 							
@@ -826,8 +826,10 @@ namespace components
 										worldspawn_valid = true;
 									}
 								}
-								
-								game::vec4_t temp = { ggui::camera_settings::sun_diffuse[0], ggui::camera_settings::sun_diffuse[1], ggui::camera_settings::sun_diffuse[2], 1.0f };
+
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->sun_diffuse[0], cs->sun_diffuse[1], cs->sun_diffuse[2], 1.0f };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
 							}
 							
@@ -846,14 +848,18 @@ namespace components
 										worldspawn_valid = true;
 									}
 								}
+
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
 								
-								game::vec4_t temp = { ggui::camera_settings::sun_specular[0], ggui::camera_settings::sun_specular[1], ggui::camera_settings::sun_specular[2], ggui::camera_settings::sun_specular[3] };
+								const game::vec4_t temp = { cs->sun_specular[0], cs->sun_specular[1], cs->sun_specular[2], cs->sun_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_specular : temp, 1);
 							}
 							
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
 							{
-								game::vec4_t temp = { ggui::camera_settings::material_specular[0], ggui::camera_settings::material_specular[1], ggui::camera_settings::material_specular[2], ggui::camera_settings::material_specular[3] };
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->material_specular[0], cs->material_specular[1], cs->material_specular[2], cs->material_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 							
@@ -879,8 +885,10 @@ namespace components
 	
 								//	worldspawn_valid = true;
 								//}
-								
-								game::vec4_t temp = { ggui::camera_settings::ambient[0], ggui::camera_settings::ambient[1], ggui::camera_settings::ambient[2], ggui::camera_settings::ambient[3] };
+
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->ambient[0], cs->ambient[1], cs->ambient[2], cs->ambient[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 						}

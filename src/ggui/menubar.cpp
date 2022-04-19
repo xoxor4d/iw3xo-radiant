@@ -492,22 +492,23 @@ namespace ggui
 
 					if (ImGui::MenuItem("Filmtweak Settings"))
 					{
-						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
+						const auto cs = GET_GUI(ggui::camera_settings_dialog);
+						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
 						{
 							// close entire window if tab is in-front
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+							cs->close(); // toggle
 						}
-						else if (!ggui::state.czwnd.m_camera_settings.menustate)
+						else if (!cs->is_active())
 						{
 							// open window with focused fakesun tab
-							ggui::camera_settings::set_tabstate_fakesun(true);
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+							cs->set_tabstate_fakesun(true);
+							cs->open(); // toggle
 						}
 						else
 						{
 							// window is open but tab not focused
-							ggui::camera_settings::set_tabstate_fakesun(true);
-							ggui::camera_settings::focus_fakesun();
+							cs->set_tabstate_fakesun(true);
+							cs->focus_fakesun();
 						}
 					}
 
@@ -523,22 +524,23 @@ namespace ggui
 
 					if (ImGui::MenuItem("Fake Sun Settings"))
 					{
-						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
+						const auto cs = GET_GUI(ggui::camera_settings_dialog);
+						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
 						{
 							// close entire window if tab is in-front
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+							cs->close(); // toggle
 						}
-						else if (!ggui::state.czwnd.m_camera_settings.menustate)
+						else if (!cs->is_active())
 						{
 							// open window with focused fakesun tab
-							ggui::camera_settings::set_tabstate_fakesun(true);
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+							cs->set_tabstate_fakesun(true);
+							cs->open(); // toggle
 						}
 						else
 						{
 							// window is open but tab not focused
-							ggui::camera_settings::set_tabstate_fakesun(true);
-							ggui::camera_settings::focus_fakesun();
+							cs->set_tabstate_fakesun(true);
+							cs->focus_fakesun();
 						}
 					}
 
@@ -786,6 +788,28 @@ namespace ggui
 
 			if (ImGui::BeginMenu("Effects"))
 			{
+				if (ImGui::MenuItem("Effect Settings .."))
+				{
+					const auto cs = GET_GUI(ggui::camera_settings_dialog);
+					if (cs->get_tabstate_effects() && cs->is_tabstate_effects_active())
+					{
+						// close entire window if tab is in-front
+						cs->close();
+					}
+					else if (!cs->is_active())
+					{
+						// open window with focused effects tab
+						cs->set_tabstate_effects(true);
+						cs->open();
+					}
+					else
+					{
+						// window is open but tab not focused
+						cs->set_tabstate_effects(true);
+						cs->focus_effects();
+					}
+				}
+
 				if (ImGui::MenuItem("Edit Current Effect", 0, nullptr, components::effects::effect_can_play()))
 				{
 					components::effects::edit();

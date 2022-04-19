@@ -1,18 +1,8 @@
 #include "std_include.hpp"
 
-namespace ggui::camera_settings
+namespace ggui
 {
-	void on_close()
-	{
-		for (int n = 0; n < IM_ARRAYSIZE(tab_states); n++)
-		{
-			tab_states[n] = false;
-		}
-
-		active_tab = -1;
-	}
-
-	void fakesun_settings()
+	void camera_settings_dialog::fakesun_settings()
 	{
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
@@ -63,7 +53,7 @@ namespace ggui::camera_settings
 		SPACING(0.0f, 2.0f);
 	}
 
-	void effect_settings()
+	void camera_settings_dialog::effect_settings()
 	{
 		const auto& style = ImGui::GetStyle();
 
@@ -139,19 +129,17 @@ namespace ggui::camera_settings
 
 			ImGui::EndDisabled();
 		}
-
-		
 	}
 
-	void menu(ggui::imgui_context_menu& menu)
+	void camera_settings_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 220.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 700.0f);
 		
 		auto initial_window_pos = ggui::get_initial_window_pos();
 		
-		if(auto camerawnd = GET_GUI(ggui::camera_dialog);
-				camerawnd)
+		if(const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd)
 		{
 			initial_window_pos = ImVec2(
 				camerawnd->rtt_get_position().x + camerawnd->rtt_get_size().x - INITIAL_WINDOW_SIZE.x - 48.0f,
@@ -179,7 +167,7 @@ namespace ggui::camera_settings
 			return;
 		}
 
-		if (!ImGui::Begin("Cam Toolbar Settings##cam_settings_window", &menu.menustate, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings /*| ImGuiWindowFlags_NoTitleBar*/))
+		if (!ImGui::Begin("Cam Toolbar Settings##cam_settings_window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings /*| ImGuiWindowFlags_NoTitleBar*/))
 		{
 			ImGui::End();
 			return;
@@ -229,4 +217,19 @@ namespace ggui::camera_settings
 
 		ImGui::End();
 	}
+
+	void camera_settings_dialog::on_open()
+	{ }
+
+	void camera_settings_dialog::on_close()
+	{
+		for (int n = 0; n < IM_ARRAYSIZE(tab_states); n++)
+		{
+			tab_states[n] = false;
+		}
+
+		active_tab = -1;
+	}
+
+	REGISTER_GUI(camera_settings_dialog);
 }

@@ -35,9 +35,11 @@ namespace ggui
 		ImGui::Text(label); ImGui::SameLine();                                                          \
 		const ImGuiMenuColumns* offsets = &ImGui::GetCurrentWindow()->DC.MenuColumns;                   \
 		ImGui::SetCursorPosX(static_cast<float>(offsets->OffsetShortcut + 5));                          \
-		ImGui::PushItemWidth(static_cast<float>(offsets->Widths[2] + offsets->Widths[3] + 5));          \
+		ImGui::PushItemWidth(ImMax(40.0f, static_cast<float>(offsets->Widths[2] + offsets->Widths[3] + 5))); \
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(ImGui::GetStyle().FramePadding.x, 0));   \
-		func; ImGui::PopItemWidth(); ImGui::PopStyleVar(); }
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.23f, 0.23f, 0.23f, 0.55f));					\
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.43f, 0.43f, 0.43f, 0.44f));				\
+		func; ImGui::PopItemWidth(); ImGui::PopStyleVar(); ImGui::PopStyleColor(2); }
 	
 	
 	// show tooltip after x seconds
@@ -562,7 +564,6 @@ namespace											\
 
 		imgui_context_menu m_toolbar;
 		imgui_context_menu m_toolbar_edit;
-		imgui_context_menu m_camera_settings;
 		imgui_context_menu m_demo;
 
 		model_selector_s rtt_model_selector;
