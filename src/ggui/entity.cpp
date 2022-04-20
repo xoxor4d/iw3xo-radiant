@@ -763,8 +763,8 @@ namespace ggui
 				{
 					if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 					{
-						const auto m_selector = ggui::get_rtt_modelselector();
-						add_prop(epw.epair->key, m_selector->preview_model_name.c_str());
+						const auto m_selector = GET_GUI(ggui::modelselector_dialog);
+						add_prop(epw.epair->key, m_selector->m_preview_model_name.c_str());
 					}
 				}
 			}

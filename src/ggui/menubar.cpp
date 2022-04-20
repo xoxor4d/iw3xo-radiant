@@ -284,10 +284,8 @@ namespace ggui
 						GET_GUI(ggui::texture_dialog)->toggle();
 					}
 
-					if (ImGui::MenuItem("Model Selector", ggui::hotkey_dialog::get_hotkey_for_command("xo_modelselector").c_str()))
-					{
-						const auto m_selector = ggui::get_rtt_modelselector();
-						m_selector->menustate = !m_selector->menustate;
+					if (ImGui::MenuItem("Model Selector", ggui::hotkey_dialog::get_hotkey_for_command("xo_modelselector").c_str())) {
+						GET_GUI(ggui::modelselector_dialog)->toggle();
 					}
 
 					if (ImGui::MenuItem("ImGui Demo")) {

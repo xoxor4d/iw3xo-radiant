@@ -669,8 +669,8 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		}
 
 		// block specific keys from triggering hotkeys (eg. moving the camera via the arrow keys, because we use the up/down arrow to change xmodel previews)
-		if (const auto	modelselector = ggui::get_rtt_modelselector();
-						modelselector->window_hovered)
+		if (const auto	modelselector = GET_GUI(ggui::modelselector_dialog);
+						modelselector->rtt_is_hovered())
 		{
 			// DownArrow / UpArrow
 			if (nChar == VK_DOWN || nChar == VK_UP)

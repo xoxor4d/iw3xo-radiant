@@ -8,28 +8,7 @@ struct layermatwnd_s
 	int unkown01;
 	int active_layer_material;
 	int selected_layer_index;
-};
-
-enum GfxProjectionTypes
-{
-	GFX_PROJECTION_2D = 0x0,
-	GFX_PROJECTION_3D = 0x1,
-};
-
-struct GfxCmdProjectionSet
-{
-	game::GfxCmdHeader header;
-	GfxProjectionTypes projection;
-};
-
-struct GfxPointVertex
-{
-	float xyz[3];
-	game::GfxColor color;
-};
-
-
-extern layermatwnd_s* layermatwnd_struct;
+}; extern layermatwnd_s* layermatwnd_struct;
 
 namespace layermatwnd
 {
@@ -49,8 +28,6 @@ namespace layermatwnd
 	
 	extern E_RENDERMETHOD rendermethod_axis;
 	extern E_RENDERMETHOD rendermethod_preview;
-	extern float fov;
-	extern bool rotation_pause;
 }
 
 class clayermatwnd

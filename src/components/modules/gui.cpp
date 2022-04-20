@@ -565,10 +565,6 @@ namespace components
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_toolbar_edit,
 				ggui::toolbar::menu_toolbar_edit(ggui::state.czwnd.m_toolbar_edit), ggui::toolbar::save_settings_ini());
 
-			// render to texture :: model selector / preview
-			IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(ggui::get_rtt_modelselector(),
-				ggui::modelselector::menu(), nullptr);
-
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
 				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
@@ -663,21 +659,11 @@ namespace components
 	// register dvars @ gui::register_dvars()
 	void gui::saved_windowstates()
 	{
-		// startup only
-		if (!ggui::saved_states_init)
-		{
-			SAVED_STATE_INIT_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
-		}
-
-		// *
-		// every frame
-		SAVED_STATE_UPDATE_RTT(ggui::get_rtt_modelselector(), dvars::gui_saved_state_modelselector);
-
-
-		// now handles init and update
+		// handles init and update
 		HANDLE_SAVED_STATE_REFACTOR(ggui::console_dialog, dvars::gui_saved_state_console, ggui::saved_states_init);
 		HANDLE_SAVED_STATE_REFACTOR(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::saved_states_init);
 		HANDLE_SAVED_STATE_REFACTOR(ggui::filter_dialog, dvars::gui_saved_state_filter, ggui::saved_states_init);
+		HANDLE_SAVED_STATE_REFACTOR(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::saved_states_init);
 		HANDLE_SAVED_STATE_REFACTOR(ggui::surface_dialog, dvars::gui_saved_state_surfinspector, ggui::saved_states_init);
 		HANDLE_SAVED_STATE_REFACTOR(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::saved_states_init);
 
@@ -981,8 +967,7 @@ namespace components
 		GET_GUI(ggui::preferences_dialog)->hooks();
 		GET_GUI(ggui::surface_dialog)->hooks();
 		GET_GUI(ggui::vertex_edit_dialog)->hooks();
-
-		ggui::modelselector::init();
+		GET_GUI(ggui::modelselector_dialog)->init();
 
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{

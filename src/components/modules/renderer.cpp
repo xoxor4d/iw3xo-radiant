@@ -2531,11 +2531,11 @@ namespace components
 		char dimensions;			// 0x7
 		bool depth_test;			// 0x8
 		char pad[3];
-		GfxPointVertex verts[2];	// 0xC (12)
+		game::GfxPointVertex verts[2];	// 0xC (12)
 	};
 
 	// rewrite to add depth_test functionality
-	void R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const GfxPointVertex* verts)
+	void R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts)
 	{
 		if (count <= 0)
 		{
@@ -2546,23 +2546,23 @@ namespace components
 		GfxCmdDrawLines* merged_cmd = reinterpret_cast<GfxCmdDrawLines*>(s_cmdList->lastCmd);
 
 		if (merged_cmd && merged_cmd->header.id == game::RC_DRAW_LINES
-			&& (count * sizeof(GfxPointVertex) * 2) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF 
+			&& (count * sizeof(game::GfxPointVertex) * 2) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF 
 			&& merged_cmd->width == width 
 			&& merged_cmd->dimensions == dimension 
 			&& count + merged_cmd->lineCount <= 0x7FFF)
 		{
 			// unsure about the name, lets call it R_AddMultipleRendercommands
-			void* cmds = utils::hook::call<void* (__cdecl)(int)>(0x4FB0D0)(count * sizeof(GfxPointVertex) * 2);
+			void* cmds = utils::hook::call<void* (__cdecl)(int)>(0x4FB0D0)(count * sizeof(game::GfxPointVertex) * 2);
 			
 			if (cmds)
 			{
-				memcpy(cmds, verts, count * sizeof(GfxPointVertex) * 2);
+				memcpy(cmds, verts, count * sizeof(game::GfxPointVertex) * 2);
 				merged_cmd->lineCount += count;
 			}
 		}
 		else
 		{
-			const size_t vert_mem_size = count * sizeof(GfxPointVertex) * 2;
+			const size_t vert_mem_size = count * sizeof(game::GfxPointVertex) * 2;
 			GfxCmdDrawLines* line = reinterpret_cast<GfxCmdDrawLines*>( game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawLines, verts), game::RC_DRAW_LINES));
 
 			if (line)

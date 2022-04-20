@@ -439,14 +439,14 @@ namespace ggui
 			if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 			{
 				const auto entity_gui = GET_GUI(ggui::entity_dialog);
+				const auto m_selector = GET_GUI(ggui::modelselector_dialog);
 
 				// reset manual left mouse capture
 				ggui::dragdrop_reset_leftmouse_capture();
 
-				const auto m_selector = ggui::get_rtt_modelselector();
 				ggui::entity_dialog::addprop_helper_s no_undo = {};
 
-				if (m_selector->overwrite_selection)
+				if (m_selector->m_overwrite_selection)
 				{
 					game::Undo_ClearRedo();
 					game::Undo_GeneralStart("change entity model");
@@ -463,7 +463,7 @@ namespace ggui
 						goto SPAWN_AWAY;
 					}
 
-					entity_gui->add_prop("model", m_selector->preview_model_name.c_str(), &no_undo);
+					entity_gui->add_prop("model", m_selector->m_preview_model_name.c_str(), &no_undo);
 					game::Undo_End();
 				}
 				else
@@ -489,7 +489,7 @@ namespace ggui
 
 					g_block_radiant_modeldialog = false;
 
-					entity_gui->add_prop("model", ggui::get_rtt_modelselector()->preview_model_name.c_str(), &no_undo);
+					entity_gui->add_prop("model", m_selector->m_preview_model_name.c_str(), &no_undo);
 					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
 
 					game::Undo_End();

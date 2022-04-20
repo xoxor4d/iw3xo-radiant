@@ -2052,6 +2052,12 @@ namespace game
 		GfxDrawSurf drawSurfs[256];
 	};
 
+	struct GfxPointVertex
+	{
+		float xyz[3];
+		game::GfxColor color;
+	};
+
 	struct GfxSkinnedXModelSurfs
 	{
 		void* firstSurf;

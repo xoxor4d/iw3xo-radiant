@@ -325,12 +325,12 @@ namespace ggui
 		}
 
 		// 
-		void set_initiated()
+		void set_initiated(bool reset = false)
 		{
 			switch (GUI_TYPE)
 			{
-			case GUI_TYPE_DEF: vars.def._one_time_init = true; break;
-			case GUI_TYPE_RTT: vars.rtt._one_time_init = true; break;
+			case GUI_TYPE_DEF: vars.def._one_time_init = reset ? false : true; break;
+			case GUI_TYPE_RTT: vars.rtt._one_time_init = reset ? false : true; break;
 			}
 		}
 
@@ -427,6 +427,8 @@ namespace ggui
 		{
 			GUI_CHECK_RTT;
 			vars.rtt._cursor_pos_pt = new_pos;
+			vars.rtt._cursor_pos.x = static_cast<float>(new_pos.x);
+			vars.rtt._cursor_pos.y = static_cast<float>(new_pos.y);
 		}
 
 
@@ -532,6 +534,7 @@ namespace ggui
 				}
 			}
 
+			ASSERT_MSG(false, "GET_GUI nullptr");
 			return nullptr;
 		}
 
@@ -566,7 +569,7 @@ namespace											\
 		imgui_context_menu m_toolbar_edit;
 		imgui_context_menu m_demo;
 
-		model_selector_s rtt_model_selector;
+		//model_selector_s rtt_model_selector;
 	};
 
 	struct imgui_state_t
@@ -624,8 +627,8 @@ namespace											\
 	extern void dragdrop_overwrite_leftmouse_capture();
 	extern void dragdrop_reset_leftmouse_capture();
 
-	inline model_selector_s* get_rtt_modelselector()
+	/*inline model_selector_s* get_rtt_modelselector()
 	{
 		return &state.czwnd.rtt_model_selector;
-	}
+	}*/
 }
