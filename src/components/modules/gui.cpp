@@ -122,7 +122,8 @@ namespace components
 		int _stylecolors = 0;
 
 		ImGuiIO& io = ImGui::GetIO();
-		
+		const auto tb = GET_GUI(ggui::toolbar_dialog);
+
 		bool floating_toolbar = dvars::gui_floating_toolbar && dvars::gui_floating_toolbar->current.enabled;
 		bool floating_toolbar_resizes_dockspace = dvars::gui_resize_dockspace && dvars::gui_resize_dockspace->current.enabled;
 
@@ -158,7 +159,7 @@ namespace components
 		{
 			window_padding = ImVec2(5.0f, 50.0f);
 			
-			if(ggui::toolbar_axis == ImGuiAxis_Y)
+			if(tb->m_toolbar_axis == ImGuiAxis_Y)
 			{
 				window_padding = ImVec2(50.0f, 5.0f);
 			}
@@ -249,7 +250,7 @@ namespace components
 		const auto current_window = ImGui::GetCurrentWindow();
 
 		// dirty hack to remove horizontal window padding from the menubar (left -> first element)
-		if (ggui::toolbar_axis == ImGuiAxis_Y)
+		if (tb->m_toolbar_axis == ImGuiAxis_Y)
 		{
 			saved_menubar_offset = current_window->DC.MenuBarOffset;
 			current_window->DC.MenuBarOffset.x = 10.0f;
@@ -263,7 +264,7 @@ namespace components
 		// toolbar settings
 		
 		// restore window padding
-		if (ggui::toolbar_axis == ImGuiAxis_Y)
+		if (tb->m_toolbar_axis == ImGuiAxis_Y)
 		{
 			current_window->DC.MenuBarOffset = saved_menubar_offset;
 		}
@@ -273,15 +274,15 @@ namespace components
 		floating_toolbar_resizes_dockspace = dvars::gui_resize_dockspace && dvars::gui_resize_dockspace->current.enabled;
 
 		// set toolbar axis once using saved settings
-		if(!context.m_toolbar.one_time_init)
+		if(!ggui::m_dockspace_initiated)
 		{
 			const ImGuiID toolbar_id = ImHashStr("toolbar##xywnd");
 			if (const auto  settings = ImGui::FindWindowSettings(toolbar_id);
 							settings)
 			{
-				ggui::toolbar_axis		= settings->Size.y > settings->Size.x ? ImGuiAxis_Y : ImGuiAxis_X;
-				ggui::toolbar_dock_left = settings->DockId;
-				ggui::toolbar_dock_top	= settings->DockId;
+				tb->m_toolbar_axis		= settings->Size.y > settings->Size.x ? ImGuiAxis_Y : ImGuiAxis_X;
+				tb->m_toolbar_dock_left = settings->DockId;
+				tb->m_toolbar_dock_top	= settings->DockId;
 			}
 		}
 
@@ -296,10 +297,10 @@ namespace components
 			{
 				dockspace_size = ImVec2(0.0f, viewport->Size.y - 85.0f);
 
-				if (ggui::toolbar_axis == ImGuiAxis_Y)
+				if (tb->m_toolbar_axis == ImGuiAxis_Y)
 				{
 					//auto region_left = ImGui::GetContentRegionAvailWidth();
-					dockspace_size = ImVec2(viewport->Size.x - (2.0f * ggui::toolbar_size.x), 0.0f);
+					dockspace_size = ImVec2(viewport->Size.x - (2.0f * tb->m_toolbar_size.x), 0.0f);
 				}
 			}
 
@@ -326,20 +327,20 @@ namespace components
 			// - uses "saved" user layout from the ini or creates a default layout
 			// - reset to the default layout at any time, respecting toolbar position
 			
-			if (!context.m_toolbar.one_time_init || ggui::reset_dockspace)
+			if (!ggui::m_dockspace_initiated || ggui::m_dockspace_reset)
 			{
 				// get the root node (DockSpace)
 				const auto root = ImGui::DockBuilderGetNode(dockspace_id);
 
 				// check if there is a basic tree
-				if (  !ggui::reset_dockspace 
+				if (  !ggui::m_dockspace_reset 
 					&& root
 					&& root->ChildNodes[0])
 				{
 					// the way we create the initial layout results in the following ID's
-					ggui::toolbar_dock_top = ImGui::FindNodeByID(0x00000001);
-					ggui::toolbar_dock_left = ImGui::FindNodeByID(0x00000003);
-					ggui::dockspace_outer_left_node = ImGui::FindNodeByID(0x00000005);
+					tb->m_toolbar_dock_top = ImGui::FindNodeByID(0x00000001);
+					tb->m_toolbar_dock_left = ImGui::FindNodeByID(0x00000003);
+					ggui::m_dockspace_outer_left_node = ImGui::FindNodeByID(0x00000005);
 				}
 				else 
 				{
@@ -350,25 +351,25 @@ namespace components
 					main_dock = ImGui::DockBuilderAddNode(dockspace_id, ImGuiDockNodeFlags_DockSpace); 
 					ImGui::DockBuilderSetNodeSize(main_dock, viewport->Size);
 					
-					ggui::toolbar_dock_top = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Up, 0.01f, nullptr, &main_dock);
-					ImGui::DockBuilderSetNodeSize(ggui::toolbar_dock_top, ImVec2{ viewport->Size.x, 36 });
+					tb->m_toolbar_dock_top = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Up, 0.01f, nullptr, &main_dock);
+					ImGui::DockBuilderSetNodeSize(tb->m_toolbar_dock_top, ImVec2{ viewport->Size.x, 36 });
 
-					ggui::toolbar_dock_left = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.01f, nullptr, &main_dock);
-					ImGui::DockBuilderSetNodeSize(ggui::toolbar_dock_left, ImVec2(36, viewport->Size.y));
+					tb->m_toolbar_dock_left = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.01f, nullptr, &main_dock);
+					ImGui::DockBuilderSetNodeSize(tb->m_toolbar_dock_left, ImVec2(36, viewport->Size.y));
 					
-					ggui::dockspace_outer_left_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.5f, nullptr, &main_dock);
+					ggui::m_dockspace_outer_left_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.5f, nullptr, &main_dock);
 					//const auto dockspace_inner_left_node = ImGui::DockBuilderSplitNode(ggui::dockspace_outer_left_node, ImGuiDir_Left, 0.5f, nullptr, &ggui::dockspace_outer_left_node);
 					const auto dockspace_right_top_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Up, 0.6f, nullptr, &main_dock);
 					
 					if (!floating_toolbar)
 					{
-						if (ggui::toolbar_axis == ImGuiAxis_X)
+						if (tb->m_toolbar_axis == ImGuiAxis_X)
 						{
-							ImGui::DockBuilderDockWindow("toolbar##window", ggui::toolbar_dock_top);
+							ImGui::DockBuilderDockWindow("toolbar##window", tb->m_toolbar_dock_top);
 						}
 						else
 						{
-							ImGui::DockBuilderDockWindow("toolbar##window", ggui::toolbar_dock_left);
+							ImGui::DockBuilderDockWindow("toolbar##window", tb->m_toolbar_dock_left);
 						}
 					}
 
@@ -379,7 +380,7 @@ namespace components
 					//ImGui::DockBuilderDockWindow("Filters##window", dockspace_inner_left_node);
 					//ImGui::DockBuilderDockWindow("Entity##window", dockspace_inner_left_node);
 					
-					ImGui::DockBuilderDockWindow("Grid Window##rtt", ggui::dockspace_outer_left_node);
+					ImGui::DockBuilderDockWindow("Grid Window##rtt", ggui::m_dockspace_outer_left_node);
 					ImGui::DockBuilderDockWindow("Camera Window##rtt", dockspace_right_top_node);
 
 					ImGui::DockBuilderDockWindow("Textures##rtt", main_dock);
@@ -404,8 +405,8 @@ namespace components
 					}
 				}
 
-				context.m_toolbar.one_time_init = true;
-				ggui::reset_dockspace = false;
+				ggui::m_dockspace_initiated = true;
+				ggui::m_dockspace_reset = false;
 			}
 		}
 
@@ -414,8 +415,8 @@ namespace components
 		
 		// *
 		// toolbar
-		
-		ggui::toolbar::menu_new(context.m_toolbar, context.m_toolbar_edit);
+
+		GET_GUI(ggui::toolbar_dialog)->toolbar();
 
 		
 		// *
@@ -560,10 +561,6 @@ namespace components
 			//	ImGui::Image(depth->image->texture.data, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
 			//	ImGui::End();
 			//}
-
-			// toolbar edit menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_toolbar_edit,
-				ggui::toolbar::menu_toolbar_edit(ggui::state.czwnd.m_toolbar_edit), ggui::toolbar::save_settings_ini());
 
 			// demo menu
 			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,

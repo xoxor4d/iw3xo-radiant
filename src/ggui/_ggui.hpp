@@ -565,8 +565,8 @@ namespace											\
 		ImGuiContext* context;
 		game::GfxWindowTarget* dx_window;
 
-		imgui_context_menu m_toolbar;
-		imgui_context_menu m_toolbar_edit;
+		//imgui_context_menu m_toolbar;
+		//imgui_context_menu m_toolbar_edit;
 		imgui_context_menu m_demo;
 
 		//model_selector_s rtt_model_selector;
@@ -594,16 +594,17 @@ namespace											\
     extern imgui_state_t state;
 	extern bool			saved_states_init;
 	
-	extern ImGuiID		dockspace_outer_left_node;
-	extern bool			reset_dockspace;
+	extern ImGuiID		m_dockspace_outer_left_node;
+	extern bool			m_dockspace_initiated;
+	extern bool			m_dockspace_reset;
 	extern bool			mainframe_menubar_enabled;
 	
-	extern ImVec2		toolbar_pos;
-	extern ImVec2		toolbar_size;
-	extern ImGuiAxis	toolbar_axis;
-	extern bool			toolbar_reset;
-	extern ImGuiID		toolbar_dock_top;
-	extern ImGuiID		toolbar_dock_left;
+	//extern ImVec2		m_toolbar_pos;
+	//extern ImVec2		m_toolbar_size;
+	//extern ImGuiAxis	m_toolbar_axis;
+	//extern bool			m_toolbar_reset;
+	//extern ImGuiID		m_toolbar_dock_top;
+	//extern ImGuiID		m_toolbar_dock_left;
 
 	extern std::vector<commandbinds> cmd_hotkeys;
 	extern std::vector<game::SCommandInfo> cmd_addon_hotkeys_builtin;

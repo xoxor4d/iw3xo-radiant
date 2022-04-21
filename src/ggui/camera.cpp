@@ -50,13 +50,15 @@ namespace ggui
 			ImGui::SetCursorPos(cursor_pos);
 		}
 
+		const auto tb = GET_GUI(ggui::toolbar_dialog);
+
 		// group all so we can get the actual toolbar width for the next frame
 		ImGui::BeginGroup();
 		{
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + collapse_button_offset);
 
 			static bool hov_open_toolbar;
-			if (ggui::toolbar::image_togglebutton("arrow_down"
+			if (tb->image_togglebutton("arrow_down"
 				, hov_open_toolbar
 				, m_toolbar_state
 				, "Collapse/Expand camera toolbar"
@@ -73,7 +75,7 @@ namespace ggui
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 				{
 					static bool hov_guizmo_enable;
-					if (ggui::toolbar::image_togglebutton("guizmo_enable"
+					if (tb->image_togglebutton("guizmo_enable"
 						, hov_guizmo_enable
 						, dvars::guizmo_enable->current.enabled
 						, "Enable guizmo"
@@ -88,7 +90,7 @@ namespace ggui
 					if (dvars::guizmo_enable->current.enabled)
 					{
 						static bool hov_guizmo_grid_snapping;
-						if (ggui::toolbar::image_togglebutton("guizmo_grid_snapping"
+						if (tb->image_togglebutton("guizmo_grid_snapping"
 							, hov_guizmo_grid_snapping
 							, dvars::guizmo_snapping->current.enabled
 							, "Guizmo: Enable grid-snapping"
@@ -102,7 +104,7 @@ namespace ggui
 
 
 						static bool hov_guizmo_brush_mode;
-						if (ggui::toolbar::image_togglebutton("guizmo_brush_mode"
+						if (tb->image_togglebutton("guizmo_brush_mode"
 							, hov_guizmo_brush_mode
 							, dvars::guizmo_brush_mode->current.enabled
 							, "Guizmo: Enable brush mode"
@@ -123,7 +125,7 @@ namespace ggui
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 				{
 					static bool hov_cubicclip;
-					if (ggui::toolbar::image_togglebutton("cubic_clip"
+					if (tb->image_togglebutton("cubic_clip"
 						, hov_cubicclip
 						, prefs->m_bCubicClipping
 						, std::string("Cubic Clipping " + ggui::hotkey_dialog::get_hotkey_for_command("ToggleCubicClip")).c_str()
@@ -136,7 +138,7 @@ namespace ggui
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 					static bool hov_gameview;
-					if (ggui::toolbar::image_togglebutton("gameview"
+					if (tb->image_togglebutton("gameview"
 						, hov_gameview
 						, dvars::radiant_gameview->current.enabled
 						, std::string("Gameview " + ggui::hotkey_dialog::get_hotkey_for_command("xo_gameview")).c_str()
@@ -157,7 +159,7 @@ namespace ggui
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 				{
 					static bool hov_fakesunpreview;
-					if (ggui::toolbar::image_togglebutton("sunpreview"
+					if (tb->image_togglebutton("sunpreview"
 						, hov_fakesunpreview
 						, dvars::r_fakesun_preview->current.enabled
 						, std::string("Fake sun preview " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()
@@ -174,7 +176,7 @@ namespace ggui
 					if (dvars::r_fakesun_preview->current.enabled)
 					{
 						static bool hov_fakesun_fog;
-						if (ggui::toolbar::image_togglebutton("fakesun_fog"
+						if (tb->image_togglebutton("fakesun_fog"
 							, hov_fakesun_fog
 							, dvars::r_fakesun_fog_enabled->current.enabled
 							, std::string("Toggle Fog " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_fog_toggle")).c_str()
@@ -192,7 +194,7 @@ namespace ggui
 					static bool hov_filmtweaks_settings;
 					const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
 
-					if (ggui::toolbar::image_togglebutton("filmtweaks"
+					if (tb->image_togglebutton("filmtweaks"
 						, hov_filmtweaks_settings
 						, r_filmtweakenable->current.enabled
 						, std::string("Toggle filmtweaks " + ggui::hotkey_dialog::get_hotkey_for_command("filmtweak_toggle")).c_str()
@@ -207,7 +209,7 @@ namespace ggui
 
 
 					static bool hov_fakesun_settings;
-					if (ggui::toolbar::image_togglebutton("fakesun_settings"
+					if (tb->image_togglebutton("fakesun_settings"
 						, hov_fakesun_settings
 						, hov_fakesun_settings
 						, "Open Fakesun / PostFX settings menu"
@@ -252,7 +254,7 @@ namespace ggui
 							ImGui::BeginDisabled(!can_fx_play || components::effects::effect_is_repeating());
 							{
 								static bool hov_fx_play;
-								if (ggui::toolbar::image_togglebutton("fx_play"
+								if (tb->image_togglebutton("fx_play"
 									, hov_fx_play
 									, can_fx_play && !components::effects::effect_is_repeating()
 									, std::string("Play Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_play")).c_str()
@@ -271,7 +273,7 @@ namespace ggui
 							ImGui::BeginDisabled(!can_fx_play);
 							{
 								static bool hov_fx_repeat;
-								if (ggui::toolbar::image_togglebutton("fx_repeat"
+								if (tb->image_togglebutton("fx_repeat"
 									, hov_fx_repeat
 									, components::effects::effect_is_repeating()
 									, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_repeat")).c_str()
@@ -286,7 +288,7 @@ namespace ggui
 
 
 								static bool hov_fx_pause;
-								if (ggui::toolbar::image_togglebutton("fx_pause"
+								if (tb->image_togglebutton("fx_pause"
 									, hov_fx_pause
 									, can_fx_play
 									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str()
@@ -301,7 +303,7 @@ namespace ggui
 
 
 								static bool hov_fx_stop;
-								if (ggui::toolbar::image_togglebutton("fx_stop"
+								if (tb->image_togglebutton("fx_stop"
 									, hov_fx_stop
 									, can_fx_play
 									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_stop")).c_str()
@@ -315,7 +317,7 @@ namespace ggui
 								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 								static bool hov_fx_edit;
-								if (ggui::toolbar::image_togglebutton("fx_edit"
+								if (tb->image_togglebutton("fx_edit"
 									, hov_fx_edit
 									, hov_fx_edit
 									, "Edit Effect for last selected fx_origin"
@@ -340,7 +342,7 @@ namespace ggui
 
 							ImGui::PushID("settings2");
 							static bool hov_fx_settings;
-							if (ggui::toolbar::image_togglebutton("fakesun_settings"
+							if (tb->image_togglebutton("fakesun_settings"
 								, hov_fx_settings
 								, hov_fx_settings
 								, "Open FX settings menu"

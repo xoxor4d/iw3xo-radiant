@@ -2776,7 +2776,7 @@ namespace components
 		// register smalldevfont
 		utils::hook(0x5011B8, post_render_init, HOOK_CALL).install()->quick();
 
-		// nop rpg world related stuff when drawing gfx-scene-entities (effect xmodels)
+		// nop rgp world related stuff when drawing gfx-scene-entities (effect xmodels)
 		utils::hook::nop(0x52A6E8, 5);
 		utils::hook::nop(0x52A6FF, 5);
 		utils::hook::nop(0x52A6F7, 3);

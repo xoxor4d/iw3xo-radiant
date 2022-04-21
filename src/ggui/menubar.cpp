@@ -218,11 +218,11 @@ namespace ggui
 				SEPERATORV(0.0f);
 
 				if (ImGui::MenuItem("Edit Colors ...")) {
-					GET_GUI(gui_colors_dialog)->toggle();
+					GET_GUI(ggui::gui_colors_dialog)->toggle();
 				}
 
 				if (ImGui::MenuItem("Edit Toolbar ...")) {
-					components::gui::toggle(ggui::state.czwnd.m_toolbar_edit);
+					GET_GUI(ggui::toolbar_edit_dialog);
 				}
 
 				if (ImGui::MenuItem("Edit Hotkeys ...")) {

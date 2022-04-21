@@ -78,14 +78,14 @@ namespace ggui
 			ImGui::Checkbox("Show mousecursor origin within the menubar", &dvars::gui_menubar_show_mouseorigin->current.enabled);
 
 			if (ImGui::Checkbox("Floating Toolbar", &dvars::gui_floating_toolbar->current.enabled)) {
-				ggui::toolbar_reset = true;
+				GET_GUI(ggui::toolbar_dialog)->m_toolbar_reset = true;
 			}
 
 			// -----------------
 			ImGui::title_with_seperator("Docking");
 
 			if (ImGui::Button("Reset Dockspace")) {
-				ggui::reset_dockspace = true;
+				ggui::m_dockspace_reset = true;
 			}
 
 			ImGui::SameLine();

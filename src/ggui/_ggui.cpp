@@ -3,11 +3,6 @@
 
 namespace ggui
 {
-	// *
-	// | -------------------- Variables ------------------------
-	// *
-
-
 	std::vector<std::unique_ptr<ggui_module>>* loader::modules_ = nullptr;
 
 	void loader::register_gui(std::unique_ptr<ggui_module>&& module_)
@@ -32,24 +27,24 @@ namespace ggui
 		modules_ = nullptr;
 	}
 
-
-
+	// *
+	// | -------------------- Variables ------------------------
+	// *
 
     imgui_state_t state = imgui_state_t();
 	bool		saved_states_init = false;
 	
-	ImGuiID		dockspace_outer_left_node;
-	bool		reset_dockspace = false;
-	bool		mainframe_menubar_enabled = false;
+	bool		m_dockspace_initiated = false;
+	bool		m_dockspace_reset = false;
+	ImGuiID		m_dockspace_outer_left_node;
+	bool		mainframe_menubar_enabled = false; // is stock menubar visible? (also used for asm stubs)
 	
-	ImVec2		toolbar_pos;
-	ImVec2		toolbar_size;
-	ImGuiAxis	toolbar_axis = ImGuiAxis_X;
-	bool		toolbar_reset = false;
-	ImGuiID		toolbar_dock_top;
-	ImGuiID		toolbar_dock_left;
-
-	//model_selector_s rtt_model_preview;
+	/*ImVec2		m_toolbar_pos;
+	ImVec2		m_toolbar_size;
+	ImGuiAxis	m_toolbar_axis = ImGuiAxis_X;
+	bool		m_toolbar_reset = false;
+	ImGuiID		m_toolbar_dock_top;
+	ImGuiID		m_toolbar_dock_left;*/
 
 	std::vector<commandbinds> cmd_hotkeys;
 
@@ -72,12 +67,13 @@ namespace ggui
 
 	ImVec2 get_initial_window_pos()
 	{
-		if(ggui::toolbar_axis == ImGuiAxis_X)
+		const auto tb = GET_GUI(ggui::toolbar_dialog);
+		if(tb->m_toolbar_axis == ImGuiAxis_X)
 		{
-			return ImVec2(5.0f, 33.0f + ggui::toolbar_size.y + 5.0f);
+			return ImVec2(5.0f, 33.0f + tb->m_toolbar_size.y + 5.0f);
 		}
 
-		return ImVec2(ggui::toolbar_size.x + 10.0f, 33.0f);
+		return ImVec2(tb->m_toolbar_size.x + 10.0f, 33.0f);
 	}
 
 	void set_next_window_initial_pos_and_constraints(ImVec2 mins, ImVec2 initial_size, ImVec2 overwrite_pos)

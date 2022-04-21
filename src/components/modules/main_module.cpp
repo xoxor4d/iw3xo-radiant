@@ -218,9 +218,6 @@ namespace components
 		clayermatwnd::hooks();
 		ctexwnd::hooks();
 
-		// ggui hooks ~ gui::gui()
-
-
 		// add iw3xradiant search path (imgui images)
 		utils::hook(0x4A29A7, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
 

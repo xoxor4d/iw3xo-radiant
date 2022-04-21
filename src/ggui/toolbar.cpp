@@ -5,14 +5,12 @@
 	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);			\
 	ImGui::SameLine(); SPACING(4.0f, 0.0f); ImGui::SameLine();	\
 
-
-namespace ggui::toolbar
+namespace ggui
 {
-	const ImVec2		IMAGEBUTTON_SIZE = ImVec2(28.0f, 28.0f);
-	const std::string	INI_FILENAME = "iw3r_toolbar.ini"s;
+	const ImVec2		TB_IMAGEBUTTON_SIZE = ImVec2(28.0f, 28.0f);
+	const std::string	TB_INI_FILENAME = "iw3r_toolbar.ini"s;
 
-	
-	void image_button(const char* image_name, bool& hovered_state, E_CALLTYPE calltype, uint32_t func_addr, const char* tooltip)
+	void toolbar_dialog::image_button(const char* image_name, bool& hovered_state, E_CALLTYPE calltype, uint32_t func_addr, const char* tooltip)
 	{
 		if (const auto	image = game::Image_RegisterHandle(image_name);
 						image && image->texture.data)
@@ -22,39 +20,8 @@ namespace ggui::toolbar
 
 			const ImVec4 bg_col = hovered_state ?
 				ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector) : ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
-			
-			if (ImGui::ImageButton(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1, 0, bg_col))
-			{
-				switch(calltype)
-				{
-				case MAINFRAME_CDECL:
-					mainframe_cdeclcall(void, func_addr);
-					break;
-					
-				case MAINFRAME_THIS:
-					mainframe_thiscall(void, func_addr);
-					break;
-					
-				case MAINFRAME_STD:
-					mainframe_stdcall(void, func_addr);
-					break;
-					
-				case CDECLCALL:
-					cdeclcall(void, func_addr);
-					break;
-				}
-			}
-			
-			if(tooltip) 
-			{
-				TT(tooltip);
-			}
 
-			hovered_state = ImGui::IsItemHovered();
-		}
-		else
-		{
-			if(ImGui::Button(image_name))
+			if (ImGui::ImageButton(image->texture.data, TB_IMAGEBUTTON_SIZE, uv0, uv1, 0, bg_col))
 			{
 				switch (calltype)
 				{
@@ -75,7 +42,38 @@ namespace ggui::toolbar
 					break;
 				}
 			}
-			
+
+			if (tooltip)
+			{
+				TT(tooltip);
+			}
+
+			hovered_state = ImGui::IsItemHovered();
+		}
+		else
+		{
+			if (ImGui::Button(image_name))
+			{
+				switch (calltype)
+				{
+				case MAINFRAME_CDECL:
+					mainframe_cdeclcall(void, func_addr);
+					break;
+
+				case MAINFRAME_THIS:
+					mainframe_thiscall(void, func_addr);
+					break;
+
+				case MAINFRAME_STD:
+					mainframe_stdcall(void, func_addr);
+					break;
+
+				case CDECLCALL:
+					cdeclcall(void, func_addr);
+					break;
+				}
+			}
+
 			if (tooltip)
 			{
 				TT(tooltip);
@@ -83,18 +81,17 @@ namespace ggui::toolbar
 		}
 	}
 
-	bool image_togglebutton(const char* image_name, bool& hovered_state, bool toggle_state, const char* tooltip, ImVec4* bg_col, ImVec4* bg_col_hovered, ImVec4* bg_col_active, ImVec2* btn_size)
+	bool toolbar_dialog::image_togglebutton(const char* image_name, bool& hovered_state, bool toggle_state, const char* tooltip, ImVec4* bg_col, ImVec4* bg_col_hovered, ImVec4* bg_col_active, ImVec2* btn_size)
 	{
-		ImVec2 button_size				= IMAGEBUTTON_SIZE;
-		ImVec4 background_color			= ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+		ImVec2 button_size = TB_IMAGEBUTTON_SIZE;
+		ImVec4 background_color = ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
 		ImVec4 background_color_hovered = ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector);
-		ImVec4 background_color_active	= ImGui::ToImVec4(dvars::gui_toolbar_button_active_color->current.vector);
+		ImVec4 background_color_active = ImGui::ToImVec4(dvars::gui_toolbar_button_active_color->current.vector);
 
-		if (btn_size)		button_size					= *btn_size;
-		
-		if (bg_col)			background_color			= *bg_col;
-		if (bg_col_hovered) background_color_hovered	= *bg_col_hovered;
-		if (bg_col_active)	background_color_active		= *bg_col_active;
+		if (btn_size) button_size = *btn_size;
+		if (bg_col)	background_color = *bg_col;
+		if (bg_col_hovered) background_color_hovered = *bg_col_hovered;
+		if (bg_col_active) background_color_active = *bg_col_active;
 
 		bool ret_state = false;
 
@@ -104,14 +101,16 @@ namespace ggui::toolbar
 			const ImVec2 uv0 = toggle_state ? ImVec2(0.5f, 0.0f) : ImVec2(0.0f, 0.0f);
 			const ImVec2 uv1 = toggle_state ? ImVec2(1.0f, 1.0f) : ImVec2(0.5f, 1.0f);
 
-			ImVec4 color = hovered_state ? background_color_hovered
-						: toggle_state ? background_color_active : background_color;
-			
-			if (ImGui::ImageButton(image->texture.data, button_size, uv0, uv1, 0, color)) {
+			const ImVec4 color  = hovered_state ? background_color_hovered
+								: toggle_state ? background_color_active : background_color;
+
+			if (ImGui::ImageButton(image->texture.data, button_size, uv0, uv1, 0, color)) 
+			{
 				ret_state = true;
 			}
 
-			if (tooltip) {
+			if (tooltip) 
+			{
 				TT(tooltip);
 			}
 
@@ -119,71 +118,42 @@ namespace ggui::toolbar
 		}
 		else
 		{
-			if (ImGui::Button(image_name)) {
+			if (ImGui::Button(image_name)) 
+			{
 				ret_state = true;
 			}
 
-			if (tooltip) {
+			if (tooltip) 
+			{
 				TT(tooltip);
 			}
 		}
-		
+
 		return ret_state;
 	}
 
-	
-	// *
-	// 
-
-	
-	bool toolbar_initiated = false;
-	int tb_element_id = 0;
-	
-	struct tb_order_element_s
+	void toolbar_dialog::register_element(const std::string& name, bool default_visible, std::function<void()> callback)
 	{
-		std::string name;
-		int			id;
-		bool		visible;
-		bool		is_separator;
-		bool		debug;
-	};
+		const auto tbedit = GET_GUI(ggui::toolbar_edit_dialog);
 
-	struct tb_selection_s
-	{
-		bool is_selected;
-		uint32_t element_id;
-		uint32_t element_pos;
-	};
-	
-	nlohmann::fifo_map<std::string, std::function<void()>> toolbar_registered_elements_callbacks;
-	std::vector<tb_order_element_s> toolbar_registered_elements;
-
-	int toolbar_sorted_element_id = 0;
-	std::vector<tb_order_element_s> toolbar_sorted_list;
-
-	tb_selection_s tbedit_selection = {};
-
-
-	void register_element(const std::string& name, bool default_visible, std::function<void()> callback)
-	{
 		bool is_debug = false;
-		toolbar_registered_elements_callbacks[name] = callback;
+		m_registered_elements_callbacks[name] = callback;
 
 		// if separator
 		if (utils::starts_with(name, ";"s))
 		{
 			// insert before selection
-			if (tbedit_selection.is_selected)
+			if (tbedit->tbedit_selection.is_selected)
 			{
-				toolbar_registered_elements.insert(
-					toolbar_registered_elements.begin() + tbedit_selection.element_pos,
-					tb_order_element_s("; ------------", tb_element_id++, default_visible, true, is_debug));
+				m_registered_elements.insert(
+					m_registered_elements.begin() + tbedit->tbedit_selection.element_pos,
+					tb_order_element_s("; ------------", m_element_id++, default_visible, true, is_debug));
 			}
 			// emplace back if nothing is selected
 			else
 			{
-				toolbar_registered_elements.emplace_back(
-					tb_order_element_s("; ------------", tb_element_id++, default_visible, true, is_debug));
+				m_registered_elements.emplace_back(
+					tb_order_element_s("; ------------", m_element_id++, default_visible, true, is_debug));
 			}
 
 			return;
@@ -194,73 +164,74 @@ namespace ggui::toolbar
 			is_debug = true;
 		}
 
-		toolbar_registered_elements.emplace_back(
-			tb_order_element_s(name, tb_element_id++, default_visible, false, is_debug));
+		m_registered_elements.emplace_back(
+			tb_order_element_s(name, m_element_id++, default_visible, false, is_debug));
 	}
-	
-	void register_element(const std::string& name, std::function<void()> callback)
+
+	void toolbar_dialog::register_element(const std::string& name, std::function<void()> callback)
 	{
+		const auto tbedit = GET_GUI(ggui::toolbar_edit_dialog);
+
 		bool is_debug = false;
-		toolbar_registered_elements_callbacks[name] = callback;
+		m_registered_elements_callbacks[name] = callback;
 
 		// if separator
 		if (utils::starts_with(name, ";"s))
 		{
-			if(!toolbar_initiated)
+			if(!this->is_initiated())
 			{
 				// insert before selection
-				if (tbedit_selection.is_selected)
+				if (tbedit->tbedit_selection.is_selected)
 				{
-					toolbar_registered_elements.insert(
-						toolbar_registered_elements.begin() + tbedit_selection.element_pos,
-						tb_order_element_s("; ------------", tb_element_id++, true, true, is_debug));
+					m_registered_elements.insert(
+						m_registered_elements.begin() + tbedit->tbedit_selection.element_pos,
+						tb_order_element_s("; ------------", m_element_id++, true, true, is_debug));
 				}
 				// emplace back if nothing is selected
 				else
 				{
-					toolbar_registered_elements.emplace_back(
-						tb_order_element_s("; ------------", tb_element_id++, true, true, is_debug));
+					m_registered_elements.emplace_back(
+						tb_order_element_s("; ------------", m_element_id++, true, true, is_debug));
 				}
 			}
 			else
 			{
 				// insert before selection
-				if (tbedit_selection.is_selected)
+				if (tbedit->tbedit_selection.is_selected)
 				{
-					toolbar_sorted_list.insert(
-						toolbar_sorted_list.begin() + tbedit_selection.element_pos,
-						tb_order_element_s("; ------------", toolbar_sorted_element_id++, true, true, is_debug));
+					m_sorted_elements.insert(
+						m_sorted_elements.begin() + tbedit->tbedit_selection.element_pos,
+						tb_order_element_s("; ------------", m_sorted_element_id++, true, true, is_debug));
 				}
 				// emplace back if nothing is selected
 				else
 				{
-					toolbar_sorted_list.emplace_back(
-						tb_order_element_s("; ------------", toolbar_sorted_element_id++, true, true, is_debug));
+					m_sorted_elements.emplace_back(
+						tb_order_element_s("; ------------", m_sorted_element_id++, true, true, is_debug));
 				}
 			}
-			
+
 
 			return;
 		}
-		
-		if(utils::starts_with(name, "debug_"s))
+
+		if (utils::starts_with(name, "debug_"s))
 		{
 			is_debug = true;
 		}
 
-		toolbar_registered_elements.emplace_back(
-			tb_order_element_s(name, tb_element_id++, true, false, is_debug));
+		m_registered_elements.emplace_back(
+			tb_order_element_s(name, m_element_id++, true, false, is_debug));
 	}
 
-	
 	// *
 	// all toolbar elements are registered here (default sort if no ini is present)
-	void toolbar_elements_init()
+	void toolbar_dialog::toolbar_elements_init()
 	{
 		register_element("open"s, []()
 			{
 				static bool hov_open;
-			
+
 				//CMainFrame::OnFileOpen
 				image_button("open", hov_open, MAINFRAME_CDECL, 0x423AE0, std::string("Open File " + ggui::hotkey_dialog::get_hotkey_for_command("FileOpen")).c_str());
 			});
@@ -268,7 +239,7 @@ namespace ggui::toolbar
 		register_element("save"s, []()
 			{
 				static bool hov_save;
-			
+
 				//CMainFrame::OnFileSave
 				image_button("save", hov_save, MAINFRAME_CDECL, 0x423B80, std::string("Save File " + ggui::hotkey_dialog::get_hotkey_for_command("FileSave")).c_str());
 			});
@@ -322,7 +293,7 @@ namespace ggui::toolbar
 				// CMainFrame::OnBrushRotatez
 				image_button("rotate_z", hov_rotz, CDECLCALL, 0x425220, std::string("Rotate Brush Z-Axis " + ggui::hotkey_dialog::get_hotkey_for_command("RotateZ")).c_str());
 			});
-		
+
 		register_element(";"s, nullptr);
 
 		register_element("select_complete_tall"s, []()
@@ -362,7 +333,7 @@ namespace ggui::toolbar
 		register_element("clipper"s, []()
 			{
 				static bool hov_clipper;
-			
+
 				// CMainFrame::OnViewClipper
 				if (image_togglebutton("clipper", hov_clipper, game::g_bClipMode, "Toggle Clipper")) {
 					mainframe_thiscall(LRESULT, 0x426510);
@@ -416,14 +387,14 @@ namespace ggui::toolbar
 				// CMainFrame::OnEditLayerCycle
 				image_button("cycle_layer", hov_cycle_layer, CDECLCALL, 0x424010, std::string("Cycle Texture Layer " + ggui::hotkey_dialog::get_hotkey_for_command("TexLayerCycle")).c_str());
 			});
-		
+
 		register_element(";"s, nullptr);
 
 		register_element("camera_movement"s, false, []()
 			{
 				static bool hov_camera_movement;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnToggleCameraMovementMode
 				ImGui::BeginGroup();
 				{
@@ -437,8 +408,8 @@ namespace ggui::toolbar
 
 					if (prefs->camera_mode)
 					{
-						prebutton_cursor.x += (IMAGEBUTTON_SIZE.x * 0.45f);
-						prebutton_cursor.y += (IMAGEBUTTON_SIZE.y * 0.4f);
+						prebutton_cursor.x += (TB_IMAGEBUTTON_SIZE.x * 0.45f);
+						prebutton_cursor.y += (TB_IMAGEBUTTON_SIZE.y * 0.4f);
 
 						ImGui::PushFontFromIndex(REGULAR_12PX);
 						ImGui::SetCursorScreenPos(prebutton_cursor);
@@ -453,7 +424,7 @@ namespace ggui::toolbar
 			{
 				static bool hov_cubicclip;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnViewCubicclipping
 				if (image_togglebutton("cubic_clip", hov_cubicclip, prefs->m_bCubicClipping,
 					std::string("Cubic Clipping" + ggui::hotkey_dialog::get_hotkey_for_command("ToggleCubicClip")).c_str()))
@@ -465,7 +436,7 @@ namespace ggui::toolbar
 		register_element("cycle_xyz"s, []()
 			{
 				static bool hov_cycle_xyz;
-			
+
 				// CMainFrame::OnViewNextview
 				ImGui::BeginGroup();
 				{
@@ -478,8 +449,8 @@ namespace ggui::toolbar
 					const char* curr_view_str = viewtype == 0 ? "YZ" : viewtype == 1 ? "XZ" : "XY";
 					const auto text_size = ImGui::CalcTextSize(curr_view_str);
 
-					prebutton_cursor.x += (IMAGEBUTTON_SIZE.x * 0.5f - (text_size.x * 0.5f));
-					prebutton_cursor.y += (IMAGEBUTTON_SIZE.y * 0.5f - (text_size.y * 0.5f));
+					prebutton_cursor.x += (TB_IMAGEBUTTON_SIZE.x * 0.5f - (text_size.x * 0.5f));
+					prebutton_cursor.y += (TB_IMAGEBUTTON_SIZE.y * 0.5f - (text_size.y * 0.5f));
 
 					ImGui::SetCursorScreenPos(prebutton_cursor);
 					ImGui::Text("%s", curr_view_str);
@@ -518,7 +489,7 @@ namespace ggui::toolbar
 			{
 				static bool hov_plantdrop;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnForceZeroDropHeight
 				if (image_togglebutton("plant_force_drop_height", hov_plantdrop, prefs->m_bForceZeroDropHeight,
 					"Force drop height to 0"))
@@ -546,7 +517,7 @@ namespace ggui::toolbar
 		register_element("free_rotate"s, []()
 			{
 				static bool hov_freerotate;
-			
+
 				// CMainFrame::OnSelectMouserotate
 				if (image_togglebutton("free_rotate", hov_freerotate, game::g_bRotateMode,
 					std::string("Free rotation " + ggui::hotkey_dialog::get_hotkey_for_command("MouseRotate")).c_str()))
@@ -558,7 +529,7 @@ namespace ggui::toolbar
 		register_element("free_scale"s, []()
 			{
 				static bool hov_freescale;
-			
+
 				// CMainFrame::OnSelectMousescale
 				if (image_togglebutton("free_scale", hov_freescale, game::g_bScaleMode,
 					"Free scaling"))
@@ -570,7 +541,7 @@ namespace ggui::toolbar
 		register_element("lock_x"s, []()
 			{
 				static bool hov_lockx;
-			
+
 				// CMainFrame::OnScalelockX
 				if (image_togglebutton("lock_x", hov_lockx,
 					(game::g_nScaleHow == 2 || game::g_nScaleHow == 4 || game::g_nScaleHow == 6),
@@ -583,7 +554,7 @@ namespace ggui::toolbar
 		register_element("lock_y"s, []()
 			{
 				static bool hov_locky;
-			
+
 				// CMainFrame::OnScalelockY
 				if (image_togglebutton("lock_y", hov_locky,
 					(game::g_nScaleHow == 1 || game::g_nScaleHow == 4 || game::g_nScaleHow == 5),
@@ -596,7 +567,7 @@ namespace ggui::toolbar
 		register_element("lock_z"s, []()
 			{
 				static bool hov_lockz;
-			
+
 				// CMainFrame::OnScalelockZ
 				if (image_togglebutton("lock_z", hov_lockz,
 					(game::g_nScaleHow > 0 && game::g_nScaleHow <= 3),
@@ -612,7 +583,7 @@ namespace ggui::toolbar
 			{
 				static bool hov_patches_as;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnPatchWireframe
 				ImGui::BeginGroup();
 				{
@@ -626,8 +597,8 @@ namespace ggui::toolbar
 
 					if (prefs->g_nPatchAsWireframe)
 					{
-						prebutton_cursor.x += (IMAGEBUTTON_SIZE.x * 0.45f);
-						prebutton_cursor.y += (IMAGEBUTTON_SIZE.y * 0.45f);
+						prebutton_cursor.x += (TB_IMAGEBUTTON_SIZE.x * 0.45f);
+						prebutton_cursor.y += (TB_IMAGEBUTTON_SIZE.y * 0.45f);
 
 						ImGui::PushFontFromIndex(REGULAR_12PX);
 						ImGui::SetCursorScreenPos(prebutton_cursor);
@@ -665,7 +636,7 @@ namespace ggui::toolbar
 			{
 				static bool hov_drill_down;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnPatchDrilldown
 				if (image_togglebutton("select_drill_down_vertices", hov_drill_down,
 					prefs->patch_drill_down,
@@ -674,11 +645,11 @@ namespace ggui::toolbar
 					mainframe_thiscall(LRESULT, 0x42A510);
 				}
 			});
-		
+
 		register_element("toggle_lock_vertices_mode"s, []()
 			{
 				static bool hov_lock_vertices;
-			
+
 				// CMainFrame::ToggleLockPatchVertMode
 				if (image_togglebutton("toggle_lock_vertices_mode", hov_lock_vertices,
 					game::g_qeglobals->bLockPatchVerts,
@@ -691,7 +662,7 @@ namespace ggui::toolbar
 		register_element("toggle_unlock_vertices_mode"s, []()
 			{
 				static bool hov_unlock_vertices;
-			
+
 				// CMainFrame::ToggleUnlockPatchVertMode
 				if (image_togglebutton("toggle_unlock_vertices_mode", hov_unlock_vertices,
 					game::g_qeglobals->bUnlockPatchVerts,
@@ -704,7 +675,7 @@ namespace ggui::toolbar
 		register_element("cycle_patch_edge_direction"s, []()
 			{
 				static bool hov_cycle_edges;
-			
+
 				// CMainFrame::OnCycleTerrainEdge
 				if (image_togglebutton("cycle_patch_edge_direction", hov_cycle_edges,
 					game::g_qeglobals->d_select_mode == 9,
@@ -718,7 +689,7 @@ namespace ggui::toolbar
 			{
 				static bool hov_tolerant_weld;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnTolerantWeld
 				if (image_togglebutton("tolerant_weld", hov_tolerant_weld,
 					prefs->m_bTolerantWeld,
@@ -734,7 +705,7 @@ namespace ggui::toolbar
 			{
 				static bool hov_drawsurfs_portal;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnToggleDrawSurfs
 				if (image_togglebutton("toggle_draw_surfs_portal", hov_drawsurfs_portal,
 					prefs->draw_toggle,
@@ -748,7 +719,7 @@ namespace ggui::toolbar
 			{
 				static bool hov_select_curve;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnDontselectcurve
 				if (image_togglebutton("dont_select_curve", hov_select_curve,
 					!prefs->m_bSelectCurves,
@@ -762,7 +733,7 @@ namespace ggui::toolbar
 			{
 				static bool hov_select_entities;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnDisableSelectionOfEntities
 				if (image_togglebutton("dont_select_entities", hov_select_entities,
 					prefs->entities_off,
@@ -776,7 +747,7 @@ namespace ggui::toolbar
 			{
 				static bool hov_dont_sel_sky;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnDisableSelectionOfSky
 				if (image_togglebutton("dont_select_sky", hov_dont_sel_sky,
 					prefs->sky_brush_off,
@@ -790,7 +761,7 @@ namespace ggui::toolbar
 			{
 				static bool hov_dont_sel_models;
 				const auto prefs = game::g_PrefsDlg();
-			
+
 				// CMainFrame::OnSelectableModels
 				if (image_togglebutton("dont_select_models", hov_dont_sel_models,
 					prefs->m_bSelectableModels,
@@ -828,9 +799,9 @@ namespace ggui::toolbar
 				{
 					static bool hov_guizmo_brush_mode;
 					if (image_togglebutton(
-						"guizmo_brush_mode", 
-						hov_guizmo_brush_mode, 
-						dvars::guizmo_brush_mode->current.enabled, 
+						"guizmo_brush_mode",
+						hov_guizmo_brush_mode,
+						dvars::guizmo_brush_mode->current.enabled,
 						dvars::guizmo_brush_mode->description))
 					{
 						dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
@@ -843,8 +814,8 @@ namespace ggui::toolbar
 			{
 				static bool hov_gameview;
 				if (image_togglebutton(
-					"gameview", 
-					hov_gameview, 
+					"gameview",
+					hov_gameview,
 					dvars::radiant_gameview->current.enabled,
 					std::string("Gameview " + ggui::hotkey_dialog::get_hotkey_for_command("xo_gameview")).c_str()))
 				{
@@ -857,9 +828,9 @@ namespace ggui::toolbar
 				static bool hov_fakesunpreview;
 
 				if (image_togglebutton(
-					"sunpreview", 
-					hov_fakesunpreview, 
-					dvars::r_fakesun_preview->current.enabled, 
+					"sunpreview",
+					hov_fakesunpreview,
+					dvars::r_fakesun_preview->current.enabled,
 					std::string("Fake sun preview " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()))
 				{
 					components::command::execute("fakesun_toggle");
@@ -909,8 +880,8 @@ namespace ggui::toolbar
 					hov_fx_play,
 					can_fx_play,
 					std::string("Play Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_play")).c_str(),
-					nullptr, 
-					nullptr, 
+					nullptr,
+					nullptr,
 					&overwrite_active_bg))
 				{
 					components::effects::play();
@@ -1015,44 +986,46 @@ namespace ggui::toolbar
 				ImGui::EndDisabled();
 			});
 
-		
+
 
 #ifdef DEBUG
 		register_element(";"s, nullptr);
-		
+
 		register_element("debug_reload_images"s, []()
 			{
-				if (ImGui::Button("RI", IMAGEBUTTON_SIZE)) {
+				if (ImGui::Button("RI", TB_IMAGEBUTTON_SIZE)) {
 					game::R_ReloadImages();
 				} TT("DBG: Reload Images");
 			});
 #endif
 	}
-	
-	void load_settings_ini()
+
+	void toolbar_dialog::load_settings_ini()
 	{
 		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
-			fs_homepath)
+						fs_homepath)
 		{
 			bool no_ini_or_empty = false;
+
 			
-			std::ifstream ini;
 			std::string ini_path = fs_homepath->current.string;
-						ini_path += "\\" + INI_FILENAME;
-	
+						ini_path += "\\" + TB_INI_FILENAME;
+
+			std::ifstream ini;
 			ini.open(ini_path.c_str());
+
 			if (!ini.is_open())
 			{
 				game::printf_to_console("[Toolbar] Failed to open ini: \"%s\"", ini_path.c_str());
 				no_ini_or_empty = true;
 			}
-			
+
 			// read ini line by line
-			if(!no_ini_or_empty)
+			if (!no_ini_or_empty)
 			{
 				std::string input;
 				int line = 0;
-				
+
 				while (std::getline(ini, input))
 				{
 					if (input.find("//") != std::string::npos)
@@ -1065,8 +1038,8 @@ namespace ggui::toolbar
 					// separators
 					if (input.find(';') != std::string::npos)
 					{
-						toolbar_sorted_list.emplace_back(
-							tb_order_element_s("; ------------", toolbar_sorted_element_id++, true, true, false));
+						m_sorted_elements.emplace_back(
+							tb_order_element_s("; ------------", m_sorted_element_id++, true, true, false));
 
 						continue;
 					}
@@ -1084,10 +1057,10 @@ namespace ggui::toolbar
 					utils::trim(args[1]);
 
 					// check if the element exists
-					if (toolbar_registered_elements_callbacks.find(args[0]) != toolbar_registered_elements_callbacks.end())
+					if (m_registered_elements_callbacks.find(args[0]) != m_registered_elements_callbacks.end())
 					{
-						toolbar_sorted_list.emplace_back(
-							tb_order_element_s(args[0], toolbar_sorted_element_id++, args[1] != "0"s, false));
+						m_sorted_elements.emplace_back(
+							tb_order_element_s(args[0], m_sorted_element_id++, args[1] != "0"s, false));
 					}
 					else
 					{
@@ -1102,14 +1075,14 @@ namespace ggui::toolbar
 			}
 
 			// loop all registered elements to add all elements not found inside the ini (eg. new elements after an update)
-			for (const auto& element : toolbar_registered_elements)
+			for (const auto& element : m_registered_elements)
 			{
 				bool found = false;
 				bool is_debug = false;
 
 				// add seperators if no ini or ini was empty
 				// do not add separators otherwise
-				if(!no_ini_or_empty)
+				if (!no_ini_or_empty)
 				{
 					if (utils::starts_with(element.name, ";"s))
 					{
@@ -1122,9 +1095,9 @@ namespace ggui::toolbar
 					is_debug = true;
 				}
 
-				for (uint32_t e = 0; e < toolbar_sorted_list.size(); e++)
+				for (uint32_t e = 0; e < m_sorted_elements.size(); e++)
 				{
-					if (element.name == toolbar_sorted_list[e].name)
+					if (element.name == m_sorted_elements[e].name)
 					{
 						found = true;
 						break;
@@ -1133,17 +1106,16 @@ namespace ggui::toolbar
 
 				if (!found)
 				{
-					toolbar_sorted_list.emplace_back(
-						tb_order_element_s(element.name, toolbar_sorted_element_id++, element.visible, false, is_debug));
+					m_sorted_elements.emplace_back(
+						tb_order_element_s(element.name, m_sorted_element_id++, element.visible, false, is_debug));
 				}
 			}
 		}
 	}
 
-	
-	void save_settings_ini()
+	void toolbar_dialog::save_settings_ini()
 	{
-		if (toolbar_sorted_list.empty())
+		if (m_sorted_elements.empty())
 		{
 			return;
 		}
@@ -1153,7 +1125,7 @@ namespace ggui::toolbar
 		{
 			std::ofstream ini;
 			std::string ini_path = fs_homepath->current.string;
-						ini_path += "\\" + INI_FILENAME;
+			ini_path += "\\" + TB_INI_FILENAME;
 
 			ini.open(ini_path.c_str());
 			if (!ini.is_open())
@@ -1164,14 +1136,14 @@ namespace ggui::toolbar
 
 			ini << "// [Name] [IsVisible] (';' Separator)" << std::endl;
 
-			for (const auto& element : toolbar_sorted_list)
+			for (const auto& element : m_sorted_elements)
 			{
-				if(element.debug)
+				if (element.debug)
 				{
 					continue;
 				}
-				
-				if(element.is_separator) 
+
+				if (element.is_separator)
 				{
 					ini << "; ------------" << std::endl;
 				}
@@ -1183,54 +1155,268 @@ namespace ggui::toolbar
 		}
 	}
 
-	
-	void menu_toolbar_edit(ggui::imgui_context_menu& menu)
+	void toolbar_dialog::toolbar()
 	{
+		const bool TOOLBAR_AUTO_DIRECTION_WHEN_DOCKED = true;
+
+		int _stylevars = 0;
+		int _stylecolors = 0;
+
+		// request auto-sizing on one axis
+		const ImVec2 requested_size = (this->m_toolbar_axis == ImGuiAxis_X) ? ImVec2(-1.0f, 0.0f) : ImVec2(0.0f, -1.0f);
+
+		ImGui::SetNextWindowSize(requested_size);
+
+		const bool is_floating_toolbar = dvars::gui_floating_toolbar && dvars::gui_floating_toolbar->current.enabled;
+
+		if (is_floating_toolbar)
+		{
+			const float menubar_height = GET_GUI(ggui::menubar_dialog)->get_height();
+			ImGui::SetNextWindowPos(ImVec2(5.0f, menubar_height + 5.0f), ImGuiCond_FirstUseEver);
+		}
+
+		if (this->m_toolbar_reset)
+		{
+			if (!is_floating_toolbar)
+			{
+				if (this->m_toolbar_axis == ImGuiAxis_X)
+				{
+					ImGui::SetNextWindowDockID(this->m_toolbar_dock_top);
+				}
+				else
+				{
+					ImGui::SetNextWindowDockID(this->m_toolbar_dock_left);
+				}
+			}
+
+			// reset to default floating state
+			else
+			{
+				const float menubar_height = GET_GUI(ggui::menubar_dialog)->get_height();
+				ImGui::SetNextWindowPos(ImVec2(5.0f, menubar_height + 5.0f));
+			}
+
+			this->m_toolbar_reset = false;
+		}
+
+		ImGuiWindowClass window_class;
+		window_class.DockingAllowUnclassed = true;
+		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoCloseButton;
+		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_HiddenTabBar;
+		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingSplitMe;
+		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingOverMe;
+		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingOverOther;
+
+		if (this->m_toolbar_axis == ImGuiAxis_X)
+		{
+			window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoResizeY;
+		}
+		else
+		{
+			window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoResizeX;
+		}
+
+		ImGui::SetNextWindowClass(&window_class);
+
+
+		// *
+		// begin into the window
+
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_toolbar_bg_color->current.vector));	 _stylecolors++;
+		//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_TabUnfocusedActive)); _stylecolors++;
+
+		ImGui::Begin("toolbar##window", nullptr,
+			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
+
+		// *
+		// overwrite node size
+
+		ImGuiDockNode* node = ImGui::GetWindowDockNode();
+		if (node != nullptr)
+		{
+			// Overwrite size of the node
+			ImGuiStyle& style = ImGui::GetStyle();
+
+			const ImGuiAxis toolbar_axis_perp = (ImGuiAxis)(this->m_toolbar_axis ^ 1);
+			const float TOOLBAR_SIZE_WHEN_DOCKED = style.WindowPadding[toolbar_axis_perp] * 2.0f + TB_IMAGEBUTTON_SIZE[toolbar_axis_perp];
+
+			node->WantLockSizeOnce = true;
+			node->Size[toolbar_axis_perp] = node->SizeRef[toolbar_axis_perp] = TOOLBAR_SIZE_WHEN_DOCKED;
+
+			if (TOOLBAR_AUTO_DIRECTION_WHEN_DOCKED)
+			{
+				if (node->ParentNode && node->ParentNode->SplitAxis != ImGuiAxis_None)
+				{
+					this->m_toolbar_axis = (ImGuiAxis)(node->ParentNode->SplitAxis ^ 1);
+				}
+			}
+		}
+
+		// on_open would be to late since its called after main gui creation
+		if (!this->is_initiated())
+		{
+			this->toolbar_elements_init();
+			this->load_settings_ini();
+			this->set_initiated();
+		}
+
+		// *
+		// populate toolbar
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);							_stylevars++;
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3.0f, 4.0f));		_stylevars++;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));		_stylevars++;
+
+		ImGui::PushStyleColor(ImGuiCol_Border, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(70, 70, 70, 70));			_stylecolors++;
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 70));		_stylecolors++;
+
+		// loop amount of registered-sorted elements
+		for (uint32_t e = 0; e < m_sorted_elements.size(); e++)
+		{
+			if (m_sorted_elements[e].is_separator)
+			{
+				if (this->m_toolbar_axis == ImGuiAxis_X)
+				{
+					TB_SEPARATOR;
+				}
+				else
+				{
+					SPACING(0.0f, 2.0f);
+					ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
+					SPACING(0.0f, 2.0f);
+				}
+
+				continue;
+			}
+
+			// check if the element was registered
+			if (auto	element = m_registered_elements_callbacks.find(m_sorted_elements[e].name);
+						element != m_registered_elements_callbacks.end())
+			{
+				if (m_sorted_elements[e].visible)
+				{
+					element->second();
+
+					if (this->m_toolbar_axis == ImGuiAxis_X)
+					{
+						ImGui::SameLine();
+					}
+				}
+			}
+		}
+
+		ImGui::PopStyleColor(_stylecolors); _stylecolors = 0;
+		ImGui::PopStyleVar(_stylevars); _stylevars = 0;
+
+
+		this->m_toolbar_pos = ImGui::GetWindowPos();
+		this->m_toolbar_size = ImGui::GetWindowSize();
+
+
+		// *
+		// context (right click) menu
+
+		if (ImGui::BeginPopupContextWindow())
+		{
+			// only enable horz/vert options when undocked
+			if (node == nullptr
+				|| node && node->ParentNode == nullptr
+				|| !TOOLBAR_AUTO_DIRECTION_WHEN_DOCKED)
+			{
+				if (ImGui::MenuItem("Horizontal", "", (this->m_toolbar_axis == ImGuiAxis_X)))
+				{
+					this->m_toolbar_axis = ImGuiAxis_X;
+				}
+
+				if (ImGui::MenuItem("Vertical", "", (this->m_toolbar_axis == ImGuiAxis_Y)))
+				{
+					this->m_toolbar_axis = ImGuiAxis_Y;
+				}
+			}
+
+			if (ImGui::MenuItem("Edit Toolbar ..."))
+			{
+				GET_GUI(ggui::toolbar_edit_dialog)->toggle();
+			}
+
+			ImGui::EndPopup();
+		}
+
+		ImGui::End();
+	}
+
+
+	void toolbar_dialog::gui()
+	{ }
+
+	void toolbar_dialog::on_open()
+	{ }
+
+	void toolbar_dialog::on_close()
+	{ }
+
+	REGISTER_GUI(toolbar_dialog);
+}
+
+
+// -----------------------------
+
+
+namespace ggui
+{
+	void toolbar_edit_dialog::gui()
+	{
+		const auto tb = GET_GUI(ggui::toolbar_dialog);
+
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 800.0f);
 
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
-		
-		ImGui::Begin("Toolbar Editor##window", &menu.menustate, ImGuiWindowFlags_NoCollapse);
-		
+
+		ImGui::Begin("Toolbar Editor##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse);
+
 		if (ImGui::Button("Add Separator"))
 		{
-			register_element(";"s, nullptr);
+			tb->register_element(";"s, nullptr);
 		}
 
 		ImGui::SameLine();
 		if (ImGui::Button("Delete Selected Separator"))
 		{
-			const bool out_of_bounds = tbedit_selection.element_pos >= toolbar_sorted_list.size();
+			const bool out_of_bounds = this->tbedit_selection.element_pos >= tb->m_sorted_elements.size();
 
-			if (tbedit_selection.is_selected 
-				&& !out_of_bounds 
-				&& toolbar_sorted_list[tbedit_selection.element_pos].is_separator)
+			if (   this->tbedit_selection.is_selected
+				&& !out_of_bounds
+				&& tb->m_sorted_elements[this->tbedit_selection.element_pos].is_separator)
 			{
-				game::printf_to_console("selected sep, deleting ...\n");
-				toolbar_sorted_list.erase(toolbar_sorted_list.begin() + tbedit_selection.element_pos);
+				//game::printf_to_console("selected sep, deleting ...\n");
+				tb->m_sorted_elements.erase(tb->m_sorted_elements.begin() + this->tbedit_selection.element_pos);
 			}
 			else if (out_of_bounds)
 			{
-				tbedit_selection.is_selected = false;
-				game::printf_to_console("out of bounds!\n");
+				this->tbedit_selection.is_selected = false;
+				game::printf_to_console("Selection out of bounds!\n");
 			}
 		}
 
 		ImGui::SameLine();
 		ImGui::HelpMarker("Rearrange elements by dragging them up and down the list using the left mousebutton");
-		
+
 		// this does not work with the way we order the list -> flickering
 		//ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(1.0f, 4.0f));
 
-		if (ImGui::BeginTable("element_sort_table", 3,
+		if (ImGui::BeginTable(
+			"element_sort_table", 
+			3,
 			ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_ScrollY,
 			ImVec2(0.0f, ImGui::GetContentRegionAvail().y - 6.0f)))
 		{
 			ImGui::TableSetupScrollFreeze(0, 1);
-			ImGui::TableSetupColumn("##icon", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHide, IMAGEBUTTON_SIZE.y);
+			ImGui::TableSetupColumn("##icon", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHide, TB_IMAGEBUTTON_SIZE.y);
 			ImGui::TableSetupColumn("Element", ImGuiTableColumnFlags_WidthStretch, 200.0f);
 			ImGui::TableSetupColumn("Visible", ImGuiTableColumnFlags_WidthFixed, 48.0f);
 			ImGui::TableHeadersRow();
@@ -1238,12 +1424,12 @@ namespace ggui::toolbar
 			int widget_id_num = 0;
 
 			// loop amount of registered-sorted elements
-			for (uint32_t e = 0; e < toolbar_sorted_list.size(); e++)
+			for (uint32_t e = 0; e < tb->m_sorted_elements.size(); e++)
 			{
-				const auto element = toolbar_sorted_list[e];
+				const auto element = tb->m_sorted_elements[e];
 
 				// check if the element was registered
-				if (element.is_separator || toolbar_registered_elements_callbacks.find(toolbar_sorted_list[e].name) != toolbar_registered_elements_callbacks.end())
+				if (element.is_separator || tb->m_registered_elements_callbacks.find(tb->m_sorted_elements[e].name) != tb->m_registered_elements_callbacks.end())
 				{
 					ImGui::TableNextRow();
 
@@ -1261,17 +1447,17 @@ namespace ggui::toolbar
 									const ImVec2 uv0 = ImVec2(0.0f, 0.0f);
 									const ImVec2 uv1 = ImVec2(0.5f, 1.0f);
 
-									ImGui::Image(image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1);
+									ImGui::Image(image->texture.data, TB_IMAGEBUTTON_SIZE, uv0, uv1);
 								}
 
 								// placeholder image when icon is missing
 								else if (const auto temp_image = game::Image_RegisterHandle("cycle_xyz");
-									temp_image&& temp_image->texture.data)
+									temp_image && temp_image->texture.data)
 								{
 									const ImVec2 uv0 = ImVec2(0.5f, 0.0f);
 									const ImVec2 uv1 = ImVec2(1.0f, 1.0f);
 
-									ImGui::Image(temp_image->texture.data, IMAGEBUTTON_SIZE, uv0, uv1);
+									ImGui::Image(temp_image->texture.data, TB_IMAGEBUTTON_SIZE, uv0, uv1);
 								}
 							}
 
@@ -1282,45 +1468,45 @@ namespace ggui::toolbar
 							{
 								// unique id for each separator
 								if (ImGui::Selectable(
-									utils::va("------------##%d", toolbar_sorted_list[e].id),
-									e == tbedit_selection.element_pos && tbedit_selection.is_selected,
-									ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, 
-									ImVec2(0.0f, IMAGEBUTTON_SIZE.y)))
+									utils::va("------------##%d", tb->m_sorted_elements[e].id),
+									e == this->tbedit_selection.element_pos && this->tbedit_selection.is_selected,
+									ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap,
+									ImVec2(0.0f, TB_IMAGEBUTTON_SIZE.y)))
 								{
-									tbedit_selection.is_selected = true;
-									tbedit_selection.element_id = toolbar_sorted_list[e].id;
-									tbedit_selection.element_pos = e;
+									this->tbedit_selection.is_selected = true;
+									this->tbedit_selection.element_id = tb->m_sorted_elements[e].id;
+									this->tbedit_selection.element_pos = e;
 								}
 							}
 							else
 							{
 								if (ImGui::Selectable(
 									element.name.c_str(),
-									e == tbedit_selection.element_pos && tbedit_selection.is_selected,
-									ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap, 
-									ImVec2(0.0f, IMAGEBUTTON_SIZE.y)))
+									e == this->tbedit_selection.element_pos && this->tbedit_selection.is_selected,
+									ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap,
+									ImVec2(0.0f, TB_IMAGEBUTTON_SIZE.y)))
 								{
-									tbedit_selection.is_selected = true;
-									tbedit_selection.element_id = toolbar_sorted_list[e].id;
-									tbedit_selection.element_pos = e;
+									this->tbedit_selection.is_selected = true;
+									this->tbedit_selection.element_id = tb->m_sorted_elements[e].id;
+									this->tbedit_selection.element_pos = e;
 								}
 							}
-							
+
 							if (ImGui::IsItemActive() && !ImGui::IsItemHovered())
 							{
 								int n_next = e + (ImGui::GetMouseDragDelta(0).y < 0.0f ? -1 : 1);
-								if (n_next >= 0 && static_cast<uint32_t>(n_next) < toolbar_sorted_list.size())
+								if (n_next >= 0 && static_cast<uint32_t>(n_next) < tb->m_sorted_elements.size())
 								{
-									const auto temp_pair = toolbar_sorted_list[n_next];
+									const auto temp_pair = tb->m_sorted_elements[n_next];
 
-									toolbar_sorted_list[n_next] = toolbar_sorted_list[e];
-									toolbar_sorted_list[e] = temp_pair;
+									tb->m_sorted_elements[n_next] = tb->m_sorted_elements[e];
+									tb->m_sorted_elements[e] = temp_pair;
 
 									ImGui::ResetMouseDragDelta();
 
-									tbedit_selection.is_selected = true;
-									tbedit_selection.element_id = toolbar_sorted_list[n_next].id;
-									tbedit_selection.element_pos = n_next;
+									this->tbedit_selection.is_selected = true;
+									this->tbedit_selection.element_id = tb->m_sorted_elements[n_next].id;
+									this->tbedit_selection.element_pos = n_next;
 								}
 							}
 							break;
@@ -1329,7 +1515,7 @@ namespace ggui::toolbar
 							if (!element.is_separator)
 							{
 								ImGui::PushID(widget_id_num); widget_id_num++;
-								ImGui::Checkbox("##checkbox", &toolbar_sorted_list[e].visible);
+								ImGui::Checkbox("##checkbox", &tb->m_sorted_elements[e].visible);
 								ImGui::PopID(); // widget_id_num
 								break;
 							}
@@ -1350,204 +1536,13 @@ namespace ggui::toolbar
 		ImGui::End();
 	}
 
-	void menu_new([[maybe_unused]] ggui::imgui_context_menu& toolbar, ggui::imgui_context_menu& toolbar_edit)
+	void toolbar_edit_dialog::on_open()
+	{ }
+
+	void toolbar_edit_dialog::on_close()
 	{
-		const bool TOOLBAR_AUTO_DIRECTION_WHEN_DOCKED = true;
-
-		int _stylevars = 0;
-		int _stylecolors = 0;
-
-		// request auto-sizing on one axis
-		const ImVec2 requested_size = (ggui::toolbar_axis == ImGuiAxis_X) ? ImVec2(-1.0f, 0.0f) : ImVec2(0.0f, -1.0f);
-
-		ImGui::SetNextWindowSize(requested_size);
-
-		const bool is_floating_toolbar = dvars::gui_floating_toolbar && dvars::gui_floating_toolbar->current.enabled;
-		
-		if(is_floating_toolbar)
-		{
-			const float menubar_height = GET_GUI(ggui::menubar_dialog)->get_height();
-			ImGui::SetNextWindowPos(ImVec2(5.0f, menubar_height + 5.0f), ImGuiCond_FirstUseEver);
-		}
-
-		if(ggui::toolbar_reset)
-		{
-			if(!is_floating_toolbar)
-			{
-				if (ggui::toolbar_axis == ImGuiAxis_X)
-				{
-					ImGui::SetNextWindowDockID(ggui::toolbar_dock_top);
-				}
-				else
-				{
-					ImGui::SetNextWindowDockID(ggui::toolbar_dock_left);
-				}
-			}
-
-			// reset to default floating state
-			else
-			{
-				const float menubar_height = GET_GUI(ggui::menubar_dialog)->get_height();
-				ImGui::SetNextWindowPos(ImVec2(5.0f, menubar_height + 5.0f));
-			}
-
-			ggui::toolbar_reset = false;
-		}
-
-		ImGuiWindowClass window_class;
-		window_class.DockingAllowUnclassed = true;
-		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoCloseButton;
-		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_HiddenTabBar;
-		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingSplitMe;
-		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingOverMe;
-		window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoDockingOverOther;
-
-		if (ggui::toolbar_axis == ImGuiAxis_X)
-		{
-			window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoResizeY;
-		}
-		else
-		{
-			window_class.DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoResizeX;
-		}
-			
-		ImGui::SetNextWindowClass(&window_class);
-
-		
-		// *
-		// begin into the window
-
-		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_toolbar_bg_color->current.vector));	 _stylecolors++;
-		//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_TabUnfocusedActive)); _stylecolors++;
-
-		ImGui::Begin("toolbar##window", nullptr, 
-			ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar);
-
-		// *
-		// overwrite node size
-		
-		ImGuiDockNode* node = ImGui::GetWindowDockNode();
-		if (node != nullptr)
-		{
-			// Overwrite size of the node
-			ImGuiStyle& style = ImGui::GetStyle();
-			
-			const ImGuiAxis toolbar_axis_perp = (ImGuiAxis)(ggui::toolbar_axis ^ 1);
-			const float TOOLBAR_SIZE_WHEN_DOCKED = style.WindowPadding[toolbar_axis_perp] * 2.0f + IMAGEBUTTON_SIZE[toolbar_axis_perp];
-			
-			node->WantLockSizeOnce = true;
-			node->Size[toolbar_axis_perp] = node->SizeRef[toolbar_axis_perp] = TOOLBAR_SIZE_WHEN_DOCKED;
-
-			if (TOOLBAR_AUTO_DIRECTION_WHEN_DOCKED)
-			{
-				if (node->ParentNode && node->ParentNode->SplitAxis != ImGuiAxis_None)
-				{
-					ggui::toolbar_axis = (ImGuiAxis)(node->ParentNode->SplitAxis ^ 1);
-				}
-			}	
-		}
-
-		
-		// *
-		// initialize toolbar elements
-		if (!toolbar_initiated)
-		{
-			toolbar_elements_init();
-			load_settings_ini();
-			
-			toolbar_initiated = true;
-		}
-		
-
-		// *
-		// populate toolbar
-		
-		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);							_stylevars++;
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3.0f, 4.0f));		_stylevars++;
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));		_stylevars++;
-
-		ImGui::PushStyleColor(ImGuiCol_Border, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(1, 1, 1, 0));					_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(70, 70, 70, 70));			_stylecolors++;
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(100, 100, 100, 70));		_stylecolors++;
-
-		// loop amount of registered-sorted elements
-		for (uint32_t e = 0; e < toolbar_sorted_list.size(); e++)
-		{
-			if (toolbar_sorted_list[e].is_separator)
-			{
-				if (ggui::toolbar_axis == ImGuiAxis_X)
-				{
-					TB_SEPARATOR;
-				}
-				else
-				{
-					SPACING(0.0f, 2.0f);
-					ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
-					SPACING(0.0f, 2.0f);
-				}
-				
-				continue;
-			}
-
-			// check if the element was registered
-			if (auto element  = toolbar_registered_elements_callbacks.find(toolbar_sorted_list[e].name);
-					 element != toolbar_registered_elements_callbacks.end())
-			{
-				if (toolbar_sorted_list[e].visible)
-				{
-					element->second();
-
-					if (ggui::toolbar_axis == ImGuiAxis_X)
-					{
-						ImGui::SameLine();
-					}
-				}
-			}
-		}
-
-		ImGui::PopStyleColor(_stylecolors); _stylecolors = 0;
-		ImGui::PopStyleVar(_stylevars); _stylevars = 0;
-
-
-		ggui::toolbar_pos = ImGui::GetWindowPos();
-		ggui::toolbar_size = ImGui::GetWindowSize();
-
-		
-		// *
-		// context (right click) menu
-		
-		if (ImGui::BeginPopupContextWindow())
-		{
-			// only enable horz/vert options when undocked
-			if (   node == nullptr 
-				|| node && node->ParentNode == nullptr 
-				|| !TOOLBAR_AUTO_DIRECTION_WHEN_DOCKED)
-			{
-				if (ImGui::MenuItem("Horizontal", "", (ggui::toolbar_axis == ImGuiAxis_X)))
-				{
-					ggui::toolbar_axis = ImGuiAxis_X;
-				}
-					
-				if (ImGui::MenuItem("Vertical", "", (ggui::toolbar_axis == ImGuiAxis_Y)))
-				{
-					ggui::toolbar_axis = ImGuiAxis_Y;
-				}
-			}
-			
-			if (ImGui::MenuItem("Edit Toolbar ...")) 
-			{
-				components::gui::toggle(toolbar_edit);
-			}
-			
-			ImGui::EndPopup();
-		}
-
-		ImGui::End();
+		GET_GUI(ggui::toolbar_dialog)->save_settings_ini();
 	}
 
-	void register_dvars()
-	{
-		
-	}
+	REGISTER_GUI(toolbar_edit_dialog);
 }
