@@ -35,7 +35,7 @@ typedef void(__thiscall* on_czwnd_msg)(czwnd*, UINT, CPoint);
 
 void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -113,7 +113,7 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 
 void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -191,7 +191,7 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 
 void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -258,7 +258,7 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 
 void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -346,7 +346,7 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 
 void __fastcall czwnd::on_mbutton_down(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -409,7 +409,7 @@ void __fastcall czwnd::on_mbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 
 void __fastcall czwnd::on_mbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -469,7 +469,7 @@ void __fastcall czwnd::on_mbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 
 void __fastcall czwnd::on_mouse_move([[maybe_unused]] czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -525,7 +525,7 @@ LRESULT WINAPI czwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	// we only need the char event
 	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 	{
-		if (ggui::cz_context_ready())
+		if (ggui::is_ggui_initialized())
 		{
 			// set cz context (in-case we use multiple imgui context's)
 			IMGUI_BEGIN_CZWND;

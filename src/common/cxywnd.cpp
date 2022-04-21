@@ -414,7 +414,7 @@ LRESULT WINAPI cxywnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	// but the user is within a textbox in some other imgui window
 	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 	{
-		if (ggui::cz_context_ready())
+		if (ggui::is_ggui_initialized())
 		{
 			// set cz context (in-case we use multiple imgui context's)
 			IMGUI_BEGIN_CZWND;

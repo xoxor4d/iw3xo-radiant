@@ -378,7 +378,7 @@ typedef LRESULT(__thiscall* wndproc_t)(cmainframe*, UINT Msg, WPARAM wParam, LPA
 // handle wm_char events for non-focused subwindows, see above msg
 LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if(ggui::cz_context_ready() && (Msg == WM_ACTIVATE || Msg == WM_SETFOCUS || Msg == WM_KILLFOCUS))
+	if(ggui::is_ggui_initialized() && (Msg == WM_ACTIVATE || Msg == WM_SETFOCUS || Msg == WM_KILLFOCUS))
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.ClearInputKeys();
@@ -431,7 +431,7 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 
 	if (Msg == WM_SETCURSOR)
 	{
-		if (ggui::cz_context_ready())
+		if (ggui::is_ggui_initialized())
 		{
 			// only above 10 fps (we might 'loose focus' on < 5 FPS, preventing imgui mouse input )
 			//if(game::glob::frames_per_second <= 100)
@@ -479,7 +479,7 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 			ggui::hotkeys::cmdbinds_ascii_to_keystr(wParam).c_str());
 #endif
 
-		if (ggui::cz_context_ready())
+		if (ggui::is_ggui_initialized())
 		{
 			IMGUI_BEGIN_CZWND;
 			if (ImGui::GetIO().WantCaptureMouse)
@@ -526,7 +526,7 @@ typedef void(__thiscall* on_cmainframe_on_destroy)(cmainframe*);
 
 BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -625,12 +625,11 @@ void on_keydown_intercept(cmainframe* pThis, UINT nChar, UINT nRepCnt, UINT nFla
 
 void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-
 #ifdef DEBUG_KEYS
 	game::printf_to_console("mainframe keydown: %s", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -662,9 +661,6 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
-			//ImGuiIO& io = ImGui::GetIO();
-			//io.ClearInputKeys();
-			
 			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
 		}
 
@@ -691,7 +687,7 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 	game::printf_to_console("mainframe keyup: %s", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;

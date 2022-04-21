@@ -31,26 +31,23 @@ namespace ggui
 	// | -------------------- Variables ------------------------
 	// *
 
-    imgui_state_t state = imgui_state_t();
-	bool		saved_states_init = false;
-	
+	bool		m_init_saved_states = false;
+
+	bool		m_ggui_initialized = false;
+	ImGuiContext* m_ggui_context = nullptr;
+
 	bool		m_dockspace_initiated = false;
 	bool		m_dockspace_reset = false;
 	ImGuiID		m_dockspace_outer_left_node;
 	bool		mainframe_menubar_enabled = false; // is stock menubar visible? (also used for asm stubs)
-	
-	/*ImVec2		m_toolbar_pos;
-	ImVec2		m_toolbar_size;
-	ImGuiAxis	m_toolbar_axis = ImGuiAxis_X;
-	bool		m_toolbar_reset = false;
-	ImGuiID		m_toolbar_dock_top;
-	ImGuiID		m_toolbar_dock_left;*/
 
+	bool		m_demo_menu_state = false;
+	
 	std::vector<commandbinds> cmd_hotkeys;
 
 	// * cmainframe::on_keydown()
 	// * ggui::hotkeys::load_commandmap()
-	// add additional radiant-builtins
+	//   add additional radiant-builtins
 	std::vector<game::SCommandInfo> cmd_addon_hotkeys_builtin
 	{
 		{ "LockX", 0, 0, 0x802E },
@@ -70,10 +67,10 @@ namespace ggui
 		const auto tb = GET_GUI(ggui::toolbar_dialog);
 		if(tb->m_toolbar_axis == ImGuiAxis_X)
 		{
-			return ImVec2(5.0f, 33.0f + tb->m_toolbar_size.y + 5.0f);
+			return { 5.0f, 33.0f + tb->m_toolbar_size.y + 5.0f };
 		}
 
-		return ImVec2(tb->m_toolbar_size.x + 10.0f, 33.0f);
+		return { tb->m_toolbar_size.x + 10.0f, 33.0f };
 	}
 
 	void set_next_window_initial_pos_and_constraints(ImVec2 mins, ImVec2 initial_size, ImVec2 overwrite_pos)
@@ -81,7 +78,7 @@ namespace ggui
 		ImGui::SetNextWindowSizeConstraints(mins, ImVec2(FLT_MAX, FLT_MAX));
 		ImGui::SetNextWindowSize(initial_size, ImGuiCond_FirstUseEver);
 
-		if(overwrite_pos.x == 0 && overwrite_pos.y == 0)
+		if(overwrite_pos.x == 0.0f && overwrite_pos.y == 0.0f)
 		{
 			ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		}
@@ -91,9 +88,9 @@ namespace ggui
 		}
 	}
 
-	bool cz_context_ready()
+	bool is_ggui_initialized()
 	{
-		return ggui::state.czwnd.context_initialized;
+		return ggui::m_ggui_initialized;
 	}
 
 	// handles "window_hovered" for widgets drawn over rtt windows (needs to be called after every widget)
@@ -106,13 +103,6 @@ namespace ggui
 		}
 
 		return false;
-	}
-
-	// ^
-	// handles "window_hovered" for widgets drawn over rtt windows (needs to be called after every widget)
-	bool rtt_handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd)
-	{
-		return rtt_handle_windowfocus_overlaywidget(&wnd->window_hovered);
 	}
 
 
@@ -147,13 +137,6 @@ namespace ggui
 			//ImGui::Indent(8.0f);
 			//ImGui::Text("Hovered Triangle? %d", hovered);
 		}
-	}
-
-	// ^
-	// redraw tabbar triangle -> blocking mouse input for that area so one can actually use the triangle to unhide the tabbar
-	void redraw_undocking_triangle(ImGuiWindow* wnd, ggui::render_to_texture_window_s* rtt)
-	{
-		redraw_undocking_triangle(wnd, &rtt->window_hovered);
 	}
 
 	void dragdrop_overwrite_leftmouse_capture()

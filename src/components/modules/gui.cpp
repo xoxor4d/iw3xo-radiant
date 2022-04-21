@@ -1,45 +1,4 @@
 #include "std_include.hpp"
-#include <iomanip>
-
-IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-#define AUTOHIDE_TABBAR
-//#define HIDE_TABBAR_MENU
-
-#define mainframe_thiscall(return_val, addr)	\
-	utils::hook::call<return_val(__fastcall)(cmainframe*)>(addr)(cmainframe::activewnd)
-
-#define mainframe_cdeclcall(return_val, addr)	\
-	utils::hook::call<return_val(__cdecl)(cmainframe*)>(addr)(cmainframe::activewnd)
-
-#define mainframe_stdcall(return_val, addr)	\
-	utils::hook::call<return_val(__stdcall)(cmainframe*)>(addr)(cmainframe::activewnd)
-
-#define cdeclcall(return_val, addr)	\
-	utils::hook::call<return_val(__cdecl)()>(addr)()
-
-
-#define IMGUI_REGISTER_TOGGLEABLE_MENU(menu, function, function_on_close) \
-    if(menu.menustate) {		\
-        function;				\
-        menu.was_open = true;	\
-    }							\
-    else if(menu.was_open) {	\
-		function_on_close;		\
-		menu.was_open = false;	\
-    }
-
-#define IMGUI_REGISTER_TOGGLEABLE_MENU_RTT(menu, function, function_on_close) \
-    if(menu->menustate) {		\
-        function;				\
-        menu->was_open = true;	\
-    }							\
-    else if(menu->was_open) {	\
-		function_on_close;		\
-		menu->was_open = false;	\
-    }
-
-// -------------------------------------------------------------------
 
 // show tooltip after x seconds
 #define TTDELAY 0.5f 
@@ -53,16 +12,6 @@ IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wPa
 // seperator with spacing
 #define SEPERATORV(spacing) SPACING(0.0f, spacing); ImGui::Separator(); SPACING(0.0f, spacing) 
 
-
-/* ---- ref -----
- * auto vtable = reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable);
- * reinterpret_cast<CStatusBar_vtbl*>(cmainframe::activewnd->m_wndStatusBar.__vftable)->SetStatusText(&cmainframe::activewnd->m_wndStatusBar, 0x75);
- *
- * auto vtable = reinterpret_cast<CSplitterWnd_vtbl*>(cmainframe::activewnd->m_wndSplit.__vftable);
- * vtable->RecalcLayout(&cmainframe::activewnd->m_wndSplit);
- */
-
-
 namespace components
 {
 	void imgui_init_fonts()
@@ -73,7 +22,8 @@ namespace components
 		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 12.0f);
 		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f);
 	}
-	
+
+
 	// *
 	// initialize imgui context
 	void imgui_init_czwnd()
@@ -88,8 +38,8 @@ namespace components
 		}
 
 		// create/set context
-		ggui::state.czwnd.context = ImGui::CreateContext();
-		ImGui::SetCurrentContext(ggui::state.czwnd.context);
+		ggui::m_ggui_context = ImGui::CreateContext();
+		ImGui::SetCurrentContext(ggui::m_ggui_context);
 
 		ImGuiIO& io = ImGui::GetIO();
 		imgui_init_fonts();
@@ -107,26 +57,19 @@ namespace components
 		ImGui::StyleColorsDevgui();
 
 		// fully initialized
-		ggui::state.czwnd.context_initialized = true;
-		ggui::state.czwnd.dx_window = &game::dx->windows[ggui::CZWND];
+		ggui::m_ggui_initialized = true;
 	}
 
 	
 	// *
 	// dockspace creation
-	// TODO! - rewrite when docking v3 is avail.
-	
-	void czwnd_gui(ggui::imgui_context_cz& context)
+	void handle_dockspace()
 	{
 		int _stylevars = 0;
 		int _stylecolors = 0;
 
 		ImGuiIO& io = ImGui::GetIO();
 		const auto tb = GET_GUI(ggui::toolbar_dialog);
-
-		bool floating_toolbar = dvars::gui_floating_toolbar && dvars::gui_floating_toolbar->current.enabled;
-		bool floating_toolbar_resizes_dockspace = dvars::gui_resize_dockspace && dvars::gui_resize_dockspace->current.enabled;
-
 
 		// *
 		// create main dockspace
@@ -145,7 +88,6 @@ namespace components
 		window_flags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 		
 		ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));		_stylecolors++;
-		//ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::ToImVec4(dvars::gui_window_child_bg_color->current.vector));	_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));			_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));							_stylecolors++;
 		ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));					_stylecolors++;
@@ -154,19 +96,8 @@ namespace components
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f); _stylevars++;
 
 		// use padding to make room for the top / left floating toolbar
-		auto window_padding = ImVec2(0.0f, 0.0f);
-		if(floating_toolbar && floating_toolbar_resizes_dockspace)
-		{
-			window_padding = ImVec2(5.0f, 50.0f);
-			
-			if(tb->m_toolbar_axis == ImGuiAxis_Y)
-			{
-				window_padding = ImVec2(50.0f, 5.0f);
-			}
-		}
-		
+		const auto window_padding = ImVec2(0.0f, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, window_padding); _stylevars++;
-		//ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 8)); _stylevars++;
 		ImGui::Begin("dockspace", nullptr, window_flags);
 
 		ImGui::PopStyleVar(_stylevars); _stylevars = 0;
@@ -256,8 +187,9 @@ namespace components
 			current_window->DC.MenuBarOffset.x = 10.0f;
 		}
 
-		GET_GUI(ggui::menubar_dialog)->menubar();
-		GET_GUI(ggui::menubar_dialog)->set_height(ImGui::GetCurrentWindow()->MenuBarHeight());
+		const auto menubar = GET_GUI(ggui::menubar_dialog);
+		menubar->menubar();
+		menubar->set_height(ImGui::GetCurrentWindow()->MenuBarHeight());
 
 
 		// *
@@ -268,10 +200,6 @@ namespace components
 		{
 			current_window->DC.MenuBarOffset = saved_menubar_offset;
 		}
-		
-		// re-check toolbar dvars in case they got modified from within the menubar
-		floating_toolbar = dvars::gui_floating_toolbar && dvars::gui_floating_toolbar->current.enabled;
-		floating_toolbar_resizes_dockspace = dvars::gui_resize_dockspace && dvars::gui_resize_dockspace->current.enabled;
 
 		// set toolbar axis once using saved settings
 		if(!ggui::m_dockspace_initiated)
@@ -286,40 +214,20 @@ namespace components
 			}
 		}
 
-		
+
 		// *
 		// create default docking layout
 
 		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 		{
-			auto dockspace_size = ImVec2(0.0f, 0.0f);
-			if (floating_toolbar && floating_toolbar_resizes_dockspace)
-			{
-				dockspace_size = ImVec2(0.0f, viewport->Size.y - 85.0f);
-
-				if (tb->m_toolbar_axis == ImGuiAxis_Y)
-				{
-					//auto region_left = ImGui::GetContentRegionAvailWidth();
-					dockspace_size = ImVec2(viewport->Size.x - (2.0f * tb->m_toolbar_size.x), 0.0f);
-				}
-			}
-
+			
 			ImGuiID main_dock;
-			ImGuiID dockspace_id = ImGui::GetID("cxywnd_dockspace_layout");
 
-			ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-#ifdef AUTOHIDE_TABBAR
-			dockspace_flags |= ImGuiDockNodeFlags_AutoHideTabBar;
-#endif
-#ifdef HIDE_TABBAR_MENU
-			dockspace_flags |= ImGuiDockNodeFlags_NoWindowMenuButton;
-#endif
+			const ImGuiID dockspace_id = ImGui::GetID("cxywnd_dockspace_layout");
+			const auto dockspace_size = ImVec2(0.0f, 0.0f);
+			const ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_AutoHideTabBar;
 
-			//ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 10));
-
-			//ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(3, 4)); // close and menubutton are too close
 			ImGui::DockSpace(dockspace_id, dockspace_size, dockspace_flags);
-			//ImGui::PopStyleVar(1);
 
 			// *
 			// main dockspace
@@ -358,28 +266,17 @@ namespace components
 					ImGui::DockBuilderSetNodeSize(tb->m_toolbar_dock_left, ImVec2(36, viewport->Size.y));
 					
 					ggui::m_dockspace_outer_left_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.5f, nullptr, &main_dock);
-					//const auto dockspace_inner_left_node = ImGui::DockBuilderSplitNode(ggui::dockspace_outer_left_node, ImGuiDir_Left, 0.5f, nullptr, &ggui::dockspace_outer_left_node);
 					const auto dockspace_right_top_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Up, 0.6f, nullptr, &main_dock);
-					
-					if (!floating_toolbar)
+
+					if (tb->m_toolbar_axis == ImGuiAxis_X)
 					{
-						if (tb->m_toolbar_axis == ImGuiAxis_X)
-						{
-							ImGui::DockBuilderDockWindow("toolbar##window", tb->m_toolbar_dock_top);
-						}
-						else
-						{
-							ImGui::DockBuilderDockWindow("toolbar##window", tb->m_toolbar_dock_left);
-						}
+						ImGui::DockBuilderDockWindow("toolbar##window", tb->m_toolbar_dock_top);
+					}
+					else
+					{
+						ImGui::DockBuilderDockWindow("toolbar##window", tb->m_toolbar_dock_left);
 					}
 
-					//ImGui::DockBuilderDockWindow("Colors##window", dockspace_inner_left_node);
-					//ImGui::DockBuilderDockWindow("Hotkeys##window", dockspace_inner_left_node);
-					//ImGui::DockBuilderDockWindow("Hotkeys Helper##window", dockspace_inner_left_node);
-					//ImGui::DockBuilderDockWindow("Toolbar Editor##window", dockspace_inner_left_node);
-					//ImGui::DockBuilderDockWindow("Filters##window", dockspace_inner_left_node);
-					//ImGui::DockBuilderDockWindow("Entity##window", dockspace_inner_left_node);
-					
 					ImGui::DockBuilderDockWindow("Grid Window##rtt", ggui::m_dockspace_outer_left_node);
 					ImGui::DockBuilderDockWindow("Camera Window##rtt", dockspace_right_top_node);
 
@@ -429,10 +326,8 @@ namespace components
 
 	// *
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
-
 	void gui::render_loop()
 	{
-
 		/* - radiant draws multiple windows using d3d
 		 *   => multiple endscene / present calls
 		 * - use dx->targetWindowIndex to distinguish between windows
@@ -460,7 +355,6 @@ namespace components
 		
 		if (game::dx->targetWindowIndex == ggui::CXYWND)
 		{
-			// copy scene to texture
 			renderer::copy_scene_to_texture(ggui::CXYWND, GET_GUI(ggui::grid_dialog)->rtt_get_texture());
 		}
 
@@ -471,9 +365,6 @@ namespace components
 
 		if(game::dx->targetWindowIndex == ggui::CTEXWND)
 		{
-			// copy scene to texture
-			//renderer::copy_scene_to_texture(ggui::CTEXWND, ggui::get_rtt_texturewnd()->scene_texture);
-
 			renderer::copy_scene_to_texture(ggui::CTEXWND, GET_GUI(ggui::texture_dialog)->rtt_get_texture());
 		}
 
@@ -494,7 +385,7 @@ namespace components
 		
 		if (game::dx->targetWindowIndex == ggui::CZWND)
 		{
-			if (!ggui::state.czwnd.context_initialized)
+			if (!ggui::m_ggui_initialized)
 			{
 				imgui_init_czwnd();
 
@@ -525,11 +416,10 @@ namespace components
 			game::glob::frames_per_second = ImGui::GetIO().Framerate;
 
 			// docking, default layout ... 
-			czwnd_gui(ggui::state.czwnd);
+			handle_dockspace();
 
 			// -
 			// separate windows for grid/camera if not used as background
-
 #if 0
 			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 1) 
 			{
@@ -540,31 +430,18 @@ namespace components
 			{
 				GET_GUI(ggui::camera_dialog)->camera_gui();
 			}
+
 #else
 			// non-closable windows 
 			GET_GUI(ggui::grid_dialog)->grid_gui();
 			GET_GUI(ggui::camera_dialog)->camera_gui();
 #endif
 
-			// debug
-
-			//game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
-			//game::GfxRenderTarget* depth = &targets[game::R_RENDERTARGET_FLOAT_Z];
-		
-			/*ImGui::Begin("Debug", nullptr);
-			ImGui::Image(postSun->image->texture.data, ImVec2(game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].width, game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].height));
-			ImGui::End();*/
-
-			//if(depth && depth->image && depth->image->texture.data)
-			//{
-			//	ImGui::Begin("Depthbuffer", nullptr);
-			//	ImGui::Image(depth->image->texture.data, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
-			//	ImGui::End();
-			//}
-
-			// demo menu
-			IMGUI_REGISTER_TOGGLEABLE_MENU(ggui::state.czwnd.m_demo,
-				ImGui::ShowDemoWindow(&ggui::state.czwnd.m_demo.menustate), nullptr);
+			if(ggui::m_demo_menu_state)
+			{
+				// demo menu
+				ImGui::ShowDemoWindow(&ggui::m_demo_menu_state);
+			}
 
 			// draw/handle gui classes
 			for (const auto& module : ggui::loader::get_modules())
@@ -581,6 +458,22 @@ namespace components
 			{
 				ShowWindow(con, SW_HIDE);
 			}
+
+			// debug
+
+			//game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
+			//game::GfxRenderTarget* depth = &targets[game::R_RENDERTARGET_FLOAT_Z];
+
+			/*ImGui::Begin("Debug", nullptr);
+			ImGui::Image(postSun->image->texture.data, ImVec2(game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].width, game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].height));
+			ImGui::End();*/
+
+			//if(depth && depth->image && depth->image->texture.data)
+			//{
+			//	ImGui::Begin("Depthbuffer", nullptr);
+			//	ImGui::Image(depth->image->texture.data, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
+			//	ImGui::End();
+			//}
 
 			// end the current context frame
 			goto END_FRAME;
@@ -608,7 +501,7 @@ namespace components
 	// shutdown imgui (d3d9ex::d3d9device::Release)
 	void gui::shutdown()
 	{
-		if (ggui::state.czwnd.context_initialized)
+		if (ggui::m_ggui_initialized)
 		{
 			IMGUI_BEGIN_CZWND;
 
@@ -620,26 +513,9 @@ namespace components
 			ImGui_ImplWin32_Shutdown();
 			ImGui::DestroyContext();
 		}
-		
-		memset(&ggui::state, 0, sizeof(ggui::imgui_state_t));
 	}
 
-#define SAVED_STATE_INIT(menu, dvar) \
-	if (dvar) ggui::state.czwnd.menu.menustate = dvar->current.enabled
-
-#define SAVED_STATE_INIT_RTT(menu, dvar) \
-	if (dvar) menu->menustate = dvar->current.enabled
-
-#define SAVED_STATE_UPDATE(menu, dvar) \
-	if (dvar && ggui::state.czwnd.menu.menustate != dvar->current.enabled) \
-		dvars::set_bool(dvar, ggui::state.czwnd.menu.menustate)
-
-#define SAVED_STATE_UPDATE_RTT(menu, dvar) \
-	if (dvar && menu->menustate != dvar->current.enabled) \
-		dvars::set_bool(dvar, menu->menustate)
-
-
-#define HANDLE_SAVED_STATE_REFACTOR(_GUI_CLASS, _DVAR, _STARTUP)							\
+#define HANDLE_SAVED_STATE(_GUI_CLASS, _DVAR, _STARTUP)										\
 		if(!(_STARTUP))																		\
 		{																					\
 			if ((_DVAR))																	\
@@ -657,47 +533,15 @@ namespace components
 	void gui::saved_windowstates()
 	{
 		// handles init and update
-		HANDLE_SAVED_STATE_REFACTOR(ggui::console_dialog, dvars::gui_saved_state_console, ggui::saved_states_init);
-		HANDLE_SAVED_STATE_REFACTOR(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::saved_states_init);
-		HANDLE_SAVED_STATE_REFACTOR(ggui::filter_dialog, dvars::gui_saved_state_filter, ggui::saved_states_init);
-		HANDLE_SAVED_STATE_REFACTOR(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::saved_states_init);
-		HANDLE_SAVED_STATE_REFACTOR(ggui::surface_dialog, dvars::gui_saved_state_surfinspector, ggui::saved_states_init);
-		HANDLE_SAVED_STATE_REFACTOR(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::saved_states_init);
+		HANDLE_SAVED_STATE(ggui::console_dialog, dvars::gui_saved_state_console, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE(ggui::filter_dialog, dvars::gui_saved_state_filter, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE(ggui::surface_dialog, dvars::gui_saved_state_surfinspector, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::m_init_saved_states);
 
-		ggui::saved_states_init = true;
+		ggui::m_init_saved_states = true;
 	}
-
-	// *
-	// toggle a imgui menu by command (or key (scheduler))
-	void gui::toggle(ggui::imgui_context_menu& menu)
-	{
-		if(!ggui::cz_context_ready())
-		{
-			return;
-		}
-
-		menu.menustate = !menu.menustate;
-
-		// on close
-		if (!menu.menustate)
-		{ }
-		
-	}
-
-	void gui::toggle(ggui::render_to_texture_window_s* menu)
-	{
-		if (!ggui::cz_context_ready() || !menu) 
-		{
-			return;
-		}
-
-		menu->menustate = !menu->menustate;
-
-		// on close
-		if (!menu->menustate) 
-		{ }
-	}
-
 
 	// *
 	void gui::begin_frame()
@@ -877,12 +721,6 @@ namespace components
 
 		// *
 		// *
-		
-		dvars::gui_floating_toolbar = dvars::register_bool(
-			/* name		*/ "gui_floating_toolbar",
-			/* default	*/ false,
-			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "enable floating toolbar (saved between restarts)");
 
 		dvars::gui_resize_dockspace = dvars::register_bool(
 			/* name		*/ "gui_resize_dockspace",
@@ -968,7 +806,7 @@ namespace components
 
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{
-			gui::toggle(ggui::state.czwnd.m_demo);
+			ggui::m_demo_menu_state = !ggui::m_demo_menu_state;
 		});
 	}
 

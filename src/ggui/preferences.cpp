@@ -77,8 +77,13 @@ namespace ggui
 
 			ImGui::Checkbox("Show mousecursor origin within the menubar", &dvars::gui_menubar_show_mouseorigin->current.enabled);
 
-			if (ImGui::Checkbox("Floating Toolbar", &dvars::gui_floating_toolbar->current.enabled)) {
-				GET_GUI(ggui::toolbar_dialog)->m_toolbar_reset = true;
+			if (ImGui::Button("Edit Colors ..")) {
+				GET_GUI(ggui::gui_colors_dialog)->toggle();
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Edit Toolbar ..")) {
+				GET_GUI(ggui::toolbar_edit_dialog)->toggle();
 			}
 
 			// -----------------
@@ -88,21 +93,13 @@ namespace ggui
 				ggui::m_dockspace_reset = true;
 			}
 
-			ImGui::SameLine();
-
-			ImGui::BeginDisabled(!dvars::gui_floating_toolbar->current.enabled);
-			{
-				ImGui::Checkbox("Resize Dockspace for floating toolbar", &dvars::gui_resize_dockspace->current.enabled);
-			}
-			ImGui::EndDisabled();
-
 			//const char* background_names[] = { "None", "Grid", "Camera" };
 			//const char* background_str = (dvars::gui_mainframe_background->current.integer >= 0 && dvars::gui_mainframe_background->current.integer <= 2) ? background_names[dvars::gui_mainframe_background->current.integer] : "Unknown";
 			//ImGui::SliderInt("Dockspace Background", &dvars::gui_mainframe_background->current.integer, 0, 2, background_str);
 
 			// -----------------
 			ImGui::title_with_seperator("New / Ported Features");
-			ImGui::Checkbox("Use new experimental surfaceinspector", &dvars::gui_use_new_surfinspector->current.enabled); TT(dvars::gui_use_new_surfinspector->description);
+			ImGui::Checkbox("Use new experimental surface-inspector", &dvars::gui_use_new_surfinspector->current.enabled); TT(dvars::gui_use_new_surfinspector->description);
 			ImGui::Checkbox("Use new vertex edit dialog", &dvars::gui_use_new_vertedit_dialog->current.enabled); TT(dvars::gui_use_new_vertedit_dialog->description);
 
 			if (ImGui::Checkbox("Use new grid context menu", &dvars::gui_use_new_context_menu->current.enabled))
@@ -115,7 +112,7 @@ namespace ggui
 			ImGui::Checkbox("Default Open - Classlist", &dvars::gui_props_classlist_defaultopen->current.enabled); TT(dvars::gui_props_classlist_defaultopen->description);
 			ImGui::Checkbox("Default Open - Spawnflags", &dvars::gui_props_spawnflags_defaultopen->current.enabled); TT(dvars::gui_props_spawnflags_defaultopen->description);
 			ImGui::Checkbox("Default Open - Comments", &dvars::gui_props_comments_defaultopen->current.enabled); TT(dvars::gui_props_comments_defaultopen->description);
-			ImGui::Checkbox("Incorporate Surface Inspector into property window", &dvars::gui_props_surfinspector->current.enabled); TT(dvars::gui_props_surfinspector->description);
+			ImGui::Checkbox("Incorporate surface-inspector into property window", &dvars::gui_props_surfinspector->current.enabled); TT(dvars::gui_props_surfinspector->description);
 		});
 	}
 

@@ -1167,35 +1167,17 @@ namespace ggui
 
 		ImGui::SetNextWindowSize(requested_size);
 
-		const bool is_floating_toolbar = dvars::gui_floating_toolbar && dvars::gui_floating_toolbar->current.enabled;
-
-		if (is_floating_toolbar)
-		{
-			const float menubar_height = GET_GUI(ggui::menubar_dialog)->get_height();
-			ImGui::SetNextWindowPos(ImVec2(5.0f, menubar_height + 5.0f), ImGuiCond_FirstUseEver);
-		}
-
 		if (this->m_toolbar_reset)
 		{
-			if (!is_floating_toolbar)
+			if (this->m_toolbar_axis == ImGuiAxis_X)
 			{
-				if (this->m_toolbar_axis == ImGuiAxis_X)
-				{
-					ImGui::SetNextWindowDockID(this->m_toolbar_dock_top);
-				}
-				else
-				{
-					ImGui::SetNextWindowDockID(this->m_toolbar_dock_left);
-				}
+				ImGui::SetNextWindowDockID(this->m_toolbar_dock_top);
 			}
-
-			// reset to default floating state
 			else
 			{
-				const float menubar_height = GET_GUI(ggui::menubar_dialog)->get_height();
-				ImGui::SetNextWindowPos(ImVec2(5.0f, menubar_height + 5.0f));
+				ImGui::SetNextWindowDockID(this->m_toolbar_dock_left);
 			}
-
+			
 			this->m_toolbar_reset = false;
 		}
 

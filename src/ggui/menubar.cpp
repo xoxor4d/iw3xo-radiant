@@ -73,19 +73,19 @@ namespace ggui
 			if (ImGui::BeginMenu("File"))
 			{
 				if (ImGui::MenuItem("New Map")) {
-					mainframe_cdeclcall(void, 0x423AA0); //cmainframe::OnFileNew
+					cdeclcall(void, 0x423AA0); //cmainframe::OnFileNew
 				}
 
 				if (ImGui::MenuItem("Open", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) {
-					mainframe_cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
+					cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
 				}
 
 				if (ImGui::MenuItem("Save", ggui::hotkey_dialog::get_hotkey_for_command("FileSave").c_str())) {
-					mainframe_cdeclcall(void, 0x423B80); //cmainframe::OnFileSave
+					cdeclcall(void, 0x423B80); //cmainframe::OnFileSave
 				}
 
 				if (ImGui::MenuItem("Save As")) {
-					mainframe_cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
+					cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
 				}
 
 				if (ImGui::MenuItem("Save Selected")) {
@@ -217,15 +217,15 @@ namespace ggui
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Edit Colors ...")) {
+				if (ImGui::MenuItem("Edit Colors ..")) {
 					GET_GUI(ggui::gui_colors_dialog)->toggle();
 				}
 
-				if (ImGui::MenuItem("Edit Toolbar ...")) {
-					GET_GUI(ggui::toolbar_edit_dialog);
+				if (ImGui::MenuItem("Edit Toolbar ..")) {
+					GET_GUI(ggui::toolbar_edit_dialog)->toggle();
 				}
 
-				if (ImGui::MenuItem("Edit Hotkeys ...")) {
+				if (ImGui::MenuItem("Edit Hotkeys ..")) {
 					GET_GUI(hotkey_dialog)->toggle();
 				}
 
@@ -289,7 +289,7 @@ namespace ggui
 					}
 
 					if (ImGui::MenuItem("ImGui Demo")) {
-						components::gui::toggle(ggui::state.czwnd.m_demo);
+						ggui::m_demo_menu_state = !ggui::m_demo_menu_state;
 					}
 
 					SEPERATORV(0.0f);

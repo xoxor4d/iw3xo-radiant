@@ -7,7 +7,7 @@
 // *
 // gui
 #define IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_BEGIN_CZWND if(ggui::cz_context_ready()) ImGui::SetCurrentContext(ggui::state.czwnd.context)
+#define IMGUI_BEGIN_CZWND if(ggui::is_ggui_initialized()) ImGui::SetCurrentContext(ggui::m_ggui_context)
 
 // Version number
 #include <version.hpp>

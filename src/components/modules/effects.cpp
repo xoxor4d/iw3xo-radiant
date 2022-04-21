@@ -540,19 +540,6 @@ namespace components
 		}
 	}
 
-	void menu(ggui::imgui_context_menu& menu)
-	{
-		ImGui::SetNextWindowSize(ImVec2(400.0f, 390.0f));
-		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
-
-		if (!ImGui::Begin("Effects-Debug##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
-		{
-			ImGui::End();
-		}
-
-		ImGui::End();
-	}
-
 	void effects::generate_createfx()
 	{
 		std::ofstream def;

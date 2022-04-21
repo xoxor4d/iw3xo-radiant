@@ -17,7 +17,7 @@ namespace dvars
 	game::dvar_s* gui_rtt_padding_size = nullptr;
 	game::dvar_s* gui_rtt_padding_color = nullptr;
 	
-	game::dvar_s* gui_floating_toolbar = nullptr;
+	//game::dvar_s* gui_floating_toolbar = nullptr;
 	game::dvar_s* gui_resize_dockspace = nullptr;
 	game::dvar_s* gui_mainframe_background = nullptr;
 	game::dvar_s* gui_menubar_show_mouseorigin = nullptr;
