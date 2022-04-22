@@ -536,4 +536,5 @@ namespace											\
 	extern void dragdrop_overwrite_leftmouse_capture();
 	extern void dragdrop_reset_leftmouse_capture();
 
+	extern void file_dialog_frame();
 }

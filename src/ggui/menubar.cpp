@@ -1,13 +1,5 @@
 #include "std_include.hpp"
 
-namespace ggui::menubar
-{
-	
-
-	
-	
-}
-
 namespace ggui
 {
 	void menubar_dialog::set_grid_size(const xywnd::E_GRID_SIZES size)
@@ -76,8 +68,11 @@ namespace ggui
 					cdeclcall(void, 0x423AA0); //cmainframe::OnFileNew
 				}
 
-				if (ImGui::MenuItem("Open", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) {
-					cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
+				if (ImGui::MenuItem("Open", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) 
+				{
+					//cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
+
+					ImGui::FileDialog::file_dialog_open = true;
 				}
 
 				if (ImGui::MenuItem("Save", ggui::hotkey_dialog::get_hotkey_for_command("FileSave").c_str())) {

@@ -150,5 +150,74 @@ namespace ggui
 		GET_GUI(ggui::camera_dialog)->rtt_set_lmb_capturing(false);
 		GET_GUI(ggui::grid_dialog)->rtt_set_lmb_capturing(false);
 	}
-	
+
+	void mru_new_item(game::LPMRUMENU* mru, const char* str)
+	{
+		const static uint32_t func_addr = 0x48A2C0;
+		__asm
+		{
+			pushad;
+			mov		esi, mru;
+			push	str;
+			call	func_addr;
+			add     esp, 4;
+			popad;
+		}
+	}
+
+	void mru_insert_item(game::LPMRUMENU* mru, HMENU menu)
+	{
+		const static uint32_t func_addr = 0x48A400;
+		__asm
+		{
+			pushad;
+			mov		edi, mru;
+			push	menu;
+			call	func_addr;
+			add     esp, 4;
+			popad;
+		}
+	}
+
+	void map_load_from_file(const char* path)
+	{
+		const static uint32_t func_addr = 0x486680;
+		__asm
+		{
+			pushad;
+			mov		ecx, path;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void file_dialog_frame()
+	{
+		if (ImGui::FileDialog::file_dialog_open)
+		{
+			const auto egui = GET_GUI(ggui::entity_dialog);
+			std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+			if(ImGui::FileDialog::ShowFileDialog(&ImGui::FileDialog::file_dialog_open, path_str, ImGui::FileDialog::FileDialogType::OpenFile, "map"))
+			{
+				// checks for unsaved changes or if inside prefab 
+				if(!utils::hook::call<bool (__cdecl)()>(0x489D90)()
+					// loose changes modal 
+					|| utils::hook::call<bool (__cdecl)()>(0x49A030)())
+				{
+					// leave all prefabs and go back to stacklevel 0
+					utils::hook::call<void (__cdecl)()>(0x489D50)();
+
+					mru_new_item(game::g_qeglobals->d_lpMruMenu, path_str.c_str());
+					auto menu = GetSubMenu(GetMenu(game::g_qeglobals->d_hwndMain), 0);
+					mru_insert_item(game::g_qeglobals->d_lpMruMenu, menu);
+
+					// Pointfile_Clear
+					utils::hook::call<void (__cdecl)()>(0x410600)();
+
+					map_load_from_file(path_str.c_str());
+				}
+			}
+		}
+	}
 }
