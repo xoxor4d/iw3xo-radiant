@@ -21,6 +21,7 @@ namespace ggui
 	{
 		MAP_LOAD = 0,
 		MAP_SAVE = 1,
+		MAP_EXPORT = 2,
 	};
 	
 	#define mainframe_thiscall(return_val, addr)	\

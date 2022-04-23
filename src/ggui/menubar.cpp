@@ -70,18 +70,22 @@ namespace ggui
 
 				if (ImGui::MenuItem("Open", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) 
 				{
-					//cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
-					//ImGui::FileDialog::file_dialog_open = true;
+					if(dvars::gui_use_new_filedialog->current.enabled)
+					{
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
 
-					const auto egui = GET_GUI(ggui::entity_dialog);
-					const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
-
-					const auto file = GET_GUI(ggui::file_dialog);
-					file->set_default_path(path_str);
-					file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_LOAD);
-					file->set_file_op_type(file_dialog::FileDialogType::OpenFile);
-					file->set_file_ext(".map");
-					file->open();
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_LOAD);
+						file->set_file_op_type(file_dialog::FileDialogType::OpenFile);
+						file->set_file_ext(".map");
+						file->open();
+					}
+					else
+					{
+						cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
+					}
 				}
 
 				if (ImGui::MenuItem("Save", ggui::hotkey_dialog::get_hotkey_for_command("FileSave").c_str())) {
@@ -90,21 +94,22 @@ namespace ggui
 
 				if (ImGui::MenuItem("Save As")) 
 				{
-					//cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
+					if (dvars::gui_use_new_filedialog->current.enabled)
+					{
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
 
-					const auto egui = GET_GUI(ggui::entity_dialog);
-					const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
-
-					const auto file = GET_GUI(ggui::file_dialog);
-					file->set_default_path(path_str);
-					file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_SAVE);
-					file->set_file_op_type(file_dialog::FileDialogType::SaveFile);
-					file->set_file_ext(".map");
-					file->open();
-				}
-
-				if (ImGui::MenuItem("Save Selected")) {
-					mainframe_thiscall(void, 0x4293A0); //cmainframe::OnFileExportmap
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_SAVE);
+						file->set_file_op_type(file_dialog::FileDialogType::SaveFile);
+						file->set_file_ext(".map");
+						file->open();
+					}
+					else
+					{
+						cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
+					}
 				}
 
 				SEPERATORV(0.0f);
@@ -132,16 +137,39 @@ namespace ggui
 
 				if (ImGui::BeginMenu("Generate File .."))
 				{
+					if (ImGui::MenuItem("Save Selected"))
+					{
+						if (dvars::gui_use_new_filedialog->current.enabled)
+						{
+							const auto egui = GET_GUI(ggui::entity_dialog);
+							const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+							const auto file = GET_GUI(ggui::file_dialog);
+							file->set_default_path(path_str);
+							file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_EXPORT);
+							file->set_file_op_type(file_dialog::FileDialogType::SaveFile);
+							file->set_file_ext(".map");
+							file->open();
+						}
+						else
+						{
+							mainframe_thiscall(void, 0x4293A0); //cmainframe::OnFileExportmap
+						}
+					}
+
+					// is this even remotely useful?
+					if (ImGui::MenuItem("Save Region", "", nullptr, game::g_region_active)) {
+						mainframe_cdeclcall(void, 0x429020); //cmainframe::OnFileSaveregion
+					}
+
+					SEPERATORV(0.0f);
+
 					if (ImGui::MenuItem("Createfx"))
 					{
 						components::effects::generate_createfx();
 
 					} TT("Generate createfx files for current map.\n (bin\\IW3xRadiant\\createfx)");
-
-					if (ImGui::MenuItem("Save Region", "", nullptr, game::g_region_active)) {
-						mainframe_cdeclcall(void, 0x429020); //cmainframe::OnFileSaveregion
-					}
-
+					
 					if (ImGui::MenuItem("Pointfile")) {
 						mainframe_cdeclcall(void, 0x423B20); //cmainframe::OnPointfileOpen
 					}

@@ -16,10 +16,7 @@ namespace dvars
 	extern game::dvar_s* gui_rtt_padding_enabled;
 	extern game::dvar_s* gui_rtt_padding_size;
 	extern game::dvar_s* gui_rtt_padding_color;
-		
-	//extern game::dvar_s* gui_floating_toolbar;
-	extern game::dvar_s* gui_resize_dockspace;
-	extern game::dvar_s* gui_mainframe_background;
+
 	extern game::dvar_s* gui_menubar_show_mouseorigin;
 	extern game::dvar_s* gui_draw_fps;
 
@@ -33,6 +30,7 @@ namespace dvars
 	extern game::dvar_s* gui_use_new_surfinspector;
 	extern game::dvar_s* gui_use_new_vertedit_dialog;
 	extern game::dvar_s* gui_use_new_context_menu;
+	extern game::dvar_s* gui_use_new_filedialog;
 
 	extern game::dvar_s* gui_camera_toolbar_defaultopen;
 	

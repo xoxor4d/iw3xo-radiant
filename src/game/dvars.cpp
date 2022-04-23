@@ -16,10 +16,7 @@ namespace dvars
 	game::dvar_s* gui_rtt_padding_enabled = nullptr;
 	game::dvar_s* gui_rtt_padding_size = nullptr;
 	game::dvar_s* gui_rtt_padding_color = nullptr;
-	
-	//game::dvar_s* gui_floating_toolbar = nullptr;
-	game::dvar_s* gui_resize_dockspace = nullptr;
-	game::dvar_s* gui_mainframe_background = nullptr;
+
 	game::dvar_s* gui_menubar_show_mouseorigin = nullptr;
 	game::dvar_s* gui_draw_fps = nullptr;
 
@@ -33,6 +30,7 @@ namespace dvars
 	game::dvar_s* gui_use_new_surfinspector = nullptr;
 	game::dvar_s* gui_use_new_vertedit_dialog = nullptr;
 	game::dvar_s* gui_use_new_context_menu = nullptr;
+	game::dvar_s* gui_use_new_filedialog = nullptr;
 
 	game::dvar_s* gui_camera_toolbar_defaultopen = nullptr;
 	

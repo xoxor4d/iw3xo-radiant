@@ -103,77 +103,6 @@ namespace components
 		ImGui::PopStyleVar(_stylevars); _stylevars = 0;
 		ImGui::PopStyleColor(); _stylecolors--;
 
-
-		// *
-		// render backgrounds (makes no sense currently)
-
-#if 0
-		if(dvars::gui_mainframe_background)
-		{
-			if (dvars::gui_mainframe_background->current.integer == 1)
-			{
-				if (game::g_PrefsDlg()->m_nView == 1)
-				{
-					SetWindowPos(cmainframe::activewnd->m_pXYWnd->m_hWnd, HWND_BOTTOM, 0, 0, zwnd->width, zwnd->height, SWP_NOZORDER);
-					const auto cxy_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nWidth), static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nHeight));
-
-					ImGui::SetNextWindowPos(ImVec2(0, 0));
-					ImGui::SetNextWindowSize(cxy_size);
-					ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-					ImGui::Begin("mainview_grid", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus);
-					{
-						
-						if (auto gridwnd = ggui::get_rtt_gridwnd();
-								 gridwnd->scene_texture)
-						{
-							const auto IO = ImGui::GetIO();
-							const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
-
-							ImGui::Image(gridwnd->scene_texture, cxy_size);
-							gridwnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_None);
-
-							gridwnd->cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
-							gridwnd->cursor_pos_pt = CPoint((LONG)gridwnd->cursor_pos.x, (LONG)gridwnd->cursor_pos.y);
-						}
-					}
-					ImGui::PopStyleVar(2);
-					ImGui::End();
-				}
-			}
-			
-			else if (dvars::gui_mainframe_background->current.integer == 2)
-			{
-				if (game::g_PrefsDlg()->m_nView == 1)
-				{
-					SetWindowPos(cmainframe::activewnd->m_pCamWnd->m_hWnd, HWND_BOTTOM, 0, 0, zwnd->width, zwnd->height, SWP_NOZORDER);
-					const auto camera_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.width), static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.height));
-
-					ImGui::SetNextWindowPos(ImVec2(0, 0));
-					ImGui::SetNextWindowSize(camera_size);
-					ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
-					ImGui::Begin("mainview_camera", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus);
-					{
-						if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
-										camerawnd->rtt_get_texture())
-						{
-							const auto IO = ImGui::GetIO();
-							const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
-
-							ImGui::Image(camerawnd->rtt_get_texture(), camera_size);
-							camerawnd->rtt_set_hovered_state(ImGui::IsItemHovered(ImGuiHoveredFlags_None));
-							camerawnd->rtt_set_cursor_pos(ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y));
-						}
-					}
-					ImGui::PopStyleVar(2);
-					ImGui::End();
-				}
-			}
-		}
-#endif
-
-		
 		// *
 		// menubar
 
@@ -418,24 +347,9 @@ namespace components
 			// docking, default layout ... 
 			handle_dockspace();
 
-			// -
-			// separate windows for grid/camera if not used as background
-#if 0
-			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 1) 
-			{
-				ggui::grid::gui();
-			}
-
-			if (dvars::gui_mainframe_background && dvars::gui_mainframe_background->current.integer != 2) 
-			{
-				GET_GUI(ggui::camera_dialog)->camera_gui();
-			}
-
-#else
 			// non-closable windows 
 			GET_GUI(ggui::grid_dialog)->grid_gui();
 			GET_GUI(ggui::camera_dialog)->camera_gui();
-#endif
 
 			if(ggui::m_demo_menu_state)
 			{
@@ -725,20 +639,6 @@ namespace components
 		// *
 		// *
 
-		dvars::gui_resize_dockspace = dvars::register_bool(
-			/* name		*/ "gui_resize_dockspace",
-			/* default	*/ true,
-			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "resize dockspace if floating toolbar is enabled (for top-floating toolbar)");
-
-		dvars::gui_mainframe_background = dvars::register_int(
-			/* name		*/ "gui_mainframe_background",
-			/* default	*/ 0,
-			/* mins		*/ 0,
-			/* maxs		*/ 2,
-			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "Window to use as the main background. 0 = None, 1 = Grid, 2 = Camera");
-
 		dvars::gui_menubar_show_mouseorigin = dvars::register_bool(
 			/* name		*/ "gui_menubar_show_mouseorigin",
 			/* default	*/ true,
@@ -750,6 +650,12 @@ namespace components
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "draw gui fps within the camera window");
+
+		dvars::gui_use_new_filedialog = dvars::register_bool(
+			/* name		*/ "gui_use_new_filedialog",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "use new filedialogs, turn off to use windows file dialogs");
 
 
 		// *

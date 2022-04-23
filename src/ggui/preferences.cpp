@@ -101,6 +101,7 @@ namespace ggui
 			ImGui::title_with_seperator("New / Ported Features");
 			ImGui::Checkbox("Use new experimental surface-inspector", &dvars::gui_use_new_surfinspector->current.enabled); TT(dvars::gui_use_new_surfinspector->description);
 			ImGui::Checkbox("Use new vertex edit dialog", &dvars::gui_use_new_vertedit_dialog->current.enabled); TT(dvars::gui_use_new_vertedit_dialog->description);
+			ImGui::Checkbox("Use new file dialogs", &dvars::gui_use_new_filedialog->current.enabled); TT(dvars::gui_use_new_filedialog->description);
 
 			if (ImGui::Checkbox("Use new grid context menu", &dvars::gui_use_new_context_menu->current.enabled))
 			{

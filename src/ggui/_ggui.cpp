@@ -264,6 +264,31 @@ namespace ggui
 
 							break;
 					}
+
+					case FILE_DIALOG_HANDLER::MAP_EXPORT:
+					{
+							std::string file_path = path_out;
+							if (!file_path.ends_with(".map"))
+							{
+								file_path += ".map";
+							}
+
+							const char* file_path_str = file_path.c_str();
+							const static uint32_t map_write_selection_func = 0x488EB0;
+							__asm
+							{
+								pushad;
+								mov		edi, file_path_str;
+								call	map_write_selection_func;
+								popad;
+							}
+
+							// fix stuck left mouse button
+							ImGuiIO& io = ImGui::GetIO();
+							io.AddMouseButtonEvent(0, false);
+
+							break;
+					}
 				}
 			}
 		}
