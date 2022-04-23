@@ -77,7 +77,7 @@
 #include "common/imgui/imgui_addons.hpp"
 #include "common/imgui/imgui_color_gradient.hpp"
 #include "common/imgui/imgui_curves.hpp"
-#include "common/imgui/l2d_file_dialog.hpp"
+
 #include "detours/Detours.h"
 #include "fifo_map.hpp"
 
@@ -129,6 +129,7 @@
 #include "ggui/filter.hpp"
 #include "ggui/grid.hpp"
 #include "ggui/hotkeys.hpp"
+#include "ggui/l2d_file_dialog.hpp"
 #include "ggui/menubar.hpp"
 #include "ggui/vertex_edit.hpp"
 #include "ggui/modelselector.hpp"

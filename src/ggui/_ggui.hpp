@@ -16,6 +16,12 @@ namespace ggui
 		MAINFRAME_STD = 2,
 		CDECLCALL = 3,
 	};
+
+	enum FILE_DIALOG_HANDLER
+	{
+		MAP_LOAD = 0,
+		MAP_SAVE = 1,
+	};
 	
 	#define mainframe_thiscall(return_val, addr)	\
 		utils::hook::call<return_val(__fastcall)(cmainframe*)>(addr)(cmainframe::activewnd)

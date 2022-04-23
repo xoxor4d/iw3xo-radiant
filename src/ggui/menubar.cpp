@@ -71,16 +71,36 @@ namespace ggui
 				if (ImGui::MenuItem("Open", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) 
 				{
 					//cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
+					//ImGui::FileDialog::file_dialog_open = true;
 
-					ImGui::FileDialog::file_dialog_open = true;
+					const auto egui = GET_GUI(ggui::entity_dialog);
+					const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+					const auto file = GET_GUI(ggui::file_dialog);
+					file->set_default_path(path_str);
+					file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_LOAD);
+					file->set_file_op_type(file_dialog::FileDialogType::OpenFile);
+					file->set_file_ext(".map");
+					file->open();
 				}
 
 				if (ImGui::MenuItem("Save", ggui::hotkey_dialog::get_hotkey_for_command("FileSave").c_str())) {
 					cdeclcall(void, 0x423B80); //cmainframe::OnFileSave
 				}
 
-				if (ImGui::MenuItem("Save As")) {
-					cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
+				if (ImGui::MenuItem("Save As")) 
+				{
+					//cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
+
+					const auto egui = GET_GUI(ggui::entity_dialog);
+					const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+					const auto file = GET_GUI(ggui::file_dialog);
+					file->set_default_path(path_str);
+					file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_SAVE);
+					file->set_file_op_type(file_dialog::FileDialogType::SaveFile);
+					file->set_file_ext(".map");
+					file->open();
 				}
 
 				if (ImGui::MenuItem("Save Selected")) {

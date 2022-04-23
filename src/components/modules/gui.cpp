@@ -418,9 +418,6 @@ namespace components
 			// docking, default layout ... 
 			handle_dockspace();
 
-			ggui::file_dialog_frame();
-
-
 			// -
 			// separate windows for grid/camera if not used as background
 #if 0
@@ -454,6 +451,9 @@ namespace components
 					module->frame();
 				}
 			}
+
+			// handle file dialogs
+			ggui::file_dialog_frame();
 
 			// hide external console if it is visible
 			if(const auto con = GetConsoleWindow(); 

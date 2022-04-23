@@ -151,14 +151,14 @@ namespace ggui
 		GET_GUI(ggui::grid_dialog)->rtt_set_lmb_capturing(false);
 	}
 
-	void mru_new_item(game::LPMRUMENU* mru, const char* str)
+	void mru_new_item(game::LPMRUMENU* mru, const char* item_str)
 	{
 		const static uint32_t func_addr = 0x48A2C0;
 		__asm
 		{
 			pushad;
 			mov		esi, mru;
-			push	str;
+			push	item_str;
 			call	func_addr;
 			add     esp, 4;
 			popad;
@@ -191,31 +191,76 @@ namespace ggui
 		}
 	}
 
+	void map_save_file(const char* path /*ecx*/, int is_reg, int save_to_perforce)
+	{
+		const static uint32_t func_addr = 0x486C00;
+		__asm
+		{
+			pushad;
+			mov		ecx, path;
+			push	save_to_perforce;
+			push	is_reg;
+			call	func_addr;
+			add		esp, 8;
+			popad;
+		}
+	}
+
+	void mru_add_recent_map(const char* map_str)
+	{
+		mru_new_item(game::g_qeglobals->d_lpMruMenu, map_str);
+		const auto menu = GetSubMenu(GetMenu(game::g_qeglobals->d_hwndMain), 0);
+		mru_insert_item(game::g_qeglobals->d_lpMruMenu, menu);
+	}
+
 	void file_dialog_frame()
 	{
-		if (ImGui::FileDialog::file_dialog_open)
+		const auto file = GET_GUI(ggui::file_dialog);
+		if (file->is_active() && file->dialog())
 		{
-			const auto egui = GET_GUI(ggui::entity_dialog);
-			std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
-
-			if(ImGui::FileDialog::ShowFileDialog(&ImGui::FileDialog::file_dialog_open, path_str, ImGui::FileDialog::FileDialogType::OpenFile, "map"))
+			if(const std::string path_out = file->get_path_result();
+								!path_out.empty())
 			{
-				// checks for unsaved changes or if inside prefab 
-				if(!utils::hook::call<bool (__cdecl)()>(0x489D90)()
-					// loose changes modal 
-					|| utils::hook::call<bool (__cdecl)()>(0x49A030)())
+				switch(file->get_file_handler())
 				{
-					// leave all prefabs and go back to stacklevel 0
-					utils::hook::call<void (__cdecl)()>(0x489D50)();
+					case FILE_DIALOG_HANDLER::MAP_LOAD:
+					{
+							// checks for unsaved changes or if inside prefab 
+							if (!utils::hook::call<bool(__cdecl)()>(0x489D90)()
+								// loose changes modal 
+								|| utils::hook::call<bool(__cdecl)()>(0x49A030)())
+							{
+								// leave all prefabs and go back to stacklevel 0
+								utils::hook::call<void(__cdecl)()>(0x489D50)();
 
-					mru_new_item(game::g_qeglobals->d_lpMruMenu, path_str.c_str());
-					auto menu = GetSubMenu(GetMenu(game::g_qeglobals->d_hwndMain), 0);
-					mru_insert_item(game::g_qeglobals->d_lpMruMenu, menu);
+								mru_add_recent_map(path_out.c_str());
 
-					// Pointfile_Clear
-					utils::hook::call<void (__cdecl)()>(0x410600)();
+								// Pointfile_Clear
+								utils::hook::call<void(__cdecl)()>(0x410600)();
 
-					map_load_from_file(path_str.c_str());
+								map_load_from_file(path_out.c_str());
+							}
+							break;
+					}
+
+					case FILE_DIALOG_HANDLER::MAP_SAVE:
+					{
+							auto window = ImGui::GetCurrentWindow();
+							std::string file_path = path_out;
+							if(!file_path.ends_with(".map"))
+							{
+								file_path += ".map";
+							}
+
+							mru_add_recent_map(file_path.c_str());
+							map_save_file(file_path.c_str(), 0, 0);
+
+							//SetFocus(cmainframe::activewnd->GetWindow());
+							SetFocus(cmainframe::activewnd->m_pZWnd->GetWindow());
+							ImGui::FocusWindow(window);
+
+							break;
+					}
 				}
 			}
 		}
