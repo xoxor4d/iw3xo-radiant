@@ -47,10 +47,10 @@ namespace ggui
 		// *
 		// asm related
 
-
-
 		// *
 		// init
+
+		void	hooks();
 
 	private:
 		void build_eclass_context_new();

@@ -22,6 +22,8 @@ namespace ggui
 		MAP_LOAD = 0,
 		MAP_SAVE = 1,
 		MAP_EXPORT = 2,
+		MISC_MODEL = 3,
+		MISC_PREFAB = 4,
 	};
 	
 	#define mainframe_thiscall(return_val, addr)	\

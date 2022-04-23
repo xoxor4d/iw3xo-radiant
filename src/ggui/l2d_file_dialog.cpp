@@ -22,7 +22,7 @@ namespace ggui
 {
 	bool file_dialog::dialog()
 	{
-		bool result = false;
+		this->m_track_result = false;
 
 		// add dot to file ext. string
 		if (!this->get_file_ext().empty())
@@ -33,18 +33,17 @@ namespace ggui
 			}
 		}
 
-		ImGui::SetNextWindowSize(ImVec2(840.0f, 480.0f), ImGuiCond_Appearing);
+		ImGui::SetNextWindowSizeConstraints(ImVec2(640.0f, 420.0f), ImVec2(FLT_MAX, FLT_MAX));
+		ImGui::SetNextWindowSize(ImVec2(924.0f, 510.0f), ImGuiCond_Appearing);
 
 		std::string window_title = "Select a ";
-					window_title += !this->get_file_ext().empty() ? this->get_file_ext() + " " : "";
-					window_title += this->get_file_op_type() == FileDialogType::OpenFile ? "file" : "folder";
+		window_title += !this->get_file_ext().empty() ? this->get_file_ext() + " " : "";
+		window_title += this->get_file_op_type() == FileDialogType::SelectFolder ? "folder" : "file";
 
-		//const char* window_title = (this->get_file_op_type() == FileDialogType::OpenFile ? "Select a file" : "Select a folder");
-
-		if (!ImGui::Begin(window_title.c_str(), this->get_p_open(), ImGuiWindowFlags_NoScrollbar))
+		if (!ImGui::Begin(window_title.c_str(), this->get_p_open(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking))
 		{
-			ImGui::PopStyleVar();
 			ImGui::End();
+			return false;
 		}
 
 		static std::vector<std::filesystem::directory_entry> files;
@@ -87,6 +86,14 @@ namespace ggui
 		const auto left_child_size = ImClamp(ImVec2(content_size.x * 0.25f, content_size.y - 112.0f), ImVec2(100, 0), ImVec2(250.0f, 99999.0f));
 		const auto right_child_size = ImVec2(content_size.x - left_child_size.x - 20.0f, left_child_size.y);
 
+		if (ImGui::Button("<"))
+		{
+			this->m_current_path = std::filesystem::path(this->m_current_path).parent_path().string();
+			this->m_update_files_and_folders = true;
+		}
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(ImGui::GetWindowWidth() - 6.0f - ImGui::GetCursorPos().x);
 
 		// display current path (editable)
 		std::string path_edit = this->m_current_path;
@@ -107,20 +114,30 @@ namespace ggui
 		// directories child
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(11.0f, 5.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 10.0f));
 		ImGui::BeginChild("Directories##1", left_child_size, true, ImGuiWindowFlags_HorizontalScrollbar);
 		{
-			if (ImGui::Selectable("..", false, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+			if (!this->m_current_path.empty())
 			{
-				if (ImGui::IsMouseDoubleClicked(0))
-				{
-					this->m_current_path = std::filesystem::path(this->m_current_path).parent_path().string();
-					this->m_update_files_and_folders = true;
-				}
+				ImGui::TextUnformatted("v");
+				ImGui::SameLine();
+				ImGui::PushFontFromIndex(ggui::BOLD_18PX);
+
+				const std::size_t pos = this->m_current_path.find_last_of('\\') + 1;
+				std::string parent_folder = this->m_current_path.substr(pos);
+
+				ImGui::TextUnformatted(parent_folder.c_str());
+				ImGui::PopFont();
 			}
+			else
+			{
+				ImGui::TextUnformatted("...");
+			}
+
 
 			for (size_t i = 0u; i < folders.size(); ++i)
 			{
-				if (ImGui::Selectable(folders[i].path().stem().string().c_str(), static_cast<int>(i) == this->m_folder_select_index, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
+				if (ImGui::Selectable(utils::va("| %s", folders[i].path().stem().string().c_str()), static_cast<int>(i) == this->m_folder_select_index, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
 				{
 					this->m_current_file = "";
 					if (ImGui::IsMouseDoubleClicked(0))
@@ -142,7 +159,15 @@ namespace ggui
 			}
 		}
 		ImGui::EndChild();
-		ImGui::PopStyleVar();
+		ImGui::PopStyleVar(2);
+
+
+
+
+		
+
+
+
 
 		// early out upon selecting a valid file or folder
 		bool early_out = false;
@@ -260,12 +285,21 @@ namespace ggui
 									this->m_save_file_name = this->m_current_file;
 									this->m_save_filename_valid = !this->m_save_file_name.empty();
 									this->m_current_folder = "";
-									
+
+									if(this->get_file_handler() == ggui::FILE_DIALOG_HANDLER::MISC_MODEL)
+									{
+										if(const auto msd = GET_GUI(ggui::modelselector_dialog);
+													  msd->is_active())
+										{
+											msd->set_bring_to_front(true);
+											msd->m_preview_model_name = this->m_current_file;
+										}
+									}
 
 									if (ImGui::IsMouseDoubleClicked(0))
 									{
-										result = this->selection_build_path_to_file();
-										if(result)
+										this->m_track_result = this->selection_build_path_to_file();
+										if (this->m_track_result)
 										{
 											ImGui::PopID(); // column
 											ImGui::PopID(); // row
@@ -294,7 +328,7 @@ namespace ggui
 								break;
 							}
 
-							if(early_out)
+							if (early_out)
 							{
 								break;
 							}
@@ -318,11 +352,11 @@ namespace ggui
 			}
 		}
 		ImGui::EndChild();
-
+		
 		if(early_out)
 		{
 			ImGui::End();
-			return result;
+			return this->m_track_result;
 		}
 
 		// #
@@ -385,63 +419,117 @@ namespace ggui
 			ImVec2 center(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x * 0.5f, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y * 0.5f);
 			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-			if (ImGui::BeginPopup("NewFolderPopup", ImGuiWindowFlags_Modal))
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 5.0f));
+			if (ImGui::BeginPopup("NewFolderPopup", ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoMove))
 			{
-				ImGui::Text("Enter a name for the new folder");
+				const ImGuiStyle& style = ImGui::GetStyle();
+
+				static float label_width = 120.0f;
+				ImGui::PushFontFromIndex(ggui::BOLD_18PX);
+				ImGui::SetCursorPosX((ImGui::GetWindowContentRegionWidth() - label_width + style.FramePadding.x) * 0.5f);
+				ImGui::TextUnformatted("Enter a name for the new folder");
+				label_width = ImGui::GetItemRectSize().x;
+				ImGui::PopFont();
+
+				ImGui::Spacing();
+
 				static char new_folder_name[500] = "";
 				static char new_folder_error[500] = "";
-				ImGui::InputText("##newfolder", new_folder_name, sizeof(new_folder_name));
 
-				if (ImGui::Button("Create##1"))
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetColorU32(ImGuiCol_Button));
+				ImGui::InputText("##newfolder", new_folder_name, sizeof(new_folder_name));
+				ImGui::PopStyleColor();
+
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 16);
+
+				static float modal_button_group_width = 100.0f;
+				ImGui::SetCursorPosX((ImGui::GetWindowContentRegionWidth() - modal_button_group_width + style.FramePadding.x) * 0.5f);
+				ImGui::BeginGroup();
 				{
-					if (strlen(new_folder_name) <= 0)
+					if (ImGui::Button("Create##1"))
 					{
-						strcpy_s(new_folder_error, "Folder name can't be empty");
+						if (strlen(new_folder_name) <= 0)
+						{
+							strcpy_s(new_folder_error, "Folder name can't be empty");
+						}
+						else
+						{
+							std::string new_file_path = this->m_current_path + (this->m_current_path.back() == '\\' ? "" : "\\") + new_folder_name;
+							std::filesystem::create_directory(new_file_path);
+
+							this->m_update_files_and_folders = true;
+							ImGui::CloseCurrentPopup();
+						}
 					}
-					else
+
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel##1"))
 					{
-						std::string new_file_path = this->m_current_path + (this->m_current_path.back() == '\\' ? "" : "\\") + new_folder_name;
-						std::filesystem::create_directory(new_file_path);
+						strcpy_s(new_folder_name, "");
+						strcpy_s(new_folder_error, "");
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::TextColored(ImColor(1.0f, 0.0f, 0.2f, 1.0f), new_folder_error);
+				}
+				ImGui::EndGroup();
+				modal_button_group_width = ImGui::GetItemRectSize().x;
+
+				ImGui::EndPopup();
+			}
+			ImGui::PopStyleVar();
+
+			ImGui::SetNextWindowSize(ImVec2(180.0f, 120.0f));
+			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 5.0f));
+			if (ImGui::BeginPopup("DeleteFolderPopup", ImGuiWindowFlags_Modal))
+			{
+				const ImGuiStyle& style = ImGui::GetStyle();
+
+				static float label_width = 120.0f;
+				ImGui::SetCursorPosX((ImGui::GetWindowContentRegionWidth() - label_width + style.FramePadding.x) * 0.5f);
+				ImGui::TextColored(ImColor(1.0f, 0.0f, 0.2f, 1.0f), "Delete this folder?");
+				label_width = ImGui::GetItemRectSize().x;
+
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6);
+
+				static float folder_str_width = 120.0f;
+				ImGui::SetCursorPosX((ImGui::GetWindowContentRegionWidth() - folder_str_width + style.FramePadding.x) * 0.5f);
+				ImGui::PushFontFromIndex(ggui::BOLD_18PX);
+				ImGui::TextUnformatted(this->m_current_folder.c_str());
+				folder_str_width = ImGui::GetItemRectSize().x;
+				ImGui::PopFont();
+				ImGui::AddUnterline(ImGui::GetColorU32(ImGuiCol_ButtonActive));
+
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 14);
+
+				static float modal_button_group_width = 100.0f;
+				ImGui::SetCursorPosX((ImGui::GetWindowContentRegionWidth() - modal_button_group_width + style.FramePadding.x) * 0.5f);
+				ImGui::BeginGroup();
+				{
+					if (ImGui::Button("Yes"))
+					{
+						std::filesystem::remove(this->m_current_path + (this->m_current_path.back() == '\\' ? "" : "\\") + this->m_current_folder);
+
+						this->m_update_files_and_folders = true;
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::SameLine();
+					if (ImGui::Button("No"))
+					{
 						ImGui::CloseCurrentPopup();
 					}
 				}
+				ImGui::EndGroup();
+				modal_button_group_width = ImGui::GetItemRectSize().x;
 
-				ImGui::SameLine();
-				if (ImGui::Button("Cancel##1"))
-				{
-					strcpy_s(new_folder_name, "");
-					strcpy_s(new_folder_error, "");
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::TextColored(ImColor(1.0f, 0.0f, 0.2f, 1.0f), new_folder_error);
 				ImGui::EndPopup();
 			}
-
-			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-			if (ImGui::BeginPopup("DeleteFolderPopup", ImGuiWindowFlags_Modal))
-			{
-				ImGui::TextColored(ImColor(1.0f, 0.0f, 0.2f, 1.0f), "Are you sure you want to delete this folder?");
-				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6);
-				ImGui::TextUnformatted(this->m_current_folder.c_str());
-				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6);
-				if (ImGui::Button("Yes"))
-				{
-					std::filesystem::remove(this->m_current_path + (this->m_current_path.back() == '\\' ? "" : "\\") + this->m_current_folder);
-					ImGui::CloseCurrentPopup();
-				}
-
-				ImGui::SameLine();
-				if (ImGui::Button("No"))
-				{
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::EndPopup();
-			}
+			ImGui::PopStyleVar();
 
 			
 			ImGui::SameLine(ImGui::GetWindowWidth() - right_align_group_width - 12.0f);
-
 			ImGui::BeginGroup();
 			{
 				const bool op_save = this->get_file_op_type() == FileDialogType::SaveFile;
@@ -449,7 +537,7 @@ namespace ggui
 				{
 					if (ImGui::Button(op_save ? "Save" : "Select"))
 					{
-						result = this->selection_build_path_to_file();
+						this->m_track_result = this->selection_build_path_to_file();
 					}
 				}
 				ImGui::EndDisabled();
@@ -459,6 +547,8 @@ namespace ggui
 				if (ImGui::Button("Cancel"))
 				{
 					this->reset();
+					this->m_was_canceled = true;
+					//this->m_track_result = true;
 				}
 			}
 			ImGui::EndGroup();
@@ -474,11 +564,13 @@ namespace ggui
 		bottom_align_group_height = ImGui::GetItemRectSize().y;
 
 		ImGui::End();
-		return result;
+		return this->m_track_result;
 	}
 
 	void file_dialog::on_open()
 	{
+		this->m_was_canceled = false;
+
 		// setup default path or use working directory
 		if (!this->m_initial_path_set && !get_default_path().empty())
 		{
@@ -511,7 +603,17 @@ namespace ggui
 
 	void file_dialog::on_close()
 	{
-
+		if(!this->m_fix_on_close)
+		{
+			if (!this->m_track_result)
+			{
+				this->m_was_canceled = true;
+			}
+		}
+		else
+		{
+			this->m_fix_on_close = false;
+		}
 	}
 
 	REGISTER_GUI(file_dialog);

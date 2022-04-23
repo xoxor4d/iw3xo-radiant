@@ -216,15 +216,17 @@ namespace ggui
 	void file_dialog_frame()
 	{
 		const auto file = GET_GUI(ggui::file_dialog);
-		if (file->is_active() && file->dialog())
+		if (file->is_active() && file->dialog() || file->was_canceled())
 		{
-			if(const std::string path_out = file->get_path_result();
-								!path_out.empty())
+			const std::string path_out = file->get_path_result();
+			const int handler = file->get_file_handler();
+
+			switch(handler)
 			{
-				switch(file->get_file_handler())
+				case MAP_LOAD:
 				{
-					case FILE_DIALOG_HANDLER::MAP_LOAD:
-					{
+						if (!file->was_canceled() && !path_out.empty())
+						{
 							// checks for unsaved changes or if inside prefab 
 							if (!utils::hook::call<bool(__cdecl)()>(0x489D90)()
 								// loose changes modal 
@@ -244,13 +246,17 @@ namespace ggui
 								ImGuiIO& io = ImGui::GetIO();
 								io.AddMouseButtonEvent(0, false);
 							}
-							break;
-					}
+						}
+						
+						break;
+				}
 
-					case FILE_DIALOG_HANDLER::MAP_SAVE:
-					{
+				case MAP_SAVE:
+				{
+						if (!file->was_canceled() && !path_out.empty())
+						{
 							std::string file_path = path_out;
-							if(!file_path.ends_with(".map"))
+							if (!file_path.ends_with(".map"))
 							{
 								file_path += ".map";
 							}
@@ -261,12 +267,15 @@ namespace ggui
 							// fix stuck left mouse button
 							ImGuiIO& io = ImGui::GetIO();
 							io.AddMouseButtonEvent(0, false);
+						}
 
-							break;
-					}
+						break;
+				}
 
-					case FILE_DIALOG_HANDLER::MAP_EXPORT:
-					{
+				case MAP_EXPORT:
+				{
+						if (!file->was_canceled() && !path_out.empty())
+						{
 							std::string file_path = path_out;
 							if (!file_path.ends_with(".map"))
 							{
@@ -286,10 +295,48 @@ namespace ggui
 							// fix stuck left mouse button
 							ImGuiIO& io = ImGui::GetIO();
 							io.AddMouseButtonEvent(0, false);
+						}
+
+						break;
+				}
+
+				case MISC_MODEL:
+				case MISC_PREFAB:
+				{
+						if(!file->was_canceled() && !path_out.empty())
+						{
+							const std::string replace_path = handler == MISC_MODEL ? "raw\\xmodel\\" : "map_source\\";
+							const std::size_t pos = path_out.find(replace_path) + replace_path.length();
+
+							std::string loc_filepath = path_out.substr(pos);
+							utils::replace(loc_filepath, "\\", "/");
+
+							const auto ent = GET_GUI(ggui::entity_dialog);
+							ent->add_prop("model", loc_filepath.c_str());
+
+							auto edit_ent = game::g_edit_entity();
+							++edit_ent->version;
+							edit_ent->modelClass = nullptr;
+							edit_ent->brushes.oprev->unk01 = 0;
+
+
+							// fix stuck left mouse button
+							ImGuiIO& io = ImGui::GetIO();
+							io.AddMouseButtonEvent(0, false);
 
 							break;
-					}
+						}
+						else
+						{
+							cdeclcall(void, 0x425690);
+						}
 				}
+			}
+
+			if(file->was_canceled())
+			{
+				file->reset();
+				file->fix_on_close();
 			}
 		}
 	}

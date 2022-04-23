@@ -53,6 +53,9 @@ namespace ggui
 		// persistent data after dialog was closed
 		std::string m_last_filepath;
 		int m_last_file_handler = 0;
+		bool m_was_canceled = false;
+		bool m_track_result = false;
+		bool m_fix_on_close = false;
 
 	public:
 		file_dialog()
@@ -75,6 +78,7 @@ namespace ggui
 			this->m_current_file = "";
 			this->m_current_folder = "";
 
+			this->m_was_canceled = false;
 			this->close();
 		}
 
@@ -124,6 +128,18 @@ namespace ggui
 		[[nodiscard]] int get_file_handler() const
 		{
 			return m_last_file_handler;
+		}
+
+		 
+		[[nodiscard]] bool was_canceled() const
+		{
+			return this->m_was_canceled;
+		}
+
+		// hack: do not re-set m_was_canceled
+		void fix_on_close()
+		{
+			this->m_fix_on_close = true;
 		}
 
 		bool selection_build_path_to_file()

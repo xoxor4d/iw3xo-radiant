@@ -190,7 +190,6 @@ namespace ggui
 		}
 	}
 
-
 	// right click context menu
 	void grid_dialog::context_menu()
 	{
@@ -613,6 +612,9 @@ namespace ggui
 	{ }
 
 	void grid_dialog::on_close()
+	{ }
+
+	void grid_dialog::hooks()
 	{ }
 
 	REGISTER_GUI(grid_dialog);

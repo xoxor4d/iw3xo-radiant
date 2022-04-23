@@ -707,6 +707,7 @@ namespace components
 
 		GET_GUI(ggui::entity_dialog)->hooks();
 		GET_GUI(ggui::filter_dialog)->hooks();
+		GET_GUI(ggui::grid_dialog)->hooks();
 		GET_GUI(ggui::hotkey_dialog)->hooks();
 		GET_GUI(ggui::preferences_dialog)->hooks();
 		GET_GUI(ggui::surface_dialog)->hooks();
