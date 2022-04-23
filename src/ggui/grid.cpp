@@ -262,6 +262,12 @@ namespace ggui
 
 						SEPERATORV(0.0f);
 
+						if (ImGui::MenuItem("Ungroup Entity"))
+						{
+							// CMainFrame::OnSelectionUngroupentity
+							cdeclcall(void, 0x426380);
+						} TT("eg: dismember a script_brushmodel to individual/normal brushes");
+
 						if(ImGui::MenuItem("Add Selection To Active Layer"))
 						{
 							// CXYWnd::OnSelectionAddToActiveLayer
@@ -407,6 +413,8 @@ namespace ggui
 
 				if(!grid_context_last_spawned_entity.empty())
 				{
+					SEPERATORV(0.0f);
+
 					const char* last_ent_str = grid_context_last_spawned_entity.c_str();
 					if (ImGui::MenuItem(last_ent_str))
 					{

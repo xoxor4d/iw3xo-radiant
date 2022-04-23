@@ -239,13 +239,16 @@ namespace ggui
 								utils::hook::call<void(__cdecl)()>(0x410600)();
 
 								map_load_from_file(path_out.c_str());
+
+								// fix stuck left mouse button
+								ImGuiIO& io = ImGui::GetIO();
+								io.AddMouseButtonEvent(0, false);
 							}
 							break;
 					}
 
 					case FILE_DIALOG_HANDLER::MAP_SAVE:
 					{
-							auto window = ImGui::GetCurrentWindow();
 							std::string file_path = path_out;
 							if(!file_path.ends_with(".map"))
 							{
@@ -255,9 +258,9 @@ namespace ggui
 							mru_add_recent_map(file_path.c_str());
 							map_save_file(file_path.c_str(), 0, 0);
 
-							//SetFocus(cmainframe::activewnd->GetWindow());
-							SetFocus(cmainframe::activewnd->m_pZWnd->GetWindow());
-							ImGui::FocusWindow(window);
+							// fix stuck left mouse button
+							ImGuiIO& io = ImGui::GetIO();
+							io.AddMouseButtonEvent(0, false);
 
 							break;
 					}
