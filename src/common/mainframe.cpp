@@ -903,8 +903,13 @@ void cmainframe::register_dvars()
 		/* desc		*/ "show the menubar");
 }
 
+const COLORREF CFRAMEWND_BK_COL = RGB(44, 44, 44);
+
 void cmainframe::hooks()
 {
+	// change mainframe background color (visible on startup)
+	utils::hook::set(0x4217F3 + 1, CFRAMEWND_BK_COL);
+
 	// hook continuous thread
 	utils::hook(0x421A90, cmainframe::hk_routine_processing, HOOK_JUMP).install()->quick();
 
