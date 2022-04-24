@@ -70,6 +70,7 @@ namespace ggui
 
 				if (ImGui::MenuItem("Open", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) 
 				{
+					// logic :: ggui::file_dialog_frame
 					if(dvars::gui_use_new_filedialog->current.enabled)
 					{
 						const auto egui = GET_GUI(ggui::entity_dialog);
@@ -94,6 +95,7 @@ namespace ggui
 
 				if (ImGui::MenuItem("Save As")) 
 				{
+					// logic :: ggui::file_dialog_frame
 					if (dvars::gui_use_new_filedialog->current.enabled)
 					{
 						const auto egui = GET_GUI(ggui::entity_dialog);
@@ -139,6 +141,7 @@ namespace ggui
 				{
 					if (ImGui::MenuItem("Save Selected"))
 					{
+						// logic :: ggui::file_dialog_frame
 						if (dvars::gui_use_new_filedialog->current.enabled)
 						{
 							const auto egui = GET_GUI(ggui::entity_dialog);

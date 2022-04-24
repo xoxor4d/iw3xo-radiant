@@ -301,11 +301,16 @@ namespace ggui
 				}
 
 				case MISC_MODEL:
+				case MISC_MODEL_CHANGE:
 				case MISC_PREFAB:
+				case MISC_PREFAB_CHANGE:
 				{
+						const bool is_model = (handler == MISC_MODEL || handler == MISC_MODEL_CHANGE);
+						const bool is_changing = (handler == MISC_MODEL_CHANGE || handler == MISC_PREFAB_CHANGE);
+
 						if(!file->was_canceled() && !path_out.empty())
 						{
-							const std::string replace_path = handler == MISC_MODEL ? "raw\\xmodel\\" : "map_source\\";
+							const std::string replace_path = is_model ? "raw\\xmodel\\" : "map_source\\";
 							const std::size_t pos = path_out.find(replace_path) + replace_path.length();
 
 							std::string loc_filepath = path_out.substr(pos);
@@ -314,10 +319,13 @@ namespace ggui
 							const auto ent = GET_GUI(ggui::entity_dialog);
 							ent->add_prop("model", loc_filepath.c_str());
 
-							auto edit_ent = game::g_edit_entity();
-							++edit_ent->version;
-							edit_ent->modelClass = nullptr;
-							edit_ent->brushes.oprev->unk01 = 0;
+							if(!is_changing)
+							{
+								auto edit_ent = game::g_edit_entity();
+								++edit_ent->version;
+								edit_ent->modelClass = nullptr;
+								edit_ent->brushes.oprev->unk01 = 0;
+							}
 
 
 							// fix stuck left mouse button
@@ -328,8 +336,34 @@ namespace ggui
 						}
 						else
 						{
-							cdeclcall(void, 0x425690);
+							if(!is_changing)
+							{
+								cdeclcall(void, 0x425690);
+							}
 						}
+				}
+
+				case FX_CHANGE:
+				{
+					if (!file->was_canceled() && !path_out.empty())
+					{
+						const std::string replace_path = "raw\\fx\\";
+						const std::size_t pos = path_out.find(replace_path) + replace_path.length();
+
+						std::string loc_filepath = path_out.substr(pos);
+						utils::replace(loc_filepath, "\\", "/");
+						utils::erase_substring(loc_filepath, ".efx"s);
+
+						const auto ent = GET_GUI(ggui::entity_dialog);
+						ent->add_prop("fx", loc_filepath.c_str());
+
+
+						// fix stuck left mouse button
+						ImGuiIO& io = ImGui::GetIO();
+						io.AddMouseButtonEvent(0, false);
+
+						break;
+					}
 				}
 			}
 

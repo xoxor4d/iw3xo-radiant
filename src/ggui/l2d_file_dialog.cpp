@@ -548,20 +548,19 @@ namespace ggui
 				{
 					this->reset();
 					this->m_was_canceled = true;
-					//this->m_track_result = true;
 				}
 			}
 			ImGui::EndGroup();
 			right_align_group_width = ImGui::GetItemRectSize().x;
-
-
-			if (strlen(this->m_error) > 0)
-			{
-				ImGui::TextColored(ImColor(1.0f, 0.0f, 0.2f, 1.0f), this->m_error);
-			}
 		}
 		ImGui::EndGroup();
 		bottom_align_group_height = ImGui::GetItemRectSize().y;
+
+		// currently renders "out of bounds"
+		if (strlen(this->m_error) > 0)
+		{
+			ImGui::TextColored(ImColor(1.0f, 0.0f, 0.2f, 1.0f), this->m_error);
+		}
 
 		ImGui::End();
 		return this->m_track_result;

@@ -774,70 +774,112 @@ namespace ggui
 	{
 		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
 		{
-			char filename[MAX_PATH];
-			OPENFILENAMEA ofn;
-			ZeroMemory(&filename, sizeof(filename));
-			ZeroMemory(&ofn, sizeof(ofn));
-
-			ofn.lStructSize = sizeof(ofn);
-			ofn.hwndOwner = cmainframe::activewnd->GetWindow();
-			ofn.lpstrFilter = "Effect Files\0*.efx\0Any File\0*.*\0";
-			ofn.lpstrFile = filename;
-			ofn.nMaxFile = MAX_PATH;
-			ofn.lpstrTitle = "Select an effect ...";
-			ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
-
-			if (GetOpenFileNameA(&ofn))
+			// logic :: ggui::file_dialog_frame
+			if (dvars::gui_use_new_filedialog->current.enabled)
 			{
-				const std::string filepath = filename;
-				const std::string replace_path = "raw\\fx\\";
+				std::string path_str;
 
-				std::size_t pos = filepath.find(replace_path) + replace_path.length();
-				std::string loc_filepath = filepath.substr(pos);
-				utils::erase_substring(loc_filepath, ".efx"s);
+				const auto egui = GET_GUI(ggui::entity_dialog);
+				path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+				path_str += "\\raw\\fx\\";
+				
 
-				add_prop(epw.epair->key, loc_filepath.c_str());
-
-				// stop old effect
-				components::command::execute("fx_stop");
+				const auto file = GET_GUI(ggui::file_dialog);
+				file->set_default_path(path_str);
+				file->set_file_handler(FX_CHANGE);
+				file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+				file->set_file_ext(".efx");
+				file->open();
 			}
 			else
 			{
-				//game::printf_to_console("filedialog: canceled");
+				char filename[MAX_PATH];
+				OPENFILENAMEA ofn;
+				ZeroMemory(&filename, sizeof(filename));
+				ZeroMemory(&ofn, sizeof(ofn));
+
+				ofn.lStructSize = sizeof(ofn);
+				ofn.hwndOwner = cmainframe::activewnd->GetWindow();
+				ofn.lpstrFilter = "Effect Files\0*.efx\0Any File\0*.*\0";
+				ofn.lpstrFile = filename;
+				ofn.nMaxFile = MAX_PATH;
+				ofn.lpstrTitle = "Select an effect ...";
+				ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
+
+				if (GetOpenFileNameA(&ofn))
+				{
+					const std::string filepath = filename;
+					const std::string replace_path = "raw\\fx\\";
+
+					std::size_t pos = filepath.find(replace_path) + replace_path.length();
+					std::string loc_filepath = filepath.substr(pos);
+					utils::erase_substring(loc_filepath, ".efx"s);
+
+					add_prop(epw.epair->key, loc_filepath.c_str());
+
+					// stop old effect
+					components::command::execute("fx_stop");
+				}
 			}
 		}
 	}
 
+	// both misc_model and misc_prefab
 	void entity_dialog::gui_entprop_model_fileprompt(const epair_wrapper& epw, [[maybe_unused]] int row)
 	{
 		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
 		{
-			char filename[MAX_PATH];
-			OPENFILENAMEA ofn;
-			ZeroMemory(&filename, sizeof(filename));
-			ZeroMemory(&ofn, sizeof(ofn));
-
-			ofn.lStructSize = sizeof(ofn);
-			ofn.hwndOwner = cmainframe::activewnd->GetWindow();
-			ofn.lpstrFilter = "Any File\0*.*\0";
-			ofn.lpstrFile = filename;
-			ofn.nMaxFile = MAX_PATH;
-			ofn.lpstrTitle = "Select a XModel ...";
-			ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
-
-			if (GetOpenFileNameA(&ofn))
+			// logic :: ggui::file_dialog_frame
+			if (dvars::gui_use_new_filedialog->current.enabled)
 			{
-				const std::string filepath = filename;
-				const std::string replace_path = "raw\\xmodel\\";
+				std::string path_str;
 
-				std::size_t pos = filepath.find(replace_path) + replace_path.length();
-				std::string loc_filepath = filepath.substr(pos);
+				const auto egui = GET_GUI(ggui::entity_dialog);
+				const bool is_prefab = (game::g_edit_entity()->eclass->classtype & 0x10) != 0; // CLASS_PREFAB
 
-				add_prop(epw.epair->key, loc_filepath.c_str());
+				if (is_prefab)
+				{
+					path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+					path_str += "\\prefabs\\";
+				}
+				else
+				{
+					path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+					path_str += "\\raw\\xmodel\\";
+				}
+
+				const auto file = GET_GUI(ggui::file_dialog);
+				file->set_default_path(path_str);
+				file->set_file_handler(is_prefab ? ggui::FILE_DIALOG_HANDLER::MISC_PREFAB_CHANGE : ggui::FILE_DIALOG_HANDLER::MISC_MODEL_CHANGE);
+				file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+				file->set_file_ext(is_prefab ? ".map" : "");
+				file->open();
 			}
 			else
 			{
-				//game::printf_to_console("filedialog: canceled");
+				char filename[MAX_PATH];
+				OPENFILENAMEA ofn;
+				ZeroMemory(&filename, sizeof(filename));
+				ZeroMemory(&ofn, sizeof(ofn));
+
+				ofn.lStructSize = sizeof(ofn);
+				ofn.hwndOwner = cmainframe::activewnd->GetWindow();
+				ofn.lpstrFilter = "Any File\0*.*\0";
+				ofn.lpstrFile = filename;
+				ofn.nMaxFile = MAX_PATH;
+				ofn.lpstrTitle = "Select a XModel ...";
+				ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
+
+				if (GetOpenFileNameA(&ofn))
+				{
+					const std::string filepath = filename;
+					const std::string replace_path = "raw\\xmodel\\";
+
+					std::size_t pos = filepath.find(replace_path) + replace_path.length();
+					std::string loc_filepath = filepath.substr(pos);
+
+					add_prop(epw.epair->key, loc_filepath.c_str());
+				}
 			}
 		}
 	}

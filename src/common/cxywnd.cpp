@@ -64,6 +64,7 @@ bool g_block_radiant_modeldialog = false;
 
 void create_entity_from_name_intercept()
 {
+	// logic :: ggui::file_dialog_frame
 	if (dvars::gui_use_new_filedialog->current.enabled)
 	{
 		std::string path_str;

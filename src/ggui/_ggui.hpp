@@ -23,7 +23,10 @@ namespace ggui
 		MAP_SAVE = 1,
 		MAP_EXPORT = 2,
 		MISC_MODEL = 3,
-		MISC_PREFAB = 4,
+		MISC_MODEL_CHANGE = 4,
+		MISC_PREFAB = 5,
+		MISC_PREFAB_CHANGE = 6,
+		FX_CHANGE = 10,
 	};
 	
 	#define mainframe_thiscall(return_val, addr)	\
