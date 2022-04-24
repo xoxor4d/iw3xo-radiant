@@ -3,6 +3,90 @@
 
 namespace ggui
 {
+	const entity_dialog::template_kvp eclass_worldspawn_templates[] =
+	{
+		{ "_color", "0.9 0.9 1.0" },
+		{ "ambient", "0.2" },
+		{ "bouncefraction", "0.2" },
+		{ "contrastgain", "0.3" },
+		{ "diffusefraction", "0.5" },
+		{ "radiosityscale", "1.4" },
+		{ "suncolor", "1.0 0.9 0.8" },
+		{ "sundiffusecolor", "0.95 0.8 0.85" },
+		{ "sundirection", "-60.0 275.0 0.0" },
+		{ "sunlight", "2.4" },
+		{ "sunradiosity", "1.5" },
+		{ "sunIsPrimaryLight", "1" },
+	};
+
+	const entity_dialog::template_kvp eclass_light_templates[] =
+	{
+		{ "_color", "1.0 1.0 1.0" },
+		{ "exponent", "1.0" },
+		{ "def", "light_point_linear" },
+		{ "fov_inner", "60.0" },
+		{ "fov_outer", "90.0" },
+		{ "intensity", "1.0" },
+		{ "radius", "400" },
+	};
+
+	const entity_dialog::template_kvp eclass_trigger_templates[] =
+	{
+		{ "cursorhint", "HINT_ACTIVATE" },
+		{ "delay", "1" },
+		{ "hintstring", "my hintstring" },
+		{ "target", "my_target" },
+		{ "targetname", "my_targetname" },
+	};
+
+	const entity_dialog::template_kvp eclass_misc_templates[] =
+	{
+		{ "model", "axis" },
+		{ "modelscale", "1" },
+		{ "target", "my_target" },
+		{ "targetname", "my_targetname" },
+	};
+
+	const entity_dialog::template_kvp eclass_generic_templates[] =
+	{
+		{ "target", "my_target" },
+		{ "targetname", "my_targetname" },
+	};
+
+	void entity_dialog::get_eclass_template(const template_kvp*& tkvp, int* size_out)
+	{
+		const auto eent = game::g_edit_entity();
+
+		const auto ctype = static_cast<ECLASS_TYPE>(eent->eclass->classtype);
+		const bool is_trigger = utils::starts_with(eent->eclass->name, "trigger_");
+
+		if (is_trigger || ctype & (CLASS_TRIGGER_RADIUS | CLASS_TRIGGER_DISC))
+		{
+			tkvp = eclass_trigger_templates;
+			*size_out = IM_ARRAYSIZE(eclass_trigger_templates);
+		}
+		else if (ctype & CLASS_LIGHT)
+		{
+			tkvp = eclass_light_templates;
+			*size_out = IM_ARRAYSIZE(eclass_light_templates);
+		}
+		else if ((ctype & CLASS_WORLDSPAWN) == 0)
+		{
+			tkvp = eclass_worldspawn_templates;
+			*size_out = IM_ARRAYSIZE(eclass_worldspawn_templates);
+		}
+		else if (ctype & (CLASS_MODEL | CLASS_PREFAB))
+		{
+			tkvp = eclass_misc_templates;
+			*size_out = IM_ARRAYSIZE(eclass_misc_templates);
+		}
+		else
+		{
+			tkvp = eclass_generic_templates;
+			*size_out = IM_ARRAYSIZE(eclass_generic_templates);
+		}
+	}
+
 	// *
 	// Helper functions
 
@@ -835,7 +919,7 @@ namespace ggui
 				std::string path_str;
 
 				const auto egui = GET_GUI(ggui::entity_dialog);
-				const bool is_prefab = (game::g_edit_entity()->eclass->classtype & 0x10) != 0; // CLASS_PREFAB
+				const bool is_prefab = (game::g_edit_entity()->eclass->classtype & 0x10) != 0;
 
 				if (is_prefab)
 				{
@@ -1182,6 +1266,7 @@ namespace ggui
 									eprop.type = EPAIR_VALUETYPE::ORIGIN;
 									eprop_sorted.push_back(eprop);
 									continue;
+									continue;
 								}
 
 								if (key == "angles")
@@ -1474,10 +1559,48 @@ namespace ggui
 			if (const auto	 selbrush = game::g_selected_brushes();
 							(selbrush && selbrush->def) || (m_sel_list_ent && !_stricmp(m_sel_list_ent->name, "worldspawn")))
 			{
-				if (ImGui::Button("Add new key-value pair", ImVec2(-6.0f, 0.0f)))
+				const auto pbutton_cursorpos = ImGui::GetCursorPos();
+				if (ImGui::Button("Add new key-value pair", ImVec2(-38.0f, 0.0f)))
 				{
 					kvp_helper._in_use = true;
 					kvp_helper.key_set_focus = true;
+				}
+
+				ImGui::SetCursorPos(ImVec2(pbutton_cursorpos.x + ImGui::GetItemRectSize().x + 6.0f, pbutton_cursorpos.y));
+
+				// #
+
+				if (ImGui::BeginCombo("##kvp_combo", nullptr, ImGuiComboFlags_NoPreview | ImGuiComboFlags_PopupAlignLeft)) // The second parameter is the label previewed before opening the combo.
+				{
+					const auto edit_entity = game::g_edit_entity();
+
+					int   template_size = 0;
+					const template_kvp* templates = nullptr;
+
+					if (edit_entity && edit_entity->eclass && edit_entity->epairs)
+					{
+						int vis_count = 0;
+						entity_dialog::get_eclass_template(templates, &template_size);
+
+						for (int n = 0; n < template_size; n++)
+						{
+							if (!has_key_value_pair(edit_entity, templates[n].key))
+							{
+								vis_count++;
+								if (ImGui::Selectable(templates[n].key))
+								{
+									add_prop(templates[n].key, templates[n].val);
+								}
+							}
+						}
+
+						if (!vis_count)
+						{
+							ImGui::TextUnformatted("...");
+						}
+					}
+
+					ImGui::EndCombo();
 				}
 			}
 

@@ -653,6 +653,7 @@ namespace ggui
 				ggui::dragdrop_reset_leftmouse_capture();
 
 				ggui::entity_dialog::addprop_helper_s no_undo = {};
+				bool trace_hit_void = false;
 
 				if (m_selector->m_overwrite_selection)
 				{
@@ -709,7 +710,7 @@ namespace ggui
 					game::Trace_AllDirectionsIfFailed(cmainframe::activewnd->m_pCamWnd->camera.origin, &trace, dir, 0x1200);
 
 					float origin[3];
-
+		
 					// if trace hit something other then the void
 					if (trace.brush)
 					{
@@ -718,6 +719,8 @@ namespace ggui
 					// if trace hit nothing, spawn model infront of the camera
 					else
 					{
+						trace_hit_void = true;
+
 						float dist = 100.0f;
 						if (const auto	model = m_selector->m_preview_model_ptr;
 										model)
@@ -735,6 +738,13 @@ namespace ggui
 					}
 
 					game::Undo_End();
+				}
+
+				// only drop if trace hit something
+				if(!trace_hit_void)
+				{
+					// CMainFrame::OnDropSelected
+					cdeclcall(void, 0x425BE0);
 				}
 
 				accepted_dragdrop = true;

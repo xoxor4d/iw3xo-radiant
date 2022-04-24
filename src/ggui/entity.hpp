@@ -4,7 +4,6 @@ namespace ggui
 {
 	class entity_dialog final : public ggui::ggui_module
 	{
-	private:
 		enum EPAIR_VALUETYPE
 		{
 			TEXT = 0,
@@ -66,6 +65,25 @@ namespace ggui
 
 
 	public:
+		struct template_kvp
+		{
+			const char* key;
+			const char* val;
+		};
+
+		enum ECLASS_TYPE : int
+		{
+			CLASS_LIGHT = 0x1,
+			CLASS_WORLDSPAWN = 0x2,
+			CLASS_PATH = 0x4,
+			CLASS_MODEL = 0x8,
+			CLASS_PREFAB = 0x10,
+			CLASS_NODE = 0x20,
+			CLASS_TRIGGER_RADIUS = 0x40,
+			CLASS_TRIGGER_DISC = 0x80,
+			CLASS_REFLECTION_PROBE = 0x100,
+		};
+
 		struct addprop_helper_s
 		{
 			bool is_origin;
@@ -80,7 +98,7 @@ namespace ggui
 		game::eclass_t* m_edit_entity_class;
 		bool m_edit_entity_changed;
 		bool m_edit_entity_changed_should_scroll;
-		bool m_checkboxflags_states[12];
+		bool m_checkboxflags_states[12] = {};
 
 		entity_dialog()
 		{
@@ -122,6 +140,7 @@ namespace ggui
 		void	hooks();
 
 	private:
+		void	get_eclass_template(const template_kvp*& tkvp, int* size_out);
 		void	separator_for_treenode();
 		bool	drag_float_helper_undo(addprop_helper_s* helper, const char* label, float* v, float v_speed, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
 		bool	color_edit3_helper_undo(addprop_helper_s* helper, const char* label, float col[3], ImGuiColorEditFlags flags = 0);

@@ -64,35 +64,38 @@ bool g_block_radiant_modeldialog = false;
 
 void create_entity_from_name_intercept()
 {
-	// logic :: ggui::file_dialog_frame
-	if (dvars::gui_use_new_filedialog->current.enabled)
+	if(!g_block_radiant_modeldialog)
 	{
-		std::string path_str;
-
-		const auto egui = GET_GUI(ggui::entity_dialog);
-		const bool is_prefab = (game::g_edit_entity()->eclass->classtype & 0x10) != 0; // CLASS_PREFAB
-
-		if (is_prefab) 
+		// logic :: ggui::file_dialog_frame
+		if (dvars::gui_use_new_filedialog->current.enabled)
 		{
-			path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
-			path_str += "\\prefabs\\";
+			std::string path_str;
+
+			const auto egui = GET_GUI(ggui::entity_dialog);
+			const bool is_prefab = (game::g_edit_entity()->eclass->classtype & 0x10) != 0; // CLASS_PREFAB
+
+			if (is_prefab)
+			{
+				path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+				path_str += "\\prefabs\\";
+			}
+			else
+			{
+				path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+				path_str += "\\raw\\xmodel\\";
+			}
+
+			const auto file = GET_GUI(ggui::file_dialog);
+			file->set_default_path(path_str);
+			file->set_file_handler(is_prefab ? ggui::FILE_DIALOG_HANDLER::MISC_PREFAB : ggui::FILE_DIALOG_HANDLER::MISC_MODEL);
+			file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+			file->set_file_ext(is_prefab ? ".map" : "");
+			file->open();
 		}
 		else
 		{
-			path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
-			path_str += "\\raw\\xmodel\\";
+			PostMessageA(game::g_qeglobals->d_hwndEntity, WM_COMMAND, 0x50E, 0); // IDC_E_ADD_MODEL
 		}
-
-		const auto file = GET_GUI(ggui::file_dialog);
-		file->set_default_path(path_str);
-		file->set_file_handler(is_prefab ? ggui::FILE_DIALOG_HANDLER::MISC_PREFAB : ggui::FILE_DIALOG_HANDLER::MISC_MODEL);
-		file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
-		file->set_file_ext(is_prefab ? ".map" : "");
-		file->open();
-	}
-	else if(!g_block_radiant_modeldialog)
-	{
-		PostMessageA(game::g_qeglobals->d_hwndEntity, WM_COMMAND, 0x50E, 0); // IDC_E_ADD_MODEL
 	}
 }
 
