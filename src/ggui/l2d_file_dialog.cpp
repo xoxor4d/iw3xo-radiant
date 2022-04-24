@@ -404,12 +404,21 @@ namespace ggui
 				this->m_save_file_name = this->m_current_file;
 
 				ImGui::SetNextItemWidth(calc_width);
-				if (ImGui::InputText("##filename", &m_save_file_name/*, ImGuiInputTextFlags_EnterReturnsTrue*/))
+				if (ImGui::InputText("##filename", &m_save_file_name))
 				{
 					this->m_save_filename_valid = !this->m_save_file_name.empty();
 					if(this->m_save_filename_valid)
 					{
 						this->m_current_file = this->m_save_file_name;
+					}
+				}
+
+				// check if enter was pressed
+				if(ImGui::IsItemDeactivatedAfterEdit()) 
+				{
+					if (this->m_save_filename_valid)
+					{
+						this->m_track_result = this->selection_build_path_to_file();
 					}
 				}
 			}

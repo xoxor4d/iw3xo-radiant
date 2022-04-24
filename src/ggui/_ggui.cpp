@@ -206,6 +206,18 @@ namespace ggui
 		}
 	}
 
+	void map_write_selection(const char* path)
+	{
+		const static uint32_t func_addr = 0x488EB0;
+		__asm
+		{
+			pushad;
+			mov		edi, path;
+			call	func_addr;
+			popad;
+		}
+	}
+
 	void mru_add_recent_map(const char* map_str)
 	{
 		mru_new_item(game::g_qeglobals->d_lpMruMenu, map_str);
@@ -282,15 +294,7 @@ namespace ggui
 								file_path += ".map";
 							}
 
-							const char* file_path_str = file_path.c_str();
-							const static uint32_t map_write_selection_func = 0x488EB0;
-							__asm
-							{
-								pushad;
-								mov		edi, file_path_str;
-								call	map_write_selection_func;
-								popad;
-							}
+							map_write_selection(file_path.c_str());
 
 							// fix stuck left mouse button
 							ImGuiIO& io = ImGui::GetIO();
