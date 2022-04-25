@@ -2205,6 +2205,11 @@ namespace components
 		}
 	}
 
+	// -------------------------------------------------------------------------------
+
+	constexpr unsigned int TESS_INDICES_AMOUNT = 1048576;
+	unsigned __int16 tess_indices_reloc[TESS_INDICES_AMOUNT] = {}; // og: 32704 // iw3: 1048576
+
 #if 0 // working fine but no need when we can use the original (here to stay for debugging purposes)
 	void RB_BeginSurface(game::Material* material, game::MaterialTechniqueType tech)
 	{
@@ -2404,7 +2409,8 @@ namespace components
 					{
 						do
 						{
-							tess.indices[v14 + tess.indexCount] = v12 + *(WORD*)(mesh->unk3 + 2 * v14);
+							tess_indices_reloc[v14 + tess.indexCount] = v12 + *(WORD*)(mesh->unk3 + 2 * v14);
+							//tess.indices[v14 + tess.indexCount] = v12 + *(WORD*)(mesh->unk3 + 2 * v14);
 							++v14;
 
 						} while (v14 < (unsigned __int16)mesh->indexCount);
@@ -2455,7 +2461,11 @@ namespace components
 
 					//R_DrawXModelSkinnedUncached_2(indexa->xsurf, indexa->___u3.skinnedVert);
 					utils::hook::call<void(__cdecl)(game::XSurface*, game::GfxPackedVertex*)>(0x53AA30)(mSurf->xsurf, mSurf->___u3.skinnedVert);
-					
+
+					// ^ above function does not check amount of indices before memcpy so it can corrupt data past the indices array boundaries
+					// dirty hack but works
+					auto x = tess.indexCount; //  = 0;
+					auto y = tess.vertexCount; // = 0;
 
 					game::gfxCmdBufSourceState->objectPlacement = 0;
 				}
@@ -2685,8 +2695,139 @@ namespace components
 			/* desc		*/ "shadow drawing distance (camera to center of brush)");
 	}
 
+	/*void relocate_struct_ref(const std::uintptr_t code_addr, const void* target_addr, const std::uintptr_t base_addr = 0, const std::uintptr_t dest_addr = 0)
+	{
+		const auto struct_offset = dest_addr - base_addr;
+		const auto struct_final_addr = reinterpret_cast<std::uintptr_t>(target_addr) + struct_offset;
+
+		utils::hook::set<std::uintptr_t>(code_addr, struct_final_addr);
+	}*/
+
+	void relocate_struct_ref(const std::uintptr_t code_addr, const void* target_addr, const unsigned int offset)
+	{
+		const auto struct_final_addr = reinterpret_cast<std::uintptr_t>(target_addr) + offset;
+		utils::hook::set<std::uintptr_t>(code_addr, struct_final_addr);
+	}
+
+	void relocate_struct_ref(const std::uintptr_t* code_addr, const void* target_addr, const int patch_amount)
+	{
+		const auto struct_final_addr = reinterpret_cast<std::uintptr_t>(target_addr);
+
+		for (auto i = 0; i < patch_amount; i++)
+		{
+			utils::hook::set<std::uintptr_t>(code_addr[i], struct_final_addr);
+		}
+	}
+
+	void relocate_struct_ref(const std::uintptr_t* code_addr, const void* target_addr, const int patch_amount, const unsigned int offset)
+	{
+		const auto struct_final_addr = reinterpret_cast<std::uintptr_t>(target_addr) + offset;
+
+		for (auto i = 0; i < patch_amount; i++)
+		{
+			utils::hook::set<std::uintptr_t>(code_addr[i], struct_final_addr);
+		}
+	}
+
 	renderer::renderer()
 	{
+		// realoc tess.indices[32704] (materialCommands_t) and increase its size to iw3's (1048576)
+		// -> xmodels with more then 32704 indices no longer crash radiant (was writing out of bounds)
+
+		// base address
+		uintptr_t tess_indices_base_patches[] =
+		{
+			// 00 4C 7A 01
+			0x4FE6E8 + 1, 0x4FEA03 + 4, 0x530E92 + 4, 0x531052 + 4,
+			0x531233 + 4, 0x5319D0 + 4, 0x531C8C + 4, 0x531F5D + 4,
+			0x532B16 + 4, 0x532DFD + 4, 0x5330F9 + 4, 0x5334B1 + 4,
+			0x53373D + 4, 0x534F5B + 4, 0x53AAD0 + 1, 0x53AB56 + 1,
+			0x53AD7B + 1, 0x541693 + 4, 0x56CECD + 4,
+
+		}; relocate_struct_ref(tess_indices_base_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_base_patches));
+
+
+		// 2
+		uintptr_t tess_indices_p2_patches[] =
+		{
+			// 02 4C 7A 01
+			0x530EA0 + 4, 0x531060 + 4, 0x53123D + 4, 0x5319EB + 4,
+			0x531CAA + 4, 0x531F65 + 4, 0x532B2B + 4, 0x532E18 + 4,
+			0x53310E + 4, 0x5334CA + 4, 0x534F48 + 4, 0x5416A1 + 4,
+			0x56CEE6 + 4,
+
+		}; relocate_struct_ref(tess_indices_p2_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_p2_patches), 2);
+
+		
+		//  4
+		uintptr_t tess_indices_p4_patches[] =
+		{
+			// 04 4C 7A 01
+			0x530EB1 + 4, 0x531071 + 4, 0x531255 + 4, 0x5319DB + 4,
+			0x531C9A + 4, 0x531F78 + 4, 0x532B41 + 4, 0x532E34 + 4,
+			0x533124 + 4, 0x5334E0 + 4, 0x534F66 + 4, 0x5416B2 + 4,
+			0x56CEFE + 4,
+
+
+		}; relocate_struct_ref(tess_indices_p4_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_p4_patches), 4);
+
+
+		// 6
+		uintptr_t tess_indices_p6_patches[] =
+		{
+			// 06 4C 7A 01
+			0x530EBF + 4, 0x53107F + 4, 0x531260 + 4, 0x5319E3 + 4,
+			0x531CA2 + 4, 0x531F80 + 4, 0x532B57 + 4, 0x532E4B + 4,
+			0x53313B + 4, 0x5334F6 + 4, 0x534F6E + 4, 0x5416C0 + 4,
+
+
+		}; relocate_struct_ref(tess_indices_p6_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_p6_patches), 6);
+
+
+		// 8
+		uintptr_t tess_indices_p8_patches[] =
+		{
+			// 08 4C 7A 01
+			0x530ECD + 4, 0x53108D + 4, 0x531245 + 4, 0x5319F3 + 4,
+			0x531CB2 + 4, 0x531F6D + 4, 0x532B6C + 4, 0x532E60 + 4,
+			0x533150 + 4, 0x53350B + 4, 0x534F50 + 4, 0x5416CE + 4,
+
+
+		}; relocate_struct_ref(tess_indices_p8_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_p8_patches), 8);
+
+
+		// 10
+		uintptr_t tess_indices_p10_patches[] =
+		{
+			// 0A 4C 7A 01
+			0x530EE1 + 4, 0x5310A1 + 4, 0x53126F + 4, 0x5319FE + 4,
+			0x531CBA + 4, 0x531F8B + 4, 0x532B82 + 4, 0x532E76 + 4,
+			0x533166 + 4, 0x533521 + 4, 0x534F79 + 4, 0x5416DF + 4,
+
+
+		}; relocate_struct_ref(tess_indices_p10_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_p10_patches), 10);
+
+		// patch indices cmp
+		utils::hook::set<DWORD>(0x4FE899 + 2, TESS_INDICES_AMOUNT); // RB_DrawEditorSkinnedCached_Sub
+		utils::hook::set<DWORD>(0x530AD2 + 2, TESS_INDICES_AMOUNT); // RB_DrawTriangles_Internal and RB_DrawPolyInteriors
+		utils::hook::set<DWORD>(0x530B0F + 2, TESS_INDICES_AMOUNT); // Everything else is 2D or lines
+		utils::hook::set<DWORD>(0x530E72 + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x531032 + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x5311EA + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x53199D + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x531C6E + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x531F2A + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x532AE9 + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x532DC9 + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x5330DE + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x533484 + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x534F1B + 2, TESS_INDICES_AMOUNT);
+
+		// rewrite, working fine but no need (only debug)
+		// utils::hook::detour(0x4FE750, RB_DrawEditorSkinnedCached, HK_JUMP);
+
+		// ------------------------------------------------------------------------------------------------
+
 		// set default value for r_vsync to false
 		utils::hook::set<BYTE>(0x51FB1A + 1, 0x0);
 
@@ -2787,9 +2928,6 @@ namespace components
 		// load depth prepass and build-floatz technique (Material_LoadTechniqueSet -> g_useTechnique)
 		//utils::hook::set<BYTE>(0x633FC4 + 0, 0x1);
 		//utils::hook::set<BYTE>(0x633FC4 + 1, 0x1);
-
-		// rewrite, working fine but no need (only debug)
-		//utils::hook::detour(0x4FE750, RB_DrawEditorSkinnedCached, HK_JUMP);
 
 		command::register_command("g_log_rendercommands"s, [this](auto)
 		{
