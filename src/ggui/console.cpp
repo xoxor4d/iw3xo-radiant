@@ -50,32 +50,33 @@ namespace ggui
 	void console_dialog::draw_text_with_color(const char* text, int index)
 	{
 		ImVec4 color;
-		bool has_color = false;
 
+		bool has_color = false;
 		std::string item_s = text;
 
-		const bool is_red = utils::starts_with(item_s, "[RED]");
-		if (   is_red
-			|| utils::starts_with(item_s, "^1")
+		if (   utils::starts_with(item_s, "[ERR]", true)
+			|| utils::starts_with(item_s, "^1ERROR:", true)
+			|| utils::starts_with(item_s, "^1", true)
 			|| utils::starts_with(item_s, "ERROR:")
 			|| utils::starts_with(item_s, "Error:"))
 		{
 			color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
 			has_color = true;
 
-			if (is_red)
-			{
-				utils::erase_substring(item_s, "[RED]");
-			}
+			utils::ltrim(item_s);
 		}
-		else if (  utils::starts_with(item_s, "^3")
+		else if (  utils::starts_with(item_s, "[WARN]", true)
+				|| utils::starts_with(item_s, "^3WARNING:", true)
+				|| utils::starts_with(item_s, "^3", true)
 				|| utils::starts_with(item_s, "WARNING:")
 				|| utils::starts_with(item_s, "Warning:"))
 		{
 			color = ImVec4(1.0f, 0.65f, 0.1f, 1.0f);
 			has_color = true;
+
+			utils::ltrim(item_s);
 		}
-		else if (utils::starts_with(item_s, "["))
+		else if (utils::starts_with(item_s, "[!]"))
 		{
 			color = ImVec4(0.75f, 0.95f, 0.825f, 1.0f);
 			has_color = true;

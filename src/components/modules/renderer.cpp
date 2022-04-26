@@ -531,7 +531,8 @@ namespace components
 			return mtlShader;
 		}
 
-		game::Com_Error("r_create_pixelshader :: pixel shader creation failed for %s\n", shader_name);
+		//game::Com_Error("r_create_pixelshader :: pixel shader creation failed for %s\n", shader_name);
+		game::printf_to_console("[ERR] r_create_pixelshader :: pixel shader creation failed for %s\n", shader_name);
 		return nullptr;
 	}
 
@@ -606,7 +607,8 @@ namespace components
 			return mtlShader;
 		}
 
-		game::Com_Error("r_create_vertexshader :: pixel shader creation failed for %s\n", shader_name);
+		//game::Com_Error("r_create_vertexshader :: vertex shader creation failed for %s\n", shader_name);
+		game::printf_to_console("[ERR] r_create_vertexshader :: vertex shader creation failed for %s\n", shader_name);
 		return nullptr;
 	}
 
@@ -2818,8 +2820,8 @@ namespace components
 		utils::hook::set<DWORD>(0x531C6E + 2, TESS_INDICES_AMOUNT);
 		utils::hook::set<DWORD>(0x531F2A + 2, TESS_INDICES_AMOUNT);
 		utils::hook::set<DWORD>(0x532AE9 + 2, TESS_INDICES_AMOUNT);
-		utils::hook::set<DWORD>(0x532DC9 + 2, TESS_INDICES_AMOUNT);
-		utils::hook::set<DWORD>(0x5330DE + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x532DC9 + 1, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x5330DE + 1, TESS_INDICES_AMOUNT);
 		utils::hook::set<DWORD>(0x533484 + 2, TESS_INDICES_AMOUNT);
 		utils::hook::set<DWORD>(0x534F1B + 2, TESS_INDICES_AMOUNT);
 

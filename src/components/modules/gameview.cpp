@@ -85,7 +85,8 @@ namespace components
 
 			// other filters
 			{
-				if (this->var.s_filter_opt_ladder)		filter->toggle_by_name("ladder", ggui::filter_dialog::OTHER, true);
+				if (this->var.s_filter_opt_ladder)			filter->toggle_by_name("ladder", ggui::filter_dialog::OTHER, true);
+				if (this->var.s_filter_opt_fx)				filter->toggle_by_name("FX", ggui::filter_dialog::OTHER, true);
 			}
 
 			memset(&this->var, 0, sizeof(vars_s));
@@ -158,7 +159,8 @@ namespace components
 
 			// other filters
 			{
-				this->var.s_filter_opt_ladder = filter->toggle_by_name("ladder", ggui::filter_dialog::OTHER, false);
+				this->var.s_filter_opt_ladder		= filter->toggle_by_name("ladder", ggui::filter_dialog::OTHER, false);
+				this->var.s_filter_opt_fx			= filter->toggle_by_name("FX", ggui::filter_dialog::OTHER, false);
 			}
 		}
 	}
