@@ -2,6 +2,8 @@
 
 namespace dvars
 {
+	game::dvar_s* parse_debug = nullptr;
+
 	game::dvar_s* gui_menubar_bg_color = nullptr;
 	game::dvar_s* gui_window_child_bg_color = nullptr;
 	game::dvar_s* gui_window_bg_color = nullptr;
@@ -199,6 +201,14 @@ namespace dvars
 		GET_GUI(ggui::vertex_edit_dialog)->register_dvars();
 
 		fx_system::register_dvars();
+
+		// ---------------------
+
+		dvars::parse_debug = dvars::register_bool(
+			/* name		*/ "parse_debug",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "show debug info while parsing a map file (parsed entity and brush amount)");
 
 		game::printf_to_console("\n");
 	}

@@ -324,18 +324,11 @@ namespace ggui
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_DEVELOPER, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
 		{
-			if (ImGui::Button("Enter Prefab"))
-			{
-				cdeclcall(void, 0x42BF70);
-			}
+			ImGui::title_with_seperator("Functional stuff", false);
+			ImGui::Checkbox("Enable map-parsing debug prints", &dvars::parse_debug->current.enabled);
 
-			ImGui::SameLine();
-			if (ImGui::Button("Leave Prefab"))
-			{
-				cdeclcall(void, 0x42BF80);
-			}
-
-			ImGui::SameLine();
+			// -----------------
+			ImGui::title_with_seperator("Random stuff");
 			if (ImGui::Button("Toggle template gui"))
 			{
 				GET_GUI(template_dialog)->toggle();
@@ -352,7 +345,6 @@ namespace ggui
 			ImGui::DragInt("Int 01", &dev_num_01, 0.1f);
 			ImGui::DragFloat3("Vec4 01", dev_vec_01, 25.0f);
 			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
-
 		});
 	}
 

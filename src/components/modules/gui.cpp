@@ -479,6 +479,8 @@ namespace components
 
 	void on_map_load()
 	{
+		//GET_GUI(ggui::console_dialog)->clear_log();
+
 		if (const auto con = GetConsoleWindow();
 			!IsWindowVisible(con))
 		{

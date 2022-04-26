@@ -2,6 +2,8 @@
 
 namespace dvars
 {
+	extern game::dvar_s* parse_debug;
+
 	extern game::dvar_s* gui_menubar_bg_color;
 	extern game::dvar_s* gui_window_child_bg_color;
 	extern game::dvar_s* gui_window_bg_color;

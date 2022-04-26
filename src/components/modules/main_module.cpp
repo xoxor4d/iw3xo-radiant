@@ -205,6 +205,51 @@ namespace components
 		}
 	}
 
+
+	// *
+	// map parsing debug prints (parsed entities and brushes, helpful for ParseEntity errors)
+
+	int map_parse_entity_num_counter = 0;
+	void __declspec(naked) map_parse_error_stub_01()
+	{
+		const static uint32_t retn_addr = 0x486603;
+		__asm
+		{
+			mov		edx, dword ptr[ebp - 8];
+			mov		map_parse_entity_num_counter, edx;
+
+			add     dword ptr[ebp - 8], 1; // ebp - 8 = entitiynum counter
+			cmp     dword ptr[esi + 4], 0;
+			jmp		retn_addr;
+		}
+	}
+
+	void parseentity_debug_print()
+	{
+		if(dvars::parse_debug && dvars::parse_debug->current.enabled)
+		{
+			game::printf_to_console("parsing entity: %d -- parsed brushes: %d\n", map_parse_entity_num_counter, game::g_qeglobals->d_parsed_brushes - 1);
+		}
+	}
+
+	void __declspec(naked) parseentity_stub()
+	{
+		const static uint32_t retn_addr = 0x483EE0;
+		__asm
+		{
+			pushad;
+			call	parseentity_debug_print;
+			popad;
+
+			mov     ecx, 2; // og
+			jmp		retn_addr;
+		}
+	}
+
+
+	// ----------------------------------
+
+
 	main_module::main_module()
 	{
 		init_threads();
@@ -217,6 +262,7 @@ namespace components
 		ccamwnd::hooks();
 		clayermatwnd::hooks();
 		ctexwnd::hooks();
+
 
 		// add iw3xradiant search path (imgui images)
 		utils::hook(0x4A29A7, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
@@ -253,6 +299,15 @@ namespace components
 
 		// set max undo memory
 		utils::hook::set<int32_t>(0x739F70, 0x01000000); // default 2mb, now 16mb
+
+
+		// read parsed entities counter for debug printing
+		utils::hook::nop(0x4865FB, 8);
+		utils::hook(0x4865FB, map_parse_error_stub_01, HOOK_JUMP).install()->quick();
+
+		// map parsing debug prints (parsed entities and brushes, helpful for ParseEntity errors)
+		utils::hook(0x483EDB, parseentity_stub, HOOK_JUMP).install()->quick();
+
 
 		// * ---------------------------
 
