@@ -407,4 +407,30 @@ void ccamwnd::hooks()
 
 	__on_keydown_cam	= reinterpret_cast<on_ccamwnd_key>(utils::hook::detour(0x402F60, ccamwnd::on_keydown, HK_JUMP));
 	__on_keyup_cam		= reinterpret_cast<on_ccamwnd_key>(utils::hook::detour(0x408B70, ccamwnd::on_keyup, HK_JUMP));
+
+	components::command::register_command_with_hotkey("center_camera_on_selection"s, [](auto)
+	{
+		const auto eent = game::g_edit_entity();
+
+		if (eent && eent->eclass && eent->eclass->name)
+		{
+			if (utils::str_to_lower(eent->eclass->name) != "worldspawn")
+			{
+				utils::vector::copy(eent->origin, cmainframe::activewnd->m_pCamWnd->camera.origin);
+			}
+			else
+			{
+				const auto sel = game::g_selected_brushes();
+				if(components::remote_net::selection_is_brush(sel->def))
+				{
+					// get center of the brush
+					for (int j = 0; j < 3; j++)
+					{
+						cmainframe::activewnd->m_pCamWnd->camera.origin[j] = 
+							sel->def->mins[j] + abs((sel->def->maxs[j] - sel->def->mins[j]) * 0.5f);
+					}
+				}
+			}
+		}
+	});
 }
