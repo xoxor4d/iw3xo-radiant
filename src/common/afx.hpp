@@ -64,12 +64,12 @@ struct AFX_DISPMAP {};
 struct AFX_CONNECTIONMAP {};
 struct AFX_INTERFACEMAP {};
 struct AFX_EVENTSINKMAP {};
-struct IConnectionPoint {};
+//struct IConnectionPoint {};
 struct CCreateContext {};
 struct tagTOOLINFOA {};
 struct CScrollBar {};
-struct IAccessible {};
-struct IAccessibleProxy {};
+//struct IAccessible {};
+//struct IAccessibleProxy {};
 struct CDataExchange {};
 struct COleControlSite {};
 struct COleControlContainer {};
@@ -324,12 +324,12 @@ struct CView : CWnd
 	void* m_pDocument; // CDocument
 };
 
-struct CSimpleStringT
+struct CSimpleStringT_X
 {
 	char* m_pszData;
 };
 
-struct CStringT : CSimpleStringT
+struct CStringT_X : CSimpleStringT_X
 {
 };
 
@@ -341,7 +341,7 @@ struct CFile : CObject
 {
 	void* m_hFile;
 	int m_bCloseOnDelete;
-	CStringT m_strFileName;
+	CStringT_X m_strFileName;
 };
 
 struct CDumpContext
@@ -387,7 +387,7 @@ struct __declspec(align(4)) CFrameWnd : CWnd
 	unsigned int m_cModalStack;
 	HWND** m_phWndDisable;
 	HMENU__* m_hMenuAlt;
-	CStringT m_strTitle;
+	CStringT_X m_strTitle;
 	int m_bInRecalcLayout;
 	CRuntimeClass* m_pFloatingFrameClass;
 	unsigned int m_nIdleFlags;

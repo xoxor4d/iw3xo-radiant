@@ -89,6 +89,8 @@
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
 
+#include <WinHttpClient.h>
+
 #include "game/structs.hpp"
 #include "utils/utils.hpp"
 #include "utils/memory.hpp"

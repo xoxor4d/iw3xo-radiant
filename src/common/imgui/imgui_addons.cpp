@@ -560,6 +560,10 @@ namespace ImGui
 		{
 			if (ImGui::IsMouseClicked(0))
 			{
+				// fix stuck left mouse button
+				ImGuiIO& io = ImGui::GetIO();
+				io.AddMouseButtonEvent(0, false);
+
 				ShellExecuteA(0, 0, url, 0, 0, SW_SHOW);
 			}
 

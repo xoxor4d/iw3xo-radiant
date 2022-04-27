@@ -7,7 +7,7 @@ namespace game
 {
 	namespace glob
 	{
-		// Init
+		// init
 		bool command_thread_running;
 		std::vector<std::string> loadedModules;
 
@@ -17,14 +17,24 @@ namespace game
 		float frames_per_second;
 		bool ccamwindow_realtime;
 
-		// Misc
+		// misc
 		game::TrackWorldspawn track_worldspawn = game::TrackWorldspawn();
 
-		// Live Link
+		// update check
+		std::string gh_update_releases_json;
+		std::string gh_update_tag;
+		std::string gh_update_date;
+		std::string gh_update_title;
+		std::string gh_update_desc;
+		std::string gh_update_link;
+		std::string gh_update_zip_name;
+		bool gh_update_avail = false;
+
+		// live-link
 		game::ProcessServerCommands cServerCmd = game::ProcessServerCommands();
 		bool live_connected;
 
-		// Renderer
+		// renderer
 		IDirect3DDevice9* d3d9_device = nullptr;
 		
 	}

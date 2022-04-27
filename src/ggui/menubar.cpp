@@ -1673,19 +1673,36 @@ namespace ggui
 				ImGui::EndMenu(); // Patch
 			}
 
-			if (ImGui::BeginMenu("Help"))
+			const char* about_str = game::glob::gh_update_avail ? "Update Available" : "About";
+
+			if(game::glob::gh_update_avail)
 			{
-				//if (ImGui::MenuItem("Command List")) {
-				//	cdeclcall(void, 0x426E00); // CMainFrame::OnHelpCommandlist
-				//}
-
-				if (ImGui::MenuItem("About / Version"))
-				{
-					GET_GUI(about_dialog)->toggle();
-				}
-
-				ImGui::EndMenu(); // Help
+				ImGui::PushFontFromIndex(ggui::BOLD_18PX);
 			}
+
+			if (ImGui::MenuItem(about_str))
+			{
+				GET_GUI(about_dialog)->toggle();
+			}
+
+			if (game::glob::gh_update_avail)
+			{
+				ImGui::PopFont();
+			}
+
+			//if (ImGui::BeginMenu("Help"))
+			//{
+			//	//if (ImGui::MenuItem("Command List")) {
+			//	//	cdeclcall(void, 0x426E00); // CMainFrame::OnHelpCommandlist
+			//	//}
+
+			//	if (ImGui::MenuItem("About / Version"))
+			//	{
+			//		GET_GUI(about_dialog)->toggle();
+			//	}
+
+			//	ImGui::EndMenu(); // Help
+			//}
 			ImGui::EndGroup(); // used to calculate total width below
 
 			if (dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
