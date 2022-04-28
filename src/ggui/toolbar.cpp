@@ -537,7 +537,7 @@ namespace ggui
 				static bool hov_plantorient;
 				const auto prefs = game::g_PrefsDlg();
 
-				// CMainFrame::OnPlantModel
+				// CMainFrame::OnOrientToFloor
 				if (image_togglebutton("plant_orient_to_floor", hov_plantorient, prefs->m_bOrientModel,
 					"Orient dropped selection to the floor"))
 				{

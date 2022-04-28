@@ -19,7 +19,7 @@ camera_s layercam = {};
 namespace layermatwnd
 {
 	E_RENDERMETHOD rendermethod_axis = FULLBRIGHT;
-	E_RENDERMETHOD rendermethod_preview = FAKELIGHT_NORMAL;
+	E_RENDERMETHOD rendermethod_preview = FAKESUN_DAY; //FAKELIGHT_NORMAL;
 }
 
 static game::orientation_t editor_instmodel_mtx =

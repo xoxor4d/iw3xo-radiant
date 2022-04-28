@@ -296,16 +296,71 @@ namespace ggui
 			ImGui::SetItemAllowOverlap();
 			ImGui::SetCursorScreenPos(ImVec2(screenpos_pre_scene.x, screenpos_pre_scene.y));
 
+			auto post_button_pos = ImGui::GetCursorPos();
+
 			if (ImGui::ButtonEx("#", ImVec2(0, 0), ImGuiButtonFlags_AllowItemOverlap))
 			{
 				m_preferences_open = !m_preferences_open;
 			} TT("open modelselector settings");
 
+			post_button_pos.x += ImGui::GetItemRectSize().x + 10.0f;
+
+			{
+				const auto prefs = game::g_PrefsDlg();
+				auto bg_color = ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+				auto bg_color_hovered = ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector);
+				auto bg_color_active = ImVec4(0.16f, 0.16f, 0.16f, 1.0f);
+
+
+				static bool hov_plantmodel;
+				if (ggui::toolbar_dialog::image_togglebutton(
+					"plant_models",
+					hov_plantmodel,
+					prefs->m_bDropModel,
+					"Plant models and apply random scale and rotation",
+					&bg_color,
+					&bg_color_hovered,
+					&bg_color_active))
+				{
+					// CMainFrame::OnPlantModel
+					mainframe_thiscall(LRESULT, 0x42A0E0);
+				}
+
+
+				static bool hov_plantorient;
+				if (ggui::toolbar_dialog::image_togglebutton(
+					"plant_orient_to_floor",
+					hov_plantorient,
+					prefs->m_bOrientModel,
+					"Orient dropped selection to the floor",
+					&bg_color,
+					&bg_color_hovered,
+					&bg_color_active))
+				{
+					// CMainFrame::OnOrientToFloor
+					mainframe_thiscall(LRESULT, 0x4258F0);
+				}
+
+				static bool hov_plantdrop;
+				if (ggui::toolbar_dialog::image_togglebutton(
+					"plant_force_drop_height",
+					hov_plantdrop,
+					prefs->m_bForceZeroDropHeight,
+					"Force drop height to 0",
+					&bg_color,
+					&bg_color_hovered,
+					&bg_color_active))
+				{
+					// CMainFrame::OnForceZeroDropHeight
+					mainframe_thiscall(LRESULT, 0x42A000);
+				}
+			}
+
 			if (m_preferences_open)
 			{
 				static float buttons_total_width = 448.0f;
+				ImGui::SetCursorPos(post_button_pos);
 
-				ImGui::SameLine();
 				ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
 				ImGui::SetNextWindowBgAlpha(0.75f);
 				ImGui::BeginChild("settings_child", ImVec2(buttons_total_width + 12.0f, 64.0f), true, ImGuiWindowFlags_None);
@@ -383,44 +438,6 @@ namespace ggui
 				ImGui::EndChild();
 				ImGui::PopStyleVar();
 			}
-
-			{
-				static bool hov_plantorient;
-				const auto prefs = game::g_PrefsDlg();
-
-				auto bg_color = ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
-				auto bg_color_hovered = ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector);
-				auto bg_color_active = ImVec4(0.16f, 0.16f, 0.16f, 1.0f);
-
-				// CMainFrame::OnPlantModel
-				if (ggui::toolbar_dialog::image_togglebutton(
-					"plant_orient_to_floor",
-					hov_plantorient,
-					prefs->m_bOrientModel,
-					"Orient dropped selection to the floor",
-					&bg_color,
-					&bg_color_hovered,
-					&bg_color_active))
-				{
-					mainframe_thiscall(LRESULT, 0x4258F0);
-				}
-
-				static bool hov_plantdrop;
-
-				// CMainFrame::OnForceZeroDropHeight
-				if (ggui::toolbar_dialog::image_togglebutton(
-					"plant_force_drop_height",
-					hov_plantdrop,
-					prefs->m_bForceZeroDropHeight,
-					"Force drop height to 0",
-					&bg_color,
-					&bg_color_hovered,
-					&bg_color_active))
-				{
-					mainframe_thiscall(LRESULT, 0x42A000);
-				}
-			}
-			
 
 			const auto current_pos = ImGui::GetCursorPos();
 			ImGui::SetCursorPos(ImVec2(split_horizontal ? current_pos.x : current_pos.x + 4.0f, ImGui::GetWindowHeight() - 22.0f));
