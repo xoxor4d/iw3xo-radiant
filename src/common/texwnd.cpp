@@ -4,16 +4,15 @@ texwnd_s* g_texwnd = reinterpret_cast<texwnd_s*>(0x25D7990);
 
 void ctexwnd::on_mousebutton_down(UINT nFlags)
 {
-	auto point = ggui::get_rtt_texturewnd()->cursor_pos_pt;
-
-	const static uint32_t CTexWnd_OnButtonDown_Func = 0x45C9A0;
+	auto point = GET_GUI(ggui::texture_dialog)->rtt_get_cursor_pos_cpoint();
+	const static uint32_t CTexWnd_OnButtonDown_func = 0x45C9A0;
 	__asm
 	{
 		pushad;
 		push	point.y;
 		push	point.x;
 		mov		eax, nFlags;
-		call	CTexWnd_OnButtonDown_Func;
+		call	CTexWnd_OnButtonDown_func;
 		add     esp, 8;
 		popad;
 	}
@@ -32,12 +31,12 @@ void ctexwnd::on_mousebutton_up(UINT nFlags)
 
 void ctexwnd::on_mousemove(UINT nFlags)
 {
-	const static uint32_t CTexWnd__OnMouseFirst_Func = 0x45CA60;
+	const static uint32_t CTexWnd__OnMouseFirst_func = 0x45CA60;
 	__asm
 	{
 		pushad;
 		mov		eax, nFlags;
-		call	CTexWnd__OnMouseFirst_Func;
+		call	CTexWnd__OnMouseFirst_func;
 		popad;
 	}
 }
@@ -53,7 +52,7 @@ BOOL __fastcall ctexwnd::on_paint(ctexwnd* pThis)
 		return EndPaint(pThis->GetWindow(), &Paint);
 	}
 
-	if(ggui::get_rtt_texturewnd()->menustate)
+	if(GET_GUI(ggui::texture_dialog)->is_active())
 	{
 		game::R_BeginFrame();
 		game::R_Clear(7, game::g_qeglobals->d_savedinfo.colors[0], 1.0f, 0);
@@ -89,15 +88,24 @@ BOOL __fastcall ctexwnd::on_paint(ctexwnd* pThis)
 
 bool texwnd_textfilter(const char* iter_material_name)
 {
-	if (ggui::textures::imgui_filter_last_len)
+	const auto tex = GET_GUI(ggui::texture_dialog);
+	const auto& filter = tex->get_filter();
+
+	if (tex->get_filter_length())
 	{
-		if (std::string(iter_material_name).find(ggui::textures::imgui_filter.InputBuf) != std::string::npos) 
+		if (std::string(iter_material_name).find(filter.InputBuf) != std::string::npos)
 		{
 			return true;
 		}
 	}
 
 	return false;
+}
+
+// asm helper function
+int texwnd_get_filter_length()
+{
+	return GET_GUI(ggui::texture_dialog)->get_filter_length();
 }
 
 void __declspec(naked) texwnd_listmaterials_intercept()
@@ -108,7 +116,7 @@ void __declspec(naked) texwnd_listmaterials_intercept()
 	__asm
 	{
 		// test if textbox filter is enabled (textlen > 0)
-		mov		eax, ggui::textures::imgui_filter_last_len;
+		call	texwnd_get_filter_length;
 		test	eax, eax;
 		jz		NO_FILTER;
 
@@ -136,24 +144,24 @@ void __declspec(naked) texwnd_listmaterials_intercept()
 // CMainFrame::OnViewTexture
 void on_viewtextures_command()
 {
-	const auto texwnd = ggui::get_rtt_texturewnd();
-	if(texwnd->inactive_tab && texwnd->menustate)
+	const auto tex = GET_GUI(ggui::texture_dialog);
+
+	if(tex->is_inactive_tab() && tex->is_active())
 	{
-		texwnd->bring_tab_to_front = true;
+		tex->set_bring_to_front(true);
 		return;
 	}
 
-	components::gui::toggle(ggui::get_rtt_texturewnd());
-
+	tex->toggle();
 }
 
 // CMainFrame::OnTexturesShowinuse
 void on_textures_show_in_use_command()
 {
-	const auto texwnd = ggui::get_rtt_texturewnd();
-	texwnd->bring_tab_to_front = true;
-	texwnd->menustate = true;
-	
+	const auto tex = GET_GUI(ggui::texture_dialog);
+	tex->set_bring_to_front(true);
+	tex->open();
+
 	// Texture_ShowInuse
 	cdeclcall(void, 0x45B850);
 }
@@ -162,9 +170,9 @@ void on_textures_show_in_use_command()
 // CMainFrame::OnTexturesShowall (intercept: no logic besides showing the menu)
 void on_textures_show_all_command_intercept()
 {
-	const auto texwnd = ggui::get_rtt_texturewnd();
-	texwnd->bring_tab_to_front = true;
-	texwnd->menustate = true;
+	const auto tex = GET_GUI(ggui::texture_dialog);
+	tex->set_bring_to_front(true);
+	tex->open();
 }
 
 void __declspec(naked) on_textures_show_all_command_stub()
@@ -212,8 +220,8 @@ void ctexwnd::hooks()
 	// disable texture tab insertion in entitywnd :: CTabCtrl::InsertItem(&g_wndTabsEntWnd, 1u, 1u, "&Textures", 0, 0);
 	utils::hook::nop(0x49672A, 23);
 
-	// TODO! :: why does the default OnPaint function induces lag on all windows (even outside radiant) calling it at 250fps
-	// -- rewritten one runs fine
+	// TODO! :: why does the default OnPaint function induces lag on all windows (even outside radiant) when calling it 250 times a second?
+	// -- rewritten one runs fine (EndPaint?)
 	utils::hook::detour(0x45DB20, ctexwnd::on_paint, HK_JUMP);
 
 	// detour the view textures hotkey (CMainFrame::OnViewTexture) to open the imgui texture window

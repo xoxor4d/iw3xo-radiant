@@ -3,6 +3,7 @@
 #pragma warning(disable: 4324)
 namespace game
 {
+	struct brush_t_with_custom_def;
 	struct MaterialTechnique;
 	typedef float vec_t;
 	typedef vec_t vec2_t[2];
@@ -494,8 +495,8 @@ namespace game
 
 	struct brush_t_def
 	{
-		brush_t* oprev;
-		brush_t* onext;
+		brush_t_with_custom_def* oprev; //brush_t* oprev;
+		brush_t_with_custom_def* onext; //brush_t* onext;
 		entity_s* owner;
 		entity_s* ownerNext;
 		entity_s* ownerPrev;
@@ -2050,6 +2051,12 @@ namespace game
 		DpvsPlane planes[5];
 		volatile int drawSurfCount;
 		GfxDrawSurf drawSurfs[256];
+	};
+
+	struct GfxPointVertex
+	{
+		float xyz[3];
+		game::GfxColor color;
 	};
 
 	struct GfxSkinnedXModelSurfs

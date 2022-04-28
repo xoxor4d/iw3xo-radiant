@@ -213,7 +213,19 @@ namespace utils
 		}
 	}
 
-	bool starts_with(std::string haystack, std::string needle)
+	bool starts_with(std::string& haystack, const std::string& needle, bool erase)
+	{
+		const bool val = (haystack.size() >= needle.size() && !strncmp(needle.data(), haystack.data(), needle.size()));
+
+		if (val && erase)
+		{
+			utils::erase_substring(haystack, needle);
+		}
+
+		return val;
+	}
+
+	bool starts_with(const std::string& haystack, const std::string& needle)
 	{
 		return (haystack.size() >= needle.size() && !strncmp(needle.data(), haystack.data(), needle.size()));
 	}

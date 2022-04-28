@@ -1,14 +1,11 @@
 #include "std_include.hpp"
 
-namespace ggui::camera
+namespace ggui
 {
-	constexpr float CAM_DEBUG_TEXT_Y_OFFS = 180.0f;
-	bool g_camera_toolbar_state = false;
-
 	// right hand side toolbar
-	void toolbar()
+	void camera_dialog::toolbar()
 	{
-		const auto camwnd = ggui::get_rtt_camerawnd();
+		constexpr float CAM_DEBUG_TEXT_Y_OFFS = 180.0f;
 		const auto prefs = game::g_PrefsDlg();
 
 		ImVec2 toolbar_button_open_size = ImVec2(22.0f, 22.0f);
@@ -20,7 +17,7 @@ namespace ggui::camera
 		// right side alignment
 		static float toolbar_line_width = toolbar_button_size.x + 8.0f; // used as first frame estimate
 		const float  collapse_button_offset = (toolbar_button_size.x - toolbar_button_open_size.x) * 0.5f;
-		const float  offs = g_camera_toolbar_state ? collapse_button_offset : 0.0f;
+		const float  offs = m_toolbar_state ? collapse_button_offset : 0.0f;
 		ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line_width + 8.0f - offs));
 
 		// offset toolbar vertically
@@ -53,30 +50,32 @@ namespace ggui::camera
 			ImGui::SetCursorPos(cursor_pos);
 		}
 
+		const auto tb = GET_GUI(ggui::toolbar_dialog);
+
 		// group all so we can get the actual toolbar width for the next frame
 		ImGui::BeginGroup();
 		{
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + collapse_button_offset);
 
 			static bool hov_open_toolbar;
-			if (ggui::toolbar::image_togglebutton("arrow_down"
+			if (tb->image_togglebutton("arrow_down"
 				, hov_open_toolbar
-				, g_camera_toolbar_state
+				, m_toolbar_state
 				, "Collapse/Expand camera toolbar"
 				, &toolbar_button_background
 				, &toolbar_button_background_hovered
 				, &toolbar_button_background_active
 				, &toolbar_button_open_size))
 			{
-				g_camera_toolbar_state = g_camera_toolbar_state ? false : true;
-			} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+				m_toolbar_state = m_toolbar_state ? false : true;
+			} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
-			if (g_camera_toolbar_state)
+			if (m_toolbar_state)
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 				{
 					static bool hov_guizmo_enable;
-					if (ggui::toolbar::image_togglebutton("guizmo_enable"
+					if (tb->image_togglebutton("guizmo_enable"
 						, hov_guizmo_enable
 						, dvars::guizmo_enable->current.enabled
 						, "Enable guizmo"
@@ -86,12 +85,12 @@ namespace ggui::camera
 						, &toolbar_button_size))
 					{
 						dvars::set_bool(dvars::guizmo_enable, !dvars::guizmo_enable->current.enabled);
-					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 					if (dvars::guizmo_enable->current.enabled)
 					{
 						static bool hov_guizmo_grid_snapping;
-						if (ggui::toolbar::image_togglebutton("guizmo_grid_snapping"
+						if (tb->image_togglebutton("guizmo_grid_snapping"
 							, hov_guizmo_grid_snapping
 							, dvars::guizmo_snapping->current.enabled
 							, "Guizmo: Enable grid-snapping"
@@ -101,11 +100,11 @@ namespace ggui::camera
 							, &toolbar_button_size))
 						{
 							dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
-						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
 						static bool hov_guizmo_brush_mode;
-						if (ggui::toolbar::image_togglebutton("guizmo_brush_mode"
+						if (tb->image_togglebutton("guizmo_brush_mode"
 							, hov_guizmo_brush_mode
 							, dvars::guizmo_brush_mode->current.enabled
 							, "Guizmo: Enable brush mode"
@@ -115,7 +114,7 @@ namespace ggui::camera
 							, &toolbar_button_size))
 						{
 							dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
-						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 					}
 
 					ImGui::PopStyleVar();
@@ -126,55 +125,23 @@ namespace ggui::camera
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 				{
 					static bool hov_cubicclip;
-					if (ggui::toolbar::image_togglebutton("cubic_clip"
+					if (tb->image_togglebutton("cubic_clip"
 						, hov_cubicclip
 						, prefs->m_bCubicClipping
-						, std::string("Cubic Clipping " + ggui::hotkeys::get_hotkey_for_command("ToggleCubicClip")).c_str()
+						, std::string("Cubic Clipping " + ggui::hotkey_dialog::get_hotkey_for_command("ToggleCubicClip")).c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
 						, &toolbar_button_size))
 					{
 						mainframe_thiscall(LRESULT, 0x428F90); // CMainFrame::OnViewCubicclipping
-					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
-
-#if 0
-					static bool hov_camera_movement;
-					ImGui::BeginGroup();
-					{
-						ImVec2 prebutton_cursor = ImGui::GetCursorScreenPos();
-
-						if (ggui::toolbar::image_togglebutton("camera_movement"
-							, hov_camera_movement
-							, prefs->camera_mode
-							, "Toggle Camera Movement Mode"
-							, &toolbar_button_background
-							, &toolbar_button_background_hovered
-							, &toolbar_button_background_active
-							, &toolbar_button_size))
-						{
-							mainframe_thiscall(LRESULT, 0x429EB0); // CMainFrame::OnToggleCameraMovementMode
-						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
-
-						if (prefs->camera_mode)
-						{
-							prebutton_cursor.x += (toolbar_button_size.x * 0.45f);
-							prebutton_cursor.y += (toolbar_button_size.y * 0.4f);
-
-							ImGui::PushFontFromIndex(ggui::REGULAR_12PX);
-							ImGui::SetCursorScreenPos(prebutton_cursor);
-							ImGui::Text("%d/2", prefs->camera_mode);
-							ImGui::PopFont();
-						}
-					}
-					ImGui::EndGroup();
-#endif
+					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 					static bool hov_gameview;
-					if (ggui::toolbar::image_togglebutton("gameview"
+					if (tb->image_togglebutton("gameview"
 						, hov_gameview
 						, dvars::radiant_gameview->current.enabled
-						, std::string("Gameview " + ggui::hotkeys::get_hotkey_for_command("xo_gameview")).c_str()
+						, std::string("Gameview " + ggui::hotkey_dialog::get_hotkey_for_command("xo_gameview")).c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
@@ -182,7 +149,7 @@ namespace ggui::camera
 					{
 						components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
 
-					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 					ImGui::PopStyleVar();
 				}
@@ -192,10 +159,10 @@ namespace ggui::camera
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 				{
 					static bool hov_fakesunpreview;
-					if (ggui::toolbar::image_togglebutton("sunpreview"
+					if (tb->image_togglebutton("sunpreview"
 						, hov_fakesunpreview
 						, dvars::r_fakesun_preview->current.enabled
-						, std::string("Fake sun preview " + ggui::hotkeys::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()
+						, std::string("Fake sun preview " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
@@ -203,16 +170,16 @@ namespace ggui::camera
 					{
 						components::command::execute("fakesun_toggle");
 
-					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
 					if (dvars::r_fakesun_preview->current.enabled)
 					{
 						static bool hov_fakesun_fog;
-						if (ggui::toolbar::image_togglebutton("fakesun_fog"
+						if (tb->image_togglebutton("fakesun_fog"
 							, hov_fakesun_fog
 							, dvars::r_fakesun_fog_enabled->current.enabled
-							, std::string("Toggle Fog " + ggui::hotkeys::get_hotkey_for_command("fakesun_fog_toggle")).c_str()
+							, std::string("Toggle Fog " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_fog_toggle")).c_str()
 							, &toolbar_button_background
 							, &toolbar_button_background_hovered
 							, &toolbar_button_background_active
@@ -220,17 +187,17 @@ namespace ggui::camera
 						{
 							components::command::execute("fakesun_fog_toggle");
 
-						} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 					}
 
 
 					static bool hov_filmtweaks_settings;
 					const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
 
-					if (ggui::toolbar::image_togglebutton("filmtweaks"
+					if (tb->image_togglebutton("filmtweaks"
 						, hov_filmtweaks_settings
 						, r_filmtweakenable->current.enabled
-						, std::string("Toggle filmtweaks " + ggui::hotkeys::get_hotkey_for_command("filmtweak_toggle")).c_str()
+						, std::string("Toggle filmtweaks " + ggui::hotkey_dialog::get_hotkey_for_command("filmtweak_toggle")).c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
@@ -238,11 +205,11 @@ namespace ggui::camera
 					{
 						components::command::execute("filmtweak_toggle");
 
-					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
 					static bool hov_fakesun_settings;
-					if (ggui::toolbar::image_togglebutton("fakesun_settings"
+					if (tb->image_togglebutton("fakesun_settings"
 						, hov_fakesun_settings
 						, hov_fakesun_settings
 						, "Open Fakesun / PostFX settings menu"
@@ -251,25 +218,26 @@ namespace ggui::camera
 						, &toolbar_button_background_active
 						, &toolbar_button_size))
 					{
-						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
+						const auto cs = GET_GUI(ggui::camera_settings_dialog);
+						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
 						{
 							// close entire window if tab is in-front
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+							cs->close(); // toggle
 						}
-						else if (!ggui::state.czwnd.m_camera_settings.menustate)
+						else if (!cs->is_active())
 						{
 							// open window with focused fakesun tab
-							ggui::camera_settings::set_tabstate_fakesun(true);
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+							cs->set_tabstate_fakesun(true);
+							cs->open(); // toggle
 						}
 						else
 						{
 							// window is open but tab not focused
-							ggui::camera_settings::set_tabstate_fakesun(true);
-							ggui::camera_settings::focus_fakesun();
+							cs->set_tabstate_fakesun(true);
+							cs->focus_fakesun();
 						}
 
-					} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 					ImGui::PopStyleVar();
 				}
@@ -286,10 +254,10 @@ namespace ggui::camera
 							ImGui::BeginDisabled(!can_fx_play || components::effects::effect_is_repeating());
 							{
 								static bool hov_fx_play;
-								if (ggui::toolbar::image_togglebutton("fx_play"
+								if (tb->image_togglebutton("fx_play"
 									, hov_fx_play
 									, can_fx_play && !components::effects::effect_is_repeating()
-									, std::string("Play Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_play")).c_str()
+									, std::string("Play Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_play")).c_str()
 									, &toolbar_button_background
 									, &toolbar_button_background_hovered
 									, &toolbar_button_background_active
@@ -297,7 +265,7 @@ namespace ggui::camera
 								{
 									components::effects::play();
 
-								} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 								ImGui::EndDisabled();
 							}
@@ -305,10 +273,10 @@ namespace ggui::camera
 							ImGui::BeginDisabled(!can_fx_play);
 							{
 								static bool hov_fx_repeat;
-								if (ggui::toolbar::image_togglebutton("fx_repeat"
+								if (tb->image_togglebutton("fx_repeat"
 									, hov_fx_repeat
 									, components::effects::effect_is_repeating()
-									, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_repeat")).c_str()
+									, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_repeat")).c_str()
 									, &toolbar_button_background
 									, &toolbar_button_background_hovered
 									, &toolbar_button_background_active
@@ -316,14 +284,14 @@ namespace ggui::camera
 								{
 									components::effects::repeat();
 
-								} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
 								static bool hov_fx_pause;
-								if (ggui::toolbar::image_togglebutton("fx_pause"
+								if (tb->image_togglebutton("fx_pause"
 									, hov_fx_pause
 									, can_fx_play
-									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_pause")).c_str()
+									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str()
 									, &toolbar_button_background
 									, &toolbar_button_background_hovered
 									, &toolbar_button_background_active
@@ -331,14 +299,14 @@ namespace ggui::camera
 								{
 									components::effects::pause();
 
-								} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
 								static bool hov_fx_stop;
-								if (ggui::toolbar::image_togglebutton("fx_stop"
+								if (tb->image_togglebutton("fx_stop"
 									, hov_fx_stop
 									, can_fx_play
-									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkeys::get_hotkey_for_command("fx_stop")).c_str()
+									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_stop")).c_str()
 									, &toolbar_button_background
 									, &toolbar_button_background_hovered
 									, &toolbar_button_background_active
@@ -346,10 +314,10 @@ namespace ggui::camera
 								{
 									components::effects::stop();
 
-								} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 								static bool hov_fx_edit;
-								if (ggui::toolbar::image_togglebutton("fx_edit"
+								if (tb->image_togglebutton("fx_edit"
 									, hov_fx_edit
 									, hov_fx_edit
 									, "Edit Effect for last selected fx_origin"
@@ -360,7 +328,7 @@ namespace ggui::camera
 								{
 									components::effects::edit();
 
-								} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 								ImGui::EndDisabled();
 							}
@@ -374,7 +342,7 @@ namespace ggui::camera
 
 							ImGui::PushID("settings2");
 							static bool hov_fx_settings;
-							if (ggui::toolbar::image_togglebutton("fakesun_settings"
+							if (tb->image_togglebutton("fakesun_settings"
 								, hov_fx_settings
 								, hov_fx_settings
 								, "Open FX settings menu"
@@ -383,25 +351,26 @@ namespace ggui::camera
 								, &toolbar_button_background_active
 								, &toolbar_button_size))
 							{
-								if (ggui::camera_settings::get_tabstate_effects() && ggui::camera_settings::is_tabstate_effects_active())
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+								if (cs->get_tabstate_effects() && cs->is_tabstate_effects_active())
 								{
 									// close entire window if tab is in-front
-									components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+									cs->close(); // toggle
 								}
-								else if (!ggui::state.czwnd.m_camera_settings.menustate)
+								else if (!cs->is_active())
 								{
 									// open window with focused effects tab
-									ggui::camera_settings::set_tabstate_effects(true);
-									components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+									cs->set_tabstate_effects(true);
+									cs->open(); // toggle
 								}
 								else
 								{
 									// window is open but tab not focused
-									ggui::camera_settings::set_tabstate_effects(true);
-									ggui::camera_settings::focus_effects();
+									cs->set_tabstate_effects(true);
+									cs->focus_effects();
 								}
 
-							} ggui::rtt_handle_windowfocus_overlaywidget(camwnd);
+							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 							ImGui::PopID();
 						}
 
@@ -422,10 +391,8 @@ namespace ggui::camera
 
 
 	// right click context menu
-	void context_menu()
+	void camera_dialog::context_menu()
 	{
-		const auto camerawnd = ggui::get_rtt_camerawnd();
-
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
 
@@ -442,7 +409,10 @@ namespace ggui::camera
 					cam_context_menu_pending_open = true;
 
 					float dir[3];
-					ccamwnd::calculate_ray_direction(camerawnd->cursor_pos_pt.x, static_cast<int>(camerawnd->scene_size_imgui.y) - camerawnd->cursor_pos_pt.y, dir);
+					ccamwnd::calculate_ray_direction(
+						this->rtt_get_cursor_pos_cpoint().x,
+						static_cast<int>(this->rtt_get_size().y) - this->rtt_get_cursor_pos_cpoint().y,
+						dir);
 
 					// trace
 					utils::hook::call<void(__cdecl)(float* _start, float* _dir, int _contents, game::trace_t* _trace, int _num_traces)>(0x48D7C0)
@@ -451,7 +421,6 @@ namespace ggui::camera
 					if (cam_trace[0].brush)
 					{
 						// sort traces by drawsurf order
-
 						const auto trace_array_end = (DWORD)&cam_trace[21];
 						const auto compare_func = reinterpret_cast<void*>(0x404BA0);
 
@@ -490,10 +459,10 @@ namespace ggui::camera
 									if (const auto  tb = cam_trace[t].brush;
 													tb->def && tb->def->owner)
 									{
-										if (auto val = entity::ValueForKey(tb->def->owner->epairs, "classname");
+										if (auto val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "classname");
 												 val && (val == "misc_prefab"s || val == "misc_model"s))
 										{
-											if (auto prefab_str = entity::ValueForKey(tb->def->owner->epairs, "model");
+											if (auto prefab_str = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "model");
 													 prefab_str)
 											{
 												vis_name = prefab_str;
@@ -564,8 +533,8 @@ namespace ggui::camera
 								if (const auto tb = cam_trace[0].brush;
 									tb->def && tb->def->owner)
 								{
-									if (auto val = entity::ValueForKey(tb->def->owner->epairs, "classname");
-										val && val == "misc_prefab"s)
+									if (auto val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "classname");
+											 val && val == "misc_prefab"s)
 									{
 										SEPERATORV(0.0f);
 
@@ -671,20 +640,22 @@ namespace ggui::camera
 
 
 	// drag-drop target
-	void drag_drop_target(bool& accepted_dragdrop)
+	void camera_dialog::drag_drop_target(bool& accepted_dragdrop)
 	{
 		// model selection drop target
 		if (ImGui::BeginDragDropTarget())
 		{
 			if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 			{
+				const auto entity_gui = GET_GUI(ggui::entity_dialog);
+				const auto m_selector = GET_GUI(ggui::modelselector_dialog);
 				// reset manual left mouse capture
 				ggui::dragdrop_reset_leftmouse_capture();
 
-				const auto m_selector = ggui::get_rtt_modelselector();
-				ggui::entity::addprop_helper_s no_undo = {};
+				ggui::entity_dialog::addprop_helper_s no_undo = {};
+				bool trace_hit_void = false;
 
-				if (m_selector->overwrite_selection)
+				if (m_selector->m_overwrite_selection)
 				{
 					game::Undo_ClearRedo();
 					game::Undo_GeneralStart("change entity model");
@@ -701,7 +672,7 @@ namespace ggui::camera
 						goto SPAWN_AWAY;
 					}
 
-					ggui::entity::AddProp("model", m_selector->preview_model_name.c_str(), &no_undo);
+					entity_gui->add_prop("model", m_selector->m_preview_model_name.c_str(), &no_undo);
 					game::Undo_End();
 				}
 				else
@@ -724,19 +695,22 @@ namespace ggui::camera
 
 					g_block_radiant_modeldialog = false;
 
-					ggui::entity::AddProp("model", m_selector->preview_model_name.c_str(), &no_undo);
+					entity_gui->add_prop("model", m_selector->m_preview_model_name.c_str(), &no_undo);
 					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
 
-					const auto camerawnd = ggui::get_rtt_camerawnd();
+					//const auto camerawnd = ggui::get_rtt_camerawnd();
 
 					float dir[3];
-					ccamwnd::calculate_ray_direction(camerawnd->cursor_pos_pt.x, static_cast<int>(camerawnd->scene_size_imgui.y) - camerawnd->cursor_pos_pt.y, dir);
+					ccamwnd::calculate_ray_direction(
+						this->rtt_get_cursor_pos_cpoint().x, 
+						static_cast<int>(this->rtt_get_size().y) - this->rtt_get_cursor_pos_cpoint().y,
+						dir);
 
 					game::trace_t trace = {};
 					game::Trace_AllDirectionsIfFailed(cmainframe::activewnd->m_pCamWnd->camera.origin, &trace, dir, 0x1200);
 
 					float origin[3];
-
+		
 					// if trace hit something other then the void
 					if (trace.brush)
 					{
@@ -745,9 +719,11 @@ namespace ggui::camera
 					// if trace hit nothing, spawn model infront of the camera
 					else
 					{
+						trace_hit_void = true;
+
 						float dist = 100.0f;
-						if (auto model = m_selector->preview_model_ptr;
-							model)
+						if (const auto	model = m_selector->m_preview_model_ptr;
+										model)
 						{
 							dist += model->radius;
 						}
@@ -758,10 +734,17 @@ namespace ggui::camera
 					char origin_str_buf[64] = {};
 					if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", origin[0], origin[1], origin[2]))
 					{
-						ggui::entity::AddProp("origin", origin_str_buf, &no_undo);
+						entity_gui->add_prop("origin", origin_str_buf, &no_undo);
 					}
 
 					game::Undo_End();
+				}
+
+				// only drop if trace hit something
+				if(!trace_hit_void)
+				{
+					// CMainFrame::OnDropSelected
+					cdeclcall(void, 0x425BE0);
 				}
 
 				accepted_dragdrop = true;
@@ -773,13 +756,13 @@ namespace ggui::camera
 
 
 	// render to texture - camera window
-	void gui()
+	void camera_dialog::camera_gui()
 	{
 		int p_styles = 0;
 		int p_colors = 0;
 
 		const auto IO = ImGui::GetIO();
-		const auto camerawnd = ggui::get_rtt_camerawnd();
+
 		const auto camera_size = ImVec2(static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.width), static_cast<float>(cmainframe::activewnd->m_pCamWnd->camera.height));
 		ImGui::SetNextWindowSizeConstraints(ImVec2(320.0f, 320.0f), ImVec2(FLT_MAX, FLT_MAX));
 
@@ -799,24 +782,14 @@ namespace ggui::camera
 		//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_TabUnfocusedActive)); p_colors++;
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_rtt_padding_color->current.vector)); p_colors++;
 
-		if (!camerawnd->one_time_init)
-		{
-			if (dvars::gui_camera_toolbar_defaultopen && dvars::gui_camera_toolbar_defaultopen->current.enabled)
-			{
-				g_camera_toolbar_state = true;
-			}
-
-			camerawnd->one_time_init = true;
-		}
-
-		if (camerawnd->should_set_focus)
+		if(this->rtt_is_focus_pending())
 		{
 			ImGui::SetNextWindowFocus();
-			camerawnd->should_set_focus = false;
+			this->rtt_set_focus_state(false);
 		}
 
 		ImGui::Begin("Camera Window##rtt", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
-		if (camerawnd->scene_texture)
+		if(this->rtt_get_texture())
 		{
 			bool tabbar_visible = true;
 			const auto wnd = ImGui::GetCurrentWindow();
@@ -830,38 +803,76 @@ namespace ggui::camera
 			}
 
 			const float frame_height = tabbar_visible ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
-			camerawnd->scene_size_imgui = ImGui::GetWindowSize() - ImVec2(0.0f, frame_height) - window_padding_both;
+			this->rtt_set_size(ImGui::GetWindowSize() - ImVec2(0.0f, frame_height) - window_padding_both);
 
 			// hack to disable left mouse window movement
 			ImGui::BeginChild("scene_child", ImVec2(camera_size.x, camera_size.y + frame_height) + window_padding_both, false, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 			{
-				camerawnd->scene_pos_imgui = ImGui::GetCursorScreenPos();
-				SetWindowPos(cmainframe::activewnd->m_pCamWnd->GetWindow(), HWND_BOTTOM, (int)camerawnd->scene_pos_imgui.x, (int)camerawnd->scene_pos_imgui.y, (int)camerawnd->scene_size_imgui.x, (int)camerawnd->scene_size_imgui.y, SWP_NOZORDER);
+				this->rtt_set_position(ImGui::GetCursorScreenPos());
+
+				SetWindowPos(
+					cmainframe::activewnd->m_pCamWnd->GetWindow(), 
+					HWND_BOTTOM, 
+					static_cast<int>(this->rtt_get_position().x),
+					static_cast<int>(this->rtt_get_position().y),
+					static_cast<int>(this->rtt_get_size().x), 
+					static_cast<int>(this->rtt_get_size().y),
+					SWP_NOZORDER);
 
 				const auto pre_image_cursor = ImGui::GetCursorPos();
 
-				ImGui::Image(camerawnd->scene_texture, camera_size);
-				camerawnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+				ImGui::Image(this->rtt_get_texture(), camera_size);
+				this->rtt_set_hovered_state(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
 
 				static bool accepted_dragdrop = false;
 
+				// hack to show mouse cursor when using ALT+TAB whilst moving the camera
+				// needed because there is no mousebutton "up" event in that case ^
+				// gridwindow is fine for whatever reason
+
+				CURSORINFO ci = { sizeof(CURSORINFO) };
+				if (GetCursorInfo(&ci))
+				{
+					if(ci.cbSize == 0)
+					{
+						if(cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate != 14) // CTRL + SHIFT + RMB
+						{
+							if (cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate != 10) // CTRL + RMB
+							{
+								if (cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate != 2
+									&& !cmainframe::activewnd->m_pCamWnd->cursor_visible)
+								{
+									int sw_cur;
+									do
+									{
+										sw_cur = ShowCursor(1);
+									} while (sw_cur < 0);
+
+									cmainframe::activewnd->m_pCamWnd->cursor_visible = true;
+								}
+							}
+						}
+					}
+				}
+
+				// --------------------
+
 				// right click context menu
-				context_menu();
+				camera_dialog::context_menu();
 
 				// drag-drop target (modelpreview)
-				drag_drop_target(accepted_dragdrop);
+				camera_dialog::drag_drop_target(accepted_dragdrop);
 
 				// pop ItemSpacing
 				ImGui::PopStyleVar(); p_styles--;
 
 				ImGui::SetCursorPos(pre_image_cursor);
-				const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
 
-				camerawnd->cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
-				camerawnd->cursor_pos_pt = CPoint((LONG)camerawnd->cursor_pos.x, (LONG)camerawnd->cursor_pos.y);
+				const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
+				this->rtt_set_cursor_pos(ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y));
 
 				// fix top left undock triangle
-				ggui::FixDockingTabbarTriangle(wnd, camerawnd);
+				ggui::redraw_undocking_triangle(wnd, this->rtt_get_hovered_state());
 
 				// 3d guizmo
 				ggui::camera_guizmo::guizmo(camera_size, accepted_dragdrop);
@@ -877,4 +888,25 @@ namespace ggui::camera
 		ImGui::PopStyleVar(p_styles);
 		ImGui::End();
 	}
+
+	void camera_dialog::gui()
+	{ }
+
+	void camera_dialog::on_open()
+	{
+		if(!this->is_initiated())
+		{
+			if (dvars::gui_camera_toolbar_defaultopen && dvars::gui_camera_toolbar_defaultopen->current.enabled)
+			{
+				m_toolbar_state = true;
+			}
+
+			this->set_initiated();
+		}
+	}
+
+	void camera_dialog::on_close()
+	{ }
+
+	REGISTER_GUI(camera_dialog);
 }

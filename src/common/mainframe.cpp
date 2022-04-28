@@ -148,6 +148,12 @@ void on_createclient()
 		}
 	}
 
+	// ensure prefs are up to date
+	if (dvars::gui_use_new_context_menu)
+	{
+		prefs->m_bRightClick = !dvars::gui_use_new_context_menu->current.enabled;
+	}
+
 	// disable r_vsync
 	if (const auto& r_vsync = game::Dvar_FindVar("r_vsync");
 					r_vsync && r_vsync->current.enabled)
@@ -372,7 +378,7 @@ typedef LRESULT(__thiscall* wndproc_t)(cmainframe*, UINT Msg, WPARAM wParam, LPA
 // handle wm_char events for non-focused subwindows, see above msg
 LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] void* edx, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	if(ggui::cz_context_ready() && (Msg == WM_ACTIVATE || Msg == WM_SETFOCUS || Msg == WM_KILLFOCUS))
+	if(ggui::is_ggui_initialized() && (Msg == WM_ACTIVATE || Msg == WM_SETFOCUS || Msg == WM_KILLFOCUS))
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		io.ClearInputKeys();
@@ -425,7 +431,7 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 
 	if (Msg == WM_SETCURSOR)
 	{
-		if (ggui::cz_context_ready())
+		if (ggui::is_ggui_initialized())
 		{
 			// only above 10 fps (we might 'loose focus' on < 5 FPS, preventing imgui mouse input )
 			//if(game::glob::frames_per_second <= 100)
@@ -473,7 +479,7 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 			ggui::hotkeys::cmdbinds_ascii_to_keystr(wParam).c_str());
 #endif
 
-		if (ggui::cz_context_ready())
+		if (ggui::is_ggui_initialized())
 		{
 			IMGUI_BEGIN_CZWND;
 			if (ImGui::GetIO().WantCaptureMouse)
@@ -520,26 +526,26 @@ typedef void(__thiscall* on_cmainframe_on_destroy)(cmainframe*);
 
 BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nFlags, SHORT zDelta, CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
 
 		// if mouse is inside imgui-cxy window
-		if (auto gridwnd = ggui::get_rtt_gridwnd();
-				 gridwnd->window_hovered)
+		if (auto gridwnd = GET_GUI(ggui::grid_dialog);
+				 gridwnd->rtt_is_hovered())
 		{
-			return mainframe::__on_mscroll(pThis, nFlags, zDelta, gridwnd->cursor_pos_pt);
+			return mainframe::__on_mscroll(pThis, nFlags, zDelta, gridwnd->rtt_get_cursor_pos_cpoint());
 		}
 
 		// if mouse is inside imgui-camera window
-		if (auto camerawnd = ggui::get_rtt_camerawnd();
-				 camerawnd->window_hovered)
+		if (auto camerawnd = GET_GUI(ggui::camera_dialog);
+				 camerawnd->rtt_is_hovered())
 		{
 			float scroll_dir = zDelta <= 0 ? 1.0f : -1.0f;
 
-			const static uint32_t CCamWnd__Scroll_Func = 0x4248A0;
+			const static uint32_t CCamWnd__Scroll_func = 0x4248A0;
 			__asm
 			{
 				pushad;
@@ -548,7 +554,7 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 				push	cmainframe::activewnd;		// ^
 				fld		scroll_dir;
 				fstp    dword ptr[esp];
-				call	CCamWnd__Scroll_Func; // cleans the stack
+				call	CCamWnd__Scroll_func; // cleans the stack
 
 				popad;
 			}
@@ -557,14 +563,12 @@ BOOL __fastcall cmainframe::on_mscroll(cmainframe* pThis, [[maybe_unused]] void*
 		}
 
 		// if mouse is inside texture window
-		if (auto texwnd = ggui::get_rtt_texturewnd();
-				 texwnd->window_hovered)
+		if(GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			// CTexWnd::Scroll
 			utils::hook::call<void(__cdecl)(std::int16_t _zDelta)>(0x45DD80)(zDelta);
 		}
-		
-		
+
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
 			ImGui::HandleKeyIO(pThis->GetWindow(), WM_MOUSEWHEEL, zDelta);
@@ -621,12 +625,11 @@ void on_keydown_intercept(cmainframe* pThis, UINT nChar, UINT nRepCnt, UINT nFla
 
 void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-
 #ifdef DEBUG_KEYS
 	game::printf_to_console("mainframe keydown: %s", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -640,8 +643,8 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		}
 
 		// if mouse is inside imgui-cxy window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
 			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
 			return;
@@ -649,8 +652,8 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 
 		// handle imgui-camera window (only triggers when czwnd is focused)
 		// cmainframe::on_keydown handles input if imgui-camera window is focused 
-		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
-						camerawnd->window_hovered)
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered())
 		{
 			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
 			return;
@@ -658,15 +661,12 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 
 		if (ImGui::GetIO().WantCaptureMouse)
 		{
-			//ImGuiIO& io = ImGui::GetIO();
-			//io.ClearInputKeys();
-			
 			ImGui::HandleKeyIO(nullptr, WM_KEYDOWN, 0, nChar);
 		}
 
 		// block specific keys from triggering hotkeys (eg. moving the camera via the arrow keys, because we use the up/down arrow to change xmodel previews)
-		if (const auto	modelselector = ggui::get_rtt_modelselector();
-						modelselector->window_hovered)
+		if (const auto	modelselector = GET_GUI(ggui::modelselector_dialog);
+						modelselector->rtt_is_hovered())
 		{
 			// DownArrow / UpArrow
 			if (nChar == VK_DOWN || nChar == VK_UP)
@@ -687,7 +687,7 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 	game::printf_to_console("mainframe keyup: %s", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
@@ -701,8 +701,8 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 		}
 
 		// if mouse is inside imgui-cxy window
-		if (auto gridwnd = ggui::get_rtt_gridwnd();
-				 gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
 			mainframe::__on_keyup(cmainframe::activewnd, nChar);
 			return;
@@ -710,8 +710,8 @@ void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 
 		// handle imgui-camera window (only triggers when xywnd is focused)
 		// cmainframe::on_keyup handles input if imgui-camera window is focused 
-		if (auto camerawnd = ggui::get_rtt_camerawnd();
-				 camerawnd->window_hovered)
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered())
 		{
 			mainframe::__on_keyup(cmainframe::activewnd, nChar);
 			return;
@@ -769,8 +769,36 @@ void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* ed
 			CZWND_POS_ONCE_ON_STARTUP = true;
 		}
 	}
-	
+
 	__on_size(pThis, nFlags, x, y);
+
+	// immediately re-paint the rtt windows upon resizing (can make resizing smoother if FPS are high enough)
+	if(cmainframe::activewnd)
+	{
+		if (const auto	hwnd = cmainframe::activewnd->m_pZWnd->GetWindow();
+						hwnd != nullptr)
+		{
+			SendMessageA(hwnd, WM_PAINT, 0, 0);
+		}
+
+		if (const auto	hwnd = cmainframe::activewnd->m_pXYWnd->GetWindow();
+						hwnd != nullptr)
+		{
+			SendMessageA(hwnd, WM_PAINT, 0, 0);
+		}
+
+		if (const auto	hwnd = cmainframe::activewnd->m_pCamWnd->GetWindow();
+						hwnd != nullptr)
+		{
+			SendMessageA(hwnd, WM_PAINT, 0, 0);
+		}
+
+		if (const auto	hwnd = cmainframe::activewnd->m_pTexWnd->GetWindow();
+						hwnd != nullptr)
+		{
+			SendMessageA(hwnd, WM_PAINT, 0, 0);
+		}
+	}
 }
 
 
@@ -875,8 +903,13 @@ void cmainframe::register_dvars()
 		/* desc		*/ "show the menubar");
 }
 
+const COLORREF CFRAMEWND_BK_COL = RGB(44, 44, 44);
+
 void cmainframe::hooks()
 {
+	// change mainframe background color (visible on startup)
+	utils::hook::set(0x4217F3 + 1, CFRAMEWND_BK_COL);
+
 	// hook continuous thread
 	utils::hook(0x421A90, cmainframe::hk_routine_processing, HOOK_JUMP).install()->quick();
 

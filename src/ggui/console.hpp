@@ -1,10 +1,10 @@
 #pragma once
-#include "_ggui.hpp"
 
 namespace ggui
 {
-	struct console
+	class console_dialog final : public ggui::ggui_module
 	{
+	public:
 		char					m_input_buf[256];
 		int						m_old_input_but_len;
 		bool					m_input_reclaim_focus;
@@ -21,24 +21,52 @@ namespace ggui
 		ImVec2					m_post_inputbox_cursor;
 		bool					m_input_focused;
 
-	public:
-		console();
-		~console();
+		console_dialog()
+		{
+			set_gui_type(GUI_TYPE_DEF);
 
-		void    clear_log();
-		void	draw_text_with_color(const char* text);
+			clear_log();
+			memset(m_input_buf, 0, sizeof(m_input_buf));
+
+			m_old_input_but_len = 0;
+			m_input_reclaim_focus = false;
+			m_autocomplete_pos = -1;
+			m_should_search_candidates = false;
+			m_matched_dvar = nullptr;
+			m_history_pos = -1;
+			m_auto_scroll = true;
+			m_scroll_to_bottom = true;
+			m_post_inputbox_cursor = ImVec2(0.0f, 0.0f);
+			m_input_focused = false;
+		}
+
+		~console_dialog() override;
+
+		// *
+		// public member functions
+
+		void	gui() override;
+		void	clear_log();
+		int		text_edit_callback(ImGuiInputTextCallbackData* data);
 		void	addline_no_format(const char* text);
 		void	addline(const char* fmt, ...) IM_FMTARGS(2);
-		void	draw(const char* title, ggui::imgui_context_menu& menu);
-		void	exec_command(const char* command_line);
 
-		static int	text_edit_callback_stub(ImGuiInputTextCallbackData* data);
-		int			text_edit_callback(ImGuiInputTextCallbackData* data);
+		// *
+		// asm related
 
-		static void menu(ggui::imgui_context_menu& menu);
-		static void	hooks();
+		static void load_raw_materials_progressbar(int index, int material_total_count);
+		static void load_raw_materials_progressbar_stub();
+
+		// *
+		// init
+
+		void	hooks();
+
+	private:
+		static void	strtrim(char* s);
+		void		draw_text_with_color(const char* text, int index);
+		void		exec_command(const char* command_line);
+
+		static void on_viewconsole_command();
 	};
-
-	extern	console* _console;
-	
 }

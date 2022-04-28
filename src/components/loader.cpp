@@ -9,11 +9,11 @@ namespace components
 	{
 		loader::mem_allocator_.clear();
 
+		loader::_register(new gui());
 		loader::_register(new command());
 		loader::_register(new d3d9ex());
 		loader::_register(new renderer());
 		loader::_register(new gameview());
-		loader::_register(new gui());
 		loader::_register(new remote_net());
 		loader::_register(new config());
 		loader::_register(new effects());
@@ -21,21 +21,22 @@ namespace components
 		loader::_register(new main_module());
 		loader::_register(new discord());
 
-		if(ggui::_console)
+		if(const auto	con = GET_GUI(ggui::console_dialog);
+						con)
 		{
 			// print to external and internal console
 			printf("[Modules] ---------------------\n");
-			ggui::_console->addline_no_format("[Modules] ---------------------\n");
-			
+			con->addline_no_format("[Modules] ---------------------\n");
+
 			for (const auto& str : game::glob::loadedModules)
 			{
 				printf(str.c_str());
-				ggui::_console->addline_no_format(str.c_str());
+				con->addline_no_format(str.c_str());
 			}
 
 			// print to external and internal console
 			printf("\n");
-			ggui::_console->addline_no_format("\n");
+			con->addline_no_format("\n");
 		}
 	}
 

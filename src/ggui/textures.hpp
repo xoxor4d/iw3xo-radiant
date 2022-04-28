@@ -1,11 +1,27 @@
 #pragma once
-#include "_ggui.hpp"
 
-namespace ggui::textures
+namespace ggui
 {
-	extern ImGuiTextFilter	imgui_filter;
-	extern int				imgui_filter_last_len;
+	class texture_dialog final : public ggui::ggui_module
+	{
+	public:
+		texture_dialog() { set_gui_type(GUI_TYPE_RTT); }
+		void gui() override;
 
-	void	gui();
+		auto& get_filter()
+		{
+			return imgui_filter;
+		}
 
+		[[nodiscard]] int get_filter_length() const
+		{
+			return imgui_filter_last_len;
+		}
+
+	private:
+		ImGuiTextFilter	imgui_filter;
+		int				imgui_filter_last_len = 0;
+
+		void toolbar();
+	};
 }

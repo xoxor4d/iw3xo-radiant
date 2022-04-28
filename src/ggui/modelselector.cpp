@@ -1,30 +1,26 @@
 #include "std_include.hpp"
 
-namespace ggui::modelselector
+namespace ggui
 {
-	ImGuiTextFilter	m_filter;
-	bool update_scroll_pos = false;
-	bool prefs_open = false;
-
-	void xmodel_listbox_elem(int index)
+	void modelselector_dialog::xmodel_listbox_elem(int index)
 	{
-		const auto m_selector = ggui::get_rtt_modelselector();
-		
-		const bool is_selected = (m_selector->xmodel_selection == index);
-		if (ImGui::Selectable(m_selector->xmodel_filelist[index], is_selected))
+		//const auto m_selector = ggui::get_rtt_modelselector();
+
+		const bool is_selected = (this->m_xmodel_selection == index);
+		if (ImGui::Selectable(this->m_xmodel_filelist[index], is_selected))
 		{
-			m_selector->xmodel_selection = index;
-			m_selector->preview_model_name = m_selector->xmodel_filelist[index];
+			this->m_xmodel_selection = index;
+			this->m_preview_model_name = this->m_xmodel_filelist[index];
 		} TT("Drag me to the grid or camera window");
 
 		if (is_selected) {
 			ImGui::SetItemDefaultFocus();
 		}
 
-		if (is_selected && update_scroll_pos)
+		if (is_selected && m_update_scroll_position)
 		{
 			ImGui::SetScrollHereY();
-			update_scroll_pos = false;
+			m_update_scroll_position = false;
 		}
 
 		// target => cxywnd::rtt_grid_window()
@@ -33,24 +29,18 @@ namespace ggui::modelselector
 		{
 			ImGui::SetDragDropPayload("MODEL_SELECTOR_ITEM", nullptr, 0, ImGuiCond_Once);
 
-			m_selector->xmodel_selection = index;
-			m_selector->preview_model_name = m_selector->xmodel_filelist[index];
+			this->m_xmodel_selection = index;
+			this->m_preview_model_name = this->m_xmodel_filelist[index];
 
-			ImGui::Text("Model: %s", m_selector->xmodel_filelist[index]);
+			ImGui::Text("Model: %s", this->m_xmodel_filelist[index]);
 			ImGui::EndDragDropSource();
 		}
 	}
-	
-	void menu()
+
+	void modelselector_dialog::gui()
 	{
-		const auto m_selector = ggui::get_rtt_modelselector();
+		//const auto m_selector = ggui::get_rtt_modelselector();
 		const auto io = ImGui::GetIO();
-		
-		if (!m_selector->one_time_init)
-		{
-			m_selector->xmodel_filelist = game::FS_ListFilteredFilesWrapper("xmodel", nullptr, &m_selector->xmodel_filecount);
-			m_selector->one_time_init = true;
-		}
 
 		const auto MIN_WINDOW_SIZE = ImVec2(500.0f, 400.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(550.0f, 600.0f);
@@ -59,24 +49,24 @@ namespace ggui::modelselector
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
 
-		if (m_selector->bring_tab_to_front)
+		if (this->is_bring_to_front_pending())
 		{
-			m_selector->bring_tab_to_front = false;
+			this->set_bring_to_front(false);
 			ImGui::SetNextWindowFocus();
 		}
-		
-		if(!ImGui::Begin("Model Selector / Previewer", &m_selector->menustate, ImGuiWindowFlags_NoCollapse))
+
+		if (!ImGui::Begin("Model Selector / Previewer", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
-			m_selector->inactive_tab = true;
+			this->set_inactive_tab(true);
 			ImGui::End();
 			return;
 		}
 
-		m_selector->inactive_tab = false;
-		//if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) __debugbreak();
+		this->set_inactive_tab(false);
+
 		// block all hotkeys if window is focused (cmainframe::on_keydown())
-		m_selector->window_hovered = ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows);
-		
+		this->rtt_set_hovered_state(ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows));
+
 		const auto window_size = ImGui::GetWindowSize();
 		const bool split_horizontal = window_size.x >= 700.0f;
 		const auto listbox_width = split_horizontal ? ImClamp(window_size.x * 0.25f, 200.0f, FLT_MAX) : ImGui::GetContentRegionAvail().x;
@@ -85,16 +75,16 @@ namespace ggui::modelselector
 		{
 			// filter widget
 			const auto screenpos_prefilter = ImGui::GetCursorScreenPos();
-			m_filter.Draw("##xmodel_filter", listbox_width - 32.0f);
+			this->m_filter.Draw("##xmodel_filter", listbox_width - 32.0f);
 			const auto screenpos_postfilter = ImGui::GetCursorScreenPos();
 
 			ImGui::SameLine(listbox_width - 27.0f);
 			if (ImGui::ButtonEx("x##clear_filter"))
 			{
-				m_filter.Clear();
+				this->m_filter.Clear();
 			}
 
-			if (!m_filter.IsActive())
+			if (!this->m_filter.IsActive())
 			{
 				ImGui::SetCursorScreenPos(ImVec2(screenpos_prefilter.x + 12.0f, screenpos_prefilter.y + 4.0f));
 				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
@@ -106,11 +96,12 @@ namespace ggui::modelselector
 			// xmodel listbox
 			if (ImGui::BeginListBox("##model_list", ImVec2(listbox_width, split_horizontal ? ImGui::GetContentRegionAvail().y : ImGui::GetContentRegionAvail().y * 0.5f)))
 			{
-				if (m_filter.IsActive())
+				if (this->m_filter.IsActive())
 				{
-					for (int i = 0; i < m_selector->xmodel_filecount; i++)
+					for (int i = 0; i < this->m_xmodel_filecount; i++)
 					{
-						if (!m_filter.PassFilter(m_selector->xmodel_filelist[i])) {
+						if (!this->m_filter.PassFilter(this->m_xmodel_filelist[i]))
+						{
 							continue;
 						}
 
@@ -120,7 +111,7 @@ namespace ggui::modelselector
 				else
 				{
 					ImGuiListClipper clipper;
-					clipper.Begin(m_selector->xmodel_filecount);
+					clipper.Begin(this->m_xmodel_filecount);
 
 					while (clipper.Step())
 					{
@@ -137,67 +128,68 @@ namespace ggui::modelselector
 		}
 		ImGui::EndGroup();
 
-		if(m_selector->window_hovered)
+		if (this->rtt_is_hovered())
 		{
 			if (ImGui::IsKeyPressedMap(ImGuiKey_DownArrow))
 			{
-				if (m_selector->xmodel_selection + 1 < m_selector->xmodel_filecount)
+				if (this->m_xmodel_selection + 1 < this->m_xmodel_filecount)
 				{
-					if (m_filter.IsActive())
+					if (this->m_filter.IsActive())
 					{
-						for (int i = m_selector->xmodel_selection + 1; i < m_selector->xmodel_filecount; i++)
+						for (int i = this->m_xmodel_selection + 1; i < this->m_xmodel_filecount; i++)
 						{
-							if (!m_filter.PassFilter(m_selector->xmodel_filelist[i])) {
+							if (!this->m_filter.PassFilter(this->m_xmodel_filelist[i]))
+							{
 								continue;
 							}
 
-							m_selector->xmodel_selection = i;
-							m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+							this->m_xmodel_selection = i;
+							this->m_preview_model_name = this->m_xmodel_filelist[this->m_xmodel_selection];
 
-							update_scroll_pos = true;
+							m_update_scroll_position = true;
 							break;
 						}
 					}
 					else
 					{
-						m_selector->xmodel_selection += 1;
-						m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+						this->m_xmodel_selection += 1;
+						this->m_preview_model_name = this->m_xmodel_filelist[this->m_xmodel_selection];
 
-						update_scroll_pos = true;
+						m_update_scroll_position = true;
 					}
 				}
 			}
 			else if (ImGui::IsKeyPressedMap(ImGuiKey_UpArrow))
 			{
-				if (m_selector->xmodel_selection - 1 >= 0)
+				if (this->m_xmodel_selection - 1 >= 0)
 				{
-					if (m_filter.IsActive())
+					if (this->m_filter.IsActive())
 					{
-						for (int i = m_selector->xmodel_selection - 1; i >= 0; i--)
+						for (int i = this->m_xmodel_selection - 1; i >= 0; i--)
 						{
-							if (!m_filter.PassFilter(m_selector->xmodel_filelist[i])) {
+							if (!this->m_filter.PassFilter(this->m_xmodel_filelist[i])) {
 								continue;
 							}
 
-							m_selector->xmodel_selection = i;
-							m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+							this->m_xmodel_selection = i;
+							this->m_preview_model_name = this->m_xmodel_filelist[this->m_xmodel_selection];
 
-							update_scroll_pos = true;
+							m_update_scroll_position = true;
 							break;
 						}
 					}
 					else
 					{
-						m_selector->xmodel_selection -= 1;
-						m_selector->preview_model_name = m_selector->xmodel_filelist[m_selector->xmodel_selection];
+						this->m_xmodel_selection -= 1;
+						this->m_preview_model_name = this->m_xmodel_filelist[this->m_xmodel_selection];
 
-						update_scroll_pos = true;
+						m_update_scroll_position = true;
 					}
 				}
 			}
 		}
 
-		if(split_horizontal)
+		if (split_horizontal)
 		{
 			ImGui::SameLine();
 		}
@@ -205,17 +197,17 @@ namespace ggui::modelselector
 		ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
 		{
 			static bool was_mouse_hidden = false;
-			
+
 			const auto child_size = ImGui::GetContentRegionAvail();
 			SetWindowPos(layermatwnd_struct->m_content_hwnd, HWND_BOTTOM, 0, 0, (int)child_size.x, (int)child_size.y, SWP_NOZORDER);
-			m_selector->scene_size_imgui = child_size;
+			this->rtt_set_size(child_size);
 
 			const auto screenpos_pre_scene = ImGui::GetCursorScreenPos();
-			
-			if (m_selector->scene_texture)
+
+			if (this->rtt_get_texture())
 			{
-				ImGui::Image(m_selector->scene_texture, child_size);
-				m_selector->scene_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+				ImGui::Image(this->rtt_get_texture(), child_size);
+				this->m_scene_texture_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
 				// target => cxywnd::rtt_grid_window()
 				// target => ccamwnd::rtt_camera_window()
@@ -223,56 +215,56 @@ namespace ggui::modelselector
 				{
 					// tell czwnd::on_lbutton_up() to pass left mouse input to imgui (on release, once)
 					ggui::dragdrop_overwrite_leftmouse_capture();
-					
+
 					ImGui::SetDragDropPayload("MODEL_SELECTOR_ITEM", nullptr, 0, ImGuiCond_Once);
-					ImGui::Text("Model: %s", m_selector->preview_model_name.c_str());
+					ImGui::Text("Model: %s", this->m_preview_model_name.c_str());
 					ImGui::EndDragDropSource();
 				}
-				
-				if (m_selector->scene_hovered)
+
+				if (this->m_scene_texture_hovered)
 				{
 					// zoom
 					if (io.MouseWheel != 0.0f)
 					{
-						m_selector->camera_distance -= (io.MouseWheel * 10.0f);
+						this->m_camera_distance -= (io.MouseWheel * 10.0f);
 					}
 
 					if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
 					{
 						CPoint point;
 						GetCursorPos(&point);
-						
-						if(!ImGui::IsMouseDragging(ImGuiMouseButton_Right))
+
+						if (!ImGui::IsMouseDragging(ImGuiMouseButton_Right))
 						{
-							m_selector->m_ptCursor = point;
+							this->rtt_set_cursor_pos_cpoint(point);
 						}
 						else
 						{
-							if (point.x != m_selector->m_ptCursor.x || point.y != m_selector->m_ptCursor.y)
+							if (point.x != this->rtt_get_cursor_pos_cpoint().x || point.y != this->rtt_get_cursor_pos_cpoint().y)
 							{
 								const auto angle_speed = static_cast<float>(game::g_PrefsDlg()->m_nAngleSpeed);
-								
+
 								// rotation mod
 								if (io.KeyMods == (ImGuiKeyModFlags_Ctrl | ImGuiKeyModFlags_Shift))
 								{
-									m_selector->camera_angles[2] = m_selector->camera_angles[2] - angle_speed / 500.0f * static_cast<float>(point.y - m_selector->m_ptCursor.y);
+									this->m_camera_angles[2] = this->m_camera_angles[2] - angle_speed / 500.0f * static_cast<float>(point.y - this->rtt_get_cursor_pos_cpoint().y);
 								}
 								// translation
 								else if (io.KeyMods == ImGuiKeyModFlags_Ctrl)
 								{
 									const auto move_speed = static_cast<float>(game::g_PrefsDlg()->m_nMoveSpeed);
-									m_selector->camera_offset[1] = (m_selector->camera_offset[1] + move_speed / 1000.0f * static_cast<float>(point.x - m_selector->m_ptCursor.x));
-									m_selector->camera_offset[2] = (m_selector->camera_offset[2] - move_speed / 1000.0f * static_cast<float>(point.y - m_selector->m_ptCursor.y));
+									this->m_camera_offset[1] = (this->m_camera_offset[1] + move_speed / 1000.0f * static_cast<float>(point.x - this->rtt_get_cursor_pos_cpoint().x));
+									this->m_camera_offset[2] = (this->m_camera_offset[2] - move_speed / 1000.0f * static_cast<float>(point.y - this->rtt_get_cursor_pos_cpoint().y));
 								}
 								// normal rotation
 								else
 								{
-									m_selector->user_rotation = true;
-									m_selector->camera_angles[1] = m_selector->camera_angles[1] - angle_speed / 500.0f * static_cast<float>(point.x - m_selector->m_ptCursor.x);
-									m_selector->camera_angles[0] = m_selector->camera_angles[0] - angle_speed / 500.0f * static_cast<float>(point.y - m_selector->m_ptCursor.y);
+									this->m_user_rotation = true;
+									this->m_camera_angles[1] = this->m_camera_angles[1] - angle_speed / 500.0f * static_cast<float>(point.x - this->rtt_get_cursor_pos_cpoint().x);
+									this->m_camera_angles[0] = this->m_camera_angles[0] - angle_speed / 500.0f * static_cast<float>(point.y - this->rtt_get_cursor_pos_cpoint().y);
 								}
-								
-								SetCursorPos(m_selector->m_ptCursor.x, m_selector->m_ptCursor.y);
+
+								SetCursorPos(this->rtt_get_cursor_pos_cpoint().x, this->rtt_get_cursor_pos_cpoint().y);
 								ShowCursor(0);
 								was_mouse_hidden = true;
 							}
@@ -286,9 +278,9 @@ namespace ggui::modelselector
 					do {
 						cursor_state = ShowCursor(1);
 					} while (cursor_state < 0);
-					
+
 					was_mouse_hidden = false;
-					m_selector->user_rotation = false;
+					this->m_user_rotation = false;
 				}
 			}
 
@@ -303,16 +295,16 @@ namespace ggui::modelselector
 
 			ImGui::SetItemAllowOverlap();
 			ImGui::SetCursorScreenPos(ImVec2(screenpos_pre_scene.x, screenpos_pre_scene.y));
-			
+
 			if (ImGui::ButtonEx("#", ImVec2(0, 0), ImGuiButtonFlags_AllowItemOverlap))
 			{
-				prefs_open = !prefs_open;
+				m_preferences_open = !m_preferences_open;
 			} TT("open modelselector settings");
-			
-			if(prefs_open)
+
+			if (m_preferences_open)
 			{
 				static float buttons_total_width = 448.0f;
-				
+
 				ImGui::SameLine();
 				ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
 				ImGui::SetNextWindowBgAlpha(0.75f);
@@ -346,17 +338,17 @@ namespace ggui::modelselector
 						}
 
 						ImGui::SameLine();
-						if (ImGui::Button("Wireframe")) 
+						if (ImGui::Button("Wireframe"))
 						{
 							layermatwnd::rendermethod_preview = layermatwnd::rendermethod_preview != layermatwnd::WIREFRAME_WHITE ? layermatwnd::WIREFRAME_WHITE : layermatwnd::WIREFRAME;
 						} TT("Press a second time to switch to textured wireframe");
 
 						ImGui::SameLine();
-						if (ImGui::Button(layermatwnd::rotation_pause ? "Play" : "Pause", ImVec2(56.0f, 0))) 
+						if (ImGui::Button(this->m_anim_pause ? "Play" : "Pause", ImVec2(56.0f, 0)))
 						{
-							layermatwnd::rotation_pause = !layermatwnd::rotation_pause;
+							this->m_anim_pause = !this->m_anim_pause;
 						} TT("play/pause automatic rotation");
-						
+
 						ImGui::PopStyleCompact();
 					}
 					ImGui::EndGroup();
@@ -367,15 +359,15 @@ namespace ggui::modelselector
 
 					ImGui::BeginGroup();
 					{
-						if (ImGui::Button(m_selector->overwrite_selection ? "Overwrite selection: On" : "Overwrite selection: Off", ImVec2(168.0f, 0))) {
-							m_selector->overwrite_selection = !m_selector->overwrite_selection;
+						if (ImGui::Button(this->m_overwrite_selection ? "Overwrite selection: On" : "Overwrite selection: Off", ImVec2(168.0f, 0))) {
+							this->m_overwrite_selection = !this->m_overwrite_selection;
 						} TT("On: swap model for selected entity\nOff: spawn a new entity");
 
 						ImGui::SameLine();
-						if (ImGui::Button("Refresh List")) 
+						if (ImGui::Button("Refresh List"))
 						{
-							m_selector->one_time_init = false;
-							m_selector->xmodel_selection = -1;
+							this->set_initiated(true);
+							this->m_xmodel_selection = -1;
 						}
 
 						ImGui::EndGroup();
@@ -385,7 +377,7 @@ namespace ggui::modelselector
 
 					ImGui::SetNextItemWidth(buttons_total_width - ImGui::CalcTextSize("Fov").x - 24.0f - second_row_button_width);
 					ImGui::SameLine();
-					ImGui::DragFloat("Fov", &layermatwnd::fov, 0.1f, 45.0f, 100.0f);
+					ImGui::DragFloat("Fov", &this->m_camera_fov, 0.1f, 10.0f, 125.0f);
 					ImGui::PopStyleCompact();
 				}
 				ImGui::EndChild();
@@ -402,31 +394,45 @@ namespace ggui::modelselector
 				"Change selection:  Up/Down Arrow:\n"
 				"- Drag and drop xmodel from list or preview to grid or camera to spawn it");
 
-			if (m_selector->bad_model)
+			if (this->m_bad_model)
 			{
 				ImGui::SameLine();
 				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
 				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Bad model");
 			}
 		}
-		
+
 		ImGui::EndChild();
 		ImGui::End();
 	}
 
-	void init()
+	void modelselector_dialog::on_open()
+	{
+		if (!this->is_initiated())
+		{
+			this->m_xmodel_filelist = game::FS_ListFilteredFilesWrapper("xmodel", nullptr, &this->m_xmodel_filecount);
+			this->set_initiated();
+		}
+	}
+
+	void modelselector_dialog::on_close()
+	{ }
+
+	void modelselector_dialog::init()
 	{
 		components::command::register_command_with_hotkey("xo_modelselector"s, [](auto)
 		{
-			const auto m_selector = ggui::get_rtt_modelselector();
+			const auto gui = GET_GUI(ggui::modelselector_dialog); //ggui::get_rtt_modelselector();
 
-			if(m_selector->inactive_tab && m_selector->menustate)
+			if (gui->is_inactive_tab() && gui->is_active())
 			{
-				m_selector->bring_tab_to_front = true;
+				gui->set_bring_to_front(true);
 				return;
 			}
-			
-			m_selector->menustate = !m_selector->menustate;
+
+			gui->toggle();
 		});
 	}
+
+	REGISTER_GUI(modelselector_dialog);
 }

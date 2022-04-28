@@ -1,33 +1,53 @@
 #include "std_include.hpp"
+#include "_ggui.hpp"
 
 namespace ggui
 {
+	std::vector<std::unique_ptr<ggui_module>>* loader::modules_ = nullptr;
+
+	void loader::register_gui(std::unique_ptr<ggui_module>&& module_)
+	{
+		if (!modules_)
+		{
+			modules_ = new std::vector<std::unique_ptr<ggui_module>>();
+			atexit(destroy_modules);
+		}
+
+		modules_->push_back(std::move(module_));
+	}
+
+	void loader::destroy_modules()
+	{
+		if (!modules_)
+		{
+			return;
+		}
+
+		delete modules_;
+		modules_ = nullptr;
+	}
+
 	// *
 	// | -------------------- Variables ------------------------
 	// *
 
-    imgui_state_t state = imgui_state_t();
-	bool		saved_states_init = false;
-	
-	ImGuiID		dockspace_outer_left_node;
-	bool		reset_dockspace = false;
-	bool		mainframe_menubar_enabled = false;
-	float		menubar_height;
-	
-	ImVec2		toolbar_pos;
-	ImVec2		toolbar_size;
-	ImGuiAxis	toolbar_axis = ImGuiAxis_X;
-	bool		toolbar_reset = false;
-	ImGuiID		toolbar_dock_top;
-	ImGuiID		toolbar_dock_left;
+	bool		m_init_saved_states = false;
 
-	//model_selector_s rtt_model_preview;
+	bool		m_ggui_initialized = false;
+	ImGuiContext* m_ggui_context = nullptr;
 
+	bool		m_dockspace_initiated = false;
+	bool		m_dockspace_reset = false;
+	ImGuiID		m_dockspace_outer_left_node;
+	bool		mainframe_menubar_enabled = false; // is stock menubar visible? (also used for asm stubs)
+
+	bool		m_demo_menu_state = false;
+	
 	std::vector<commandbinds> cmd_hotkeys;
 
 	// * cmainframe::on_keydown()
 	// * ggui::hotkeys::load_commandmap()
-	// add additional radiant-builtins
+	//   add additional radiant-builtins
 	std::vector<game::SCommandInfo> cmd_addon_hotkeys_builtin
 	{
 		{ "LockX", 0, 0, 0x802E },
@@ -44,12 +64,13 @@ namespace ggui
 
 	ImVec2 get_initial_window_pos()
 	{
-		if(ggui::toolbar_axis == ImGuiAxis_X)
+		const auto tb = GET_GUI(ggui::toolbar_dialog);
+		if(tb->m_toolbar_axis == ImGuiAxis_X)
 		{
-			return ImVec2(5.0f, 33.0f + ggui::toolbar_size.y + 5.0f);
+			return { 5.0f, 33.0f + tb->m_toolbar_size.y + 5.0f };
 		}
 
-		return ImVec2(ggui::toolbar_size.x + 10.0f, 33.0f);
+		return { tb->m_toolbar_size.x + 10.0f, 33.0f };
 	}
 
 	void set_next_window_initial_pos_and_constraints(ImVec2 mins, ImVec2 initial_size, ImVec2 overwrite_pos)
@@ -57,7 +78,7 @@ namespace ggui
 		ImGui::SetNextWindowSizeConstraints(mins, ImVec2(FLT_MAX, FLT_MAX));
 		ImGui::SetNextWindowSize(initial_size, ImGuiCond_FirstUseEver);
 
-		if(overwrite_pos.x == 0 && overwrite_pos.y == 0)
+		if(overwrite_pos.x == 0.0f && overwrite_pos.y == 0.0f)
 		{
 			ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		}
@@ -67,26 +88,26 @@ namespace ggui
 		}
 	}
 
-	bool cz_context_ready()
+	bool is_ggui_initialized()
 	{
-		return ggui::state.czwnd.context_initialized;
+		return ggui::m_ggui_initialized;
 	}
 
-	// handles "window_hovered" for widgets drawn over rtt windows
-	// needs to be called after every widget
-	bool rtt_handle_windowfocus_overlaywidget(ggui::render_to_texture_window_s* wnd)
+	// handles "window_hovered" for widgets drawn over rtt windows (needs to be called after every widget)
+	bool rtt_handle_windowfocus_overlaywidget(bool* gui_hover_state)
 	{
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_None))
 		{
-			wnd->window_hovered = false;
+			*gui_hover_state = false;
 			return true;
 		}
 
 		return false;
 	}
 
+
 	// redraw tabbar triangle -> blocking mouse input for that area so one can actually use the triangle to unhide the tabbar
-	void FixDockingTabbarTriangle(ImGuiWindow* wnd, ggui::render_to_texture_window_s* rtt)
+	void redraw_undocking_triangle(ImGuiWindow* wnd, bool* gui_hover_state)
 	{
 		if (wnd->DockIsActive && wnd->DockNode->IsHiddenTabBar() && !wnd->DockNode->IsNoTabBar())
 		{
@@ -96,10 +117,10 @@ namespace ggui
 
 			ImGui::InvisibleButton("##unhide_hack", ImVec2(unhide_sz_hit, unhide_sz_hit));
 
-			const bool hovered = ggui::rtt_handle_windowfocus_overlaywidget(rtt);
-			
+			const bool hovered = ggui::rtt_handle_windowfocus_overlaywidget(gui_hover_state);
 
-			if(dvars::gui_rtt_padding_enabled && !dvars::gui_rtt_padding_enabled->current.enabled)
+
+			if (dvars::gui_rtt_padding_enabled && !dvars::gui_rtt_padding_enabled->current.enabled)
 			{
 				const auto col_hover = ImGui::GetColorU32(ImGuiCol_ButtonActive);
 				const auto col_bg = ImGui::ColorConvertFloat4ToU32(ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));
@@ -120,14 +141,241 @@ namespace ggui
 
 	void dragdrop_overwrite_leftmouse_capture()
 	{
-		get_rtt_camerawnd()->capture_left_mousebutton = true;
-		get_rtt_gridwnd()->capture_left_mousebutton = true;
+		GET_GUI(ggui::camera_dialog)->rtt_set_lmb_capturing(true);
+		GET_GUI(ggui::grid_dialog)->rtt_set_lmb_capturing(true);
 	}
 
 	void dragdrop_reset_leftmouse_capture()
 	{
-		get_rtt_camerawnd()->capture_left_mousebutton = false;
-		get_rtt_gridwnd()->capture_left_mousebutton = false;
+		GET_GUI(ggui::camera_dialog)->rtt_set_lmb_capturing(false);
+		GET_GUI(ggui::grid_dialog)->rtt_set_lmb_capturing(false);
 	}
-	
+
+	void mru_new_item(game::LPMRUMENU* mru, const char* item_str)
+	{
+		const static uint32_t func_addr = 0x48A2C0;
+		__asm
+		{
+			pushad;
+			mov		esi, mru;
+			push	item_str;
+			call	func_addr;
+			add     esp, 4;
+			popad;
+		}
+	}
+
+	void mru_insert_item(game::LPMRUMENU* mru, HMENU menu)
+	{
+		const static uint32_t func_addr = 0x48A400;
+		__asm
+		{
+			pushad;
+			mov		edi, mru;
+			push	menu;
+			call	func_addr;
+			add     esp, 4;
+			popad;
+		}
+	}
+
+	void map_load_from_file(const char* path)
+	{
+		const static uint32_t func_addr = 0x486680;
+		__asm
+		{
+			pushad;
+			mov		ecx, path;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void map_save_file(const char* path /*ecx*/, int is_reg, int save_to_perforce)
+	{
+		const static uint32_t func_addr = 0x486C00;
+		__asm
+		{
+			pushad;
+			mov		ecx, path;
+			push	save_to_perforce;
+			push	is_reg;
+			call	func_addr;
+			add		esp, 8;
+			popad;
+		}
+	}
+
+	void map_write_selection(const char* path)
+	{
+		const static uint32_t func_addr = 0x488EB0;
+		__asm
+		{
+			pushad;
+			mov		edi, path;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void mru_add_recent_map(const char* map_str)
+	{
+		mru_new_item(game::g_qeglobals->d_lpMruMenu, map_str);
+		const auto menu = GetSubMenu(GetMenu(game::g_qeglobals->d_hwndMain), 0);
+		mru_insert_item(game::g_qeglobals->d_lpMruMenu, menu);
+	}
+
+	void file_dialog_frame()
+	{
+		const auto file = GET_GUI(ggui::file_dialog);
+		if (file->is_active() && file->dialog() || file->was_canceled())
+		{
+			const std::string path_out = file->get_path_result();
+			const int handler = file->get_file_handler();
+
+			switch(handler)
+			{
+				case MAP_LOAD:
+				{
+						if (!file->was_canceled() && !path_out.empty())
+						{
+							// checks for unsaved changes or if inside prefab 
+							if (!utils::hook::call<bool(__cdecl)()>(0x489D90)()
+								// loose changes modal 
+								|| utils::hook::call<bool(__cdecl)()>(0x49A030)())
+							{
+								// leave all prefabs and go back to stacklevel 0
+								utils::hook::call<void(__cdecl)()>(0x489D50)();
+
+								mru_add_recent_map(path_out.c_str());
+
+								// Pointfile_Clear
+								utils::hook::call<void(__cdecl)()>(0x410600)();
+
+								map_load_from_file(path_out.c_str());
+
+								// fix stuck left mouse button
+								ImGuiIO& io = ImGui::GetIO();
+								io.AddMouseButtonEvent(0, false);
+							}
+						}
+						
+						break;
+				}
+
+				case MAP_SAVE:
+				{
+						if (!file->was_canceled() && !path_out.empty())
+						{
+							std::string file_path = path_out;
+							if (!file_path.ends_with(".map"))
+							{
+								file_path += ".map";
+							}
+
+							mru_add_recent_map(file_path.c_str());
+							map_save_file(file_path.c_str(), 0, 0);
+
+							// fix stuck left mouse button
+							ImGuiIO& io = ImGui::GetIO();
+							io.AddMouseButtonEvent(0, false);
+						}
+
+						break;
+				}
+
+				case MAP_EXPORT:
+				{
+						if (!file->was_canceled() && !path_out.empty())
+						{
+							std::string file_path = path_out;
+							if (!file_path.ends_with(".map"))
+							{
+								file_path += ".map";
+							}
+
+							map_write_selection(file_path.c_str());
+
+							// fix stuck left mouse button
+							ImGuiIO& io = ImGui::GetIO();
+							io.AddMouseButtonEvent(0, false);
+						}
+
+						break;
+				}
+
+				case MISC_MODEL:
+				case MISC_MODEL_CHANGE:
+				case MISC_PREFAB:
+				case MISC_PREFAB_CHANGE:
+				{
+						const bool is_model = (handler == MISC_MODEL || handler == MISC_MODEL_CHANGE);
+						const bool is_changing = (handler == MISC_MODEL_CHANGE || handler == MISC_PREFAB_CHANGE);
+
+						if(!file->was_canceled() && !path_out.empty())
+						{
+							const std::string replace_path = is_model ? "raw\\xmodel\\" : "map_source\\";
+							const std::size_t pos = path_out.find(replace_path) + replace_path.length();
+
+							std::string loc_filepath = path_out.substr(pos);
+							utils::replace(loc_filepath, "\\", "/");
+
+							const auto ent = GET_GUI(ggui::entity_dialog);
+							ent->add_prop("model", loc_filepath.c_str());
+
+							if(!is_changing)
+							{
+								auto edit_ent = game::g_edit_entity();
+								++edit_ent->version;
+								edit_ent->modelClass = nullptr;
+								edit_ent->brushes.oprev->unk01 = 0;
+							}
+
+
+							// fix stuck left mouse button
+							ImGuiIO& io = ImGui::GetIO();
+							io.AddMouseButtonEvent(0, false);
+
+							break;
+						}
+						else
+						{
+							if(!is_changing)
+							{
+								cdeclcall(void, 0x425690);
+							}
+						}
+				}
+
+				case FX_CHANGE:
+				{
+					if (!file->was_canceled() && !path_out.empty())
+					{
+						const std::string replace_path = "raw\\fx\\";
+						const std::size_t pos = path_out.find(replace_path) + replace_path.length();
+
+						std::string loc_filepath = path_out.substr(pos);
+						utils::replace(loc_filepath, "\\", "/");
+						utils::erase_substring(loc_filepath, ".efx"s);
+
+						const auto ent = GET_GUI(ggui::entity_dialog);
+						ent->add_prop("fx", loc_filepath.c_str());
+
+
+						// fix stuck left mouse button
+						ImGuiIO& io = ImGui::GetIO();
+						io.AddMouseButtonEvent(0, false);
+
+						break;
+					}
+				}
+			}
+
+			if(file->was_canceled())
+			{
+				file->reset();
+				file->fix_on_close();
+			}
+		}
+	}
 }

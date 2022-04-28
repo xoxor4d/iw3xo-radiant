@@ -1,18 +1,12 @@
 #include "std_include.hpp"
 
-namespace ggui::textures
+namespace ggui
 {
-	ImGuiTextFilter	imgui_filter;
-	int				imgui_filter_last_len = 0;
 
-	void toolbar()
+	void texture_dialog::toolbar()
 	{
-		const float RIGHT_OFFSET = 14.0f;
-
-		const auto texwnd = ggui::get_rtt_texturewnd();
-		//ImGui::SetCursorScreenPos(ImVec2(cursor_pos.x, cursor_pos.y + 40.0f)); // no effect with sameline below
-
 		// right side alignment
+		const float RIGHT_OFFSET = 14.0f;
 		static float toolbar_line1_width = 580.0f; // used as first frame estimate
 		ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line1_width + RIGHT_OFFSET));
 
@@ -27,20 +21,19 @@ namespace ggui::textures
 			{
 				// Texture_ShowAll
 				cdeclcall(void, 0x45B730);
-			} ggui::rtt_handle_windowfocus_overlaywidget(texwnd); TT("Show all textures");
+			} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state()); TT("Show all textures");
 
 			ImGui::SameLine();
 			if (ImGui::Button("U"))
 			{
 				// Texture_ShowInuse
 				cdeclcall(void, 0x45B850);
-			} ggui::rtt_handle_windowfocus_overlaywidget(texwnd); TT("Show all textures in use");
+			} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state()); TT("Show all textures in use");
+
 			ImGui::PopStyleCompact();
 
 			ImGui::SameLine();
 			ImGui::PushStyleCompact();
-			//ImGui::TextUnformatted("Usage:");
-			//ImGui::SameLine();
 			ImGui::SetNextItemWidth(140.0f);
 
 			const char* combo_usage_preview_str = "Usage: all";
@@ -62,9 +55,9 @@ namespace ggui::textures
 							game::g_nUpdateBits |= W_TEXTURE;
 							g_texwnd->nPos = 0; // scroll to top
 
-						} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
-						// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+						// set the initial focus when opening the combo (scrolling + keyboard navigation focus)
 						if (game::texWndGlob_usageFilter == i)
 						{
 							ImGui::SetItemDefaultFocus();
@@ -77,52 +70,14 @@ namespace ggui::textures
 				}
 
 				ImGui::EndCombo();
-			} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+			} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+
 			ImGui::PopStyleCompact();
-
-#if 0 // who needs this filter anyway
-			ImGui::SameLine();
-			ImGui::TextUnformatted("Locale:");
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(140.0f);
-			if (ImGui::BeginCombo("##combo_locale", game::filter_locale_array[game::texWndGlob_localeFilter].name, ImGuiComboFlags_HeightLarge))
-			{
-				for (std::uint8_t i = 0; i < game::texWndGlob_localeCount; i++)
-				{
-					const char* name = game::filter_locale_array[i].name;
-					if (name)
-					{
-						if (ImGui::Selectable(name, game::texWndGlob_localeFilter == i))
-						{
-							game::texWndGlob_localeFilter = i;
-							game::g_nUpdateBits |= W_TEXTURE;
-							g_texwnd->nPos = 0; // scroll to top
-
-						} handle_windowfocus_overlaywidget(texwnd);
-
-						// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-						if (game::texWndGlob_localeFilter == i)
-						{
-							ImGui::SetItemDefaultFocus();
-						}
-					}
-					else if (game::filter_locale_array[i].index == -1)
-					{
-						SEPERATORV(0.0f);
-					}
-				}
-
-				ImGui::EndCombo();
-			} handle_windowfocus_overlaywidget(texwnd);
-			ImGui::PopStyleCompact();
-#endif
 
 			// ---------
 
 			ImGui::SameLine();
 			ImGui::PushStyleCompact();
-			//ImGui::TextUnformatted("Surface:");
-			//ImGui::SameLine();
 			ImGui::SetNextItemWidth(140.0f);
 
 			const char* combo_surface_preview_str = "Surface: all";
@@ -135,8 +90,8 @@ namespace ggui::textures
 			{
 				for (std::uint8_t i = 0; i < 29; i++) // hardcoded value
 				{
-					const char* name = game::filter_surfacetype_array[i].name;
-					if (name)
+					if (const char* name = game::filter_surfacetype_array[i].name; 
+									name)
 					{
 						if (ImGui::Selectable(name, game::texWndGlob_surfaceTypeFilter == i))
 						{
@@ -144,9 +99,9 @@ namespace ggui::textures
 							game::g_nUpdateBits |= W_TEXTURE;
 							g_texwnd->nPos = 0; // scroll to top
 
-						} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
-						// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+						// set the initial focus when opening the combo (scrolling + keyboard navigation focus)
 						if (game::texWndGlob_surfaceTypeFilter == i)
 						{
 							ImGui::SetItemDefaultFocus();
@@ -159,7 +114,8 @@ namespace ggui::textures
 				}
 
 				ImGui::EndCombo();
-			} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+			} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+
 			ImGui::PopStyleCompact();
 
 			// ---------
@@ -193,16 +149,9 @@ namespace ggui::textures
 				}
 
 				ImGui::EndCombo();
-			} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+			} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+
 			ImGui::PopStyleCompact();
-
-#if 0
-			ImGui::Text("Texwnd hovered? %d", texwnd->window_hovered);
-			ImGui::Text("nPos: %d", g_texwnd->nPos);
-			ImGui::Text("needRange: %d", g_texwnd->m_bNeedRange);
-			ImGui::Text("textureoffset: %d", g_texwnd->textureOffset);
-#endif
-
 			ImGui::EndGroup();
 		}
 
@@ -243,7 +192,6 @@ namespace ggui::textures
 				ImGui::PopStyleColor();
 
 				g_texwnd->searchbar_filter = false;
-				//g_texwnd->searchbar_buffer = "";
 				imgui_filter_last_len = 0;
 			}
 			else
@@ -260,16 +208,13 @@ namespace ggui::textures
 
 
 			ImGui::EndGroup();
-		} ggui::rtt_handle_windowfocus_overlaywidget(texwnd);
+		} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 		toolbar_line2_width = ImGui::GetItemRectSize().x; // save width for the next frame
 		ImGui::PopStyleCompact();
 	}
 
-	// gui::render_loop()
-	// render to texture - imgui texture window
-
-	void gui()
+	void texture_dialog::gui()
 	{
 		int p_styles = 0;
 		int p_colors = 0;
@@ -300,28 +245,25 @@ namespace ggui::textures
 		ImGui::PushStyleColor(ImGuiCol_ResizeGripHovered, 0); p_colors++;
 		ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); p_colors++;
 
-		auto texwnd = ggui::get_rtt_texturewnd();
-
-		// yes 2 bools for the same thing, cba to refactor and test use-cases across all menus
-		if (texwnd->should_set_focus || texwnd->bring_tab_to_front)
+		if (this->rtt_is_focus_pending() || this->is_bring_to_front_pending())
 		{
-			texwnd->bring_tab_to_front = false;
-			texwnd->should_set_focus = false;
+			this->rtt_set_focus_state(false);
+			this->set_bring_to_front(false);
 			ImGui::SetNextWindowFocus();
 		}
 
-		if (!ImGui::Begin("Textures##rtt", &texwnd->menustate, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+		if (!ImGui::Begin("Textures##rtt", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 		{
-			texwnd->inactive_tab = true;
+			this->set_inactive_tab(true);
 			ImGui::PopStyleColor(p_colors);
 			ImGui::PopStyleVar(p_styles);
 			ImGui::End();
 			return;
 		}
 
-		texwnd->inactive_tab = false;
+		this->set_inactive_tab(false);
 
-		if (texwnd->scene_texture)
+		if (this->rtt_get_texture())
 		{
 			bool tabbar_visible = true;
 			const auto wnd = ImGui::GetCurrentWindow();
@@ -336,8 +278,8 @@ namespace ggui::textures
 
 			const float frame_height = tabbar_visible ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
 
-			const auto IO = ImGui::GetIO();
-			texwnd->scene_size_imgui = ImGui::GetWindowSize() - ImVec2(0.0f, frame_height);
+			const auto& io = ImGui::GetIO();
+			this->rtt_set_size(ImGui::GetWindowSize() - ImVec2(0.0f, frame_height));
 
 			const auto pre_child_pos = ImGui::GetCursorScreenPos();
 
@@ -345,11 +287,30 @@ namespace ggui::textures
 			ImGui::BeginChild("scene_child", ImVec2(texture_size.x, texture_size.y + frame_height), false, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 			{
 				const auto screenpos = ImGui::GetCursorScreenPos();
-				SetWindowPos(cmainframe::activewnd->m_pTexWnd->GetWindow(), HWND_BOTTOM, (int)screenpos.x, (int)screenpos.y, (int)texwnd->scene_size_imgui.x, (int)texwnd->scene_size_imgui.y, SWP_NOZORDER);
+				const auto& scene_size = this->rtt_get_size();
+
+				SetWindowPos(
+					cmainframe::activewnd->m_pTexWnd->GetWindow(), 
+					HWND_BOTTOM, 
+					static_cast<int>(screenpos.x),
+					static_cast<int>(screenpos.y),
+					static_cast<int>(scene_size.x), 
+					static_cast<int>(scene_size.y), 
+					SWP_NOZORDER);
+
 				const auto pre_image_cursor = ImGui::GetCursorPos();
 
-				ImGui::Image(texwnd->scene_texture, texture_size);
-				texwnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+				ImGui::Image(this->rtt_get_texture(), texture_size);
+				this->rtt_set_hovered_state(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
+
+				if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
+				{
+					this->rtt_set_hovered_state(true);
+				}
+				else
+				{
+					this->rtt_set_hovered_state(false);
+				}
 
 				// pop ItemSpacing
 				ImGui::PopStyleVar(); p_styles--;
@@ -357,15 +318,14 @@ namespace ggui::textures
 				ImGui::SetCursorPos(pre_image_cursor);
 				const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
 
-				texwnd->cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
-				texwnd->cursor_pos_pt = CPoint((LONG)texwnd->cursor_pos.x, (LONG)texwnd->cursor_pos.y);
+				this->rtt_set_cursor_pos(ImVec2(io.MousePos.x - cursor_screen_pos.x, io.MousePos.y - cursor_screen_pos.y));
 
 				// overlay toolbar
 				toolbar();
 
 				// reset cursorpos and fix tabbar triangle
 				ImGui::SetCursorScreenPos(pre_child_pos);
-				ggui::FixDockingTabbarTriangle(wnd, texwnd);
+				ggui::redraw_undocking_triangle(wnd, this->rtt_get_hovered_state());
 
 
 				// *
@@ -404,4 +364,6 @@ namespace ggui::textures
 		ImGui::PopStyleVar(p_styles);
 		ImGui::End();
 	}
+
+	REGISTER_GUI(texture_dialog);
 }

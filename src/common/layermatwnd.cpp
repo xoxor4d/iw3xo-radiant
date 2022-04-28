@@ -15,22 +15,21 @@
 
 layermatwnd_s* layermatwnd_struct = reinterpret_cast<layermatwnd_s*>(0x181F500);
 camera_s layercam = {};
-float _model_anim_yaw = 0.0f;
 
 namespace layermatwnd
 {
 	E_RENDERMETHOD rendermethod_axis = FULLBRIGHT;
 	E_RENDERMETHOD rendermethod_preview = FAKELIGHT_NORMAL;
-	float fov = 60.0f;
-	bool rotation_pause = false;
 }
 
 static game::orientation_t editor_instmodel_mtx =
 {
-	0.0f, 0.0f, 0.0f,
-	1.0f, 0.0f, 0.0f,
-	0.0f, 1.0f, 0.0f,
-	0.0f, 0.0f, 1.0f
+	{ 0.0f, 0.0f, 0.0f },
+	{
+		{1.0f, 0.0f, 0.0f},
+		{0.0f, 1.0f, 0.0f},
+		{0.0f, 0.0f, 1.0f}
+	}
 };
 
 void R_AddCmdSetViewportValues(int x, int y, int width, int height)
@@ -114,8 +113,8 @@ void set_scene_params_modelselector(const float* origin, float* axis, game::GfxM
 
 void setup_scene_modelselector(float* origin, float* axis, int x, int y, int width, int height)
 {
-	float fov_y = tan(ggui::get_rtt_modelselector()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
-	float fov_x = fov_y * ((float)layercam.width / (float)layercam.height);
+	float fov_y = tan(GET_GUI(ggui::modelselector_dialog)->m_camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
+	float fov_x = fov_y * (static_cast<float>(layercam.width) / static_cast<float>(layercam.height));
 	
 	game::GfxMatrix projection = {};
 	
@@ -125,13 +124,13 @@ void setup_scene_modelselector(float* origin, float* axis, int x, int y, int wid
 
 void calc_raydir_modelselector(int x, int y, float* dir)
 {
-	const float tan_half_y = tan(ggui::get_rtt_modelselector()->camera_fov * 0.01745329238474369f * 0.5f);
-	const float tan_half_x = (tan_half_y * 0.75f + tan_half_y * 0.75f) / (float)layercam.height;
+	const float tan_half_y = tan(GET_GUI(ggui::modelselector_dialog)->m_camera_fov * 0.01745329238474369f * 0.5f);
+	const float tan_half_x = (tan_half_y * 0.75f + tan_half_y * 0.75f) / static_cast<float>(layercam.height);
 
-	const float xa = tan_half_x * (float)(y - layercam.height / 2);
-	const float xb = tan_half_x * (float)(x - layercam.width / 2);
+	const float xa = tan_half_x * (static_cast<float>(y) - (static_cast<float>(layercam.height) / 2.0f));
+	const float xb = tan_half_x * (static_cast<float>(x) - (static_cast<float>(layercam.width) / 2.0f));
 
-	dir[0] = layercam.vup[0] * xa + layercam.vright[0] * xb + layercam.vpn[0];
+	                                                                   dir[0] = layercam.vup[0] * xa + layercam.vright[0] * xb + layercam.vpn[0];
 	dir[1] = layercam.vup[1] * xa + layercam.vright[1] * xb + layercam.vpn[1];
 	dir[2] = layercam.vup[2] * xa + layercam.vright[2] * xb + layercam.vpn[2];
 
@@ -186,17 +185,17 @@ void clayermatwnd::on_paint()
 	
 	build_matrix_modelselector();
 	
-	const auto m_selector = ggui::get_rtt_modelselector();
-	m_selector->camera_fov = layermatwnd::fov;
-	
+	const auto gui = GET_GUI(ggui::modelselector_dialog); //ggui::get_rtt_modelselector();
+
 	// stop yaw animation if rotated manually
-	if(!m_selector->user_rotation && !layermatwnd::rotation_pause)
+	if(!gui->m_user_rotation && !gui->m_anim_pause)
 	{
-		_model_anim_yaw += 0.1f;
+		gui->m_anim_model_yaw += 0.1f;
 	}
 	
-	if (_model_anim_yaw > 360.0f) {
-		_model_anim_yaw -= 360.0f;
+	if (gui->m_anim_model_yaw > 360.0f) 
+	{
+		gui->m_anim_model_yaw -= 360.0f;
 	}
 
 	layercam.width = game::dx->windows[ggui::LAYERED].width;
@@ -204,7 +203,7 @@ void clayermatwnd::on_paint()
 
 	// custom rendermethods always use fakelight_normal
 	auto render_method_model = layermatwnd::rendermethod_preview;
-	if(render_method_model >= layermatwnd::CUSTOM_BEGIN)
+	if ( render_method_model >= layermatwnd::CUSTOM_BEGIN)
 	{
 		render_method_model = layermatwnd::FAKELIGHT_NORMAL;
 	}
@@ -212,12 +211,12 @@ void clayermatwnd::on_paint()
 	if (layercam.width != 0 && layercam.height != 0)
 	{
 		{
-			if (m_selector->menustate && !m_selector->inactive_tab && !m_selector->preview_model_name.empty())
+			if (gui->is_active() && !gui->is_inactive_tab() && !gui->m_preview_model_name.empty())
 			{
-				m_selector->bad_model = false;
+				gui->m_bad_model = false;
 
 				// get model handle
-				if(auto model = game::R_RegisterModel(m_selector->preview_model_name.c_str());
+				if(auto model = game::R_RegisterModel(gui->m_preview_model_name.c_str());
 						model)
 				{
 					// use the fx model for invalid or vertex heavy models
@@ -226,7 +225,7 @@ void clayermatwnd::on_paint()
 						|| model->surfs->vertCount > 15000)
 					{
 						model = game::R_RegisterModel("fx");
-						m_selector->bad_model = true;
+						gui->m_bad_model = true;
 					}
 
 					// begin a new frame, clear the scene
@@ -248,12 +247,12 @@ void clayermatwnd::on_paint()
 					float origin[3];
 					origin[0] = 0.0f; //m_selector->camera_offset[0]; //cmainframe::activewnd->m_pCamWnd->camera.origin[0];
 					origin[1] = 0.0f; //m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[1];
-					origin[2] = m_selector->camera_offset[2]; //cmainframe::activewnd->m_pCamWnd->camera.origin[2];
+					origin[2] = gui->m_camera_offset[2]; //cmainframe::activewnd->m_pCamWnd->camera.origin[2];
 
 					float temp_angles[3];
-					temp_angles[0] = -m_selector->camera_angles[0];
-					temp_angles[1] = _model_anim_yaw - m_selector->camera_angles[1];
-					temp_angles[2] = m_selector->camera_angles[2];
+					temp_angles[0] = -gui->m_camera_angles[0];
+					temp_angles[1] = gui->m_anim_model_yaw - gui->m_camera_angles[1];
+					temp_angles[2] = gui->m_camera_angles[2];
 
 					setup_scene_modelselector(origin, axis, 0, 0, game::dx->windows[game::dx->targetWindowIndex].width, game::dx->windows[game::dx->targetWindowIndex].height);
 
@@ -283,14 +282,14 @@ void clayermatwnd::on_paint()
 
 					// get direction vector from center point into the scene
 					game::vec3_t direction;
-					calc_raydir_modelselector(static_cast<int>(m_selector->scene_size_imgui.x * 0.5f), static_cast<int>(m_selector->scene_size_imgui.y * 0.5f), direction);
+					calc_raydir_modelselector(static_cast<int>(gui->rtt_get_size().x * 0.5f), static_cast<int>(gui->rtt_get_size().y * 0.5f), direction);
 
 					game::vec3_t model_origin;
 					utils::vector::copy(origin, model_origin);
-					model_origin[1] = m_selector->camera_offset[1];
+					model_origin[1] = gui->m_camera_offset[1];
 
 					// calculate model origin including "zoom"
-					utils::vector::ma(model_origin, model->radius * 1.75f + m_selector->camera_distance, direction, model_orientation.origin);
+					utils::vector::ma(model_origin, model->radius * 1.75f + gui->m_camera_distance, direction, model_orientation.origin);
 					model_orientation.origin[2] = -(model->maxs[2] - dist);
 					
 					// transform by identity matrix (not needed)
@@ -308,36 +307,36 @@ void clayermatwnd::on_paint()
 						game::AnglesToAxis(temp_angles, &axis_orientation.axis[0][0]);
 
 						// get direction vector from bottom right point into the scene
-						calc_raydir_modelselector(static_cast<int>(m_selector->scene_size_imgui.x) - 35, 25, direction);
+						calc_raydir_modelselector(static_cast<int>(gui->rtt_get_size().x) - 35, 25, direction);
 
 						// push the model into the scene so it does not clip with the camera
 						utils::vector::ma(origin, axis_dist, direction, axis_orientation.origin);
 
-						if (!m_selector->axis_model_initiated)
+						if (!gui->m_axis_model_initiated)
 						{
 							// get model handle
-							if (auto axis_model = game::R_RegisterModel("axis");
-									 axis_model)
+							if (const auto	axis_model = game::R_RegisterModel("axis");
+											axis_model)
 							{
 								// AddModelToModelInstBuff - add the model to the instance "buffer"
 								if (const int model_inst_num = utils::hook::call<int(__cdecl)(game::XModel * _model, float* _axis, float _scale)>(0x4FDBE0)(axis_model, &axis_orientation.origin[0], axis_scale);
 											  model_inst_num)
 								{
-									m_selector->axis_model_inst_handle = model_inst_num;
+									gui->m_axis_model_inst_handle = model_inst_num;
 								}
 
-								m_selector->axis_model_initiated = true;
+								gui->m_axis_model_initiated = true;
 							}
 						}
 						else
 						{
 							// ModelInstUpdate
 							utils::hook::call<void(__cdecl)(int _inst, float* _axis, float scale)>(0x4FDD80)
-								(m_selector->axis_model_inst_handle, &axis_orientation.origin[0], axis_scale);
+								(gui->m_axis_model_inst_handle, &axis_orientation.origin[0], axis_scale);
 
 							// SkinModelInst - add model surfs to the skinnedCached buffer
 							utils::hook::call<int(__cdecl)(int inst_handle, int checkhandle, int techflags, game::GfxColor* color, int drawflags)>(0x4FE2E0)(
-								m_selector->axis_model_inst_handle, 0, layermatwnd::rendermethod_axis, nullptr, 2);
+								gui->m_axis_model_inst_handle, 0, layermatwnd::rendermethod_axis, nullptr, 2);
 						}
 					}
 
@@ -346,44 +345,44 @@ void clayermatwnd::on_paint()
 					// draw preview model
 					{
 						// is the last model still the selected one? -> update the model instance
-						if (m_selector->preview_model_ptr && m_selector->preview_model_ptr == model)
+						if (gui->m_preview_model_ptr && gui->m_preview_model_ptr == model)
 						{
 							// ModelInstUpdate
 							utils::hook::call<void(__cdecl)(int _inst, float* _axis, float scale)>(0x4FDD80)
-								(m_selector->preview_model_inst_handle, &model_orientation.origin[0], 1.0f);
+								(gui->m_preview_model_inst_handle, &model_orientation.origin[0], 1.0f);
 						}
 						// new model selected
 						else
 						{
 							// reset camera zoom and angles
-							m_selector->camera_angles[0] = 0.0f;
-							m_selector->camera_angles[1] = 0.0f;
-							m_selector->camera_angles[2] = 0.0f;
-							m_selector->camera_distance = 0.0f;
-							m_selector->camera_offset[0] = 0.0f;
-							m_selector->camera_offset[1] = 0.0f;
-							m_selector->camera_offset[2] = 0.0f;
+							gui->m_camera_angles[0] = 0.0f;
+							gui->m_camera_angles[1] = 0.0f;
+							gui->m_camera_angles[2] = 0.0f;
+							gui->m_camera_distance = 0.0f;
+							gui->m_camera_offset[0] = 0.0f;
+							gui->m_camera_offset[1] = 0.0f;
+							gui->m_camera_offset[2] = 0.0f;
 							
 							// RemoveModelInstFromBuf - clear old model instance
-							if (m_selector->preview_model_ptr && m_selector->preview_model_inst_handle)
+							if (gui->m_preview_model_ptr && gui->m_preview_model_inst_handle)
 							{
-								utils::hook::call<void(__cdecl)(int)>(0x4FDCE0)(m_selector->preview_model_inst_handle);
+								utils::hook::call<void(__cdecl)(int)>(0x4FDCE0)(gui->m_preview_model_inst_handle);
 							}
 
 							// AddModelToModelInstBuff - add the model to the instance "buffer"
 							if (const int model_inst_num = utils::hook::call<int(__cdecl)(game::XModel * _model, float* _axis, float _scale)>(0x4FDBE0)(model, &model_orientation.origin[0], 1.0f);
 								model_inst_num)
 							{
-								m_selector->preview_model_ptr = model;
-								m_selector->preview_model_inst_handle = model_inst_num;
+								gui->m_preview_model_ptr = model;
+								gui->m_preview_model_inst_handle = model_inst_num;
 							}
 						}
 
-						if (m_selector->preview_model_ptr)
+						if (gui->m_preview_model_ptr)
 						{
 							// SkinModelInst - add model surfs to the skinnedCached buffer
 							utils::hook::call<int(__cdecl)(int inst_handle, int checkhandle, int techflags, game::GfxColor* color, int drawflags)>(0x4FE2E0)(
-								m_selector->preview_model_inst_handle, 0, render_method_model, nullptr, 2);
+								gui->m_preview_model_inst_handle, 0, render_method_model, nullptr, 2);
 						}
 					}
 				}
@@ -394,7 +393,7 @@ void clayermatwnd::on_paint()
 				game::R_EndFrame();
 				game::R_IssueRenderCommands(-1);
 				game::R_SortMaterials(); // not needed because only a single model
-				components::renderer::copy_scene_to_texture(ggui::LAYERED, m_selector->scene_texture);
+				components::renderer::copy_scene_to_texture(ggui::LAYERED, gui->rtt_get_texture());
 			}
 		}
 	}

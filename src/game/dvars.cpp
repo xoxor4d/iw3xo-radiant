@@ -2,6 +2,8 @@
 
 namespace dvars
 {
+	game::dvar_s* parse_debug = nullptr;
+
 	game::dvar_s* gui_menubar_bg_color = nullptr;
 	game::dvar_s* gui_window_child_bg_color = nullptr;
 	game::dvar_s* gui_window_bg_color = nullptr;
@@ -16,10 +18,7 @@ namespace dvars
 	game::dvar_s* gui_rtt_padding_enabled = nullptr;
 	game::dvar_s* gui_rtt_padding_size = nullptr;
 	game::dvar_s* gui_rtt_padding_color = nullptr;
-	
-	game::dvar_s* gui_floating_toolbar = nullptr;
-	game::dvar_s* gui_resize_dockspace = nullptr;
-	game::dvar_s* gui_mainframe_background = nullptr;
+
 	game::dvar_s* gui_menubar_show_mouseorigin = nullptr;
 	game::dvar_s* gui_draw_fps = nullptr;
 
@@ -33,6 +32,7 @@ namespace dvars
 	game::dvar_s* gui_use_new_surfinspector = nullptr;
 	game::dvar_s* gui_use_new_vertedit_dialog = nullptr;
 	game::dvar_s* gui_use_new_context_menu = nullptr;
+	game::dvar_s* gui_use_new_filedialog = nullptr;
 
 	game::dvar_s* gui_camera_toolbar_defaultopen = nullptr;
 	
@@ -194,14 +194,21 @@ namespace dvars
 		cxywnd::register_dvars();
 		ccamwnd::register_dvars();
 		ctexwnd::register_dvars();
-		
-		ggui::entity::register_dvars();
-		ggui::mesh::register_dvars();
-		ggui::preferences::register_dvars();
-		ggui::surface_inspector::register_dvars();
-		ggui::toolbar::register_dvars();
+
+		GET_GUI(ggui::entity_dialog)->register_dvars();
+		GET_GUI(ggui::preferences_dialog)->register_dvars();
+		GET_GUI(ggui::surface_dialog)->register_dvars();
+		GET_GUI(ggui::vertex_edit_dialog)->register_dvars();
 
 		fx_system::register_dvars();
+
+		// ---------------------
+
+		dvars::parse_debug = dvars::register_bool(
+			/* name		*/ "parse_debug",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "show debug info while parsing a map file (parsed entity and brush amount)");
 
 		game::printf_to_console("\n");
 	}

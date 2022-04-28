@@ -110,7 +110,7 @@ namespace ggui::camera_guizmo
 	{
 		if (dvars::guizmo_enable->current.enabled)
 		{
-			const auto camerawnd = ggui::get_rtt_camerawnd();
+			const auto camerawnd = GET_GUI(ggui::camera_dialog);
 
 			// do not activate guizmo till initial left click is released
 			// fixes unwanted transforms on multi selection via shift (if mouse is over guizmo)
@@ -121,7 +121,8 @@ namespace ggui::camera_guizmo
 			{
 				if (guizmo_needs_activation)
 				{
-					camerawnd->capture_left_mousebutton = true;
+					camerawnd->rtt_set_lmb_capturing(true);
+
 					if (!guizmo_capture_active)
 					{
 						if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
@@ -138,7 +139,8 @@ namespace ggui::camera_guizmo
 			else
 			{
 				// always track
-				camerawnd->capture_left_mousebutton = true;
+				camerawnd->rtt_set_lmb_capturing(true);
+
 				guizmo_needs_activation = true;
 				guizmo_capture_active = false;
 			}
@@ -163,15 +165,18 @@ namespace ggui::camera_guizmo
 			// imguizmo settings
 			ImGuizmo::SetOrthographic(false);
 			ImGuizmo::SetDrawlist();
-			ImGuizmo::SetRect(camerawnd->scene_pos_imgui.x, camerawnd->scene_pos_imgui.y, camera_size.x, camera_size.y);
+			ImGuizmo::SetRect(
 
-			auto guizmo_mode = game::g_bRotateMode ? ImGuizmo::OPERATION::ROTATE : ImGuizmo::OPERATION::TRANSLATE;
+				camerawnd->rtt_get_position().x, 
+				camerawnd->rtt_get_position().y,
+				camera_size.x, 
+				camera_size.y);
+
+			const auto guizmo_mode = game::g_bRotateMode ? ImGuizmo::OPERATION::ROTATE : ImGuizmo::OPERATION::TRANSLATE;
 
 			float mtx_scale[3] = { 1.0f, 1.0f, 1.0f };
 			float angles[3] = { 0.0f, 0.0f, 0.0f };
 			float snap[3] = { 0.0f, 0.0f, 0.0f };
-
-#define VERTEX_GUIZMO
 
 			if (dvars::guizmo_snapping->current.enabled)
 			{
@@ -202,7 +207,7 @@ namespace ggui::camera_guizmo
 					// pass mouse input to ImGui
 					if (ImGuizmo::IsOver())
 					{
-						camerawnd->capture_left_mousebutton = true;
+						camerawnd->rtt_set_lmb_capturing(true);
 					}
 
 					// guizmo position
@@ -322,9 +327,7 @@ namespace ggui::camera_guizmo
 								rotate_axis_for_radiant[2][3] = rotate_axis[2][2];
 
 								// apply rotation to all selected brushes
-								for (auto   sb = game::g_selected_brushes_next();
-									(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
-									sb = sb->next)
+								FOR_ALL_SELECTED_BRUSHES(sb)
 								{
 									if (const auto brush = sb->def; brush)
 									{
@@ -416,7 +419,7 @@ namespace ggui::camera_guizmo
 					if (ImGuizmo::IsOver())
 					{
 						//camerawnd->window_hovered = false;
-						camerawnd->capture_left_mousebutton = true;
+						camerawnd->rtt_set_lmb_capturing(true);
 					}
 
 					for (auto epair = edit_entity->epairs; epair; epair = epair->next)
@@ -444,19 +447,21 @@ namespace ggui::camera_guizmo
 							ImGuizmo::DecomposeMatrixToComponents(tmp_matrix, t_origin, t_angles, mtx_scale);
 
 							char org_str[64] = {};
-							ggui::entity::addprop_helper_s helper = {};
 
+							ggui::entity_dialog::addprop_helper_s helper = {};
 							helper.add_undo = false;
 
-							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_origin[0], t_origin[1], t_origin[2])) {
+							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_origin[0], t_origin[1], t_origin[2])) 
+							{
 								helper.is_origin = true;
-								ggui::entity::AddProp("origin", org_str, &helper);
+								GET_GUI(ggui::entity_dialog)->add_prop("origin", org_str, &helper);
 							}
 
 							// switch axis
-							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_angles[1], t_angles[2], t_angles[0])) {
+							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_angles[1], t_angles[2], t_angles[0])) 
+							{
 								helper.is_angle = true;
-								ggui::entity::AddProp("angles", org_str, &helper);
+								GET_GUI(ggui::entity_dialog)->add_prop("angles", org_str, &helper);
 							}
 						}
 					}

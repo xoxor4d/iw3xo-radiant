@@ -69,7 +69,8 @@ namespace utils
 	const char *va(const char *fmt, ...);
 
 	std::string str_to_lower(std::string input);
-	bool starts_with(std::string haystack, std::string needle);
+	bool starts_with(std::string& haystack, const std::string& needle, bool erase = false);
+	bool starts_with(const std::string& haystack, const std::string& needle);
 	bool ends_with(std::string haystack, std::string needle);
 	std::vector<std::string> explode(const std::string& str, char delim);
 	void replace(std::string &string, std::string find, std::string replace);

@@ -1,6 +1,114 @@
 #include "std_include.hpp"
+#include <WinHttpClient.h>
 
-// discord_rpc
+bool get_html(const std::string& url, std::wstring& header, std::wstring& hmtl)
+{
+	const auto wurl = std::wstring(url.begin(), url.end());
+	bool ret = false;
+
+	try
+	{
+		WinHttpClient client(wurl);
+		std::string url_protocol = url.substr(0, 5);
+
+		std::ranges::transform(url_protocol.begin(), url_protocol.end(), url_protocol.begin(), (int (*)(int))std::toupper);
+
+		if (url_protocol == "HTTPS")
+		{
+			client.SetRequireValidSslCertificates(false);
+		}
+
+		client.SetUserAgent(L"User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:19.0) Gecko/20100101 Firefox/19.0");
+
+		if (client.SendHttpRequest())
+		{
+			header = client.GetResponseHeader();
+			hmtl = client.GetResponseContent();
+			ret = true;
+		}
+	}
+	catch (...)
+	{
+		header = L"Error";
+		hmtl = L"";
+	}
+
+	return ret;
+}
+
+DWORD WINAPI update_check(LPVOID)
+{
+	const std::string url = "https://api.github.com/repos/xoxor4d/iw3xo-radiant/releases";
+	std::wstring header, html;
+	get_html(url, header, html);
+
+	std::ranges::transform(html.begin(), html.end(), std::back_inserter(game::glob::gh_update_releases_json), [](wchar_t c)
+	{
+		return (char)c;
+	});
+
+	if (!game::glob::gh_update_releases_json.empty())
+	{
+		rapidjson::Document doc;
+		doc.Parse(game::glob::gh_update_releases_json.c_str());
+
+		if (!doc.Empty())
+		{
+			// latest release should be at index 0
+			if (doc[0].HasMember("tag_name"))
+			{
+				game::glob::gh_update_tag = doc[0]["tag_name"].GetString();
+			}
+
+			if (doc[0].HasMember("name"))
+			{
+				game::glob::gh_update_title = doc[0]["name"].GetString();
+			}
+
+			if (doc[0].HasMember("published_at"))
+			{
+				game::glob::gh_update_date = doc[0]["published_at"].GetString();
+
+				const auto pos = game::glob::gh_update_date.find_first_of('T');
+				if (pos)
+				{
+					game::glob::gh_update_date = game::glob::gh_update_date.substr(0, pos);
+				}
+			}
+
+			if (doc[0].HasMember("assets"))
+			{
+				if (doc[0]["assets"][0].HasMember("browser_download_url"))
+				{
+					game::glob::gh_update_link = doc[0]["assets"][0]["browser_download_url"].GetString();
+				}
+
+				if (doc[0]["assets"][0].HasMember("name"))
+				{
+					game::glob::gh_update_zip_name = doc[0]["assets"][0]["name"].GetString();
+				}
+			}
+		}
+
+		if (!game::glob::gh_update_tag.empty())
+		{
+			const auto tag_ver = utils::try_stof(game::glob::gh_update_tag, true);
+			if (tag_ver > (float)REVISION)
+			{
+				if (!game::glob::gh_update_title.empty() && !game::glob::gh_update_link.empty() && !game::glob::gh_update_zip_name.empty())
+				{
+					game::glob::gh_update_avail = true;
+				}
+			}
+		}
+	}
+
+	return TRUE;
+}
+
+// #
+// #
+
 DWORD WINAPI discord_rpc(LPVOID)
 {
 	while (true)
@@ -18,6 +126,9 @@ DWORD WINAPI discord_rpc(LPVOID)
 		}
 	}
 }
+
+// #
+// #
 
 DWORD WINAPI paint_msg_loop(LPVOID)
 {
@@ -137,18 +248,25 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 	return TRUE;
 }
 
+// #
+// #
+
 BOOL init_threads()
 {
-	//CreateThread(nullptr, 0, gui_paint_msg, nullptr, 0, nullptr);
+	// continuous gui painting
 	CreateThread(nullptr, 0, paint_msg_loop, nullptr, 0, nullptr);
 
-	// Create LiveRadiant thread (connecting to the server)
+	// live-link thread (search game server)
 	CreateThread(nullptr, 0, remote_net_search_server_thread, nullptr, 0, nullptr);
 
-	// Create LiveRadiant thread (receiving commands from the server)
+	// live-link thread (receiving commands from the server)
 	CreateThread(nullptr, 0, remote_net_receive_packet_thread, nullptr, 0, nullptr);
 
+	// discord rich presence
 	CreateThread(nullptr, 0, discord_rpc, nullptr, 0, nullptr);
+
+	// check for iw3xradiant updates
+	CreateThread(nullptr, 0, update_check, nullptr, 0, nullptr);
 
 	game::glob::command_thread_running = false;
 	if (CreateThread(nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(components::command::command_thread), nullptr, 0, nullptr))
@@ -156,13 +274,10 @@ BOOL init_threads()
 		game::glob::command_thread_running = true;
 	}
 
-	// -----------
-	// I/O Console
-
-	// Disable STDOUT buffering
+	// disable stdout buffering
 	setvbuf(stdout, nullptr, _IONBF, 0);
 
-	// Create an external console for Radiant
+	// create an external console
 	if (AllocConsole())
 	{
 		FILE *file = nullptr;
@@ -205,16 +320,55 @@ namespace components
 		}
 	}
 
+
+	// *
+	// map parsing debug prints (parsed entities and brushes, helpful for ParseEntity errors)
+
+	int map_parse_entity_num_counter = 0;
+	void __declspec(naked) map_parse_error_stub_01()
+	{
+		const static uint32_t retn_addr = 0x486603;
+		__asm
+		{
+			mov		edx, dword ptr[ebp - 8];
+			mov		map_parse_entity_num_counter, edx;
+
+			add     dword ptr[ebp - 8], 1; // ebp - 8 = entitiynum counter
+			cmp     dword ptr[esi + 4], 0;
+			jmp		retn_addr;
+		}
+	}
+
+	void parseentity_debug_print()
+	{
+		if(dvars::parse_debug && dvars::parse_debug->current.enabled)
+		{
+			game::printf_to_console("parsing entity: %d -- parsed brushes: %d\n", map_parse_entity_num_counter, game::g_qeglobals->d_parsed_brushes - 1);
+		}
+	}
+
+	void __declspec(naked) parseentity_stub()
+	{
+		const static uint32_t retn_addr = 0x483EE0;
+		__asm
+		{
+			pushad;
+			call	parseentity_debug_print;
+			popad;
+
+			mov     ecx, 2; // og
+			jmp		retn_addr;
+		}
+	}
+
+	// ----------------------------------
+
+
 	main_module::main_module()
 	{
 		init_threads();
 
-		// init internal console class
-		static ggui::console console;
-		console.m_scroll_to_bottom = true;
-
-		ggui::console::hooks();
-		
+		GET_GUI(ggui::console_dialog)->hooks();
 		radiantapp::hooks();
 		cmainframe::hooks();
 		czwnd::hooks();
@@ -223,35 +377,11 @@ namespace components
 		clayermatwnd::hooks();
 		ctexwnd::hooks();
 
-		// ggui hooks ~ gui::gui()
-
-
 		// add iw3xradiant search path (imgui images)
 		utils::hook(0x4A29A7, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
 
 		// do not load "_glow" fonts (qerfont_glow)
 		utils::hook::nop(0x552806, 5);
-
-		// hook / Grab CameraWnd object (only when using floating windows) :: (cmainframe::update_windows sets cmainframe::activewnd otherwise)
-		//utils::hook(0x42270C, ccam_init_stub, HOOK_JUMP).install()->quick();
-
-#if 0 // not needed because func was rewritten (renderer)
-		// disable black world on selecting a brush with sun preview enabled -> still disables active sun preview .. no black world tho
-		utils::hook::nop(0x406A11, 5);
-
-		// sunpreview: disable shadow projection for unselected brushes and entities
-		utils::hook::nop(0x406A70, 5);
-		// sunpreview: disable shadow projection for selected brushes and entities
-		utils::hook::nop(0x406A86, 5);
-		// sunpreview: disable shadow polyoffset
-		utils::hook::nop(0x406A8E, 5);
-
-		// sunpreview: keep sunpreview active even if a brush is selected ... what the fuck -> can no longer copy-paste brushes
-		//utils::hook::nop(0x484947, 5);
-
-		// disable black world on selecting a brush with sun preview enabled -> no longer able to clone brushes ...
-		//utils::hook::set<BYTE>(0x484904, 0xEB);
-#endif
 
 		// nop com_math.cpp "det" line:1775 assert (MatrixInverse44)
 		utils::hook::nop(0x4A6BC9, 5);
@@ -262,7 +392,16 @@ namespace components
 		// set max undo memory
 		utils::hook::set<int32_t>(0x739F70, 0x01000000); // default 2mb, now 16mb
 
+		// read parsed entities counter for debug printing
+		utils::hook::nop(0x4865FB, 8);
+		utils::hook(0x4865FB, map_parse_error_stub_01, HOOK_JUMP).install()->quick();
+
+		// map parsing debug prints (parsed entities and brushes, helpful for ParseEntity errors)
+		utils::hook(0x483EDB, parseentity_stub, HOOK_JUMP).install()->quick();
+
+
 		// * ---------------------------
+
 
 		// creates a brush that encupsules all selected brushes/patches and uses texture info of the first selected brush
 		// then deletes the original selection

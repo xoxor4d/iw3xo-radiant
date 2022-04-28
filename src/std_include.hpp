@@ -7,7 +7,7 @@
 // *
 // gui
 #define IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_BEGIN_CZWND if(ggui::cz_context_ready()) ImGui::SetCurrentContext(ggui::state.czwnd.context)
+#define IMGUI_BEGIN_CZWND if(ggui::is_ggui_initialized()) ImGui::SetCurrentContext(ggui::m_ggui_context)
 
 // Version number
 #include <version.hpp>
@@ -77,6 +77,7 @@
 #include "common/imgui/imgui_addons.hpp"
 #include "common/imgui/imgui_color_gradient.hpp"
 #include "common/imgui/imgui_curves.hpp"
+
 #include "detours/Detours.h"
 #include "fifo_map.hpp"
 
@@ -87,6 +88,8 @@
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
+
+#include <WinHttpClient.h>
 
 #include "game/structs.hpp"
 #include "utils/utils.hpp"
@@ -116,6 +119,7 @@
 #include "fx_system/fx_save.hpp"
 
 #include "ggui/_ggui.hpp"
+#include "ggui/_template_dialog.hpp"
 #include "ggui/about.hpp"
 #include "ggui/camera.hpp"
 #include "ggui/camera_guizmo.hpp"
@@ -127,8 +131,9 @@
 #include "ggui/filter.hpp"
 #include "ggui/grid.hpp"
 #include "ggui/hotkeys.hpp"
+#include "ggui/l2d_file_dialog.hpp"
 #include "ggui/menubar.hpp"
-#include "ggui/mesh.hpp"
+#include "ggui/vertex_edit.hpp"
 #include "ggui/modelselector.hpp"
 #include "ggui/preferences.hpp"
 #include "ggui/surface_inspector.hpp"

@@ -7,7 +7,7 @@ namespace game
 {
 	namespace glob
 	{
-		// Init
+		// init
 		bool command_thread_running;
 		std::vector<std::string> loadedModules;
 
@@ -17,14 +17,24 @@ namespace game
 		float frames_per_second;
 		bool ccamwindow_realtime;
 
-		// Misc
+		// misc
 		game::TrackWorldspawn track_worldspawn = game::TrackWorldspawn();
 
-		// Live Link
+		// update check
+		std::string gh_update_releases_json;
+		std::string gh_update_tag;
+		std::string gh_update_date;
+		std::string gh_update_title;
+		std::string gh_update_desc;
+		std::string gh_update_link;
+		std::string gh_update_zip_name;
+		bool gh_update_avail = false;
+
+		// live-link
 		game::ProcessServerCommands cServerCmd = game::ProcessServerCommands();
 		bool live_connected;
 
-		// Renderer
+		// renderer
 		IDirect3DDevice9* d3d9_device = nullptr;
 		
 	}
@@ -124,7 +134,15 @@ namespace game
 		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*(DWORD*)0x23F1868);
 		return brush;
 	}
-	
+
+	// g_selected_faces is a CArray
+	game::selface_t* g_selected_faces()
+	{
+		const auto selfaces = reinterpret_cast<game::selface_t*>(*(DWORD*)0x73C710);
+		return selfaces;
+	}
+
+	// pot. unsafe, do not use in loops
 	game::entity_s_def* g_edit_entity()
 	{
 		const auto ent = reinterpret_cast<game::entity_s_def*>(*(DWORD*)0x240A108);
@@ -137,6 +155,12 @@ namespace game
 	{
 		const auto eclass = reinterpret_cast<game::eclass_t*>(*(DWORD*)0x25D5B20);
 		return eclass;
+	}
+
+	CSurfaceDlg* get_surfacedialog()
+	{
+		const auto g_dlgSurface = reinterpret_cast<CSurfaceDlg*>(0x25D7668);
+		return g_dlgSurface;
 	}
 	
 	CPrefsDlg* g_PrefsDlg()
@@ -319,6 +343,40 @@ namespace game
 		}
 	}
 
+	void Patch_SetTextureInfo(game::texdef_sub_t* texdef /*ebx*/)
+	{
+		const static uint32_t func_addr = 0x447760;
+		__asm
+		{
+			pushad;
+			mov		ebx, texdef;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void Patch_ShiftTexture(game::patchMesh_t* def, float shift_horz, float shift_vert)
+	{
+		const static uint32_t func_addr = 0x446170;
+		__asm
+		{
+			pushad;
+			sub		esp, 8;
+
+			mov		edi, def;
+
+			fld		shift_vert;
+			fstp    dword ptr[esp + 4];
+
+			fld		shift_horz;
+			fstp    dword ptr[esp];
+
+			call	func_addr;
+			add		esp, 8;
+			popad;
+		}
+	}
+
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap)
 	{
 		const static uint32_t func_addr = 0x47BA40;
@@ -375,13 +433,10 @@ namespace game
 		__asm
 		{
 			pushad;
-
 			push	snap;
 			mov		ecx, brush;
-
 			call	func_addr;
 			add		esp, 4;
-
 			popad;
 		}
 	}
@@ -764,9 +819,10 @@ namespace game
 		vsprintf(text_out, _format, va);
 		_result = _vfprintf_l(stdout, _format, NULL, va);
 
-		if (ggui::_console)
+		if (const auto	con = GET_GUI(ggui::console_dialog); 
+						con)
 		{
-			ggui::_console->addline_no_format(text_out);
+			con->addline_no_format(text_out);
 		}
 
 		return _result;
@@ -783,9 +839,10 @@ namespace game
 		_result = _vfprintf_l(stdout, _format, NULL, _arglist);
 		__crt_va_end(_arglist);
 
-		if(ggui::_console)
+		if (const auto	con = GET_GUI(ggui::console_dialog);
+						con)
 		{
-			ggui::_console->addline_no_format(text_out);
+			con->addline_no_format(text_out);
 		}
 		
 		return _result;
@@ -801,9 +858,10 @@ namespace game
 		_vfprintf_l(stdout, _format, NULL, _arglist);
 		__crt_va_end(_arglist);
 
-		if (ggui::_console)
+		if (const auto	con = GET_GUI(ggui::console_dialog);
+						con)
 		{
-			ggui::_console->addline_no_format(text_out);
+			con->addline_no_format(text_out);
 		}
 	}
 
@@ -812,9 +870,10 @@ namespace game
 		std::string err = "[!] " + msg + "\n";
 		printf(err.c_str());
 
-		if (ggui::_console)
+		if (const auto	con = GET_GUI(ggui::console_dialog);
+						con)
 		{
-			ggui::_console->addline_no_format(err.c_str());
+			con->addline_no_format(err.c_str());
 		}
 	}
 

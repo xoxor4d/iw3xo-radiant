@@ -320,3 +320,8 @@ Other Ladder face
 {
 	ladder
 }
+
+Other FX
+{
+	KeyValue classname fx_origin
+}

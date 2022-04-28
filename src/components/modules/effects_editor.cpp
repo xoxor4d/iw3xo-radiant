@@ -153,17 +153,16 @@ namespace components
 
 	bool effects_editor::is_editor_active()
 	{
-		return ggui::state.czwnd.m_effects_editor.menustate;
+		return GET_GUI(ggui::effects_editor_dialog)->is_active();
 	}
 
 	bool effects_editor::has_unsaved_changes()
 	{
-		return ggui::effects_editor_gui::editor_effect_was_modified;
+		return GET_GUI(ggui::effects_editor_dialog)->m_effect_was_modified;
 	}
 
 	effects_editor::effects_editor()
-	{
-	}
+	{ }
 
 	effects_editor::~effects_editor()
 	{ }

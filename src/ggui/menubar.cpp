@@ -1,27 +1,8 @@
 #include "std_include.hpp"
 
-namespace ggui::menubar
+namespace ggui
 {
-	/*const float GRID_SIZES[11] =
-	{ 0.5f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f, 128.0f, 256.0f, 512.0f };
-
-	enum E_GRID_SIZES : int
-	{
-		GRID_05,
-		GRID_1,
-		GRID_2,
-		GRID_4,
-		GRID_8,
-		GRID_16,
-		GRID_32,
-		GRID_64,
-		GRID_128,
-		GRID_256,
-		GRID_512,
-	};*/
-
-	
-	void set_grid_size(const xywnd::E_GRID_SIZES size)
+	void menubar_dialog::set_grid_size(const xywnd::E_GRID_SIZES size)
 	{
 		game::g_qeglobals->d_gridsize = size;
 		if (game::g_PrefsDlg()->m_bSnapTToGrid)
@@ -32,8 +13,8 @@ namespace ggui::menubar
 		mainframe_thiscall(void, 0x428A00); // CMainFrame::SetGridStatus
 		game::g_nUpdateBits |= W_Z | W_XY;
 	}
-	
-	void set_render_method(const game::RENDER_METHOD_E meth)
+
+	void menubar_dialog::set_render_method(const game::RENDER_METHOD_E meth)
 	{
 		switch (meth)
 		{
@@ -51,8 +32,7 @@ namespace ggui::menubar
 		}
 	}
 
-	
-	void set_texture_resolution(int picmip)
+	void menubar_dialog::set_texture_resolution(int picmip)
 	{
 		game::g_qeglobals->d_savedinfo.d_picmip = picmip;
 
@@ -68,41 +48,70 @@ namespace ggui::menubar
 		game::g_nUpdateBits = -1;
 	}
 
-	
-	void menu(ggui::imgui_context_cz& context)
+	void menubar_dialog::menubar()
 	{
 		const auto prefs = game::g_PrefsDlg();
-		
+
 		// *
 		// menu bar within dockspace
-		
+
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12, 6));
 
 		if (ImGui::BeginMenuBar())
 		{
 			ImGui::BeginGroup();
-			
+
 			if (ImGui::BeginMenu("File"))
 			{
 				if (ImGui::MenuItem("New Map")) {
-					mainframe_cdeclcall(void, 0x423AA0); //cmainframe::OnFileNew
+					cdeclcall(void, 0x423AA0); //cmainframe::OnFileNew
 				}
 
-				if (ImGui::MenuItem("Open", hotkeys::get_hotkey_for_command("FileOpen").c_str())) {
-					mainframe_cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
+				if (ImGui::MenuItem("Open", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) 
+				{
+					// logic :: ggui::file_dialog_frame
+					if(dvars::gui_use_new_filedialog->current.enabled)
+					{
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_LOAD);
+						file->set_file_op_type(file_dialog::FileDialogType::OpenFile);
+						file->set_file_ext(".map");
+						file->open();
+					}
+					else
+					{
+						cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
+					}
 				}
 
-				if (ImGui::MenuItem("Save", hotkeys::get_hotkey_for_command("FileSave").c_str())) {
-					mainframe_cdeclcall(void, 0x423B80); //cmainframe::OnFileSave
+				if (ImGui::MenuItem("Save", ggui::hotkey_dialog::get_hotkey_for_command("FileSave").c_str())) {
+					cdeclcall(void, 0x423B80); //cmainframe::OnFileSave
 				}
 
-				if (ImGui::MenuItem("Save As")) {
-					mainframe_cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
-				}
+				if (ImGui::MenuItem("Save As")) 
+				{
+					// logic :: ggui::file_dialog_frame
+					if (dvars::gui_use_new_filedialog->current.enabled)
+					{
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
 
-				if (ImGui::MenuItem("Save Selected")) {
-					mainframe_thiscall(void, 0x4293A0); //cmainframe::OnFileExportmap
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_SAVE);
+						file->set_file_op_type(file_dialog::FileDialogType::SaveFile);
+						file->set_file_ext(".map");
+						file->open();
+					}
+					else
+					{
+						cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
+					}
 				}
 
 				SEPERATORV(0.0f);
@@ -130,16 +139,40 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Generate File .."))
 				{
+					if (ImGui::MenuItem("Save Selected"))
+					{
+						// logic :: ggui::file_dialog_frame
+						if (dvars::gui_use_new_filedialog->current.enabled)
+						{
+							const auto egui = GET_GUI(ggui::entity_dialog);
+							const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+							const auto file = GET_GUI(ggui::file_dialog);
+							file->set_default_path(path_str);
+							file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_EXPORT);
+							file->set_file_op_type(file_dialog::FileDialogType::SaveFile);
+							file->set_file_ext(".map");
+							file->open();
+						}
+						else
+						{
+							mainframe_thiscall(void, 0x4293A0); //cmainframe::OnFileExportmap
+						}
+					}
+
+					// is this even remotely useful?
+					if (ImGui::MenuItem("Save Region", "", nullptr, game::g_region_active)) {
+						mainframe_cdeclcall(void, 0x429020); //cmainframe::OnFileSaveregion
+					}
+
+					SEPERATORV(0.0f);
+
 					if (ImGui::MenuItem("Createfx"))
 					{
 						components::effects::generate_createfx();
 
 					} TT("Generate createfx files for current map.\n (bin\\IW3xRadiant\\createfx)");
-
-					if (ImGui::MenuItem("Save Region", "", nullptr, game::g_region_active)) {
-						mainframe_cdeclcall(void, 0x429020); //cmainframe::OnFileSaveregion
-					}
-
+					
 					if (ImGui::MenuItem("Pointfile")) {
 						mainframe_cdeclcall(void, 0x423B20); //cmainframe::OnPointfileOpen
 					}
@@ -174,7 +207,7 @@ namespace ggui::menubar
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Exit", hotkeys::get_hotkey_for_command("Quit").c_str()))
+				if (ImGui::MenuItem("Exit", ggui::hotkey_dialog::get_hotkey_for_command("Quit").c_str()))
 				{
 					PostMessage(cmainframe::activewnd->GetWindow(), WM_CLOSE, 0, 0L);
 				}
@@ -186,31 +219,31 @@ namespace ggui::menubar
 
 			if (ImGui::BeginMenu("Edit"))
 			{
-				if (ImGui::MenuItem("Undo", hotkeys::get_hotkey_for_command("Undo").c_str(), nullptr, game::g_lastundo() && game::g_lastundo()->done)) {
+				if (ImGui::MenuItem("Undo", ggui::hotkey_dialog::get_hotkey_for_command("Undo").c_str(), nullptr, game::g_lastundo() && game::g_lastundo()->done)) {
 					cdeclcall(void, 0x428730); //cmainframe::OnEditUndo / OnUpdateEditUndo
 				}
 
-				if (ImGui::MenuItem("Redo", hotkeys::get_hotkey_for_command("Redo").c_str(), nullptr, game::g_lastredo())) {
+				if (ImGui::MenuItem("Redo", ggui::hotkey_dialog::get_hotkey_for_command("Redo").c_str(), nullptr, game::g_lastredo())) {
 					cdeclcall(void, 0x428740); //cmainframe::OnEditRedo / OnUpdateEditRedo
 				}
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Copy", hotkeys::get_hotkey_for_command("Copy").c_str())) {
+				if (ImGui::MenuItem("Copy", ggui::hotkey_dialog::get_hotkey_for_command("Copy").c_str())) {
 					mainframe_thiscall(void, 0x4286B0); //cmainframe::OnEditCopybrush
 				}
 
-				if (ImGui::MenuItem("Paste", hotkeys::get_hotkey_for_command("Paste").c_str())) {
+				if (ImGui::MenuItem("Paste", ggui::hotkey_dialog::get_hotkey_for_command("Paste").c_str())) {
 					mainframe_thiscall(void, 0x4286D0); //cmainframe::OnEditPastebrush
 				}
 
-				if (ImGui::MenuItem("Delete", hotkeys::get_hotkey_for_command("DeleteSelection").c_str())) {
+				if (ImGui::MenuItem("Delete", ggui::hotkey_dialog::get_hotkey_for_command("DeleteSelection").c_str())) {
 					cdeclcall(void, 0x425690); //cmainframe::OnSelectionDelete
 				}
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Map Info", hotkeys::get_hotkey_for_command("MapInfo").c_str())) {
+				if (ImGui::MenuItem("Map Info", ggui::hotkey_dialog::get_hotkey_for_command("MapInfo").c_str())) {
 					cdeclcall(void, 0x426C60); //cmainframe::OnEditMapinfo
 				}
 
@@ -220,30 +253,30 @@ namespace ggui::menubar
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Enter Prefab", hotkeys::get_hotkey_for_command("EnterPrefab").c_str())) {
+				if (ImGui::MenuItem("Enter Prefab", ggui::hotkey_dialog::get_hotkey_for_command("EnterPrefab").c_str())) {
 					cdeclcall(void, 0x42BF70); //cmainframe::OnPrefabEnter
 				}
 
-				if (ImGui::MenuItem("Leave Prefab", hotkeys::get_hotkey_for_command("LeavePrefab").c_str())) {
+				if (ImGui::MenuItem("Leave Prefab", ggui::hotkey_dialog::get_hotkey_for_command("LeavePrefab").c_str())) {
 					cdeclcall(void, 0x42BF80); //cmainframe::OnPrefabLeave
 				}
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Edit Colors ...")) {
-					components::gui::toggle(context.m_colors);
-				}
-				
-				if (ImGui::MenuItem("Edit Toolbar ...")) {
-					components::gui::toggle(context.m_toolbar_edit);
+				if (ImGui::MenuItem("Edit Colors ..")) {
+					GET_GUI(ggui::gui_colors_dialog)->toggle();
 				}
 
-				if (ImGui::MenuItem("Edit Hotkeys ...")) {
-					components::gui::toggle(context.m_cmdbinds);
+				if (ImGui::MenuItem("Edit Toolbar ..")) {
+					GET_GUI(ggui::toolbar_edit_dialog)->toggle();
 				}
 
-				if (ImGui::MenuItem("Preferences", hotkeys::get_hotkey_for_command("Preferences").c_str())) {
-					components::gui::toggle(context.m_preferences);
+				if (ImGui::MenuItem("Edit Hotkeys ..")) {
+					GET_GUI(hotkey_dialog)->toggle();
+				}
+
+				if (ImGui::MenuItem("Preferences", ggui::hotkey_dialog::get_hotkey_for_command("Preferences").c_str())) {
+					GET_GUI(ggui::preferences_dialog)->toggle();
 				}
 
 				ImGui::EndMenu(); // Edit
@@ -253,33 +286,33 @@ namespace ggui::menubar
 			{
 				if (ImGui::BeginMenu("Toggle"))
 				{
-					if (ImGui::MenuItem("Game View", hotkeys::get_hotkey_for_command("xo_gameview").c_str(), dvars::radiant_gameview->current.enabled)) {
+					if (ImGui::MenuItem("Game View", ggui::hotkey_dialog::get_hotkey_for_command("xo_gameview").c_str(), dvars::radiant_gameview->current.enabled)) {
 						components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
 					}
-					
-					if (ImGui::MenuItem("Console", hotkeys::get_hotkey_for_command("ViewConsole").c_str())) {
-						components::gui::toggle(context.m_console);
+
+					if (ImGui::MenuItem("Console", ggui::hotkey_dialog::get_hotkey_for_command("ViewConsole").c_str())) {
+						GET_GUI(console_dialog)->toggle();
 					}
 
-					if (ImGui::MenuItem("Filter", hotkeys::get_hotkey_for_command("ViewFilters").c_str())) {
-						components::gui::toggle(context.m_filter);
+					if (ImGui::MenuItem("Filter", ggui::hotkey_dialog::get_hotkey_for_command("ViewFilters").c_str())) {
+						GET_GUI(filter_dialog)->toggle();
 					}
 
-					if (ImGui::MenuItem("Entity", hotkeys::get_hotkey_for_command("ViewEntityInfo").c_str())) {
-						components::gui::toggle(context.m_entity);
+					if (ImGui::MenuItem("Entity", ggui::hotkey_dialog::get_hotkey_for_command("ViewEntityInfo").c_str())) {
+						GET_GUI(ggui::entity_dialog)->toggle();
 					}
 
-					if (ImGui::MenuItem("Surface Inspector", hotkeys::get_hotkey_for_command("SurfaceInspector").c_str())) 
+					if (ImGui::MenuItem("Surface Inspector", ggui::hotkey_dialog::get_hotkey_for_command("SurfaceInspector").c_str()))
 					{
 						if (dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
 						{
 							if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
 							{
-								components::gui::toggle(ggui::state.czwnd.m_entity);
+								GET_GUI(ggui::entity_dialog)->toggle();
 							}
 							else
 							{
-								components::gui::toggle(ggui::state.czwnd.m_surface_inspector);
+								GET_GUI(ggui::surface_dialog)->toggle();
 							}
 						}
 						else
@@ -289,22 +322,20 @@ namespace ggui::menubar
 						}
 					}
 
-					if (ImGui::MenuItem("Layers", hotkeys::get_hotkey_for_command("ToggleLayers").c_str())) {
+					if (ImGui::MenuItem("Layers", ggui::hotkey_dialog::get_hotkey_for_command("ToggleLayers").c_str())) {
 						cdeclcall(void, 0x42BD10); // cmainframe::OnLayersDlg
 					}
 
-					if (ImGui::MenuItem("Textures", hotkeys::get_hotkey_for_command("ViewTextures").c_str())) {
-						components::gui::toggle(ggui::get_rtt_texturewnd());
+					if (ImGui::MenuItem("Textures", ggui::hotkey_dialog::get_hotkey_for_command("ViewTextures").c_str())) {
+						GET_GUI(ggui::texture_dialog)->toggle();
 					}
 
-					if (ImGui::MenuItem("Model Selector", hotkeys::get_hotkey_for_command("xo_modelselector").c_str()))
-					{
-						const auto m_selector = ggui::get_rtt_modelselector();
-						m_selector->menustate = !m_selector->menustate;
+					if (ImGui::MenuItem("Model Selector", ggui::hotkey_dialog::get_hotkey_for_command("xo_modelselector").c_str())) {
+						GET_GUI(ggui::modelselector_dialog)->toggle();
 					}
 
 					if (ImGui::MenuItem("ImGui Demo")) {
-						components::gui::toggle(context.m_demo);
+						ggui::m_demo_menu_state = !ggui::m_demo_menu_state;
 					}
 
 					SEPERATORV(0.0f);
@@ -343,18 +374,18 @@ namespace ggui::menubar
 							}
 						}
 
-						if (ImGui::MenuItem("Camera View (Original)", hotkeys::get_hotkey_for_command("ToggleCamera").c_str(), nullptr, cmainframe::is_combined_view())) {
+						if (ImGui::MenuItem("Camera View (Original)", ggui::hotkey_dialog::get_hotkey_for_command("ToggleCamera").c_str(), nullptr, cmainframe::is_combined_view())) {
 							mainframe_thiscall(void, 0x426A40); // cmainframe::OnTogglecamera
 						}
 
-						if (ImGui::MenuItem("XY View (Original)", hotkeys::get_hotkey_for_command("ToggleView").c_str(), nullptr, cmainframe::is_combined_view())) {
+						if (ImGui::MenuItem("XY View (Original)", ggui::hotkey_dialog::get_hotkey_for_command("ToggleView").c_str(), nullptr, cmainframe::is_combined_view())) {
 							mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
 						}
 #endif
 
 						if (ImGui::MenuItem("Surface Inspector (Original)"))
 						{
-							
+
 							// SurfaceInspector::DoSurface
 							cdeclcall(void, 0x4585D0);
 						}
@@ -372,7 +403,7 @@ namespace ggui::menubar
 								utils::hook::call<void(__fastcall)(CWnd*, int, int)>(0x58EA4F)(vEdit, 0, SW_SHOW);
 							}
 						}
-						
+
 						ImGui::EndMenu(); // Original Windows
 					}
 
@@ -381,25 +412,25 @@ namespace ggui::menubar
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Center", hotkeys::get_hotkey_for_command("CenterView").c_str())) {
+				if (ImGui::MenuItem("Center", ggui::hotkey_dialog::get_hotkey_for_command("CenterView").c_str())) {
 					mainframe_thiscall(void, 0x423C50); // cmainframe::OnViewCenter
 				}
 
-				if (ImGui::MenuItem("Center 2D On Camera", hotkeys::get_hotkey_for_command("Center2DOnCamera").c_str())) {
+				if (ImGui::MenuItem("Center 2D On Camera", ggui::hotkey_dialog::get_hotkey_for_command("Center2DOnCamera").c_str())) {
 					cdeclcall(void, 0x42A2D0); // cmainframe::OnCenter2DOnCamera
 				}
 
-				if (ImGui::MenuItem("Up Floor", hotkeys::get_hotkey_for_command("UpFloor").c_str())) {
+				if (ImGui::MenuItem("Up Floor", ggui::hotkey_dialog::get_hotkey_for_command("UpFloor").c_str())) {
 					mainframe_thiscall(void, 0x424700); // cmainframe::OnViewUpfloor
 				} TT("move up one floor, if there is one");
 
-				if (ImGui::MenuItem("Down Floor", hotkeys::get_hotkey_for_command("DownFloor").c_str())) {
+				if (ImGui::MenuItem("Down Floor", ggui::hotkey_dialog::get_hotkey_for_command("DownFloor").c_str())) {
 					mainframe_thiscall(void, 0x423ED0); // cmainframe::OnViewDownfloor
 				} TT("move down one floor, if there is one");
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Next (XY, YZ, XZ)", hotkeys::get_hotkey_for_command("NextView").c_str())) {
+				if (ImGui::MenuItem("Next (XY, YZ, XZ)", ggui::hotkey_dialog::get_hotkey_for_command("NextView").c_str())) {
 					mainframe_thiscall(void, 0x426DB0); // cmainframe::OnViewNextview
 				}
 
@@ -416,25 +447,25 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("XZ")) {
 						mainframe_thiscall(void, 0x424A80); // cmainframe::OnViewXz
 					}
-					
+
 					ImGui::EndMenu(); // Grid Window
 				}
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Hide Selected", hotkeys::get_hotkey_for_command("HideSelected").c_str())) {
+				if (ImGui::MenuItem("Hide Selected", ggui::hotkey_dialog::get_hotkey_for_command("HideSelected").c_str())) {
 					cdeclcall(void, 0x42B6A0); // cmainframe::OnHideSelected
 				}
 
-				if (ImGui::MenuItem("Hide Unselected", hotkeys::get_hotkey_for_command("HideUnSelected").c_str())) {
+				if (ImGui::MenuItem("Hide Unselected", ggui::hotkey_dialog::get_hotkey_for_command("HideUnSelected").c_str())) {
 					cdeclcall(void, 0x42B6C0); // cmainframe::OnHideUnselected
 				}
 
-				if (ImGui::MenuItem("Show Last Hidden", hotkeys::get_hotkey_for_command("ShowLastHidden").c_str())) {
+				if (ImGui::MenuItem("Show Last Hidden", ggui::hotkey_dialog::get_hotkey_for_command("ShowLastHidden").c_str())) {
 					cdeclcall(void, 0x42B6E0); // cmainframe::OnHideUnselected
 				}
 
-				if (ImGui::MenuItem("Show Hidden", hotkeys::get_hotkey_for_command("ShowHidden").c_str())) {
+				if (ImGui::MenuItem("Show Hidden", ggui::hotkey_dialog::get_hotkey_for_command("ShowHidden").c_str())) {
 					cdeclcall(void, 0x42B6D0); // cmainframe::OnShowHidden
 				}
 
@@ -445,11 +476,11 @@ namespace ggui::menubar
 			{
 				if (ImGui::BeginMenu("General"))
 				{
-					if (ImGui::MenuItem("Outline Selected", hotkeys::get_hotkey_for_command("ToggleOutlineDraw").c_str(), !game::g_qeglobals->dontDrawSelectedOutlines)) {
+					if (ImGui::MenuItem("Outline Selected", ggui::hotkey_dialog::get_hotkey_for_command("ToggleOutlineDraw").c_str(), !game::g_qeglobals->dontDrawSelectedOutlines)) {
 						game::g_qeglobals->dontDrawSelectedOutlines ^= 1;
 					}
 
-					if (ImGui::MenuItem("Tint Selected", hotkeys::get_hotkey_for_command("ToggleTintDraw").c_str(), !game::g_qeglobals->dontDrawSelectedTint)) {
+					if (ImGui::MenuItem("Tint Selected", ggui::hotkey_dialog::get_hotkey_for_command("ToggleTintDraw").c_str(), !game::g_qeglobals->dontDrawSelectedTint)) {
 						game::g_qeglobals->dontDrawSelectedTint ^= 1;
 					}
 
@@ -464,7 +495,7 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("Draw Model Origins", 0, dvars::r_draw_model_origin->current.enabled)) {
 						dvars::set_bool(dvars::r_draw_model_origin, !dvars::r_draw_model_origin->current.enabled);
 					} TT("Draw small boxes around entity origins (size can be set in preferences/general \"Model origin size\"");
-					
+
 					ImGui::EndMenu(); // General
 				}
 
@@ -478,7 +509,7 @@ namespace ggui::menubar
 						mainframe_thiscall(void, 0x42BB00); // cmainframe::OnSelectBlocks
 					}
 
-					if (ImGui::MenuItem("Draw Crosshair", hotkeys::get_hotkey_for_command("ToggleCrosshairs").c_str(), game::g_bCrossHairs)) {
+					if (ImGui::MenuItem("Draw Crosshair", ggui::hotkey_dialog::get_hotkey_for_command("ToggleCrosshairs").c_str(), game::g_bCrossHairs)) {
 						game::g_bCrossHairs ^= 1;
 					}
 
@@ -488,7 +519,7 @@ namespace ggui::menubar
 				if (ImGui::BeginMenu("Render Method / Features"))
 				{
 					if (const auto	draw_water = game::Dvar_FindVar("r_drawWater");
-									draw_water)
+						draw_water)
 					{
 						if (ImGui::MenuItem("Draw Water", 0, draw_water->current.enabled)) {
 							dvars::set_bool(draw_water, !draw_water->current.enabled);
@@ -496,7 +527,7 @@ namespace ggui::menubar
 					}
 
 					if (const auto	filmtweaks = game::Dvar_FindVar("r_filmtweakenable");
-									filmtweaks)
+						filmtweaks)
 					{
 						if (ImGui::MenuItem("Filmtweaks", 0, filmtweaks->current.enabled)) {
 							dvars::set_bool(filmtweaks, !filmtweaks->current.enabled);
@@ -505,58 +536,60 @@ namespace ggui::menubar
 
 					if (ImGui::MenuItem("Filmtweak Settings"))
 					{
-						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
+						const auto cs = GET_GUI(ggui::camera_settings_dialog);
+						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
 						{
 							// close entire window if tab is in-front
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+							cs->close(); // toggle
 						}
-						else if (!ggui::state.czwnd.m_camera_settings.menustate)
+						else if (!cs->is_active())
 						{
 							// open window with focused fakesun tab
-							ggui::camera_settings::set_tabstate_fakesun(true);
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+							cs->set_tabstate_fakesun(true);
+							cs->open(); // toggle
 						}
 						else
 						{
 							// window is open but tab not focused
-							ggui::camera_settings::set_tabstate_fakesun(true);
-							ggui::camera_settings::focus_fakesun();
+							cs->set_tabstate_fakesun(true);
+							cs->focus_fakesun();
 						}
 					}
 
 					SEPERATORV(0.0f);
 
-					if (ImGui::MenuItem("Fake Sun Preview", hotkeys::get_hotkey_for_command("fakesun_toggle").c_str(), dvars::r_fakesun_preview->current.enabled)) {
+					if (ImGui::MenuItem("Fake Sun Preview", ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle").c_str(), dvars::r_fakesun_preview->current.enabled)) {
 						components::command::execute("fakesun_toggle");
 					} TT("with specular and bumpmap support, settings @preferences->developer");
 
 					if (ImGui::MenuItem("Fake Sun Fog", 0, dvars::r_fakesun_fog_enabled->current.enabled)) {
 						dvars::set_bool(dvars::r_fakesun_fog_enabled, !dvars::r_fakesun_fog_enabled->current.enabled);
 					} TT("settings @preferences->developer");
-					
-					if (ImGui::MenuItem("Fake Sun Settings")) 
+
+					if (ImGui::MenuItem("Fake Sun Settings"))
 					{
-						if (ggui::camera_settings::get_tabstate_fakesun() && ggui::camera_settings::is_tabstate_fakesun_active())
+						const auto cs = GET_GUI(ggui::camera_settings_dialog);
+						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
 						{
 							// close entire window if tab is in-front
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+							cs->close(); // toggle
 						}
-						else if (!ggui::state.czwnd.m_camera_settings.menustate)
+						else if (!cs->is_active())
 						{
 							// open window with focused fakesun tab
-							ggui::camera_settings::set_tabstate_fakesun(true);
-							components::gui::toggle(ggui::state.czwnd.m_camera_settings);
+							cs->set_tabstate_fakesun(true);
+							cs->open(); // toggle
 						}
 						else
 						{
 							// window is open but tab not focused
-							ggui::camera_settings::set_tabstate_fakesun(true);
-							ggui::camera_settings::focus_fakesun();
+							cs->set_tabstate_fakesun(true);
+							cs->focus_fakesun();
 						}
 					}
 
 					SEPERATORV(0.0f);
-					
+
 					if (ImGui::MenuItem("Wireframe", 0, cmainframe::activewnd->m_pCamWnd->camera.draw_mode == game::RM_WIREFRAME)) {
 						set_render_method(game::RM_WIREFRAME);
 					}
@@ -627,7 +660,7 @@ namespace ggui::menubar
 				if (ImGui::BeginMenu("Specular Texture Resolution"))
 				{
 					const auto r_picmip_spec = game::Dvar_FindVar("r_picmip_spec");
-					
+
 					if (ImGui::MenuItem("Maximum", 0, r_picmip_spec->current.integer == 0)) {
 						game::Dvar_SetInt(r_picmip_spec, 0);
 					}
@@ -670,12 +703,12 @@ namespace ggui::menubar
 					ImGui::EndMenu(); // Texture Resolution
 				}
 
-				if (ImGui::MenuItem("Reload Textures", hotkeys::get_hotkey_for_command("RefreshTextures").c_str())) {
+				if (ImGui::MenuItem("Reload Textures", ggui::hotkey_dialog::get_hotkey_for_command("RefreshTextures").c_str())) {
 					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
 				}
 
 				SEPERATORV(0.0f);
-				
+
 				if (ImGui::BeginMenu("Show Patches As"))
 				{
 					// dvars::r_draw_patch_backface_wireframe
@@ -683,7 +716,7 @@ namespace ggui::menubar
 					{
 						game::Dvar_SetBool(dvars::r_draw_patch_backface_wireframe, !dvars::r_draw_patch_backface_wireframe->current.enabled);
 					}
-					
+
 					if (ImGui::MenuItem("Textured", 0, !prefs->g_nPatchAsWireframe))
 					{
 						prefs->g_nPatchAsWireframe = 0;
@@ -736,11 +769,11 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Light Preview"))
 				{
-					if (ImGui::MenuItem("Enable Light Preview", hotkeys::get_hotkey_for_command("LightPreviewToggle").c_str(), prefs->enable_light_preview)) {
+					if (ImGui::MenuItem("Enable Light Preview", ggui::hotkey_dialog::get_hotkey_for_command("LightPreviewToggle").c_str(), prefs->enable_light_preview)) {
 						mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
 					}
 
-					if (ImGui::MenuItem("Enable Sun Preview", hotkeys::get_hotkey_for_command("LightPreviewSun").c_str(), prefs->preview_sun_aswell)) {
+					if (ImGui::MenuItem("Enable Sun Preview", ggui::hotkey_dialog::get_hotkey_for_command("LightPreviewSun").c_str(), prefs->preview_sun_aswell)) {
 						mainframe_thiscall(void, 0x424060); // cmainframe::OnPreviewSun
 					}
 
@@ -752,25 +785,25 @@ namespace ggui::menubar
 
 					SEPERATORV(0.0f);
 
-					if (ImGui::MenuItem("Start Previewing Selected", hotkeys::get_hotkey_for_command("LightPreviewStart").c_str())) {
+					if (ImGui::MenuItem("Start Previewing Selected", ggui::hotkey_dialog::get_hotkey_for_command("LightPreviewStart").c_str())) {
 						mainframe_thiscall(void, 0x424120); // cmainframe::OnStartPreviewSelected
 					}
 
-					if (ImGui::MenuItem("Stop Previewing Selected", hotkeys::get_hotkey_for_command("LightPreviewStop").c_str())) {
+					if (ImGui::MenuItem("Stop Previewing Selected", ggui::hotkey_dialog::get_hotkey_for_command("LightPreviewStop").c_str())) {
 						mainframe_thiscall(void, 0x424170); // cmainframe::OnStopPreviewSelected
 					}
 
-					if (ImGui::MenuItem("Clear Preview List", hotkeys::get_hotkey_for_command("LightPreviewClear").c_str())) {
+					if (ImGui::MenuItem("Clear Preview List", ggui::hotkey_dialog::get_hotkey_for_command("LightPreviewClear").c_str())) {
 						mainframe_thiscall(void, 0x4241C0); // cmainframe::OnClearPreviewList
 					}
 
 					SEPERATORV(0.0f);
 
-					if (ImGui::MenuItem("Preview At Max Intensity", hotkeys::get_hotkey_for_command("MaxLightIntensity").c_str(), !game::g_qeglobals->preview_at_max_intensity)) {
+					if (ImGui::MenuItem("Preview At Max Intensity", ggui::hotkey_dialog::get_hotkey_for_command("MaxLightIntensity").c_str(), !game::g_qeglobals->preview_at_max_intensity)) {
 						cdeclcall(void, 0x425670); // cmainframe::OnPreviewAtMaxIntensity
 					}
 
-					if (ImGui::MenuItem("Show Regions For Selected", hotkeys::get_hotkey_for_command("LightPreviewRegions").c_str())) {
+					if (ImGui::MenuItem("Show Regions For Selected", ggui::hotkey_dialog::get_hotkey_for_command("LightPreviewRegions").c_str())) {
 						mainframe_thiscall(void, 0x4241E0); // cmainframe::OnShowRegionsForSelected
 					}
 
@@ -789,26 +822,48 @@ namespace ggui::menubar
 
 				IMGUI_MENU_WIDGET_SINGLE("Cubic Scale", ImGui::DragInt("##cubic_scalar", &prefs->m_nCubicScale, 1, 1, 220));
 
-				if (ImGui::MenuItem("Cubic Clipping", hotkeys::get_hotkey_for_command("ToggleCubicClip").c_str(), prefs->m_bCubicClipping)) {
+				if (ImGui::MenuItem("Cubic Clipping", ggui::hotkey_dialog::get_hotkey_for_command("ToggleCubicClip").c_str(), prefs->m_bCubicClipping)) {
 					mainframe_thiscall(void, 0x428F90); // cmainframe::OnViewCubicclipping
 				}
-				
+
 				ImGui::EndMenu(); // Renderer
 			}
 
 
 			if (ImGui::BeginMenu("Effects"))
 			{
+				if (ImGui::MenuItem("Effect Settings .."))
+				{
+					const auto cs = GET_GUI(ggui::camera_settings_dialog);
+					if (cs->get_tabstate_effects() && cs->is_tabstate_effects_active())
+					{
+						// close entire window if tab is in-front
+						cs->close();
+					}
+					else if (!cs->is_active())
+					{
+						// open window with focused effects tab
+						cs->set_tabstate_effects(true);
+						cs->open();
+					}
+					else
+					{
+						// window is open but tab not focused
+						cs->set_tabstate_effects(true);
+						cs->focus_effects();
+					}
+				}
+
 				if (ImGui::MenuItem("Edit Current Effect", 0, nullptr, components::effects::effect_can_play()))
 				{
 					components::effects::edit();
 				}
 
-				if (ImGui::MenuItem("Reload Current Effect", 0, nullptr, components::effects::effect_can_play())) 
+				if (ImGui::MenuItem("Reload Current Effect", 0, nullptr, components::effects::effect_can_play()))
 				{
-					if(components::effects_editor::is_editor_active())
+					if (components::effects_editor::is_editor_active())
 					{
-						effects_editor_gui::editor_pending_reload = true;
+						GET_GUI(ggui::effects_editor_dialog)->m_pending_reload = true;
 					}
 					else
 					{
@@ -833,11 +888,11 @@ namespace ggui::menubar
 
 			if (ImGui::BeginMenu("Selection"))
 			{
-				if (ImGui::MenuItem("Drag Edges", hotkeys::get_hotkey_for_command("DragEdges").c_str())) {
+				if (ImGui::MenuItem("Drag Edges", ggui::hotkey_dialog::get_hotkey_for_command("DragEdges").c_str())) {
 					cdeclcall(void, 0x4257D0); // CMainFrame::OnSelectionDragedges
 				}
 
-				if (ImGui::MenuItem("Drag Vertices", hotkeys::get_hotkey_for_command("DragVertices").c_str())) {
+				if (ImGui::MenuItem("Drag Vertices", ggui::hotkey_dialog::get_hotkey_for_command("DragVertices").c_str())) {
 					cdeclcall(void, 0x425840); // CMainFrame::OnSelectionDragVertices
 				}
 
@@ -853,11 +908,11 @@ namespace ggui::menubar
 						cdeclcall(void, 0x4263A0); // CMainFrame::OnSelectionClassname
 					}
 
-					if (ImGui::MenuItem("Select By Key/Value", hotkeys::get_hotkey_for_command("SelectionKeyValue").c_str())) {
+					if (ImGui::MenuItem("Select By Key/Value", ggui::hotkey_dialog::get_hotkey_for_command("SelectionKeyValue").c_str())) {
 						cdeclcall(void, 0x4263B0); // CMainFrame::OnSelectionKeyValue
 					}
 
-					if (ImGui::MenuItem("Select Connected", hotkeys::get_hotkey_for_command("SelectConnectedEntities").c_str())) {
+					if (ImGui::MenuItem("Select Connected", ggui::hotkey_dialog::get_hotkey_for_command("SelectConnectedEntities").c_str())) {
 						cdeclcall(void, 0x425550); // CMainFrame::OnSelectConneted
 					}
 
@@ -882,15 +937,15 @@ namespace ggui::menubar
 					ImGui::EndMenu(); // Select
 				}
 
-				if (ImGui::MenuItem("Deselect", hotkeys::get_hotkey_for_command("UnSelectSelection").c_str())) {
+				if (ImGui::MenuItem("Deselect", ggui::hotkey_dialog::get_hotkey_for_command("UnSelectSelection").c_str())) {
 					mainframe_thiscall(void, 0x425740); // CMainFrame::OnSelectionDeselect
 				}
 
-				if (ImGui::MenuItem("Clone", hotkeys::get_hotkey_for_command("CloneSelection").c_str())) {
+				if (ImGui::MenuItem("Clone", ggui::hotkey_dialog::get_hotkey_for_command("CloneSelection").c_str())) {
 					cdeclcall(void, 0x425480); // CMainFrame::OnSelectionClone
 				}
-				
-				if (ImGui::MenuItem("Invert", hotkeys::get_hotkey_for_command("InvertSelection").c_str())) {
+
+				if (ImGui::MenuItem("Invert", ggui::hotkey_dialog::get_hotkey_for_command("InvertSelection").c_str())) {
 					cdeclcall(void, 0x42B6F0); // CMainFrame::OnSelectionInvert
 				}
 
@@ -923,11 +978,11 @@ namespace ggui::menubar
 						cdeclcall(void, 0x425190); // CMainFrame::OnBrushRotatey
 					}
 
-					if (ImGui::MenuItem("Rotate Z", hotkeys::get_hotkey_for_command("RotateZ").c_str())) {
+					if (ImGui::MenuItem("Rotate Z", ggui::hotkey_dialog::get_hotkey_for_command("RotateZ").c_str())) {
 						cdeclcall(void, 0x425220); // CMainFrame::OnBrushRotatez
 					}
 
-					if (ImGui::MenuItem("Free Rotation", hotkeys::get_hotkey_for_command("MouseRotate").c_str(), game::g_bRotateMode)) {
+					if (ImGui::MenuItem("Free Rotation", ggui::hotkey_dialog::get_hotkey_for_command("MouseRotate").c_str(), game::g_bRotateMode)) {
 						mainframe_thiscall(void, 0x428570); // CMainFrame::OnSelectMouserotate
 					}
 
@@ -976,11 +1031,11 @@ namespace ggui::menubar
 						cdeclcall(void, 0x425570); // CMainFrame::OnSelectionMakehollow
 					}
 
-					if (ImGui::MenuItem("Merge", hotkeys::get_hotkey_for_command("CSGMerge").c_str())) {
+					if (ImGui::MenuItem("Merge", ggui::hotkey_dialog::get_hotkey_for_command("CSGMerge").c_str())) {
 						cdeclcall(void, 0x4255D0); // CMainFrame::OnSelectionCsgmerge
 					}
 
-					if (ImGui::MenuItem("Auto Caulk", hotkeys::get_hotkey_for_command("AutoCaulk").c_str())) {
+					if (ImGui::MenuItem("Auto Caulk", ggui::hotkey_dialog::get_hotkey_for_command("AutoCaulk").c_str())) {
 						cdeclcall(void, 0x425600); // CMainFrame::OnSelectionAutoCaulk
 					}
 
@@ -989,32 +1044,32 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Clipper"))
 				{
-					if (ImGui::MenuItem("Toggle Clipper", hotkeys::get_hotkey_for_command("ToggleClipper").c_str())) {
+					if (ImGui::MenuItem("Toggle Clipper", ggui::hotkey_dialog::get_hotkey_for_command("ToggleClipper").c_str())) {
 						mainframe_thiscall(void, 0x426510); // CMainFrame::OnViewClipper
 					}
 
-					if (ImGui::MenuItem("Clip Selected", hotkeys::get_hotkey_for_command("ClipSelected").c_str())) {
+					if (ImGui::MenuItem("Clip Selected", ggui::hotkey_dialog::get_hotkey_for_command("ClipSelected").c_str())) {
 						mainframe_thiscall(void, 0x427170); // CMainFrame::OnClipSelected
 					}
 
-					if (ImGui::MenuItem("Split Selected", hotkeys::get_hotkey_for_command("SplitSelected").c_str())) {
+					if (ImGui::MenuItem("Split Selected", ggui::hotkey_dialog::get_hotkey_for_command("SplitSelected").c_str())) {
 						mainframe_thiscall(void, 0x4271D0); // CMainFrame::OnSplitSelected
 					}
 
-					if (ImGui::MenuItem("Flip Clip Orientation", hotkeys::get_hotkey_for_command("FlipClip").c_str())) {
+					if (ImGui::MenuItem("Flip Clip Orientation", ggui::hotkey_dialog::get_hotkey_for_command("FlipClip").c_str())) {
 						mainframe_thiscall(void, 0x427140); // CMainFrame::OnFlipClip
 					}
 
 					ImGui::EndMenu(); // Clipper
 				}
-				
+
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Connect Entities", hotkeys::get_hotkey_for_command("ConnectSelection").c_str())) {
+				if (ImGui::MenuItem("Connect Entities", ggui::hotkey_dialog::get_hotkey_for_command("ConnectSelection").c_str())) {
 					cdeclcall(void, 0x425510); // CMainFrame::OnSelectionConnect
 				}
 
-				if (ImGui::MenuItem("Link Entities", hotkeys::get_hotkey_for_command("LinkSelected").c_str())) {
+				if (ImGui::MenuItem("Link Entities", ggui::hotkey_dialog::get_hotkey_for_command("LinkSelected").c_str())) {
 					cdeclcall(void, 0x425500); // CMainFrame::OnLinkSelected
 				}
 
@@ -1022,25 +1077,25 @@ namespace ggui::menubar
 					cdeclcall(void, 0x426380); // CMainFrame::OnSelectionUngroupentity
 				}
 
-				if (ImGui::MenuItem("Cycle Group Selection", hotkeys::get_hotkey_for_command("Patch TAB").c_str())) {
+				if (ImGui::MenuItem("Cycle Group Selection", ggui::hotkey_dialog::get_hotkey_for_command("Patch TAB").c_str())) {
 					cdeclcall(void, 0x42A9E0); // CMainFrame::OnPatchTab
 				} TT("Cycle between all brushes/patches of a selected group/brushmodel");
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Make Detail", hotkeys::get_hotkey_for_command("MakeDetail").c_str())) {
+				if (ImGui::MenuItem("Make Detail", ggui::hotkey_dialog::get_hotkey_for_command("MakeDetail").c_str())) {
 					cdeclcall(void, 0x4261C0); // CMainFrame::OnSelectionMakeDetail
 				}
 
-				if (ImGui::MenuItem("Make Structural", hotkeys::get_hotkey_for_command("MakeStructural").c_str())) {
+				if (ImGui::MenuItem("Make Structural", ggui::hotkey_dialog::get_hotkey_for_command("MakeStructural").c_str())) {
 					cdeclcall(void, 0x426200); // CMainFrame::OnSelectionMakeStructural
 				}
 
-				if (ImGui::MenuItem("Make Weapon Clip", hotkeys::get_hotkey_for_command("MakeWeaponClip").c_str())) {
+				if (ImGui::MenuItem("Make Weapon Clip", ggui::hotkey_dialog::get_hotkey_for_command("MakeWeaponClip").c_str())) {
 					cdeclcall(void, 0x426240); // CMainFrame::OnSelectionMakeWeaponclip
 				}
 
-				if (ImGui::MenuItem("Make Non-Colliding", hotkeys::get_hotkey_for_command("MakeNonColliding").c_str())) {
+				if (ImGui::MenuItem("Make Non-Colliding", ggui::hotkey_dialog::get_hotkey_for_command("MakeNonColliding").c_str())) {
 					cdeclcall(void, 0x426280); // CMainFrame::OnSelectionMakeNonColliding
 				}
 
@@ -1059,35 +1114,35 @@ namespace ggui::menubar
 
 			if (ImGui::BeginMenu("Grid"))
 			{
-				if (ImGui::MenuItem("Grid 0.5", hotkeys::get_hotkey_for_command("SetGridPointFive").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_05)) {
+				if (ImGui::MenuItem("Grid 0.5", ggui::hotkey_dialog::get_hotkey_for_command("SetGridPointFive").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_05)) {
 					set_grid_size(xywnd::GRID_05);
 				}
 
-				if (ImGui::MenuItem("Grid 1", hotkeys::get_hotkey_for_command("SetGrid1").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_1)) {
+				if (ImGui::MenuItem("Grid 1", ggui::hotkey_dialog::get_hotkey_for_command("SetGrid1").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_1)) {
 					set_grid_size(xywnd::GRID_1);
 				}
 
-				if (ImGui::MenuItem("Grid 2", hotkeys::get_hotkey_for_command("SetGrid2").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_2)) {
+				if (ImGui::MenuItem("Grid 2", ggui::hotkey_dialog::get_hotkey_for_command("SetGrid2").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_2)) {
 					set_grid_size(xywnd::GRID_2);
 				}
 
-				if (ImGui::MenuItem("Grid 4", hotkeys::get_hotkey_for_command("SetGrid4").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_4)) {
+				if (ImGui::MenuItem("Grid 4", ggui::hotkey_dialog::get_hotkey_for_command("SetGrid4").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_4)) {
 					set_grid_size(xywnd::GRID_4);
 				}
 
-				if (ImGui::MenuItem("Grid 8", hotkeys::get_hotkey_for_command("SetGrid8").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_8)) {
+				if (ImGui::MenuItem("Grid 8", ggui::hotkey_dialog::get_hotkey_for_command("SetGrid8").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_8)) {
 					set_grid_size(xywnd::GRID_8);
 				}
 
-				if (ImGui::MenuItem("Grid 16", hotkeys::get_hotkey_for_command("SetGrid16").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_16)) {
+				if (ImGui::MenuItem("Grid 16", ggui::hotkey_dialog::get_hotkey_for_command("SetGrid16").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_16)) {
 					set_grid_size(xywnd::GRID_16);
 				}
 
-				if (ImGui::MenuItem("Grid 32", hotkeys::get_hotkey_for_command("SetGrid32").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_32)) {
+				if (ImGui::MenuItem("Grid 32", ggui::hotkey_dialog::get_hotkey_for_command("SetGrid32").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_32)) {
 					set_grid_size(xywnd::GRID_32);
 				}
 
-				if (ImGui::MenuItem("Grid 64", hotkeys::get_hotkey_for_command("SetGrid64").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_64)) {
+				if (ImGui::MenuItem("Grid 64", ggui::hotkey_dialog::get_hotkey_for_command("SetGrid64").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_64)) {
 					set_grid_size(xywnd::GRID_64);
 				}
 
@@ -1095,15 +1150,15 @@ namespace ggui::menubar
 					set_grid_size(xywnd::GRID_128);
 				}
 
-				if (ImGui::MenuItem("Grid 256", hotkeys::get_hotkey_for_command("SetGrid256").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_256)) {
+				if (ImGui::MenuItem("Grid 256", ggui::hotkey_dialog::get_hotkey_for_command("SetGrid256").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_256)) {
 					set_grid_size(xywnd::GRID_256);
 				}
 
-				if (ImGui::MenuItem("Grid 512", hotkeys::get_hotkey_for_command("SetGrid512").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_512)) {
+				if (ImGui::MenuItem("Grid 512", ggui::hotkey_dialog::get_hotkey_for_command("SetGrid512").c_str(), game::g_qeglobals->d_gridsize == xywnd::GRID_512)) {
 					set_grid_size(xywnd::GRID_512);
 				}
 
-				if (ImGui::MenuItem("Snap To Grid", hotkeys::get_hotkey_for_command("ToggleSnapToGrid").c_str(), !prefs->m_bNoClamp)) {
+				if (ImGui::MenuItem("Snap To Grid", ggui::hotkey_dialog::get_hotkey_for_command("ToggleSnapToGrid").c_str(), !prefs->m_bNoClamp)) {
 					mainframe_thiscall(void, 0x428380); // CMainFrame::OnSnaptogrid
 				}
 
@@ -1113,15 +1168,15 @@ namespace ggui::menubar
 
 			if (ImGui::BeginMenu("Textures"))
 			{
-				if (ImGui::MenuItem("Show All", hotkeys::get_hotkey_for_command("ShowAllTextures").c_str())) {
+				if (ImGui::MenuItem("Show All", ggui::hotkey_dialog::get_hotkey_for_command("ShowAllTextures").c_str())) {
 					cdeclcall(void, 0x42B440); // CMainFrame::OnTexturesShowall
 				}
 
-				if (ImGui::MenuItem("Show In Use", hotkeys::get_hotkey_for_command("ShowTexturesInUse").c_str())) {
+				if (ImGui::MenuItem("Show In Use", ggui::hotkey_dialog::get_hotkey_for_command("ShowTexturesInUse").c_str())) {
 					mainframe_thiscall(void, 0x424B20); // CMainFrame::OnTexturesShowinuse
 				}
 
-				if (ImGui::MenuItem("Surface Inspector", hotkeys::get_hotkey_for_command("SurfaceInspector").c_str())) {
+				if (ImGui::MenuItem("Surface Inspector", ggui::hotkey_dialog::get_hotkey_for_command("SurfaceInspector").c_str())) {
 					cdeclcall(void, 0x424B60); // CMainFrame::OnTexturesInspector
 				}
 
@@ -1130,7 +1185,7 @@ namespace ggui::menubar
 				if (ImGui::MenuItem("Find / Replace")) {
 					cdeclcall(void, 0x428B40); // CMainFrame::OnTextureReplaceall
 				}
-				
+
 				if (ImGui::BeginMenu("Texture Window Scale"))
 				{
 					if (ImGui::MenuItem("200%", 0, prefs->m_nTextureWindowScale == 200)) {
@@ -1158,15 +1213,15 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Texture Lock"))
 				{
-					if (ImGui::MenuItem("Moves", hotkeys::get_hotkey_for_command("ToggleTexMoveLock").c_str(), prefs->m_bTextureLock == 1)) {
+					if (ImGui::MenuItem("Moves", ggui::hotkey_dialog::get_hotkey_for_command("ToggleTexMoveLock").c_str(), prefs->m_bTextureLock == 1)) {
 						mainframe_thiscall(void, 0x426B80); // CMainFrame::OnToggleLockMoves
 					}
 
-					if (ImGui::MenuItem("Rotations", hotkeys::get_hotkey_for_command("ToggleTexRotateLock").c_str(), prefs->m_bRotateLock == 1)) {
+					if (ImGui::MenuItem("Rotations", ggui::hotkey_dialog::get_hotkey_for_command("ToggleTexRotateLock").c_str(), prefs->m_bRotateLock == 1)) {
 						mainframe_thiscall(void, 0x429230); // CMainFrame::OnToggleLockRotations
 					}
 
-					if (ImGui::MenuItem("Lightmaps", hotkeys::get_hotkey_for_command("ToggleLightmapLock").c_str(), prefs->m_bLightmapLock == 1)) {
+					if (ImGui::MenuItem("Lightmaps", ggui::hotkey_dialog::get_hotkey_for_command("ToggleLightmapLock").c_str(), prefs->m_bLightmapLock == 1)) {
 						mainframe_thiscall(void, 0x426BF0); // CMainFrame::OnToggleLockLightmap
 					}
 
@@ -1177,31 +1232,31 @@ namespace ggui::menubar
 
 				//if (ImGui::BeginMenu("Layered Materials"))
 				//{
-				//	if (ImGui::MenuItem("Toogle Tool Window", hotkeys::get_hotkey_for_command("ToggleLayeredMaterialWnd").c_str()))
+				//	if (ImGui::MenuItem("Toogle Tool Window", ggui::hotkey_dialog::get_hotkey_for_command("ToggleLayeredMaterialWnd").c_str()))
 				//	{
 				//		cdeclcall(void, 0x42BFE0); // CMainFrame::OnToggleLayeredMaterials
 				//	}
 
-				//	if (ImGui::MenuItem("Save", hotkeys::get_hotkey_for_command("SaveLayeredMaterials").c_str())) {
+				//	if (ImGui::MenuItem("Save", ggui::hotkey_dialog::get_hotkey_for_command("SaveLayeredMaterials").c_str())) {
 				//		cdeclcall(void, 0x42C020); // CMainFrame::OnSaveLayeredMaterials
 				//	}
 
 				//	ImGui::EndMenu(); // Layered Materials
 				//}
-				
+
 				if (ImGui::BeginMenu("Edit Layer"))
 				{
-					if (ImGui::MenuItem("Cycle", hotkeys::get_hotkey_for_command("TexLayerCycle").c_str())) {
+					if (ImGui::MenuItem("Cycle", ggui::hotkey_dialog::get_hotkey_for_command("TexLayerCycle").c_str())) {
 						cdeclcall(void, 0x424010); // CMainFrame::OnEditLayerCycle
 					}
 
 					SEPERATORV(0.0f);
 
-					if (ImGui::MenuItem("Material", hotkeys::get_hotkey_for_command("TexLayerMaterial").c_str(), game::g_qeglobals->current_edit_layer == 0)) {
+					if (ImGui::MenuItem("Material", ggui::hotkey_dialog::get_hotkey_for_command("TexLayerMaterial").c_str(), game::g_qeglobals->current_edit_layer == 0)) {
 						cdeclcall(void, 0x424030); // CMainFrame::OnEditLayerMaterial
 					}
 
-					if (ImGui::MenuItem("Lightmap", hotkeys::get_hotkey_for_command("TexLayerLightmap").c_str(), game::g_qeglobals->current_edit_layer == 1)) {
+					if (ImGui::MenuItem("Lightmap", ggui::hotkey_dialog::get_hotkey_for_command("TexLayerLightmap").c_str(), game::g_qeglobals->current_edit_layer == 1)) {
 						cdeclcall(void, 0x424040); // CMainFrame::OnEditLayerLightmap
 					}
 
@@ -1291,11 +1346,11 @@ namespace ggui::menubar
 					cdeclcall(void, 0x424BA0); // CMainFrame::OnMiscGoToPosition
 				}
 
-				if (ImGui::MenuItem("-> Leak Spot / Error", hotkeys::get_hotkey_for_command("NextLeakSpot").c_str())) {
+				if (ImGui::MenuItem("-> Leak Spot / Error", ggui::hotkey_dialog::get_hotkey_for_command("NextLeakSpot").c_str())) {
 					cdeclcall(void, 0x424BC0); // CMainFrame::OnMiscNextleakspot
 				}
 
-				if (ImGui::MenuItem("<- Leak Spot / Error", hotkeys::get_hotkey_for_command("PrevLeakSpot").c_str())) {
+				if (ImGui::MenuItem("<- Leak Spot / Error", ggui::hotkey_dialog::get_hotkey_for_command("PrevLeakSpot").c_str())) {
 					cdeclcall(void, 0x424BE0); // CMainFrame::OnMiscPreviousleakspot
 				}
 
@@ -1303,7 +1358,7 @@ namespace ggui::menubar
 					cdeclcall(void, 0x424C00); // CMainFrame::OnMiscPrintxy
 				}
 
-				if (ImGui::MenuItem("Entity Color Dialog", hotkeys::get_hotkey_for_command("EntityColor").c_str())) {
+				if (ImGui::MenuItem("Entity Color Dialog", ggui::hotkey_dialog::get_hotkey_for_command("EntityColor").c_str())) {
 					cdeclcall(void, 0x424C10); // CMainFrame::OnMiscSelectentitycolor
 				}
 
@@ -1315,11 +1370,11 @@ namespace ggui::menubar
 					cdeclcall(void, 0x424E30); // CMainFrame::OnDeleteExportables
 				}
 
-				if (ImGui::MenuItem("Vehicle Group Dialog", hotkeys::get_hotkey_for_command("VehicleGroup").c_str())) {
+				if (ImGui::MenuItem("Vehicle Group Dialog", ggui::hotkey_dialog::get_hotkey_for_command("VehicleGroup").c_str())) {
 					cdeclcall(void, 0x42BD50); // CMainFrame::OnMiscVehicleGroup
 				}
 
-				if (ImGui::MenuItem("Dyn Entity Dialog", hotkeys::get_hotkey_for_command("DynEntities").c_str())) {
+				if (ImGui::MenuItem("Dyn Entity Dialog", ggui::hotkey_dialog::get_hotkey_for_command("DynEntities").c_str())) {
 					cdeclcall(void, 0x42BD90); // CMainFrame::OnMiscDynEntities
 				}
 
@@ -1328,7 +1383,7 @@ namespace ggui::menubar
 				}
 
 				// no clue what that does
-				if (ImGui::MenuItem("Cycle Preview Models", hotkeys::get_hotkey_for_command("TogglePreviewModels").c_str())) {
+				if (ImGui::MenuItem("Cycle Preview Models", ggui::hotkey_dialog::get_hotkey_for_command("TogglePreviewModels").c_str())) {
 					mainframe_thiscall(void, 0x42BDD0); // CMainFrame::OnMiscCyclePreviewModels
 				}
 
@@ -1458,11 +1513,11 @@ namespace ggui::menubar
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Vert Edit Dialog", hotkeys::get_hotkey_for_command("VertEdit").c_str())) {
+				if (ImGui::MenuItem("Vert Edit Dialog", ggui::hotkey_dialog::get_hotkey_for_command("VertEdit").c_str())) {
 					cdeclcall(void, 0x42BCD0); // CMainFrame::OnVertexEditDlg
 				}
 
-				if (ImGui::MenuItem("Advanced Edit Dialog", hotkeys::get_hotkey_for_command("AdvancedCurveEdit").c_str())) {
+				if (ImGui::MenuItem("Advanced Edit Dialog", ggui::hotkey_dialog::get_hotkey_for_command("AdvancedCurveEdit").c_str())) {
 					cdeclcall(void, 0x42BC90); // CMainFrame::OnAdvancedEditDlg
 				}
 
@@ -1478,19 +1533,19 @@ namespace ggui::menubar
 						cdeclcall(void, 0x42A790); // CMainFrame::OnCurveInsertInsertrow
 					}
 
-					if (ImGui::MenuItem("Add 2 Columns", hotkeys::get_hotkey_for_command("IncPatchColumn").c_str())) {
+					if (ImGui::MenuItem("Add 2 Columns", ggui::hotkey_dialog::get_hotkey_for_command("IncPatchColumn").c_str())) {
 						cdeclcall(void, 0x42A6A0); // CMainFrame::OnCurveInsertAddcolumn
 					}
 
-					if (ImGui::MenuItem("Add 2 Rows", hotkeys::get_hotkey_for_command("IncPatchRow").c_str())) {
+					if (ImGui::MenuItem("Add 2 Rows", ggui::hotkey_dialog::get_hotkey_for_command("IncPatchRow").c_str())) {
 						cdeclcall(void, 0x42A6F0); // CMainFrame::OnCurveInsertAddrow
 					}
 
-					if (ImGui::MenuItem("Add Terrain Row / Column", hotkeys::get_hotkey_for_command("AddTerrainRow").c_str())) {
+					if (ImGui::MenuItem("Add Terrain Row / Column", ggui::hotkey_dialog::get_hotkey_for_command("AddTerrainRow").c_str())) {
 						cdeclcall(void, 0x42B080); // CMainFrame::OnAddTerrainRowColumn
 					}
 
-					if (ImGui::MenuItem("Extrude Terrain Row", hotkeys::get_hotkey_for_command("ExtrudeTerrainRow").c_str())) {
+					if (ImGui::MenuItem("Extrude Terrain Row", ggui::hotkey_dialog::get_hotkey_for_command("ExtrudeTerrainRow").c_str())) {
 						cdeclcall(void, 0x42B0A0); // CMainFrame::ExtrudeTerrainRow
 					}
 
@@ -1499,11 +1554,11 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Delete"))
 				{
-					if (ImGui::MenuItem("First 2 Columns", hotkeys::get_hotkey_for_command("DecPatchColumn").c_str())) {
+					if (ImGui::MenuItem("First 2 Columns", ggui::hotkey_dialog::get_hotkey_for_command("DecPatchColumn").c_str())) {
 						cdeclcall(void, 0x42A810); // CMainFrame::OnCurveDeleteFirstcolumn
 					}
 
-					if (ImGui::MenuItem("First 2 Rows", hotkeys::get_hotkey_for_command("DecPatchRow").c_str())) {
+					if (ImGui::MenuItem("First 2 Rows", ggui::hotkey_dialog::get_hotkey_for_command("DecPatchRow").c_str())) {
 						cdeclcall(void, 0x42A860); // CMainFrame::OnCurveDeleteFirstrow
 					}
 
@@ -1515,7 +1570,7 @@ namespace ggui::menubar
 						cdeclcall(void, 0x42A900); // CMainFrame::OnCurveDeleteLastrow
 					}
 
-					if (ImGui::MenuItem("Remove Terrain Row / Column", hotkeys::get_hotkey_for_command("RemoveTerrainRow").c_str())) {
+					if (ImGui::MenuItem("Remove Terrain Row / Column", ggui::hotkey_dialog::get_hotkey_for_command("RemoveTerrainRow").c_str())) {
 						cdeclcall(void, 0x42B0B0); // CMainFrame::OnRemoveTerrainRowColumn
 					}
 
@@ -1524,19 +1579,19 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Matrix"))
 				{
-					if (ImGui::MenuItem("Transpose", hotkeys::get_hotkey_for_command("PatchMatrixTranspose").c_str())) {
+					if (ImGui::MenuItem("Transpose", ggui::hotkey_dialog::get_hotkey_for_command("PatchMatrixTranspose").c_str())) {
 						cdeclcall(void, 0x42B1E0); // CMainFrame::OnCurveMatrixTranspose
 					}
 
-					if (ImGui::MenuItem("Re-disperse Vertices", hotkeys::get_hotkey_for_command("RedisperseVertices").c_str())) {
+					if (ImGui::MenuItem("Re-disperse Vertices", ggui::hotkey_dialog::get_hotkey_for_command("RedisperseVertices").c_str())) {
 						cdeclcall(void, 0x42A270); // CMainFrame::OnRedistPatchPoints
 					}
 
-					if (ImGui::MenuItem("Re-disperse Columns", hotkeys::get_hotkey_for_command("RedisperseCols").c_str())) {
+					if (ImGui::MenuItem("Re-disperse Columns", ggui::hotkey_dialog::get_hotkey_for_command("RedisperseCols").c_str())) {
 						cdeclcall(void, 0x42AD80); // CMainFrame::OnCurveRedisperseCols
 					}
 
-					if (ImGui::MenuItem("Re-disperse Rows", hotkeys::get_hotkey_for_command("RedisperseRows").c_str())) {
+					if (ImGui::MenuItem("Re-disperse Rows", ggui::hotkey_dialog::get_hotkey_for_command("RedisperseRows").c_str())) {
 						cdeclcall(void, 0x42AD90); // CMainFrame::OnCurveRedisperseRows
 					}
 
@@ -1545,7 +1600,7 @@ namespace ggui::menubar
 
 				if (ImGui::BeginMenu("Weld"))
 				{
-					if (ImGui::MenuItem("Connect Selection / Weld", hotkeys::get_hotkey_for_command("ConnectSelection").c_str())) {
+					if (ImGui::MenuItem("Connect Selection / Weld", ggui::hotkey_dialog::get_hotkey_for_command("ConnectSelection").c_str())) {
 						cdeclcall(void, 0x425510); // CMainFrame::OnSelectionConnect
 					}
 
@@ -1562,32 +1617,32 @@ namespace ggui::menubar
 					if (ImGui::MenuItem("Weld to Prefab Vertices", 0, prefs->m_bVertSnapPrefab)) {
 						mainframe_thiscall(void, 0x42A220); // CMainFrame::OnVertSnapPrefab
 					} TT("Allows welding of patch verts to prefab vertices");
-					
+
 					ImGui::EndMenu(); // Weld
 				}
 
-				if (ImGui::MenuItem("Inc Subdevision", hotkeys::get_hotkey_for_command("OverBrightShiftUp").c_str())) {
+				if (ImGui::MenuItem("Inc Subdevision", ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftUp").c_str())) {
 					cdeclcall(void, 0x428EB0); // CMainFrame::OnOverBrightShiftUp
 				} TT("Curve Patches: increase vertex count (subdivide)");
 
-				if (ImGui::MenuItem("Dec Subdevision", hotkeys::get_hotkey_for_command("OverBrightShiftDown").c_str())) {
+				if (ImGui::MenuItem("Dec Subdevision", ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftDown").c_str())) {
 					cdeclcall(void, 0x428EE0); // CMainFrame::OnOverBrightShiftDown
 				} TT("Curve Patches: decrease vertex count (decimate)");
 
-				if (ImGui::MenuItem("Split", hotkeys::get_hotkey_for_command("SplitPatch").c_str())) {
+				if (ImGui::MenuItem("Split", ggui::hotkey_dialog::get_hotkey_for_command("SplitPatch").c_str())) {
 					cdeclcall(void, 0x42B0C0); // CMainFrame::OnSplitPatch
 				}
 
 				// TODO: add 'InvertCurveTextureX' and 'InvertCurveTextureY'
-				if (ImGui::MenuItem("Invert", hotkeys::get_hotkey_for_command("InvertCurve").c_str())) {
+				if (ImGui::MenuItem("Invert", ggui::hotkey_dialog::get_hotkey_for_command("InvertCurve").c_str())) {
 					cdeclcall(void, 0x42A7E0); // CMainFrame::OnCurveNegative
 				}
 
-				if (ImGui::MenuItem("Thicken", hotkeys::get_hotkey_for_command("ThickenPatch").c_str())) {
+				if (ImGui::MenuItem("Thicken", ggui::hotkey_dialog::get_hotkey_for_command("ThickenPatch").c_str())) {
 					cdeclcall(void, 0x42B0D0); // CMainFrame::OnCurveThicken
 				}
 
-				if (ImGui::MenuItem("Cap", hotkeys::get_hotkey_for_command("CapCurrentCurve").c_str())) {
+				if (ImGui::MenuItem("Cap", ggui::hotkey_dialog::get_hotkey_for_command("CapCurrentCurve").c_str())) {
 					cdeclcall(void, 0x42AD40); // CMainFrame::OnCurveCap
 				}
 
@@ -1597,43 +1652,60 @@ namespace ggui::menubar
 					cdeclcall(void, 0x4294E0); // CMainFrame::OnTurnTerrainEdges
 				}
 
-				if (ImGui::MenuItem("Lock Vertices", hotkeys::get_hotkey_for_command("ToggleLockPatchVertices").c_str())) {
+				if (ImGui::MenuItem("Lock Vertices", ggui::hotkey_dialog::get_hotkey_for_command("ToggleLockPatchVertices").c_str())) {
 					mainframe_thiscall(void, 0x42B4F0); // CMainFrame::ToggleLockPatchVertMode
 				}
 
-				if (ImGui::MenuItem("Unlock Vertices", hotkeys::get_hotkey_for_command("ToggleUnlockPatchVertices").c_str())) {
+				if (ImGui::MenuItem("Unlock Vertices", ggui::hotkey_dialog::get_hotkey_for_command("ToggleUnlockPatchVertices").c_str())) {
 					mainframe_thiscall(void, 0x42B510); // CMainFrame::ToggleUnlockPatchVertMode
 				}
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Cycle Cap Texture", hotkeys::get_hotkey_for_command("CycleCapTexturePatch").c_str())) {
+				if (ImGui::MenuItem("Cycle Cap Texture", ggui::hotkey_dialog::get_hotkey_for_command("CycleCapTexturePatch").c_str())) {
 					cdeclcall(void, 0x42B1A0); // CMainFrame::OnCurveCyclecap
 				}
 
-				if (ImGui::MenuItem("Cap Texture", hotkeys::get_hotkey_for_command("ApplyPatchCap").c_str())) {
+				if (ImGui::MenuItem("Cap Texture", ggui::hotkey_dialog::get_hotkey_for_command("ApplyPatchCap").c_str())) {
 					cdeclcall(void, 0x42AE50); // CMainFrame::OnPatchCap
 				}
 
 				ImGui::EndMenu(); // Patch
 			}
 
-			if (ImGui::BeginMenu("Help"))
+			const char* about_str = game::glob::gh_update_avail ? "Update Available" : "About";
+
+			if(game::glob::gh_update_avail)
 			{
-				//if (ImGui::MenuItem("Command List")) {
-				//	cdeclcall(void, 0x426E00); // CMainFrame::OnHelpCommandlist
-				//}
-
-				if (ImGui::MenuItem("About / Version"))
-				{
-					components::gui::toggle(context.m_about);
-				}
-
-				ImGui::EndMenu(); // Help
+				ImGui::PushFontFromIndex(ggui::BOLD_18PX);
 			}
+
+			if (ImGui::MenuItem(about_str))
+			{
+				GET_GUI(about_dialog)->toggle();
+			}
+
+			if (game::glob::gh_update_avail)
+			{
+				ImGui::PopFont();
+			}
+
+			//if (ImGui::BeginMenu("Help"))
+			//{
+			//	//if (ImGui::MenuItem("Command List")) {
+			//	//	cdeclcall(void, 0x426E00); // CMainFrame::OnHelpCommandlist
+			//	//}
+
+			//	if (ImGui::MenuItem("About / Version"))
+			//	{
+			//		GET_GUI(about_dialog)->toggle();
+			//	}
+
+			//	ImGui::EndMenu(); // Help
+			//}
 			ImGui::EndGroup(); // used to calculate total width below
 
-			if(dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
+			if (dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
 			{
 				const auto menubar_width = ImGui::GetItemRectSize().x + 24.0f;
 				const auto gridpos_text_width = ImGui::CalcTextSize(cmainframe::activewnd->m_strStatus[1]).x;
@@ -1656,4 +1728,6 @@ namespace ggui::menubar
 			ImGui::EndMenuBar();
 		}
 	}
+
+	REGISTER_GUI(menubar_dialog);
 }

@@ -66,7 +66,36 @@ void create_entity_from_name_intercept()
 {
 	if(!g_block_radiant_modeldialog)
 	{
-		PostMessageA(game::g_qeglobals->d_hwndEntity, WM_COMMAND, 0x50E, 0); // IDC_E_ADD_MODEL
+		// logic :: ggui::file_dialog_frame
+		if (dvars::gui_use_new_filedialog->current.enabled)
+		{
+			std::string path_str;
+
+			const auto egui = GET_GUI(ggui::entity_dialog);
+			const bool is_prefab = (game::g_edit_entity()->eclass->classtype & 0x10) != 0; // CLASS_PREFAB
+
+			if (is_prefab)
+			{
+				path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+				path_str += "\\prefabs\\";
+			}
+			else
+			{
+				path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+				path_str += "\\raw\\xmodel\\";
+			}
+
+			const auto file = GET_GUI(ggui::file_dialog);
+			file->set_default_path(path_str);
+			file->set_file_handler(is_prefab ? ggui::FILE_DIALOG_HANDLER::MISC_PREFAB : ggui::FILE_DIALOG_HANDLER::MISC_MODEL);
+			file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+			file->set_file_ext(is_prefab ? ".map" : "");
+			file->open();
+		}
+		else
+		{
+			PostMessageA(game::g_qeglobals->d_hwndEntity, WM_COMMAND, 0x50E, 0); // IDC_E_ADD_MODEL
+		}
 	}
 }
 
@@ -414,12 +443,12 @@ LRESULT WINAPI cxywnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPa
 	// but the user is within a textbox in some other imgui window
 	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 	{
-		if (ggui::cz_context_ready())
+		if (ggui::is_ggui_initialized())
 		{
 			// set cz context (in-case we use multiple imgui context's)
 			IMGUI_BEGIN_CZWND;
 
-			if (!ggui::get_rtt_gridwnd()->window_hovered && ImGui::GetIO().WantCaptureMouse)
+			if (!GET_GUI(ggui::grid_dialog)->rtt_is_hovered() && ImGui::GetIO().WantCaptureMouse)
 			{
 				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
 				return true;

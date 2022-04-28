@@ -12,11 +12,11 @@ const auto CamWnd__DropModelsToPlane = reinterpret_cast<CamWnd__DropModelsToPlan
 IMGUI_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 /*
- * (czwnd member functions are only used if the cz subwindow is focused)
- * - Directly clicking onto an imgui window will not focus the subwindow behind it
- * - IO will instead be handled by cmainframe member functions
- * + Mouse scrolling handled by cmainframe::on_mscroll
- * + Char events handled by czwnd::wndproc / cxywnd::wndproc / ccamwnd::wndproc or cmainframe::windowproc (depends on focused window)
+ * (czwnd member functions are only used if the cz subwindow is focused or if they are redirected to the czwnd)
+ * - directly clicking onto an imgui window will not focus the subwindow behind it
+ * - IO will be handled by cmainframe member functions
+ * + mouse scrolling handled by cmainframe::on_mscroll
+ * + char events handled by czwnd::wndproc / cxywnd::wndproc / ccamwnd::wndproc or cmainframe::windowproc (depends on focused window)
  */
 
 
@@ -35,43 +35,43 @@ typedef void(__thiscall* on_czwnd_msg)(czwnd*, UINT, CPoint);
 
 void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 		
 
 		// if mouse is inside imgui grid window & cursor not at window border (resizing)
-		if (auto gridwnd = ggui::get_rtt_gridwnd();
-				 gridwnd->window_hovered && !ImGui::IsResizing())
+		if (auto gridwnd = GET_GUI(ggui::grid_dialog);
+				 gridwnd->rtt_is_hovered() && !ImGui::IsResizing())
 		{
-			gridwnd->should_set_focus = true;
+			gridwnd->rtt_set_focus_state(true);
 
-			xywnd::__on_lbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_lbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 
-			if (gridwnd->capture_left_mousebutton)
+			if (gridwnd->rtt_is_capturing_lmb())
 			{
 				ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_LBUTTONDOWN);
-				gridwnd->capture_left_mousebutton = false;
+				gridwnd->rtt_set_lmb_capturing(false);
 			}
 
 			return;
 		}
 
 		// if mouse is inside imgui camera window & cursor not at window border (resizing)
-		if (auto camerawnd = ggui::get_rtt_camerawnd();
-				 camerawnd->window_hovered && !ImGui::IsResizing())
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered() && !ImGui::IsResizing())
 		{
-			camerawnd->should_set_focus = true;
-			
+			camerawnd->rtt_set_focus_state(true);
+
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
 
-			ccam->m_ptLastCursor = camerawnd->cursor_pos_pt;
+			ccam->m_ptLastCursor = camerawnd->rtt_get_cursor_pos_cpoint();
 			SetFocus(ccam->GetWindow());
 			SetCapture(ccam->GetWindow());
 			CamWnd__DropModelsToPlane(ccam, ccam->m_ptLastCursor.x, ccam->camera.height - ccam->m_ptLastCursor.y - 1, nFlags);
 
-			if(camerawnd->capture_left_mousebutton)
+			if(camerawnd->rtt_is_capturing_lmb())
 			{
 				ImGui::HandleKeyIO(ccam->GetWindow(), WM_LBUTTONDOWN);
 				//camerawnd->capture_left_mousebutton = false;
@@ -81,10 +81,10 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		}
 
 		// if mouse is inside imgui texture window & cursor not at window border (resizing)
-		if (auto texwnd = ggui::get_rtt_texturewnd();
-				 texwnd->window_hovered && !ImGui::IsResizing())
+		if (const auto  tex = GET_GUI(ggui::texture_dialog);
+						tex->rtt_is_hovered())
 		{
-			texwnd->should_set_focus = true;
+			tex->rtt_set_focus_state(true);
 			ctexwnd::on_mousebutton_down(nFlags);
 
 			// handle IO because we have an overlay toolbar within the texture window
@@ -113,22 +113,22 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 
 void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
 
 		// if mouse is inside imgui grid window
-		if (auto gridwnd = ggui::get_rtt_gridwnd();
-				 gridwnd->window_hovered)
+		if (auto gridwnd = GET_GUI(ggui::grid_dialog);
+				 gridwnd->rtt_is_hovered())
 		{
-			xywnd::__on_lbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_lbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 
-			if (gridwnd->capture_left_mousebutton)
+			if (gridwnd->rtt_is_capturing_lmb())
 			{
 				ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_LBUTTONUP);
-				gridwnd->capture_left_mousebutton = false;
+				gridwnd->rtt_set_lmb_capturing(false);
 			}
 			
 			return;
@@ -141,7 +141,7 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 		// check if func was called from ccamwnd::on_lbutton_up
 		if (point.x == 251)
 		{
-			const auto camerawnd = ggui::get_rtt_camerawnd();
+			const auto camerawnd = GET_GUI(ggui::camera_dialog);
 
 			ccamwnd::mouse_up(cmainframe::activewnd->m_pCamWnd, nFlags);
 			if ((nFlags & (MK_MBUTTON | MK_RBUTTON | MK_LBUTTON)) == 0)
@@ -149,18 +149,17 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 				ReleaseCapture();
 			}
 
-			if (camerawnd->capture_left_mousebutton)
+			if (camerawnd->rtt_is_capturing_lmb())
 			{
 				ImGui::HandleKeyIO(cmainframe::activewnd->m_pCamWnd->GetWindow(), WM_LBUTTONUP);
-				camerawnd->capture_left_mousebutton = false;
+				camerawnd->rtt_set_lmb_capturing(false);
 			}
 			
 			return;
 		}
 
 		// if mouse is inside imgui texture window
-		if (const auto  texwnd = ggui::get_rtt_texturewnd();
-						texwnd->window_hovered)
+		if(GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			ctexwnd::on_mousebutton_up(nFlags);
 
@@ -192,45 +191,49 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 
 void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
 		
 		// if mouse is inside imgui grid window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
-			gridwnd->should_set_focus = true;
+			gridwnd->rtt_set_focus_state(true);
 
 			ImGui::HandleKeyIO(cmainframe::activewnd->m_pXYWnd->GetWindow(), WM_RBUTTONDOWN);
 
-			xywnd::__on_rbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_rbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 			return;
 		}
 
 		// if mouse is inside imgui camera window
-		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
-						camerawnd->window_hovered)
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered())
 		{
-			camerawnd->should_set_focus = true;
-			
+			camerawnd->rtt_set_focus_state(true);
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
 
 			SetFocus(ccam->GetWindow());
 			SetCapture(ccam->GetWindow());
-			CamWnd__DropModelsToPlane(ccam, camerawnd->cursor_pos_pt.x, ccam->camera.height - camerawnd->cursor_pos_pt.y - 1, nFlags);
+
+			CamWnd__DropModelsToPlane(
+				ccam, 
+				camerawnd->rtt_get_cursor_pos_cpoint().x, 
+				ccam->camera.height - camerawnd->rtt_get_cursor_pos_cpoint().y - 1,
+				nFlags);
 
 			ImGui::HandleKeyIO(ccam->GetWindow(), WM_RBUTTONDOWN);
 			return;
 		}
 
 		// if mouse is inside imgui texture window
-		if (const auto	texwnd = ggui::get_rtt_texturewnd();
-						texwnd->window_hovered)
+		if (const auto	tex = GET_GUI(ggui::texture_dialog);
+						tex->rtt_is_hovered())
 		{
-			texwnd->should_set_focus = true;
+			tex->rtt_set_focus_state(true);
 			ctexwnd::on_mousebutton_down(nFlags);
 
 			// fake left click to unfocus inputtext widgets
@@ -255,15 +258,15 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 
 void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
 
 		// if mouse is inside imgui grid window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
 			const auto cxywnd = cmainframe::activewnd->m_pXYWnd;
 			ImGui::HandleKeyIO(cxywnd->GetWindow(), WM_RBUTTONUP);
@@ -272,7 +275,7 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 			cxywnd->m_ptDrag.x = point.x;
 			cxywnd->m_ptDrag.y = point.y;
 
-			xywnd::__on_rbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_rbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 			return;
 		}
 
@@ -311,8 +314,7 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 		}
 
 		// if mouse is inside imgui texture window
-		if (const auto	texwnd = ggui::get_rtt_texturewnd();
-						texwnd->window_hovered)
+		if (GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			ctexwnd::on_mousebutton_up(nFlags);
 
@@ -344,42 +346,47 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 
 void __fastcall czwnd::on_mbutton_down(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
 
 		// if mouse is inside imgui grid window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
-			gridwnd->should_set_focus = true;
+			gridwnd->rtt_set_focus_state(true);
 			
-			xywnd::__on_mbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_mbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 			return;
 		}
 
 		// if mouse is inside imgui camera window
-		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
-						camerawnd->window_hovered)
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered())
 		{
-			camerawnd->should_set_focus = true;
+			camerawnd->rtt_set_focus_state(true);
 			
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
 
 			SetFocus(ccam->GetWindow());
 			SetCapture(ccam->GetWindow());
-			CamWnd__DropModelsToPlane(ccam, camerawnd->cursor_pos_pt.x, ccam->camera.height - camerawnd->cursor_pos_pt.y - 1, nFlags);
+
+			CamWnd__DropModelsToPlane(
+				ccam, 
+				camerawnd->rtt_get_cursor_pos_cpoint().x, 
+				ccam->camera.height - camerawnd->rtt_get_cursor_pos_cpoint().y - 1,
+				nFlags);
 
 			return;
 		}
 
 		// if mouse is inside imgui texture window
-		if (const auto	texwnd = ggui::get_rtt_texturewnd();
-						texwnd->window_hovered)
+		if (const auto  tex = GET_GUI(ggui::texture_dialog);
+						tex->rtt_is_hovered())
 		{
-			texwnd->should_set_focus = true;
+			tex->rtt_set_focus_state(true);
 			ctexwnd::on_mousebutton_down(nFlags);
 			return;
 		}
@@ -402,17 +409,17 @@ void __fastcall czwnd::on_mbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 
 void __fastcall czwnd::on_mbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
 
 		// if mouse is inside imgui grid window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
-			xywnd::__on_mbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_mbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 			return;
 		}
 
@@ -433,8 +440,7 @@ void __fastcall czwnd::on_mbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 		}
 
 		// if mouse is inside imgui texture window
-		if (const auto	texwnd = ggui::get_rtt_texturewnd(); 
-						texwnd->window_hovered)
+		if (GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			ctexwnd::on_mousebutton_up(nFlags);
 			return;
@@ -463,31 +469,35 @@ void __fastcall czwnd::on_mbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 
 void __fastcall czwnd::on_mouse_move([[maybe_unused]] czwnd* pThis, [[maybe_unused]] void* edx, UINT nFlags, [[maybe_unused]] CPoint point)
 {
-	if (ggui::cz_context_ready())
+	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
 		IMGUI_BEGIN_CZWND;
 
 		// if mouse is inside imgui-cxy window
-		if (const auto	gridwnd = ggui::get_rtt_gridwnd();
-						gridwnd->window_hovered)
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
-			xywnd::__on_mouse_move(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->cursor_pos_pt);
+			xywnd::__on_mouse_move(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 			return;
 		}
 
 		// if mouse is inside imgui-camera window
-		if (const auto	camerawnd = ggui::get_rtt_camerawnd();
-						camerawnd->window_hovered)
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+						camerawnd->rtt_is_hovered())
 		{
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
 
-			ccamwnd::mouse_moved(ccam, nFlags, camerawnd->cursor_pos_pt.x, ccam->camera.height - camerawnd->cursor_pos_pt.y - 1);
+			ccamwnd::mouse_moved(
+				ccam, 
+				nFlags, 
+				camerawnd->rtt_get_cursor_pos_cpoint().x, 
+				ccam->camera.height - camerawnd->rtt_get_cursor_pos_cpoint().y - 1);
+
 			return;
 		}
 
-		if(const auto	texwnd = ggui::get_rtt_texturewnd();
-						texwnd->window_hovered)
+		if (GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			ctexwnd::on_mousemove(nFlags);
 			return;
@@ -515,25 +525,25 @@ LRESULT WINAPI czwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPar
 	// we only need the char event
 	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 	{
-		if (ggui::cz_context_ready())
+		if (ggui::is_ggui_initialized())
 		{
 			// set cz context (in-case we use multiple imgui context's)
 			IMGUI_BEGIN_CZWND;
 
 			// if mouse is inside imgui-cxy window
-			if (ggui::get_rtt_gridwnd()->window_hovered)
+			if (GET_GUI(ggui::grid_dialog)->rtt_is_hovered())
 			{
 				return DefWindowProcA(hWnd, Msg, wParam, lParam);
 			}
 
 			// if mouse is inside imgui-camera window
-			if (ggui::get_rtt_camerawnd()->window_hovered)
+			if (GET_GUI(ggui::camera_dialog)->rtt_is_hovered())
 			{
 				return DefWindowProcA(hWnd, Msg, wParam, lParam);
 			}
 
 			// if mouse is inside imgui-texture window
-			if (ggui::get_rtt_texturewnd()->window_hovered)
+			if(GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 			{
 				return DefWindowProcA(hWnd, Msg, wParam, lParam);
 			}

@@ -1,62 +1,189 @@
 #include "std_include.hpp"
 
-namespace ggui::grid
+namespace ggui
 {
-	struct eclass_context_helper
+	// ouch
+	void grid_dialog::build_eclass_context_new()
 	{
-		bool is_single;
-		std::string group_name;
-		std::vector<std::string> childs;
-	};
+		const auto entity_gui = GET_GUI(ggui::entity_dialog);
 
-	std::vector<eclass_context_helper> eclass_context_menus;
-
-	void build_eclass_context()
-	{
-		int current_dir_idx = 0;
-
-		for (size_t i = 0; i < entity::classlist.size(); ++i)
+		for (size_t i = 0; i < entity_gui->m_classlist.size(); ++i)
 		{
-			std::string class_str = entity::classlist[i]->name;
+			std::string class_str = entity_gui->m_classlist[i]->name;
 			std::vector<std::string> split = utils::split(class_str, '_');
 
-			// first element
-			if(!i)
+			std::string class_str_next;
+
+			if(i + 1 < entity_gui->m_classlist.size())
 			{
-				eclass_context_helper t = { false, split[0] };
-				eclass_context_menus.push_back(t);
-				eclass_context_menus[0].childs.push_back(class_str);
-
-				continue;
-			}
-
-			std::string class_str_prev = entity::classlist[i - 1]->name;
-			std::vector<std::string> split_prev = utils::split(class_str_prev, '_');
-
-			if(split[0] == split_prev[0])
-			{
-				eclass_context_menus[current_dir_idx].childs.push_back(class_str);
+				class_str_next = entity_gui->m_classlist[i + 1]->name;
 			}
 			else
 			{
-				// check for single element group
-				if(eclass_context_menus[current_dir_idx].childs.size() <= 1)
+				class_str_next = class_str;
+			}
+
+			std::vector<std::string> split_next = utils::split(class_str_next, '_');
+
+			if (!split.empty() && !split_next.empty())
+			{
+				// cap layer depth at 2 for anything other then actors
+				const size_t group_depth = split[0] == "actor" ? 4 : 2;
+
+				for (size_t t = 0; t < split.size(); t++)
 				{
-					eclass_context_menus[current_dir_idx].is_single = true;
+					// compare current and next entity token
+					if(t < group_depth && t + 1 < split.size() && t < split_next.size() && split[t] == split_next[t])
+					{
+						// build complete path to current group
+						std::string path_str;
+						for (size_t cc = 0; cc < t + 1; cc++)
+						{
+							path_str += (cc ? "_"s : ""s) + split[cc]; // no initial _
+						}
+
+						eclass_context_group gr = { split[t], path_str };
+
+						// check if group exists in current layer
+						bool exists = false;
+
+						const size_t m_size = eclass_ctr_curr ? eclass_ctr_curr->childs.size() : eclass_context_groups.size();
+						for (auto g = 0u; g < m_size; g++)
+						{
+							std::string* group_str = eclass_ctr_curr ? &eclass_ctr_curr->childs[g].group_name : &eclass_context_groups[g].group_name;
+							if (split[t] == *group_str)
+							{
+								eclass_ctr_curr = eclass_ctr_curr ? &eclass_ctr_curr->childs[g] : &eclass_context_groups[g];
+								exists = true;
+								break;
+							}
+						}
+
+						if(!exists)
+						{
+							eclass_ctr_curr = eclass_ctr_curr ? 
+								  &eclass_ctr_curr->childs.emplace_back(gr)
+								: &eclass_context_groups.emplace_back(gr);
+						}
+					}
+					else
+					{
+						// ungrouped entity in subgroup
+
+						// second token and up
+						if (eclass_ctr_curr)
+						{
+							// check if current entity is part of the last group
+							bool exists = false;
+
+							for (size_t cc = 0; cc < eclass_ctr_curr->childs.size(); cc++)
+							{
+								if (split[t] == eclass_ctr_curr->childs[cc].group_name)
+								{
+									// build child string
+									std::string child_str = split[t];
+									for (size_t nn = t + 1; nn < split.size(); nn++)
+									{
+										child_str += "_"s + split[nn];
+									}
+
+									eclass_ctr_curr->childs[cc].ents.push_back({ child_str, class_str});
+									exists = true;
+									break;
+								}
+							}
+
+							// not part of last group
+							if(!exists)
+							{
+								// build child string
+								std::string child_str = split[t];
+								for (size_t cc = t + 1; cc < split.size(); cc++)
+								{
+									child_str += "_"s + split[cc];
+								}
+
+								// combine item and group when eg: [weapon_ak47] = item and group -> "context->weapon->ak47->ak47 .. ak47_mp etc"
+								if(split[0] == "weapon" && t + 1 == split.size() && split[t] == split_next[t])
+								{
+									// complete path to group
+									std::string path_str;
+									for (size_t cc = 0; cc < t + 1; cc++)
+									{
+										path_str += (cc ? "_"s : ""s) + split[cc]; // no initial _
+									}
+
+									eclass_context_group gr = { split[t], path_str };
+									gr.ents.push_back({ child_str, class_str });
+
+									eclass_ctr_curr = &eclass_ctr_curr->childs.emplace_back(gr);
+								}
+								else
+								{
+									eclass_ctr_curr->ents.push_back({ child_str, class_str });
+								}
+							}
+
+							// do not compare left over tokens
+							break;
+						}
+						else // first token
+						{
+							// build child string
+							std::string child_str = split[t];
+							for (size_t cc = t + 1; cc < split.size(); cc++)
+							{
+								child_str += "_"s + split[cc];
+							}
+
+							bool exists = false;
+							if(eclass_ctr_prev)
+							{
+								// is current ent part of the last group?
+								if(child_str.starts_with(eclass_ctr_prev->path_including_group))
+								{
+									utils::replace(child_str, eclass_ctr_prev->path_including_group + "_"s, "");
+
+									eclass_ctr_prev->ents.push_back({ child_str, class_str });
+									exists = true;
+									break;
+								}
+							}
+
+							if (!exists)
+							{
+								eclass_context_ents.push_back({ child_str, class_str });
+							}
+
+							// do not compare left over tokens
+							break;
+						}
+					}
 				}
 
-				current_dir_idx++;
-				eclass_context_helper t = { false, split[0] };
-				eclass_context_menus.push_back(t);
-				eclass_context_menus[current_dir_idx].childs.push_back(class_str);
+				eclass_ctr_prev = eclass_ctr_curr;
+				eclass_ctr_curr = nullptr;
+			}
+		}
 
-				// check if current element is the last element
-				if(i + 1 >= entity::classlist.size())
+		// fix edge cases
+		// currently only fixes weapon_g3 not being within the g3 group
+		// because classlist contains "weapon_g3" - "weapon_g36c" - ... g36c - "weapon_g3_acog_mp"
+		for (auto& group : eclass_context_groups)
+		{
+			//if (group.group_name == "weapon")
+			{
+				// check all seperate ents
+				for (size_t w = 0u; w < group.ents.size(); w++)
 				{
-					// check for single element group
-					if (eclass_context_menus[current_dir_idx].childs.size() <= 1)
+					// check current ent against all groups
+					for (auto& weap_group : group.childs)
 					{
-						eclass_context_menus[current_dir_idx].is_single = true;
+						if (weap_group.group_name == group.ents[w].token)
+						{
+							weap_group.ents.insert(weap_group.ents.begin(), group.ents[w]);
+							group.ents.erase(group.ents.begin() + w);
+						}
 					}
 				}
 			}
@@ -64,14 +191,14 @@ namespace ggui::grid
 	}
 
 	// right click context menu
-	void context_menu()
+	void grid_dialog::context_menu()
 	{
 		const auto cxywnd = cmainframe::activewnd->m_pXYWnd;
 
 		static bool grid_context_open = false;
 		static bool grid_context_pending_open = false;
 
-		static std::string grid_context_last_spawned_entity = "";
+		static std::string grid_context_last_spawned_entity;
 
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
 		{
@@ -134,6 +261,12 @@ namespace ggui::grid
 
 						SEPERATORV(0.0f);
 
+						if (ImGui::MenuItem("Ungroup Entity"))
+						{
+							// CMainFrame::OnSelectionUngroupentity
+							cdeclcall(void, 0x426380);
+						} TT("eg: dismember a script_brushmodel to individual/normal brushes");
+
 						if(ImGui::MenuItem("Add Selection To Active Layer"))
 						{
 							// CXYWnd::OnSelectionAddToActiveLayer
@@ -149,7 +282,7 @@ namespace ggui::grid
 
 					if (sb && sb->def && sb->def->owner)
 					{
-						if (const auto  val = entity::ValueForKey(sb->def->owner->epairs, "classname");
+						if (const auto  val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(sb->def->owner->epairs, "classname");
 										val && val == "misc_prefab"s)
 						{
 							if (ImGui::MenuItem("Enter Prefab"))
@@ -181,70 +314,112 @@ namespace ggui::grid
 				if (ImGui::BeginMenu("Create Entity"))
 				{
 					// create entity list
-					if (eclass_context_menus.empty())
+					if (eclass_context_groups.empty())
 					{
-						build_eclass_context();
+						/*auto gui = GET_GUI(ggui::entity_dialog);
+						for (size_t i = 0; i < gui->m_classlist.size(); ++i)
+						{
+							game::printf_to_console(gui->m_classlist[i]->name);
+						}*/
+
+						build_eclass_context_new();
 					}
 
-					if(!eclass_context_menus.empty())
+					auto handle_menu_item = [&](const eclass_context_group& group) -> void
 					{
-						for(const auto& ca : eclass_context_menus)
+						for (const auto& str : group.ents)
 						{
-							if(ca.group_name == "worldspawn")
+							const char* c_str = str.ent_str.c_str();
+							if(ImGui::MenuItem(c_str))
+							{
+								game::CreateEntityFromClassname(cxywnd, c_str, cxywnd->m_ptDrag.x, cxywnd->m_ptDrag.y);
+								grid_context_last_spawned_entity = str.ent_str;
+							}
+						}
+					};
+
+					// ouch
+					if (!eclass_context_groups.empty())
+					{
+						for (const auto& ca : eclass_context_groups)
+						{
+							if (ImGui::BeginMenu(ca.group_name.c_str()))
+							{
+								for (const auto& child : ca.childs)
+								{
+									if (ImGui::BeginMenu(child.group_name.c_str()))
+									{
+										for (const auto& aa : child.childs)
+										{
+											if (ImGui::BeginMenu(aa.group_name.c_str()))
+											{
+												for (const auto& ab : aa.childs)
+												{
+													if (ImGui::BeginMenu(ab.group_name.c_str()))
+													{
+														for (const auto& ac : ab.childs)
+														{
+															if (ImGui::BeginMenu(ac.group_name.c_str())) // not needed since group depth is capped at 4
+															{
+																handle_menu_item(ac);
+																ImGui::EndMenu();
+															}
+														}
+
+														handle_menu_item(ab);
+														ImGui::EndMenu();
+													}
+												}
+
+												handle_menu_item(aa);
+												ImGui::EndMenu();
+											}
+										}
+
+										handle_menu_item(child);
+										ImGui::EndMenu();
+									}
+								}
+
+								handle_menu_item(ca);
+								ImGui::EndMenu();
+							}
+						}
+					}
+
+					if(!eclass_context_ents.empty())
+					{
+						for (const auto& str : eclass_context_ents)
+						{
+							if(str.ent_str == "worldspawn")
 							{
 								continue;
 							}
 
-							if(ca.is_single)
-							{
-								const char* eclass_str = ca.childs[0].c_str();
-								if (ImGui::MenuItem(eclass_str))
-								{
-									game::CreateEntityFromClassname(cxywnd, eclass_str, cxywnd->m_ptDrag.x, cxywnd->m_ptDrag.y);
-									grid_context_last_spawned_entity = eclass_str;
-								}
-							}
-							else
-							{
-								if (ImGui::BeginMenu(ca.group_name.c_str()))
-								{
-									for(const auto& child : ca.childs)
-									{
-										const char* eclass_str = child.c_str();
-										if (ImGui::MenuItem(eclass_str))
-										{
-											game::CreateEntityFromClassname(cxywnd, eclass_str, cxywnd->m_ptDrag.x, cxywnd->m_ptDrag.y);
-											grid_context_last_spawned_entity = eclass_str;
-										}
-									}
+							//ImGui::MenuItem(str.ent_str.c_str());
 
-									ImGui::EndMenu();
-								}
+							const char* c_str = str.ent_str.c_str();
+							if (ImGui::MenuItem(c_str))
+							{
+								game::CreateEntityFromClassname(cxywnd, c_str, cxywnd->m_ptDrag.x, cxywnd->m_ptDrag.y);
+								grid_context_last_spawned_entity = str.ent_str;
 							}
 						}
 					}
-
-					// we can not iterate over g_eclass because it also holds classes not part of the project
-					/*for(const auto eclass : entity::classlist)
-					{
-						if (ImGui::MenuItem(eclass->name))
-						{
-							game::CreateEntityFromClassname(cxywnd, eclass->name, cxywnd->m_ptDrag.x, cxywnd->m_ptDrag.y);
-						}
-					}*/
 
 					ImGui::EndMenu();
 				}
 
 				if(!grid_context_last_spawned_entity.empty())
 				{
+					SEPERATORV(0.0f);
+
 					const char* last_ent_str = grid_context_last_spawned_entity.c_str();
 					if (ImGui::MenuItem(last_ent_str))
 					{
 						game::CreateEntityFromClassname(cxywnd, last_ent_str, cxywnd->m_ptDrag.x, cxywnd->m_ptDrag.y);
 					}
 				}
-				
 
 				ImGui::PopStyleColor();
 				ImGui::EndPopup();
@@ -261,23 +436,24 @@ namespace ggui::grid
 
 			ImGui::PopStyleVar(2);
 		}
-		
 	}
 
 	// drag-drop target
-	void drag_drop_target()
+	void grid_dialog::drag_drop_target()
 	{
 		if (ImGui::BeginDragDropTarget())
 		{
 			if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 			{
+				const auto entity_gui = GET_GUI(ggui::entity_dialog);
+				const auto m_selector = GET_GUI(ggui::modelselector_dialog);
+
 				// reset manual left mouse capture
 				ggui::dragdrop_reset_leftmouse_capture();
 
-				const auto m_selector = ggui::get_rtt_modelselector();
-				ggui::entity::addprop_helper_s no_undo = {};
+				ggui::entity_dialog::addprop_helper_s no_undo = {};
 
-				if (m_selector->overwrite_selection)
+				if (m_selector->m_overwrite_selection)
 				{
 					game::Undo_ClearRedo();
 					game::Undo_GeneralStart("change entity model");
@@ -294,7 +470,7 @@ namespace ggui::grid
 						goto SPAWN_AWAY;
 					}
 
-					ggui::entity::AddProp("model", m_selector->preview_model_name.c_str(), &no_undo);
+					entity_gui->add_prop("model", m_selector->m_preview_model_name.c_str(), &no_undo);
 					game::Undo_End();
 				}
 				else
@@ -306,8 +482,10 @@ namespace ggui::grid
 					if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
 					{
 					SPAWN_AWAY:
-						const auto gridwnd = ggui::get_rtt_gridwnd();
-						game::CreateEntityBrush(static_cast<int>(gridwnd->scene_size_imgui.y) - gridwnd->cursor_pos_pt.y, gridwnd->cursor_pos_pt.x, cmainframe::activewnd->m_pXYWnd);
+						game::CreateEntityBrush(
+							static_cast<int>(this->rtt_get_size().y) - this->rtt_get_cursor_pos_cpoint().y, 
+							this->rtt_get_cursor_pos_cpoint().x,
+							cmainframe::activewnd->m_pXYWnd);
 					}
 
 					// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
@@ -318,7 +496,7 @@ namespace ggui::grid
 
 					g_block_radiant_modeldialog = false;
 
-					ggui::entity::AddProp("model", ggui::get_rtt_modelselector()->preview_model_name.c_str(), &no_undo);
+					entity_gui->add_prop("model", m_selector->m_preview_model_name.c_str(), &no_undo);
 					// ^ model dialog -> OpenDialog // CEntityWnd_EntityWndProc
 
 					game::Undo_End();
@@ -330,7 +508,7 @@ namespace ggui::grid
 	// gui::render_loop()
 	// render to texture - imgui grid window
 
-	void gui()
+	void grid_dialog::grid_gui()
 	{
 		int p_styles = 0;
 		int p_colors = 0;
@@ -356,16 +534,15 @@ namespace ggui::grid
 		ImGui::PushStyleColor(ImGuiCol_ResizeGripActive, 0); p_colors++;
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_rtt_padding_color->current.vector)); p_colors++;
 
-		const auto gridwnd = ggui::get_rtt_gridwnd();
-		if (gridwnd->should_set_focus)
+		if (this->rtt_is_focus_pending())
 		{
 			ImGui::SetNextWindowFocus();
-			gridwnd->should_set_focus = false;
+			this->rtt_set_focus_state(false);
 		}
 
 		ImGui::Begin("Grid Window##rtt", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 
-		if (gridwnd->scene_texture)
+		if (this->rtt_get_texture())
 		{
 			bool tabbar_visible = true;
 			const auto wnd = ImGui::GetCurrentWindow();
@@ -379,18 +556,26 @@ namespace ggui::grid
 			}
 
 			const float frame_height = tabbar_visible ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
-			gridwnd->scene_size_imgui = ImGui::GetWindowSize() - ImVec2(0.0f, frame_height) - window_padding_both;
+			this->rtt_set_size(ImGui::GetWindowSize() - ImVec2(0.0f, frame_height) - window_padding_both);
 
 			// hack to disable left mouse window movement
 			ImGui::BeginChild("scene_child_cxy", ImVec2(cxy_size.x, cxy_size.y + frame_height) + window_padding_both, false, ImGuiWindowFlags_NoMove);
 			{
 				const auto screenpos = ImGui::GetCursorScreenPos();
-				SetWindowPos(cmainframe::activewnd->m_pXYWnd->m_hWnd, HWND_BOTTOM, (int)screenpos.x, (int)screenpos.y, (int)gridwnd->scene_size_imgui.x, (int)gridwnd->scene_size_imgui.y, SWP_NOZORDER);
+
+				SetWindowPos(
+					cmainframe::activewnd->m_pXYWnd->m_hWnd, 
+					HWND_BOTTOM, 
+					(int)screenpos.x, 
+					(int)screenpos.y,
+					static_cast<int>(this->rtt_get_size().x), 
+					static_cast<int>(this->rtt_get_size().y),
+					SWP_NOZORDER);
 
 				const auto pre_image_cursor = ImGui::GetCursorPos();
 
-				ImGui::Image(gridwnd->scene_texture, cxy_size);
-				gridwnd->window_hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+				ImGui::Image(this->rtt_get_texture(), cxy_size);
+				this->rtt_set_hovered_state(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
 
 				// right click context menu
 				if(dvars::gui_use_new_context_menu->current.enabled)
@@ -405,12 +590,11 @@ namespace ggui::grid
 				ImGui::PopStyleVar(); p_styles--;
 
 				ImGui::SetCursorPos(pre_image_cursor);
+
 				const auto cursor_screen_pos = ImGui::GetCursorScreenPos();
+				this->rtt_set_cursor_pos(ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y));
 
-				gridwnd->cursor_pos = ImVec2(IO.MousePos.x - cursor_screen_pos.x, IO.MousePos.y - cursor_screen_pos.y);
-				gridwnd->cursor_pos_pt = CPoint((LONG)gridwnd->cursor_pos.x, (LONG)gridwnd->cursor_pos.y);
-
-				ggui::FixDockingTabbarTriangle(wnd, gridwnd);
+				ggui::redraw_undocking_triangle(wnd, this->rtt_get_hovered_state());
 
 				ImGui::EndChild();
 			}
@@ -420,4 +604,18 @@ namespace ggui::grid
 		ImGui::PopStyleVar(p_styles);
 		ImGui::End();
 	}
+
+	void grid_dialog::gui()
+	{ }
+
+	void grid_dialog::on_open()
+	{ }
+
+	void grid_dialog::on_close()
+	{ }
+
+	void grid_dialog::hooks()
+	{ }
+
+	REGISTER_GUI(grid_dialog);
 }

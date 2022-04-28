@@ -295,22 +295,21 @@ namespace components
 
 	void effects::edit()
 	{
-		// on open
-		if(!ggui::state.czwnd.m_effects_editor.menustate)
-		{
-			ggui::state.czwnd.m_effects_editor.menustate = true;
-		}
+		const auto gui = GET_GUI(ggui::effects_editor_dialog);
 
-		// on close
+		if(!gui->is_active()) 
+		{
+			gui->open();
+		}
 		else
 		{
-			if(effects_editor::has_unsaved_changes())
+			if (effects_editor::has_unsaved_changes())
 			{
-				ggui::effects_editor_gui::editor_pending_close = true;
+				gui->m_pending_close = true;
 			}
 			else
 			{
-				ggui::state.czwnd.m_effects_editor.menustate = false;
+				gui->close();
 			}
 		}
 	}
@@ -353,16 +352,17 @@ namespace components
 
 			if(edit_ent->eclass && edit_ent->eclass->classtype == game::ECLASS_RADIANT_NODE)
 			{
-				
-				if (utils::string_equals(ggui::entity::ValueForKey(edit_ent->epairs, "classname"), "fx_origin"))
+				const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
+				if (utils::string_equals(entity_gui->get_value_for_key_from_epairs(edit_ent->epairs, "classname"), "fx_origin"))
 				{
 					is_fx_origin_selected_ = true;
 
 					memcpy(editor_origin_from_fx_origin, edit_ent->origin, sizeof(game::vec3_t));
 
-					ggui::entity::Entity_GetVec3ForKey(reinterpret_cast<game::entity_s*>(edit_ent), editor_angles_from_fx_origin, "angles");
+					entity_gui->get_vec3_for_key_from_entity(reinterpret_cast<game::entity_s*>(edit_ent), editor_angles_from_fx_origin, "angles");
 
-					const auto fx_name = ggui::entity::ValueForKey(edit_ent->epairs, "fx");
+					const auto fx_name = entity_gui->get_value_for_key_from_epairs(edit_ent->epairs, "fx");
 
 
 					if (fx_name && !utils::string_equals(fx_system::ed_editor_effect.name, fx_name))
@@ -540,19 +540,6 @@ namespace components
 		}
 	}
 
-	void menu(ggui::imgui_context_menu& menu)
-	{
-		ImGui::SetNextWindowSize(ImVec2(400.0f, 390.0f));
-		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
-
-		if (!ImGui::Begin("Effects-Debug##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
-		{
-			ImGui::End();
-		}
-
-		ImGui::End();
-	}
-
 	void effects::generate_createfx()
 	{
 		std::ofstream def;
@@ -599,8 +586,10 @@ namespace components
 					const auto owner = reinterpret_cast<game::entity_s_def*>(sb->def->owner);
 					if (utils::string_equals(owner->eclass->name, "fx_origin"))
 					{
+						const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
 						float fx_angles[3] = {};
-						ggui::entity::Entity_GetVec3ForKey(reinterpret_cast<game::entity_s*>(owner), fx_angles, "angles");
+						entity_gui->get_vec3_for_key_from_entity(reinterpret_cast<game::entity_s*>(owner), fx_angles, "angles");
 
 						float temp_rotation_matrix[3][3] = {};
 						utils::vector::angle_vectors(fx_angles, temp_rotation_matrix[2], temp_rotation_matrix[1], temp_rotation_matrix[0]);
@@ -608,7 +597,7 @@ namespace components
 						float world_angles[3] = {};
 						game::AxisToAngles(temp_rotation_matrix, world_angles);
 
-						std::string fx_path = ggui::entity::ValueForKey(owner->epairs, "fx");
+						std::string fx_path = entity_gui->get_value_for_key_from_epairs(owner->epairs, "fx");
 						utils::replace(fx_path, "\\", "/");
 
 						def << "\tlevel._effect[ \"effect_" << effect_count << "\" ] = loadfx( \"" << fx_path << "\" );" << std::endl;
@@ -641,8 +630,10 @@ namespace components
 					const auto owner = reinterpret_cast<game::entity_s_def*>(sb->def->owner);
 					if (utils::string_equals(owner->eclass->name, "fx_origin"))
 					{
+						const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
 						float fx_angles[3] = {};
-						ggui::entity::Entity_GetVec3ForKey(reinterpret_cast<game::entity_s*>(owner), fx_angles, "angles");
+						entity_gui->get_vec3_for_key_from_entity(reinterpret_cast<game::entity_s*>(owner), fx_angles, "angles");
 
 						float temp_rotation_matrix[3][3] = {};
 						utils::vector::angle_vectors(fx_angles, temp_rotation_matrix[2], temp_rotation_matrix[1], temp_rotation_matrix[0]);
@@ -650,7 +641,7 @@ namespace components
 						float world_angles[3] = {};
 						game::AxisToAngles(temp_rotation_matrix, world_angles);
 
-						std::string fx_path = ggui::entity::ValueForKey(owner->epairs, "fx");
+						std::string fx_path = entity_gui->get_value_for_key_from_epairs(owner->epairs, "fx");
 						utils::replace(fx_path, "\\", "/");
 
 						def << "\tlevel._effect[ \"effect_" << effect_count << "\" ] = loadfx( \"" << fx_path << "\" );" << std::endl;

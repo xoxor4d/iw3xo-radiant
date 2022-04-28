@@ -1,181 +1,124 @@
 #include "std_include.hpp"
 #include "commdlg.h"
 
-namespace ggui::entity
+namespace ggui
 {
-	// *
-	// entity list and property list vars
-	
-	enum EPAIR_VALUETYPE
+	const entity_dialog::template_kvp eclass_worldspawn_templates[] =
 	{
-		TEXT = 0,
-		FLOAT = 1,
-		COLOR = 2,
-		ORIGIN = 3,
-		ANGLES = 4,
-		MODEL = 5,
-		FX = 6
+		{ "_color", "0.9 0.9 1.0" },
+		{ "ambient", "0.2" },
+		{ "bouncefraction", "0.2" },
+		{ "contrastgain", "0.3" },
+		{ "diffusefraction", "0.5" },
+		{ "radiosityscale", "1.4" },
+		{ "suncolor", "1.0 0.9 0.8" },
+		{ "sundiffusecolor", "0.95 0.8 0.85" },
+		{ "sundirection", "-60.0 275.0 0.0" },
+		{ "sunlight", "2.4" },
+		{ "sunradiosity", "1.5" },
+		{ "sunIsPrimaryLight", "1" },
 	};
 
-	struct epair_wrapper
+	const entity_dialog::template_kvp eclass_light_templates[] =
 	{
-		game::entity_s_def* entity;
-		game::eclass_t* eclass;
-		game::epair_t* epair;
-		EPAIR_VALUETYPE type;
-		float v_speed = 0.1f;
-		float v_min = 0.0f;
-		float v_max = FLT_MAX;
-		bool  is_fixedsize;
+		{ "_color", "1.0 1.0 1.0" },
+		{ "exponent", "1.0" },
+		{ "def", "light_point_linear" },
+		{ "fov_inner", "60.0" },
+		{ "fov_outer", "90.0" },
+		{ "intensity", "1.0" },
+		{ "radius", "400" },
 	};
 
-	std::vector<epair_wrapper> eprop_sorted;
-	std::vector<game::eclass_t*> classlist;
-	
-	game::eclass_t* sel_list_ent = nullptr;
-	game::eclass_t* edit_entity_class = nullptr;
-	
-	bool edit_entity_changed = false;
-	bool edit_entity_changed_should_scroll = false;
-	bool checkboxflags_states[12];
-
-	
-	// *
-	// key value pair vars
-	
-	const int EPROP_MAX_ROWS = 32; // you are doing something wrong if you hit this limit D:
-	const int EPROP_INPUTLEN = 256;
-
-	char _edit_buf_key[EPROP_INPUTLEN][EPROP_MAX_ROWS] = {};
-	bool _edit_buf_key_dirty[EPROP_MAX_ROWS] = { false };
-
-	char _edit_buf_value[EPROP_INPUTLEN][EPROP_MAX_ROWS] = {};
-	bool _edit_buf_value_dirty[EPROP_MAX_ROWS] = { false };
-
-	struct new_kvp_helper
+	const entity_dialog::template_kvp eclass_trigger_templates[] =
 	{
-		bool _in_use;
+		{ "cursorhint", "HINT_ACTIVATE" },
+		{ "delay", "1" },
+		{ "hintstring", "my hintstring" },
+		{ "target", "my_target" },
+		{ "targetname", "my_targetname" },
+	};
 
-		char key_buffer[EPROP_INPUTLEN];
-		bool key_active;
-		bool key_set_focus;
-		bool key_valid;
+	const entity_dialog::template_kvp eclass_misc_templates[] =
+	{
+		{ "model", "axis" },
+		{ "modelscale", "1" },
+		{ "target", "my_target" },
+		{ "targetname", "my_targetname" },
+	};
 
-		char value_buffer[EPROP_INPUTLEN];
-		bool value_active;
-		bool value_set_focus;
-		bool value_valid;
+	const entity_dialog::template_kvp eclass_generic_templates[] =
+	{
+		{ "target", "my_target" },
+		{ "targetname", "my_targetname" },
+	};
 
-		void reset()
+	void entity_dialog::get_eclass_template(const template_kvp*& tkvp, int* size_out)
+	{
+		const auto eent = game::g_edit_entity();
+
+		const auto ctype = static_cast<ECLASS_TYPE>(eent->eclass->classtype);
+		const bool is_trigger = utils::starts_with(eent->eclass->name, "trigger_");
+
+		if (is_trigger || ctype & (CLASS_TRIGGER_RADIUS | CLASS_TRIGGER_DISC))
 		{
-			memset(this, 0, sizeof(new_kvp_helper));
+			tkvp = eclass_trigger_templates;
+			*size_out = IM_ARRAYSIZE(eclass_trigger_templates);
 		}
-	};
+		else if (ctype & CLASS_LIGHT)
+		{
+			tkvp = eclass_light_templates;
+			*size_out = IM_ARRAYSIZE(eclass_light_templates);
+		}
+		else if ((ctype & CLASS_WORLDSPAWN) == 0)
+		{
+			tkvp = eclass_worldspawn_templates;
+			*size_out = IM_ARRAYSIZE(eclass_worldspawn_templates);
+		}
+		else if (ctype & (CLASS_MODEL | CLASS_PREFAB))
+		{
+			tkvp = eclass_misc_templates;
+			*size_out = IM_ARRAYSIZE(eclass_misc_templates);
+		}
+		else
+		{
+			tkvp = eclass_generic_templates;
+			*size_out = IM_ARRAYSIZE(eclass_generic_templates);
+		}
+	}
 
-	new_kvp_helper kvp_helper = {};
-
-	
 	// *
 	// Helper functions
 
-	char* ValueForKey(game::epair_t*& e, const char* key)
-	{
-		for (auto ep = e; ep; ep = ep->next)
-		{
-			if (!strcmp(ep->key, key))
-			{
-				return ep->value;
-			}
-		}
-
-		return nullptr;
-	}
-
-	bool Entity_GetValueForKey(game::entity_s* ent, float* value, const char* keyname)
-	{
-		if(auto value_str = ValueForKey(ent->epairs, keyname);
-				value_str)
-		{
-			return sscanf(value_str, "%f", value) == 1;
-		}
-
-		return false;
-	}
-
-	bool Entity_GetVec3ForKey(game::entity_s* ent, float* vec3, const char* keyname)
-	{
-		if(auto value_str = ValueForKey(ent->epairs, keyname);
-				value_str)
-		{
-			return sscanf(value_str, "%f %f %f", &vec3[0], &vec3[1], &vec3[2]) == 3;
-		}
-
-		return false;
-	}
-
-	bool HasKeyValuePair(game::entity_s_def* ent, const char* key)
-	{
-		game::epair_t* ep;
-
-		ep = ent->epairs;
-		if (!ep)
-		{
-			return false;
-		}
-		
-		while (strcmp(ep->key, key))
-		{
-			ep = ep->next;
-			if (!ep)
-			{
-				return false;
-			}
-		}
-		
-		return true;
-	}
-
-	
-	/*struct addprop_helper_s
-	{
-		bool is_origin;
-		bool is_angle;
-		bool is_generic_slider;
-		bool is_color;
-		bool add_undo;
-	};*/
-
-	void AddProp(const char* key, const char* value, addprop_helper_s* helper)
+	void entity_dialog::add_prop(const char* key, const char* value, addprop_helper_s* helper)
 	{
 		// undo if no helper defined or helper wants to add an undo
 		const bool should_add_undo = !helper || helper && helper->add_undo;
-		
-		if(auto edit_entity = game::g_edit_entity();
-				edit_entity)
+
+		if (const auto	edit_entity = game::g_edit_entity();
+						edit_entity)
 		{
-			if(should_add_undo)
+			if (should_add_undo)
 			{
 				//if(!helper) game::printf_to_console("Start Undo without helper.");
 				//else game::printf_to_console("Start Undo with helper->add_undo = %d", helper->add_undo);
-				
+
 				game::Undo_ClearRedo();
 				game::Undo_GeneralStart("set key value pair");
 			}
 
-			if(game::multiple_edit_entities)
+			if (game::multiple_edit_entities)
 			{
-				for (auto	sb = game::g_selected_brushes_next();
-					(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
-							sb = sb->next)
+				FOR_ALL_SELECTED_BRUSHES(sb)
 				{
 					std::string class_str;
 
-					if(sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->name)
+					if (sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->name)
 					{
 						class_str = utils::str_to_lower(sb->owner->firstActive->eclass->name);
 					}
 
-					if(class_str != "worldspawn")
+					if (class_str != "worldspawn")
 					{
 
 						if (should_add_undo)
@@ -187,7 +130,7 @@ namespace ggui::entity
 
 						if (!strcmp("origin", key) && edit_entity)
 						{
-							Entity_GetVec3ForKey((game::entity_s*)edit_entity, edit_entity->origin, "origin");
+							get_vec3_for_key_from_entity((game::entity_s*)edit_entity, edit_entity->origin, "origin");
 							++edit_entity->version;
 						}
 					}
@@ -206,7 +149,7 @@ namespace ggui::entity
 						{
 							float delta[3];
 							utils::vector::subtract(org, edit_entity->origin, delta);
-							
+
 							Brush_Move(delta, sb->currSelection, 0);
 							game::SetKeyValue(sb->owner->firstActive, key, value);
 						}
@@ -223,16 +166,16 @@ namespace ggui::entity
 				{
 					Undo_AddEntity_W((game::entity_s*)edit_entity);
 				}
-				
+
 				game::SetKeyValue((game::entity_s*)edit_entity, key, value);
-				
+
 				if (!strcmp("origin", key))
 				{
-					Entity_GetVec3ForKey((game::entity_s*)edit_entity, edit_entity->origin, "origin");
+					get_vec3_for_key_from_entity((game::entity_s*)edit_entity, edit_entity->origin, "origin");
 					++edit_entity->version;
 				}
 			}
-			
+
 			game::SetKeyValuePairs(); // refresh the prop listbox
 
 			if (should_add_undo)
@@ -242,10 +185,10 @@ namespace ggui::entity
 		}
 	}
 
-	void DelProp(const char* key, bool overwrite_classname_check = false)
+	void entity_dialog::del_prop(const char* key, bool overwrite_classname_check)
 	{
-		if (const auto edit_entity = game::g_edit_entity();
-					   edit_entity)
+		if (const auto	edit_entity = game::g_edit_entity();
+						edit_entity)
 		{
 			if (!overwrite_classname_check && !_stricmp(key, "classname"))
 			{
@@ -258,9 +201,7 @@ namespace ggui::entity
 
 			if (game::multiple_edit_entities)
 			{
-				for (auto sb = game::g_selected_brushes_next();
-					(DWORD*)sb != game::currSelectedBrushes; // sb->next really points to &selected_brushes(currSelectedBrushes) eventually
-							sb = sb->next)
+				FOR_ALL_SELECTED_BRUSHES(sb)
 				{
 					game::Undo_AddEntity_W(sb->owner->firstActive);
 					game::DeleteKey(sb->owner->firstActive->epairs, key);
@@ -281,8 +222,64 @@ namespace ggui::entity
 		}
 	}
 
+	char* entity_dialog::get_value_for_key_from_epairs(game::epair_t*& e, const char* key)
+	{
+		for (auto ep = e; ep; ep = ep->next)
+		{
+			if (!strcmp(ep->key, key))
+			{
+				return ep->value;
+			}
+		}
+
+		return nullptr;
+	}
+
+	bool entity_dialog::get_value_for_key_from_entity(game::entity_s* ent, float* value, const char* keyname)
+	{
+		if (const auto	value_str = get_value_for_key_from_epairs(ent->epairs, keyname);
+						value_str)
+		{
+			return sscanf(value_str, "%f", value) == 1;
+		}
+
+		return false;
+	}
+
+	bool entity_dialog::get_vec3_for_key_from_entity(game::entity_s* ent, float* vec3, const char* keyname)
+	{
+		if (const auto	value_str = get_value_for_key_from_epairs(ent->epairs, keyname);
+						value_str)
+		{
+			return sscanf(value_str, "%f %f %f", &vec3[0], &vec3[1], &vec3[2]) == 3;
+		}
+
+		return false;
+	}
+
+	bool entity_dialog::has_key_value_pair(game::entity_s_def* ent, const char* key)
+	{
+		game::epair_t* ep = ent->epairs;
+		if (!ep)
+		{
+			return false;
+		}
+
+		while (strcmp(ep->key, key))
+		{
+			ep = ep->next;
+			if (!ep)
+			{
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+
 	// adds grey horizontal separator
-	void separator_for_treenode()
+	void entity_dialog::separator_for_treenode()
 	{
 		SPACING(0.0f, 6.0f);
 		ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.3f, 0.3f, 0.3f, 0.9f));
@@ -292,7 +289,7 @@ namespace ggui::entity
 
 	// *
 	// dragfloat helper - add a single undo before starting to edit the value
-	bool DragFloat_HelperUndo(addprop_helper_s* helper, const char* label, float* v, float v_speed, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
+	bool entity_dialog::drag_float_helper_undo(addprop_helper_s* helper, const char* label, float* v, float v_speed, float v_min, float v_max, const char* format, ImGuiSliderFlags flags)
 	{
 		// dirty on edit
 		if (ImGui::DragFloat(label, v, v_speed, v_min, v_max, format, flags))
@@ -313,7 +310,7 @@ namespace ggui::entity
 
 	// *
 	// coloredit3 helper - add a single undo before starting to edit the values
-	bool ColorEdit3_HelperUndo(addprop_helper_s* helper, const char* label, float col[3], ImGuiColorEditFlags flags = 0)
+	bool entity_dialog::color_edit3_helper_undo(addprop_helper_s* helper, const char* label, float col[3], ImGuiColorEditFlags flags)
 	{
 		if (ImGui::ColorEdit3(label, col, flags))
 		{
@@ -332,38 +329,40 @@ namespace ggui::entity
 	}
 
 
-	
+
 	// *
 	// Intercepted original functions
-	
-	void on_mapload_intercept()
+
+	void entity_dialog::on_mapload_intercept()
 	{
-		sel_list_ent = nullptr;
-		edit_entity_class = nullptr;
-		edit_entity_changed = false;
-		edit_entity_changed_should_scroll = false;
+		const auto gui = GET_GUI(ggui::entity_dialog);
+
+		gui->m_sel_list_ent = nullptr;
+		gui->m_edit_entity_class = nullptr;
+		gui->m_edit_entity_changed = false;
+		gui->m_edit_entity_changed_should_scroll = false;
 	}
 
 	// UpdateSelection
-	void on_update_selection_intercept()
+	void entity_dialog::on_update_selection_intercept()
 	{
 		if (const auto	g_edit_ent = game::g_edit_entity();
 						g_edit_ent)
 		{
+			const auto gui = GET_GUI(ggui::entity_dialog);
+
 			// update our selected entity (also updates on escape)
-			if (edit_entity_class != g_edit_ent->eclass)
+			if (gui->m_edit_entity_class != g_edit_ent->eclass)
 			{
-				sel_list_ent = g_edit_ent->eclass;
-				edit_entity_class = g_edit_ent->eclass;
-				edit_entity_changed = true;
-				edit_entity_changed_should_scroll = true;
+				gui->m_sel_list_ent = g_edit_ent->eclass;
+				gui->m_edit_entity_class = g_edit_ent->eclass;
+				gui->m_edit_entity_changed = true;
+				gui->m_edit_entity_changed_should_scroll = true;
 			}
 
-			if(g_edit_ent && g_edit_ent->eclass->name)
+			if (g_edit_ent && g_edit_ent->eclass->name)
 			{
-				std::string class_str = utils::str_to_lower(g_edit_ent->eclass->name);
-
-				if(class_str != "worldspawn")
+				if (utils::str_to_lower(g_edit_ent->eclass->name) != "worldspawn"s)
 				{
 					// update / set initial origin on selection (freshly spawned prefabs wont have an origin key otherwise)
 					// og. radiant does this aswell by writing into the key/value field and "simulating" the enter key
@@ -374,9 +373,9 @@ namespace ggui::entity
 						helper.is_origin = true;
 
 						char origin_str_buf[64] = {};
-						if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", g_edit_ent->origin[0], g_edit_ent->origin[1], g_edit_ent->origin[2])) 
+						if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", g_edit_ent->origin[0], g_edit_ent->origin[1], g_edit_ent->origin[2]))
 						{
-							AddProp("origin", origin_str_buf, &helper);
+							gui->add_prop("origin", origin_str_buf, &helper);
 						}
 					}
 				}
@@ -386,8 +385,10 @@ namespace ggui::entity
 
 	// the classlist is only build once at startup. We need to do the same as "game::g_eclass"
 	// will hold pretty much every model/prefab that is placed on the map -> list indices wont match up with the original entity window
-	void fill_classlist_intercept()
+	void entity_dialog::fill_classlist_intercept()
 	{
+		auto& classlist = GET_GUI(ggui::entity_dialog)->m_classlist;
+
 		for (auto pec = game::g_eclass(); pec; pec = pec->next)
 		{
 			classlist.push_back(pec);
@@ -395,11 +396,11 @@ namespace ggui::entity
 	}
 
 
-	
+
 	// *
 	// gui
-	
-	void draw_classlist()
+
+	void entity_dialog::draw_classlist()
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
 
@@ -410,13 +411,13 @@ namespace ggui::entity
 			if (ImGui::BeginListBox("##entlistbox", ImVec2(-4, 12 * ImGui::GetTextLineHeightWithSpacing())))
 			{
 				int index = 0;
-				for (const auto pec : classlist)
+				for (const auto pec : m_classlist)
 				{
-					const bool is_selected = (sel_list_ent == pec);
+					const bool is_selected = (m_sel_list_ent == pec);
 					if (ImGui::Selectable(pec->name, is_selected, ImGuiSelectableFlags_AllowDoubleClick))
 					{
-						sel_list_ent = pec;
-						edit_entity_changed = true;
+						m_sel_list_ent = pec;
+						m_edit_entity_changed = true;
 						game::UpdateSel(index, pec);
 
 						if (ImGui::IsMouseDoubleClicked(0))
@@ -431,10 +432,10 @@ namespace ggui::entity
 						ImGui::SetItemDefaultFocus();
 					}
 
-					if (is_selected && edit_entity_changed_should_scroll)
+					if (is_selected && m_edit_entity_changed_should_scroll)
 					{
 						ImGui::SetScrollHereY();
-						edit_entity_changed_should_scroll = false;
+						m_edit_entity_changed_should_scroll = false;
 					}
 
 					index++;
@@ -442,7 +443,7 @@ namespace ggui::entity
 
 				ImGui::EndListBox();
 			}
-			
+
 			ImGui::TreePop();
 			separator_for_treenode();
 		}
@@ -452,7 +453,7 @@ namespace ggui::entity
 		SPACING(0.0f, 0.01f);
 	}
 
-	void draw_comments()
+	void entity_dialog::draw_comments()
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
 
@@ -465,10 +466,10 @@ namespace ggui::entity
 			char* comment_buf = &empty_text;
 			auto  comment_buf_len = strlen(comment_buf);
 
-			if (sel_list_ent && sel_list_ent->comments)
+			if (m_sel_list_ent && m_sel_list_ent->comments)
 			{
-				comment_buf = sel_list_ent->comments;
-				comment_buf_len = strlen(sel_list_ent->comments);
+				comment_buf = m_sel_list_ent->comments;
+				comment_buf_len = strlen(m_sel_list_ent->comments);
 			}
 
 			ImGui::InputTextMultiline("##entcomments", comment_buf, comment_buf_len, ImVec2(-4, 0), ImGuiInputTextFlags_ReadOnly);
@@ -476,24 +477,25 @@ namespace ggui::entity
 			ImGui::TreePop();
 			separator_for_treenode();
 		}
-		
+
 		ImGui::PopStyleVar();
 		SPACING(0.0f, 0.01f);
 	}
 
-	void draw_checkboxes()
+	void entity_dialog::draw_checkboxes()
 	{
 		// on changed selection -> update spawnflags / checkboxes
 		if (const auto	selected_brush = game::g_selected_brushes();
-			selected_brush && selected_brush->def)
+						selected_brush && selected_brush->def)
 		{
-			if (const auto edit_entity = game::g_edit_entity();
-				edit_entity && edit_entity->epairs)
+			if (const auto	edit_entity = game::g_edit_entity();
+							edit_entity && edit_entity->epairs)
 			{
 				// do spawnflags
 				int flag = 0;
-				if(char* value_str = ValueForKey(edit_entity->epairs, "spawnflags"); 
-						 value_str)
+
+				if (char*	value_str = get_value_for_key_from_epairs(edit_entity->epairs, "spawnflags");
+							value_str)
 				{
 					flag = atoi(value_str);
 				}
@@ -501,16 +503,16 @@ namespace ggui::entity
 				// set checkboxes accordingly, TODO :: move this
 				for (auto i = 0; i < 12; i++)
 				{
-					checkboxflags_states[i] = !!(flag & 1 << i);
+					m_checkboxflags_states[i] = !!(flag & 1 << i);
 				}
 			}
 		}
 
 		// render checkboxes
-		
+
 		const auto wnd_size = ImGui::GetWindowSize();
 		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
-		
+
 		if (ImGui::TreeNodeEx("Spawnflags", dvars::gui_props_spawnflags_defaultopen->current.enabled ? ImGuiTreeNodeFlags_DefaultOpen : 0))
 		{
 			if (ImGui::TreeNodeEx("Gametype Specific##who_needs_these", ImGuiTreeNodeFlags_SpanFullWidth))
@@ -521,33 +523,33 @@ namespace ggui::entity
 				int cb_num = 8;
 				const auto pre_checkbox_cursor = ImGui::GetCursorPos();
 
-				if (ImGui::Checkbox("!Easy", &checkboxflags_states[cb_num]))
+				if (ImGui::Checkbox("!Easy", &m_checkboxflags_states[cb_num]))
 				{
-					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
+					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, m_checkboxflags_states[cb_num], 0);
 					game::SetSpawnFlags(cb_num);
 				} cb_num++;
 
 
-				if (ImGui::Checkbox("!Medium", &checkboxflags_states[cb_num]))
+				if (ImGui::Checkbox("!Medium", &m_checkboxflags_states[cb_num]))
 				{
-					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
+					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, m_checkboxflags_states[cb_num], 0);
 					game::SetSpawnFlags(cb_num);
 				} cb_num++;
 
 				ImGui::SetCursorPosX(pre_checkbox_cursor.x + (wnd_size.x * 0.5f));
 				ImGui::SetCursorPosY(pre_checkbox_cursor.y);
 
-				if (ImGui::Checkbox("!Hard", &checkboxflags_states[cb_num]))
+				if (ImGui::Checkbox("!Hard", &m_checkboxflags_states[cb_num]))
 				{
-					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
+					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, m_checkboxflags_states[cb_num], 0);
 					game::SetSpawnFlags(cb_num);
 				} cb_num++;
 
 				ImGui::SetCursorPosX(pre_checkbox_cursor.x + (wnd_size.x * 0.5f));
 
-				if (ImGui::Checkbox("!Deathmatch", &checkboxflags_states[cb_num]))
+				if (ImGui::Checkbox("!Deathmatch", &m_checkboxflags_states[cb_num]))
 				{
-					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[cb_num], 0);
+					SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + cb_num], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, m_checkboxflags_states[cb_num], 0);
 					game::SetSpawnFlags(cb_num);
 				} cb_num++;
 
@@ -575,19 +577,19 @@ namespace ggui::entity
 					bool flag_in_use = false;
 					std::string flagname;
 
-					if (sel_list_ent && sel_list_ent->flagnames[i] && sel_list_ent->flagnames[i][0] != 0)
+					if (m_sel_list_ent && m_sel_list_ent->flagnames[i] && m_sel_list_ent->flagnames[i][0] != 0)
 					{
 						flag_in_use = true;
-						flagname = sel_list_ent->flagnames[i];
+						flagname = m_sel_list_ent->flagnames[i];
 					}
 
 					flagname += "##entcheckbox"s + std::to_string(i);
 
-					if (ImGui::Checkbox(flagname.c_str(), &checkboxflags_states[i]))
+					if (ImGui::Checkbox(flagname.c_str(), &m_checkboxflags_states[i]))
 					{
 						if (flag_in_use)
 						{
-							SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + i], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, checkboxflags_states[i], 0);
+							SendMessageA(game::entitywnd_hwnds[game::E_ENTITYWND_HWNDS::ENTWND_CHECK1 + i], WM_NCLBUTTONDOWN | WM_INPUTLANGCHANGEREQUEST, m_checkboxflags_states[i], 0);
 							game::SetSpawnFlags(i);
 						}
 					}
@@ -606,28 +608,30 @@ namespace ggui::entity
 		SPACING(0.0f, 0.01f);
 	}
 
-	void gui_entprop_new_keyvalue_pair()
+	void entity_dialog::gui_entprop_new_keyvalue_pair()
 	{
 		// full width input text without label spacing
 		ImGui::SetNextItemWidth(-1);
 
 		// set focus on key input?
-		if (kvp_helper.key_set_focus) 
+		if (kvp_helper.key_set_focus)
 		{
 			ImGui::SetKeyboardFocusHere();
 		}
 
-		bool key_has_color = !kvp_helper.key_valid;
-		if ( key_has_color ) {
+		const bool key_has_color = !kvp_helper.key_valid;
+		if (key_has_color) 
+		{
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.49f, 0.2f, 0.2f, 1.0f));
 		}
-		
+
 		if (ImGui::InputText("##key", kvp_helper.key_buffer, EPROP_INPUTLEN))
 		{
 			kvp_helper.key_valid = strlen(kvp_helper.key_buffer);
 		}
 
-		if (key_has_color) {
+		if (key_has_color) 
+		{
 			ImGui::PopStyleColor();
 		}
 
@@ -659,7 +663,7 @@ namespace ggui::entity
 			ImGui::TableNextColumn();
 			{
 				// set focus on value input?
-				if (kvp_helper.value_set_focus) 
+				if (kvp_helper.value_set_focus)
 				{
 					ImGui::SetKeyboardFocusHere();
 				}
@@ -667,17 +671,19 @@ namespace ggui::entity
 				// full width input text without label spacing
 				ImGui::SetNextItemWidth(-1);
 
-				bool value_has_color = !kvp_helper.value_valid;
-				if ( value_has_color ) {
+				const bool value_has_color = !kvp_helper.value_valid;
+				if (value_has_color) 
+				{
 					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.49f, 0.2f, 0.2f, 1.0f));
 				}
-				
+
 				if (ImGui::InputText("##value", kvp_helper.value_buffer, EPROP_INPUTLEN/*, ImGuiInputTextFlags_EnterReturnsTrue*/))
 				{
 					kvp_helper.value_valid = strlen(kvp_helper.value_buffer);
 				}
 
-				if (value_has_color) {
+				if (value_has_color) 
+				{
 					ImGui::PopStyleColor();
 				}
 
@@ -690,20 +696,21 @@ namespace ggui::entity
 				// if value inputtext active + valid + pressed enter -> add KVP
 				if (kvp_helper.value_active && kvp_helper.value_valid && ImGui::IsKeyPressedMap(ImGuiKey_Enter))
 				{
-					AddProp(kvp_helper.key_buffer, kvp_helper.value_buffer);
+					add_prop(kvp_helper.key_buffer, kvp_helper.value_buffer);
 					kvp_helper.reset();
+
 					return;
 				}
 
-				if(!ImGui::IsItemActive())
+				if (!ImGui::IsItemActive())
 				{
 					// if value is no longer active but had focus on the last frame + key input text is not active
-					if(kvp_helper.value_active && !kvp_helper.key_active)
+					if (kvp_helper.value_active && !kvp_helper.key_active)
 					{
 						// is the value valid? -> add KVP
-						if(kvp_helper.value_valid)
+						if (kvp_helper.value_valid)
 						{
-							AddProp(kvp_helper.key_buffer, kvp_helper.value_buffer);
+							add_prop(kvp_helper.key_buffer, kvp_helper.value_buffer);
 						}
 
 						// reset everything otherwise or after the KVP was added
@@ -712,15 +719,15 @@ namespace ggui::entity
 					}
 
 					// key and value valid and none of them are active? -> add KVP
-					if(kvp_helper.key_valid && kvp_helper.value_valid && !kvp_helper.key_active && !kvp_helper.value_active)
+					if (kvp_helper.key_valid && kvp_helper.value_valid && !kvp_helper.key_active && !kvp_helper.value_active)
 					{
-						AddProp(kvp_helper.key_buffer, kvp_helper.value_buffer);
+						add_prop(kvp_helper.key_buffer, kvp_helper.value_buffer);
 						kvp_helper.reset();
 						return;
 					}
 
 					// reset when key nor value active
-					if(!kvp_helper.key_active)
+					if (!kvp_helper.key_active)
 					{
 						kvp_helper.reset();
 						return;
@@ -749,15 +756,14 @@ namespace ggui::entity
 		}
 	}
 
-	
-	void gui_entprop_add_key(game::epair_t* epair, int row)
+	void entity_dialog::gui_entprop_add_key(game::epair_t* epair, int row)
 	{
 		// update inputbuf (text shown) using the epair key if inputbuf is not dirty, aka. not modified
 		if (!_edit_buf_key_dirty[row])
 		{
 			strcpy(_edit_buf_key[row], epair->key);
 		}
-		
+
 		// full with input text without label spacing
 		ImGui::SetNextItemWidth(-1);
 
@@ -769,27 +775,27 @@ namespace ggui::entity
 				return 0;
 
 			}, (void*)row))
-		// if(ImGui::InputText) -> on enter
+			// if(ImGui::InputText) -> on enter
 		{
 			// add as new key with old value
-			AddProp(_edit_buf_key[row], epair->value);
+			add_prop(_edit_buf_key[row], epair->value);
 
 			// delete the old key
-			DelProp(epair->key, true);
+			del_prop(epair->key, true);
 
 			// ^ needs a sorting system as newest is always on top
 
 			_edit_buf_key_dirty[row] = false;
 		}
 
-		// if InputText ^ is not active and buf dirty (user did not submit the change via enter) -> restore buf on next frame
-		if (!ImGui::IsItemActive() && _edit_buf_key_dirty[row])
-		{
-			_edit_buf_key_dirty[row] = false;
-		}
+			// if InputText ^ is not active and buf dirty (user did not submit the change via enter) -> restore buf on next frame
+			if (!ImGui::IsItemActive() && _edit_buf_key_dirty[row])
+			{
+				_edit_buf_key_dirty[row] = false;
+			}
 	}
 
-	void gui_entprop_add_value_text(const epair_wrapper& epw, int row)
+	void entity_dialog::gui_entprop_add_value_text(const epair_wrapper& epw, int row)
 	{
 		// update inputbuf (text shown) using the epair value if inputbuf is not dirty, aka. not modified
 		if (!_edit_buf_value_dirty[row])
@@ -808,7 +814,7 @@ namespace ggui::entity
 				return 0;
 
 			}, (void*)row))
-		// if(ImGui::InputText) -> on enter
+			// if(ImGui::InputText) -> on enter
 		{
 			if (!strlen(_edit_buf_value[row]))
 			{
@@ -817,147 +823,189 @@ namespace ggui::entity
 			else
 			{
 				// add "new" value with old key
-				AddProp(epw.epair->key, _edit_buf_value[row]);
+				add_prop(epw.epair->key, _edit_buf_value[row]);
 
 				// ^ needs a sorting system as newest is always on top
 				_edit_buf_value_dirty[row] = false;
 			}
 		}
 
-		// if InputText ^ is not active and buf dirty (user did not submit the change via enter) -> restore buf on next frame
-		if (!ImGui::IsItemActive() && _edit_buf_value_dirty[row])
-		{
-			_edit_buf_value_dirty[row] = false;
-		}
-
-
-		// *
-		// drop model from modelselector into the textbox
-
-		if (epw.type == EPAIR_VALUETYPE::MODEL)
-		{
-			// model selection drop target
-			if (ImGui::BeginDragDropTarget())
+			// if InputText ^ is not active and buf dirty (user did not submit the change via enter) -> restore buf on next frame
+			if (!ImGui::IsItemActive() && _edit_buf_value_dirty[row])
 			{
-				if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
+				_edit_buf_value_dirty[row] = false;
+			}
+
+
+			// *
+			// drop model from modelselector into the textbox
+
+			if (epw.type == EPAIR_VALUETYPE::MODEL)
+			{
+				// model selection drop target
+				if (ImGui::BeginDragDropTarget())
 				{
-					const auto m_selector = ggui::get_rtt_modelselector();
-					AddProp(epw.epair->key, m_selector->preview_model_name.c_str());
+					if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
+					{
+						const auto m_selector = GET_GUI(ggui::modelselector_dialog);
+						add_prop(epw.epair->key, m_selector->m_preview_model_name.c_str());
+					}
+				}
+			}
+	}
+
+	void entity_dialog::gui_entprop_effect_fileprompt(const epair_wrapper& epw, [[maybe_unused]] int row)
+	{
+		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
+		{
+			// logic :: ggui::file_dialog_frame
+			if (dvars::gui_use_new_filedialog->current.enabled)
+			{
+				std::string path_str;
+
+				const auto egui = GET_GUI(ggui::entity_dialog);
+				path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+				path_str += "\\raw\\fx\\";
+				
+
+				const auto file = GET_GUI(ggui::file_dialog);
+				file->set_default_path(path_str);
+				file->set_file_handler(FX_CHANGE);
+				file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+				file->set_file_ext(".efx");
+				file->open();
+			}
+			else
+			{
+				char filename[MAX_PATH];
+				OPENFILENAMEA ofn;
+				ZeroMemory(&filename, sizeof(filename));
+				ZeroMemory(&ofn, sizeof(ofn));
+
+				ofn.lStructSize = sizeof(ofn);
+				ofn.hwndOwner = cmainframe::activewnd->GetWindow();
+				ofn.lpstrFilter = "Effect Files\0*.efx\0Any File\0*.*\0";
+				ofn.lpstrFile = filename;
+				ofn.nMaxFile = MAX_PATH;
+				ofn.lpstrTitle = "Select an effect ...";
+				ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
+
+				if (GetOpenFileNameA(&ofn))
+				{
+					const std::string filepath = filename;
+					const std::string replace_path = "raw\\fx\\";
+
+					std::size_t pos = filepath.find(replace_path) + replace_path.length();
+					std::string loc_filepath = filepath.substr(pos);
+					utils::erase_substring(loc_filepath, ".efx"s);
+
+					add_prop(epw.epair->key, loc_filepath.c_str());
+
+					// stop old effect
+					components::command::execute("fx_stop");
 				}
 			}
 		}
 	}
 
-	void gui_entprop_effect_fileprompt(const epair_wrapper& epw, [[maybe_unused]] int row)
+	// both misc_model and misc_prefab
+	void entity_dialog::gui_entprop_model_fileprompt(const epair_wrapper& epw, [[maybe_unused]] int row)
 	{
 		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
 		{
-			char filename[MAX_PATH];
-			OPENFILENAMEA ofn;
-			ZeroMemory(&filename, sizeof(filename));
-			ZeroMemory(&ofn, sizeof(ofn));
-
-			ofn.lStructSize = sizeof(ofn);
-			ofn.hwndOwner = cmainframe::activewnd->GetWindow();
-			ofn.lpstrFilter = "Effect Files\0*.efx\0Any File\0*.*\0";
-			ofn.lpstrFile = filename;
-			ofn.nMaxFile = MAX_PATH;
-			ofn.lpstrTitle = "Select an effect ...";
-			ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
-
-			if (GetOpenFileNameA(&ofn))
+			// logic :: ggui::file_dialog_frame
+			if (dvars::gui_use_new_filedialog->current.enabled)
 			{
-				const std::string filepath = filename;
-				const std::string replace_path = "raw\\fx\\";
+				std::string path_str;
 
-				std::size_t pos = filepath.find(replace_path) + replace_path.length();
-				std::string loc_filepath = filepath.substr(pos);
-				utils::erase_substring(loc_filepath, ".efx"s);
+				const auto egui = GET_GUI(ggui::entity_dialog);
+				const bool is_prefab = (game::g_edit_entity()->eclass->classtype & 0x10) != 0;
 
-				AddProp(epw.epair->key, loc_filepath.c_str());
+				if (is_prefab)
+				{
+					path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+					path_str += "\\prefabs\\";
+				}
+				else
+				{
+					path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+					path_str += "\\raw\\xmodel\\";
+				}
 
-				// stop old effect
-				components::command::execute("fx_stop");
+				const auto file = GET_GUI(ggui::file_dialog);
+				file->set_default_path(path_str);
+				file->set_file_handler(is_prefab ? ggui::FILE_DIALOG_HANDLER::MISC_PREFAB_CHANGE : ggui::FILE_DIALOG_HANDLER::MISC_MODEL_CHANGE);
+				file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+				file->set_file_ext(is_prefab ? ".map" : "");
+				file->open();
 			}
 			else
 			{
-				//game::printf_to_console("filedialog: canceled");
+				char filename[MAX_PATH];
+				OPENFILENAMEA ofn;
+				ZeroMemory(&filename, sizeof(filename));
+				ZeroMemory(&ofn, sizeof(ofn));
+
+				ofn.lStructSize = sizeof(ofn);
+				ofn.hwndOwner = cmainframe::activewnd->GetWindow();
+				ofn.lpstrFilter = "Any File\0*.*\0";
+				ofn.lpstrFile = filename;
+				ofn.nMaxFile = MAX_PATH;
+				ofn.lpstrTitle = "Select a XModel ...";
+				ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
+
+				if (GetOpenFileNameA(&ofn))
+				{
+					const std::string filepath = filename;
+					const std::string replace_path = "raw\\xmodel\\";
+
+					std::size_t pos = filepath.find(replace_path) + replace_path.length();
+					std::string loc_filepath = filepath.substr(pos);
+
+					add_prop(epw.epair->key, loc_filepath.c_str());
+				}
 			}
 		}
 	}
 
-	void gui_entprop_model_fileprompt(const epair_wrapper& epw, [[maybe_unused]] int row)
-	{
-		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
-		{
-			char filename[MAX_PATH];
-			OPENFILENAMEA ofn;
-			ZeroMemory(&filename, sizeof(filename));
-			ZeroMemory(&ofn, sizeof(ofn));
-
-			ofn.lStructSize = sizeof(ofn);
-			ofn.hwndOwner = cmainframe::activewnd->GetWindow();
-			ofn.lpstrFilter = "Any File\0*.*\0";
-			ofn.lpstrFile = filename;
-			ofn.nMaxFile = MAX_PATH;
-			ofn.lpstrTitle = "Select a XModel ...";
-			ofn.Flags = OFN_DONTADDTORECENT | OFN_FILEMUSTEXIST;
-
-			if (GetOpenFileNameA(&ofn))
-			{
-				const std::string filepath = filename;
-				const std::string replace_path = "raw\\xmodel\\";
-
-				std::size_t pos = filepath.find(replace_path) + replace_path.length();
-				std::string loc_filepath = filepath.substr(pos);
-
-				AddProp(epw.epair->key, loc_filepath.c_str());
-			}
-			else
-			{
-				//game::printf_to_console("filedialog: canceled");
-			}
-		}
-	}
-
-	void gui_entprop_add_value_slider(const epair_wrapper& epw)
+	void entity_dialog::gui_entprop_add_value_slider(const epair_wrapper& epw)
 	{
 		addprop_helper_s helper = {};
 		helper.is_generic_slider = true;
 
 		// full with input text without label spacing
 		ImGui::SetNextItemWidth(-1);
-		
-		float val = static_cast<float>(atof(epw.epair->value));
-		if (DragFloat_HelperUndo(&helper, "##value_slider", &val, epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
+
+		auto val = static_cast<float>(atof(epw.epair->value));
+		if (drag_float_helper_undo(&helper, "##value_slider", &val, epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
 		{
 			char val_str_buf[32] = {};
 			if (sprintf_s(val_str_buf, "%.2f", val))
 			{
-				AddProp(epw.epair->key, val_str_buf, &helper);
+				add_prop(epw.epair->key, val_str_buf, &helper);
 			}
 		}
 	}
 
-	void gui_entprop_add_value_color(const epair_wrapper& epw)
+	void entity_dialog::gui_entprop_add_value_color(const epair_wrapper& epw)
 	{
 		addprop_helper_s helper = {};
 		helper.is_color = true;
 
 		float col[3] = { 1.0f, 1.0f, 1.0f };
-		if(sscanf(epw.epair->value, "%f %f %f", &col[0], &col[1], &col[2]) == 3)
+		if (sscanf(epw.epair->value, "%f %f %f", &col[0], &col[1], &col[2]) == 3)
 		{
 			// full with input text without label spacing
 			ImGui::SetNextItemWidth(-1);
 
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 			ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(4.0f, 0.0f));
-			if(ColorEdit3_HelperUndo(&helper, "##value_color", col, ImGuiColorEditFlags_Float))
+			if (color_edit3_helper_undo(&helper, "##value_color", col, ImGuiColorEditFlags_Float))
 			{
 				char col_str_buf[64] = {};
 				if (sprintf_s(col_str_buf, "%.3f %.3f %.3f", col[0], col[1], col[2]))
 				{
-					AddProp(epw.epair->key, col_str_buf, &helper);
+					add_prop(epw.epair->key, col_str_buf, &helper);
 				}
 			}
 			ImGui::PopStyleVar(2);
@@ -965,43 +1013,44 @@ namespace ggui::entity
 	}
 
 	// move object to new point (does not change "local" object origin)
-	void brush_moveto(game::brush_t_with_custom_def* b, const float* new_origin, const float* old_origin, bool snap = true)
+	void entity_dialog::brush_moveto(game::brush_t_with_custom_def* b, const float* new_origin, const float* old_origin, bool snap)
 	{
 		game::vec3_t delta;
 
 		// calc distance between centers
 		VectorSubtract(new_origin, old_origin, delta);
-		
+
 		game::Brush_Move(delta, b, snap);
 	}
 
 	// move and center object (using bounds) around new point (changes "local" object origin)
-	void brush_moveto_center(game::brush_t_with_custom_def* b, const float* new_origin, bool snap = true)
+	void entity_dialog::brush_moveto_center(game::brush_t_with_custom_def* b, const float* new_origin, bool snap)
 	{
 		game::vec3_t v_mid;
-		
+
 		// get center of the brush
-		for (int j = 0; j < 3; j++) {
+		for (int j = 0; j < 3; j++) 
+		{
 			v_mid[j] = b->mins[j] + abs((b->maxs[j] - b->mins[j]) * 0.5f);
 		}
-		
+
 		// calc distance between centers
 		VectorSubtract(new_origin, v_mid, v_mid);
-		
+
 		game::Brush_Move(v_mid, b, snap);
 	}
 
-	void gui_entprop_add_value_vec3(const epair_wrapper& epw, float* vec_in, int row = 0)
+	void entity_dialog::gui_entprop_add_value_vec3(const epair_wrapper& epw, float* vec_in, int row)
 	{
 		bool dirty = false;
 		char vec3_str_buf[64] = {};
-		
+
 		float* vec3 = vec_in;
 		float temp_origin[] = { vec_in[0], vec_in[1], vec_in[2] };
 
 		// do not edit the input vec directly if we modify an entity thats build using brushes (eg. lights, script_origins etc)
 		// Brush_Move updates the key
-		if(epw.is_fixedsize)
+		if (epw.is_fixedsize)
 		{
 			vec3 = temp_origin;
 		}
@@ -1012,24 +1061,25 @@ namespace ggui::entity
 		addprop_helper_s helper = {};
 		helper.is_origin = epw.type == ORIGIN;
 		helper.is_angle = epw.type == ANGLES;
-		
-		if (game::multiple_edit_entities) {
+
+		if (game::multiple_edit_entities) 
+		{
 			ImGui::BeginDisabled(true);
 		}
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 4));
 
-		const float line_height		= ImGui::GetFrameHeight();
-		const auto  button_size		= ImVec2(line_height, line_height);
-		const float widget_spacing	= 4.0f;
-		const float widget_width	= (ImGui::GetContentRegionAvail().x - (3.0f * button_size.x) - (2.0f * widget_spacing)) * 0.33333f;
+		const float line_height = ImGui::GetFrameHeight();
+		const auto  button_size = ImVec2(line_height, line_height);
+		const float widget_spacing = 4.0f;
+		const float widget_width = (ImGui::GetContentRegionAvail().x - (3.0f * button_size.x) - (2.0f * widget_spacing)) * 0.33333f;
 
-		const float window_width	= ImGui::GetWindowWidth();
+		const float window_width = ImGui::GetWindowWidth();
 		const bool  min_window_width_origin = window_width < 460.0f;
 
 		// -------
 		// -- X --
-		
+
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.55f, 0.17f, 0.17f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.55f, 0.17f, 0.17f, 1.0f));
 		ImGui::ButtonEx("X", button_size, ImGuiButtonFlags_MouseButtonMiddle);
@@ -1044,27 +1094,27 @@ namespace ggui::entity
 		{
 			ImGui::SetNextItemWidth(-1);
 		}
-		
-		if(DragFloat_HelperUndo(&helper, "##X", &vec3[0], epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
+
+		if (drag_float_helper_undo(&helper, "##X", &vec3[0], epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
 		{
 			dirty = true;
 		}
 
 		// -------
 		// -- Y --
-		
-		if(!min_window_width_origin) 
+
+		if (!min_window_width_origin)
 		{
 			ImGui::SameLine(0, widget_spacing);
 		}
-			
+
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.185f, 0.6f, 0.23f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.185f, 0.6f, 0.23f, 1.0f));
 		ImGui::ButtonEx("Y", button_size, ImGuiButtonFlags_MouseButtonMiddle);
 		ImGui::PopStyleColor(2);
 		ImGui::SameLine();
 
-		if (!min_window_width_origin) 
+		if (!min_window_width_origin)
 		{
 			ImGui::SetNextItemWidth(widget_width);
 		}
@@ -1072,8 +1122,8 @@ namespace ggui::entity
 		{
 			ImGui::SetNextItemWidth(-1);
 		}
-		
-		if(DragFloat_HelperUndo(&helper, "##Y", &vec3[1], epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
+
+		if (drag_float_helper_undo(&helper, "##Y", &vec3[1], epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
 		{
 			dirty = true;
 		}
@@ -1081,7 +1131,7 @@ namespace ggui::entity
 		// -------
 		// -- Z --
 
-		if(!min_window_width_origin) 
+		if (!min_window_width_origin)
 		{
 			ImGui::SameLine(0, widget_spacing);
 		}
@@ -1100,56 +1150,58 @@ namespace ggui::entity
 		{
 			ImGui::SetNextItemWidth(-1);
 		}
-		
-		if(DragFloat_HelperUndo(&helper, "##Z", &vec3[2], epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
+
+		if (drag_float_helper_undo(&helper, "##Z", &vec3[2], epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
 		{
 			dirty = true;
 		}
 
 		ImGui::PopStyleVar();
 		ImGui::PopID();
-		
-		if (game::multiple_edit_entities) 
+
+		if (game::multiple_edit_entities)
 		{
 			ImGui::EndDisabled();
 			return;
 		}
-		
-		if(dirty)
+
+		if (dirty)
 		{
-			if(const auto ctype = epw.eclass->classtype; 
+			if (const auto ctype = epw.eclass->classtype;
 				epw.type == ORIGIN && (ctype == game::ECLASS_LIGHT || ctype == game::ECLASS_NODE || ctype == game::ECLASS_RADIANT_NODE))
 			{
 				//game::printf_to_console("Inspector: moving entity/brush using Brush_Move");
-				
+
 				const auto sb = game::g_selected_brushes();
 				brush_moveto(sb->def, vec3, vec_in);
 
-				if (sprintf_s(vec3_str_buf, "%.3f %.3f %.3f", vec3[0], vec3[1], vec3[2])) {
-					AddProp(epw.epair->key, vec3_str_buf, &helper);
+				if (sprintf_s(vec3_str_buf, "%.3f %.3f %.3f", vec3[0], vec3[1], vec3[2])) 
+				{
+					add_prop(epw.epair->key, vec3_str_buf, &helper);
 				}
 			}
-			
-			else if (sprintf_s(vec3_str_buf, "%.3f %.3f %.3f", vec3[0], vec3[1], vec3[2])) {
-				AddProp(epw.epair->key, vec3_str_buf, &helper);
+
+			else if (sprintf_s(vec3_str_buf, "%.3f %.3f %.3f", vec3[0], vec3[1], vec3[2])) 
+			{
+				add_prop(epw.epair->key, vec3_str_buf, &helper);
 			}
 		}
 	}
 
-	void gui_entprop_add_value_vec3(const epair_wrapper& epw, int row)
+	void entity_dialog::gui_entprop_add_value_vec3(const epair_wrapper& epw, int row)
 	{
-		switch(epw.type)
+		switch (epw.type)
 		{
-			
+
 		case ORIGIN:
-			if(const auto edit_entity = game::g_edit_entity(); 
-						  edit_entity)
+			if (const auto	edit_entity = game::g_edit_entity();
+							edit_entity)
 			{
 				gui_entprop_add_value_vec3(epw, edit_entity->origin, row);
 				return;
 			}
-			
-			
+
+
 		case ANGLES:
 			float angles[3] = { 0.0f, 0.0f, 0.0f };
 			if (sscanf(epw.epair->value, "%f %f %f", &angles[0], &angles[1], &angles[2]) == 3)
@@ -1161,17 +1213,17 @@ namespace ggui::entity
 
 		gui_entprop_add_value_text(epw, row);
 	}
-	
-	
-	void draw_entprops()
+
+	void entity_dialog::draw_entprops()
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(2.0f, 2.0f));
 
 		if (ImGui::TreeNodeEx("Entity Properties", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			//call EditProp (on Enter/submission)
+			// call EditProp (on Enter/submission)
 			static ImGuiTableFlags flags = ImGuiTableFlags_SizingStretchProp;
+
 			if (ImGui::BeginTable("##entprop_list", 3, flags))
 			{
 				//ImGui::TableSetupScrollFreeze(0, 1);
@@ -1183,14 +1235,14 @@ namespace ggui::entity
 				int row = 0;
 				eprop_sorted.clear();
 
-				const bool is_worldspawn = (sel_list_ent && !_stricmp(sel_list_ent->name, "worldspawn"));
+				const bool is_worldspawn = (m_sel_list_ent && !_stricmp(m_sel_list_ent->name, "worldspawn"));
 
 				// only draw entprops if something is selected or if nothing is selected and sel_list_ent == the worldspawn
-				if (const auto selbrush = game::g_selected_brushes();
-						(selbrush && selbrush->def) || is_worldspawn)
+				if (const auto	 selbrush = game::g_selected_brushes();
+								(selbrush && selbrush->def) || is_worldspawn)
 				{
-					if (const auto edit_entity = game::g_edit_entity();
-							edit_entity && edit_entity->epairs)
+					if (const auto	edit_entity = game::g_edit_entity();
+									edit_entity && edit_entity->epairs)
 					{
 						// add all epairs to our vector
 						for (auto epair = edit_entity->epairs; epair; epair = epair->next)
@@ -1198,72 +1250,73 @@ namespace ggui::entity
 							std::string key = utils::str_to_lower(epair->key);
 
 							epair_wrapper eprop = {};
-							eprop.entity	= edit_entity;
-							eprop.eclass	= edit_entity->eclass;
-							eprop.epair		= epair;
-							eprop.type		= EPAIR_VALUETYPE::TEXT;
-							eprop.v_speed	=  1.0f;
-							eprop.v_min		= -FLT_MAX;
-							eprop.v_max		=  FLT_MAX;
+							eprop.entity = edit_entity;
+							eprop.eclass = edit_entity->eclass;
+							eprop.epair = epair;
+							eprop.type = EPAIR_VALUETYPE::TEXT;
+							eprop.v_speed = 1.0f;
+							eprop.v_min = -FLT_MAX;
+							eprop.v_max = FLT_MAX;
 							eprop.is_fixedsize = edit_entity->eclass->fixedsize;
-							
-							if(!is_worldspawn)
+
+							if (!is_worldspawn)
 							{
-								if (key == "origin") 
+								if (key == "origin")
 								{
 									eprop.type = EPAIR_VALUETYPE::ORIGIN;
 									eprop_sorted.push_back(eprop);
 									continue;
+									continue;
 								}
 
-								if (key == "angles") 
+								if (key == "angles")
 								{
-									eprop.type		= EPAIR_VALUETYPE::ANGLES;
-									eprop.v_speed	= 0.1f;
+									eprop.type = EPAIR_VALUETYPE::ANGLES;
+									eprop.v_speed = 0.1f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 							}
 							else
 							{
-								if (key == "suncolor") 
+								if (key == "suncolor")
 								{
 									eprop.type = EPAIR_VALUETYPE::COLOR;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "sundiffusecolor") 
+								if (key == "sundiffusecolor")
 								{
 									eprop.type = EPAIR_VALUETYPE::COLOR;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "sundirection") 
+								if (key == "sundirection")
 								{
-									eprop.type		= EPAIR_VALUETYPE::ANGLES;
-									eprop.v_speed	= 0.1f;
+									eprop.type = EPAIR_VALUETYPE::ANGLES;
+									eprop.v_speed = 0.1f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 							}
 
-							if (key == "_color") 
+							if (key == "_color")
 							{
 								eprop.type = EPAIR_VALUETYPE::COLOR;
 								eprop_sorted.push_back(eprop);
 								continue;
 							}
 
-							
+
 
 							// *
 							// type float
 
-							if(!is_worldspawn)
+							if (!is_worldspawn)
 							{
-								if (key == "radius") 
+								if (key == "radius")
 								{
 									eprop.type = EPAIR_VALUETYPE::FLOAT;
 									eprop_sorted.push_back(eprop);
@@ -1277,115 +1330,115 @@ namespace ggui::entity
 									continue;
 								}
 
-								if (key == "exponent") 
+								if (key == "exponent")
 								{
-									eprop.type		= EPAIR_VALUETYPE::FLOAT;
-									eprop.v_speed	= 0.01f;
-									eprop.v_min		= 0.0f;
-									eprop.v_max		= 100.0f;
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.01f;
+									eprop.v_min = 0.0f;
+									eprop.v_max = 100.0f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "fov_inner") 
+								if (key == "fov_inner")
 								{
-									eprop.type		= EPAIR_VALUETYPE::FLOAT;
-									eprop.v_speed	= 0.1f;
-									eprop.v_min		= 1.0f;
-									eprop.v_max		= 136.0f;
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.1f;
+									eprop.v_min = 1.0f;
+									eprop.v_max = 136.0f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "fov_outer") 
+								if (key == "fov_outer")
 								{
-									eprop.type		= EPAIR_VALUETYPE::FLOAT;
-									eprop.v_speed	= 0.1f;
-									eprop.v_min		= 1.0f;
-									eprop.v_max		= 136.0f;
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.1f;
+									eprop.v_min = 1.0f;
+									eprop.v_max = 136.0f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
 								if (key == "intensity")
 								{
-									eprop.type		= EPAIR_VALUETYPE::FLOAT;
-									eprop.v_speed	= 0.01f;
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.01f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 							}
 							else
 							{
-								if (key == "ambient") 
+								if (key == "ambient")
 								{
-									eprop.type		= EPAIR_VALUETYPE::FLOAT;
-									eprop.v_speed	= 0.01f;
-									eprop.v_min		= 0.0f;
-									eprop.v_max		= 2.0f;
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.01f;
+									eprop.v_min = 0.0f;
+									eprop.v_max = 2.0f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "sunlight") 
+								if (key == "sunlight")
 								{
-									eprop.type		= EPAIR_VALUETYPE::FLOAT;
-									eprop.v_speed	= 0.01f;
-									eprop.v_min		= 0.0f;
-									eprop.v_max		= 8.0f;
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.01f;
+									eprop.v_min = 0.0f;
+									eprop.v_max = 8.0f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "sunradiosity") 
+								if (key == "sunradiosity")
 								{
-									eprop.type		= EPAIR_VALUETYPE::FLOAT;
-									eprop.v_speed	= 0.01f;
-									eprop.v_min		= 0.0f;
-									eprop.v_max		= 100.0f;
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.01f;
+									eprop.v_min = 0.0f;
+									eprop.v_max = 100.0f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "diffusefraction") 
+								if (key == "diffusefraction")
 								{
-									eprop.type		= EPAIR_VALUETYPE::FLOAT;
-									eprop.v_speed	= 0.01f;
-									eprop.v_min		= 0.0f;
-									eprop.v_max		= 1.0f;
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.01f;
+									eprop.v_min = 0.0f;
+									eprop.v_max = 1.0f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "radiosityscale") 
+								if (key == "radiosityscale")
 								{
-									eprop.type		= EPAIR_VALUETYPE::FLOAT;
-									eprop.v_speed	= 0.01f;
-									eprop.v_min		= 0.0f;
-									eprop.v_max		= 100.0f;
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.01f;
+									eprop.v_min = 0.0f;
+									eprop.v_max = 100.0f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 
-								if (key == "contrastgain") 
+								if (key == "contrastgain")
 								{
-									eprop.type		= EPAIR_VALUETYPE::FLOAT;
-									eprop.v_speed	= 0.01f;
-									eprop.v_min		= 0.0f;
-									eprop.v_max		= 1.0f;
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.01f;
+									eprop.v_min = 0.0f;
+									eprop.v_max = 1.0f;
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
 							}
 
-							if (key == "model") 
+							if (key == "model")
 							{
 								eprop.type = EPAIR_VALUETYPE::MODEL;
 								eprop_sorted.push_back(eprop);
 								continue;
 							}
 
-							if(key == "fx")
+							if (key == "fx")
 							{
 								eprop.type = EPAIR_VALUETYPE::FX;
 								eprop_sorted.push_back(eprop);
@@ -1409,7 +1462,7 @@ namespace ggui::entity
 						for (auto ep : eprop_sorted)
 						{
 							const bool is_classname = !_stricmp(ep.epair->key, "classname");
-							
+
 							ImGui::PushID(row);
 							ImGui::TableNextColumn();
 							{
@@ -1439,9 +1492,9 @@ namespace ggui::entity
 									gui_entprop_add_value_vec3(ep, row);
 									break;
 
-								/*case EPAIR_VALUETYPE::FX:
-									gui_entprop_add_text_fileprompt(ep, row);
-									break;*/
+									/*case EPAIR_VALUETYPE::FX:
+										gui_entprop_add_text_fileprompt(ep, row);
+										break;*/
 
 								default:
 								case EPAIR_VALUETYPE::FX:
@@ -1458,7 +1511,7 @@ namespace ggui::entity
 
 							ImGui::TableNextColumn();
 							{
-								if(ep.type == EPAIR_VALUETYPE::FX)
+								if (ep.type == EPAIR_VALUETYPE::FX)
 								{
 									gui_entprop_effect_fileprompt(ep, row);
 								}
@@ -1472,14 +1525,14 @@ namespace ggui::entity
 								{
 									if (ImGui::Button("x", ImVec2(28, ImGui::GetFrameHeight())))
 									{
-										DelProp(ep.epair->key);
+										del_prop(ep.epair->key);
 									}
 								}
 							}
 
 							ImGui::PopID();
 
-							if(row < EPROP_MAX_ROWS) 
+							if (row < EPROP_MAX_ROWS)
 							{
 								row++;
 							}
@@ -1490,7 +1543,7 @@ namespace ggui::entity
 							}
 						}
 
-						if(kvp_helper._in_use)
+						if (kvp_helper._in_use)
 						{
 							ImGui::TableNextColumn();
 							{
@@ -1503,19 +1556,57 @@ namespace ggui::entity
 				ImGui::EndTable();
 			}
 
-			if(const auto selbrush = game::g_selected_brushes();
-				(selbrush && selbrush->def) || (sel_list_ent && !_stricmp(sel_list_ent->name, "worldspawn")))
+			if (const auto	 selbrush = game::g_selected_brushes();
+							(selbrush && selbrush->def) || (m_sel_list_ent && !_stricmp(m_sel_list_ent->name, "worldspawn")))
 			{
-				if (ImGui::Button("Add new key-value pair", ImVec2(-6.0f, 0.0f)))
+				const auto pbutton_cursorpos = ImGui::GetCursorPos();
+				if (ImGui::Button("Add new key-value pair", ImVec2(-38.0f, 0.0f)))
 				{
 					kvp_helper._in_use = true;
 					kvp_helper.key_set_focus = true;
+				}
+
+				ImGui::SetCursorPos(ImVec2(pbutton_cursorpos.x + ImGui::GetItemRectSize().x + 6.0f, pbutton_cursorpos.y));
+
+				// #
+
+				if (ImGui::BeginCombo("##kvp_combo", nullptr, ImGuiComboFlags_NoPreview | ImGuiComboFlags_PopupAlignLeft)) // The second parameter is the label previewed before opening the combo.
+				{
+					const auto edit_entity = game::g_edit_entity();
+
+					int   template_size = 0;
+					const template_kvp* templates = nullptr;
+
+					if (edit_entity && edit_entity->eclass && edit_entity->epairs)
+					{
+						int vis_count = 0;
+						entity_dialog::get_eclass_template(templates, &template_size);
+
+						for (int n = 0; n < template_size; n++)
+						{
+							if (!has_key_value_pair(edit_entity, templates[n].key))
+							{
+								vis_count++;
+								if (ImGui::Selectable(templates[n].key))
+								{
+									add_prop(templates[n].key, templates[n].val);
+								}
+							}
+						}
+
+						if (!vis_count)
+						{
+							ImGui::TextUnformatted("...");
+						}
+					}
+
+					ImGui::EndCombo();
 				}
 			}
 
 			ImGui::TreePop();
 
-			if(dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
+			if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
 			{
 				separator_for_treenode();
 			}
@@ -1524,8 +1615,8 @@ namespace ggui::entity
 		ImGui::PopStyleVar(2);
 		SPACING(0.0f, 0.01f);
 	}
-	
-	void menu(ggui::imgui_context_menu& menu)
+
+	void entity_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 800.0f);
@@ -1534,47 +1625,38 @@ namespace ggui::entity
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		if (menu.bring_tab_to_front)
+		const auto gui = GET_GUI(ggui::entity_dialog);
+
+		if (gui->is_bring_to_front_pending())
 		{
-			menu.bring_tab_to_front = false;
+			gui->set_bring_to_front(false);
 			ImGui::SetNextWindowFocus();
 		}
-		
-		if(!ImGui::Begin("Entity##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
+
+		if (!ImGui::Begin("Entity##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
-			menu.inactive_tab = true;
+			gui->set_inactive_tab(true);
 			ImGui::End();
 			return;
 		}
 
-		menu.inactive_tab = false;
+		gui->set_inactive_tab(false);
 
 		draw_classlist();
 		draw_comments();
 		draw_checkboxes();
 		draw_entprops();
 
-		edit_entity_changed = false;
-		
-		// Funcs of interest:
-		// - EntityWndProc
-		// - GetEntityControls
-		// - FillClassList
-		
-		// 12 Checkboxes
-		// checkbox 1 setting spawnflags 1 << 1 using "SetSpawnFlags(1)"
-		// checkbox 2 setting spawnflags 1 << 2 etc
+		m_edit_entity_changed = false;
 
-		//SEPERATORV(0.0f);
-
-		if(dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
+		if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
 
 			if (ImGui::TreeNodeEx("Surface Inspector", dvars::gui_props_classlist_defaultopen->current.enabled ? ImGuiTreeNodeFlags_DefaultOpen : 0))
 			{
 				SPACING(0.0f, 0.01f);
-				ggui::surface_inspector::controls();
+				GET_GUI(ggui::surface_dialog)->inspector_controls();
 
 				ImGui::TreePop();
 			}
@@ -1585,31 +1667,30 @@ namespace ggui::entity
 		ImGui::End();
 	}
 
-
 	// ----------------------------------
 	// ASM
 
-	__declspec(naked) void init_classlist_stub()
+	__declspec(naked) void entity_dialog::init_classlist_stub()
 	{
 		const static uint32_t retn_pt = 0x496816;
 		__asm
 		{
 			pushad;
-			call	fill_classlist_intercept;
+			call	entity_dialog::fill_classlist_intercept;
 			popad;
 
 			push	0x184;
 			jmp		retn_pt;
 		}
 	}
-	
-	__declspec(naked) void on_update_selection_stub()
+
+	__declspec(naked) void entity_dialog::on_update_selection_stub()
 	{
 		const static uint32_t retn_pt = 0x497225;
 		__asm
 		{
 			pushad;
-			call	on_update_selection_intercept;
+			call	entity_dialog::on_update_selection_intercept;
 			popad;
 
 			push    0x186;		// overwritten op
@@ -1617,13 +1698,13 @@ namespace ggui::entity
 		}
 	}
 
-	__declspec(naked) void on_mapload_stub()
+	__declspec(naked) void entity_dialog::on_mapload_stub()
 	{
 		const static uint32_t retn_pt = 0x418814;
 		__asm
 		{
 			pushad;
-			call	on_mapload_intercept;
+			call	entity_dialog::on_mapload_intercept;
 			popad;
 
 			push    0x1101;
@@ -1632,26 +1713,27 @@ namespace ggui::entity
 	}
 
 	// CMainFrame::OnViewEntity
-	void on_viewentity_command()
+	void entity_dialog::on_viewentity_command()
 	{
-		auto& menu = ggui::state.czwnd.m_entity;
-		if (menu.inactive_tab && menu.menustate)
+		const auto gui = GET_GUI(ggui::entity_dialog);
+
+		if(gui->is_inactive_tab() && gui->is_active())
 		{
-			menu.bring_tab_to_front = true;
+			gui->set_bring_to_front(true);
 			return;
 		}
-		
-		components::gui::toggle(ggui::state.czwnd.m_entity);
+
+		gui->toggle();
 	}
 
-	void register_dvars()
+	void entity_dialog::register_dvars()
 	{
 		dvars::gui_props_classlist_defaultopen = dvars::register_bool(
 			/* name		*/ "gui_props_classlist_defaultopen",
 			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "property editor - default state for treenode classlist");
-		
+
 		dvars::gui_props_comments_defaultopen = dvars::register_bool(
 			/* name		*/ "gui_props_comments_defaultopen",
 			/* default	*/ false,
@@ -1665,19 +1747,19 @@ namespace ggui::entity
 			/* desc		*/ "property editor - default state for treenode spawnflags");
 	}
 
-	void hooks()
+	void entity_dialog::hooks()
 	{
 		// init classlist on startup
-		utils::hook(0x496811, init_classlist_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x496811, entity_dialog::init_classlist_stub, HOOK_JUMP).install()->quick();
 
 		// update edit_entity with radiant routines
-		utils::hook(0x497220, on_update_selection_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x497220, entity_dialog::on_update_selection_stub, HOOK_JUMP).install()->quick();
 
 		// reset classlist on map re/load
-		utils::hook(0x41880F, on_mapload_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x41880F, entity_dialog::on_mapload_stub, HOOK_JUMP).install()->quick();
 
 		// make entity-view hotkey open the imgui variant :: CMainFrame::OnFilterDlg
-		utils::hook::detour(0x423F00, on_viewentity_command, HK_JUMP);
+		utils::hook::detour(0x423F00, entity_dialog::on_viewentity_command, HK_JUMP);
 
 		// do not show original entity window
 		utils::hook::set<BYTE>(0x423D0A + 1, 0x0);
@@ -1686,11 +1768,13 @@ namespace ggui::entity
 
 		// do not show original entity window when opening the misc_model dialog from the context menu
 		utils::hook::nop(0x46624A, 5);
-		
+
 		// (can be disabled once the imgui-entity window is done and the original hidden)
 		// disable top-most mode for inspector/entity window
 		//utils::hook::nop(0x496CB6, 13); // clear instructions
 		//utils::hook::set<BYTE>(0x496CB6, 0xB9); // mov ecx,00000000 (0xB9 00 00 00 00)
 		//utils::hook::set<DWORD>(0x496CB6 + 1, 0x0); // mov ecx,00000000 (0xB9 00 00 00 00)
 	}
+
+	REGISTER_GUI(entity_dialog);
 }

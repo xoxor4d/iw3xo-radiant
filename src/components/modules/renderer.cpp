@@ -531,7 +531,8 @@ namespace components
 			return mtlShader;
 		}
 
-		game::Com_Error("r_create_pixelshader :: pixel shader creation failed for %s\n", shader_name);
+		//game::Com_Error("r_create_pixelshader :: pixel shader creation failed for %s\n", shader_name);
+		game::printf_to_console("[ERR] r_create_pixelshader :: pixel shader creation failed for %s\n", shader_name);
 		return nullptr;
 	}
 
@@ -606,7 +607,8 @@ namespace components
 			return mtlShader;
 		}
 
-		game::Com_Error("r_create_vertexshader :: pixel shader creation failed for %s\n", shader_name);
+		//game::Com_Error("r_create_vertexshader :: vertex shader creation failed for %s\n", shader_name);
+		game::printf_to_console("[ERR] r_create_vertexshader :: vertex shader creation failed for %s\n", shader_name);
 		return nullptr;
 	}
 
@@ -787,7 +789,7 @@ namespace components
 								if(dvars::r_fakesun_use_worldspawn->current.enabled)
 								{
 									const auto world_ent = game::g_world_entity();
-									if(world_ent && world_ent->firstActive && ggui::entity::Entity_GetVec3ForKey(world_ent->firstActive, sun_dir, "sundirection"))
+									if(world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_dir, "sundirection"))
 									{
 										worldspawn_valid = true;
 									}
@@ -796,7 +798,7 @@ namespace components
 								game::vec4_t temp = { 0.0f, 0.0f, 0.0f, 0.0f };
 								
 								// AngleVectors(float* angles, float* vpn, float* right, float* up)
-								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : ggui::camera_settings::sun_dir, temp, nullptr, nullptr);
+								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : GET_GUI(ggui::camera_settings_dialog)->sun_dir, temp, nullptr, nullptr);
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 							
@@ -812,9 +814,9 @@ namespace components
 									float sunlight = 0.0f;
 									game::vec3_t suncolor = {};
 
-									if(world_ent && world_ent->firstActive && ggui::entity::Entity_GetVec3ForKey(world_ent->firstActive, suncolor, "suncolor"))
+									if(world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, suncolor, "suncolor"))
 									{
-										if (!ggui::entity::Entity_GetValueForKey(world_ent->firstActive, &sunlight, "sunlight"))
+										if (!GET_GUI(ggui::entity_dialog)->get_value_for_key_from_entity(world_ent->firstActive, &sunlight, "sunlight"))
 										{
 											// default value
 											sunlight = 1.35f;
@@ -826,8 +828,10 @@ namespace components
 										worldspawn_valid = true;
 									}
 								}
-								
-								game::vec4_t temp = { ggui::camera_settings::sun_diffuse[0], ggui::camera_settings::sun_diffuse[1], ggui::camera_settings::sun_diffuse[2], 1.0f };
+
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->sun_diffuse[0], cs->sun_diffuse[1], cs->sun_diffuse[2], 1.0f };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
 							}
 							
@@ -839,21 +843,25 @@ namespace components
 								if (dvars::r_fakesun_use_worldspawn->current.enabled)
 								{
 									const auto world_ent = game::g_world_entity();
-									if (world_ent && world_ent->firstActive && ggui::entity::Entity_GetVec3ForKey(world_ent->firstActive, sun_specular, "suncolor"))
+									if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_specular, "suncolor"))
 									{
 										// worldspawn suncolor
 										utils::vector::ma(game::vec3_t(1.0f, 1.0f, 1.0f), 2.0f, sun_specular, sun_specular);
 										worldspawn_valid = true;
 									}
 								}
+
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
 								
-								game::vec4_t temp = { ggui::camera_settings::sun_specular[0], ggui::camera_settings::sun_specular[1], ggui::camera_settings::sun_specular[2], ggui::camera_settings::sun_specular[3] };
+								const game::vec4_t temp = { cs->sun_specular[0], cs->sun_specular[1], cs->sun_specular[2], cs->sun_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_specular : temp, 1);
 							}
 							
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
 							{
-								game::vec4_t temp = { ggui::camera_settings::material_specular[0], ggui::camera_settings::material_specular[1], ggui::camera_settings::material_specular[2], ggui::camera_settings::material_specular[3] };
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->material_specular[0], cs->material_specular[1], cs->material_specular[2], cs->material_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 							
@@ -879,8 +887,10 @@ namespace components
 	
 								//	worldspawn_valid = true;
 								//}
-								
-								game::vec4_t temp = { ggui::camera_settings::ambient[0], ggui::camera_settings::ambient[1], ggui::camera_settings::ambient[2], ggui::camera_settings::ambient[3] };
+
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->ambient[0], cs->ambient[1], cs->ambient[2], cs->ambient[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 						}
@@ -1238,11 +1248,11 @@ namespace components
 			// filmtweaks :: set colorMapPostSunSampler (uses pre-postfx scene texture)
 			if (is_filmtweak_tech)
 			{
-				if (const auto	cam = ggui::get_rtt_camerawnd();
-								cam && cam->scene_texture)
+				if (const auto	cam = GET_GUI(ggui::camera_dialog);
+								cam && cam->rtt_get_texture())
 				{
 					game::GfxImage postsun = {};
-					postsun.texture.data = cam->scene_texture;
+					postsun.texture.data = cam->rtt_get_texture();
 
 					game::R_SetSampler(0, state, 4, (char)114, &postsun);
 				}
@@ -1370,24 +1380,26 @@ namespace components
 	// parses worldspawn and light settings, sets custom shader constants and returns the sun direction in "sun_dir"
 	bool sunpreview_set_shader_constants(float* sun_dir)
 	{
+		const auto entity_gui = GET_GUI(ggui::entity_dialog);
 		const auto prefs = game::g_PrefsDlg();
 		const auto world_ent = reinterpret_cast<game::entity_s_def*>(game::g_world_entity()->firstActive);
 
-		if (!ggui::entity::HasKeyValuePair(world_ent, "sundirection"))
+
+		if (!entity_gui->has_key_value_pair(world_ent, "sundirection"))
 		{
 			game::printf_to_console("[Sunpreview] disabled. Missing worldspawn kvp: \"sundirection\"");
 			prefs->preview_sun_aswell = false;
 			return false;
 		}
 
-		if (!ggui::entity::HasKeyValuePair(world_ent, "sunlight"))
+		if (!entity_gui->has_key_value_pair(world_ent, "sunlight"))
 		{
 			game::printf_to_console("[Sunpreview] disabled. Missing worldspawn kvp: \"sunlight\"");
 			prefs->preview_sun_aswell = false;
 			return false;
 		}
 
-		if (!ggui::entity::HasKeyValuePair(world_ent, "suncolor"))
+		if (!entity_gui->has_key_value_pair(world_ent, "suncolor"))
 		{
 			game::printf_to_console("[Sunpreview] disabled. Missing worldspawn kvp: \"suncolor\"");
 			prefs->preview_sun_aswell = false;
@@ -1508,7 +1520,7 @@ namespace components
 		if(renderer::postfx::is_any_active())
 		{
 			// get scene without postfx -> used for colorMapPostSunSampler
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
+			renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 		}
 
 		// register_material
@@ -1521,7 +1533,7 @@ namespace components
 			utils::hook::call<void(__cdecl)(game::Material* _material)>(0x531450)(game::rgp->pixelCostColorCodeMaterial);
 
 			// get scene with postfx -> render with imgui
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, ggui::get_rtt_camerawnd()->scene_texture);
+			renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 		}
 	}
 
@@ -2195,6 +2207,11 @@ namespace components
 		}
 	}
 
+	// -------------------------------------------------------------------------------
+
+	constexpr unsigned int TESS_INDICES_AMOUNT = 1048576;
+	unsigned __int16 tess_indices_reloc[TESS_INDICES_AMOUNT] = {}; // og: 32704 // iw3: 1048576
+
 #if 0 // working fine but no need when we can use the original (here to stay for debugging purposes)
 	void RB_BeginSurface(game::Material* material, game::MaterialTechniqueType tech)
 	{
@@ -2394,7 +2411,8 @@ namespace components
 					{
 						do
 						{
-							tess.indices[v14 + tess.indexCount] = v12 + *(WORD*)(mesh->unk3 + 2 * v14);
+							tess_indices_reloc[v14 + tess.indexCount] = v12 + *(WORD*)(mesh->unk3 + 2 * v14);
+							//tess.indices[v14 + tess.indexCount] = v12 + *(WORD*)(mesh->unk3 + 2 * v14);
 							++v14;
 
 						} while (v14 < (unsigned __int16)mesh->indexCount);
@@ -2445,7 +2463,11 @@ namespace components
 
 					//R_DrawXModelSkinnedUncached_2(indexa->xsurf, indexa->___u3.skinnedVert);
 					utils::hook::call<void(__cdecl)(game::XSurface*, game::GfxPackedVertex*)>(0x53AA30)(mSurf->xsurf, mSurf->___u3.skinnedVert);
-					
+
+					// ^ above function does not check amount of indices before memcpy so it can corrupt data past the indices array boundaries
+					// dirty hack but works
+					auto x = tess.indexCount; //  = 0;
+					auto y = tess.vertexCount; // = 0;
 
 					game::gfxCmdBufSourceState->objectPlacement = 0;
 				}
@@ -2521,11 +2543,11 @@ namespace components
 		char dimensions;			// 0x7
 		bool depth_test;			// 0x8
 		char pad[3];
-		GfxPointVertex verts[2];	// 0xC (12)
+		game::GfxPointVertex verts[2];	// 0xC (12)
 	};
 
 	// rewrite to add depth_test functionality
-	void R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const GfxPointVertex* verts)
+	void R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts)
 	{
 		if (count <= 0)
 		{
@@ -2536,23 +2558,23 @@ namespace components
 		GfxCmdDrawLines* merged_cmd = reinterpret_cast<GfxCmdDrawLines*>(s_cmdList->lastCmd);
 
 		if (merged_cmd && merged_cmd->header.id == game::RC_DRAW_LINES
-			&& (count * sizeof(GfxPointVertex) * 2) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF 
+			&& (count * sizeof(game::GfxPointVertex) * 2) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF 
 			&& merged_cmd->width == width 
 			&& merged_cmd->dimensions == dimension 
 			&& count + merged_cmd->lineCount <= 0x7FFF)
 		{
 			// unsure about the name, lets call it R_AddMultipleRendercommands
-			void* cmds = utils::hook::call<void* (__cdecl)(int)>(0x4FB0D0)(count * sizeof(GfxPointVertex) * 2);
+			void* cmds = utils::hook::call<void* (__cdecl)(int)>(0x4FB0D0)(count * sizeof(game::GfxPointVertex) * 2);
 			
 			if (cmds)
 			{
-				memcpy(cmds, verts, count * sizeof(GfxPointVertex) * 2);
+				memcpy(cmds, verts, count * sizeof(game::GfxPointVertex) * 2);
 				merged_cmd->lineCount += count;
 			}
 		}
 		else
 		{
-			const size_t vert_mem_size = count * sizeof(GfxPointVertex) * 2;
+			const size_t vert_mem_size = count * sizeof(game::GfxPointVertex) * 2;
 			GfxCmdDrawLines* line = reinterpret_cast<GfxCmdDrawLines*>( game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawLines, verts), game::RC_DRAW_LINES));
 
 			if (line)
@@ -2675,8 +2697,139 @@ namespace components
 			/* desc		*/ "shadow drawing distance (camera to center of brush)");
 	}
 
+	/*void relocate_struct_ref(const std::uintptr_t code_addr, const void* target_addr, const std::uintptr_t base_addr = 0, const std::uintptr_t dest_addr = 0)
+	{
+		const auto struct_offset = dest_addr - base_addr;
+		const auto struct_final_addr = reinterpret_cast<std::uintptr_t>(target_addr) + struct_offset;
+
+		utils::hook::set<std::uintptr_t>(code_addr, struct_final_addr);
+	}*/
+
+	void relocate_struct_ref(const std::uintptr_t code_addr, const void* target_addr, const unsigned int offset)
+	{
+		const auto struct_final_addr = reinterpret_cast<std::uintptr_t>(target_addr) + offset;
+		utils::hook::set<std::uintptr_t>(code_addr, struct_final_addr);
+	}
+
+	void relocate_struct_ref(const std::uintptr_t* code_addr, const void* target_addr, const int patch_amount)
+	{
+		const auto struct_final_addr = reinterpret_cast<std::uintptr_t>(target_addr);
+
+		for (auto i = 0; i < patch_amount; i++)
+		{
+			utils::hook::set<std::uintptr_t>(code_addr[i], struct_final_addr);
+		}
+	}
+
+	void relocate_struct_ref(const std::uintptr_t* code_addr, const void* target_addr, const int patch_amount, const unsigned int offset)
+	{
+		const auto struct_final_addr = reinterpret_cast<std::uintptr_t>(target_addr) + offset;
+
+		for (auto i = 0; i < patch_amount; i++)
+		{
+			utils::hook::set<std::uintptr_t>(code_addr[i], struct_final_addr);
+		}
+	}
+
 	renderer::renderer()
 	{
+		// realoc tess.indices[32704] (materialCommands_t) and increase its size to iw3's (1048576)
+		// -> xmodels with more then 32704 indices no longer crash radiant (was writing out of bounds)
+
+		// base address
+		uintptr_t tess_indices_base_patches[] =
+		{
+			// 00 4C 7A 01
+			0x4FE6E8 + 1, 0x4FEA03 + 4, 0x530E92 + 4, 0x531052 + 4,
+			0x531233 + 4, 0x5319D0 + 4, 0x531C8C + 4, 0x531F5D + 4,
+			0x532B16 + 4, 0x532DFD + 4, 0x5330F9 + 4, 0x5334B1 + 4,
+			0x53373D + 4, 0x534F5B + 4, 0x53AAD0 + 1, 0x53AB56 + 1,
+			0x53AD7B + 1, 0x541693 + 4, 0x56CECD + 4,
+
+		}; relocate_struct_ref(tess_indices_base_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_base_patches));
+
+
+		// 2
+		uintptr_t tess_indices_p2_patches[] =
+		{
+			// 02 4C 7A 01
+			0x530EA0 + 4, 0x531060 + 4, 0x53123D + 4, 0x5319EB + 4,
+			0x531CAA + 4, 0x531F65 + 4, 0x532B2B + 4, 0x532E18 + 4,
+			0x53310E + 4, 0x5334CA + 4, 0x534F48 + 4, 0x5416A1 + 4,
+			0x56CEE6 + 4,
+
+		}; relocate_struct_ref(tess_indices_p2_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_p2_patches), 2);
+
+		
+		//  4
+		uintptr_t tess_indices_p4_patches[] =
+		{
+			// 04 4C 7A 01
+			0x530EB1 + 4, 0x531071 + 4, 0x531255 + 4, 0x5319DB + 4,
+			0x531C9A + 4, 0x531F78 + 4, 0x532B41 + 4, 0x532E34 + 4,
+			0x533124 + 4, 0x5334E0 + 4, 0x534F66 + 4, 0x5416B2 + 4,
+			0x56CEFE + 4,
+
+
+		}; relocate_struct_ref(tess_indices_p4_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_p4_patches), 4);
+
+
+		// 6
+		uintptr_t tess_indices_p6_patches[] =
+		{
+			// 06 4C 7A 01
+			0x530EBF + 4, 0x53107F + 4, 0x531260 + 4, 0x5319E3 + 4,
+			0x531CA2 + 4, 0x531F80 + 4, 0x532B57 + 4, 0x532E4B + 4,
+			0x53313B + 4, 0x5334F6 + 4, 0x534F6E + 4, 0x5416C0 + 4,
+
+
+		}; relocate_struct_ref(tess_indices_p6_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_p6_patches), 6);
+
+
+		// 8
+		uintptr_t tess_indices_p8_patches[] =
+		{
+			// 08 4C 7A 01
+			0x530ECD + 4, 0x53108D + 4, 0x531245 + 4, 0x5319F3 + 4,
+			0x531CB2 + 4, 0x531F6D + 4, 0x532B6C + 4, 0x532E60 + 4,
+			0x533150 + 4, 0x53350B + 4, 0x534F50 + 4, 0x5416CE + 4,
+
+
+		}; relocate_struct_ref(tess_indices_p8_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_p8_patches), 8);
+
+
+		// 10
+		uintptr_t tess_indices_p10_patches[] =
+		{
+			// 0A 4C 7A 01
+			0x530EE1 + 4, 0x5310A1 + 4, 0x53126F + 4, 0x5319FE + 4,
+			0x531CBA + 4, 0x531F8B + 4, 0x532B82 + 4, 0x532E76 + 4,
+			0x533166 + 4, 0x533521 + 4, 0x534F79 + 4, 0x5416DF + 4,
+
+
+		}; relocate_struct_ref(tess_indices_p10_patches, tess_indices_reloc, ARRAYSIZE(tess_indices_p10_patches), 10);
+
+		// patch indices cmp
+		utils::hook::set<DWORD>(0x4FE899 + 2, TESS_INDICES_AMOUNT); // RB_DrawEditorSkinnedCached_Sub
+		utils::hook::set<DWORD>(0x530AD2 + 2, TESS_INDICES_AMOUNT); // RB_DrawTriangles_Internal and RB_DrawPolyInteriors
+		utils::hook::set<DWORD>(0x530B0F + 2, TESS_INDICES_AMOUNT); // Everything else is 2D or lines
+		utils::hook::set<DWORD>(0x530E72 + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x531032 + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x5311EA + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x53199D + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x531C6E + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x531F2A + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x532AE9 + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x532DC9 + 1, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x5330DE + 1, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x533484 + 2, TESS_INDICES_AMOUNT);
+		utils::hook::set<DWORD>(0x534F1B + 2, TESS_INDICES_AMOUNT);
+
+		// rewrite, working fine but no need (only debug)
+		// utils::hook::detour(0x4FE750, RB_DrawEditorSkinnedCached, HK_JUMP);
+
+		// ------------------------------------------------------------------------------------------------
+
 		// set default value for r_vsync to false
 		utils::hook::set<BYTE>(0x51FB1A + 1, 0x0);
 
@@ -2766,7 +2919,7 @@ namespace components
 		// register smalldevfont
 		utils::hook(0x5011B8, post_render_init, HOOK_CALL).install()->quick();
 
-		// nop rpg world related stuff when drawing gfx-scene-entities (effect xmodels)
+		// nop rgp world related stuff when drawing gfx-scene-entities (effect xmodels)
 		utils::hook::nop(0x52A6E8, 5);
 		utils::hook::nop(0x52A6FF, 5);
 		utils::hook::nop(0x52A6F7, 3);
@@ -2777,9 +2930,6 @@ namespace components
 		// load depth prepass and build-floatz technique (Material_LoadTechniqueSet -> g_useTechnique)
 		//utils::hook::set<BYTE>(0x633FC4 + 0, 0x1);
 		//utils::hook::set<BYTE>(0x633FC4 + 1, 0x1);
-
-		// rewrite, working fine but no need (only debug)
-		//utils::hook::detour(0x4FE750, RB_DrawEditorSkinnedCached, HK_JUMP);
 
 		command::register_command("g_log_rendercommands"s, [this](auto)
 		{

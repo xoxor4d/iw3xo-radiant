@@ -48,7 +48,7 @@ namespace components
 			bool s_filter_mpentities;
 			bool s_filter_script_origins;
 
-			// tiggers
+			// triggers
 			bool s_filter_trigger;
 			bool s_filter_bcs;
 			bool s_filter_escort;
@@ -67,6 +67,7 @@ namespace components
 
 			// other (optional if installed custom filters)
 			bool s_filter_opt_ladder;
+			bool s_filter_opt_fx;
 		};
 
 		vars_s var = {};

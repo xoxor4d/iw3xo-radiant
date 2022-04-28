@@ -1,8 +1,8 @@
 #include "std_include.hpp"
 
-namespace ggui::colors
+namespace ggui
 {
-	void menu(ggui::imgui_context_menu& menu)
+	void gui_colors_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 800.0f);
@@ -14,7 +14,7 @@ namespace ggui::colors
 		const float inner_item_spacing = 4.0f;
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(inner_item_spacing, 0.0f));
 
-		if(!ImGui::Begin("Colors##window", &menu.menustate, ImGuiWindowFlags_NoCollapse))
+		if (!ImGui::Begin("Colors##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
 			ImGui::PopStyleVar();
 			ImGui::End();
@@ -24,9 +24,7 @@ namespace ggui::colors
 		ImGui::Indent(4.0f);
 		SPACING(0.0f, 2.0f);
 
-		const float clamped_min_widget_width = ImGui::CalcItemWidth();
-
-		if (ImGui::Button("Set Default Radiant Colors", ImVec2(clamped_min_widget_width, ImGui::GetFrameHeight())))
+		if (ImGui::Button("Set Default Radiant Colors", ImVec2(ImGui::CalcItemWidth(), ImGui::GetFrameHeight())))
 		{
 			radiantapp::set_default_savedinfo_colors();
 		}
@@ -44,7 +42,7 @@ namespace ggui::colors
 		ImGui::ColorEdit4("Grid Block", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBLOCK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Grid Text", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDTEXT], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Grid Entity Classname", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float);
-		
+
 		SEPERATORV(0.0f);
 
 		ImGui::ColorEdit4("Unselected Brushes", game::g_qeglobals->d_savedinfo.colors[game::COLOR_BRUSHES], ImGuiColorEditFlags_Float);
@@ -85,7 +83,7 @@ namespace ggui::colors
 		ImGui::ColorEdit4("Gui Child Bg##4", dvars::gui_window_child_bg_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Border##5", dvars::gui_border_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Docking Preview##6", dvars::gui_dockingpreview_color->current.vector, ImGuiColorEditFlags_Float);
-		
+
 		ImGui::ColorEdit4("Gui Toolbar Button", dvars::gui_toolbar_button_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Toolbar Button Hovered", dvars::gui_toolbar_button_hovered_color->current.vector, ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Gui Toolbar Button Active", dvars::gui_toolbar_button_active_color->current.vector, ImGuiColorEditFlags_Float);
@@ -109,4 +107,6 @@ namespace ggui::colors
 		ImGui::PopStyleVar();
 		ImGui::End();
 	}
+
+	REGISTER_GUI(gui_colors_dialog);
 }

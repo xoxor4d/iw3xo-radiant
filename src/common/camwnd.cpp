@@ -39,7 +39,7 @@ void cam_rotate()
 		//cam->camera.angles[0] = cam->camera.angles[0] - prefs->m_nMoveSpeed / 500.0 * (point.y - cam->m_ptCursor.y);
 
 		SetCursorPos(cam->m_ptCursor.x, cam->m_ptCursor.y);
-		cam->x48 = 0;
+		cam->cursor_visible = false;
 
 		ShowCursor(0);
 	}
@@ -69,7 +69,7 @@ void cam_positiondrag()
 		//cam->camera.origin[2] = cam->camera.origin[2];
 
 		SetCursorPos(cam->m_ptCursor.x, cam->m_ptCursor.y);
-		cam->x48 = 0;
+		cam->cursor_visible = false;
 		
 		ShowCursor(0);
 	}
@@ -96,7 +96,7 @@ void ccamwnd::mouse_up(ccamwnd* cam, int flags)
 	game::Drag_MouseUp(flags);
 	cam->prob_some_cursor = 0;
 	cam->x47 = 0;
-	cam->x48 = 1; // prob. int16
+	cam->cursor_visible = true; // prob. int16
 
 	int sw_cur;
 	do {
@@ -246,13 +246,13 @@ BOOL WINAPI ccamwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lPara
 	// but the user is within a textbox in some other imgui window
 	if (Msg == WM_CHAR || Msg == WM_KEYDOWN || Msg == WM_KEYUP)
 	{
-		if (ggui::cz_context_ready())
+		if (ggui::is_ggui_initialized())
 		{
 			// set cz context (in-case we use multiple imgui context's)
 			IMGUI_BEGIN_CZWND;
 
 			// not sure why I did this
-			if (!ggui::get_rtt_camerawnd()->window_hovered && ImGui::GetIO().WantCaptureMouse)
+			if (!GET_GUI(ggui::camera_dialog)->rtt_is_hovered() && ImGui::GetIO().WantCaptureMouse)
 			{
 				ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
 				return true;
@@ -407,4 +407,30 @@ void ccamwnd::hooks()
 
 	__on_keydown_cam	= reinterpret_cast<on_ccamwnd_key>(utils::hook::detour(0x402F60, ccamwnd::on_keydown, HK_JUMP));
 	__on_keyup_cam		= reinterpret_cast<on_ccamwnd_key>(utils::hook::detour(0x408B70, ccamwnd::on_keyup, HK_JUMP));
+
+	components::command::register_command_with_hotkey("center_camera_on_selection"s, [](auto)
+	{
+		const auto eent = game::g_edit_entity();
+
+		if (eent && eent->eclass && eent->eclass->name)
+		{
+			if (utils::str_to_lower(eent->eclass->name) != "worldspawn")
+			{
+				utils::vector::copy(eent->origin, cmainframe::activewnd->m_pCamWnd->camera.origin);
+			}
+			else
+			{
+				const auto sel = game::g_selected_brushes();
+				if(components::remote_net::selection_is_brush(sel->def))
+				{
+					// get center of the brush
+					for (int j = 0; j < 3; j++)
+					{
+						cmainframe::activewnd->m_pCamWnd->camera.origin[j] = 
+							sel->def->mins[j] + abs((sel->def->maxs[j] - sel->def->mins[j]) * 0.5f);
+					}
+				}
+			}
+		}
+	});
 }
