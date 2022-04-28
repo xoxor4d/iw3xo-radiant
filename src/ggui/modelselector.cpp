@@ -384,6 +384,44 @@ namespace ggui
 				ImGui::PopStyleVar();
 			}
 
+			{
+				static bool hov_plantorient;
+				const auto prefs = game::g_PrefsDlg();
+
+				auto bg_color = ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+				auto bg_color_hovered = ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector);
+				auto bg_color_active = ImVec4(0.16f, 0.16f, 0.16f, 1.0f);
+
+				// CMainFrame::OnPlantModel
+				if (ggui::toolbar_dialog::image_togglebutton(
+					"plant_orient_to_floor",
+					hov_plantorient,
+					prefs->m_bOrientModel,
+					"Orient dropped selection to the floor",
+					&bg_color,
+					&bg_color_hovered,
+					&bg_color_active))
+				{
+					mainframe_thiscall(LRESULT, 0x4258F0);
+				}
+
+				static bool hov_plantdrop;
+
+				// CMainFrame::OnForceZeroDropHeight
+				if (ggui::toolbar_dialog::image_togglebutton(
+					"plant_force_drop_height",
+					hov_plantdrop,
+					prefs->m_bForceZeroDropHeight,
+					"Force drop height to 0",
+					&bg_color,
+					&bg_color_hovered,
+					&bg_color_active))
+				{
+					mainframe_thiscall(LRESULT, 0x42A000);
+				}
+			}
+			
+
 			const auto current_pos = ImGui::GetCursorPos();
 			ImGui::SetCursorPos(ImVec2(split_horizontal ? current_pos.x : current_pos.x + 4.0f, ImGui::GetWindowHeight() - 22.0f));
 			ImGui::HelpMarker(
@@ -392,7 +430,9 @@ namespace ggui
 				"Move Object:\t\t  Right Mouse +Ctrl +Shift\n"
 				"Zoom Object:\t\t  Mouse Scroll\n"
 				"Change selection:  Up/Down Arrow:\n"
-				"- Drag and drop xmodel from list or preview to grid or camera to spawn it");
+				"- Drag and drop a xmodel from the list/preview to the grid or camera to spawn it\n"
+				" ^ use model planting settings (toolbar) like 'Orient To Floor' or 'Force Zero Dropheight'\n"
+				" ^ to adjust model planing behaviour");
 
 			if (this->m_bad_model)
 			{

@@ -41,6 +41,7 @@ void registery_save([[maybe_unused]] CPrefsDlg* prefs)
 	const auto state = afx::get_module_state();
 	CWinApp_WriteProfileInt(state->m_pCurrentWinApp, "Prefs", "iw3x_mainframe_menubar_enabled", ggui::mainframe_menubar_enabled);
 	CWinApp_WriteProfileInt(state->m_pCurrentWinApp, "Prefs", "lights_max_intensity", game::g_qeglobals->preview_at_max_intensity);
+	CWinApp_WriteProfileInt(state->m_pCurrentWinApp, "Prefs", "force_zero_dropheight", prefs->m_bForceZeroDropHeight);
 	CWinApp_WriteProfileInt(state->m_pCurrentWinApp, "Prefs", "discord_rpc", components::discord::g_enable_discord_rpc);
 }
 
@@ -72,6 +73,12 @@ void registery_load()
 
 	// always bothered me ..
 	game::g_qeglobals->preview_at_max_intensity = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "lights_max_intensity", 0);
+
+	const auto prefs = game::g_PrefsDlg();
+	if(prefs)
+	{
+		prefs->m_bForceZeroDropHeight = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "force_zero_dropheight", 1);
+	}
 
 	components::discord::g_enable_discord_rpc = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "discord_rpc", 1);
 }
