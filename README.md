@@ -28,7 +28,7 @@ ___
 - extend functionalities across the board
 
 ### New features not found within the original cod4 radiant:
-- play, edit and export effects right from within radiant (makes effectsEd _almost_ obsolete)
+- play, edit and export effects as createFx files right from within radiant (makes effectsEd _almost_ obsolete)
 - switch / scale / place the individual windows however you want
 - preview xmodels and drag them directly into the scene using the model previewer
 - custom lighting shader with normal-mapping, specular highlights, reflections and fog
@@ -37,14 +37,17 @@ ___
 - render actual water instead of case-textures 
 - guizmo to manipulate entities and brushes from within the camera window
 - live link (sync. brushes (with collision), camera and worldspawn settings between cod4 and radiant)
+- high poly xmodel's no longer crash radiant
 - realtime viewports
 - better surface / property editor
 - context aware grid and camera context menus with QoL features
 - better vertex edit dialog
 - zoom to cursor
 - editable toolbars, hotkeys, colors (all saved)
+- new file dialogs with working default paths
 - texture window toolbar for quick filtering
 - a proper console with dvar support (incl. dvar suggestions and autocomplete)
+- print parsed entity and brush num on map load making it easier to find issues in map files (off by default) 
 - increased undo limit
 - alot of QOL features
 
@@ -107,11 +110,14 @@ https://discord.gg/t5jRGbj
 ## Credits
 - [X Labs](https://github.com/XLabsProject) (especially [Snake](https://github.com/momo5502))
 - [The Plutonium Project Team](https://plutonium.pw/) (especially [Rektinator](https://github.com/RektInator))
-- https://github.com/Nukem9/LinkerMod
-- https://github.com/Nukem9/detours
-- https://github.com/ocornut/imgui
-- https://github.com/CedricGuillemet/ImGuizmo
-- https://github.com/devKlausS/dxsdk
+- [Nukem9 - LinkerMod](https://github.com/Nukem9/LinkerMod) & [detours](https://github.com/Nukem9/detours)
+- [ocornut - Dear ImGui](https://github.com/ocornut/imgui)
+- [CedricGuillemet - ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo)
+- [nlohmann - fifo_map](https://github.com/nlohmann/fifo_map)
+- [David Gallardo - imgui_color_gradient](https://gist.github.com/galloscript/8a5d179e432e062550972afcd1ecf112)
+- [nem0 - ImGui CurveEditor](https://github.com/nem0/LumixEngine/blob/39e46c18a58111cc3c8c10a4d5ebbb614f19b1b8/external/imgui/imgui_user.inl#L505-L930)
+- [Infinity Ward - OG. Radiant and Effects Framework](https://www.infinityward.com)
+- [id-Software - OG. Radiant](https://github.com/id-Software/Quake-III-Arena/tree/master/q3radiant)
 
 <br>
 
