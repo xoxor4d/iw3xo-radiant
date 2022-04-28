@@ -39,6 +39,7 @@ namespace ggui
 		// *
 		// public member functions
 
+		static bool image_button(const char* image_name, bool& hovered_state, const char* tooltip);
 		static void image_button(const char* image_name, bool& hovered_state, E_CALLTYPE calltype, uint32_t func_addr, const char* tooltip);
 		static bool image_togglebutton(const char* image_name, bool& hovered_state, bool toggle_state, const char* tooltip, ImVec4* bg_col = nullptr, ImVec4* bg_col_hovered = nullptr, ImVec4* bg_col_active = nullptr, ImVec2* btn_size = nullptr);
 
