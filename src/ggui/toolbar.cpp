@@ -10,6 +10,47 @@ namespace ggui
 	const ImVec2		TB_IMAGEBUTTON_SIZE = ImVec2(28.0f, 28.0f);
 	const std::string	TB_INI_FILENAME = "iw3r_toolbar.ini"s;
 
+	bool toolbar_dialog::image_button(const char* image_name, bool& hovered_state, const char* tooltip)
+	{
+		bool ret_state = false;
+
+		if (const auto	image = game::Image_RegisterHandle(image_name);
+						image && image->texture.data)
+		{
+			const ImVec2 uv0 = hovered_state ? ImVec2(0.5f, 0.0f) : ImVec2(0.0f, 0.0f);
+			const ImVec2 uv1 = hovered_state ? ImVec2(1.0f, 1.0f) : ImVec2(0.5f, 1.0f);
+
+			const ImVec4 bg_col = hovered_state ?
+				ImGui::ToImVec4(dvars::gui_toolbar_button_hovered_color->current.vector) : ImGui::ToImVec4(dvars::gui_toolbar_button_color->current.vector);
+
+			if (ImGui::ImageButton(image->texture.data, TB_IMAGEBUTTON_SIZE, uv0, uv1, 0, bg_col))
+			{
+				ret_state = true;
+			}
+
+			if (tooltip)
+			{
+				TT(tooltip);
+			}
+
+			hovered_state = ImGui::IsItemHovered();
+		}
+		else
+		{
+			if (ImGui::Button(image_name))
+			{
+				ret_state = true;
+			}
+
+			if (tooltip)
+			{
+				TT(tooltip);
+			}
+		}
+
+		return ret_state;
+	}
+
 	void toolbar_dialog::image_button(const char* image_name, bool& hovered_state, E_CALLTYPE calltype, uint32_t func_addr, const char* tooltip)
 	{
 		if (const auto	image = game::Image_RegisterHandle(image_name);
@@ -232,8 +273,27 @@ namespace ggui
 			{
 				static bool hov_open;
 
-				//CMainFrame::OnFileOpen
-				image_button("open", hov_open, MAINFRAME_CDECL, 0x423AE0, std::string("Open File " + ggui::hotkey_dialog::get_hotkey_for_command("FileOpen")).c_str());
+				// logic :: ggui::file_dialog_frame
+				if (dvars::gui_use_new_filedialog->current.enabled)
+				{
+					if (image_button("open", hov_open, std::string("Open File " + ggui::hotkey_dialog::get_hotkey_for_command("FileOpen")).c_str()))
+					{
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_LOAD);
+						file->set_file_op_type(file_dialog::FileDialogType::OpenFile);
+						file->set_file_ext(".map");
+						file->open();
+					}
+				}
+				else
+				{
+					//CMainFrame::OnFileOpen
+					image_button("open", hov_open, MAINFRAME_CDECL, 0x423AE0, std::string("Open File " + ggui::hotkey_dialog::get_hotkey_for_command("FileOpen")).c_str());
+				}
 			});
 
 		register_element("save"s, []()
