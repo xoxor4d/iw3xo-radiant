@@ -1892,6 +1892,7 @@ namespace game
 		unsigned __int16 vertCount;
 		unsigned __int16 triCount;
 		char zoneHandle;
+		char padding;
 		unsigned __int16 baseTriIndex;
 		unsigned __int16 baseVertIndex;
 		unsigned __int16* triIndices;
@@ -1900,7 +1901,8 @@ namespace game
 		unsigned int vertListCount;
 		XRigidVertList* vertList;
 		int partBits[4];
-	};
+		int pad;
+	}; STATIC_ASSERT_SIZE(XSurface, 0x3C);
 
 	struct XModelCollTri_s
 	{
