@@ -20,6 +20,11 @@ namespace game
 		// misc
 		game::TrackWorldspawn track_worldspawn = game::TrackWorldspawn();
 
+		bool debug_sundir = false;
+		game::vec3_t debug_sundir_startpos = {};
+		float debug_sundir_length = 500.0f;
+
+
 		// update check
 		std::string gh_update_releases_json;
 		std::string gh_update_tag;

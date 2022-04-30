@@ -40,6 +40,11 @@ namespace game
 		// misc
 		extern game::TrackWorldspawn track_worldspawn;
 
+		extern bool debug_sundir;
+		extern game::vec3_t debug_sundir_startpos;
+		extern float debug_sundir_length;
+
+
 		// update check
 		extern std::string gh_update_releases_json;
 		extern std::string gh_update_tag;

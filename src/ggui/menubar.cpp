@@ -767,7 +767,7 @@ namespace ggui
 					ImGui::EndMenu(); // Show Entities As
 				}
 
-				if (ImGui::BeginMenu("Light Preview"))
+				if (ImGui::BeginMenu("Light / Sun Preview"))
 				{
 					if (ImGui::MenuItem("Enable Light Preview", ggui::hotkey_dialog::get_hotkey_for_command("LightPreviewToggle").c_str(), prefs->enable_light_preview)) {
 						mainframe_thiscall(void, 0x4240C0); // cmainframe::OnEnableLightPreview
@@ -781,7 +781,19 @@ namespace ggui
 						game::Dvar_SetBool(dvars::r_sunpreview_shadow_enable, !dvars::r_sunpreview_shadow_enable->current.enabled);
 					}
 
-					IMGUI_MENU_WIDGET_SINGLE("Sun Shadow Distance", ImGui::DragFloat("#sunshadow_dist_scalar", &dvars::r_sunpreview_shadow_dist->current.value, 25.0f, 0, FLT_MAX, "%.0f"));
+					IMGUI_MENU_WIDGET_SINGLE("Sun Shadow Distance", ImGui::DragFloat("##sunshadow_dist_scalar", &dvars::r_sunpreview_shadow_dist->current.value, 25.0f, 0, FLT_MAX, "%.0f"));
+
+					SEPERATORV(0.0f);
+
+					// debug_sundir
+					if (ImGui::MenuItem("Debug Sundirection", 0, game::glob::debug_sundir)) {
+						game::glob::debug_sundir = !game::glob::debug_sundir;
+					}
+
+					IMGUI_MENU_WIDGET_SINGLE("Sundirection Length", ImGui::DragFloat("##sundir_debug_length", &game::glob::debug_sundir_length, 15.0f, 100.0f, FLT_MAX, "%.0f"));
+					IMGUI_MENU_WIDGET_SINGLE("Sundirection Position X", ImGui::DragFloat("##sundir_debug_posx", &game::glob::debug_sundir_startpos[0], 15.0f, -FLT_MAX, FLT_MAX, "%.0f"));
+					IMGUI_MENU_WIDGET_SINGLE("Sundirection Position Y", ImGui::DragFloat("##sundir_debug_posy", &game::glob::debug_sundir_startpos[1], 15.0f, -FLT_MAX, FLT_MAX, "%.0f"));
+					IMGUI_MENU_WIDGET_SINGLE("Sundirection Position Z", ImGui::DragFloat("##sundir_debug_posz", &game::glob::debug_sundir_startpos[2], 15.0f, -FLT_MAX, FLT_MAX, "%.0f"));
 
 					SEPERATORV(0.0f);
 
