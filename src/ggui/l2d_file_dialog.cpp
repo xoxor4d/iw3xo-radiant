@@ -259,82 +259,72 @@ namespace ggui
 				// use clipper to skip invisible files
 
 				int filelist_row = 0;
-				ImGuiListClipper filelist_clipper;
-				filelist_clipper.Begin(static_cast<int>(files.size()));
 
-				while (filelist_clipper.Step() && !early_out)
+				// #
+				// #
+
+				auto list_file = [&](const int i) -> void
 				{
-					for (int i = filelist_clipper.DisplayStart; i < filelist_clipper.DisplayEnd; i++)
+					// unique widget id's for each row
+					ImGui::PushID(filelist_row); filelist_row++;
+					ImGui::TableNextRow();
+
+					for (int column = 0; column < 4; column++)
 					{
-						// unique widget id's for each row
-						ImGui::PushID(filelist_row); filelist_row++;
-						ImGui::TableNextRow();
+						ImGui::PushID(column);
+						ImGui::TableNextColumn();
 
-						for (int column = 0; column < 4; column++)
+						switch (column)
 						{
-							ImGui::PushID(column);
-							ImGui::TableNextColumn();
-
-							switch (column)
+						case 0:
+							if (ImGui::Selectable(files[i].path().filename().string().c_str(), i == this->m_file_select_index, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
 							{
-							case 0:
-								if (ImGui::Selectable(files[i].path().filename().string().c_str(), i == this->m_file_select_index, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
+								this->m_file_select_index = i;
+								this->m_current_file = files[i].path().filename().string();
+								this->m_save_file_name = this->m_current_file;
+								this->m_save_filename_valid = !this->m_save_file_name.empty();
+								this->m_current_folder = "";
+
+								if (this->get_file_handler() == ggui::FILE_DIALOG_HANDLER::MISC_MODEL)
 								{
-									this->m_file_select_index = i;
-									this->m_current_file = files[i].path().filename().string();
-									this->m_save_file_name = this->m_current_file;
-									this->m_save_filename_valid = !this->m_save_file_name.empty();
-									this->m_current_folder = "";
-
-									if(this->get_file_handler() == ggui::FILE_DIALOG_HANDLER::MISC_MODEL)
+									if (const auto	msd = GET_GUI(ggui::modelselector_dialog);
+													msd->is_active())
 									{
-										if(const auto msd = GET_GUI(ggui::modelselector_dialog);
-													  msd->is_active())
-										{
-											msd->set_bring_to_front(true);
-											msd->m_preview_model_name = this->m_current_file;
-										}
-									}
-
-									if (ImGui::IsMouseDoubleClicked(0))
-									{
-										this->m_track_result = this->selection_build_path_to_file();
-										if (this->m_track_result)
-										{
-											ImGui::PopID(); // column
-											ImGui::PopID(); // row
-											early_out = true;
-										}
+										msd->set_bring_to_front(true);
+										msd->m_preview_model_name = this->m_current_file;
 									}
 								}
-								break;
 
-							case 1:
-								ImGui::TextUnformatted(utils::va("%d KB", files[i].file_size() / 1024));
-								break;
-
-							case 2:
-								ImGui::TextUnformatted(files[i].path().extension().string().c_str());
-								break;
-
-							case 3:
-								auto ftime = files[i].last_write_time();
-								auto st = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - decltype(ftime)::clock::now() + std::chrono::system_clock::now());
-								std::time_t tt = std::chrono::system_clock::to_time_t(st);
-								std::tm* mt = std::localtime(&tt);
-								std::stringstream ss;
-								ss << std::put_time(mt, "%F %R");
-								ImGui::TextUnformatted(ss.str().c_str());
-								break;
+								if (ImGui::IsMouseDoubleClicked(0))
+								{
+									this->m_track_result = this->selection_build_path_to_file();
+									if (this->m_track_result)
+									{
+										ImGui::PopID(); // column
+										ImGui::PopID(); // row
+										early_out = true;
+									}
+								}
 							}
+							break;
 
-							if (early_out)
-							{
-								break;
-							}
+						case 1:
+							ImGui::TextUnformatted(utils::va("%d KB", files[i].file_size() / 1024));
+							break;
 
-							// column
-							ImGui::PopID();
+						case 2:
+							ImGui::TextUnformatted(files[i].path().extension().string().c_str());
+							break;
+
+						case 3:
+							auto ftime = files[i].last_write_time();
+							auto st = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - decltype(ftime)::clock::now() + std::chrono::system_clock::now());
+							std::time_t tt = std::chrono::system_clock::to_time_t(st);
+							std::tm* mt = std::localtime(&tt);
+							std::stringstream ss;
+							ss << std::put_time(mt, "%F %R");
+							ImGui::TextUnformatted(ss.str().c_str());
+							break;
 						}
 
 						if (early_out)
@@ -342,18 +332,74 @@ namespace ggui
 							break;
 						}
 
+						// column
+						ImGui::PopID();
+					}
+
+					if (!early_out)
+					{
 						// row
 						ImGui::PopID();
 					}
+				};
+
+				// #
+				// #
+
+				{
+					
+					static std::vector<int> filtered_list;
+
+					if (m_filter.IsActive())
+					{
+						static std::string last_filter;
+
+						if (m_filter.InputBuf != last_filter)
+						{
+							filtered_list.clear();
+
+							for (size_t i = 0u; i < files.size(); i++)
+							{
+								std::string item_name = files[i].path().filename().string();
+
+								if (!m_filter.PassFilter(item_name.c_str()))
+								{
+									continue;
+								}
+
+								filtered_list.emplace_back(i);
+							}
+
+							last_filter = m_filter.InputBuf;
+						}
+					}
+
+					ImGuiListClipper filelist_clipper;
+					filelist_clipper.Begin(
+						m_filter.IsActive() ? static_cast<int>(filtered_list.size()) : static_cast<int>(files.size()));
+
+					while (filelist_clipper.Step() && !early_out)
+					{
+						for (int i = filelist_clipper.DisplayStart; i < filelist_clipper.DisplayEnd; i++)
+						{
+							list_file(m_filter.IsActive() ? filtered_list[i] : i);
+
+							if(this->m_track_result)
+							{
+								break;
+							}
+						}
+					}
+
+					filelist_clipper.End();
 				}
 
-				filelist_clipper.End();
 				ImGui::EndTable();
 			}
 		}
 		ImGui::EndChild();
 		
-		if(early_out)
+		if(this->m_track_result)
 		{
 			ImGui::End();
 			return this->m_track_result;
@@ -396,11 +442,12 @@ namespace ggui
 
 			static float right_align_group_width = 120.0f;
 
+
 			if(this->get_file_op_type() == FileDialogType::SaveFile)
 			{
 				ImGui::SameLine();
-
 				float calc_width = ImGui::GetWindowWidth() - right_align_group_width - 18.0f - ImGui::GetCursorPos().x;
+
 				this->m_save_file_name = this->m_current_file;
 
 				ImGui::SetNextItemWidth(calc_width);
@@ -422,6 +469,24 @@ namespace ggui
 					}
 				}
 			}
+			else // filter 
+			{
+				ImGui::SameLine();
+
+				const float calc_width = ImGui::GetWindowWidth() - right_align_group_width - 18.0f - ImGui::GetCursorPos().x;
+
+				const auto pre_filter_pos = ImGui::GetCursorScreenPos();
+				m_filter.Draw("##filedialog_filter", calc_width);
+
+				if (!m_filter.IsActive())
+				{
+					ImGui::GetWindowDrawList()->AddText(
+						ImVec2(pre_filter_pos.x + 12.0f, pre_filter_pos.y + 4.0f), 
+						ImGui::GetColorU32(ImGuiCol_ButtonHovered),
+						"Filter ..");
+				}
+			}
+
 
 			// # Folder creation popup
 

@@ -496,7 +496,7 @@ namespace ggui
 
 		ImGui::SameLine(0, 6.0f);
 		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
-		m_filter.Draw("#console_filter", ImGui::GetContentRegionAvail().x); //ImGui::GetContentRegionAvailWidth());
+		m_filter.Draw("##console_filter", ImGui::GetContentRegionAvail().x); //ImGui::GetContentRegionAvailWidth());
 
 		if (!m_filter.IsActive())
 		{
