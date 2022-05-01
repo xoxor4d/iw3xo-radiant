@@ -567,6 +567,12 @@ namespace game
 		pmesh_texcoord savedTexCoord;
 	}; STATIC_ASSERT_SIZE(drawVert_t, 0x4C);
 
+	struct patchMesh_material
+	{
+		LayerMaterialDef* lyrMtl;
+		qtexture_s* radMtl;
+	};
+
 	struct patchMesh_t
 	{
 		int width;
@@ -575,20 +581,15 @@ namespace game
 		int flags;
 		int type;
 		int subDivType;
-		char pad_0x0018[4];
-		qtexture_s* d_texture;
-		char pad_0x0020[4];
-		texdef_t* mat_lightmap;
-		char pad_0x0028[4];
-		texdef_t* mat_smoothing;
+		patchMesh_material texture;
+		patchMesh_material lightmap;
+		patchMesh_material smoothing;
 		char pad_0x0030[4];
 		texdef_t* mat_unk;
 		drawVert_t ctrl[16][16];
 		char pad_0x4468[1024];
 		int pad_unk;
 		brush_t* pSymbiot;
-		//bool xx20b;
-		//bool xx21b;
 		std::int16_t version;
 		bool xx22b;
 		bool bDirty;

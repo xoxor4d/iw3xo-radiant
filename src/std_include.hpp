@@ -136,6 +136,7 @@
 #include "ggui/vertex_edit.hpp"
 #include "ggui/modelselector.hpp"
 #include "ggui/preferences.hpp"
+#include "ggui/rope_generator.hpp"
 #include "ggui/surface_inspector.hpp"
 #include "ggui/textures.hpp"
 #include "ggui/toolbar.hpp"

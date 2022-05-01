@@ -330,7 +330,7 @@ namespace ggui
 						GET_GUI(ggui::texture_dialog)->toggle();
 					}
 
-					if (ImGui::MenuItem("Model Selector", ggui::hotkey_dialog::get_hotkey_for_command("xo_modelselector").c_str())) {
+					if (ImGui::MenuItem("Model Previewer", ggui::hotkey_dialog::get_hotkey_for_command("xo_modelselector").c_str())) {
 						GET_GUI(ggui::modelselector_dialog)->toggle();
 					}
 
@@ -1345,6 +1345,20 @@ namespace ggui
 				}
 
 				ImGui::EndMenu(); // Textures
+			}
+
+
+			if (ImGui::BeginMenu("Tools"))
+			{
+				if (ImGui::MenuItem("Rope Generator")) {
+					GET_GUI(ggui::rope_generator_dialog)->toggle();
+				}
+
+				if (ImGui::MenuItem("Noise Generator")) {
+					GET_GUI(ggui::vertex_edit_dialog)->toggle();
+				}
+
+				ImGui::EndMenu(); // Tools
 			}
 
 
