@@ -40,6 +40,11 @@ namespace game
 		// misc
 		extern game::TrackWorldspawn track_worldspawn;
 
+		extern bool debug_sundir;
+		extern game::vec3_t debug_sundir_startpos;
+		extern float debug_sundir_length;
+
+
 		// update check
 		extern std::string gh_update_releases_json;
 		extern std::string gh_update_tag;
@@ -138,6 +143,8 @@ namespace game
 
 	static utils::function<void()> Undo_ClearRedo = 0x45DF20;
 	void Undo_GeneralStart(const char* operation /*eax*/);
+	void Undo_AddBrushList(void* sb); //(game::selbrush_def_t* sb /*edi*/);
+	void Undo_EndBrushList(void* sb); //(game::selbrush_def_t* sb /*esi*/);
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/);
 	static utils::function<void()> Undo_End = 0x45EA20;
 
@@ -146,13 +153,23 @@ namespace game
 	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/);
 
 	void AxisToAngles(const float(*axis)[3], float* angles);
-
+	void selection_rotate_axis(int axis, int deg);
+	
 	void SetSpawnFlags(int flag);
+
+	void SetMaterial(const char* name /*edi*/, game::patchMesh_material* def /*esi*/);
+
 	void UpdateSel(int wParam, game::eclass_t* e_class);
-	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, bool unk);
+	static utils::function<void(bool)> Select_Deselect = 0x48E800;
+
+	void Patch_SelectRow(int row /*eax*/, game::patchMesh_t* p /*edi*/, int multi);
+	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, int always_true);
 	void Patch_SetTextureInfo(game::texdef_sub_t* texdef /*ebx*/);
 	void Patch_ShiftTexture(game::patchMesh_t* def, float shift_horz, float shift_vert);
-	static utils::function<void(bool)> Select_Deselect = 0x48E800;
+	void Patch_Lightmap_Texturing_dirty(game::patchMesh_t* p /*esi*/);
+	void Patch_CalcBounds(game::patchMesh_t* p, game::vec3_t& vMin, game::vec3_t& vMax);
+
+
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
 	void Brush_Create(float* maxs /*edx*/, float* mins /*ecx*/, game::brush_t_with_custom_def* brush, int unk);
@@ -242,11 +259,8 @@ namespace game
 	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/);
 	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis);
 
-	typedef void(*CopyAxis_t)(float* src, float* dest);
-		extern CopyAxis_t CopyAxis;
-
-	typedef void(*AnglesToAxis_t)(float*, float*);
-		extern AnglesToAxis_t AnglesToAxis;
+	inline auto CopyAxis = reinterpret_cast<void(*)(float* src, float* dest)>(0x4A8860);
+	inline auto AnglesToAxis = reinterpret_cast<void(*)(float* angles, float* axis)>(0x4ABEB0);
 
 	typedef void(*AngleVectors_t)(float* _angles, float* _vpn, float* _right, float* _up);
 		extern AngleVectors_t AngleVectors;

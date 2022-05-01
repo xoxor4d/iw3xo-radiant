@@ -39,6 +39,8 @@ namespace ggui
 		int  m_folder_select_index = 0;
 		char m_error[500] = {};
 
+		ImGuiTextFilter	m_filter;
+
 		FileDialogType m_file_operation_type = FileDialogType::OpenFile;
 		std::string m_file_ext;
 

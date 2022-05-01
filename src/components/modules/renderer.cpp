@@ -2174,14 +2174,20 @@ namespace components
 		}
 
 //#ifdef DEBUG
-//		// Add a debug line
-//		game::vec3_t start = { 0.0f, 0.0f, 0.0f };
-//		game::vec3_t end = { 0.0f, 0.0f, 20000.0f };
-//		game::vec4_t color = { 1.0f, 0.0f, 0.0f, 1.0f };
-//
-//		// R_AddDebugLine(frontEndDataOut->debugGlobals, &v10, &v13, v9);
-//		utils::hook::call<void(__cdecl)(game::DebugGlobals*, const float* start, const float* end, const float* color)>(0x528680)
-//			(game::get_frontenddata()->debugGlobals, start, end, color);
+		// Add a debug line
+		//game::vec3_t start = { 0.0f, 0.0f, 0.0f };
+		//game::vec3_t fwd = {};
+		//utils::vector::angle_vectors(game::glob::track_worldspawn.sundirection, fwd, nullptr, nullptr);
+
+		//utils::vector::scale(fwd, 500.0f, fwd);
+
+		////game::vec3_t end = { 0.0f, 0.0f, 20000.0f };
+		//game::vec4_t color = { 1.0f, 0.5f, 0.0f, 1.0f };
+
+		//// R_AddDebugLine(frontEndDataOut->debugGlobals, &v10, &v13, v9);
+		//utils::hook::call<void(__cdecl)(game::DebugGlobals*, const float* start, const float* end, const float* color)>(0x528680)
+		//	(game::get_frontenddata()->debugGlobals, start, fwd, color);
+
 //#endif
 
 		RB_EndSceneRendering(game::gfxCmdBufSourceState, game::gfxCmdBufState, &viewInfo->input, viewInfo);
@@ -2517,6 +2523,55 @@ namespace components
 		}
 	}
 
+	void debug_sundirection()
+	{
+		if(game::glob::debug_sundir)
+		{
+			if (const auto	world_ent = game::g_world_entity();
+							world_ent && world_ent->firstActive)
+			{
+				for (auto epair = world_ent->firstActive->epairs; epair; epair = epair->next)
+				{
+					if (utils::string_equals(epair->key, "sundirection"))
+					{
+						const std::vector<std::string> value_str = utils::explode(epair->value, ' ');
+
+						if (value_str.size() != 3)
+						{
+							break;
+						}
+
+						game::vec3_t sun_dir = {};
+						sun_dir[0] = utils::try_stof(value_str[0], true);
+						sun_dir[1] = utils::try_stof(value_str[1], true);
+						sun_dir[2] = utils::try_stof(value_str[0], true);
+
+						game::vec3_t end_pt = {};
+						utils::vector::angle_vectors(sun_dir, end_pt, nullptr, nullptr);
+						utils::vector::scale(end_pt, game::glob::debug_sundir_length, end_pt);
+
+						game::vec4_t color_start = { 1.0f, 0.4f, 0.1f, 1.0f };
+						game::vec4_t color_end = { 0.85f, 0.75f, 0.25f, 1.0f };
+
+						game::GfxPointVertex pts[2] = {};
+
+						game::Byte4PackPixelColor(color_start, &pts[0].color);
+						pts[0].xyz[0] = game::glob::debug_sundir_startpos[0];
+						pts[0].xyz[1] = game::glob::debug_sundir_startpos[1];
+						pts[0].xyz[2] = game::glob::debug_sundir_startpos[2];
+
+						game::Byte4PackPixelColor(color_end, &pts[1].color);
+						pts[1].xyz[0] = end_pt[0];
+						pts[1].xyz[1] = end_pt[1];
+						pts[1].xyz[2] = end_pt[2];
+
+						renderer::R_AddLineCmd(1, 4, 3, pts);
+					}
+				}
+			}
+		}
+	}
+
 	void __declspec(naked) disable_line_depth_testing2()
 	{
 		// enable depth testing for connection lines
@@ -2528,6 +2583,7 @@ namespace components
 
 			pushad;
 			call	draw_target_connection_lines_func;
+			call	debug_sundirection;
 			popad;
 
 			jmp		retn_addr;
@@ -2547,7 +2603,7 @@ namespace components
 	};
 
 	// rewrite to add depth_test functionality
-	void R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts)
+	void renderer::R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts)
 	{
 		if (count <= 0)
 		{
@@ -2898,12 +2954,15 @@ namespace components
 
 		// ^ nop call that adds connection lines (target->targetname) (after disabled depth testing) and call it before disabling depth testing
 		//utils::hook::nop(0x408645, 5);
-		utils::hook(0x40CC21, disable_line_depth_testing2, HOOK_JUMP).install()->quick(); // disable depth testing for lines (same result as clearing the depthbuffer)
+
+		// disable depth testing for lines (same result as clearing the depthbuffer)
+		// + stub that draws the sundirection debug line
+		utils::hook(0x40CC21, disable_line_depth_testing2, HOOK_JUMP).install()->quick(); 
 
 		// * ------
 
 		// rewrite R_AddLineCmd to add depth_test functionality
-		utils::hook::detour(0x4FD0A0, R_AddLineCmd, HK_JUMP);
+		utils::hook::detour(0x4FD0A0, renderer::R_AddLineCmd, HK_JUMP);
 
 		// make RB_DrawLinesCmd use the cmd's depth_test var
 		utils::hook::nop(0x5336AF, 6);

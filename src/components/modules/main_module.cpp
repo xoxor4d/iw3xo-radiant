@@ -361,6 +361,7 @@ namespace components
 		}
 	}
 
+
 	// ----------------------------------
 
 
@@ -401,6 +402,17 @@ namespace components
 
 
 		// * ---------------------------
+
+		/*command::register_command("rope"s, [](const std::vector<std::string>& args)
+		{
+			if (args.size() != 4)
+			{
+				game::printf_to_console("Usage: rope <int: thickness>  <int: slack in percent (0-100)>  <bool: delete nulls>");
+				return;
+			}
+
+			generate_rope(utils::try_stoi(args[1], false), utils::try_stoi(args[2], false), utils::try_stoi(args[3], false));
+		});*/
 
 
 		// creates a brush that encupsules all selected brushes/patches and uses texture info of the first selected brush

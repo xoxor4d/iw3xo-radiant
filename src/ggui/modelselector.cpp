@@ -194,7 +194,7 @@ namespace ggui
 			ImGui::SameLine();
 		}
 
-		ImGui::BeginChild("##pref_child", ImVec2(0, 0), false);
+		ImGui::BeginChild("##pref_child", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		{
 			static bool was_mouse_hidden = false;
 
@@ -363,7 +363,7 @@ namespace ggui
 
 				ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
 				ImGui::SetNextWindowBgAlpha(0.75f);
-				ImGui::BeginChild("settings_child", ImVec2(buttons_total_width + 12.0f, 64.0f), true, ImGuiWindowFlags_None);
+				ImGui::BeginChild("settings_child", ImVec2(buttons_total_width + 12.0f, 64.0f), true);
 				{
 					ImGui::BeginGroup();
 					{
@@ -456,6 +456,91 @@ namespace ggui
 				ImGui::SameLine();
 				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
 				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "Bad model");
+			}
+
+			if(m_preview_model_ptr)
+			{
+				const auto padding_right = 4.0f;
+				const auto upper_right = ImVec2(screenpos_pre_scene.x + this->rtt_get_size().x, screenpos_pre_scene.y);
+				ImGui::SetCursorScreenPos(upper_right);
+
+				int vertcount_total = 0;
+				const bool calc_total_verts = m_preview_model_ptr->numsurfs > 1;
+
+				{
+					const char* bones_str = utils::va("Num Bones: %d", m_preview_model_ptr->numBones);
+					ImGui::SetCursorPosX(ImGui::GetCursorPos().x - ImGui::CalcTextSize(bones_str).x - padding_right);
+					ImGui::TextUnformatted(bones_str);
+					ImGui::SetCursorScreenPos(ImVec2(upper_right.x, ImGui::GetCursorScreenPos().y + 2.0f));
+
+					const auto line_y = ImGui::GetCursorScreenPos().y - 2.0f;
+					const auto p1 = ImVec2(upper_right.x - ImGui::CalcTextSize(bones_str).x - padding_right, line_y);
+					const auto p2 = ImVec2(upper_right.x - padding_right, line_y);
+					ImGui::GetWindowDrawList()->AddLine(p1, p2, ImGui::GetColorU32(ImGuiCol_Text), 1.0f);
+					ImGui::SetCursorScreenPos(ImVec2(upper_right.x, ImGui::GetCursorScreenPos().y + 2.0f));
+				}
+
+				{
+					float lod_str_width = 0.0f;
+
+					if(m_preview_model_ptr->numLods)
+					{
+						for (auto lod = 0; lod < m_preview_model_ptr->numLods; lod++)
+						{
+							const char* lod_dist_surfs_str = utils::va("Dist %.1f - Surfs %d [LOD %d]", m_preview_model_ptr->lodInfo[lod].dist, m_preview_model_ptr->lodInfo[lod].numsurfs, lod);
+							lod_str_width = ImGui::CalcTextSize(lod_dist_surfs_str).x;
+
+							ImGui::SetCursorPosX(ImGui::GetCursorPos().x - lod_str_width - padding_right);
+							ImGui::TextUnformatted(lod_dist_surfs_str);
+							ImGui::SetCursorScreenPos(ImVec2(upper_right.x, ImGui::GetCursorScreenPos().y));
+						}
+
+						ImGui::SetCursorScreenPos(ImVec2(upper_right.x, ImGui::GetCursorScreenPos().y + 2.0f));
+
+						const auto line_y = ImGui::GetCursorScreenPos().y;
+						const auto p1 = ImVec2(upper_right.x - lod_str_width - padding_right, line_y);
+						const auto p2 = ImVec2(upper_right.x - padding_right, line_y);
+						ImGui::GetWindowDrawList()->AddLine(p1, p2, ImGui::GetColorU32(ImGuiCol_Text), 1.0f);
+						ImGui::SetCursorScreenPos(ImVec2(upper_right.x, ImGui::GetCursorScreenPos().y + 2.0f));
+					}
+				}
+
+				{
+					const char* vert_str = "Surface Vertcounts";
+					ImGui::SetCursorPosX(ImGui::GetCursorPos().x - ImGui::CalcTextSize(vert_str).x - padding_right);
+					ImGui::TextUnformatted(vert_str);
+					ImGui::SetCursorScreenPos(ImVec2(upper_right.x, ImGui::GetCursorScreenPos().y));
+
+					for (auto surf = 0; surf < m_preview_model_ptr->numsurfs; surf++)
+					{
+						vertcount_total += m_preview_model_ptr->surfs[surf].vertCount;
+
+						const char* surf_vert_count_str = calc_total_verts ?
+							utils::va("%d [%d]", m_preview_model_ptr->surfs[surf].vertCount, surf)
+							: utils::va("%d [=]", m_preview_model_ptr->surfs[surf].vertCount);
+
+						ImGui::SetCursorPosX(ImGui::GetCursorPos().x - ImGui::CalcTextSize(surf_vert_count_str).x - padding_right);
+						ImGui::TextUnformatted(surf_vert_count_str);
+						ImGui::SetCursorScreenPos(ImVec2(upper_right.x, ImGui::GetCursorScreenPos().y));
+					}
+				}
+
+				if(calc_total_verts)
+				{
+					const char* vert_total_str = utils::va("%d [=]", vertcount_total);
+
+					const auto line_y = ImGui::GetCursorScreenPos().y - 1.0f;
+					const auto p1 = ImVec2(upper_right.x - ImGui::CalcTextSize(vert_total_str).x - padding_right, line_y);
+					const auto p2 = ImVec2(upper_right.x - padding_right, line_y);
+					ImGui::GetWindowDrawList()->AddLine(p1, p2, ImGui::GetColorU32(ImGuiCol_Text), 1.0f);
+
+
+					ImGui::SetCursorPosX(ImGui::GetCursorPos().x - ImGui::CalcTextSize(vert_total_str).x - padding_right);
+					ImGui::TextUnformatted(vert_total_str);
+					ImGui::SetCursorScreenPos(ImVec2(upper_right.x, ImGui::GetCursorScreenPos().y));
+				}
+				
+
 			}
 		}
 

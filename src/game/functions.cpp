@@ -20,6 +20,11 @@ namespace game
 		// misc
 		game::TrackWorldspawn track_worldspawn = game::TrackWorldspawn();
 
+		bool debug_sundir = false;
+		game::vec3_t debug_sundir_startpos = {};
+		float debug_sundir_length = 500.0f;
+
+
 		// update check
 		std::string gh_update_releases_json;
 		std::string gh_update_tag;
@@ -238,6 +243,40 @@ namespace game
 		}
 	}
 
+	// game::currSelectedBrushes
+	void Undo_AddBrushList(void* sb)
+	{
+#ifdef DEBUG
+		game::printf_to_console("Undo_AddBrushList");
+#endif
+
+		const static uint32_t func_addr = 0x45E7C0;
+		__asm
+		{
+			pushad;
+			mov		edi, sb;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	// game::currSelectedBrushes
+	void Undo_EndBrushList(void* sb)
+	{
+#ifdef DEBUG
+		game::printf_to_console("Undo_EndBrushList");
+#endif
+
+		const static uint32_t func_addr = 0x45E870;
+		__asm
+		{
+			pushad;
+			mov		esi, sb;
+			call	func_addr;
+			popad;
+		}
+	}
+
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/)
 	{
 		const static uint32_t func_addr = 0x45E990;
@@ -304,6 +343,41 @@ namespace game
 		}
 	}
 
+	// arbitary rotate selection around axis (xyz)
+	void selection_rotate_axis(int axis, int deg)
+	{
+		class rot_helper
+		{
+		public:
+			char pad[16];
+			int deg;
+			int unused;
+
+			rot_helper(int deg)
+			{
+				this->deg = deg;
+				this->unused = 0;
+			}
+		}; STATIC_ASSERT_OFFSET(rot_helper, deg, 0x10);
+
+		rot_helper helper(deg);
+
+		switch (axis)
+		{
+		case 0:
+			utils::hook::call<void(__stdcall)(rot_helper*, int*)>(0x450EF0)(&helper, &helper.unused);
+			break;
+
+		case 1:
+			utils::hook::call<void(__stdcall)(rot_helper*, int*)>(0x450F80)(&helper, &helper.unused);
+			break;
+
+		case 2:
+			utils::hook::call<void(__stdcall)(rot_helper*, int*)>(0x451010)(&helper, &helper.unused);
+			break;
+		}
+	}
+
 	void SetSpawnFlags(int flag)
 	{
 		const static uint32_t func_addr = 0x496F00;
@@ -311,6 +385,20 @@ namespace game
 		{
 			pushad;
 			mov		ebx, flag;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	// change material of the current selection (only tested on a single patch)
+	void SetMaterial(const char* name /*edi*/, game::patchMesh_material* def /*esi*/)
+	{
+		const static uint32_t func_addr = 0x4315C0;
+		__asm
+		{
+			pushad;
+			mov		esi, def;
+			mov     edi, name;
 			call	func_addr;
 			popad;
 		}
@@ -329,17 +417,34 @@ namespace game
 		}
 	}
 
-	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, bool unk)
+	// select a complete row of a selected patch
+	void Patch_SelectRow(int row /*eax*/, game::patchMesh_t* p /*edi*/, int multi)
 	{
-		int unkown = unk;
-
-		const static uint32_t patch_update_selected_func_addr = 0x438D80;
+		const static uint32_t func_addr = 0x43C710;
 		__asm
 		{
+			pushad;
+			push	multi;
+			mov		eax, row;
+			mov		edi, p;
+			call	func_addr;
+			add		esp, 4;
+			popad;
+		}
+	}
+
+	// update / rebuild the patch (also visually)
+	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, int always_true)
+	{
+		const static uint32_t func_addr = 0x438D80;
+		__asm
+		{
+			pushad;
+			push	always_true;
 			mov		esi, p;
-			push	unkown;
-			call	patch_update_selected_func_addr;
+			call	func_addr;
 			add     esp, 4;
+			popad;
 		}
 	}
 
@@ -374,6 +479,47 @@ namespace game
 			call	func_addr;
 			add		esp, 8;
 			popad;
+		}
+	}
+
+	// no checks, no undo
+	void Patch_Lightmap_Texturing_dirty(game::patchMesh_t* p /*esi*/)
+	{
+		const static uint32_t func_addr = 0x4397B0;
+		__asm
+		{
+			pushad;
+			mov		esi, p;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	// calculate mins and maxs for the given patch
+	void Patch_CalcBounds(game::patchMesh_t* p, game::vec3_t& vMin, game::vec3_t& vMax)
+	{
+		vMin[0] = vMin[1] = vMin[2] = 99999.0f;
+		vMax[0] = vMax[1] = vMax[2] = -99999.0f;
+
+		//p->bDirty = true;
+		for (int w = 0; w < p->width; w++)
+		{
+			for (int h = 0; h < p->height; h++)
+			{
+				for (int j = 0; j < 3; j++)
+				{
+					const float f = p->ctrl[w][h].xyz[j];
+					if (f < vMin[j])
+					{
+						vMin[j] = f;
+					}
+
+					if (f > vMax[j])
+					{
+						vMax[j] = f;
+					}
+				}
+			}
 		}
 	}
 
@@ -640,8 +786,8 @@ namespace game
 		}
 	}
 
-	CopyAxis_t CopyAxis = reinterpret_cast<CopyAxis_t>(0x4A8860);
-	AnglesToAxis_t AnglesToAxis = reinterpret_cast<AnglesToAxis_t>(0x4ABEB0);
+	//CopyAxis_t CopyAxis = reinterpret_cast<CopyAxis_t>(0x4A8860);
+	//AnglesToAxis_t AnglesToAxis = reinterpret_cast<AnglesToAxis_t>(0x4ABEB0);
 	AngleVectors_t AngleVectors = reinterpret_cast<AngleVectors_t>(0x4ABD70);
 	OrientationConcatenate_t OrientationConcatenate = reinterpret_cast<OrientationConcatenate_t>(0x4BA7D0);
 

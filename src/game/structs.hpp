@@ -567,6 +567,12 @@ namespace game
 		pmesh_texcoord savedTexCoord;
 	}; STATIC_ASSERT_SIZE(drawVert_t, 0x4C);
 
+	struct patchMesh_material
+	{
+		LayerMaterialDef* lyrMtl;
+		qtexture_s* radMtl;
+	};
+
 	struct patchMesh_t
 	{
 		int width;
@@ -575,22 +581,18 @@ namespace game
 		int flags;
 		int type;
 		int subDivType;
-		char pad_0x0018[4];
-		qtexture_s* d_texture;
-		char pad_0x0020[4];
-		texdef_t* mat_lightmap;
-		char pad_0x0028[4];
-		texdef_t* mat_smoothing;
+		patchMesh_material texture;
+		patchMesh_material lightmap;
+		patchMesh_material smoothing;
 		char pad_0x0030[4];
 		texdef_t* mat_unk;
 		drawVert_t ctrl[16][16];
 		char pad_0x4468[1024];
 		int pad_unk;
 		brush_t* pSymbiot;
-		bool xx20b;
-		bool xx21b;
+		std::int16_t version;
 		bool xx22b;
-		bool xx23b;
+		bool bDirty;
 		int xx21;
 		int size_of_struct_0x504C;
 	}; STATIC_ASSERT_SIZE(patchMesh_t, 0x504C);
@@ -1653,10 +1655,10 @@ namespace game
 		Material* d_additive;
 		int d_parsed_brushes;
 		int pad_d_parsed_brushes;
-		int some_cam_xy_count1;
-		int some_cam_xy_count2;
-		int some_cam_xy_count3;
-		int some_cam_xy_count4;
+		int drag_selectionbox_x_1;
+		int drag_selectionbox_y_1;
+		int drag_selectionbox_x_2;
+		int drag_selectionbox_y_2;
 		void* camera_fov_setup;
 		bool use_ini;
 		char pad_use_ini[3];
@@ -1892,6 +1894,7 @@ namespace game
 		unsigned __int16 vertCount;
 		unsigned __int16 triCount;
 		char zoneHandle;
+		char padding;
 		unsigned __int16 baseTriIndex;
 		unsigned __int16 baseVertIndex;
 		unsigned __int16* triIndices;
@@ -1900,7 +1903,8 @@ namespace game
 		unsigned int vertListCount;
 		XRigidVertList* vertList;
 		int partBits[4];
-	};
+		int pad;
+	}; STATIC_ASSERT_SIZE(XSurface, 0x3C);
 
 	struct XModelCollTri_s
 	{
