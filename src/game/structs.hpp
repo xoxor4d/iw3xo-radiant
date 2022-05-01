@@ -587,10 +587,11 @@ namespace game
 		char pad_0x4468[1024];
 		int pad_unk;
 		brush_t* pSymbiot;
-		bool xx20b;
-		bool xx21b;
+		//bool xx20b;
+		//bool xx21b;
+		std::int16_t version;
 		bool xx22b;
-		bool xx23b;
+		bool bDirty;
 		int xx21;
 		int size_of_struct_0x504C;
 	}; STATIC_ASSERT_SIZE(patchMesh_t, 0x504C);

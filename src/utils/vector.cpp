@@ -48,6 +48,56 @@ namespace utils
 			}
 		}
 
+		void vectoangles(const vec3_t value1, vec3_t angles)
+		{
+			float forward;
+			float yaw, pitch;
+
+			if (value1[1] == 0 && value1[0] == 0) 
+			{
+				yaw = 0;
+				if (value1[2] > 0) 
+				{
+					pitch = 90.0f;
+				}
+				else 
+				{
+					pitch = 270.0f;
+				}
+			}
+			else 
+			{
+				if (value1[0]) 
+				{
+					yaw = (atan2(value1[1], value1[0]) * 180.0f / M_PI);
+				}
+				else if (value1[1] > 0.0f) 
+				{
+					yaw = 90.0f;
+				}
+				else 
+				{
+					yaw = 270.0f;
+				}
+				if (yaw < 0.0f) 
+				{
+					yaw += 360.0f;
+				}
+
+				forward = sqrt(value1[0] * value1[0] + value1[1] * value1[1]);
+				pitch = (atan2(value1[2], forward) * 180.0f / M_PI);
+
+				if (pitch < 0.0f)
+				{
+					pitch += 360.0f;
+				}
+			}
+
+			angles[PITCH] = -pitch;
+			angles[YAW] = yaw;
+			angles[ROLL] = 0;
+		}
+
 		float q_rsqrt(float number)
 		{
 			long i;

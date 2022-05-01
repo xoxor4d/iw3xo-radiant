@@ -23,7 +23,8 @@ namespace utils
 		#define Vector4Copy(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
 
 		void	angle_vectors(const game::vec3_t angles, game::vec3_t forward, game::vec3_t right, game::vec3_t up);
-
+		void	vectoangles(const vec3_t value1, vec3_t angles);
+		
 		int		compare(const vec3_t v1, const vec3_t v2);
 		void	clamp_vec3(const vec3_t a, const vec3_t b, vec3_t o1, vec3_t o2);
 		vec_t	dot(const vec3_t v1, const vec3_t v2);
