@@ -1655,10 +1655,10 @@ namespace game
 		Material* d_additive;
 		int d_parsed_brushes;
 		int pad_d_parsed_brushes;
-		int some_cam_xy_count1;
-		int some_cam_xy_count2;
-		int some_cam_xy_count3;
-		int some_cam_xy_count4;
+		int drag_selectionbox_x_1;
+		int drag_selectionbox_y_1;
+		int drag_selectionbox_x_2;
+		int drag_selectionbox_y_2;
 		void* camera_fov_setup;
 		bool use_ini;
 		char pad_use_ini[3];

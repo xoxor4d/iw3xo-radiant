@@ -339,6 +339,31 @@ void __declspec(naked) move_selection_stub()
     }
 }
 
+void __declspec(naked) drag_setup_stub()
+{
+	const static uint32_t cmp_addr = 0x47E45A;
+	const static uint32_t retn_pt = 0x47E448;
+	__asm
+	{
+		shr     eax, 0xF;	// og
+		test    al, 1;		// og
+		jz		JZ_ADDR;
+		jmp		retn_pt;
+
+	JZ_ADDR:
+		pushad; // new
+		call    should_move_selection;
+		test    al, al;
+		popad;	// new
+
+		je      SKIP_ADDR;
+		jmp		cmp_addr;
+
+	SKIP_ADDR:
+		jmp		retn_pt;
+	}
+}
+
 // *
 // *
 
@@ -391,6 +416,10 @@ void ccamwnd::hooks()
 	// disable entity dragging with mouse in camerawnd
 	//utils::hook::set<BYTE>(0x40539D, 0xEB);
 	utils::hook(0x480238, move_selection_stub, HOOK_JUMP).install()->quick();
+
+	// disable selection box when using the guizmo to translate vertices -> fixes deselection of vertices after translation
+	utils::hook::nop(0x47E441, 5);
+	utils::hook(0x47E441, drag_setup_stub, HOOK_JUMP).install()->quick();
 
 	// disable original context menu ~ handled in czwnd
 	//utils::hook::nop(0x403340, 5);
