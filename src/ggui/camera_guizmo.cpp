@@ -221,10 +221,11 @@ namespace ggui::camera_guizmo
 					// check for vertex edit mode
 					if(selection_mode == game::sel_curvepoint || selection_mode == game::sel_area)
 					{
-						if(!num_move_points)
+						// this can result in the guizmo not being disabled correctly, thus using IsUsing() can return the wrong value
+						/*if(!num_move_points)
 						{
 							return;
-						}
+						}*/
 
 						in_vertex_mode = true;
 					}
