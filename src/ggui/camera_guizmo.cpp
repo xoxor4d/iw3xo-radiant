@@ -2,6 +2,8 @@
 
 namespace ggui::camera_guizmo
 {
+	bool overwrite_activation = false;
+
 	void get_matrices_for_guizmo(game::GfxMatrix* view, game::GfxMatrix* projection)
 	{
 		float axis[9];
@@ -119,6 +121,12 @@ namespace ggui::camera_guizmo
 
 			if (const auto b = game::g_selected_brushes()->def; b)
 			{
+				if(overwrite_activation)
+				{
+					guizmo_needs_activation = false;
+					overwrite_activation = false;
+				}
+
 				if (guizmo_needs_activation)
 				{
 					camerawnd->rtt_set_lmb_capturing(true);

@@ -42,11 +42,12 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 		
 
 		// if mouse is inside imgui grid window & cursor not at window border (resizing)
-		if (auto gridwnd = GET_GUI(ggui::grid_dialog);
-				 gridwnd->rtt_is_hovered() && !ImGui::IsResizing())
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered() && !ImGui::IsResizing())
 		{
 			gridwnd->rtt_set_focus_state(true);
 
+			ggui::camera_guizmo::overwrite_activation = true;
 			xywnd::__on_lbutton_down(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 
 			if (gridwnd->rtt_is_capturing_lmb())
@@ -124,8 +125,8 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 
 
 		// if mouse is inside imgui grid window
-		if (auto gridwnd = GET_GUI(ggui::grid_dialog);
-				 gridwnd->rtt_is_hovered())
+		if (const auto	gridwnd = GET_GUI(ggui::grid_dialog);
+						gridwnd->rtt_is_hovered())
 		{
 			xywnd::__on_lbutton_up(cmainframe::activewnd->m_pXYWnd, nFlags, gridwnd->rtt_get_cursor_pos_cpoint());
 
