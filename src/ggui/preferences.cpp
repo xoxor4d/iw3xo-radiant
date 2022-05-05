@@ -203,6 +203,7 @@ namespace ggui
 			// -----------------
 			ImGui::title_with_seperator("Visuals");
 			ImGui::Checkbox("Show sizing info", &prefs->m_bSizePaint);
+			ImGui::Checkbox("Draw edge and grid block coordinates", &dvars::grid_draw_edge_coordinates->current.enabled);
 			ImGui::Checkbox("Thick selection lines", &prefs->thick_selection_lines);
 			ImGui::Checkbox("Texture brushes", &prefs->texture_brush_2d);
 			ImGui::Checkbox("Texture meshes", &prefs->texture_mesh_2d);
@@ -333,6 +334,8 @@ namespace ggui
 			{
 				GET_GUI(template_dialog)->toggle();
 			}
+
+			ImGui::DragFloat("xywnd scale", &cmainframe::activewnd->m_pXYWnd->m_fScale, 0.01f, 0.01f, 100.0f);
 
 			SPACING(0.0f, 4.0f);
 

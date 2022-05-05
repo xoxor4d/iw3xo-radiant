@@ -49,6 +49,7 @@ namespace dvars
 	extern game::dvar_s* mainframe_show_menubar;
 
 	extern game::dvar_s* grid_zoom_to_cursor;
+	extern game::dvar_s* grid_draw_edge_coordinates;
 
 	extern game::dvar_s* r_draw_model_origin;
 	extern game::dvar_s* r_draw_model_shadowcaster;

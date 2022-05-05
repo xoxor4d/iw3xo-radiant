@@ -9,6 +9,16 @@ enum VIEWTYPE
 	XY = 0x2,
 };
 
+bool should_draw_grid_text()
+{
+	if(dvars::grid_draw_edge_coordinates && !dvars::grid_draw_edge_coordinates->current.enabled)
+	{
+		return false;
+	}
+
+	return game::g_zoomLevel > 0.05f;
+}
+
 void reposition_viewtype_hint(const char* text, game::Font_s* font, [[maybe_unused]] float* origin, float* pixel_step_x, float* pixel_step_y, float* color)
 {
 	float new_org[3];
@@ -40,6 +50,11 @@ void reposition_viewtype_hint(const char* text, game::Font_s* font, [[maybe_unus
 
 void reposition_top_grid_hint(const char* text, game::Font_s* font, [[maybe_unused]] float* origin, float* pixel_step_x, float* pixel_step_y, float* color)
 {
+	if (!should_draw_grid_text())
+	{
+		return;
+	}
+
 	const int nDim1 = cmainframe::activewnd->m_pXYWnd->m_nViewType == YZ;
 	const int nDim2 = (cmainframe::activewnd->m_pXYWnd->m_nViewType != XY) + 1;
 	const int nDim3 = 3 - nDim2 - nDim1;
@@ -53,6 +68,49 @@ void reposition_top_grid_hint(const char* text, game::Font_s* font, [[maybe_unus
 
 	components::renderer::R_AddCmdDrawTextAtPosition(text, font, new_org, pixel_step_x, pixel_step_y, color);
 }
+
+void __declspec(naked) draw_left_grid_text_stub()
+{
+	const static uint32_t func_addr = 0x4FBE20; // R_AddCmdDrawTextAtPosition
+	const static uint32_t retn_addr = 0x468FBD;
+	__asm
+	{
+		pushad; // new
+		call    should_draw_grid_text;
+		test    al, al;
+		popad;	// new
+
+		je      SKIP_DRAWING;
+		call	func_addr;
+		jmp		retn_addr;
+
+	SKIP_DRAWING:
+		jmp		retn_addr;
+	}
+}
+
+void __declspec(naked) draw_grid_block_text_stub()
+{
+	const static uint32_t func_addr = 0x4FBE20; // R_AddCmdDrawTextAtPosition
+	const static uint32_t retn_addr = 0x4695EF;
+	__asm
+	{
+		pushad; // new
+		call    should_draw_grid_text;
+		test    al, al;
+		popad;	// new
+
+		je      SKIP_DRAWING;
+		call	func_addr;
+		jmp		retn_addr;
+
+	SKIP_DRAWING:
+		jmp		retn_addr;
+	}
+}
+
+// #
+// #
 
 // fix entity name drawing
 void draw_entity_names_hk(const char* text, game::Font_s* font, float* origin, float* pixel_step_x, float* pixel_step_y, [[maybe_unused]] float* color)
@@ -510,15 +568,28 @@ void cxywnd::register_dvars()
 		/* default	*/ true,
 		/* flags	*/ game::dvar_flags::saved,
 		/* desc		*/ "grid-view: zoom towards the mouse cursor");
+
+	dvars::grid_draw_edge_coordinates = dvars::register_bool(
+		/* name		*/ "grid_draw_edge_coordinates",
+		/* default	*/ true,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "grid-view: draw edge and grid block coordinates");
+
 }
 
 void cxywnd::hooks()
 {
-	// reposition xy-xz-yz text
+	// reposition xy - xz - yz hint text
 	utils::hook(0x4690C5, reposition_viewtype_hint, HOOK_CALL).install()->quick();
 
-	// reposition top grid -> bottom
+	// reposition top grid text -> bottom
 	utils::hook(0x468E50, reposition_top_grid_hint, HOOK_CALL).install()->quick();
+
+	// disable drawing of left grid text when zooming out too far
+	utils::hook(0x468FB8, draw_left_grid_text_stub, HOOK_JUMP).install()->quick();
+
+	// disable drawing of grid block positions when zooming out too far
+	utils::hook(0x4695EA, draw_grid_block_text_stub, HOOK_JUMP).install()->quick();
 
 	// fix entity name drawing
 	utils::hook(0x46CA02, draw_entity_names_hk, HOOK_CALL).install()->quick();
@@ -564,5 +635,5 @@ void cxywnd::hooks()
 	utils::hook(0x42B9FE, on_view_zoomout_stub, HOOK_JUMP).install()->quick();
 
 	utils::hook::nop(0x466255, 19);
-				utils::hook(0x466255, create_entity_from_name_stub, HOOK_JUMP).install()->quick();
+		 utils::hook(0x466255, create_entity_from_name_stub, HOOK_JUMP).install()->quick();
 }

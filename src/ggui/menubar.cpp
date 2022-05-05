@@ -509,6 +509,10 @@ namespace ggui
 						mainframe_thiscall(void, 0x42BB00); // cmainframe::OnSelectBlocks
 					}
 
+					if (ImGui::MenuItem("Draw Edge and Block Coordinates", 0, dvars::grid_draw_edge_coordinates->current.enabled)) {
+						dvars::set_bool(dvars::grid_draw_edge_coordinates, !dvars::grid_draw_edge_coordinates->current.enabled);
+					}
+
 					if (ImGui::MenuItem("Draw Crosshair", ggui::hotkey_dialog::get_hotkey_for_command("ToggleCrosshairs").c_str(), game::g_bCrossHairs)) {
 						game::g_bCrossHairs ^= 1;
 					}
