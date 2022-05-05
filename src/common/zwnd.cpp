@@ -65,11 +65,15 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			camerawnd->rtt_set_focus_state(true);
 
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
-
 			ccam->m_ptLastCursor = camerawnd->rtt_get_cursor_pos_cpoint();
+
 			SetFocus(ccam->GetWindow());
 			SetCapture(ccam->GetWindow());
-			CamWnd__DropModelsToPlane(ccam, ccam->m_ptLastCursor.x, ccam->camera.height - ccam->m_ptLastCursor.y - 1, nFlags);
+
+			if(!ImGuizmo::IsOver())
+			{
+				CamWnd__DropModelsToPlane(ccam, ccam->m_ptLastCursor.x, ccam->camera.height - ccam->m_ptLastCursor.y - 1, nFlags);
+			}
 
 			if(camerawnd->rtt_is_capturing_lmb())
 			{
