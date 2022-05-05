@@ -25,6 +25,8 @@
 
 namespace game
 {
+	typedef void(__cdecl* cdecl_no_args_t)();
+
 	namespace glob
 	{
 		// init
@@ -64,13 +66,21 @@ namespace game
 		
 	}
 
+	static DWORD* frontEndDataOut_ptr = (DWORD*)(0x73D480);  // frontEndDataOut pointer
+	static DWORD* backEndDataOut_ptr = (DWORD*)(0x174F970);  // backendEndDataOut pointer
+	static DWORD* active_brushes_ptr = (DWORD*)(0x23F189C);
+	static DWORD* active_brushes_next_ptr = (DWORD*)(0x23F18A0);
+	static DWORD* currSelectedBrushes = (DWORD*)(0x23F1864); // (selected_brushes array pointer)
+	static DWORD* worldEntity_ptr = (DWORD*)(0x25D5B30); // holds pointer to worldEntity
+	static DWORD* g_pParentWnd_ptr = (DWORD*)(0x25D5A70);
+
 	extern game::vec3_t vec3_origin;
 	extern game::vec4_t color_white;
 
 	extern IDirect3DTexture9* framebuffer_test;
 	
 	// radiant globals
-	extern int&			g_nScaleHow;
+	extern int&		g_nScaleHow;
 	extern game::qeglobals_t* g_qeglobals;
 
 	extern float&	g_zoomLevel;
@@ -141,26 +151,28 @@ namespace game
 	extern bool is_single_brush_selected(bool print_warning = false);
 	extern bool is_any_brush_selected();
 
-	static utils::function<void()> Undo_ClearRedo = 0x45DF20;
+	inline auto Drag_MouseUp = reinterpret_cast<void (*)(unsigned int flags)>(0x4802A0);
+
+	inline auto Undo_ClearRedo = reinterpret_cast<void (*)()>(0x45DF20);
 	void Undo_GeneralStart(const char* operation /*eax*/);
 	void Undo_AddBrushList(void* sb); //(game::selbrush_def_t* sb /*edi*/);
 	void Undo_EndBrushList(void* sb); //(game::selbrush_def_t* sb /*esi*/);
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/);
-	static utils::function<void()> Undo_End = 0x45EA20;
+	inline auto Undo_End = reinterpret_cast<void (*)()>(0x45EA20);
 
 	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/);
 	void Checkkey_Model(entity_s* ent /*esi*/, const char* key);
 	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/);
 
-	void AxisToAngles(const float(*axis)[3], float* angles);
 	void selection_rotate_axis(int axis, int deg);
-	
+	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/);
+	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis);
 	void SetSpawnFlags(int flag);
 
 	void SetMaterial(const char* name /*edi*/, game::patchMesh_material* def /*esi*/);
 
 	void UpdateSel(int wParam, game::eclass_t* e_class);
-	static utils::function<void(bool)> Select_Deselect = 0x48E800;
+	inline auto Select_Deselect = reinterpret_cast<void (*)(bool)>(0x48E800);
 
 	void Patch_SelectRow(int row /*eax*/, game::patchMesh_t* p /*edi*/, int multi);
 	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, int always_true);
@@ -169,7 +181,6 @@ namespace game
 	void Patch_Lightmap_Texturing_dirty(game::patchMesh_t* p /*esi*/);
 	void Patch_CalcBounds(game::patchMesh_t* p, game::vec3_t& vMin, game::vec3_t& vMax);
 
-
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
 	void Brush_Create(float* maxs /*edx*/, float* mins /*ecx*/, game::brush_t_with_custom_def* brush, int unk);
@@ -177,24 +188,72 @@ namespace game
 	void Entity_LinkBrush(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world /*edi*/);
 	game::brush_t_with_custom_def* Brush_AddToList(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world);
 	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/);
-
 	void Brush_Deselect(game::brush_t* b /*esi*/);
 	void Brush_Select(game::brush_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection);
+	inline auto QE_SingleBrush = reinterpret_cast<bool (*)(unsigned int flags)>(0x48C8B0); // no warnings when bQuiet
 
-	static utils::function<void(game::entity_s* ent, const char* key, const char* value)> SetKeyValue = 0x483690;
-	static utils::function<void()> SetKeyValuePairs = 0x496CF0;
-	static utils::function<void()> CreateEntity = 0x497300;
-
+	inline auto SetKeyValue = reinterpret_cast<void (*)(game::entity_s * ent, const char* key, const char* value)>(0x483690);
+	inline auto SetKeyValuePairs = reinterpret_cast<void (*)()>(0x496CF0);
+	inline auto CreateEntity = reinterpret_cast<void (*)()>(0x497300);
 	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y);
-
-	// world bounds, not local
-	static utils::function<void(game::XModel* model, float* axis, float* mins, float* maxs)> R_GetXModelBounds = 0x4C9150;
-	static utils::function<game::XModel*(const char*)> R_RegisterModel = 0x51D450;
-	
-	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count);
 	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* cxywnd);
+
 	game::trace_t* Trace_AllDirectionsIfFailed(float* cam_origin /*ebx*/, void* trace_result, float* dir, int contents);
+	inline auto R_GetXModelBounds = reinterpret_cast<void (*)(game::XModel * model, float* axis, float* mins, float* maxs)>(0x4C9150); // world bounds, not local
+
 	
+
+	
+	
+
+
+	
+	
+
+
+	// *
+	// * --------------------- renderer / math ------------------------------
+	
+	inline auto Byte4PackPixelColor = reinterpret_cast<void (*)(float* from, game::GfxColor * to)>(0x402AC0);
+	inline auto R_BeginFrame = reinterpret_cast<void (*)()>(0x4FCB10);
+	inline auto R_EndFrame = reinterpret_cast<void (*)()>(0x4FCBC0);
+	inline auto R_ReloadImages = reinterpret_cast<void (*)()>(0x513D70);
+	inline auto R_SetupViewParms = reinterpret_cast<game::GfxViewParms* (*)()>(0x4FB540);
+	inline auto R_SetupProjection = reinterpret_cast<void (*)(game::GfxMatrix*, float halfx, float halfy, float znear)>(0x4A78E0);
+	inline auto R_SetupRenderCmd = reinterpret_cast<void (*)(game::GfxSceneDef*, game::GfxViewParms*)>(0x4FC3A0);
+	inline auto R_Clear = reinterpret_cast<void (*)(int, const float*, float, bool)>(0x4FCC70);
+	inline auto R_IssueRenderCommands = reinterpret_cast<void (*)(int)>(0x4FD630);
+	inline auto R_SortMaterials = reinterpret_cast<void (*)()>(0x4FD910);
+	inline auto R_SetupRendertarget_CheckDevice = reinterpret_cast<bool (*)(HWND)>(0x501A70);
+	inline auto R_CheckTargetWindow = reinterpret_cast<bool (*)(HWND)>(0x500660);
+	inline auto R_AddDebugBox = reinterpret_cast<void (*)(game::DebugGlobals * debugGlobalsEntry, const float* mins, const float* maxs, const float* color)>(0x528710);
+
+	// sampler_index = the index used in shader_vars.h
+	inline auto R_SetSampler = reinterpret_cast<void (*)(int unused, game::GfxCmdBufState * state, int sampler_index, char sampler_state, game::GfxImage * img)>(0x538D70);
+	inline auto R_AddCmdDrawFullScreenColoredQuad = reinterpret_cast<bool (*)(float s0, float t0, float s1, float t1, float* color, game::Material * mtl)>(0x4FC260);
+
+	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/);
+	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
+
+	inline auto MatrixForViewer = reinterpret_cast<void (*)(float(*mtx)[4], const float* origin, const float* axis)>(0x4A7A70);
+	inline auto MatrixMultiply44 = reinterpret_cast<void (*)(game::GfxViewParms * view_params, game::GfxMatrix * a, game::GfxMatrix * b)>(0x4A6180);
+	inline auto MatrixInverse44 = reinterpret_cast<void (*)(game::GfxMatrix * a, game::GfxMatrix * b)>(0x4A6670);
+
+	inline auto CopyAxis = reinterpret_cast<void (*)(float* src, float* dest)>(0x4A8860);
+	inline auto AnglesToAxis = reinterpret_cast<void (*)(float* angles, float* axis)>(0x4ABEB0);
+	void AxisToAngles(const float(*axis)[3], float* angles);
+	inline auto AngleVectors = reinterpret_cast<void (*)(float* _angles, float* _vpn, float* _right, float* _up)>(0x4ABD70);
+	inline auto OrientationConcatenate = reinterpret_cast<void (*)(const game::orientation_t * orFirst, const game::orientation_t * orSecond, game::orientation_t * out)>(0x4BA7D0);
+
+	// no error but doesnt reload everything
+	inline auto DX_ResetDevice = reinterpret_cast<void (*)()>(0x5015F0);
+	inline auto Hunk_Alloc = reinterpret_cast<int* (*)(size_t)>(0x5104E0);
+	inline auto Z_Malloc = reinterpret_cast<int* (*)(int)>(0x438FD0);
+
+
+	// *
+	// * --------------------- dvars ------------------------------
+
 	extern int* dvarCount;
 	extern game::dvar_s* dvarPool;
 	extern game::dvar_s* dvarPool_FirstEmpty;
@@ -202,144 +261,70 @@ namespace game
 	extern DWORD* sortedDvarsAddons;
 	extern int sortedDvarsAddonsCount;
 
-	static DWORD* frontEndDataOut_ptr = (DWORD*)(0x73D480);  // frontEndDataOut pointer
-	static DWORD* backEndDataOut_ptr = (DWORD*)(0x174F970);  // backendEndDataOut pointer
+	inline auto Dvar_SetBool = reinterpret_cast<void (*)(game::dvar_s* dvar, bool value)>(0x4B37F0);
+	inline auto Dvar_SetInt = reinterpret_cast<void (*)(game::dvar_s* dvar, std::int32_t value)>(0x4B3810);
+	inline auto Dvar_SetFloat = reinterpret_cast<void (*)(game::dvar_s* dvar, float value)>(0x4B3830);
+	inline auto Dvar_SetColor = reinterpret_cast<void (*)(game::dvar_s* dvar, float r, float g, float b, float a)>(0x4B38E0);
+	inline auto Dvar_SetVec2 = reinterpret_cast<void (*)(game::dvar_s* dvar, float x, float y)>(0x4B3850);
+	inline auto Dvar_SetVec3 = reinterpret_cast<void (*)(game::dvar_s* dvar, float x, float y, float z)>(0x4B3870);
+	inline auto Dvar_SetVec4 = reinterpret_cast<void (*)(game::dvar_s* dvar, float x, float y, float z, float w)>(0x4B38A0);
+	inline auto Dvar_SetIntByName = reinterpret_cast<void (*)(int value, const char* name)>(0x4B3A60);
 
-	static DWORD* active_brushes_ptr = (DWORD*)(0x23F189C);
-	static DWORD* active_brushes_next_ptr = (DWORD*)(0x23F18A0);
-	static DWORD* currSelectedBrushes = (DWORD*)(0x23F1864); // (selected_brushes array pointer)
-	static DWORD* worldEntity_ptr = (DWORD*)(0x25D5B30); // holds pointer to worldEntity
-	static DWORD* g_pParentWnd_ptr = (DWORD*)(0x25D5A70);
-
-	// -----------------------------------------------------------
-
-	typedef void(__cdecl* cdecl_no_args_t)();
-	
-	typedef void(*Com_Error_t)(const char *error, ...);
-		extern Com_Error_t Com_Error;
-
-	typedef HBRUSH(__thiscall* OnCtlColor_t)(void* thisptr, class CDC* pDC, class CWnd* pWnd, UINT nCtlColor);
-		extern OnCtlColor_t OnCtlColor;
-
-	static utils::function<bool(bool bQuiet)> QE_SingleBrush = 0x48C8B0; // no warnings when bQuiet
-	static utils::function<void(game::DebugGlobals *debugGlobalsEntry, const float *mins, const float *maxs, const float *color)> R_AddDebugBox = 0x528710;
-
-	//bool IsBrushSelected(game::brush_t* bSel);
-	static utils::function<void(unsigned int flags)> Drag_MouseUp = 0x4802A0;
-	
-	// *
-	// renderer
-	static utils::function<void()> R_BeginFrame = 0x4FCB10;
-	static utils::function<void()> R_EndFrame = 0x4FCBC0;
-	static utils::function<void()> R_ReloadImages = 0x513D70;
-	static utils::function<void(float* from, game::GfxColor* to)> Byte4PackPixelColor = 0x402AC0;
-	static utils::function<game::GfxViewParms*()> R_SetupViewParms = 0x4FB540;
-	static utils::function<void(game::GfxMatrix*, float halfx, float halfy, float znear)> R_SetupProjection = 0x4A78E0;
-	static utils::function<void(game::GfxSceneDef*, game::GfxViewParms*)> R_SetupRenderCmd = 0x4FC3A0;
-	static utils::function<void(int, const float*, float, bool)> R_Clear = 0x4FCC70;
-	static utils::function<void(int)> R_IssueRenderCommands = 0x4FD630;
-	static utils::function<void()> R_SortMaterials = 0x4FD910;
-	static utils::function<bool(HWND)> R_SetupRendertarget_CheckDevice = 0x501A70;
-	static utils::function<bool(HWND)> R_CheckTargetWindow = 0x500660;
-
-	// sampler_index = the index used in shader_vars.h
-	static utils::function<void(int unused, game::GfxCmdBufState* state, int sampler_index, char sampler_state, game::GfxImage* img)> R_SetSampler = 0x538D70;
-
-	static utils::function<bool(float s0, float t0, float s1, float t1, float* color, game::Material* mtl)> R_AddCmdDrawFullScreenColoredQuad = 0x4FC260;
-	
-	typedef void(*MatrixForViewer_t)(float(*mtx)[4], const float* origin, const float* axis);
-		extern MatrixForViewer_t MatrixForViewer;
-	
-	typedef void(*MatrixMultiply44_t)(game::GfxViewParms* view_params, game::GfxMatrix* a, game::GfxMatrix* b);
-		extern MatrixMultiply44_t MatrixMultiply44;
-	
-	typedef void(*MatrixInverse44_t)(game::GfxMatrix* a, game::GfxMatrix* b);
-		extern MatrixInverse44_t MatrixInverse44;
-
-	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/);
-	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis);
-
-	inline auto CopyAxis = reinterpret_cast<void(*)(float* src, float* dest)>(0x4A8860);
-	inline auto AnglesToAxis = reinterpret_cast<void(*)(float* angles, float* axis)>(0x4ABEB0);
-
-	typedef void(*AngleVectors_t)(float* _angles, float* _vpn, float* _right, float* _up);
-		extern AngleVectors_t AngleVectors;
-
-	typedef void(*OrientationConcatenate_t)(const game::orientation_t* orFirst, const game::orientation_t* orSecond, game::orientation_t* out);
-		extern OrientationConcatenate_t OrientationConcatenate;
-
-	// no error but doesnt reload everything
-	static utils::function<void()> DX_ResetDevice = 0x5015F0;
-	static utils::function<int*(size_t)> Hunk_Alloc = 0x5104E0;
-
-	// *
-	// dvars
-
-	static utils::function< void (game::dvar_s* dvar, bool value)>							Dvar_SetBool = 0x4B37F0;
-	static utils::function< void (game::dvar_s* dvar, std::int32_t value)>					Dvar_SetInt = 0x4B3810;
-	static utils::function< void (game::dvar_s* dvar, float value)>							Dvar_SetFloat = 0x4B3830;
-	static utils::function< void (game::dvar_s* dvar, float r, float g, float b, float a)>	Dvar_SetColor = 0x4B38E0;
-
-	static utils::function< void (game::dvar_s* dvar, float x, float y)>						Dvar_SetVec2 = 0x4B3850;
-	static utils::function< void (game::dvar_s* dvar, float x, float y, float z)>				Dvar_SetVec3 = 0x4B3870;
-	static utils::function< void (game::dvar_s* dvar, float x, float y, float z, float w)>		Dvar_SetVec4 = 0x4B38A0;
-
-	static utils::function< void __fastcall (int value, const char* name)>						Dvar_SetIntByName = 0x4B3A60;
-	
-	static utils::function< game::dvar_s* (const char* dvar_name, char value, __int16 flags, const char* description)> Dvar_RegisterBool = 0x4B25F0;
-	static utils::function< game::dvar_s* (const char* dvar_name, int value, int mins, int maxs, __int16 flags, const char* description)> Dvar_RegisterInt = 0x4B2660;
-	static utils::function< game::dvar_s* (const char* dvar_name, float value, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterFloat = 0x4B26D0;
-	
-	static utils::function< game::dvar_s* (const char* dvar_name, float x, float y, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterVec2 = 0x4B2750;
-	static utils::function< game::dvar_s* (const char* dvar_name, float x, float y, float z, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterVec3 = 0x4B27D0;
-	//static utils::function< game::dvar_s* (const char* dvar_name, float x, float y, float z, float w, float mins, float maxs, __int16 flags, const char* description)> Dvar_RegisterVec4 = 0x4B2860;
+	inline auto Dvar_RegisterBool = reinterpret_cast<game::dvar_s* (*)(const char* dvar_name, char value, __int16 flags, const char* description)>(0x4B25F0);
+	inline auto Dvar_RegisterInt = reinterpret_cast<game::dvar_s* (*)(const char* dvar_name, int value, int mins, int maxs, __int16 flags, const char* description)>(0x4B2660);
+	inline auto Dvar_RegisterFloat = reinterpret_cast<game::dvar_s* (*)(const char* dvar_name, float value, float mins, float maxs, __int16 flags, const char* description)>(0x4B26D0);
+	inline auto Dvar_RegisterVec2 = reinterpret_cast<game::dvar_s* (*)(const char* dvar_name, float x, float y, float mins, float maxs, __int16 flags, const char* description)>(0x4B2750);
+	inline auto Dvar_RegisterVec3 = reinterpret_cast<game::dvar_s* (*)(const char* dvar_name, float x, float y, float z, float mins, float maxs, __int16 flags, const char* description)>(0x4B27D0);
 	game::dvar_s* Dvar_RegisterVec4(const char* dvar_name /*ecx*/, float x, float y, float z, float w, float mins, float maxs, __int16 flags /*di/edi*/, const char* description);
+	inline auto Dvar_RegisterString = reinterpret_cast<game::dvar_s* (*)(const char* dvarName, const char* value, __int16 flags, const char* description)>(0x4B28E0);
 	
-	static utils::function< game::dvar_s* (const char *dvarName, const char *value, __int16 flags, const char *description)> Dvar_RegisterString = 0x4B28E0;
-
-	// ASM
 	const char* Dvar_DisplayableValue(game::dvar_s* dvar);
 	const char* Dvar_DomainToString_Internal(signed int buffer_len /*eax*/, const char* buffer_out /*ebx*/, int dvar_type, int* enum_lines_count, float mins, float maxs);
 	void Dvar_SetString(game::dvar_s *dvar /*esi*/, const char *string /*ebx*/);
 	game::dvar_s* Dvar_FindVar(const char* dvar);
 	game::dvar_s* Dvar_SetFromStringFromSource(const char *string /*ecx*/, game::dvar_s *dvar /*esi*/, int source);
+	
 
+	// *
+	// * --------------------- console / warnings / error ------------------------------
+
+	inline auto Com_Error = reinterpret_cast<void (*)(const char* error, ...)>(0x499F50);
 	int printf_to_console_internal(const char* _format, va_list va);
 	int printf_to_console(_In_z_ _Printf_format_string_ char const* const _format, ...);
 	void com_printf_to_console(int channel, const char* _format, ...);
 	void console_error(const std::string& msg);
+	
 
+	// *
+	// * --------------------- fs / io ------------------------------
+
+	inline auto FS_ReadFile = reinterpret_cast<unsigned int (*)(const char*, void**)>(0x4A0240);
+	inline auto FS_FreeFile = reinterpret_cast<void (*)(void*)>(0x4A0300);
 	void FS_ScanForDir(const char* directory, const char* search_path, int localized);
+	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count);
+
 	game::GfxImage* Image_FindExisting(const char* name);
 	game::GfxImage* Image_RegisterHandle(const char* name);
 
-	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/);
-	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
+	inline auto Material_RegisterHandle = reinterpret_cast<game::Material * (*)(const char* name, int)>(0x511BE0);
+	inline auto R_RegisterModel = reinterpret_cast<game::XModel * (*)(const char* name)>(0x51D450);
 
 
-	// * ------------------------- FX --------------------------------
+	// *
+	// * --------------------- fx ------------------------------
 
 	extern int& g_processCodeMesh;
 
 	extern int I_strncmp(const char* s0, const char* s1, int n);
 	extern int I_strcmp(const char* s1, const char* s2);
 	extern void I_strncpyz(char* Dest, const char* Source, int destsize);
-	static utils::function<int(const char*, const char*)> I_stricmp = 0x4B9490;
+	inline auto I_stricmp = reinterpret_cast<int (*)(const char* a, const char* b)>(0x4B9490);
 
-	static utils::function<Material* (const char*, int)> Material_RegisterHandle = 0x511BE0;
-
-
-	static utils::function<int* (int)> Z_Malloc = 0x438FD0;
-
-	static utils::function<unsigned int(const char*, void**)> FS_ReadFile = 0x4A0240;
-	static utils::function<void(void*)> FS_FreeFile = 0x4A0300;
-
-	static utils::function<void(const char*)> Com_BeginParseSession = 0x4B78D0;
-	static utils::function<void()> Com_EndParseSession = 0x4B79A0;
-	static utils::function<void(int)> Com_SetSpaceDelimited = 0x4B79D0;
-	static utils::function<void()> Com_SetParseNegativeNumbers = 0x4B7A30;
-
-	static utils::function<char* (const char**)> Com_Parse = 0x4B8390;
-	static utils::function<int(const char**, const char*, int)> Com_MatchToken = 0x4B8430;
-	static utils::function<void()> Com_UngetToken = 0x4B7C90;
+	inline auto Com_BeginParseSession = reinterpret_cast<void (*)(const char*)>(0x4B78D0);
+	inline auto Com_EndParseSession = reinterpret_cast<void (*)()>(0x4B79A0);
+	inline auto Com_SetSpaceDelimited = reinterpret_cast<void (*)(int)>(0x4B79D0);
+	inline auto Com_SetParseNegativeNumbers = reinterpret_cast<void (*)()>(0x4B7A30);
+	inline auto Com_Parse = reinterpret_cast<char* (*)(const char**)>(0x4B8390);
+	inline auto Com_MatchToken = reinterpret_cast<int (*)(const char**, const char*, int)>(0x4B8430);
+	inline auto Com_UngetToken = reinterpret_cast<void (*)()>(0x4B7C90);
 }

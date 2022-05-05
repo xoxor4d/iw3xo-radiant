@@ -222,7 +222,7 @@ namespace ggui::camera_guizmo
 					game::vec3_t selection_center = {};
 
 					
-					const auto num_move_points = game::g_qeglobals->d_num_move_points;
+					//const auto num_move_points = game::g_qeglobals->d_num_move_points;
 					const auto selection_mode = game::g_qeglobals->d_select_mode;
 					bool in_vertex_mode = false;
 
