@@ -36,3 +36,4 @@ namespace components
 #include "modules/effects.hpp"
 #include "modules/effects_editor.hpp"
 #include "modules/discord.hpp"
+#include "modules/pmesh.hpp"

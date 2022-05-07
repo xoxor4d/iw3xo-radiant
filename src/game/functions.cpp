@@ -41,39 +41,39 @@ namespace game
 
 		// renderer
 		IDirect3DDevice9* d3d9_device = nullptr;
-		
+
 	}
 
 	game::vec3_t vec3_origin = { 0.0f, 0.0f, 0.0f };
 	game::vec4_t color_white = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	IDirect3DTexture9* framebuffer_test = nullptr;
-	
+
 	// radiant globals
-	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
+	int& g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
 	game::qeglobals_t* g_qeglobals = reinterpret_cast<game::qeglobals_t*>(0x25F39C0);
 
-	float&	g_zoomLevel = *reinterpret_cast<float*>(0x25D5A90);
-	int*	g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
-	int&	g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
-	bool&	g_bScreenUpdates = *reinterpret_cast<bool*>(0x739B0F);
+	float& g_zoomLevel = *reinterpret_cast<float*>(0x25D5A90);
+	int* g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
+	int& g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
+	bool& g_bScreenUpdates = *reinterpret_cast<bool*>(0x739B0F);
 	double& g_time = *reinterpret_cast<double*>(0x2665678);
 	double& g_oldtime = *reinterpret_cast<double*>(0x2665670);
-	bool&	g_region_active = *reinterpret_cast<bool*>(0x23F1744);
-	bool&	g_bCrossHairs = *reinterpret_cast<bool*>(0x25D5B06);
-	bool&	g_bClipMode = *reinterpret_cast<bool*>(0x23F16D8);
-	bool&	g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
-	bool&	g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
-	int&	g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
-	int&	g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
-	float*	g_vRotateOrigin = reinterpret_cast<float*>(0x23F1658);
-	int&	g_prefab_stack_level = *reinterpret_cast<int*>(0x25D5B34);
+	bool& g_region_active = *reinterpret_cast<bool*>(0x23F1744);
+	bool& g_bCrossHairs = *reinterpret_cast<bool*>(0x25D5B06);
+	bool& g_bClipMode = *reinterpret_cast<bool*>(0x23F16D8);
+	bool& g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
+	bool& g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
+	int& g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
+	int& g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
+	float* g_vRotateOrigin = reinterpret_cast<float*>(0x23F1658);
+	int& g_prefab_stack_level = *reinterpret_cast<int*>(0x25D5B34);
 
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
 
 	const char* current_map_filepath = reinterpret_cast<const char*>(0x23F18D8);
-	
+
 	game::filter_material_t* filter_surfacetype_array = reinterpret_cast<game::filter_material_t*>(0x73AF80);
 	game::filter_material_t* filter_locale_array = reinterpret_cast<game::filter_material_t*>(0x73A780);
 	game::filter_material_t* filter_usage_array = reinterpret_cast<game::filter_material_t*>(0x739F80);
@@ -127,7 +127,7 @@ namespace game
 		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*game::active_brushes_next_ptr);
 		return brush;
 	}
-	
+
 	game::selbrush_def_t* g_selected_brushes()
 	{
 		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*game::currSelectedBrushes);
@@ -155,7 +155,7 @@ namespace game
 	}
 
 	int& multiple_edit_entities = *reinterpret_cast<int*>(0x240A10C);
-	
+
 	game::eclass_t* g_eclass()
 	{
 		const auto eclass = reinterpret_cast<game::eclass_t*>(*(DWORD*)0x25D5B20);
@@ -167,7 +167,7 @@ namespace game
 		const auto g_dlgSurface = reinterpret_cast<CSurfaceDlg*>(0x25D7668);
 		return g_dlgSurface;
 	}
-	
+
 	CPrefsDlg* g_PrefsDlg()
 	{
 		const auto prefs = reinterpret_cast<CPrefsDlg*>(*(DWORD*)0x73C704);
@@ -184,13 +184,13 @@ namespace game
 			call	SavePrefs_addr;
 		}
 	}
-	
+
 	game::undo_s* g_lastundo()
 	{
 		const auto undo = reinterpret_cast<game::undo_s*>(*(DWORD*)0x23F162C);
 		return undo;
 	}
-	
+
 	game::undo_s* g_lastredo()
 	{
 		const auto redo = reinterpret_cast<game::undo_s*>(*(DWORD*)0x23F15CC);
@@ -201,11 +201,11 @@ namespace game
 	{
 		if ((DWORD*)g_selected_brushes_next() == game::currSelectedBrushes || (DWORD*)g_selected_brushes_next()->next != game::currSelectedBrushes)
 		{
-			if(print_warning)
+			if (print_warning)
 			{
 				game::printf_to_console("Error: you must have a single brush selected");
 			}
-			
+
 			return false;
 		}
 
@@ -232,7 +232,7 @@ namespace game
 #ifdef DEBUG
 		game::printf_to_console("Undo_GeneralStart :: %s", operation);
 #endif
-		
+
 		const static uint32_t func_addr = 0x45E3F0;
 		__asm
 		{
@@ -550,6 +550,112 @@ namespace game
 					}
 				}
 			}
+		}
+	}
+
+	// insert/delete, column/row
+	void Patch_Adjust(game::patchMesh_t* p, bool insert, bool column, bool flag)
+	{
+		if (insert)
+		{
+			if (column)
+			{
+				game::Patch_InsertColumn(p, flag);
+			}
+			else
+			{
+				game::Patch_InsertRow(p, flag);
+			}
+		}
+		else if (column)
+		{
+			game::Patch_RemoveColumn(p, flag);
+		}
+		else
+		{
+			game::Patch_RemoveRow(p, flag);
+		}
+	}
+
+	game::patchMesh_t* Patch_Duplicate(game::patchMesh_t* p /*edi*/)
+	{
+		const static uint32_t func_addr = 0x4486A0;
+		__asm
+		{
+			mov		edi, p;
+			call	func_addr;
+		}
+	}
+
+	void Patch_Invert(game::patchMesh_t* p /*ebx*/)
+	{
+		const static uint32_t func_addr = 0x446480;
+		__asm
+		{
+			mov		ebx, p;
+			call	func_addr;
+		}
+	}
+
+	void Patch_Rebuild(game::patchMesh_t* p /*esi*/, int reset)
+	{
+		const static uint32_t func_addr = 0x438D80;
+		__asm
+		{
+			push	reset;
+			mov		esi, p;
+			call	func_addr;
+			add		esp, 4;
+		}
+	}
+
+	// flag :: [true] first column, [false] last column
+	void Patch_InsertColumn(patchMesh_t* p, bool flag /*cl*/)
+	{
+		const static uint32_t func_addr = 0x443410;
+		__asm
+		{
+			mov		cl, flag;
+			push	p;
+			call	func_addr;
+			add		esp, 4;
+		}
+	}
+
+	// flag :: [true] first row, [false] last row
+	void Patch_InsertRow(patchMesh_t* p, bool flag /*dl*/)
+	{
+		const static uint32_t func_addr = 0x443830;
+		__asm
+		{
+			mov		dl, flag;
+			push	p;
+			call	func_addr;
+			add		esp, 4;
+		}
+	}
+
+	// flag :: [true] first column, [false] last column
+	void Patch_RemoveColumn(patchMesh_t* p /*eax*/, bool flag /*cl*/)
+	{
+		const static uint32_t func_addr = 0x443C90;
+		__asm
+		{
+			mov		cl, flag;
+			mov		eax, p;
+			call	func_addr;
+		}
+	}
+
+	// flag :: [true] first row, [false] last row
+	void Patch_RemoveRow(patchMesh_t* p /*eax*/, bool flag /*cl*/)
+	{
+		const static uint32_t func_addr = 0x443B60;
+		__asm
+		{
+			mov		cl, flag;
+			mov		eax, p;
+			call	func_addr;
 		}
 	}
 

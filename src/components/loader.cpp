@@ -20,6 +20,7 @@ namespace components
 		loader::_register(new effects_editor());
 		loader::_register(new main_module());
 		loader::_register(new discord());
+		loader::_register(new pmesh());
 
 		if(const auto	con = GET_GUI(ggui::console_dialog);
 						con)

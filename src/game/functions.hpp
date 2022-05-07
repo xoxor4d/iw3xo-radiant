@@ -180,6 +180,15 @@ namespace game
 	void Patch_ShiftTexture(game::patchMesh_t* def, float shift_horz, float shift_vert);
 	void Patch_Lightmap_Texturing_dirty(game::patchMesh_t* p /*esi*/);
 	void Patch_CalcBounds(game::patchMesh_t* p, game::vec3_t& vMin, game::vec3_t& vMax);
+	void Patch_Adjust(game::patchMesh_t* p, bool insert, bool column, bool flag);
+	game::patchMesh_t* Patch_Duplicate(game::patchMesh_t* p /*edi*/);
+	void Patch_Invert(game::patchMesh_t* p /*ebx*/);
+	void Patch_Rebuild(game::patchMesh_t* p /*esi*/, int reset);
+	void Patch_InsertColumn(patchMesh_t* p, bool flag /*cl*/);
+	void Patch_InsertRow(patchMesh_t* p, bool flag /*dl*/);
+	void Patch_RemoveColumn(patchMesh_t* p /*eax*/, bool flag /*cl*/);
+	void Patch_RemoveRow(patchMesh_t* p /*eax*/, bool flag /*cl*/);
+	inline auto Patch_MeshNormals = reinterpret_cast<void (*)(game::patchMesh_t*)>(0x437C80);
 
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
