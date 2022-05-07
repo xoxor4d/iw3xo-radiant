@@ -577,6 +577,16 @@ namespace game
 		qtexture_s* radMtl;
 	};
 
+	struct curvePatchDef_t
+	{
+		int width;
+		int height;
+		int random_one;
+		float* point_array;
+		int unk;
+		float large_float_array[64];
+	};
+
 	struct patchMesh_t
 	{
 		int width;
@@ -592,7 +602,7 @@ namespace game
 		texdef_t* mat_unk;
 		drawVert_t ctrl[16][16];
 		//char pad_0x4468[1024];
-		int pad_unk;
+		curvePatchDef_t* curveDef;
 		brush_t_with_custom_def* pSymbiot; //brush_t* pSymbiot;
 		std::int16_t version;
 		bool xx22b;

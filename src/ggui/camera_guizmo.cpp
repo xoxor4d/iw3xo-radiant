@@ -3,6 +3,7 @@
 namespace ggui::camera_guizmo
 {
 	bool overwrite_activation = false;
+	bool guizmo_visible = false;
 
 	void get_matrices_for_guizmo(game::GfxMatrix* view, game::GfxMatrix* projection)
 	{
@@ -118,6 +119,8 @@ namespace ggui::camera_guizmo
 			// fixes unwanted transforms on multi selection via shift (if mouse is over guizmo)
 			static bool guizmo_needs_activation = true;
 			static bool guizmo_capture_active = false;
+
+			guizmo_visible = false;
 
 			if (const auto b = game::g_selected_brushes()->def; b)
 			{
@@ -284,6 +287,9 @@ namespace ggui::camera_guizmo
 					// draw guizmo / manipulate
 					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap, bounds))
 #else
+
+					guizmo_visible = true;
+
 					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap))
 #endif
 					{
@@ -447,6 +453,8 @@ namespace ggui::camera_guizmo
 
 					float tmp_matrix[16];
 					ImGuizmo::RecomposeMatrixFromComponents(edit_entity->origin, angles, mtx_scale, tmp_matrix);
+
+					guizmo_visible = true;
 
 					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, nullptr, snap))
 					{

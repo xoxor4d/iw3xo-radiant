@@ -71,7 +71,7 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			SetFocus(ccam->GetWindow());
 			SetCapture(ccam->GetWindow());
 
-			if(!ImGuizmo::IsOver())
+			if(!ggui::camera_guizmo::guizmo_visible || !ImGuizmo::IsOver())
 			{
 				CamWnd__DropModelsToPlane(ccam, ccam->m_ptLastCursor.x, ccam->camera.height - ccam->m_ptLastCursor.y - 1, nFlags);
 			}
