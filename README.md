@@ -13,10 +13,10 @@ Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You 
 
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/xoxor4d/iw3xo-radiant?color=%2368BC71&logo=github)](https://github.com/xoxor4d/iw3xo-radiant/releases)&ensp;
 ![GitHub commits since latest release (by date)](https://img.shields.io/github/commits-since/xoxor4d/iw3xo-radiant/latest/develop?logo=github)&ensp;
-[![](https://img.shields.io/github/downloads/xoxor4d/iw3xo-radiant/total?logo=github)](https://github.com/xoxor4d/iw3xo-radiant/releases)&ensp;
-[![](https://img.shields.io/discord/677574256678141973?label=Discord&logo=discord&logoColor=%23FFFF&)](https://discord.gg/t5jRGbj)&ensp;
-![Twitter Follow](https://img.shields.io/twitter/follow/xoxor4d?style=social)&ensp;
-![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UC7DiUO6bzZGii0EUx1Vg4mw?style=social)&ensp;
+[![Downloads](https://img.shields.io/github/downloads/xoxor4d/iw3xo-radiant/total?logo=github)](https://github.com/xoxor4d/iw3xo-radiant/releases)&ensp;
+[![Discord](https://img.shields.io/discord/677574256678141973?label=Discord&logo=discord&logoColor=%23FFFF&)](https://discord.gg/t5jRGbj)&ensp;
+[![Twitter Follow](https://img.shields.io/twitter/follow/xoxor4d?style=social)](https://twitter.com/intent/follow?screen_name=xoxor4d)&ensp;
+[![YouTube Channel Views](https://img.shields.io/youtube/channel/views/UC7DiUO6bzZGii0EUx1Vg4mw?style=social)](https://www.youtube.com/xoxor4d)&ensp;
 
 </div>
 
