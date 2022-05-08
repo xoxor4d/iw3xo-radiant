@@ -156,7 +156,9 @@ namespace game
 	inline auto Undo_ClearRedo = reinterpret_cast<void (*)()>(0x45DF20);
 	void Undo_GeneralStart(const char* operation /*eax*/);
 	void Undo_AddBrushList(void* sb); //(game::selbrush_def_t* sb /*edi*/);
+	void Undo_AddBrushList_Selected();
 	void Undo_EndBrushList(void* sb); //(game::selbrush_def_t* sb /*esi*/);
+	void Undo_EndBrushList_Selected();
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/);
 	inline auto Undo_End = reinterpret_cast<void (*)()>(0x45EA20);
 
@@ -189,6 +191,8 @@ namespace game
 	void Patch_RemoveColumn(patchMesh_t* p /*eax*/, bool flag /*cl*/);
 	void Patch_RemoveRow(patchMesh_t* p /*eax*/, bool flag /*cl*/);
 	inline auto Patch_MeshNormals = reinterpret_cast<void (*)(game::patchMesh_t*)>(0x437C80);
+	inline auto Patch_GenericMesh = reinterpret_cast<game::selbrush_def_t* (*)(int nWidth, int nHeight, int nOrientation, bool bDeleteSource, bool bOverwrite)>(0x43B310);
+	inline auto Create_Terrain = reinterpret_cast<game::selbrush_def_t* (*)(int nWidth, int nHeight, int nOrientation)>(0x43B660);
 
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
@@ -198,8 +202,8 @@ namespace game
 	game::brush_t_with_custom_def* Brush_AddToList(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world);
 	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/);
 	void Brush_Deselect(game::brush_t* b /*esi*/);
-	void Brush_Select(game::brush_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection);
-	inline auto QE_SingleBrush = reinterpret_cast<bool (*)(unsigned int flags)>(0x48C8B0); // no warnings when bQuiet
+	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection);
+	inline auto QE_SingleBrush = reinterpret_cast<bool (*)()>(0x48C8B0); // no warnings when bQuiet
 
 	inline auto SetKeyValue = reinterpret_cast<void (*)(game::entity_s * ent, const char* key, const char* value)>(0x483690);
 	inline auto SetKeyValuePairs = reinterpret_cast<void (*)()>(0x496CF0);

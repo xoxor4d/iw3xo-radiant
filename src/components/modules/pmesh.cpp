@@ -160,7 +160,7 @@ namespace components
 
 		for (const auto b : brushes)
 		{
-			game::Brush_Select((game::brush_t*)b, true, true, false);
+			game::Brush_Select((game::selbrush_def_t*)b, true, true, false);
 		}
 	}
 

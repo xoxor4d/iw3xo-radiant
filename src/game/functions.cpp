@@ -260,6 +260,11 @@ namespace game
 		}
 	}
 
+	void Undo_AddBrushList_Selected()
+	{
+		game::Undo_AddBrushList(game::currSelectedBrushes);
+	}
+
 	// game::currSelectedBrushes
 	void Undo_EndBrushList(void* sb)
 	{
@@ -275,6 +280,11 @@ namespace game
 			call	func_addr;
 			popad;
 		}
+	}
+
+	void Undo_EndBrushList_Selected()
+	{
+		game::Undo_EndBrushList(game::currSelectedBrushes);
 	}
 
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/)
@@ -780,7 +790,7 @@ namespace game
 		}
 	}
 
-	void Brush_Select(game::brush_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection)
+	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection)
 	{
 		const int overwrite = some_overwrite;
 		const int status = update_status;

@@ -494,7 +494,7 @@ namespace ggui
 										}
 										else
 										{
-											game::Brush_Select((game::brush_t*)cam_trace[t].brush, false, false, false);
+											game::Brush_Select(cam_trace[t].brush, false, false, false);
 											cam_trace[t].selected = true;
 										}
 									}
@@ -509,7 +509,7 @@ namespace ggui
 							{
 								for (auto t = 0; t < 20 && cam_trace[t].brush; t++)
 								{
-									game::Brush_Select((game::brush_t*)cam_trace[t].brush, false, false, false);
+									game::Brush_Select(cam_trace[t].brush, false, false, false);
 									cam_trace[t].selected = true;
 								}
 							}
@@ -542,7 +542,7 @@ namespace ggui
 										{
 											if (!cam_trace[0].selected)
 											{
-												game::Brush_Select((game::brush_t*)cam_trace[0].brush, false, false, false);
+												game::Brush_Select(cam_trace[0].brush, false, false, false);
 											}
 
 											// CMainFrame::OnPrefabEnter

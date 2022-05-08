@@ -420,6 +420,10 @@ namespace ggui
 					cdeclcall(void, 0x42A2D0); // cmainframe::OnCenter2DOnCamera
 				}
 
+				if (ImGui::MenuItem("Center Camera On Selection", ggui::hotkey_dialog::get_hotkey_for_command("center_camera_on_selection").c_str())) {
+					components::command::execute("center_camera_on_selection");
+				}
+
 				if (ImGui::MenuItem("Up Floor", ggui::hotkey_dialog::get_hotkey_for_command("UpFloor").c_str())) {
 					mainframe_thiscall(void, 0x424700); // cmainframe::OnViewUpfloor
 				} TT("move up one floor, if there is one");
@@ -1475,12 +1479,20 @@ namespace ggui
 
 			if (ImGui::BeginMenu("Patch"))
 			{
+				//if (ImGui::MenuItem("Simple Curve Patch")) {
+				//	cdeclcall(void, 0x429A20); // CMainFrame::OnCurveSimplepatchmesh
+				//}
+
 				if (ImGui::MenuItem("Simple Curve Patch")) {
-					cdeclcall(void, 0x429A20); // CMainFrame::OnCurveSimplepatchmesh
+					GET_GUI(ggui::curve_patch_dialog)->toggle();
 				}
 
+				//if (ImGui::MenuItem("Simple Terrain Patch")) {
+				//	cdeclcall(void, 0x429DA0); // CMainFrame::OnTerrainSimplepatchmesh
+				//}
+
 				if (ImGui::MenuItem("Simple Terrain Patch")) {
-					cdeclcall(void, 0x429DA0); // CMainFrame::OnTerrainSimplepatchmesh
+					GET_GUI(ggui::terrain_patch_dialog)->toggle();
 				}
 
 				if (ImGui::MenuItem("Curve To Terrain")) {
