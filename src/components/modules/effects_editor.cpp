@@ -114,37 +114,55 @@ namespace components
 
 	bool effects_editor::save_as()
 	{
-		char filename[MAX_PATH];
-		OPENFILENAMEA ofn;
-		ZeroMemory(&filename, sizeof(filename));
-		ZeroMemory(&ofn, sizeof(ofn));
-
-		ofn.lStructSize = sizeof(ofn);
-		ofn.hwndOwner = cmainframe::activewnd->GetWindow();
-		ofn.lpstrFilter = "Effect Files\0*.efx\0";
-		ofn.lpstrFile = filename;
-		ofn.lpstrDefExt = ".efx";
-		ofn.nMaxFile = MAX_PATH;
-		ofn.lpstrTitle = "Save effect as ...";
-		ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
-
-		if (GetSaveFileNameA(&ofn))
+		// logic :: ggui::file_dialog_frame
+		if (dvars::gui_use_new_filedialog->current.enabled)
 		{
-			if(fx_system::FX_SaveEditorEffect(filename))
+			const auto egui = GET_GUI(ggui::entity_dialog);
+			std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+						path_str += "\\raw\\fx";
+
+			const auto file = GET_GUI(ggui::file_dialog);
+			file->set_default_path(path_str);
+			file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_LOAD);
+			file->set_file_op_type(ggui::file_dialog::FileDialogType::SaveFile);
+			file->set_file_ext(".efx");
+			file->set_callback([]
+				{
+					const auto dlg = GET_GUI(ggui::file_dialog);
+					const std::string filename = dlg->get_path_result();
+
+					if (fx_system::FX_SaveEditorEffect(filename.c_str()))
+					{
+						game::printf_to_console("[*] Successfully saved effect: %s", filename.c_str());
+						//GET_GUI(ggui::effects_editor_dialog)->m_effect_was_modified = false;
+					}
+				});
+
+			file->open();
+		}
+		else
+		{
+			char filename[MAX_PATH];
+			OPENFILENAMEA ofn;
+			ZeroMemory(&filename, sizeof(filename));
+			ZeroMemory(&ofn, sizeof(ofn));
+
+			ofn.lStructSize = sizeof(ofn);
+			ofn.hwndOwner = cmainframe::activewnd->GetWindow();
+			ofn.lpstrFilter = "Effect Files\0*.efx\0";
+			ofn.lpstrFile = filename;
+			ofn.lpstrDefExt = ".efx";
+			ofn.nMaxFile = MAX_PATH;
+			ofn.lpstrTitle = "Save effect as ...";
+			ofn.Flags = OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+
+			if (GetSaveFileNameA(&ofn))
 			{
-				/*const std::string filepath = filename;
-				const std::string replace_path = "raw\\fx\\";
-				const std::size_t pos = filepath.find(replace_path) + replace_path.length();
-
-				std::string loc_filepath = filepath.substr(pos);
-				utils::erase_substring(loc_filepath, ".efx"s);
-				utils::replace(loc_filepath, "\\", "/");
-
-				effects::load_effect(loc_filepath.c_str());*/
-
-				game::printf_to_console("[*] Successfully saved effect: %s", filename);
-
-				return true;
+				if (fx_system::FX_SaveEditorEffect(filename))
+				{
+					game::printf_to_console("[*] Successfully saved effect: %s", filename);
+					return false;
+				}
 			}
 		}
 

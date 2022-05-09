@@ -865,7 +865,7 @@ namespace ggui
 
 				const auto egui = GET_GUI(ggui::entity_dialog);
 				path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
-				path_str += "\\raw\\fx\\";
+				path_str += "\\raw\\fx";
 				
 
 				const auto file = GET_GUI(ggui::file_dialog);
@@ -873,6 +873,7 @@ namespace ggui
 				file->set_file_handler(FX_CHANGE);
 				file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
 				file->set_file_ext(".efx");
+				file->set_blocking();
 				file->open();
 			}
 			else
@@ -924,12 +925,12 @@ namespace ggui
 				if (is_prefab)
 				{
 					path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
-					path_str += "\\prefabs\\";
+					path_str += "\\prefabs";
 				}
 				else
 				{
 					path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
-					path_str += "\\raw\\xmodel\\";
+					path_str += "\\raw\\xmodel";
 				}
 
 				const auto file = GET_GUI(ggui::file_dialog);
@@ -937,6 +938,7 @@ namespace ggui
 				file->set_file_handler(is_prefab ? ggui::FILE_DIALOG_HANDLER::MISC_PREFAB_CHANGE : ggui::FILE_DIALOG_HANDLER::MISC_MODEL_CHANGE);
 				file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
 				file->set_file_ext(is_prefab ? ".map" : "");
+				file->set_blocking();
 				file->open();
 			}
 			else

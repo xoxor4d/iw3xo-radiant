@@ -23,16 +23,7 @@ namespace ggui
 	bool file_dialog::dialog()
 	{
 		this->m_track_result = false;
-
-		// add dot to file ext. string
-		if (!this->get_file_ext().empty())
-		{
-			if (!this->get_file_ext().starts_with("."))
-			{
-				this->set_file_ext("." + this->get_file_ext());
-			}
-		}
-
+		
 		ImGui::SetNextWindowSizeConstraints(ImVec2(640.0f, 420.0f), ImVec2(FLT_MAX, FLT_MAX));
 		ImGui::SetNextWindowSize(ImVec2(924.0f, 510.0f), ImGuiCond_Appearing);
 
@@ -40,7 +31,16 @@ namespace ggui
 		window_title += !this->get_file_ext().empty() ? this->get_file_ext() + " " : "";
 		window_title += this->get_file_op_type() == FileDialogType::SelectFolder ? "folder" : "file";
 
-		if (!ImGui::Begin(window_title.c_str(), this->get_p_open(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking))
+		if(this->is_blocking())
+		{
+			ImGui::OpenPopup(window_title.c_str());
+			if (!ImGui::BeginPopupModal(window_title.c_str(), this->get_p_open(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking))
+			{
+				//ImGui::EndPopup();
+				return false;
+			}
+		}
+		else if (!ImGui::Begin(window_title.c_str(), this->get_p_open(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking))
 		{
 			ImGui::End();
 			return false;
@@ -401,7 +401,15 @@ namespace ggui
 		
 		if(this->m_track_result)
 		{
-			ImGui::End();
+			if (this->is_blocking())
+			{
+				ImGui::EndPopup();
+			}
+			else
+			{
+				ImGui::End();
+			}
+
 			return this->m_track_result;
 		}
 
@@ -636,7 +644,15 @@ namespace ggui
 			ImGui::TextColored(ImColor(1.0f, 0.0f, 0.2f, 1.0f), this->m_error);
 		}
 
-		ImGui::End();
+		if (this->is_blocking())
+		{
+			ImGui::EndPopup();
+		}
+		else
+		{
+			ImGui::End();
+		}
+
 		return this->m_track_result;
 	}
 

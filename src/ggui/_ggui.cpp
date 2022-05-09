@@ -233,10 +233,12 @@ namespace ggui
 			const std::string path_out = file->get_path_result();
 			const int handler = file->get_file_handler();
 
-			switch(handler)
+			if(!file->do_callback())
 			{
-				case MAP_LOAD:
+				switch (handler)
 				{
+					case MAP_LOAD:
+					{
 						if (!file->was_canceled() && !path_out.empty())
 						{
 							// checks for unsaved changes or if inside prefab 
@@ -259,12 +261,12 @@ namespace ggui
 								io.AddMouseButtonEvent(0, false);
 							}
 						}
-						
-						break;
-				}
 
-				case MAP_SAVE:
-				{
+						break;
+					}
+
+					case MAP_SAVE:
+					{
 						if (!file->was_canceled() && !path_out.empty())
 						{
 							std::string file_path = path_out;
@@ -282,10 +284,10 @@ namespace ggui
 						}
 
 						break;
-				}
+					}
 
-				case MAP_EXPORT:
-				{
+					case MAP_EXPORT:
+					{
 						if (!file->was_canceled() && !path_out.empty())
 						{
 							std::string file_path = path_out;
@@ -302,17 +304,17 @@ namespace ggui
 						}
 
 						break;
-				}
+					}
 
-				case MISC_MODEL:
-				case MISC_MODEL_CHANGE:
-				case MISC_PREFAB:
-				case MISC_PREFAB_CHANGE:
-				{
+					case MISC_MODEL:
+					case MISC_MODEL_CHANGE:
+					case MISC_PREFAB:
+					case MISC_PREFAB_CHANGE:
+					{
 						const bool is_model = (handler == MISC_MODEL || handler == MISC_MODEL_CHANGE);
 						const bool is_changing = (handler == MISC_MODEL_CHANGE || handler == MISC_PREFAB_CHANGE);
 
-						if(!file->was_canceled() && !path_out.empty())
+						if (!file->was_canceled() && !path_out.empty())
 						{
 							const std::string replace_path = is_model ? "raw\\xmodel\\" : "map_source\\";
 							const std::size_t pos = path_out.find(replace_path) + replace_path.length();
@@ -323,7 +325,7 @@ namespace ggui
 							const auto ent = GET_GUI(ggui::entity_dialog);
 							ent->add_prop("model", loc_filepath.c_str());
 
-							if(!is_changing)
+							if (!is_changing)
 							{
 								auto edit_ent = game::g_edit_entity();
 								++edit_ent->version;
@@ -340,40 +342,47 @@ namespace ggui
 						}
 						else
 						{
-							if(!is_changing)
+							if (!is_changing)
 							{
 								cdeclcall(void, 0x425690);
 							}
 						}
-				}
+					}
 
-				case FX_CHANGE:
-				{
-					if (!file->was_canceled() && !path_out.empty())
+					case FX_CHANGE:
 					{
-						const std::string replace_path = "raw\\fx\\";
-						const std::size_t pos = path_out.find(replace_path) + replace_path.length();
+						if (!file->was_canceled() && !path_out.empty())
+						{
+							const std::string replace_path = "raw\\fx\\";
+							const std::size_t pos = path_out.find(replace_path) + replace_path.length();
 
-						std::string loc_filepath = path_out.substr(pos);
-						utils::replace(loc_filepath, "\\", "/");
-						utils::erase_substring(loc_filepath, ".efx"s);
+							std::string loc_filepath = path_out.substr(pos);
+							utils::replace(loc_filepath, "\\", "/");
+							utils::erase_substring(loc_filepath, ".efx"s);
 
-						const auto ent = GET_GUI(ggui::entity_dialog);
-						ent->add_prop("fx", loc_filepath.c_str());
+							const auto ent = GET_GUI(ggui::entity_dialog);
+							ent->add_prop("fx", loc_filepath.c_str());
 
 
-						// fix stuck left mouse button
-						ImGuiIO& io = ImGui::GetIO();
-						io.AddMouseButtonEvent(0, false);
+							// fix stuck left mouse button
+							ImGuiIO& io = ImGui::GetIO();
+							io.AddMouseButtonEvent(0, false);
 
-						break;
+							break;
+						}
+					}
+
+					case FX_EDITOR_DEF:
+					{
+						// asd
+
 					}
 				}
 			}
 
 			if(file->was_canceled())
 			{
-				file->reset();
+				file->reset(true);
 				file->fix_on_close();
 			}
 		}

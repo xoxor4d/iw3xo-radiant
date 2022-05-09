@@ -27,6 +27,9 @@ namespace ggui
 		MISC_PREFAB = 5,
 		MISC_PREFAB_CHANGE = 6,
 		FX_CHANGE = 10,
+		FX_EDITOR_DEF = 11,
+		FX_EDITOR_MATERIAL = 12,
+		FX_EDITOR_MODEL = 13,
 	};
 	
 	#define mainframe_thiscall(return_val, addr)	\
@@ -195,6 +198,7 @@ namespace ggui
 			
 		}
 
+		// has to be called last
 		void open()
 		{
 			switch (GUI_TYPE)

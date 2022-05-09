@@ -40,17 +40,18 @@ namespace ggui
 		char m_error[500] = {};
 
 		ImGuiTextFilter	m_filter;
-
 		FileDialogType m_file_operation_type = FileDialogType::OpenFile;
 		std::string m_file_ext;
-
 		std::string m_default_path;
 		std::string m_current_path;
 		std::string m_current_file;
 		std::string m_current_folder;
+		bool m_blocking = false;
 
 		std::string m_save_file_name;
 		bool m_save_filename_valid = false;
+
+		std::function<void()> m_callback;
 
 		// persistent data after dialog was closed
 		std::string m_last_filepath;
@@ -65,7 +66,7 @@ namespace ggui
 			set_gui_type(GUI_TYPE_DEF);
 		}
 
-		void reset()
+		void reset(bool reset_callback = false)
 		{
 			this->m_file_select_index = 0;
 			this->m_folder_select_index = 0;
@@ -79,9 +80,41 @@ namespace ggui
 			this->m_current_path = "";
 			this->m_current_file = "";
 			this->m_current_folder = "";
+			this->m_blocking = false;
+			
+			if(reset_callback)
+			{
+				this->m_callback = nullptr;
+			}
 
 			this->m_was_canceled = false;
 			this->close();
+		}
+
+		void set_callback(const std::function<void()>& _callback)
+		{
+			if(!this->is_active())
+				this->m_callback = _callback;
+		}
+		[[nodiscard]] bool do_callback()
+		{
+			if(this->m_callback != nullptr && !this->get_path_result().empty() && !this->was_canceled())
+			{
+				this->m_callback();
+				this->m_callback = nullptr;
+				return true;
+			}
+
+			return false;
+		}
+
+		void set_blocking()
+		{
+			this->m_blocking = true;
+		}
+		[[nodiscard]] bool is_blocking() const
+		{
+			return this->m_blocking;
 		}
 
 		void set_file_op_type(const FileDialogType type)
@@ -97,7 +130,12 @@ namespace ggui
 		void set_file_ext(const std::string& ext)
 		{
 			if (!this->is_active())
-				m_file_ext = ext;
+			{
+				if(!ext.empty())
+				{
+					m_file_ext = ext.starts_with(".") ? ext : "." + ext;
+				}
+			}
 		}
 		std::string& get_file_ext()
 		{
@@ -106,7 +144,7 @@ namespace ggui
 
 		void set_default_path(const std::string& path)
 		{
-			if (!this->is_active())
+			if (!this->is_active()) 
 				m_default_path = path;
 		}
 		const std::string& get_default_path()
