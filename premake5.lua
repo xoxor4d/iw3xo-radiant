@@ -174,8 +174,8 @@ workspace "iw3xo-radiant"
 			
 			-- Pre-build
 			prebuildcommands {
-			"cd %{_MAIN_SCRIPT_DIR}",
-			"tools\\premake5 generate-buildinfo"
+			--[[ "cd %{_MAIN_SCRIPT_DIR}",
+			"tools\\premake5 generate-buildinfo" ]]
 			}
             
 		configuration {}
