@@ -109,6 +109,8 @@ namespace ggui::camera_guizmo
 		utils::vector::scale(center_point, 0.5f, center_point);
 	}
 
+	bool added_undo = false;
+	
 	void guizmo(const ImVec2& camera_size, bool& accepted_dragdrop)
 	{
 		if (dvars::guizmo_enable->current.enabled)
@@ -149,6 +151,14 @@ namespace ggui::camera_guizmo
 			}
 			else
 			{
+				// no brush selected
+				if (added_undo)
+				{
+					game::Undo_EndBrushList_Selected();
+					game::Undo_End();
+					added_undo = false;
+				}
+
 				// always track
 				camerawnd->rtt_set_lmb_capturing(true);
 
@@ -289,7 +299,7 @@ namespace ggui::camera_guizmo
 #else
 
 					guizmo_visible = true;
-
+					
 					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap))
 #endif
 					{
@@ -297,6 +307,15 @@ namespace ggui::camera_guizmo
 						{
 							utils::hook::call<void(__cdecl)(game::brush_t_with_custom_def*, float*, float*)>(0x438760)(b, bounds, &bounds[3]);
 						}*/
+
+						if (!added_undo)
+						{
+							game::Undo_ClearRedo();
+							game::Undo_GeneralStart("move");
+							game::Undo_AddBrushList_Selected();
+
+							added_undo = true;
+						}
 
 						if (ImGuizmo::IsOver())
 						{
@@ -376,6 +395,8 @@ namespace ggui::camera_guizmo
 								}
 								else
 								{
+									
+
 									// move all selected brushes using the delta
 									FOR_ALL_SELECTED_BRUSHES(sb)
 									{
@@ -388,6 +409,15 @@ namespace ggui::camera_guizmo
 									}
 								}
 							}
+						}
+					} // no manipulation
+					else if(added_undo)
+					{
+						if(ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+						{
+							game::Undo_EndBrushList_Selected();
+							game::Undo_End();
+							added_undo = false;
 						}
 					}
 				}

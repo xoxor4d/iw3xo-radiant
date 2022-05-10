@@ -361,6 +361,30 @@ namespace components
 		}
 	}
 
+	void undo_general_start_print(const char* op)
+	{
+		game::printf_to_console("[UNDO] '%s' added to the undo stack. New stack size: %d", op, game::g_undoId);
+	}
+
+	void __declspec(naked) undo_general_start_stub()
+	{
+		const static uint32_t retn_addr = 0x45E3F9;
+		__asm
+		{
+			push    ebx; // og
+			push    esi; // og
+			push    edi; // og
+			mov     edi, eax; // og
+
+			pushad;
+			push	eax;
+			call	undo_general_start_print;
+			add		esp, 4;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
 
 	// ----------------------------------
 
@@ -399,6 +423,9 @@ namespace components
 
 		// map parsing debug prints (parsed entities and brushes, helpful for ParseEntity errors)
 		utils::hook(0x483EDB, parseentity_stub, HOOK_JUMP).install()->quick();
+
+		// print undo creation and stack size
+		utils::hook(0x45E3F4, undo_general_start_stub, HOOK_JUMP).install()->quick();
 
 
 		// * ---------------------------

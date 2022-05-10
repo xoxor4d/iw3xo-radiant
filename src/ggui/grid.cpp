@@ -287,25 +287,21 @@ namespace ggui
 						{
 							if (ImGui::MenuItem("Enter Prefab"))
 							{
-								// CMainFrame::OnPrefabEnter
-								cdeclcall(void, 0x42BF70);
+								game::Prefab_Enter();
 							}
 
-							if (ImGui::MenuItem("Leave Prefab"))
-							{
-								// CMainFrame::OnPrefabLeave
-								cdeclcall(void, 0x42BF80);
-							}
-
+							camera_dialog::stamp_prefab_imgui_imgui_menu(sb);
+							
 							SEPERATORV(0.0f);
 						}
 					}
 				}
-				else if (game::g_prefab_stack_level) // nothing selected and within prefab
+
+				if (game::g_prefab_stack_level) // nothing selected and within prefab
 				{
 					if (ImGui::MenuItem("Leave Prefab"))
 					{
-						cdeclcall(void, 0x42BF80);
+						game::Prefab_Leave();
 					}
 
 					SEPERATORV(0.0f);

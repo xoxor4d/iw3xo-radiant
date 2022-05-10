@@ -1,4 +1,5 @@
 #pragma once
+#include "common/mainframe.hpp"
 #include "fx_system/fx_structs.hpp"
 
 #define GET_PARENTWND (CMainFrame*) *(DWORD*)(game::g_pParentWnd_ptr)
@@ -22,6 +23,20 @@
 
 #define FOR_ALL_SELECTED_BRUSHES(B) for (auto (B) = game::g_selected_brushes_next(); (DWORD*)(B) != game::currSelectedBrushes; (B) = (B)->next)
 #define FOR_ALL_ACTIVE_BRUSHES(B) for (auto (B) = game::g_active_brushes_next(); (DWORD*)(B) != game::active_brushes_ptr; (B) = (B)->next)
+
+#define mainframe_thiscall(return_val, addr)	\
+		utils::hook::call<return_val(__fastcall)(cmainframe*)>(addr)(cmainframe::activewnd)
+
+#define mainframe_cdeclcall(return_val, addr)	\
+		utils::hook::call<return_val(__cdecl)(cmainframe*)>(addr)(cmainframe::activewnd)
+
+#define mainframe_stdcall(return_val, addr)	\
+		utils::hook::call<return_val(__stdcall)(cmainframe*)>(addr)(cmainframe::activewnd)
+
+#define cdeclcall(return_val, addr)	\
+		utils::hook::call<return_val(__cdecl)()>(addr)()
+
+
 
 namespace game
 {
@@ -95,7 +110,6 @@ namespace game
 	extern bool&	g_bRotateMode;
 	extern bool&	g_bScaleMode;
 	extern int&		g_nLastLen;
-	extern int&		g_undoMaxSize;
 
 	extern float*	g_vRotateOrigin;
 	extern int&		g_prefab_stack_level;
@@ -147,11 +161,8 @@ namespace game
 
 	extern game::undo_s* g_lastundo();
 	extern game::undo_s* g_lastredo();
-
-	extern bool is_single_brush_selected(bool print_warning = false);
-	extern bool is_any_brush_selected();
-
-	inline auto Drag_MouseUp = reinterpret_cast<void (*)(unsigned int flags)>(0x4802A0);
+	extern int& g_undoMaxSize;
+	extern int& g_undoId;
 
 	inline auto Undo_ClearRedo = reinterpret_cast<void (*)()>(0x45DF20);
 	void Undo_GeneralStart(const char* operation /*eax*/);
@@ -160,7 +171,18 @@ namespace game
 	void Undo_EndBrushList(void* sb); //(game::selbrush_def_t* sb /*esi*/);
 	void Undo_EndBrushList_Selected();
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/);
+	inline auto Undo_AddBrush = reinterpret_cast<void (*)(game::brush_t_with_custom_def*)>(0x45E680);
 	inline auto Undo_End = reinterpret_cast<void (*)()>(0x45EA20);
+
+	extern bool is_single_brush_selected(bool print_warning = false);
+	extern bool is_any_brush_selected();
+
+	inline auto Prefab_Enter = reinterpret_cast<void (*)()>(0x42BF70); // CMainFrame::OnPrefabEnter
+	inline auto Prefab_Leave = reinterpret_cast<void (*)()>(0x42BF80); // CMainFrame::OnPrefabLeave
+	inline auto Drag_MouseUp = reinterpret_cast<void (*)(unsigned int flags)>(0x4802A0);
+
+	inline void Selection_Copy() { mainframe_thiscall(void, 0x4286B0); } // CMainFrame::OnEditCopybrush
+	inline void Selection_Paste() { mainframe_thiscall(void, 0x4286D0); } // CMainFrame::OnEditPastebrush
 
 	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/);
 	void Checkkey_Model(entity_s* ent /*esi*/, const char* key);
@@ -169,12 +191,13 @@ namespace game
 	void selection_rotate_axis(int axis, int deg);
 	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/);
 	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis);
-	void SetSpawnFlags(int flag);
-
-	void SetMaterial(const char* name /*edi*/, game::patchMesh_material* def /*esi*/);
-
-	void UpdateSel(int wParam, game::eclass_t* e_class);
 	inline auto Select_Deselect = reinterpret_cast<void (*)(bool)>(0x48E800);
+	inline auto Select_Delete = reinterpret_cast<void (*)()>(0x48E760);
+	inline auto Select_Invert = reinterpret_cast<void (*)()>(0x493F10);
+
+	void SetSpawnFlags(int flag);
+	void SetMaterial(const char* name /*edi*/, game::patchMesh_material* def /*esi*/);
+	void UpdateSel(int wParam, game::eclass_t* e_class);
 
 	void Patch_SelectRow(int row /*eax*/, game::patchMesh_t* p /*edi*/, int multi);
 	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, int always_true);
@@ -209,6 +232,7 @@ namespace game
 	inline auto SetKeyValuePairs = reinterpret_cast<void (*)()>(0x496CF0);
 	inline auto CreateEntity = reinterpret_cast<void (*)()>(0x497300);
 	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y);
+	inline auto CreateEntityFromName = reinterpret_cast<void (*)(const char* name)>(0x465CC0); // does not add an undo
 	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* cxywnd);
 
 	game::trace_t* Trace_AllDirectionsIfFailed(float* cam_origin /*ebx*/, void* trace_result, float* dir, int contents);

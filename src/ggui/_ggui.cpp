@@ -225,8 +225,27 @@ namespace ggui
 		mru_insert_item(game::g_qeglobals->d_lpMruMenu, menu);
 	}
 
+	bool wait_frame = false;
+
 	void file_dialog_frame()
 	{
+		//if(wait_frame)
+		//{
+		//	auto sab = game::g_selected_brushes();
+		//	auto sabn = game::g_selected_brushes_next();
+
+		//	auto ab = game::g_active_brushes();
+		//	auto abn = game::g_active_brushes_next();
+
+		//	int x = 1;
+
+		//	// also update cached prefabs?
+		//	cdeclcall(void, 0x42BF70); // CMainFrame::OnPrefabEnter
+		//	cdeclcall(void, 0x42BF80); // CMainFrame::OnPrefabLeave
+
+		//	wait_frame = false;
+		//}
+
 		const auto file = GET_GUI(ggui::file_dialog);
 		if (file->is_active() && file->dialog() || file->was_canceled())
 		{
@@ -287,6 +306,7 @@ namespace ggui
 					}
 
 					case MAP_EXPORT:
+					case MISC_PREFAB_CREATE:
 					{
 						if (!file->was_canceled() && !path_out.empty())
 						{
@@ -297,6 +317,45 @@ namespace ggui
 							}
 
 							map_write_selection(file_path.c_str());
+
+							if(handler == MISC_PREFAB_CREATE)
+							{
+								const auto ent = GET_GUI(ggui::entity_dialog);
+
+								// delete selection
+								game::Select_Delete();
+
+								// create prefab at 0, 0, 0
+								game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+
+								// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+								g_block_radiant_modeldialog = true;
+								game::CreateEntityFromName("misc_prefab");
+								g_block_radiant_modeldialog = false;
+
+								const std::string replace_path = "map_source\\";
+								const std::size_t pos = file_path.find(replace_path) + replace_path.length();
+
+								std::string loc_filepath = file_path.substr(pos);
+								utils::replace(loc_filepath, "\\", "/");
+
+								ent->add_prop("model", loc_filepath.c_str());
+								ent->add_prop("origin", "0 0 0");
+
+								auto edit_ent = game::g_edit_entity();
+								++edit_ent->version;
+								edit_ent->modelClass = nullptr;
+								edit_ent->brushes.oprev->unk01 = 0;
+
+								components::exec::on_gui_once([]
+								{
+									// enter and leave prefab on next frame to update the prefab incase it was modified
+									// this does not work in the frame the prefab was spawned in
+
+									game::Prefab_Enter();
+									game::Prefab_Leave();
+								});
+							}
 
 							// fix stuck left mouse button
 							ImGuiIO& io = ImGui::GetIO();

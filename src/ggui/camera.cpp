@@ -389,6 +389,86 @@ namespace ggui
 		toolbar_line_width = ImGui::GetItemRectSize().x;
 	}
 
+	void camera_dialog::convert_selection_to_prefab_imgui_menu()
+	{
+		// logic :: ggui::file_dialog_frame
+		if (ImGui::MenuItem("Convert Selection to Prefab"))
+		{
+			const auto egui = GET_GUI(ggui::entity_dialog);
+			const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath") + "\\prefabs"s;
+
+			const auto file = GET_GUI(ggui::file_dialog);
+			file->set_default_path(path_str);
+			file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MISC_PREFAB_CREATE);
+			file->set_file_op_type(file_dialog::FileDialogType::SaveFile);
+			file->set_file_ext(".map");
+			file->set_blocking();
+			file->open();
+		}
+	}
+
+	void camera_dialog::stamp_prefab_imgui_imgui_menu(game::selbrush_def_t* sb)
+	{
+		if (ImGui::MenuItem("Stamp Prefab"))
+		{
+			const auto egui = GET_GUI(ggui::entity_dialog);
+
+			// select prefab 
+			if (sb)
+			{
+				game::Select_Deselect(false);
+				game::Brush_Select(sb, true, false, false);
+			}
+
+			// save prefab ptr
+			game::selbrush_def_t* og_prefab = game::g_selected_brushes();
+
+			if (!og_prefab)
+			{
+				game::printf_to_console("[ERR] something went wrong while stamping prefab");
+				return;
+			}
+
+			// idea: access brushes via owner->prefab->active_brushlist->def .. ->onext .. 
+
+			// enter prefab and select everything -> copy
+			// !! entering / leaving a prefab clears the entire undo stack !!
+			game::Prefab_Enter();
+			game::Select_Deselect(false);
+			game::Select_Invert();
+			game::Selection_Copy();
+
+			// leave prefab -> undo, delete prefab
+			game::Prefab_Leave();
+
+			// deselect all, then select the original prefab
+			game::Select_Deselect(false);
+			game::Brush_Select(og_prefab, false, false, false);
+
+			// get prefab origin
+			game::vec3_t prefab_origin = {};
+			egui->get_vec3_for_key_from_entity(og_prefab->def->owner, prefab_origin, "origin");
+
+			// create undo and delete the original prefab
+			game::Undo_ClearRedo();
+			game::Undo_GeneralStart("delete prefab");
+			game::Undo_AddBrushList(game::currSelectedBrushes);
+
+			game::Select_Delete();
+
+			game::Undo_EndBrushList(game::currSelectedBrushes);
+			game::Undo_End();
+
+			// paste the copied brushes
+			game::Selection_Paste();
+
+			// offset all stamped brushes by the prefab origin
+			FOR_ALL_SELECTED_BRUSHES(stamped)
+			{
+				game::Brush_Move(prefab_origin, stamped->def, true);
+			}
+		}
+	}
 
 	// right click context menu
 	void camera_dialog::context_menu()
@@ -429,7 +509,35 @@ namespace ggui
 					}
 				}
 
-				if (cam_trace[0].brush || game::g_prefab_stack_level)
+				// #
+				// #
+
+				//const auto export_selection_as_prefab_menu = [&]() -> void
+				//{
+				//	if (ImGui::MenuItem("Export Selection as Prefab"))
+				//	{
+				//		// logic :: ggui::file_dialog_frame
+				//		if (dvars::gui_use_new_filedialog->current.enabled)
+				//		{
+				//			const auto egui = GET_GUI(ggui::entity_dialog);
+				//			const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath") + "\\prefabs"s;
+
+				//			const auto file = GET_GUI(ggui::file_dialog);
+				//			file->set_default_path(path_str);
+				//			file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_EXPORT);
+				//			file->set_file_op_type(file_dialog::FileDialogType::SaveFile);
+				//			file->set_file_ext(".map");
+				//			file->open();
+				//		}
+				//		else
+				//		{
+				//			mainframe_thiscall(void, 0x4293A0); //cmainframe::OnFileExportmap
+				//		}
+				//	}
+				//};
+
+				// this is stupid but imgui creates a little empty square otherwise
+				if (cam_trace[0].brush || game::g_prefab_stack_level || game::is_any_brush_selected())
 				{
 					if (!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##camera"))
 					{
@@ -527,48 +635,95 @@ namespace ggui
 							}
 
 							// prefab
-
-							if (!game::multiple_edit_entities)
 							{
-								if (const auto tb = cam_trace[0].brush;
-									tb->def && tb->def->owner)
-								{
-									if (auto val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "classname");
-											 val && val == "misc_prefab"s)
-									{
-										SEPERATORV(0.0f);
+								bool prefab_sep = false;
 
-										if (ImGui::MenuItem("Enter Prefab"))
+								if (!game::multiple_edit_entities)
+								{
+									if (const auto	tb = cam_trace[0].brush;
+													tb->def && tb->def->owner)
+									{
+										// if prefab is hovered
+										if (const auto	val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "classname");
+														val && val == "misc_prefab"s)
 										{
-											if (!cam_trace[0].selected)
+											SEPERATORV(0.0f);
+											prefab_sep = true;
+
+											if (ImGui::MenuItem("Enter Prefab"))
 											{
-												game::Brush_Select(cam_trace[0].brush, false, false, false);
+												if (!cam_trace[0].selected)
+												{
+													game::Brush_Select(cam_trace[0].brush, false, false, false);
+												}
+
+												game::Prefab_Enter();
 											}
 
-											// CMainFrame::OnPrefabEnter
-											cdeclcall(void, 0x42BF70);
-										}
+											if (game::g_prefab_stack_level)
+											{
+												if (ImGui::MenuItem("Leave Prefab"))
+												{
+													game::Prefab_Leave();
+												}
+											}
 
-										if(game::g_prefab_stack_level)
+											stamp_prefab_imgui_imgui_menu(cam_trace[0].brush);
+										}
+										else if (game::g_prefab_stack_level)
 										{
+											SEPERATORV(0.0f);
+											prefab_sep = true;
+
 											if (ImGui::MenuItem("Leave Prefab"))
 											{
-												// CMainFrame::OnPrefabLeave
-												cdeclcall(void, 0x42BF80);
+												game::Prefab_Leave();
 											}
 										}
 									}
 								}
-							}
 
+								// within a prefab but no other prefab hovered
+								else if (game::g_prefab_stack_level)
+								{
+									if (!prefab_sep)
+									{
+										SEPERATORV(0.0f);
+										prefab_sep = true;
+									}
+
+									/*if (game::is_any_brush_selected())
+									{
+										export_selection_as_prefab_menu();
+									}*/
+
+									if (ImGui::MenuItem("Leave Prefab"))
+									{
+										game::Prefab_Leave();
+									}
+								}
+
+								if (game::is_any_brush_selected())
+								{
+									if (!prefab_sep) 
+									{
+										SEPERATORV(0.0f);
+										prefab_sep = true;
+									}
+									
+									convert_selection_to_prefab_imgui_menu();
+									//export_selection_as_prefab_menu();
+								}
+							}
+							
 							// subdivision and texture operations
 
 							if (any_selected)
 							{
 								if (!game::multiple_edit_entities)
 								{
-									if (const auto selbrush = game::g_selected_brushes();
-										(selbrush && selbrush->def && selbrush->patch))
+									if (const auto	 selbrush = game::g_selected_brushes();
+													(selbrush && selbrush->def && selbrush->patch))
 									{
 										if (selbrush->patch->def->type != game::PATCH_TERRAIN)
 										{
@@ -604,14 +759,28 @@ namespace ggui
 									}
 								}
 							}
-						}
+						} // no brush hit
 						else if(game::g_prefab_stack_level) // within prefab
 						{
 							if (ImGui::MenuItem("Leave Prefab"))
 							{
-								// CMainFrame::OnPrefabLeave
-								cdeclcall(void, 0x42BF80);
+								game::Prefab_Leave();
 							}
+
+							if (game::is_any_brush_selected())
+							{
+								convert_selection_to_prefab_imgui_menu();
+							}
+
+							/*if (game::is_any_brush_selected())
+							{
+								export_selection_as_prefab_menu();
+								SEPERATORV(0.0f);
+							}*/
+						}
+						else if(game::is_any_brush_selected())
+						{
+							convert_selection_to_prefab_imgui_menu();
 						}
 
 						ImGui::PopStyleColor();
@@ -689,10 +858,7 @@ namespace ggui
 
 					// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
 					g_block_radiant_modeldialog = true;
-
-					//CreateEntityFromName(classname);
-					utils::hook::call<void(__cdecl)(const char*)>(0x465CC0)("misc_model");
-
+					game::CreateEntityFromName("misc_model");
 					g_block_radiant_modeldialog = false;
 
 					entity_gui->add_prop("model", m_selector->m_preview_model_name.c_str(), &no_undo);

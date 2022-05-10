@@ -65,7 +65,6 @@ namespace game
 	bool& g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
 	bool& g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
 	int& g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
-	int& g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
 	float* g_vRotateOrigin = reinterpret_cast<float*>(0x23F1658);
 	int& g_prefab_stack_level = *reinterpret_cast<int*>(0x25D5B34);
 
@@ -197,41 +196,14 @@ namespace game
 		return redo;
 	}
 
-	bool is_single_brush_selected(bool print_warning)
-	{
-		if ((DWORD*)g_selected_brushes_next() == game::currSelectedBrushes || (DWORD*)g_selected_brushes_next()->next != game::currSelectedBrushes)
-		{
-			if (print_warning)
-			{
-				game::printf_to_console("Error: you must have a single brush selected");
-			}
-
-			return false;
-		}
-
-		if (auto n = g_selected_brushes_next(); n && n->owner && n->owner->firstActive && n->owner->firstActive->eclass->fixedsize)
-		{
-			if (print_warning)
-			{
-				game::printf_to_console("Error: you cannot manipulate fixed size entities");
-			}
-
-			return false;
-		}
-
-		return true;
-	}
-
-	bool is_any_brush_selected()
-	{
-		return (DWORD*)game::g_selected_brushes_next() != game::currSelectedBrushes;
-	}
+	int& g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
+	int& g_undoId = *reinterpret_cast<int*>(0x739F74);
 
 	void Undo_GeneralStart(const char* operation /*eax*/)
 	{
-#ifdef DEBUG
-		game::printf_to_console("Undo_GeneralStart :: %s", operation);
-#endif
+//#ifdef DEBUG
+//		game::printf_to_console("Undo_GeneralStart :: %s", operation);
+//#endif
 
 		const static uint32_t func_addr = 0x45E3F0;
 		__asm
@@ -297,6 +269,36 @@ namespace game
 			call	func_addr;
 			popad;
 		}
+	}
+
+	bool is_single_brush_selected(bool print_warning)
+	{
+		if ((DWORD*)g_selected_brushes_next() == game::currSelectedBrushes || (DWORD*)g_selected_brushes_next()->next != game::currSelectedBrushes)
+		{
+			if (print_warning)
+			{
+				game::printf_to_console("Error: you must have a single brush selected");
+			}
+
+			return false;
+		}
+
+		if (auto n = g_selected_brushes_next(); n && n->owner && n->owner->firstActive && n->owner->firstActive->eclass->fixedsize)
+		{
+			if (print_warning)
+			{
+				game::printf_to_console("Error: you cannot manipulate fixed size entities");
+			}
+
+			return false;
+		}
+
+		return true;
+	}
+
+	bool is_any_brush_selected()
+	{
+		return (DWORD*)game::g_selected_brushes_next() != game::currSelectedBrushes;
 	}
 
 	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/)
@@ -825,6 +827,7 @@ namespace game
 		}
 	}
 
+	// also adds an undo
 	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y)
 	{
 		const static uint32_t func_addr = 0x466480;

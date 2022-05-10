@@ -464,7 +464,20 @@ namespace game
 		char *mapLayer;
 		char pad_0x004C[16];
 	}; // brush_t is missing 8*4 bytes, see undo_s
-	
+
+	struct selbrush_def_t;
+	struct entity_s_def;
+
+	struct prefab_s
+	{
+		prefab_s* prev_entity;
+		prefab_s* next_entity;
+		entity_s_def* unk;
+		selbrush_def_t* active_brushlist;
+		selbrush_def_t* active_brushlist_next;
+	};
+
+
 	struct entity_s
 	{
 		entity_s *prev;
@@ -473,7 +486,7 @@ namespace game
 		brush_t *firstBrush; // <- brush substruct, no ptr
 		char pad_0x0010[52];
 		void* modelInst;
-		int prefab;
+		prefab_s* prefab;
 		int version;
 		char* mapLayer;
 		int someCount;
