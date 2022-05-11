@@ -2,6 +2,9 @@
 
 namespace ggui::camera_guizmo
 {
+	bool overwrite_activation = false;
+	bool guizmo_visible = false;
+
 	void get_matrices_for_guizmo(game::GfxMatrix* view, game::GfxMatrix* projection)
 	{
 		float axis[9];
@@ -106,6 +109,8 @@ namespace ggui::camera_guizmo
 		utils::vector::scale(center_point, 0.5f, center_point);
 	}
 
+	bool added_undo = false;
+	
 	void guizmo(const ImVec2& camera_size, bool& accepted_dragdrop)
 	{
 		if (dvars::guizmo_enable->current.enabled)
@@ -117,8 +122,16 @@ namespace ggui::camera_guizmo
 			static bool guizmo_needs_activation = true;
 			static bool guizmo_capture_active = false;
 
+			guizmo_visible = false;
+
 			if (const auto b = game::g_selected_brushes()->def; b)
 			{
+				if(overwrite_activation)
+				{
+					guizmo_needs_activation = false;
+					overwrite_activation = false;
+				}
+
 				if (guizmo_needs_activation)
 				{
 					camerawnd->rtt_set_lmb_capturing(true);
@@ -138,6 +151,14 @@ namespace ggui::camera_guizmo
 			}
 			else
 			{
+				// no brush selected
+				if (added_undo)
+				{
+					game::Undo_EndBrushList_Selected();
+					game::Undo_End();
+					added_undo = false;
+				}
+
 				// always track
 				camerawnd->rtt_set_lmb_capturing(true);
 
@@ -214,17 +235,18 @@ namespace ggui::camera_guizmo
 					game::vec3_t selection_center = {};
 
 					
-					const auto num_move_points = game::g_qeglobals->d_num_move_points;
+					//const auto num_move_points = game::g_qeglobals->d_num_move_points;
 					const auto selection_mode = game::g_qeglobals->d_select_mode;
 					bool in_vertex_mode = false;
 
 					// check for vertex edit mode
 					if(selection_mode == game::sel_curvepoint || selection_mode == game::sel_area)
 					{
-						if(!num_move_points)
+						// this can result in the guizmo not being disabled correctly, thus using IsUsing() can return the wrong value
+						/*if(!num_move_points)
 						{
 							return;
-						}
+						}*/
 
 						in_vertex_mode = true;
 					}
@@ -275,6 +297,9 @@ namespace ggui::camera_guizmo
 					// draw guizmo / manipulate
 					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap, bounds))
 #else
+
+					guizmo_visible = true;
+					
 					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap))
 #endif
 					{
@@ -282,6 +307,15 @@ namespace ggui::camera_guizmo
 						{
 							utils::hook::call<void(__cdecl)(game::brush_t_with_custom_def*, float*, float*)>(0x438760)(b, bounds, &bounds[3]);
 						}*/
+
+						if (!added_undo)
+						{
+							game::Undo_ClearRedo();
+							game::Undo_GeneralStart("move");
+							game::Undo_AddBrushList_Selected();
+
+							added_undo = true;
+						}
 
 						if (ImGuizmo::IsOver())
 						{
@@ -361,6 +395,8 @@ namespace ggui::camera_guizmo
 								}
 								else
 								{
+									
+
 									// move all selected brushes using the delta
 									FOR_ALL_SELECTED_BRUSHES(sb)
 									{
@@ -373,6 +409,15 @@ namespace ggui::camera_guizmo
 									}
 								}
 							}
+						}
+					} // no manipulation
+					else if(added_undo)
+					{
+						if(ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+						{
+							game::Undo_EndBrushList_Selected();
+							game::Undo_End();
+							added_undo = false;
 						}
 					}
 				}
@@ -438,6 +483,8 @@ namespace ggui::camera_guizmo
 
 					float tmp_matrix[16];
 					ImGuizmo::RecomposeMatrixFromComponents(edit_entity->origin, angles, mtx_scale, tmp_matrix);
+
+					guizmo_visible = true;
 
 					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, nullptr, snap))
 					{

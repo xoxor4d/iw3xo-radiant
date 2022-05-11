@@ -1080,8 +1080,9 @@ namespace components
 		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) || 
 			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
 		{
-			if (utils::string_equals(state->technique->name, "fakelight_normal_dtex") ||
-				utils::string_equals(state->technique->name, "fakelight_normal_d0_dtex"))
+			/*if (utils::string_equals(state->technique->name, "fakelight_normal_dtex") ||
+				utils::string_equals(state->technique->name, "fakelight_normal_d0_dtex"))*/
+			if (state->techType == game::TECHNIQUE_FAKELIGHT_NORMAL)
 			{
 				bool has_normal = false;
 				bool has_spec = false;
@@ -1152,8 +1153,13 @@ namespace components
 		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
 			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
 		{
-			if (utils::string_equals(state->technique->name, "fakelight_normal") ||
-				utils::string_equals(state->technique->name, "fakelight_normal_d0"))
+			if(state->material->techniqueSet && state->material->techniqueSet->name == "wc_tools"s)
+			{
+				// dont use fakesun on tool textures
+			}
+			/*else if (utils::string_equals(state->technique->name, "fakelight_normal") ||
+					 utils::string_equals(state->technique->name, "fakelight_normal_d0"))*/
+			else if(state->techType == game::TECHNIQUE_FAKELIGHT_NORMAL)
 			{
 				bool has_normal = false;
 				bool has_spec = false;

@@ -257,6 +257,8 @@ namespace components
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
 	void gui::render_loop()
 	{
+		exec::on_gui_execute();
+
 		/* - radiant draws multiple windows using d3d
 		 *   => multiple endscene / present calls
 		 * - use dx->targetWindowIndex to distinguish between windows

@@ -19,7 +19,10 @@ namespace game
 		PATCH_HEMISPHERE =	0x8,	// unknown, unused?
 		PATCH_CONE =		0x10,
 		PATCH_TRIANGLE =	0x20,	// unused?
-		PATCH_TERRAIN =		0x40	
+		PATCH_TERRAIN =		0x40,
+		PATCH_CAP =			0x1000,
+		PATCH_SEAM =		0x2000,
+		PATCH_THICK =		0x4000,
 	};
 
 	enum RadiantCommandType
@@ -461,7 +464,20 @@ namespace game
 		char *mapLayer;
 		char pad_0x004C[16];
 	}; // brush_t is missing 8*4 bytes, see undo_s
-	
+
+	struct selbrush_def_t;
+	struct entity_s_def;
+
+	struct prefab_s
+	{
+		prefab_s* prev_entity;
+		prefab_s* next_entity;
+		entity_s_def* unk;
+		selbrush_def_t* active_brushlist;
+		selbrush_def_t* active_brushlist_next;
+	};
+
+
 	struct entity_s
 	{
 		entity_s *prev;
@@ -470,7 +486,7 @@ namespace game
 		brush_t *firstBrush; // <- brush substruct, no ptr
 		char pad_0x0010[52];
 		void* modelInst;
-		int prefab;
+		prefab_s* prefab;
 		int version;
 		char* mapLayer;
 		int someCount;
@@ -565,12 +581,23 @@ namespace game
 		vec3_t normal;
 		rgba_4byte vert_color;
 		pmesh_texcoord savedTexCoord;
-	}; STATIC_ASSERT_SIZE(drawVert_t, 0x4C);
+		int unkown;
+	}; STATIC_ASSERT_SIZE(drawVert_t, 0x50); //STATIC_ASSERT_SIZE(drawVert_t, 0x4C);
 
 	struct patchMesh_material
 	{
 		LayerMaterialDef* lyrMtl;
 		qtexture_s* radMtl;
+	};
+
+	struct curvePatchDef_t
+	{
+		int width;
+		int height;
+		int random_one;
+		float* point_array;
+		int unk;
+		float large_float_array[64];
 	};
 
 	struct patchMesh_t
@@ -587,15 +614,16 @@ namespace game
 		char pad_0x0030[4];
 		texdef_t* mat_unk;
 		drawVert_t ctrl[16][16];
-		char pad_0x4468[1024];
-		int pad_unk;
-		brush_t* pSymbiot;
+		//char pad_0x4468[1024];
+		curvePatchDef_t* curveDef;
+		brush_t_with_custom_def* pSymbiot; //brush_t* pSymbiot;
 		std::int16_t version;
 		bool xx22b;
 		bool bDirty;
 		int xx21;
 		int size_of_struct_0x504C;
 	}; STATIC_ASSERT_SIZE(patchMesh_t, 0x504C);
+	STATIC_ASSERT_OFFSET(patchMesh_t, pSymbiot, 0x503C);
 
 	struct patch_def_t
 	{

@@ -446,10 +446,14 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 						IMGUI_BEGIN_CZWND;
 						const auto context = ImGui::GetCurrentContext();
 
-						if (context->OpenPopupStack.Size > 0)
+						// fix flickering background
+						if(!GET_GUI(ggui::file_dialog)->is_active())
 						{
-							//printf("closing popup #%d\n", context->OpenPopupStack.Size - 1);
-							ImGui::ClosePopupToLevel(context->OpenPopupStack.Size - 1, false);
+							if (context->OpenPopupStack.Size > 0)
+							{
+								//printf("closing popup #%d\n", context->OpenPopupStack.Size - 1);
+								ImGui::ClosePopupToLevel(context->OpenPopupStack.Size - 1, false);
+							}
 						}
 
 						// restore context

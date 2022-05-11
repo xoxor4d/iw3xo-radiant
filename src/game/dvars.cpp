@@ -49,6 +49,7 @@ namespace dvars
 	game::dvar_s* mainframe_show_menubar = nullptr;
 
 	game::dvar_s* grid_zoom_to_cursor = nullptr;
+	game::dvar_s* grid_draw_edge_coordinates = nullptr;
 
 	game::dvar_s* r_draw_model_origin = nullptr;
 	game::dvar_s* r_draw_model_shadowcaster = nullptr;

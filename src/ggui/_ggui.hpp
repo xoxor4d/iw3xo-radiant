@@ -26,20 +26,24 @@ namespace ggui
 		MISC_MODEL_CHANGE = 4,
 		MISC_PREFAB = 5,
 		MISC_PREFAB_CHANGE = 6,
+		MISC_PREFAB_CREATE = 7,
 		FX_CHANGE = 10,
+		FX_EDITOR_DEF = 11,
+		FX_EDITOR_MATERIAL = 12,
+		FX_EDITOR_MODEL = 13,
 	};
 	
-	#define mainframe_thiscall(return_val, addr)	\
-		utils::hook::call<return_val(__fastcall)(cmainframe*)>(addr)(cmainframe::activewnd)
-	
-	#define mainframe_cdeclcall(return_val, addr)	\
-		utils::hook::call<return_val(__cdecl)(cmainframe*)>(addr)(cmainframe::activewnd)
-	
-	#define mainframe_stdcall(return_val, addr)	\
-		utils::hook::call<return_val(__stdcall)(cmainframe*)>(addr)(cmainframe::activewnd)
-	
-	#define cdeclcall(return_val, addr)	\
-		utils::hook::call<return_val(__cdecl)()>(addr)()
+	//#define mainframe_thiscall(return_val, addr)	\
+	//	utils::hook::call<return_val(__fastcall)(cmainframe*)>(addr)(cmainframe::activewnd)
+	//
+	//#define mainframe_cdeclcall(return_val, addr)	\
+	//	utils::hook::call<return_val(__cdecl)(cmainframe*)>(addr)(cmainframe::activewnd)
+	//
+	//#define mainframe_stdcall(return_val, addr)	\
+	//	utils::hook::call<return_val(__stdcall)(cmainframe*)>(addr)(cmainframe::activewnd)
+	//
+	//#define cdeclcall(return_val, addr)	\
+	//	utils::hook::call<return_val(__cdecl)()>(addr)()
 
 
 	// left label menu widget, eg. "dragfloat"
@@ -195,6 +199,7 @@ namespace ggui
 			
 		}
 
+		// has to be called last
 		void open()
 		{
 			switch (GUI_TYPE)

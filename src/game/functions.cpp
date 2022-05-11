@@ -41,39 +41,38 @@ namespace game
 
 		// renderer
 		IDirect3DDevice9* d3d9_device = nullptr;
-		
+
 	}
 
 	game::vec3_t vec3_origin = { 0.0f, 0.0f, 0.0f };
 	game::vec4_t color_white = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	IDirect3DTexture9* framebuffer_test = nullptr;
-	
+
 	// radiant globals
-	int&		g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
+	int& g_nScaleHow = *reinterpret_cast<int*>(0x23F16DC);
 	game::qeglobals_t* g_qeglobals = reinterpret_cast<game::qeglobals_t*>(0x25F39C0);
 
-	float&	g_zoomLevel = *reinterpret_cast<float*>(0x25D5A90);
-	int*	g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
-	int&	g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
-	bool&	g_bScreenUpdates = *reinterpret_cast<bool*>(0x739B0F);
+	float& g_zoomLevel = *reinterpret_cast<float*>(0x25D5A90);
+	int* g_nUpdateBitsPtr = reinterpret_cast<int*>(0x25D5A74);
+	int& g_nUpdateBits = *reinterpret_cast<int*>(0x25D5A74);
+	bool& g_bScreenUpdates = *reinterpret_cast<bool*>(0x739B0F);
 	double& g_time = *reinterpret_cast<double*>(0x2665678);
 	double& g_oldtime = *reinterpret_cast<double*>(0x2665670);
-	bool&	g_region_active = *reinterpret_cast<bool*>(0x23F1744);
-	bool&	g_bCrossHairs = *reinterpret_cast<bool*>(0x25D5B06);
-	bool&	g_bClipMode = *reinterpret_cast<bool*>(0x23F16D8);
-	bool&	g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
-	bool&	g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
-	int&	g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
-	int&	g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
-	float*	g_vRotateOrigin = reinterpret_cast<float*>(0x23F1658);
-	int&	g_prefab_stack_level = *reinterpret_cast<int*>(0x25D5B34);
+	bool& g_region_active = *reinterpret_cast<bool*>(0x23F1744);
+	bool& g_bCrossHairs = *reinterpret_cast<bool*>(0x25D5B06);
+	bool& g_bClipMode = *reinterpret_cast<bool*>(0x23F16D8);
+	bool& g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
+	bool& g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
+	int& g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
+	float* g_vRotateOrigin = reinterpret_cast<float*>(0x23F1658);
+	int& g_prefab_stack_level = *reinterpret_cast<int*>(0x25D5B34);
 
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
 
 	const char* current_map_filepath = reinterpret_cast<const char*>(0x23F18D8);
-	
+
 	game::filter_material_t* filter_surfacetype_array = reinterpret_cast<game::filter_material_t*>(0x73AF80);
 	game::filter_material_t* filter_locale_array = reinterpret_cast<game::filter_material_t*>(0x73A780);
 	game::filter_material_t* filter_usage_array = reinterpret_cast<game::filter_material_t*>(0x739F80);
@@ -127,7 +126,7 @@ namespace game
 		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*game::active_brushes_next_ptr);
 		return brush;
 	}
-	
+
 	game::selbrush_def_t* g_selected_brushes()
 	{
 		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*game::currSelectedBrushes);
@@ -155,7 +154,7 @@ namespace game
 	}
 
 	int& multiple_edit_entities = *reinterpret_cast<int*>(0x240A10C);
-	
+
 	game::eclass_t* g_eclass()
 	{
 		const auto eclass = reinterpret_cast<game::eclass_t*>(*(DWORD*)0x25D5B20);
@@ -167,7 +166,7 @@ namespace game
 		const auto g_dlgSurface = reinterpret_cast<CSurfaceDlg*>(0x25D7668);
 		return g_dlgSurface;
 	}
-	
+
 	CPrefsDlg* g_PrefsDlg()
 	{
 		const auto prefs = reinterpret_cast<CPrefsDlg*>(*(DWORD*)0x73C704);
@@ -184,55 +183,28 @@ namespace game
 			call	SavePrefs_addr;
 		}
 	}
-	
+
 	game::undo_s* g_lastundo()
 	{
 		const auto undo = reinterpret_cast<game::undo_s*>(*(DWORD*)0x23F162C);
 		return undo;
 	}
-	
+
 	game::undo_s* g_lastredo()
 	{
 		const auto redo = reinterpret_cast<game::undo_s*>(*(DWORD*)0x23F15CC);
 		return redo;
 	}
 
-	bool is_single_brush_selected(bool print_warning)
-	{
-		if ((DWORD*)g_selected_brushes_next() == game::currSelectedBrushes || (DWORD*)g_selected_brushes_next()->next != game::currSelectedBrushes)
-		{
-			if(print_warning)
-			{
-				game::printf_to_console("Error: you must have a single brush selected");
-			}
-			
-			return false;
-		}
-
-		if (auto n = g_selected_brushes_next(); n && n->owner && n->owner->firstActive && n->owner->firstActive->eclass->fixedsize)
-		{
-			if (print_warning)
-			{
-				game::printf_to_console("Error: you cannot manipulate fixed size entities");
-			}
-
-			return false;
-		}
-
-		return true;
-	}
-
-	bool is_any_brush_selected()
-	{
-		return (DWORD*)game::g_selected_brushes_next() != game::currSelectedBrushes;
-	}
+	int& g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
+	int& g_undoId = *reinterpret_cast<int*>(0x739F74);
 
 	void Undo_GeneralStart(const char* operation /*eax*/)
 	{
-#ifdef DEBUG
-		game::printf_to_console("Undo_GeneralStart :: %s", operation);
-#endif
-		
+//#ifdef DEBUG
+//		game::printf_to_console("Undo_GeneralStart :: %s", operation);
+//#endif
+
 		const static uint32_t func_addr = 0x45E3F0;
 		__asm
 		{
@@ -260,6 +232,11 @@ namespace game
 		}
 	}
 
+	void Undo_AddBrushList_Selected()
+	{
+		game::Undo_AddBrushList(game::currSelectedBrushes);
+	}
+
 	// game::currSelectedBrushes
 	void Undo_EndBrushList(void* sb)
 	{
@@ -277,6 +254,11 @@ namespace game
 		}
 	}
 
+	void Undo_EndBrushList_Selected()
+	{
+		game::Undo_EndBrushList(game::currSelectedBrushes);
+	}
+
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/)
 	{
 		const static uint32_t func_addr = 0x45E990;
@@ -287,6 +269,36 @@ namespace game
 			call	func_addr;
 			popad;
 		}
+	}
+
+	bool is_single_brush_selected(bool print_warning)
+	{
+		if ((DWORD*)g_selected_brushes_next() == game::currSelectedBrushes || (DWORD*)g_selected_brushes_next()->next != game::currSelectedBrushes)
+		{
+			if (print_warning)
+			{
+				game::printf_to_console("Error: you must have a single brush selected");
+			}
+
+			return false;
+		}
+
+		if (auto n = g_selected_brushes_next(); n && n->owner && n->owner->firstActive && n->owner->firstActive->eclass->fixedsize)
+		{
+			if (print_warning)
+			{
+				game::printf_to_console("Error: you cannot manipulate fixed size entities");
+			}
+
+			return false;
+		}
+
+		return true;
+	}
+
+	bool is_any_brush_selected()
+	{
+		return (DWORD*)game::g_selected_brushes_next() != game::currSelectedBrushes;
 	}
 
 	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/)
@@ -330,19 +342,6 @@ namespace game
 		}
 	}
 
-	void AxisToAngles(const float(*axis)[3], float* angles)
-	{
-		const static uint32_t func_addr = 0x4A8A00;
-		__asm
-		{
-			pushad;
-			mov		eax, angles;
-			mov		ecx, axis;
-			call	func_addr;
-			popad;
-		}
-	}
-
 	// arbitary rotate selection around axis (xyz)
 	void selection_rotate_axis(int axis, int deg)
 	{
@@ -375,6 +374,49 @@ namespace game
 		case 2:
 			utils::hook::call<void(__stdcall)(rot_helper*, int*)>(0x451010)(&helper, &helper.unused);
 			break;
+		}
+	}
+
+	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/)
+	{
+		const static uint32_t func_addr = 0x47CDE0;
+		__asm
+		{
+			pushad;
+			push	unk;
+			push	0; // ecx?
+
+			fld		degree;
+			fstp    dword ptr[esp];
+
+			push	snap;
+			push	brush;
+
+			mov		eax, rotate_axis; // lea
+
+			call	func_addr;
+			add		esp, 16;
+			popad;
+		}
+	}
+
+	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis)
+	{
+		const static uint32_t func_addr = 0x48FF40;
+		__asm
+		{
+			pushad;
+			push	rotate_axis;
+			push	0; // ecx?
+
+			mov		eax, axis;
+
+			fld		degree;
+			fstp    dword ptr[esp];
+
+			call	func_addr;
+			add		esp, 8;
+			popad;
 		}
 	}
 
@@ -523,6 +565,112 @@ namespace game
 		}
 	}
 
+	// insert/delete, column/row
+	void Patch_Adjust(game::patchMesh_t* p, bool insert, bool column, bool flag)
+	{
+		if (insert)
+		{
+			if (column)
+			{
+				game::Patch_InsertColumn(p, flag);
+			}
+			else
+			{
+				game::Patch_InsertRow(p, flag);
+			}
+		}
+		else if (column)
+		{
+			game::Patch_RemoveColumn(p, flag);
+		}
+		else
+		{
+			game::Patch_RemoveRow(p, flag);
+		}
+	}
+
+	game::patchMesh_t* Patch_Duplicate(game::patchMesh_t* p /*edi*/)
+	{
+		const static uint32_t func_addr = 0x4486A0;
+		__asm
+		{
+			mov		edi, p;
+			call	func_addr;
+		}
+	}
+
+	void Patch_Invert(game::patchMesh_t* p /*ebx*/)
+	{
+		const static uint32_t func_addr = 0x446480;
+		__asm
+		{
+			mov		ebx, p;
+			call	func_addr;
+		}
+	}
+
+	void Patch_Rebuild(game::patchMesh_t* p /*esi*/, int reset)
+	{
+		const static uint32_t func_addr = 0x438D80;
+		__asm
+		{
+			push	reset;
+			mov		esi, p;
+			call	func_addr;
+			add		esp, 4;
+		}
+	}
+
+	// flag :: [true] first column, [false] last column
+	void Patch_InsertColumn(patchMesh_t* p, bool flag /*cl*/)
+	{
+		const static uint32_t func_addr = 0x443410;
+		__asm
+		{
+			mov		cl, flag;
+			push	p;
+			call	func_addr;
+			add		esp, 4;
+		}
+	}
+
+	// flag :: [true] first row, [false] last row
+	void Patch_InsertRow(patchMesh_t* p, bool flag /*dl*/)
+	{
+		const static uint32_t func_addr = 0x443830;
+		__asm
+		{
+			mov		dl, flag;
+			push	p;
+			call	func_addr;
+			add		esp, 4;
+		}
+	}
+
+	// flag :: [true] first column, [false] last column
+	void Patch_RemoveColumn(patchMesh_t* p /*eax*/, bool flag /*cl*/)
+	{
+		const static uint32_t func_addr = 0x443C90;
+		__asm
+		{
+			mov		cl, flag;
+			mov		eax, p;
+			call	func_addr;
+		}
+	}
+
+	// flag :: [true] first row, [false] last row
+	void Patch_RemoveRow(patchMesh_t* p /*eax*/, bool flag /*cl*/)
+	{
+		const static uint32_t func_addr = 0x443B60;
+		__asm
+		{
+			mov		cl, flag;
+			mov		eax, p;
+			call	func_addr;
+		}
+	}
+
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap)
 	{
 		const static uint32_t func_addr = 0x47BA40;
@@ -644,7 +792,7 @@ namespace game
 		}
 	}
 
-	void Brush_Select(game::brush_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection)
+	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection)
 	{
 		const int overwrite = some_overwrite;
 		const int status = update_status;
@@ -664,20 +812,6 @@ namespace game
 		}
 	}
 
-	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count)
-	{
-		const static uint32_t func_addr = 0x4A11A0;
-		__asm
-		{
-			push	file_count;
-			mov		esi, null;
-			mov		edx, path;
-	
-			call	func_addr;
-			add     esp, 4;
-		}
-	}
-
 	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* wnd)
 	{
 		const static uint32_t func_addr = 0x466290;
@@ -693,6 +827,7 @@ namespace game
 		}
 	}
 
+	// also adds an undo
 	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y)
 	{
 		const static uint32_t func_addr = 0x466480;
@@ -723,354 +858,18 @@ namespace game
 		}
 	}
 
-	int* dvarCount = reinterpret_cast<int*>(0x242394C);
-	game::dvar_s* dvarPool = reinterpret_cast<game::dvar_s*>(0x2427DA4); // dvarpool + 1 dvar size
-	game::dvar_s* dvarPool_FirstEmpty = reinterpret_cast<game::dvar_s*>(0x242C14C); // first empty dvar 
-	DWORD* sortedDvars = reinterpret_cast<DWORD*>(0x2423958); // sorted dvar* list
-	DWORD* sortedDvarsAddons = reinterpret_cast<DWORD*>(0x2423CEC); // first empty pointer
-	int sortedDvarsAddonsCount = 0;
 
-	//game::selbrush_t *selected_brushes = reinterpret_cast<game::selbrush_t*>(0x23F1864);
-	//game::selbrush_t *selected_brushes_next = reinterpret_cast<game::selbrush_t*>(0x23F1868);
-
-	//entity_s* edit_entity = reinterpret_cast<entity_s*>(0x240A108); // add structs
-	//entity_s* world_entity = reinterpret_cast<entity_s*>(0x25D5B30); // add structs
-
-	Com_Error_t Com_Error = Com_Error_t(0x499F50);
-	OnCtlColor_t OnCtlColor = OnCtlColor_t(0x587907);
-
-	MatrixForViewer_t MatrixForViewer = reinterpret_cast<MatrixForViewer_t>(0x4A7A70);
-	MatrixMultiply44_t MatrixMultiply44 = reinterpret_cast<MatrixMultiply44_t>(0x4A6180);
-	MatrixInverse44_t MatrixInverse44 = reinterpret_cast<MatrixInverse44_t>(0x4A6670);
-
-	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/)
-	{
-		const static uint32_t func_addr = 0x47CDE0;
-		__asm
-		{
-			pushad;
-			push	unk;
-			push	0; // ecx?
-
-			fld		degree;
-			fstp    dword ptr[esp];
-
-			push	snap;
-			push	brush;
-
-			mov		eax, rotate_axis; // lea
-
-			call	func_addr;
-			add		esp, 16;
-			popad;
-		}
-	}
-
-	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis)
-	{
-		const static uint32_t func_addr = 0x48FF40;
-		__asm
-		{
-			pushad;
-			push	rotate_axis;
-			push	0; // ecx?
-
-			mov		eax, axis;
-
-			fld		degree;
-			fstp    dword ptr[esp];
-
-			call	func_addr;
-			add		esp, 8;
-			popad;
-		}
-	}
-
-	//CopyAxis_t CopyAxis = reinterpret_cast<CopyAxis_t>(0x4A8860);
-	//AnglesToAxis_t AnglesToAxis = reinterpret_cast<AnglesToAxis_t>(0x4ABEB0);
-	AngleVectors_t AngleVectors = reinterpret_cast<AngleVectors_t>(0x4ABD70);
-	OrientationConcatenate_t OrientationConcatenate = reinterpret_cast<OrientationConcatenate_t>(0x4BA7D0);
-
-
-	// * --------------------- FX ----------------------------------
-
-	int& g_processCodeMesh = *reinterpret_cast<int*>(0x174F960);
-
-	int I_strncmp(const char* s0, const char* s1, int n)
-	{
-		int c0, c1;
-
-		if (!s0 || !s1)
-		{
-			Assert();
-			return s1 - s0;
-		}
-		do
-		{
-			c0 = *s0++;
-			c1 = *s1++;
-
-			if (!n--)
-			{
-				return 0;
-			}
-
-			if (c0 != c1)
-			{
-				return 2 * (c0 >= c1) - 1;
-			}
-
-		} while (c0);
-
-		return 0;
-	}
-
-	int I_strcmp(const char* s1, const char* s2)
-	{
-		if (!s1 || !s2)
-		{
-			Assert();
-		}
-		
-		return I_strncmp(s1, s2, 0x7FFFFFFF);
-	}
-
-	void I_strncpyz(char* Dest, const char* Source, int destsize)
-	{
-		if (!Source || !Dest || destsize < 1)
-		{
-			Assert();
-		}
-		
-		strncpy(Dest, Source, destsize - 1);
-		Dest[destsize - 1] = 0;
-	}
-
-	// -----------------------------------------------------------
-	// DVARS
-
-	game::dvar_s* Dvar_RegisterVec4(const char* dvar_name /*ecx*/, float x, float y, float z, float w, float mins, float maxs, __int16 flags /*di/edi*/, const char* description)
-	{
-		const static uint32_t Dvar_RegisterVec4 = 0x4B2860;
-		__asm
-		{
-			push	description;
-			sub		esp, 24;
-			
-			fld		maxs;
-			fstp    dword ptr[esp + 20];
-			
-			fld		mins;
-			fstp    dword ptr[esp + 16];
-			
-			fld		w;
-			fstp    dword ptr[esp + 12];
-			
-			fld		z;
-			fstp    dword ptr[esp + 8];
-			
-			fld		y;
-			fstp    dword ptr[esp + 4];
-			
-			fld		x;
-			fstp    dword ptr[esp];
-
-			xor		edi, edi;
-			mov		di, flags;
-			
-			mov		ecx, dvar_name;
-			
-			call	Dvar_RegisterVec4;
-			add		esp, 28;
-		}
-	}
-
-	void Dvar_SetString(game::dvar_s *dvar /*esi*/, const char *string /*ebx*/)
-	{
-		const static uint32_t Dvar_SetString_Func = 0x4B38D0;
-		
-		__asm pushad
-		__asm mov		ebx, [string]
-		__asm mov		esi, [dvar]
-		__asm Call		Dvar_SetString_Func
-		__asm popad
-	}
-
-	const char* Dvar_DisplayableValue(game::dvar_s* dvar)
-	{
-		const static uint32_t Dvar_DisplayableValue_Func = 0x4AFAA0;
-		__asm
-		{
-			mov		eax, dvar
-			Call	Dvar_DisplayableValue_Func
-		}
-	}
-
-	const char* Dvar_DomainToString_Internal(signed int buffer_len /*eax*/, const char* buffer_out /*ebx*/, int dvar_type, int* enum_lines_count, float mins, float maxs) //DvarLimits limit)
-	{
-		const static uint32_t Dvar_DomainToString_Internal_Func = 0x4B0220;
-		__asm
-		{
-			push	maxs;
-			push	mins;
-			
-			push	enum_lines_count;
-			push	dvar_type;
-			mov		ebx, buffer_out;
-			mov		eax, buffer_len;
-			call	Dvar_DomainToString_Internal_Func;
-			add		esp, 16;
-		}
-	}
-
-	game::dvar_s * Dvar_SetFromStringFromSource(const char *string /*ecx*/, game::dvar_s *dvar /*esi*/, int source)
-	{
-		const static uint32_t Dvar_SetFromStringFromSource_Func = 0x4B3910;
-		__asm
-		{
-			mov		esi, dvar
-			push	source
-			mov		ecx, string
-
-			Call	Dvar_SetFromStringFromSource_Func
-			add		esp, 4h
-		}
-	}
-
-	__declspec(naked) game::dvar_s* Dvar_FindVar(const char* /*dvar*/)
-	{
-		__asm
-		{
-			push eax
-			pushad
-
-			mov ebx, [esp + 28h]
-			mov eax, 4B0F00h // Dvar_FindMalleableVar Addr.
-			call eax
-
-			mov[esp + 20h], eax
-			popad
-
-			pop eax
-			retn
-		}
-	}
-
-	// do not call manually :x
-	int printf_to_console_internal(const char* _format, va_list va)
-	{
-		int _result;
-		char text_out[32772];
-
-		vsprintf(text_out, _format, va);
-		_result = _vfprintf_l(stdout, _format, NULL, va);
-
-		if (const auto	con = GET_GUI(ggui::console_dialog); 
-						con)
-		{
-			con->addline_no_format(text_out);
-		}
-
-		return _result;
-	}
-	
-	int printf_to_console(_In_z_ _Printf_format_string_ char const* const _format, ...)
-	{
-		int _result;
-		va_list _arglist;
-		char text_out[1024];
-
-		__crt_va_start(_arglist, _format);
-		vsprintf(text_out, _format, _arglist);
-		_result = _vfprintf_l(stdout, _format, NULL, _arglist);
-		__crt_va_end(_arglist);
-
-		if (const auto	con = GET_GUI(ggui::console_dialog);
-						con)
-		{
-			con->addline_no_format(text_out);
-		}
-		
-		return _result;
-	}
-
-	void com_printf_to_console([[maybe_unused]] int channel, const char* _format, ...)
-	{
-		va_list _arglist;
-		char text_out[1024];
-
-		__crt_va_start(_arglist, _format);
-		vsprintf(text_out, _format, _arglist);
-		_vfprintf_l(stdout, _format, NULL, _arglist);
-		__crt_va_end(_arglist);
-
-		if (const auto	con = GET_GUI(ggui::console_dialog);
-						con)
-		{
-			con->addline_no_format(text_out);
-		}
-	}
-
-	void console_error(const std::string &msg)
-	{
-		std::string err = "[!] " + msg + "\n";
-		printf(err.c_str());
-
-		if (const auto	con = GET_GUI(ggui::console_dialog);
-						con)
-		{
-			con->addline_no_format(err.c_str());
-		}
-	}
-
-	void FS_ScanForDir(const char* directory, const char* search_path, int localized)
-	{
-		const static uint32_t FS_ScanForDir_Func = 0x4A1E80;
-		__asm
-		{
-			pushad;
-			push	localized;
-			mov		edx, directory;
-			mov     ecx, search_path;
-			call	FS_ScanForDir_Func;
-			add		esp, 4;
-			popad;
-		}
-	}
-
-	game::GfxImage* Image_FindExisting(const char* name)
-	{
-		const static uint32_t Image_FindExisting_Func = 0x513200;
-		__asm
-		{
-			//pushad;
-			mov     edi, name;
-			call	Image_FindExisting_Func;
-			//popad;
-		}
-	}
-
-	game::GfxImage* Image_RegisterHandle(const char* name)
-	{
-		game::GfxImage* image = game::Image_FindExisting(name);
-		
-		if (!image)
-		{
-			// Image_FindExisting_LoadObj
-			image = utils::function<game::GfxImage* (const char* name, int, int)>(0x54FFC0)(name, 1, 0);
-		}
-
-		return image;
-	}
+	// *
+	// * --------------------- renderer ------------------------------
 
 	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/)
 	{
-		const static uint32_t R_RenderBufferCmdCheck_Func = 0x4FAEB0;
+		const static uint32_t R_RenderBufferCmdCheck_func = 0x4FAEB0;
 		__asm
 		{
 			mov		ebx, bytes;
 			mov		edi, render_cmd;
-			call	R_RenderBufferCmdCheck_Func;
+			call	R_RenderBufferCmdCheck_func;
 		}
 	}
 
@@ -1143,7 +942,7 @@ namespace game
 				{
 					ASSERT_MSG(1, "var");
 				}
-				
+
 				*swapchain = nullptr;
 
 				if (old_swapchain->Release())
@@ -1164,4 +963,317 @@ namespace game
 		}
 	}
 
+	void AxisToAngles(const float(*axis)[3], float* angles)
+	{
+		const static uint32_t func_addr = 0x4A8A00;
+		__asm
+		{
+			pushad;
+			mov		eax, angles;
+			mov		ecx, axis;
+			call	func_addr;
+			popad;
+		}
+	}
+	
+	
+	// *
+	// * --------------------- dvars ------------------------------
+
+	int* dvarCount = reinterpret_cast<int*>(0x242394C);
+	game::dvar_s* dvarPool = reinterpret_cast<game::dvar_s*>(0x2427DA4); // dvarpool + 1 dvar size
+	game::dvar_s* dvarPool_FirstEmpty = reinterpret_cast<game::dvar_s*>(0x242C14C); // first empty dvar 
+	DWORD* sortedDvars = reinterpret_cast<DWORD*>(0x2423958); // sorted dvar* list
+	DWORD* sortedDvarsAddons = reinterpret_cast<DWORD*>(0x2423CEC); // first empty pointer
+	int sortedDvarsAddonsCount = 0;
+
+	game::dvar_s* Dvar_RegisterVec4(const char* dvar_name /*ecx*/, float x, float y, float z, float w, float mins, float maxs, __int16 flags /*di/edi*/, const char* description)
+	{
+		const static uint32_t Dvar_RegisterVec4 = 0x4B2860;
+		__asm
+		{
+			push	description;
+			sub		esp, 24;
+			
+			fld		maxs;
+			fstp    dword ptr[esp + 20];
+			
+			fld		mins;
+			fstp    dword ptr[esp + 16];
+			
+			fld		w;
+			fstp    dword ptr[esp + 12];
+			
+			fld		z;
+			fstp    dword ptr[esp + 8];
+			
+			fld		y;
+			fstp    dword ptr[esp + 4];
+			
+			fld		x;
+			fstp    dword ptr[esp];
+
+			xor		edi, edi;
+			mov		di, flags;
+			
+			mov		ecx, dvar_name;
+			
+			call	Dvar_RegisterVec4;
+			add		esp, 28;
+		}
+	}
+
+	void Dvar_SetString(game::dvar_s *dvar /*esi*/, const char *string /*ebx*/)
+	{
+		const static uint32_t Dvar_SetString_func = 0x4B38D0;
+		__asm
+		{
+			pushad;
+			mov		ebx, [string];
+			mov		esi, [dvar];
+			call	Dvar_SetString_func;
+			popad;
+		}
+	}
+
+	const char* Dvar_DisplayableValue(game::dvar_s* dvar)
+	{
+		const static uint32_t Dvar_DisplayableValue_func = 0x4AFAA0;
+		__asm
+		{
+			mov		eax, dvar
+			call	Dvar_DisplayableValue_func
+		}
+	}
+
+	const char* Dvar_DomainToString_Internal(signed int buffer_len /*eax*/, const char* buffer_out /*ebx*/, int dvar_type, int* enum_lines_count, float mins, float maxs) //DvarLimits limit)
+	{
+		const static uint32_t Dvar_DomainToString_Internal_func = 0x4B0220;
+		__asm
+		{
+			push	maxs;
+			push	mins;
+			push	enum_lines_count;
+			push	dvar_type;
+			mov		ebx, buffer_out;
+			mov		eax, buffer_len;
+			call	Dvar_DomainToString_Internal_func;
+			add		esp, 16;
+		}
+	}
+
+	game::dvar_s * Dvar_SetFromStringFromSource(const char *string /*ecx*/, game::dvar_s *dvar /*esi*/, int source)
+	{
+		const static uint32_t Dvar_SetFromStringFromSource_func = 0x4B3910;
+		__asm
+		{
+			mov		esi, dvar;
+			push	source;
+			mov		ecx, string;
+
+			call	Dvar_SetFromStringFromSource_func;
+			add		esp, 4;
+		}
+	}
+
+	__declspec(naked) game::dvar_s* Dvar_FindVar(const char* /*dvar*/)
+	{
+		__asm
+		{
+			push eax;
+			pushad;
+
+			mov ebx, [esp + 28h];
+			mov eax, 0x4B0F00; // Dvar_FindMalleableVar Addr.
+			call eax;
+
+			mov[esp + 20h], eax;
+			popad;
+
+			pop eax;
+			retn;
+		}
+	}
+
+
+	// *
+	// * --------------------- console / warnings / error ------------------------------
+
+	// do not call manually
+	int printf_to_console_internal(const char* _format, va_list va)
+	{
+		int _result;
+		char text_out[32772];
+
+		vsprintf(text_out, _format, va);
+		_result = _vfprintf_l(stdout, _format, NULL, va);
+
+		if (const auto	con = GET_GUI(ggui::console_dialog); 
+						con)
+		{
+			con->addline_no_format(text_out);
+		}
+
+		return _result;
+	}
+	
+	int printf_to_console(_In_z_ _Printf_format_string_ char const* const _format, ...)
+	{
+		int _result;
+		va_list _arglist;
+		char text_out[1024];
+
+		__crt_va_start(_arglist, _format);
+		vsprintf(text_out, _format, _arglist);
+		_result = _vfprintf_l(stdout, _format, NULL, _arglist);
+		__crt_va_end(_arglist);
+
+		if (const auto	con = GET_GUI(ggui::console_dialog);
+						con)
+		{
+			con->addline_no_format(text_out);
+		}
+		
+		return _result;
+	}
+
+	void com_printf_to_console([[maybe_unused]] int channel, const char* _format, ...)
+	{
+		va_list _arglist;
+		char text_out[1024];
+
+		__crt_va_start(_arglist, _format);
+		vsprintf(text_out, _format, _arglist);
+		_vfprintf_l(stdout, _format, NULL, _arglist);
+		__crt_va_end(_arglist);
+
+		if (const auto	con = GET_GUI(ggui::console_dialog);
+						con)
+		{
+			con->addline_no_format(text_out);
+		}
+	}
+
+	void console_error(const std::string &msg)
+	{
+		std::string err = "[!] " + msg + "\n";
+		printf(err.c_str());
+
+		if (const auto	con = GET_GUI(ggui::console_dialog);
+						con)
+		{
+			con->addline_no_format(err.c_str());
+		}
+	}
+
+
+	// *
+	// * --------------------- fs / io ------------------------------
+
+	void FS_ScanForDir(const char* directory, const char* search_path, int localized)
+	{
+		const static uint32_t FS_ScanForDir_func = 0x4A1E80;
+		__asm
+		{
+			pushad;
+			push	localized;
+			mov		edx, directory;
+			mov     ecx, search_path;
+			call	FS_ScanForDir_func;
+			add		esp, 4;
+			popad;
+		}
+	}
+
+	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count)
+	{
+		const static uint32_t func_addr = 0x4A11A0;
+		__asm
+		{
+			push	file_count;
+			mov		esi, null;
+			mov		edx, path;
+
+			call	func_addr;
+			add     esp, 4;
+		}
+	}
+
+	game::GfxImage* Image_FindExisting(const char* name)
+	{
+		const static uint32_t Image_FindExisting_func = 0x513200;
+		__asm
+		{
+			mov     edi, name;
+			call	Image_FindExisting_func;
+		}
+	}
+
+	game::GfxImage* Image_RegisterHandle(const char* name)
+	{
+		game::GfxImage* image = game::Image_FindExisting(name);
+		
+		if (!image)
+		{
+			// Image_FindExisting_LoadObj
+			image = utils::function<game::GfxImage* (const char* name, int, int)>(0x54FFC0)(name, 1, 0);
+		}
+
+		return image;
+	}
+
+	// *
+	// * --------------------- FX ----------------------------------
+
+	int& g_processCodeMesh = *reinterpret_cast<int*>(0x174F960);
+
+	int I_strncmp(const char* s0, const char* s1, int n)
+	{
+		int c0, c1;
+
+		if (!s0 || !s1)
+		{
+			Assert();
+			return s1 - s0;
+		}
+		do
+		{
+			c0 = *s0++;
+			c1 = *s1++;
+
+			if (!n--)
+			{
+				return 0;
+			}
+
+			if (c0 != c1)
+			{
+				return 2 * (c0 >= c1) - 1;
+			}
+
+		} while (c0);
+
+		return 0;
+	}
+
+	int I_strcmp(const char* s1, const char* s2)
+	{
+		if (!s1 || !s2)
+		{
+			Assert();
+		}
+
+		return I_strncmp(s1, s2, 0x7FFFFFFF);
+	}
+
+	void I_strncpyz(char* Dest, const char* Source, int destsize)
+	{
+		if (!Source || !Dest || destsize < 1)
+		{
+			Assert();
+		}
+
+		strncpy(Dest, Source, destsize - 1);
+		Dest[destsize - 1] = 0;
+	}
 }

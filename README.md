@@ -1,3 +1,6 @@
+
+
+
 <h1 align="center">IW3xRadiant - A Call of Duty 4 Radiant Modification using ImGui</h3>
 
 <p align="center">
@@ -6,20 +9,43 @@ Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You 
 </p>
 
 <br>
+<div align="center" markdown="1">
+
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/xoxor4d/iw3xo-radiant?color=%2368BC71&logo=github)](https://github.com/xoxor4d/iw3xo-radiant/releases)&ensp;
+![GitHub commits since latest release (by date)](https://img.shields.io/github/commits-since/xoxor4d/iw3xo-radiant/latest/develop?logo=github)&ensp;
+[![Downloads](https://img.shields.io/github/downloads/xoxor4d/iw3xo-radiant/total?logo=github&label=total-downloads)](https://github.com/xoxor4d/iw3xo-radiant/releases)&ensp;
+[![Discord](https://img.shields.io/discord/677574256678141973?label=Discord&logo=discord&logoColor=%23FFFF&)](https://discord.gg/t5jRGbj)&ensp;
+
+<br>
+
+### nightly builds - develop branch
+( download and install the [latest release](https://github.com/xoxor4d/iw3xo-radiant/releases) before using nightly's )
+
+[![build-develop](https://img.shields.io/github/workflow/status/xoxor4d/iw3xo-radiant/Build/develop?logo=github&label=nightly-develop)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build/develop/Debug%20binaries.zip)&ensp;
+[![build-release](https://img.shields.io/github/workflow/status/xoxor4d/iw3xo-radiant/Build/develop?logo=github&label=nightly-release)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build/develop/Release%20binaries.zip)&ensp;
+
+<br>
+
+### Project Page (Guide / In-Depth)
+https://xoxor4d.github.io/projects/iw3xo-radiant
+
+</div>
+
+<br>
 
 ![image](https://user-images.githubusercontent.com/45299104/143088571-8a392c17-ed21-4639-9afb-f4fa492e3fca.jpg)
 
 ![](readme/effects.gif)
 
 ![image](readme/feat_ui.gif)
+<div align="center" markdown="1">
 
-<p align="center">
-	<b>^ build the layout you've always wanted</b><br>
-    <b>Youtube preview: </b>
-    <a href="https://www.youtube.com/watch?v=YSIGsSZZkco">https://www.youtube.com/watch?v=YSIGsSZZkco</a><br>
-</p>
+^ build the layout you've always wanted  
+[https://www.youtube.com/watch?v=YSIGsSZZkco](https://www.youtube.com/watch?v=YSIGsSZZkco)
+</div>
 
 ___
+## Features
 
 <br>
 
@@ -46,6 +72,8 @@ ___
 - editable toolbars, hotkeys, colors (all saved)
 - new file dialogs with working default paths
 - texture window toolbar for quick filtering
+- rope/wire generator
+- sun direction visualizer
 - a proper console with dvar support (incl. dvar suggestions and autocomplete)
 - print parsed entity and brush num on map load making it easier to find issues in map files (off by default) 
 - increased undo limit
@@ -53,42 +81,53 @@ ___
 
 <br>
 
-<p align="right">
-	<b>Pre-built binaries</b><br>
-    <a href="https://github.com/xoxor4d/iw3xo-radiant/releases">https://github.com/xoxor4d/iw3xo-radiant/releases</a><br>
-</p>
-
-
 ___
+## Installation
 
 <br>
 
-### How to build the project using Visual Studio
-1. Clone the repo (zip does not include deps!)
+1. Download the latest [release](https://github.com/xoxor4d/iw3xo-radiant/releases)
+2. Copy the `bin` and `map_source` folders into your cod4 root directory
+3. Start __IW3xRadiant.exe__
+
+- [NIGHTLY]&ensp; &ensp; unpack and replace `iw3r.dll` within the `bin` folder
+- [OPTIONAL]&ensp; __bo3-tool-textures.zip__ (unpack and place `.iwi's` into `bin\IW3xRadiant\images`)
+
+<br>
+
+___
+## Build / Compile
+
+<br>
+
+### How to build / compile the project using Visual Studio
+1. Clone the repo! __(zip does not include deps!)__
 2. Copy everything within the assets folder into your cod4-root folder
-3. Use "update_submodules.bat" to update submodules
-4. Use "generate-buildfiles.bat" to build project files with premake
-5. Load the solution (build/iw3xo-radiant.sln) in visual studio and open the iw3r project-settings to setup paths (Debug/Release):
-   - General:   output directory path -> "path-to-cod4-root\bin\"
-   - Debugging: command -> "path-to-cod4-root\bin\IW3xRadiant.exe"
-   - Debugging: working directory -> "path-to-cod4-root\bin\"
-6. Build -> Build Solution
+3. Use __update_submodules.bat__ to update submodules
+4. Use __generate-buildfiles.bat__ to build project files with premake
+5. Load the solution `(build/iw3xo-radiant.sln)` and open the iw3r project-settings to setup paths:
+> - General &ensp; &ensp; &ensp; output directory path -> `path-to-cod4-root\bin\`
+> - Debugging &ensp; command -> `path-to-cod4-root\bin\IW3xRadiant.exe`
+> - Debugging &ensp; working directory -> `path-to-cod4-root\bin\`
+6. Build -> Build Solution or run with debugger
 
 <br>
 
 ### How to build the project using VSCode
 1. Install C++ Build tools (msbuild)
-2. Add msbuild folder to the "PATH" environment variable (eg. "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin")
-3. Add "COD4_ROOT" environment variable with path to your cod4 directory (eg. "COD4_ROOT" "D:\COD4-Modtools")
+2. Add msbuild folder to the "PATH" environment variable:
+> `%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin`
+3. Add `COD4_ROOT` environment variable with path to your cod4 directory 
+> `"COD4_ROOT" "D:\COD4-Modtools"`
 4. Clone the repo (zip does not include deps!)
 5. Copy everything within the assets folder into your cod4-root folder
-6. Drag and drop all files from ".vscode/tracked\" into ".vscode\ (.gitignore all files in .vscode/ besides the readme and /tracked/)
-7. Open "iw3xo-radiant.code-workspace" 
-8. Run task "update_submodules" or open "update_submodules.bat"
-9. Run task "generate-buildfiles" or open "generate-buildfiles.bat"
+6. Drag and drop all files from `.vscode/tracked\` into `.vscode\`
+7. Open __iw3xo-radiant.code-workspace__ 
+8. Run task: `update_submodules` or open __update_submodules.bat__
+9. Run task: `generate-buildfiles` or open __generate-buildfiles.bat__
 
-Use provided build-tasks to build debug/release builds with the option to copy iw3r.dll and iw3r.pdb to %COD4_ROOT%/bin.
-Run->Start Debugging will build and copy a debug build to to %COD4_ROOT%/bin and launch IW3xRadiant.
+Use provided build-tasks with the option to copy `iw3r.dll` and `iw3r.pdb` to `%COD4_ROOT%/bin`  
+__Run->Start Debugging__ will build and copy a debug build to to `%COD4_ROOT%/bin` and launch IW3xRadiant.
 
 <br>
 
@@ -121,8 +160,10 @@ https://discord.gg/t5jRGbj
 
 <br>
 
+___
 ## Images
----
+
+<br>
 
 ### Model Selector / Preview:
 ![image](https://user-images.githubusercontent.com/45299104/146609277-803b9203-4a64-4355-99fc-32cfb7ad6d82.jpg)

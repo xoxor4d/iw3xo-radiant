@@ -529,8 +529,59 @@ namespace ggui
 				ImGui::SameLine();
 				if (ImGui::Button("..##filepromt_death", ImVec2(28, ImGui::GetFrameHeight())))
 				{
-					if (const auto	death_elem = effectdef_fileprompt();
-						death_elem)
+					// callback called from :: ggui::file_dialog_frame
+					if (dvars::gui_use_new_filedialog->current.enabled)
+					{
+						std::string path_str;
+
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+						path_str += "\\raw\\fx";
+
+
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(FX_EDITOR_DEF);
+						file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+						file->set_file_ext(".efx");
+						file->set_blocking();
+						file->set_callback([]
+							{
+								const auto dlg = GET_GUI(ggui::file_dialog);
+
+								const std::string replace_path = "raw\\fx\\";
+
+								if (dlg->get_path_result().contains(replace_path))
+								{
+									std::string loc_filepath = dlg->get_path_result().substr(
+										dlg->get_path_result().find(replace_path) + replace_path.length());
+
+									utils::erase_substring(loc_filepath, ".efx"s);
+									utils::replace(loc_filepath, "\\", "/");
+
+									if (const auto	_efx = fx_system::get_editor_effect();
+													_efx)
+									{
+										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+
+										if (const auto  death_elem = fx_system::FX_Register(loc_filepath.c_str());
+														death_elem)
+										{
+											_elem->effectOnDeath = death_elem;
+											GET_GUI(ggui::effects_editor_dialog)->on_modified(true);
+										}
+									}
+								}
+								else
+								{
+									game::printf_to_console("[ERR] [fx_editor] file not within \"raw\\fx\" directory");
+								}
+							});
+
+						file->open();
+					}
+					else if (const auto	death_elem = effectdef_fileprompt();
+										death_elem)
 					{
 						elem->effectOnDeath = death_elem;
 						modified = true;
@@ -565,8 +616,59 @@ namespace ggui
 
 				if (ImGui::Button("..##filepromt_emission", ImVec2(28, ImGui::GetFrameHeight())))
 				{
-					if (const auto	emit_elem = effectdef_fileprompt();
-						emit_elem)
+					// callback called from :: ggui::file_dialog_frame
+					if (dvars::gui_use_new_filedialog->current.enabled)
+					{
+						std::string path_str;
+
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+						path_str += "\\raw\\fx";
+
+
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(FX_EDITOR_DEF);
+						file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+						file->set_file_ext(".efx");
+						file->set_blocking();
+						file->set_callback([]
+							{
+								const auto dlg = GET_GUI(ggui::file_dialog);
+
+								const std::string replace_path = "raw\\fx\\";
+
+								if (dlg->get_path_result().contains(replace_path))
+								{
+									std::string loc_filepath = dlg->get_path_result().substr(
+										dlg->get_path_result().find(replace_path) + replace_path.length());
+
+									utils::erase_substring(loc_filepath, ".efx"s);
+									utils::replace(loc_filepath, "\\", "/");
+
+									if (const auto	_efx = fx_system::get_editor_effect();
+													_efx)
+									{
+										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+
+										if (const auto  emit_elem = fx_system::FX_Register(loc_filepath.c_str());
+														emit_elem)
+										{
+											_elem->emission = emit_elem;
+											GET_GUI(ggui::effects_editor_dialog)->on_modified(true);
+										}
+									}
+								}
+								else
+								{
+									game::printf_to_console("[ERR] [fx_editor] file not within \"raw\\fx\" directory");
+								}
+							});
+
+						file->open();
+					}
+					else if (const auto	emit_elem = effectdef_fileprompt();
+										emit_elem)
 					{
 						elem->emission = emit_elem;
 						modified = true;
@@ -1187,8 +1289,59 @@ namespace ggui
 
 					if (ImGui::Button("..##filepromt_impact", ImVec2(28, ImGui::GetFrameHeight())))
 					{
-						if (const auto	impact_elem = effectdef_fileprompt();
-							impact_elem)
+						// callback called from :: ggui::file_dialog_frame
+						if (dvars::gui_use_new_filedialog->current.enabled)
+						{
+							std::string path_str;
+
+							const auto egui = GET_GUI(ggui::entity_dialog);
+							path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+							path_str += "\\raw\\fx";
+
+
+							const auto file = GET_GUI(ggui::file_dialog);
+							file->set_default_path(path_str);
+							file->set_file_handler(FX_EDITOR_DEF);
+							file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+							file->set_file_ext(".efx");
+							file->set_blocking();
+							file->set_callback([]
+								{
+									const auto dlg = GET_GUI(ggui::file_dialog);
+
+									const std::string replace_path = "raw\\fx\\";
+
+									if (dlg->get_path_result().contains(replace_path))
+									{
+										std::string loc_filepath = dlg->get_path_result().substr(
+											dlg->get_path_result().find(replace_path) + replace_path.length());
+
+										utils::erase_substring(loc_filepath, ".efx"s);
+										utils::replace(loc_filepath, "\\", "/");
+
+										if (const auto	_efx = fx_system::get_editor_effect();
+														_efx)
+										{
+											auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+
+											if (const auto  impact_elem = fx_system::FX_Register(loc_filepath.c_str());
+															impact_elem)
+											{
+												_elem->effectOnImpact = impact_elem;
+												GET_GUI(ggui::effects_editor_dialog)->on_modified(true);
+											}
+										}
+									}
+									else
+									{
+										game::printf_to_console("[ERR] [fx_editor] file not within \"raw\\fx\" directory");
+									}
+								});
+
+							file->open();
+						}
+						else if (const auto	impact_elem = effectdef_fileprompt();
+											impact_elem)
 						{
 							elem->effectOnImpact = impact_elem;
 							modified = true;
@@ -1510,8 +1663,60 @@ namespace ggui
 			{
 				if (elem->elemType <= fx_system::FX_ELEM_TYPE_LAST_SPRITE || elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD)
 				{
-					if (const auto  material = material_fileprompt();
-						material && elem->visualCount < 32)
+					// callback called from :: ggui::file_dialog_frame
+					if (dvars::gui_use_new_filedialog->current.enabled)
+					{
+						std::string path_str;
+
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+						path_str += "\\raw\\materials";
+
+
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(FX_EDITOR_MATERIAL);
+						file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+						file->set_file_ext("");
+						file->set_blocking();
+						file->set_callback([]
+						{
+								const auto dlg = GET_GUI(ggui::file_dialog);
+
+								const std::string replace_path = "raw\\materials\\";
+
+								if (dlg->get_path_result().contains(replace_path))
+								{
+									std::string loc_filepath = dlg->get_path_result().substr(
+										dlg->get_path_result().find(replace_path) + replace_path.length());
+
+									utils::replace(loc_filepath, "\\", "/");
+
+									if (const auto	_efx = fx_system::get_editor_effect();
+													_efx)
+									{
+										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+
+										if (const auto  material = game::Material_RegisterHandle(loc_filepath.c_str(), 0);
+														material && _elem->visualCount < 32)
+										{
+											_elem->u.visuals[_elem->visualCount].material = material;
+											_elem->visualCount++;
+
+											GET_GUI(ggui::effects_editor_dialog)->on_modified(true);
+										}
+									}
+								}
+								else
+								{
+									game::printf_to_console("[ERR] [fx_editor] file not within \"raw\\materials\" directory");
+								}
+						});
+
+						file->open();
+					}
+					else if (const auto material = material_fileprompt();
+										material && elem->visualCount < 32)
 					{
 						elem->u.visuals[elem->visualCount].material = material;
 						elem->visualCount++;
@@ -1521,8 +1726,60 @@ namespace ggui
 				}
 				else if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
 				{
-					if (const auto	model = xmodel_fileprompt();
-						model)
+					// callback called from :: ggui::file_dialog_frame
+					if (dvars::gui_use_new_filedialog->current.enabled)
+					{
+						std::string path_str;
+
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+						path_str += "\\raw\\xmodel";
+
+
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(FX_EDITOR_MODEL);
+						file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+						file->set_file_ext("");
+						file->set_blocking();
+						file->set_callback([]
+							{
+								const auto dlg = GET_GUI(ggui::file_dialog);
+
+								const std::string replace_path = "raw\\xmodel\\";
+
+								if(dlg->get_path_result().contains(replace_path))
+								{
+									std::string loc_filepath = dlg->get_path_result().substr(
+										dlg->get_path_result().find(replace_path) + replace_path.length());
+
+									utils::replace(loc_filepath, "\\", "/");
+
+									if (const auto	_efx = fx_system::get_editor_effect();
+													_efx)
+									{
+										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+
+										if (const auto  model = game::R_RegisterModel(loc_filepath.c_str());
+														model && _elem->visualCount < 32)
+										{
+											_elem->u.visuals[_elem->visualCount].model = model;
+											_elem->visualCount++;
+
+											GET_GUI(ggui::effects_editor_dialog)->on_modified(true);
+										}
+									}
+								}
+								else
+								{
+									game::printf_to_console("[ERR] [fx_editor] file not within \"raw\\xmodel\" directory");
+								}
+							});
+
+						file->open();
+					}
+					else if (const auto	model = xmodel_fileprompt();
+										model)
 					{
 						elem->u.visuals[elem->visualCount].model = model;
 						elem->visualCount++;
@@ -1532,8 +1789,61 @@ namespace ggui
 				}
 				else if (elem->elemType == fx_system::FX_ELEM_TYPE_RUNNER)
 				{
-					if (const auto	effect_def = effectdef_fileprompt();
-						effect_def)
+					// callback called from :: ggui::file_dialog_frame
+					if (dvars::gui_use_new_filedialog->current.enabled)
+					{
+						std::string path_str;
+
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+						path_str += "\\raw\\fx";
+
+
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(FX_EDITOR_DEF);
+						file->set_file_op_type(ggui::file_dialog::FileDialogType::OpenFile);
+						file->set_file_ext(".efx");
+						file->set_blocking();
+						file->set_callback([]
+							{
+								const auto dlg = GET_GUI(ggui::file_dialog);
+
+								const std::string replace_path = "raw\\fx\\";
+
+								if(dlg->get_path_result().contains(replace_path))
+								{
+									std::string loc_filepath = dlg->get_path_result().substr(
+										dlg->get_path_result().find(replace_path) + replace_path.length());
+
+									utils::erase_substring(loc_filepath, ".efx"s);
+									utils::replace(loc_filepath, "\\", "/");
+
+									if (const auto	_efx = fx_system::get_editor_effect();
+													_efx)
+									{
+										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+
+										if (const auto  effect_def = fx_system::FX_Register(loc_filepath.c_str());
+														effect_def && _elem->visualCount < 32)
+										{
+											_elem->u.visuals[_elem->visualCount].effectDef.handle = effect_def;
+											_elem->visualCount++;
+
+											GET_GUI(ggui::effects_editor_dialog)->on_modified(true);
+										}
+									}
+								}
+								else
+								{
+									game::printf_to_console("[ERR] [fx_editor] file not within \"raw\\fx\" directory");
+								}
+							});
+
+						file->open();
+					}
+					else if (const auto	effect_def = effectdef_fileprompt();
+										effect_def)
 					{
 						elem->u.visuals[elem->visualCount].effectDef.handle = effect_def;
 						elem->visualCount++;
