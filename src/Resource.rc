@@ -51,8 +51,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1, 0, 0, REVISION
- PRODUCTVERSION 1, 0, 0, REVISION
+ FILEVERSION VERSION_FILE_RC
+ PRODUCTVERSION VERSION_PRODUCT_RC
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -73,12 +73,12 @@ BEGIN
 #else
             VALUE "FileDescription", "Radiant modification built for IW3xo"
 #endif
-            VALUE "FileVersion", VERSION_RC
+            VALUE "FileVersion", VERSION_FILE
             VALUE "InternalName", "iw3r"
             VALUE "LegalCopyright", "xoxor4d.github.io"
             VALUE "OriginalFilename", "iw3r.dll"
             VALUE "ProductName", "IW3xRadiant"
-            VALUE "ProductVersion", VERSION_RC
+            VALUE "ProductVersion", VERSION_PRODUCT
         END
     END
     BLOCK "VarFileInfo"

@@ -93,7 +93,7 @@ DWORD WINAPI update_check(LPVOID)
 		if (!game::glob::gh_update_tag.empty())
 		{
 			const auto tag_ver = utils::try_stof(game::glob::gh_update_tag, true);
-			if (tag_ver > (float)REVISION)
+			if (tag_ver > utils::try_stof(GIT_TAG, true))
 			{
 				if (!game::glob::gh_update_title.empty() && !game::glob::gh_update_link.empty() && !game::glob::gh_update_zip_name.empty())
 				{
