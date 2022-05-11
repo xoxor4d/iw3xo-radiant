@@ -1085,6 +1085,60 @@ namespace ggui
 
 				SEPERATORV(0.0f);
 
+				{
+					bool prefab_selected = false;
+
+					auto sb = game::g_selected_brushes();
+					if (sb->def && sb->def->owner)
+					{
+						prefab_selected = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(sb->def->owner->epairs, "classname") == "misc_prefab"s;
+					}
+
+					ImGui::BeginDisabled(!prefab_selected);
+					{
+						if (ImGui::MenuItem("Enter Prefab"))
+						{
+							game::Prefab_Enter();
+						}
+
+						ImGui::EndDisabled();
+					}
+
+					ImGui::BeginDisabled(!game::g_prefab_stack_level);
+					{
+						if (ImGui::MenuItem("Leave Prefab"))
+						{
+							if (game::g_prefab_stack_level)
+							{
+								game::Prefab_Leave();
+							}
+						}
+
+						ImGui::EndDisabled();
+					}
+
+					ImGui::BeginDisabled(!prefab_selected);
+					{
+						camera_dialog::stamp_prefab_imgui_imgui_menu();
+
+						ImGui::EndDisabled();
+					}
+
+					// update sb because the selection is no longer valid (was stamped) 
+					sb = game::g_selected_brushes();
+
+					if (sb->def && sb->def->owner)
+					{
+						camera_dialog::convert_selection_to_prefab_imgui_menu();
+					}
+				}
+
+				
+
+				
+
+				SEPERATORV(0.0f);
+
 				if (ImGui::MenuItem("Connect Entities", ggui::hotkey_dialog::get_hotkey_for_command("ConnectSelection").c_str())) {
 					cdeclcall(void, 0x425510); // CMainFrame::OnSelectionConnect
 				}

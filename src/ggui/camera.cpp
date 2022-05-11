@@ -423,7 +423,7 @@ namespace ggui
 			// save prefab ptr
 			game::selbrush_def_t* og_prefab = game::g_selected_brushes();
 
-			if (!og_prefab)
+			if (!og_prefab || !og_prefab->def)
 			{
 				game::printf_to_console("[ERR] something went wrong while stamping prefab");
 				return;
