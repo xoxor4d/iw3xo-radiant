@@ -82,6 +82,20 @@ ___
 <br>
 
 ___
+## Installation
+
+<br>
+
+1. Download the latest [release](https://github.com/xoxor4d/iw3xo-radiant/releases)
+2. Copy the `bin` and `map_source` folders into your cod4 root directory
+3. Start __IW3xRadiant.exe__
+
+- [NIGHTLY]&ensp; &ensp; unpack and replace `iw3r.dll` within the `bin` folder
+- [OPTIONAL]&ensp; __bo3-tool-textures.zip__ (unpack and place `.iwi's` into `bin\IW3xRadiant\images`)
+
+<br>
+
+___
 ## Build / Compile
 
 <br>
