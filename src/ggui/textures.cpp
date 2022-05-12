@@ -3,12 +3,18 @@
 namespace ggui
 {
 
-	void texture_dialog::toolbar()
+	void texture_dialog::toolbar(const ImVec2& screenpos)
 	{
 		// right side alignment
 		const float RIGHT_OFFSET = 14.0f;
 		static float toolbar_line1_width = 580.0f; // used as first frame estimate
-		ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line1_width + RIGHT_OFFSET));
+		//ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line1_width + RIGHT_OFFSET));
+
+		const auto line_one_start = ImVec2(
+			screenpos.x + this->rtt_get_size().x - (toolbar_line1_width + RIGHT_OFFSET),
+			screenpos.y);
+
+		ImGui::SetCursorScreenPos(line_one_start);
 
 		// offset toolbar vertically
 		ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 8.0f);
@@ -156,16 +162,22 @@ namespace ggui
 		}
 
 		toolbar_line1_width = ImGui::GetItemRectSize().x; // save width for the next frame
-
+		const float line1_height = ImGui::GetItemRectSize().y;
 
 		// *
 		// line 2
 
 		static float toolbar_line2_width = 220.0f; // used as first frame estimate
-		ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line2_width + RIGHT_OFFSET));
+		//ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line2_width + RIGHT_OFFSET));
+
+		const auto line_two_start = ImVec2(
+			screenpos.x + this->rtt_get_size().x - (toolbar_line2_width + RIGHT_OFFSET),
+			screenpos.y + line1_height + 12.0f);
+
+		ImGui::SetCursorScreenPos(line_two_start);
 
 		// offset toolbar vertically
-		ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 28.0f);
+		//ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 28.0f);
 
 		ImGui::BeginGroup();
 		{
@@ -321,7 +333,7 @@ namespace ggui
 				this->rtt_set_cursor_pos(ImVec2(io.MousePos.x - cursor_screen_pos.x, io.MousePos.y - cursor_screen_pos.y));
 
 				// overlay toolbar
-				toolbar();
+				toolbar(screenpos);
 
 				// reset cursorpos and fix tabbar triangle
 				ImGui::SetCursorScreenPos(pre_child_pos);
@@ -332,7 +344,7 @@ namespace ggui
 				// custom scrollbar
 				if (dvars::gui_texwnd_draw_scrollbar && dvars::gui_texwnd_draw_scrollbar->current.enabled)
 				{
-					ImGuiContext& g = *GImGui;
+					const ImGuiContext& g = *GImGui;
 					ImGuiWindow* window = g.CurrentWindow;
 
 					const ImGuiID id = ImGui::GetWindowScrollbarID(window, ImGuiAxis_Y);

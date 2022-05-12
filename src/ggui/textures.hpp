@@ -22,6 +22,6 @@ namespace ggui
 		ImGuiTextFilter	imgui_filter;
 		int				imgui_filter_last_len = 0;
 
-		void toolbar();
+		void toolbar(const ImVec2& screenpos);
 	};
 }

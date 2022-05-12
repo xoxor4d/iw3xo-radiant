@@ -18,7 +18,13 @@ namespace ggui
 		static float toolbar_line_width = toolbar_button_size.x + 8.0f; // used as first frame estimate
 		const float  collapse_button_offset = (toolbar_button_size.x - toolbar_button_open_size.x) * 0.5f;
 		const float  offs = m_toolbar_state ? collapse_button_offset : 0.0f;
-		ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line_width + 8.0f - offs));
+		//ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line_width + 8.0f - offs));
+
+		const auto upper_right = ImVec2(
+			this->rtt_get_position().x + this->rtt_get_size().x - (toolbar_line_width + 8.0f - offs),
+			this->rtt_get_position().y);
+
+		ImGui::SetCursorScreenPos(upper_right);
 
 		// offset toolbar vertically
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 6.0f);
