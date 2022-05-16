@@ -1170,6 +1170,8 @@ namespace game
 	// *
 	// * --------------------- fs / io ------------------------------
 
+	game::fileData_s** com_fileDataHashTable = reinterpret_cast<fileData_s**>(0x2422948);
+
 	void FS_ScanForDir(const char* directory, const char* search_path, int localized)
 	{
 		const static uint32_t FS_ScanForDir_func = 0x4A1E80;
@@ -1196,6 +1198,41 @@ namespace game
 
 			call	func_addr;
 			add     esp, 4;
+		}
+	}
+
+	std::uint32_t FS_HashFileName(const char* fname, int hash_size)
+	{
+		auto hash = 0u;
+		for (auto i = 0u; fname[i]; ++i)
+		{
+			auto letter = tolower(fname[i]);
+			if (letter == '.')
+			{
+				break;
+			}
+
+			if (letter == '\\')
+			{
+				letter = '/';
+			}
+
+			hash += letter * (i + 'w');
+		}
+
+		return ((hash >> 20) ^ hash ^ (hash >> 10)) & (hash_size - 1);
+	}
+
+	void* Hunk_FindDataForFileInternal(int hash /*eax*/, int data_type /*ebx*/, const char* name /*edi*/)
+	{
+		const static uint32_t func_addr = 0x4AC6A0;
+		__asm
+		{
+			mov		eax, hash;
+			mov		ebx, data_type;
+			mov		edi, name;
+
+			call	func_addr;
 		}
 	}
 

@@ -193,6 +193,15 @@ namespace game
 		MAPTYPE_COUNT = 0x6,
 	};
 
+	struct fileData_s
+	{
+		void* data;
+		fileData_s* next;
+		char type;
+		char name[1];
+		char pad[2];
+	};
+
 	struct GfxImageLoadDef
 	{
 		char levelCount;

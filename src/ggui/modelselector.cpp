@@ -425,6 +425,35 @@ namespace ggui
 							this->m_xmodel_selection = -1;
 						}
 
+						ImGui::SameLine();
+						if (ImGui::Button("Reload XModel"))
+						{
+							const char* model_str = m_preview_model_name.c_str();
+							auto hash = game::FS_HashFileName(model_str, 1024);
+
+							// part of Hunk_FindDataForFileInternal
+							game::fileData_s* searchFileData = game::com_fileDataHashTable[hash];
+							if (searchFileData)
+							{
+								bool end_of_list = false;
+								while (static_cast<std::uint8_t>(searchFileData->type) != 5 || game::I_stricmp(searchFileData->name, model_str))
+								{
+									searchFileData = searchFileData->next;
+									if (!searchFileData)
+									{
+										end_of_list = true;
+										break;
+									}
+								}
+
+								if(!end_of_list)
+								{
+									auto hash_entry = &game::com_fileDataHashTable[hash];
+									memset(hash_entry, 0, sizeof(uintptr_t));
+								}
+							}
+						}
+
 						ImGui::EndGroup();
 					}
 

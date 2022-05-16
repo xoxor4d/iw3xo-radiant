@@ -335,10 +335,14 @@ namespace game
 	// *
 	// * --------------------- fs / io ------------------------------
 
+	extern game::fileData_s** com_fileDataHashTable;
+
 	inline auto FS_ReadFile = reinterpret_cast<unsigned int (*)(const char*, void**)>(0x4A0240);
 	inline auto FS_FreeFile = reinterpret_cast<void (*)(void*)>(0x4A0300);
 	void FS_ScanForDir(const char* directory, const char* search_path, int localized);
 	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count);
+	std::uint32_t FS_HashFileName(const char* fname, int hash_size);
+	void* Hunk_FindDataForFileInternal(int hash /*eax*/, int data_type /*ebx*/, const char* name /*edi*/);
 
 	game::GfxImage* Image_FindExisting(const char* name);
 	game::GfxImage* Image_RegisterHandle(const char* name);

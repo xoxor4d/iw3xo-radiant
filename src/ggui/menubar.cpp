@@ -715,6 +715,11 @@ namespace ggui
 					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
 				}
 
+				if (ImGui::MenuItem("Reload XModels")) 
+				{
+					memset(game::com_fileDataHashTable, 0, sizeof(uintptr_t) * 1024);
+				}
+
 				SEPERATORV(0.0f);
 
 				if (ImGui::BeginMenu("Show Patches As"))
