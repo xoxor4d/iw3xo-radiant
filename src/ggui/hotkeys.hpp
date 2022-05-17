@@ -20,6 +20,9 @@ namespace ggui
 
 	class hotkey_dialog final : public ggui::ggui_module
 	{
+	private:
+		ImGuiTextFilter	m_filter;
+
 	public:
 		hotkey_dialog() { set_gui_type(GUI_TYPE_DEF); }
 
@@ -49,5 +52,6 @@ namespace ggui
 
 	private:
 		bool cmdbinds_check_dupe(commandbinds& bind, std::string& o_dupebind);
+		void do_row(int index, int& row_counter);
 	};
 }

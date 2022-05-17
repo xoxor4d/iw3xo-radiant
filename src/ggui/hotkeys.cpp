@@ -522,6 +522,86 @@ namespace ggui
 		return false;
 	}
 
+	void hotkey_dialog::do_row(int index, int& row_counter)
+	{
+		commandbinds& bind = cmd_hotkeys[index];
+
+		std::string str_dupe_bind = bind.cmd_name;
+		const bool found_dupe = cmdbinds_check_dupe(bind, str_dupe_bind);
+
+		// unique widget id's for each row
+		ImGui::PushID(row_counter); row_counter++;
+		ImGui::TableNextRow();
+
+		for (int column = 0; column < 5; column++)
+		{
+			ImGui::PushID(column);
+			ImGui::TableNextColumn();
+
+			switch (column)
+			{
+			case 0:
+				ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(bind.cmd_name.c_str()).x) * 0.5f);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
+
+				if (found_dupe)
+				{
+					ImGui::TextColored(ImVec4(0.9f, 0.1f, 0.1f, 1.0f), bind.cmd_name.c_str());
+					ImGui::SameLine();
+					ImGui::HelpMarker(utils::va("bind conflicts with '%s'", str_dupe_bind.c_str()));
+				}
+				else
+				{
+					ImGui::TextUnformatted(bind.cmd_name.c_str());
+				}
+
+				break;
+			case 1:
+				ImGui::Checkbox("##2", (bool*)&bind.modifier_shift);
+				break;
+			case 2:
+				ImGui::Checkbox("##0", (bool*)&bind.modifier_alt);
+				break;
+			case 3:
+				ImGui::Checkbox("##1", (bool*)&bind.modifier_ctrl);
+				break;
+			case 4:
+				ImGui::PushItemWidth(ImGui::GetColumnWidth() - 6.0f);
+
+				if (ImGui::BeginCombo("##combokey", bind.modifier_key.c_str(), ImGuiComboFlags_NoArrowButton)) // The second parameter is the label previewed before opening the combo.
+				{
+					for (int n = 0; n < IM_ARRAYSIZE(radiant_keybind_array); n++)
+					{
+						const bool is_selected = !_stricmp(bind.modifier_key.c_str(), radiant_keybind_array[n]); // You can store your selection however you want, outside or inside your objects
+						if (is_selected)
+						{
+							ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+						}
+
+						if (ImGui::Selectable(radiant_keybind_array[n], is_selected))
+						{
+							bind.modifier_key = radiant_keybind_array[n];
+							if (is_selected)
+							{
+								ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
+							}
+						}
+					}
+					ImGui::EndCombo();
+				}
+
+				ImGui::PopItemWidth();
+				break;
+			}
+
+			// column
+			ImGui::PopID();
+		}
+
+		// row
+		ImGui::PopID();
+	}
+
 	void hotkey_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(450.0f, 342.0f);
@@ -532,12 +612,42 @@ namespace ggui
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		ImGui::Begin("Hotkeys##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse);
+		if(!ImGui::Begin("Hotkeys##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
+		{
+			ImGui::PopStyleVar(); // ImGuiStyleVar_CellPadding
+			ImGui::End();
+		}
+
+		SPACING(0.0f, 2.0f);
 
 		const char* apply_hint = "Changes will apply upon closing the window.";
 		ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(apply_hint).x) * 0.5f);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 1.0f);
 		ImGui::TextUnformatted(apply_hint);
+
+		ImGui::SetCursorPosX(ImGui::GetCursorPos().x + 6.0f);
+
+		// filter widget
+		const auto screenpos_prefilter = ImGui::GetCursorScreenPos();
+		this->m_filter.Draw("##hotkey_filter", ImGui::GetContentRegionAvail().x - 46.0f);
+		const auto screenpos_postfilter = ImGui::GetCursorScreenPos();
+
+		ImGui::SameLine();
+		if (ImGui::ButtonEx("x##clear_filter"))
+		{
+			this->m_filter.Clear();
+		}
+
+		if (!this->m_filter.IsActive())
+		{
+			ImGui::SetCursorScreenPos(ImVec2(screenpos_prefilter.x + 12.0f, screenpos_prefilter.y + 4.0f));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
+			ImGui::TextUnformatted("Filter ..");
+			ImGui::PopStyleColor();
+			ImGui::SetCursorScreenPos(ImVec2(screenpos_postfilter.x, screenpos_postfilter.y));
+		}
+
+		SPACING(0.0f, 2.0f);
 
 		if (ImGui::BeginTable("bind_table", 5,
 			ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
@@ -552,91 +662,31 @@ namespace ggui
 
 			int row = 0;
 
-			ImGuiListClipper clipper;
-			clipper.Begin(cmd_hotkeys.size());
-			while (clipper.Step())
+			if (this->m_filter.IsActive())
 			{
-				// for (commandbinds& bind : cmd_hotkeys)
-				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+				for (int i = 0; i < cmd_hotkeys.size(); i++)
 				{
-					commandbinds& bind = cmd_hotkeys[i];
-
-					std::string str_dupe_bind = bind.cmd_name;
-					const bool found_dupe = cmdbinds_check_dupe(bind, str_dupe_bind);
-
-					// unique widget id's for each row
-					ImGui::PushID(row); row++;
-					ImGui::TableNextRow();
-
-					for (int column = 0; column < 5; column++)
+					if (!this->m_filter.PassFilter(cmd_hotkeys[i].cmd_name.c_str()))
 					{
-						ImGui::PushID(column);
-						ImGui::TableNextColumn();
-
-						switch (column)
-						{
-						case 0:
-							ImGui::SetCursorPosX((ImGui::GetColumnWidth() - ImGui::CalcTextSize(bind.cmd_name.c_str()).x) * 0.5f);
-							ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
-
-							if (found_dupe)
-							{
-								ImGui::TextColored(ImVec4(0.9f, 0.1f, 0.1f, 1.0f), bind.cmd_name.c_str());
-								ImGui::SameLine();
-								ImGui::HelpMarker(utils::va("bind conflicts with '%s'", str_dupe_bind.c_str()));
-							}
-							else
-							{
-								ImGui::TextUnformatted(bind.cmd_name.c_str());
-							}
-
-							break;
-						case 1:
-							ImGui::Checkbox("##2", (bool*)&bind.modifier_shift);
-							break;
-						case 2:
-							ImGui::Checkbox("##0", (bool*)&bind.modifier_alt);
-							break;
-						case 3:
-							ImGui::Checkbox("##1", (bool*)&bind.modifier_ctrl);
-							break;
-						case 4:
-							ImGui::PushItemWidth(ImGui::GetColumnWidth() - 6.0f);
-
-							if (ImGui::BeginCombo("##combokey", bind.modifier_key.c_str(), ImGuiComboFlags_NoArrowButton)) // The second parameter is the label previewed before opening the combo.
-							{
-								for (int n = 0; n < IM_ARRAYSIZE(radiant_keybind_array); n++)
-								{
-									const bool is_selected = !_stricmp(bind.modifier_key.c_str(), radiant_keybind_array[n]); // You can store your selection however you want, outside or inside your objects
-									if (is_selected)
-									{
-										ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-									}
-
-									if (ImGui::Selectable(radiant_keybind_array[n], is_selected))
-									{
-										bind.modifier_key = radiant_keybind_array[n];
-										if (is_selected)
-										{
-											ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
-										}
-									}
-								}
-								ImGui::EndCombo();
-							}
-
-							ImGui::PopItemWidth();
-							break;
-						}
-
-						// column
-						ImGui::PopID();
+						continue;
 					}
 
-					// row
-					ImGui::PopID();
+					hotkey_dialog::do_row(i, row);
 				}
-			} clipper.End();
+			}
+			else
+			{
+				ImGuiListClipper clipper;
+				clipper.Begin(cmd_hotkeys.size());
+				while (clipper.Step())
+				{
+					// for (commandbinds& bind : cmd_hotkeys)
+					for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+					{
+						hotkey_dialog::do_row(i, row);
+					}
+				} clipper.End();
+			}
 
 			ImGui::EndTable();
 		}
@@ -656,6 +706,8 @@ namespace ggui
 
 	void hotkey_dialog::on_close()
 	{
+		this->m_filter.Clear();
+
 		if (cmd_hotkeys.empty())
 		{
 			return;
