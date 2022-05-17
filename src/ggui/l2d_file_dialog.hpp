@@ -39,6 +39,8 @@ namespace ggui
 		int  m_folder_select_index = 0;
 		char m_error[500] = {};
 
+		std::string m_desktop_path;
+
 		ImGuiTextFilter	m_filter;
 		FileDialogType m_file_operation_type = FileDialogType::OpenFile;
 		std::string m_file_ext;
@@ -61,10 +63,7 @@ namespace ggui
 		bool m_fix_on_close = false;
 
 	public:
-		file_dialog()
-		{
-			set_gui_type(GUI_TYPE_DEF);
-		}
+		file_dialog();
 
 		void reset(bool reset_callback = false)
 		{

@@ -17,6 +17,7 @@
 // based on https://github.com/Limeoats/L2DFileDialog/tree/b902d7faae37a2b1ab9b6b7ce3c123f42963061e
 
 #include "std_include.hpp"
+#include <ShlObj.h>
 
 namespace ggui
 {
@@ -25,7 +26,7 @@ namespace ggui
 		this->m_track_result = false;
 		
 		ImGui::SetNextWindowSizeConstraints(ImVec2(640.0f, 420.0f), ImVec2(FLT_MAX, FLT_MAX));
-		ImGui::SetNextWindowSize(ImVec2(924.0f, 510.0f), ImGuiCond_Appearing);
+		ImGui::SetNextWindowSize(ImVec2(888.0f, 510.0f), ImGuiCond_Appearing);
 
 		std::string window_title = "Select a ";
 		window_title += !this->get_file_ext().empty() ? this->get_file_ext() + " " : "";
@@ -422,10 +423,30 @@ namespace ggui
 
 		ImGui::BeginGroup();
 		{
-			if (ImGui::Button("New folder"))
+			if (ImGui::Button("Desktop"))
+			{
+				if (std::filesystem::is_directory(this->m_desktop_path))
+				{
+					this->m_current_path = this->m_desktop_path;
+					this->m_update_files_and_folders = true;
+				}
+			} TT("Go to desktop");
+			ImGui::SameLine();
+
+			if (ImGui::Button("Default"))
+			{
+				if (std::filesystem::is_directory(this->m_default_path))
+				{
+					this->m_current_path = this->m_default_path;
+					this->m_update_files_and_folders = true;
+				}
+			} TT("Go to the default path");
+			ImGui::SameLine();
+
+			if (ImGui::Button("+"))
 			{
 				ImGui::OpenPopup("NewFolderPopup");
-			}
+			} TT("Create new folder");
 			ImGui::SameLine();
 
 			static bool disable_delete_button = false;
@@ -437,10 +458,10 @@ namespace ggui
 				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
 			}
 
-			if (ImGui::Button("Delete folder"))
+			if (ImGui::Button("-"))
 			{
 				ImGui::OpenPopup("DeleteFolderPopup");
-			}
+			} TT("Delete folder");
 
 			if (disable_delete_button)
 			{
@@ -623,7 +644,6 @@ namespace ggui
 					}
 				}
 				ImGui::EndDisabled();
-				
 
 				ImGui::SameLine();
 				if (ImGui::Button("Cancel"))
@@ -702,6 +722,23 @@ namespace ggui
 		else
 		{
 			this->m_fix_on_close = false;
+		}
+	}
+
+	file_dialog::file_dialog()
+	{
+		set_gui_type(GUI_TYPE_DEF);
+
+		LPWSTR desktop_path;
+		if (SHGetKnownFolderPath(FOLDERID_Desktop, NULL, 0, &desktop_path))
+		{
+			game::printf_to_console("failed to get desktop path");
+		}
+		else
+		{
+			// convert LPWSTR to std::string
+			std::wstring ws(desktop_path);
+			this->m_desktop_path = std::string(ws.begin(), ws.end());
 		}
 	}
 

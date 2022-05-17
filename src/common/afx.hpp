@@ -66,7 +66,7 @@ struct AFX_INTERFACEMAP {};
 struct AFX_EVENTSINKMAP {};
 //struct IConnectionPoint {};
 struct CCreateContext {};
-struct tagTOOLINFOA {};
+struct tagTOOLINFOA_temp {};
 struct CScrollBar {};
 //struct IAccessible {};
 //struct IAccessibleProxy {};
@@ -243,7 +243,7 @@ struct CWnd_vtbl
 	int(__thiscall* DestroyWindow)(CWnd*);
 	int(__thiscall* PreCreateWindow)(CWnd*, tagCREATESTRUCTA*);
 	void(__thiscall* CalcWindowRect)(CWnd*, tagRECT*, unsigned int);
-	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA*);
+	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA_temp*);
 	CScrollBar* (__thiscall* GetScrollBarCtrl)(CWnd*, int);
 	void(__thiscall* WinHelpA)(CWnd*, unsigned int, unsigned int);
 	void(__thiscall* HtmlHelpA)(CWnd*, unsigned int, unsigned int);
@@ -423,7 +423,7 @@ struct /*VFT*/ CFrameWnd_vtbl
 	int(__thiscall* DestroyWindow)(CWnd*);
 	int(__thiscall* PreCreateWindow)(CWnd*, tagCREATESTRUCTA*);
 	void(__thiscall* CalcWindowRect)(CWnd*, tagRECT*, unsigned int);
-	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA*);
+	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA_temp*);
 	CScrollBar* (__thiscall* GetScrollBarCtrl)(CWnd*, int);
 	void(__thiscall* WinHelpA)(CWnd*, unsigned int, unsigned int);
 	void(__thiscall* HtmlHelpA)(CWnd*, unsigned int, unsigned int);
@@ -528,7 +528,7 @@ struct /*VFT*/ CControlBar_vtbl
 	int(__thiscall* DestroyWindow)(CWnd*);
 	int(__thiscall* PreCreateWindow)(CWnd*, tagCREATESTRUCTA*);
 	void(__thiscall* CalcWindowRect)(CWnd*, tagRECT*, unsigned int);
-	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA*);
+	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA_temp*);
 	CScrollBar* (__thiscall* GetScrollBarCtrl)(CWnd*, int);
 	void(__thiscall* WinHelpA)(CWnd*, unsigned int, unsigned int);
 	void(__thiscall* HtmlHelpA)(CWnd*, unsigned int, unsigned int);
@@ -829,7 +829,7 @@ struct CStatusBar_vtbl
 	int(__thiscall* DestroyWindow)(CWnd*);
 	int(__thiscall* PreCreateWindow)(CWnd*, tagCREATESTRUCTA*);
 	void(__thiscall* CalcWindowRect)(CWnd*, tagRECT*, unsigned int);
-	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA*);
+	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA_temp*);
 	CScrollBar* (__thiscall* GetScrollBarCtrl)(CWnd*, int);
 	void(__thiscall* WinHelpA)(CWnd*, unsigned int, unsigned int);
 	void(__thiscall* HtmlHelpA)(CWnd*, unsigned int, unsigned int);
@@ -941,7 +941,7 @@ struct CToolBar_vtbl
 	int(__thiscall* DestroyWindow)(CWnd*);
 	int(__thiscall* PreCreateWindow)(CWnd*, tagCREATESTRUCTA*);
 	void(__thiscall* CalcWindowRect)(CWnd*, tagRECT*, unsigned int);
-	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA*);
+	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA_temp*);
 	CScrollBar* (__thiscall* GetScrollBarCtrl)(CWnd*, int);
 	void(__thiscall* WinHelpA)(CWnd*, unsigned int, unsigned int);
 	void(__thiscall* HtmlHelpA)(CWnd*, unsigned int, unsigned int);
@@ -1125,7 +1125,7 @@ struct CSplitterWnd_vtbl
 	int(__thiscall* DestroyWindow)(CWnd*);
 	int(__thiscall* PreCreateWindow)(CWnd*, tagCREATESTRUCTA*);
 	void(__thiscall* CalcWindowRect)(CWnd*, tagRECT*, unsigned int);
-	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA*);
+	int(__thiscall* OnToolHitTest)(CWnd*, CPoint, tagTOOLINFOA_temp*);
 	CScrollBar* (__thiscall* GetScrollBarCtrl)(CWnd*, int);
 	void(__thiscall* WinHelpA)(CWnd*, unsigned int, unsigned int);
 	void(__thiscall* HtmlHelpA)(CWnd*, unsigned int, unsigned int);
