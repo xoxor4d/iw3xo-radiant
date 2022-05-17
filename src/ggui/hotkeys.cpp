@@ -664,7 +664,7 @@ namespace ggui
 
 			if (this->m_filter.IsActive())
 			{
-				for (int i = 0; i < cmd_hotkeys.size(); i++)
+				for (int i = 0; i < static_cast<int>(cmd_hotkeys.size()); i++)
 				{
 					if (!this->m_filter.PassFilter(cmd_hotkeys[i].cmd_name.c_str()))
 					{
