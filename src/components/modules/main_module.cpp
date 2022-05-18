@@ -386,6 +386,26 @@ namespace components
 		}
 	}
 
+	void undo_undo_print(const char* op)
+	{
+		game::printf_to_console("[UNDO] '%s' undone. New stack size: %d", op, game::g_undoSize - 1); // g_undoSize will be decremented right after the hook
+	}
+
+	void __declspec(naked) undo_undo_stub()
+	{
+		const static uint32_t retn_addr = 0x45F1CB;
+		__asm
+		{
+			pushad;
+			push	edx; // operation
+			call	undo_undo_print;
+			add		esp, 4;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
+
 	// ----------------------------------
 
 
@@ -426,6 +446,14 @@ namespace components
 
 		// print undo creation and stack size
 		utils::hook(0x45E3F4, undo_general_start_stub, HOOK_JUMP).install()->quick();
+
+		// print undo undo and stack size
+		utils::hook(0x45F1C6, undo_undo_stub, HOOK_JUMP).install()->quick();
+
+		// kill Sys_Printf("Updating layers...\n")
+		utils::hook::nop(0x45F2A6, 5); // undo undo
+		utils::hook::nop(0x48977C, 5); // enter prefab
+		utils::hook::nop(0x489BA6, 5); // leave prefab
 
 
 		// * ---------------------------

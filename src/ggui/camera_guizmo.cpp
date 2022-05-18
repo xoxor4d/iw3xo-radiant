@@ -401,7 +401,7 @@ namespace ggui::camera_guizmo
 										if (const auto	brush = sb->def; 
 														brush)
 										{
-											const int max_move = 200.0f;
+											const float max_move = 200.0f;
 
 											if(delta_origin[0] >= max_move) {
 												delta_origin[0] = max_move;

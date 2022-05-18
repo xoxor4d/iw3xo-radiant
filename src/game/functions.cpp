@@ -198,6 +198,7 @@ namespace game
 
 	int& g_undoMaxSize = *reinterpret_cast<int*>(0x739F6C);
 	int& g_undoId = *reinterpret_cast<int*>(0x739F74);
+	int& g_undoSize = *reinterpret_cast<int*>(0x25D5B18);
 
 	void Undo_GeneralStart(const char* operation /*eax*/)
 	{

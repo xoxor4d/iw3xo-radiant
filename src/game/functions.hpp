@@ -163,6 +163,7 @@ namespace game
 	extern game::undo_s* g_lastredo();
 	extern int& g_undoMaxSize;
 	extern int& g_undoId;
+	extern int& g_undoSize;
 
 	inline auto Undo_ClearRedo = reinterpret_cast<void (*)()>(0x45DF20);
 	void Undo_GeneralStart(const char* operation /*eax*/);
