@@ -228,7 +228,9 @@ namespace game
 	void Brush_Deselect(game::brush_t* b /*esi*/);
 	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection);
 	inline auto QE_SingleBrush = reinterpret_cast<bool (*)()>(0x48C8B0); // no warnings when bQuiet
-
+	inline auto Brush_MakeFacePlanes = reinterpret_cast<void (*)(game::brush_t_with_custom_def* b)>(0x470A50); // calculate normal and dist from planepts
+	int CM_ForEachBrushPlaneIntersection(game::brush_t_with_custom_def* b /*esi*/, game::BrushPt_t* brush_pts);
+	
 	inline auto SetKeyValue = reinterpret_cast<void (*)(game::entity_s * ent, const char* key, const char* value)>(0x483690);
 	inline auto SetKeyValuePairs = reinterpret_cast<void (*)()>(0x496CF0);
 	inline auto CreateEntity = reinterpret_cast<void (*)()>(0x497300);
@@ -236,6 +238,7 @@ namespace game
 	inline auto CreateEntityFromName = reinterpret_cast<void (*)(const char* name)>(0x465CC0); // does not add an undo
 	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* cxywnd);
 
+	inline auto Test_Ray = reinterpret_cast<void (*)(float* start, float* dir, int contents, game::trace_t * trace, int num_traces)>(0x48D7C0);
 	game::trace_t* Trace_AllDirectionsIfFailed(float* cam_origin /*ebx*/, void* trace_result, float* dir, int contents);
 	inline auto R_GetXModelBounds = reinterpret_cast<void (*)(game::XModel * model, float* axis, float* mins, float* maxs)>(0x4C9150); // world bounds, not local
 

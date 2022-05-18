@@ -488,7 +488,97 @@ namespace ggui
 
 		if (cmainframe::activewnd->m_pCamWnd->cam_was_not_dragged)
 		{
-			if (ImGui::IsMouseDown(ImGuiMouseButton_Right) || cam_context_menu_open || cam_context_menu_pending_open)
+			// alt detection is kinda bugged via imgui
+			const bool is_alt_key_pressed = GetKeyState(VK_MENU) < 0;
+
+			// extend / extrude selected brush to traced face (ala bo3's reflection probe bounds)
+			if (is_alt_key_pressed && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && game::is_single_brush_selected())
+			{
+				cam_context_menu_open = false;
+				cam_context_menu_pending_open = false;
+
+				float dir[3];
+
+				ccamwnd::calculate_ray_direction(
+					this->rtt_get_cursor_pos_cpoint().x, 
+					static_cast<int>(this->rtt_get_size().y) - this->rtt_get_cursor_pos_cpoint().y,
+					dir);
+
+				game::Test_Ray(cmainframe::activewnd->m_pCamWnd->camera.origin, dir, 0, cam_trace, 20);
+
+				if (cam_trace[0].brush && cam_trace[0].brush->def)
+				{
+					game::face_t_new* hit_face = nullptr;
+
+					for(auto i = 0; i < cam_trace[0].brush->def->facecount; i++)
+					{
+						if(utils::vector::compare(cam_trace[0].face_normal, cam_trace[0].brush->def->brush_faces[i].plane.normal))
+						{
+							hit_face = &cam_trace[0].brush->def->brush_faces[i];
+							break;
+						}
+					}
+
+					if(hit_face)
+					{
+						std::map<float, int, std::greater<>> face_dot_products;
+
+						if(const auto	selbrush = game::g_selected_brushes(); 
+										selbrush && selbrush->def)
+						{
+							for (auto i = 0; i < selbrush->def->facecount; i++)
+							{
+								// invert normal
+								game::vec3_t inv_normal;
+								utils::vector::scale(selbrush->def->brush_faces[i].plane.normal, -1.0f, inv_normal);
+
+								float plane_plane_dot = utils::vector::dot(hit_face->plane.normal, inv_normal);
+								face_dot_products.emplace(std::make_pair(plane_plane_dot, i));
+							}
+
+							const int best_index = face_dot_products.begin()->second;
+
+							// backup points in case the brush gets degenerated
+							game::vec3_t backup_points[3] = {};
+							utils::vector::copy(selbrush->def->brush_faces[best_index].planepts0, backup_points[0]);
+							utils::vector::copy(selbrush->def->brush_faces[best_index].planepts1, backup_points[1]);
+							utils::vector::copy(selbrush->def->brush_faces[best_index].planepts2, backup_points[2]);
+
+							// create undo
+							game::Undo_ClearRedo();
+							game::Undo_GeneralStart("extrude to face");
+							game::Undo_AddBrush(selbrush->def);
+
+							// copy plane points
+							utils::vector::copy(hit_face->planepts2, selbrush->def->brush_faces[best_index].planepts0);
+							utils::vector::copy(hit_face->planepts1, selbrush->def->brush_faces[best_index].planepts1);
+							utils::vector::copy(hit_face->planepts0, selbrush->def->brush_faces[best_index].planepts2);
+
+							game::Brush_MakeFacePlanes(selbrush->def);
+							game::BrushPt_t points[1024];
+
+							// test if extending results in a valid brush or if it gets degenerated
+							if(game::CM_ForEachBrushPlaneIntersection(selbrush->def, points) < 4)
+							{
+								game::printf_to_console("invalid face");
+
+								// restore plane
+								utils::vector::copy(backup_points[0], selbrush->def->brush_faces[best_index].planepts0);
+								utils::vector::copy(backup_points[1], selbrush->def->brush_faces[best_index].planepts1);
+								utils::vector::copy(backup_points[2], selbrush->def->brush_faces[best_index].planepts2);
+							}
+							else // valid brush -> build windings
+							{
+								game::Brush_BuildWindings(selbrush->def, false);
+								++selbrush->def->version;
+							}
+
+							game::Undo_End();
+						}
+					}
+				}
+			}
+			else if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) || cam_context_menu_open || cam_context_menu_pending_open)
 			{
 				if (!cam_context_menu_open)
 				{
@@ -500,9 +590,7 @@ namespace ggui
 						static_cast<int>(this->rtt_get_size().y) - this->rtt_get_cursor_pos_cpoint().y,
 						dir);
 
-					// trace
-					utils::hook::call<void(__cdecl)(float* _start, float* _dir, int _contents, game::trace_t* _trace, int _num_traces)>(0x48D7C0)
-						(cmainframe::activewnd->m_pCamWnd->camera.origin, dir, 0, cam_trace, 20);
+					game::Test_Ray(cmainframe::activewnd->m_pCamWnd->camera.origin, dir, 0, cam_trace, 20);
 
 					if (cam_trace[0].brush)
 					{

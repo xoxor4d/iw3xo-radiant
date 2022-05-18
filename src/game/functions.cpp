@@ -813,6 +813,18 @@ namespace game
 		}
 	}
 
+	int CM_ForEachBrushPlaneIntersection(game::brush_t_with_custom_def* b /*esi*/, game::BrushPt_t* brush_pts)
+	{
+		const static uint32_t func_addr = 0x470880;
+		__asm
+		{
+			push	brush_pts;
+			mov		esi, b;
+			call	func_addr;
+			add     esp, 4;
+		}
+	}
+
 	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* wnd)
 	{
 		const static uint32_t func_addr = 0x466290;

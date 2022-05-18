@@ -2997,10 +2997,10 @@ namespace game
 		__int16 xx12_2;
 		int xx13;
 		int xx14;
-		int xx15;
+		float xx15;
 		float dist;
 		bool selected;
-		vec3_t some_point;
+		vec3_t face_normal;
 	}; STATIC_ASSERT_SIZE(trace_t, 0x58);
 
 	struct orientation_t
