@@ -24,8 +24,8 @@ namespace ggui::camera_guizmo
 		const float tanHalfFovY = tan(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
 		const float tanHalfFovX = tanHalfFovY * ((float)cmainframe::activewnd->m_pCamWnd->camera.width / (float)cmainframe::activewnd->m_pCamWnd->camera.height);
 
-		// R_SetupProjection
-		utils::hook::call<void(__cdecl)(game::GfxMatrix*, float halfx, float halfy, float znear)>(0x4A78E0)(projection, tanHalfFovX, tanHalfFovY, 0.0099999998f);
+		// R_SetupProjection ...... changing znear from "0.0099999998" (stock) to "10.0" fixed the jiggle issue
+		utils::hook::call<void(__cdecl)(game::GfxMatrix*, float halfx, float halfy, float znear)>(0x4A78E0)(projection, tanHalfFovX, tanHalfFovY, 10.0f);
 
 		// ----------
 
@@ -395,14 +395,38 @@ namespace ggui::camera_guizmo
 								}
 								else
 								{
-									
-
 									// move all selected brushes using the delta
 									FOR_ALL_SELECTED_BRUSHES(sb)
 									{
 										if (const auto	brush = sb->def; 
 														brush)
 										{
+											const int max_move = 200.0f;
+
+											if(delta_origin[0] >= max_move) {
+												delta_origin[0] = max_move;
+											}
+
+											if (delta_origin[1] >= max_move) {
+												delta_origin[1] = max_move;
+											}
+
+											if (delta_origin[2] >= max_move) {
+												delta_origin[2] = max_move;
+											}
+
+											if (delta_origin[0] <= -max_move) {
+												delta_origin[0] = -max_move;
+											}
+
+											if (delta_origin[1] <= -max_move) {
+												delta_origin[1] = -max_move;
+											}
+
+											if (delta_origin[2] <= -max_move) {
+												delta_origin[2] = -max_move;
+											}
+
 											game::Brush_Move(delta_origin, brush, true);
 											components::remote_net::cmd_send_brush_select_deselect(true);
 										}
