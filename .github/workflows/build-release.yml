@@ -75,4 +75,4 @@ jobs:
           embed-author-url: "https://github.com/xoxor4d/iw3xo-radiant"
           embed-title: "Successful build (release)"
           embed-color: 0x82ff80
-          embed-description: "${{ env.GIT_TAG }} [nightly link](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-release/develop/Debug%20binaries.zip)"
+          embed-description: "${{ env.GIT_TAG }} [nightly link](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-release/develop/Release%20binaries.zip)"
