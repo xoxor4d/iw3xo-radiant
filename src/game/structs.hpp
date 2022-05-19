@@ -193,6 +193,49 @@ namespace game
 		MAPTYPE_COUNT = 0x6,
 	};
 
+	struct DiskPrimaryLight
+	{
+		char type;
+		char canUseShadowMap;
+		char unused[2];
+		float color[3];
+		float dir[3];
+		float origin[3];
+		float radius;
+		float cosHalfFovOuter;
+		float cosHalfFovInner;
+		int exponent;
+		float rotationLimit;
+		float translationLimit;
+		char defName[64];
+	};
+
+	struct ComPrimaryLight
+	{
+		char type;
+		char canUseShadowMap;
+		char exponent;
+		char unused;
+		float color[3];
+		float dir[3];
+		float origin[3];
+		float radius;
+		float cosHalfFovOuter;
+		float cosHalfFovInner;
+		float cosHalfFovExpanded;
+		float rotationLimit;
+		float translationLimit;
+		const char* defName;
+	};
+
+	struct ComWorld
+	{
+		const char* name;
+		int isInUse;
+		unsigned int primaryLightCount;
+		ComPrimaryLight* primaryLights;
+	};
+
 	struct fileData_s
 	{
 		void* data;
@@ -1815,6 +1858,277 @@ namespace game
 		float waterFloatTime_0x4308_total;
 	};
 
+	struct GfxWorldStreamInfo
+	{
+		int aabbTreeCount;
+	};
+
+	union PackedUnitVec
+	{
+		unsigned int packed;
+		char array[4];
+	};
+
+	struct GfxWorldVertex
+	{
+		float xyz[3];
+		float binormalSign;
+		GfxColor color;
+		float texCoord[2];
+		float lmapCoord[2];
+		PackedUnitVec normal;
+		PackedUnitVec tangent;
+	};
+
+	struct GfxWorldVertexData
+	{
+		GfxWorldVertex* vertices;
+		void* worldVb;
+	};
+
+	struct GfxWorldVertexLayerData
+	{
+		char* data;
+		void* layerVb;
+	};
+
+	struct SunLightParseParams
+	{
+		char name[64];
+		float ambientScale;
+		float ambientColor[3];
+		float diffuseFraction;
+		float sunLight;
+		float sunColor[3];
+		float diffuseColor[3];
+		bool diffuseColorHasBeenSet;
+		float angles[3];
+	};
+
+	struct GfxReflectionProbe
+	{
+		float origin[3];
+		GfxImage* reflectionImage;
+	};
+
+	struct cplane_s;
+
+	struct GfxWorldDpvsPlanes
+	{
+		int cellCount;
+		cplane_s* planes;
+		unsigned __int16* nodes;
+		unsigned int* sceneEntCellBits;
+	};
+
+	struct GfxAabbTree
+	{
+		float mins[3];
+		float maxs[3];
+		unsigned __int16 childCount;
+		unsigned __int16 surfaceCount;
+		unsigned __int16 startSurfIndex;
+		unsigned __int16 surfaceCountNoDecal;
+		unsigned __int16 startSurfIndexNoDecal;
+		unsigned __int16 smodelIndexCount;
+		unsigned __int16* smodelIndexes;
+		int childrenOffset;
+	};
+
+	struct GfxCell
+	{
+		float mins[3];
+		float maxs[3];
+		int aabbTreeCount;
+		GfxAabbTree* aabbTree;
+		int portalCount;
+		void* portals; // GfxPortal*
+		int cullGroupCount;
+		int* cullGroups;
+		char reflectionProbeCount;
+		char* reflectionProbes;
+	};
+
+	struct GfxLightmapArray
+	{
+		GfxImage* primary;
+		GfxImage* secondary;
+	};
+
+	struct GfxLightGridEntry
+	{
+		unsigned __int16 colorsIndex;
+		char primaryLightIndex;
+		char needsTrace;
+	};
+
+	struct GfxLightGridColors
+	{
+		char rgb[56][3];
+	};
+
+	struct GfxLightGrid
+	{
+		char hasLightRegions;
+		unsigned int sunPrimaryLightIndex;
+		unsigned __int16 mins[3];
+		unsigned __int16 maxs[3];
+		unsigned int rowAxis;
+		unsigned int colAxis;
+		unsigned __int16* rowDataStart;
+		unsigned int rawRowDataSize;
+		char* rawRowData;
+		unsigned int entryCount;
+		GfxLightGridEntry* entries;
+		unsigned int colorCount;
+		GfxLightGridColors* colors;
+	};
+
+	struct GfxBrushModel;
+
+	struct MaterialMemory
+	{
+		Material* material;
+		int memory;
+	};
+
+	struct sunflare_t
+	{
+		char hasValidData;
+		Material* spriteMaterial;
+		Material* flareMaterial;
+		float spriteSize;
+		float flareMinSize;
+		float flareMinDot;
+		float flareMaxSize;
+		float flareMaxDot;
+		float flareMaxAlpha;
+		int flareFadeInTime;
+		int flareFadeOutTime;
+		float blindMinDot;
+		float blindMaxDot;
+		float blindMaxDarken;
+		int blindFadeInTime;
+		int blindFadeOutTime;
+		float glareMinDot;
+		float glareMaxDot;
+		float glareMaxLighten;
+		int glareFadeInTime;
+		int glareFadeOutTime;
+		float sunFxPosition[3];
+	};
+
+	struct GfxLightRegionAxis
+	{
+		float dir[3];
+		float midPoint;
+		float halfSize;
+	};
+
+	struct GfxLightRegionHull
+	{
+		float kdopMidPoint[9];
+		float kdopHalfSize[9];
+		unsigned int axisCount;
+		GfxLightRegionAxis* axis;
+	};
+
+	struct GfxLightRegion
+	{
+		unsigned int hullCount;
+		GfxLightRegionHull* hulls;
+	};
+
+	struct GfxWorldDpvsStatic
+	{
+		unsigned int smodelCount;
+		unsigned int staticSurfaceCount;
+		unsigned int staticSurfaceCountNoDecal;
+		unsigned int litSurfsBegin;
+		unsigned int litSurfsEnd;
+		unsigned int decalSurfsBegin;
+		unsigned int decalSurfsEnd;
+		unsigned int emissiveSurfsBegin;
+		unsigned int emissiveSurfsEnd;
+		unsigned int smodelVisDataCount;
+		unsigned int surfaceVisDataCount;
+		char* smodelVisData[3];
+		char* surfaceVisData[3];
+		unsigned int* lodData;
+		unsigned __int16* sortedSurfIndex;
+		void* smodelInsts; //GfxStaticModelInst*
+		void* surfaces; // GfxSurface*
+		void* cullGroups; // GfxCullGroup*
+		void* smodelDrawInsts; // GfxStaticModelDrawInst*
+		GfxDrawSurf* surfaceMaterials;
+		unsigned int* surfaceCastsSunShadow;
+		volatile int usageCount;
+	};
+
+	struct GfxWorldDpvsDynamic
+	{
+		unsigned int dynEntClientWordCount[2];
+		unsigned int dynEntClientCount[2];
+		unsigned int* dynEntCellBits[2];
+		char* dynEntVisData[2][3];
+	};
+
+	struct GfxWorld
+	{
+		const char* name;
+		const char* baseName;
+		int planeCount;
+		int nodeCount;
+		int indexCount;
+		unsigned __int16* indices;
+		int surfaceCount;
+		GfxWorldStreamInfo streamInfo;
+		int skySurfCount;
+		int* skyStartSurfs;
+		GfxImage* skyImage;
+		char skySamplerState;
+		unsigned int vertexCount;
+		GfxWorldVertexData vd;
+		unsigned int vertexLayerDataSize;
+		GfxWorldVertexLayerData vld;
+		SunLightParseParams sunParse;
+		GfxLight* sunLight;
+		float sunColorFromBsp[3];
+		unsigned int sunPrimaryLightIndex;
+		unsigned int primaryLightCount;
+		int cullGroupCount;
+		unsigned int reflectionProbeCount;
+		GfxReflectionProbe* reflectionProbes;
+		GfxTexture* reflectionProbeTextures;
+		GfxWorldDpvsPlanes dpvsPlanes;
+		int cellBitsCount;
+		GfxCell* cells;
+		int lightmapCount;
+		GfxLightmapArray* lightmaps;
+		GfxLightGrid lightGrid;
+		GfxTexture* lightmapPrimaryTextures;
+		GfxTexture* lightmapSecondaryTextures;
+		int modelCount;
+		GfxBrushModel* models;
+		float mins[3];
+		float maxs[3];
+		unsigned int checksum;
+		int materialMemoryCount;
+		MaterialMemory* materialMemory;
+		sunflare_t sun;
+		float outdoorLookupMatrix[4][4];
+		GfxImage* outdoorImage;
+		unsigned int* cellCasterBits;
+		void* sceneDynModel; // GfxSceneDynModel*
+		void* sceneDynBrush; // GfxSceneDynBrush*
+		unsigned int* primaryLightEntityShadowVis;
+		unsigned int* primaryLightDynEntShadowVis[2];
+		char* nonSunPrimaryLightForModelDynEnt;
+		void* shadowGeom; // GfxShadowGeometry*
+		GfxLightRegion* lightRegion;
+		GfxWorldDpvsStatic dpvs;
+		GfxWorldDpvsDynamic dpvsDyn;
+	}; STATIC_ASSERT_SIZE(GfxWorld, 0x2DC);
 
 	struct r_global_permanent_t
 	{
@@ -1857,7 +2171,7 @@ namespace game
 		Material* frameColorDebugMaterial;
 		Material* frameAlphaDebugMaterial;
 		GfxImage* rawImage;
-		void* world; //GfxWorld*
+		GfxWorld* world;
 		int caseTextures_count;
 		GfxImage* caseTextures[64];
 		Material* feedbackReplaceMaterial;
@@ -1897,12 +2211,6 @@ namespace game
 	union PackedTexCoords
 	{
 		unsigned int packed;
-	};
-	
-	union PackedUnitVec
-	{
-		unsigned int packed;
-		char array[4];
 	};
 	
 	struct GfxPackedVertex
@@ -2551,19 +2859,6 @@ namespace game
 		float vec[4];
 	}; STATIC_ASSERT_SIZE(GfxCmdSetCustomConstant, 24);
 
-	struct SunLightParseParams
-	{
-		char name[64];
-		float ambientScale;
-		float ambientColor[3];
-		float diffuseFraction;
-		float sunLight;
-		float sunColor[3];
-		float diffuseColor[3];
-		bool diffuseColorHasBeenSet;
-		float angles[3];
-	};
-
 	enum ShaderCodeConstants : unsigned __int16
 	{
 		CONST_SRC_CODE_MAYBE_DIRTY_PS_BEGIN = 0x0,
@@ -2911,6 +3206,20 @@ namespace game
 		GfxColor color;
 		float texCoord[2];
 		PackedUnitVec normal;
+	};
+
+	struct GfxSceneParms
+	{
+		int localClientNum;
+		float blurRadius;
+		GfxDepthOfField dof;
+		GfxFilm film;
+		GfxGlow glow;
+		bool isRenderingFullScreen;
+		GfxViewport sceneViewport;
+		GfxViewport displayViewport;
+		GfxViewport scissorViewport;
+		GfxLight* primaryLights;
 	};
 
 	struct materialCommands_t

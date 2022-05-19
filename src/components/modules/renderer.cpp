@@ -1792,80 +1792,98 @@ namespace components
 
 	void setup_viewinfo(game::GfxViewParms* viewParms)
 	{
-		const auto frontEndDataOut = game::get_frontenddata();
-		auto viewInfo = &frontEndDataOut->viewInfo[0];
+		//const auto frontEndDataOut = game::get_frontenddata();
+		//auto viewInfo = &frontEndDataOut->viewInfo[0];
 
-		frontEndDataOut->viewInfoIndex = 0;
-		frontEndDataOut->viewInfoCount = 1;
+		//frontEndDataOut->viewInfoIndex = 0;
+		//frontEndDataOut->viewInfoCount = 1;
 
-		memcpy(&viewInfo->input, game::gfxCmdBufInput, sizeof(viewInfo->input));
-		viewInfo->input.data = frontEndDataOut;
-		viewInfo->sceneDef = game::scene->def;
+		//memcpy(&viewInfo->input, game::gfxCmdBufInput, sizeof(viewInfo->input));
+		//viewInfo->input.data = frontEndDataOut;
+		//viewInfo->sceneDef = game::scene->def;
 
-		memcpy(&viewInfo->viewParms, viewParms, sizeof(game::GfxViewParms));
+		//memcpy(&viewInfo->viewParms, viewParms, sizeof(game::GfxViewParms));
 
-		const auto window = game::dx->windows[ggui::CCAMERAWND];
-		game::GfxViewport viewport = { 0, 0, window.width, window.height };
+		//const auto window = game::dx->windows[ggui::CCAMERAWND];
+		//game::GfxViewport viewport = { 0, 0, window.width, window.height };
 
-		viewInfo->sceneViewport = viewport;
-		viewInfo->displayViewport = viewport;
-
-
-		// needed for debug plumes (3D text in space)
-		game::rg->debugViewParms = viewParms;
-
-		// R_DrawAllSceneEnt - add/draw effect xmodels 
-		utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523E50)(viewInfo);
-
-		// R_AddAllSceneEntSurfacesCamera (Worker CMD) - add/draw effect xmodels 
-		utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523660)(viewInfo);
-
-		// *
-		// lit drawlist (effect xmodels)
-
-		R_InitDrawSurfListInfo(&viewInfo->litInfo);
-
-		viewInfo->litInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL; 
-		viewInfo->litInfo.viewInfo = viewInfo;
-		viewInfo->litInfo.viewOrigin[0] = viewParms->origin[0];
-		viewInfo->litInfo.viewOrigin[1] = viewParms->origin[1];
-		viewInfo->litInfo.viewOrigin[2] = viewParms->origin[2];
-		viewInfo->litInfo.viewOrigin[3] = viewParms->origin[3];
-		viewInfo->litInfo.cameraView = 1;
-
-		int initial_lit_drawSurfCount = frontEndDataOut->drawSurfCount;
-
-		// R_MergeAndEmitDrawSurfLists
-		utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(0, 3);
-
-		viewInfo->litInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_lit_drawSurfCount];
-		viewInfo->litInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_lit_drawSurfCount;
+		//viewInfo->sceneViewport = viewport;
+		//viewInfo->displayViewport = viewport;
 
 
-		// *
-		// emissive drawlist (effects)
+		//// needed for debug plumes (3D text in space)
+		//game::rg->debugViewParms = viewParms;
 
-		auto emissiveList = &viewInfo->emissiveInfo;
-		R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
+		//// R_DrawAllSceneEnt - add/draw effect xmodels 
+		//utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523E50)(viewInfo);
 
-		viewInfo->emissiveInfo.baseTechType = game::TECHNIQUE_EMISSIVE;
-		viewInfo->emissiveInfo.viewInfo = viewInfo;
-		viewInfo->emissiveInfo.viewOrigin[0] = viewParms->origin[0];
-		viewInfo->emissiveInfo.viewOrigin[1] = viewParms->origin[1];
-		viewInfo->emissiveInfo.viewOrigin[2] = viewParms->origin[2];
-		viewInfo->emissiveInfo.viewOrigin[3] = viewParms->origin[3];
-		viewInfo->emissiveInfo.cameraView = 1;
+		//// R_AddAllSceneEntSurfacesCamera (Worker CMD) - add/draw effect xmodels 
+		//utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523660)(viewInfo);
 
-		int initial_emissive_drawSurfCount = frontEndDataOut->drawSurfCount;
+		//// *
+		//// lit drawlist (effect xmodels)
 
-		// R_MergeAndEmitDrawSurfLists
-		utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(9, 6);
+		//R_InitDrawSurfListInfo(&viewInfo->litInfo);
 
-		emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_emissive_drawSurfCount];
+		//viewInfo->litInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL; 
+		//viewInfo->litInfo.viewInfo = viewInfo;
+		//viewInfo->litInfo.viewOrigin[0] = viewParms->origin[0];
+		//viewInfo->litInfo.viewOrigin[1] = viewParms->origin[1];
+		//viewInfo->litInfo.viewOrigin[2] = viewParms->origin[2];
+		//viewInfo->litInfo.viewOrigin[3] = viewParms->origin[3];
+		//viewInfo->litInfo.cameraView = 1;
 
-		renderer::effect_drawsurf_count_ = frontEndDataOut->drawSurfCount;
+		//int initial_lit_drawSurfCount = frontEndDataOut->drawSurfCount;
 
-		viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
+		//// R_MergeAndEmitDrawSurfLists
+		//utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(0, 3);
+
+		//viewInfo->litInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_lit_drawSurfCount];
+		//viewInfo->litInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_lit_drawSurfCount;
+
+
+		//// *
+		//// emissive drawlist (effects)
+
+		//auto emissiveList = &viewInfo->emissiveInfo;
+		//R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
+
+		//viewInfo->emissiveInfo.baseTechType = game::TECHNIQUE_EMISSIVE;
+		//viewInfo->emissiveInfo.viewInfo = viewInfo;
+		//viewInfo->emissiveInfo.viewOrigin[0] = viewParms->origin[0];
+		//viewInfo->emissiveInfo.viewOrigin[1] = viewParms->origin[1];
+		//viewInfo->emissiveInfo.viewOrigin[2] = viewParms->origin[2];
+		//viewInfo->emissiveInfo.viewOrigin[3] = viewParms->origin[3];
+		//viewInfo->emissiveInfo.cameraView = 1;
+
+		//int initial_emissive_drawSurfCount = frontEndDataOut->drawSurfCount;
+
+		//// R_MergeAndEmitDrawSurfLists
+		//utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(9, 6);
+
+		//emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_emissive_drawSurfCount];
+
+		//renderer::effect_drawsurf_count_ = frontEndDataOut->drawSurfCount;
+
+		//viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
+
+		game::GfxSceneParms scene = {};
+		scene.displayViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
+		scene.displayViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
+		scene.sceneViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
+		scene.sceneViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
+		scene.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
+		scene.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
+		scene.primaryLights = d3dbsp::scene_lights;
+
+		if (game::comworld->isInUse)
+		{
+			auto asd = game::rg->viewInfoCount_0x42E8;
+			auto asd2 = game::get_frontenddata();
+			utils::hook::call<void(__cdecl)(game::GfxSceneParms*, game::GfxViewParms* _lock, game::GfxViewParms* _actualview)>(0x504B40)(&scene, viewParms, viewParms);
+		}
+			
+			
 	}
 
 	void __declspec(naked) setup_viewinfo_stub()

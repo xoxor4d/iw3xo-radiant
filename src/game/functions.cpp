@@ -95,6 +95,9 @@ namespace game
 	game::GfxScene* scene = reinterpret_cast<game::GfxScene*>(0x1370980);
 	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
 
+	game::ComWorld* comworld = reinterpret_cast<game::ComWorld*>(0x241DDC8);
+	game::GfxWorld* s_world = reinterpret_cast<game::GfxWorld*>(0x174F688);
+
 	HWND* entitywnd_hwnds = reinterpret_cast<HWND*>(0x240A118);
 
 	game::GfxBackEndData* get_backenddata()

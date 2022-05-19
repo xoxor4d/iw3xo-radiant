@@ -12,6 +12,7 @@ namespace components
 		loader::_register(new gui());
 		loader::_register(new command());
 		loader::_register(new d3d9ex());
+		loader::_register(new d3dbsp());
 		loader::_register(new renderer());
 		loader::_register(new gameview());
 		loader::_register(new remote_net());

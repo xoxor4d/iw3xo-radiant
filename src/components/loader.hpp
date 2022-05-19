@@ -28,6 +28,7 @@ namespace components
 #include "modules/command.hpp"
 #include "modules/config.hpp"
 #include "modules/d3d9ex.hpp"
+#include "modules/d3dbsp.hpp"
 #include "modules/discord.hpp"
 #include "modules/effects.hpp"
 #include "modules/effects_editor.hpp"

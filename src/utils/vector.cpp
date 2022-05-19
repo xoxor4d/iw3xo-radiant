@@ -11,6 +11,11 @@ namespace utils
 {
 	namespace vector // https://github.com/id-Software/Quake-III-Arena/blob/master/code/game/q_math.c
 	{
+		float cos_of_sum_of_arc_cos(float cos0, float cos1)
+		{
+			return (cos0 * cos1) - sqrt((1.0f - cos0 * cos0) * (1.0f - cos1 * cos1));
+		}
+
 		void angle_vectors(const game::vec3_t angles, game::vec3_t forward, game::vec3_t right, game::vec3_t up)
 		{
 			float angle;

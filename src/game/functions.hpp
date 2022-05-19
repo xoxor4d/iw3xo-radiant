@@ -141,6 +141,9 @@ namespace game
 	extern game::GfxScene* scene;
 	extern game::DxGlobals* dx;
 
+	extern game::ComWorld* comworld;
+	extern game::GfxWorld* s_world;
+
 	extern game::GfxBackEndData* get_backenddata();
 	extern game::GfxBackEndData* get_frontenddata();
 
@@ -289,7 +292,7 @@ namespace game
 	// no error but doesnt reload everything
 	inline auto DX_ResetDevice = reinterpret_cast<void (*)()>(0x5015F0);
 	inline auto Hunk_Alloc = reinterpret_cast<int* (*)(size_t)>(0x5104E0);
-	inline auto Z_Malloc = reinterpret_cast<int* (*)(int)>(0x438FD0);
+	inline auto Z_Malloc = reinterpret_cast<int* (*)(size_t)>(0x4AC330);
 
 
 	// *
@@ -343,6 +346,9 @@ namespace game
 
 	inline auto FS_ReadFile = reinterpret_cast<unsigned int (*)(const char*, void**)>(0x4A0240);
 	inline auto FS_FreeFile = reinterpret_cast<void (*)(void*)>(0x4A0300);
+	inline auto FS_Read = reinterpret_cast<int (*)(void* buffer, size_t len, signed int h)>(0x49FE30);
+	inline auto FS_FOpenFileRead = reinterpret_cast<std::uint32_t (*)(const char* filename, int* file)>(0x49FAF0);
+	inline auto FS_FCloseFile = reinterpret_cast<void (*)(int h)>(0x49EAD0);
 	void FS_ScanForDir(const char* directory, const char* search_path, int localized);
 	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count);
 	std::uint32_t FS_HashFileName(const char* fname, int hash_size);
