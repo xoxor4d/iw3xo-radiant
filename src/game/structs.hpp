@@ -1096,6 +1096,46 @@ namespace game
 		GfxViewport viewport;
 	};
 	
+	//struct GfxViewInfo
+	//{
+	//	GfxViewParms viewParms;
+	//	GfxSceneDef sceneDef;
+	//	GfxViewport sceneViewport;
+	//	GfxViewport displayViewport;
+	//	GfxViewport scissorViewport;
+	//	ShadowType dynamicShadowType;
+	//	//__declspec(align(16)) ShadowCookieList shadowCookieList;
+	//	char shadowCookieList[0x1210];
+	//	char align_pad[8];
+	//	int localClientNum;
+	//	int isRenderingFullScreen;
+	//	bool needsFloatZ;
+	//	GfxLight shadowableLights[255];
+	//	unsigned int shadowableLightCount;
+	//	PointLightPartition pointLightPartitions[4];
+	//	GfxMeshData pointLightMeshData[4];
+	//	int pointLightCount;
+	//	unsigned int emissiveSpotLightIndex;
+	//	GfxLight emissiveSpotLight;
+	//	int emissiveSpotDrawSurfCount;
+	//	void *emissiveSpotDrawSurfs; // GfxDrawSurf
+	//	unsigned int emissiveSpotLightCount;
+	//	float blurRadius;
+	//	float frustumPlanes[4][4];
+	//	GfxDepthOfField dof;
+	//	GfxFilm film;
+	//	GfxGlow glow;
+	//	const void *cmds;
+	//	GfxSunShadow sunShadow;
+	//	unsigned int spotShadowCount;
+	//	GfxSpotShadow spotShadows[4];
+	//	GfxQuadMeshData *fullSceneViewMesh;
+	//	GfxDrawSurfListInfo litInfo;
+	//	GfxDrawSurfListInfo decalInfo;
+	//	GfxDrawSurfListInfo emissiveInfo;
+	//	GfxCmdBufInput input;
+	//};
+
 	struct GfxViewInfo
 	{
 		GfxViewParms viewParms;
@@ -1104,36 +1144,42 @@ namespace game
 		GfxViewport displayViewport;
 		GfxViewport scissorViewport;
 		ShadowType dynamicShadowType;
-		//__declspec(align(16)) ShadowCookieList shadowCookieList;
-		char shadowCookieList[1210];
+		char shadowCookieList[4624];
+		char align_pad[8];
 		int localClientNum;
 		int isRenderingFullScreen;
-		bool needsFloatZ;
+		char needsFloatZ;
 		GfxLight shadowableLights[255];
-		unsigned int shadowableLightCount;
+		int shadowableLightCount;
 		PointLightPartition pointLightPartitions[4];
 		GfxMeshData pointLightMeshData[4];
 		int pointLightCount;
-		unsigned int emissiveSpotLightIndex;
+		int emissiveSpotLightIndex;
 		GfxLight emissiveSpotLight;
 		int emissiveSpotDrawSurfCount;
-		void *emissiveSpotDrawSurfs; // GfxDrawSurf
-		unsigned int emissiveSpotLightCount;
+		float emissiveSpotDrawSurfs;
+		float emissiveSpotLightCount;
 		float blurRadius;
-		float frustumPlanes[4][4];
+		float frustumPlanes[16];
 		GfxDepthOfField dof;
 		GfxFilm film;
 		GfxGlow glow;
-		const void *cmds;
-		GfxSunShadow sunShadow;
-		unsigned int spotShadowCount;
-		GfxSpotShadow spotShadows[4];
-		GfxQuadMeshData *fullSceneViewMesh;
+		void* cmds;
+		char sunShadow[1240];
+		int spotShadowCount;
+		char gap5FBC[1942];
+		GfxQuadMeshData* fullSceneViewMesh;
 		GfxDrawSurfListInfo litInfo;
 		GfxDrawSurfListInfo decalInfo;
 		GfxDrawSurfListInfo emissiveInfo;
 		GfxCmdBufInput input;
 	};
+
+
+	STATIC_ASSERT_OFFSET(GfxViewInfo, dynamicShadowType, 0x184);
+	STATIC_ASSERT_OFFSET(GfxViewInfo, localClientNum, 0x13A0);
+	STATIC_ASSERT_OFFSET(GfxViewInfo, cmds, 0x5688);
+	STATIC_ASSERT_OFFSET(GfxViewInfo, litInfo, 0x6304);
 
 	struct GfxDebugPoly
 	{
@@ -1912,6 +1958,12 @@ namespace game
 	};
 
 	struct cplane_s;
+
+	struct dplane_t
+	{
+		float normal[3];
+		float dist;
+	};
 
 	struct GfxWorldDpvsPlanes
 	{
@@ -3239,6 +3291,157 @@ namespace game
 	{
 		const void* cmd;
 	};
+
+	struct cStaticModelWritable
+	{
+		unsigned __int16 nextModelInWorldSector;
+	};
+
+	struct cStaticModel_s
+	{
+		cStaticModelWritable writable;
+		XModel* xmodel;
+		float origin[3];
+		float invScaledAxis[3][3];
+		float absmin[3];
+		float absmax[3];
+	};
+
+	struct dmaterial_t
+	{
+		char material[64];
+		int surfaceFlags;
+		int contentFlags;
+	};
+
+	struct cNode_t
+	{
+		cplane_s* plane;
+		__int16 children[2];
+	};
+
+	struct __declspec(align(4)) cLeaf_t
+	{
+		unsigned __int16 firstCollAabbIndex;
+		unsigned __int16 collAabbCount;
+		int brushContents;
+		int terrainContents;
+		float mins[3];
+		float maxs[3];
+		int leafBrushNode;
+		__int16 cluster;
+	};
+
+	struct cLeafBrushNodeLeaf_t
+	{
+		unsigned __int16* brushes;
+	};
+
+	struct cLeafBrushNodeChildren_t
+	{
+		float dist;
+		float range;
+		unsigned __int16 childOffset[2];
+	};
+
+	union cLeafBrushNodeData_t
+	{
+		cLeafBrushNodeLeaf_t leaf;
+		cLeafBrushNodeChildren_t children;
+	};
+
+	struct cLeafBrushNode_s
+	{
+		char axis;
+		__int16 leafBrushCount;
+		int contents;
+		cLeafBrushNodeData_t data;
+	};
+
+	struct CollisionBorder
+	{
+		float distEq[3];
+		float zBase;
+		float zSlope;
+		float start;
+		float length;
+	};
+
+	struct cmodel_t
+	{
+		float mins[3];
+		float maxs[3];
+		float radius;
+		cLeaf_t leaf;
+	};
+
+	struct __declspec(align(16)) cbrush_t
+	{
+		float mins[3];
+		int contents;
+		float maxs[3];
+		unsigned int numsides;
+		cbrushside_t* sides;
+		__int16 axialMaterialNum[2][3];
+		char* baseAdjacentSide;
+		__int16 firstAdjacentSideOffsets[2][3];
+		char edgeCount[2][3];
+	};
+
+	struct clipMap_t
+	{
+		const char* name;
+		int isInUse;
+		int planeCount;
+		cplane_s* planes;
+		unsigned int numStaticModels;
+		cStaticModel_s* staticModelList;
+		unsigned int numMaterials;
+		dmaterial_t* materials;
+		unsigned int numBrushSides;
+		cbrushside_t* brushsides;
+		unsigned int numBrushEdges;
+		char* brushEdges;
+		unsigned int numNodes;
+		cNode_t* nodes;
+		unsigned int numLeafs;
+		cLeaf_t* leafs;
+		unsigned int leafbrushNodesCount;
+		cLeafBrushNode_s* leafbrushNodes;
+		unsigned int numLeafBrushes;
+		unsigned __int16* leafbrushes;
+		unsigned int numLeafSurfaces;
+		unsigned int* leafsurfaces;
+		unsigned int vertCount;
+		float(*verts)[3];
+		int triCount;
+		unsigned __int16* triIndices;
+		char* triEdgeIsWalkable;
+		int borderCount;
+		CollisionBorder* borders;
+		int partitionCount;
+		void* partitions; // CollisionPartition*
+		int aabbTreeCount;
+		void* aabbTrees; // CollisionAabbTree*
+		unsigned int numSubModels;
+		cmodel_t* cmodels;
+		unsigned __int16 numBrushes;
+		cbrush_t* brushes;
+		int numClusters;
+		int clusterBytes;
+		char* visibility;
+		int vised;
+		void* mapEnts; // MapEnts*
+		cbrush_t* box_brush;
+		cmodel_t box_model;
+		unsigned __int16 dynEntCount[2];
+		void* dynEntDefList[2]; // DynEntityDef*
+		void* dynEntPoseList[2]; // DynEntityPose*
+		void* dynEntClientList[2]; // DynEntityClient*
+		void* dynEntCollList[2]; // DynEntityColl*
+		unsigned int checksum;
+	};
+
 
 	struct filter_material_t
 	{

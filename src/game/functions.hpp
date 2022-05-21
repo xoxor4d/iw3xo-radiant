@@ -266,15 +266,23 @@ namespace game
 	inline auto R_SetupProjection = reinterpret_cast<void (*)(game::GfxMatrix*, float halfx, float halfy, float znear)>(0x4A78E0);
 	inline auto R_SetupRenderCmd = reinterpret_cast<void (*)(game::GfxSceneDef*, game::GfxViewParms*)>(0x4FC3A0);
 	inline auto R_Clear = reinterpret_cast<void (*)(int, const float*, float, bool)>(0x4FCC70);
+	inline auto R_ClearScreen = reinterpret_cast<void (*)(IDirect3DDevice9*, int whichToClear, const float* color, float depth, bool stencil, game::GfxViewport*)>(0x539AA0);
 	inline auto R_IssueRenderCommands = reinterpret_cast<void (*)(int)>(0x4FD630);
 	inline auto R_SortMaterials = reinterpret_cast<void (*)()>(0x4FD910);
+	inline auto R_SetupRendertarget = reinterpret_cast<bool (*)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670);
+	inline auto R_SetRenderTarget = reinterpret_cast<bool (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0);
 	inline auto R_SetupRendertarget_CheckDevice = reinterpret_cast<bool (*)(HWND)>(0x501A70);
 	inline auto R_CheckTargetWindow = reinterpret_cast<bool (*)(HWND)>(0x500660);
 	inline auto R_AddDebugBox = reinterpret_cast<void (*)(game::DebugGlobals * debugGlobalsEntry, const float* mins, const float* maxs, const float* color)>(0x528710);
+	inline auto R_CmdBufSet3D = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*)>(0x53CFB0);
+	inline auto R_SetGameTime = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, float)>(0x55A4A0);
 
 	// sampler_index = the index used in shader_vars.h
 	inline auto R_SetSampler = reinterpret_cast<void (*)(int unused, game::GfxCmdBufState * state, int sampler_index, char sampler_state, game::GfxImage * img)>(0x538D70);
 	inline auto R_AddCmdDrawFullScreenColoredQuad = reinterpret_cast<bool (*)(float s0, float t0, float s1, float t1, float* color, game::Material * mtl)>(0x4FC260);
+	inline auto R_DrawSurfs = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x5324E0);
+	inline auto R_ShowTris = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x55B100);
+	inline auto R_InitCmdBufSourceState = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput * input, int)>(0x53CB20);
 
 	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/);
 	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);

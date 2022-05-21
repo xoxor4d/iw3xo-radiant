@@ -89,12 +89,17 @@ namespace components
 		};
 
 		static bspGlob_s comBspGlob;
+		static game::clipMap_t cm;
 		static game::GfxLight scene_lights[255];
+
+		static game::cplane_s* CM_GetPlanes();
+		static int CM_GetPlaneCount();
 
 		static bool Com_IsBspLoaded();
 		static std::uint32_t Com_GetBspVersion();
 		static char* Com_ValidateBspLumpData(LumpType type, unsigned int offset, unsigned int length, unsigned int elemSize, unsigned int* count);
 		static const void* Com_GetBspLump(LumpType type, unsigned int elemSize, unsigned int* count);
+		static bool Com_GetBspLumpBool(LumpType type);
 		static bool Com_LoadBsp(const char* filename);
 
 		d3dbsp();

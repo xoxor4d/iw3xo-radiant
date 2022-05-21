@@ -1564,6 +1564,18 @@ namespace components
 			// render emissive surfs (effects)
 			renderer::RB_Draw3D();
 
+
+			//const auto backend = game::get_backenddata();
+
+			//if (backend->viewInfo->displayViewport.width != 0 && backend->viewInfoCount)
+			//{
+			//	// &backend->viewInfo[0]
+			//	//cdeclcall(void, 0x55B670); //
+
+			//	utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x55B670)(&backend->viewInfo[0]);
+			//	
+			//}
+
 			// post effects logic (filmtweaks)
 			camera_postfx();
 		}
@@ -1749,7 +1761,8 @@ namespace components
 		}
 	}
 
-	void __declspec(naked) RB_ExecuteRenderCommandsLoop_stub()
+	void __declspec(naked)
+	RB_ExecuteRenderCommandsLoop_stub()
 	{
 		const static uint32_t retn_addr = 0x535B1F;
 		__asm
@@ -1792,8 +1805,14 @@ namespace components
 
 	void setup_viewinfo(game::GfxViewParms* viewParms)
 	{
-		//const auto frontEndDataOut = game::get_frontenddata();
-		//auto viewInfo = &frontEndDataOut->viewInfo[0];
+		if (game::dx->targetWindowIndex != ggui::CCAMERAWND)
+		{
+			int dbg = 0;
+			return;
+		}
+
+		const auto frontEndDataOut = game::get_frontenddata();
+		auto viewInfo = &frontEndDataOut->viewInfo[0];
 
 		//frontEndDataOut->viewInfoIndex = 0;
 		//frontEndDataOut->viewInfoCount = 1;
@@ -1867,23 +1886,75 @@ namespace components
 
 		//viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
 
-		game::GfxSceneParms scene = {};
+
+
+		/*game::GfxSceneParms scene = {};
 		scene.displayViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
 		scene.displayViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
 		scene.sceneViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
 		scene.sceneViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
 		scene.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
 		scene.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
-		scene.primaryLights = d3dbsp::scene_lights;
+		scene.primaryLights = d3dbsp::scene_lights;*/
+
+
 
 		if (game::comworld->isInUse)
 		{
 			auto asd = game::rg->viewInfoCount_0x42E8;
 			auto asd2 = game::get_frontenddata();
-			utils::hook::call<void(__cdecl)(game::GfxSceneParms*, game::GfxViewParms* _lock, game::GfxViewParms* _actualview)>(0x504B40)(&scene, viewParms, viewParms);
+
+			// R_RenderScene
+			//utils::hook::call<void(__cdecl)(game::GfxSceneParms*, game::GfxViewParms* _lock, game::GfxViewParms* _actualview)>(0x504B40)(&scene, viewParms, viewParms);
+
+			struct refdef_s
+			{
+				unsigned int x;
+				unsigned int y;
+				unsigned int width;
+				unsigned int height;
+				float tanHalfFovX;
+				float tanHalfFovY;
+				float vieworg[3];
+				float viewaxis[3][3];
+				float viewOffset[3];
+				int time;
+				float zNear;
+				float blurRadius;
+				game::GfxDepthOfField dof;
+				game::GfxFilm film;
+				game::GfxGlow glow;
+				game::GfxLight primaryLights[255];
+				game::GfxViewport scissorViewport;
+				bool useScissorViewport;
+				int localClientNum;
+			};
+
+			refdef_s refdef = {};
+			utils::vector::copy(viewParms->origin, refdef.vieworg);
+			utils::vector::copy(viewParms->axis[0], refdef.viewaxis[0]);
+			utils::vector::copy(viewParms->axis[1], refdef.viewaxis[1]);
+			utils::vector::copy(viewParms->axis[2], refdef.viewaxis[2]);
+
+			refdef.width = game::dx->windows[ggui::CCAMERAWND].width;
+			refdef.height = game::dx->windows[ggui::CCAMERAWND].height;
+
+			const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
+			refdef.tanHalfFovY = tanf(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
+			refdef.tanHalfFovX = refdef.tanHalfFovY * (static_cast<float>(cam->width) / static_cast<float>(cam->height));
+
+			refdef.zNear = 0.1f;
+
+			refdef.time = static_cast<int>(gfx_fbv.float_time);
+
+			refdef.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
+			refdef.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
+
+			memcpy(&refdef.primaryLights, &d3dbsp::scene_lights, sizeof(d3dbsp::scene_lights));
+
+			// CL_RenderScene
+			utils::hook::call<void(__cdecl)(refdef_s* _refdef)>(0x506030)(&refdef);
 		}
-			
-			
 	}
 
 	void __declspec(naked) setup_viewinfo_stub()
@@ -1937,9 +2008,8 @@ namespace components
 
 			source->eyeOffset[2] = eye_offset;
 			source->eyeOffset[3] = 1.0f;
-
-			//R_CmdBufSet3D(source);
-			utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*)>(0x53CFB0)(source);
+			
+			game::R_CmdBufSet3D(source);
 		}
 	}
 
@@ -1992,10 +2062,8 @@ namespace components
 
 		R_Set3D(source);
 		source->materialTime = 0.0f;
-
-		// R_SetGameTime(source, source->sceneDef.floatTime);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, float)>(0x55A4A0)(source, source->sceneDef.floatTime);
-
+		
+		game::R_SetGameTime(source, source->sceneDef.floatTime);
 		R_SetViewParms(source);
 	}
 
@@ -2054,25 +2122,19 @@ namespace components
 
 		memset(buf_state->vertexShaderConstState, 0, sizeof(buf_state->vertexShaderConstState));
 		memset(buf_state->pixelShaderConstState, 0, sizeof(buf_state->pixelShaderConstState));
-
-		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(buf_source_state, game::R_RENDERTARGET_FRAME_BUFFER); //game::R_RENDERTARGET_SCENE);
-
-		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(buf_source_state, buf_state, game::R_RENDERTARGET_FRAME_BUFFER); //game::R_RENDERTARGET_SCENE);
+		
+		game::R_SetupRendertarget(buf_source_state, game::R_RENDERTARGET_FRAME_BUFFER);
+		game::R_SetRenderTarget(buf_source_state, buf_state, game::R_RENDERTARGET_FRAME_BUFFER);
 
 		if(clear)
 		{
-			//R_ClearScreen(gfxCmdBufState.prim.device, 6, colorWhite, 1.0, 0, (GfxViewport*)a1);
-			utils::hook::call<void(__cdecl)(IDirect3DDevice9*, int whichToClear, const float* color, float depth, bool stencil, game::GfxViewport*)>(0x539AA0)
-				(buf_state->prim.device, 7, game::g_qeglobals->d_savedinfo.colors[4], 1.0f, false, nullptr);
+			game::R_ClearScreen(buf_state->prim.device, 7, game::g_qeglobals->d_savedinfo.colors[4], 1.0f, false, nullptr);
 		}
 	}
 
-	void R_DrawLitCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
+	void R_DepthPrepassCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
 		R_Set3D(source);
-
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
 
 		const RECT rect =
@@ -2085,25 +2147,96 @@ namespace components
 
 		state->prim.device->SetScissorRect(&rect);
 
-		//R_DrawSurfs(source, state, 0, &viewInfo->emissiveInfo);
-		// int __cdecl R_DrawSurfs(GfxCmdBufSourceState *source, GfxCmdBufState *state, GfxCmdBufState *prepassstate, GfxDrawSurfListInfo *info)
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x5324E0)
-			(source, state, nullptr, &viewInfo->litInfo);
+		game::MaterialTechniqueType tech_type;
 
-		//R_ShowTris(source, state, &viewInfo->emissiveInfo);
-		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState* a1, game::GfxCmdBufState* a2, game::GfxDrawSurfListInfo*)>(0x55B100)
-		//	(source, state, &viewInfo->emissiveInfo);
+		if (viewInfo->needsFloatZ)
+		{
+			game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FLOAT_Z);
+			tech_type = game::TECHNIQUE_BUILD_FLOAT_Z;
+
+			//R_DrawQuadMesh(source, state, game::rgp->shadowClearMaterial, &viewInfo->fullSceneViewMesh->meshData);
+			utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::Material*, game::GfxMeshData*)>(0x52B9F0)
+				(source, state, game::rgp->shadowClearMaterial, &viewInfo->fullSceneViewMesh->meshData);
+
+			source->input.consts[game::CONST_SRC_CODE_DEPTH_FROM_CLIP][0] = 0.0f;
+			source->input.consts[game::CONST_SRC_CODE_DEPTH_FROM_CLIP][1] = 0.0f;
+			source->input.consts[game::CONST_SRC_CODE_DEPTH_FROM_CLIP][2] = 0.0f;
+			source->input.consts[game::CONST_SRC_CODE_DEPTH_FROM_CLIP][3] = 1.0f;
+			++source->constVersions[54];
+		}
+		else
+		{
+			game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_DYNAMICSHADOWS);
+			tech_type = game::TECHNIQUE_DEPTH_PREPASS;
+		}
+
+		game::GfxDrawSurfListInfo info;
+
+		memcpy(&info, &viewInfo->litInfo, sizeof(info));
+		info.baseTechType = tech_type;
+		game::R_DrawSurfs(source, state, nullptr, &info);
+
+		memcpy(&info, &viewInfo->decalInfo, sizeof(info));
+		info.baseTechType = tech_type;
+		game::R_DrawSurfs(source, state, nullptr, &info);
+
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
+	}
+
+	void R_DrawLitCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
+	{
+		game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FRAME_BUFFER);
+
+		R_Set3D(source);
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
+
+		const RECT rect =
+		{
+			viewInfo->sceneViewport.x,
+			viewInfo->sceneViewport.y,
+			viewInfo->sceneViewport.x + viewInfo->sceneViewport.width,
+			viewInfo->sceneViewport.y + viewInfo->sceneViewport.height
+		};
+
+		state->prim.device->SetScissorRect(&rect);
+
+		game::R_DrawSurfs(source, state, nullptr, &viewInfo->litInfo);
+		//game::R_ShowTris(source, state, &viewInfo->emissiveInfo);
+
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
+	}
+
+	void R_DrawDecalCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
+	{
+		game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FRAME_BUFFER);
+
+		R_Set3D(source);
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
+
+		const RECT rect =
+		{
+			viewInfo->sceneViewport.x,
+			viewInfo->sceneViewport.y,
+			viewInfo->sceneViewport.x + viewInfo->sceneViewport.width,
+			viewInfo->sceneViewport.y + viewInfo->sceneViewport.height
+		};
+
+		state->prim.device->SetScissorRect(&rect);
+
+		game::R_DrawSurfs(source, state, nullptr, &viewInfo->decalInfo);
+		//game::R_ShowTris(source, state, &viewInfo->decalInfo);
 
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
 	}
 
 	void R_DrawEmissiveCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
+		game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FRAME_BUFFER);
+
 		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
 		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(source, state, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
 
 		R_Set3D(source);
-
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
 
 		const RECT rect =
@@ -2118,14 +2251,8 @@ namespace components
 
 		//auto& rg = *reinterpret_cast<game::r_globals_t*>(0x13683F0);
 
-		//R_DrawSurfs(source, state, 0, &viewInfo->emissiveInfo);
-		// int __cdecl R_DrawSurfs(GfxCmdBufSourceState *source, GfxCmdBufState *state, GfxCmdBufState *prepassstate, GfxDrawSurfListInfo *info)
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x5324E0)
-			(source, state, nullptr, &viewInfo->emissiveInfo);
-
-		//R_ShowTris(source, state, &viewInfo->emissiveInfo);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState* a1, game::GfxCmdBufState* a2, game::GfxDrawSurfListInfo*)>(0x55B100)
-			(source, state, &viewInfo->emissiveInfo);
+		game::R_DrawSurfs(source, state, nullptr, &viewInfo->emissiveInfo);
+		game::R_ShowTris(source, state, &viewInfo->emissiveInfo);
 
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
 	}
@@ -2145,15 +2272,27 @@ namespace components
 		memcpy(game::gfxCmdBufState, &state1, sizeof(game::GfxCmdBufState));
 	}
 
+	void R_DepthPrepass(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
+	{
+		game::R_ClearScreen(cmdbuf->device, 6, game::color_white, 1.0f, false, nullptr);
+
+		game::GfxCmdBufSourceState source = {};
+		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FLOAT_Z);
+
+		// R_SetSceneViewport
+		source.sceneViewport = viewinfo->sceneViewport;
+		source.viewMode = game::VIEW_MODE_NONE;
+		source.viewportIsDirty = true;
+
+		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DepthPrepassCallback, viewinfo, &source, viewinfo, nullptr, viewinfo, cmdbuf, 0);
+	}
+
 	void R_DrawLit(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
 	{
 		game::GfxCmdBufSourceState source = {};
-
-		//R_InitCmdBufSourceState(GfxCmdBufSourceState *source, GfxCmdBufInput *input, int a3)
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput* input, int)>(0x53CB20)(&source, &viewinfo->input, 1);
-
-		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
+		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
 
 		// R_SetSceneViewport
 		source.sceneViewport = viewinfo->sceneViewport;
@@ -2163,15 +2302,25 @@ namespace components
 		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DrawLitCallback, viewinfo, &source, viewinfo, &viewinfo->litInfo, viewinfo, cmdbuf, 0);
 	}
 
+	void R_DrawDecal(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
+	{
+		game::GfxCmdBufSourceState source = {};
+		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
+
+		// R_SetSceneViewport
+		source.sceneViewport = viewinfo->sceneViewport;
+		source.viewMode = game::VIEW_MODE_NONE;
+		source.viewportIsDirty = true;
+
+		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DrawDecalCallback, viewinfo, &source, viewinfo, &viewinfo->decalInfo, viewinfo, cmdbuf, 0);
+	}
+
 	void R_DrawEmissive(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
 	{
 		game::GfxCmdBufSourceState source = {};
-
-		//R_InitCmdBufSourceState(GfxCmdBufSourceState *source, GfxCmdBufInput *input, int a3)
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput* input, int)>(0x53CB20)(&source, &viewinfo->input, 1);
-
-		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
+		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
 
 		// R_SetSceneViewport
 		source.sceneViewport = viewinfo->sceneViewport;
@@ -2185,7 +2334,7 @@ namespace components
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
 
-		if (game::dx->device && (effects::effect_is_playing() || fx_system::ed_is_paused && !effects::effect_is_playing()))
+		if (game::dx->device /*&& (effects::effect_is_playing() || fx_system::ed_is_paused && !effects::effect_is_playing())*/)
 		{
 			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];
@@ -2193,8 +2342,21 @@ namespace components
 			renderer::copy_scene_to_texture(ggui::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
 			game::gfxCmdBufSourceState->input.codeImages[10] = resolved_post_sun->image;
 
+			// R_SetFrameFog
+			// R_SetSunConstants
+
+
+			R_DepthPrepass(&cmdBuf, viewInfo);
 			R_DrawLit(&cmdBuf, viewInfo);
+			R_DrawDecal(&cmdBuf, viewInfo);
+
+			// RB_DrawSun
+			// R_DrawLights
+
 			R_DrawEmissive(&cmdBuf, viewInfo);
+
+			
+			
 		}
 
 //#ifdef DEBUG
@@ -3011,8 +3173,40 @@ namespace components
 		// * ------
 
 		// load depth prepass and build-floatz technique (Material_LoadTechniqueSet -> g_useTechnique)
-		//utils::hook::set<BYTE>(0x633FC4 + 0, 0x1);
-		//utils::hook::set<BYTE>(0x633FC4 + 1, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 0, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 1, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 2, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 3, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 4, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 5, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 6, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 7, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 8, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 9, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 10, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 11, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 12, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 13, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 14, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 15, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 16, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 17, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 18, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 19, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 20, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 21, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 22, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 23, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 24, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 25, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 26, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 27, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 28, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 29, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 30, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 31, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 32, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 33, 0x1);
 
 		command::register_command("g_log_rendercommands"s, [this](auto)
 		{
