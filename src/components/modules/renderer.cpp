@@ -940,6 +940,21 @@ namespace components
 					{
 						if (state->pass->vertexShader)
 						{
+							/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_GAMETIME)
+							{
+								const float clamped_second = gfx_fbv.float_time - floorf(gfx_fbv.float_time);
+
+								const game::vec4_t temp =
+								{
+									sinf(clamped_second * 6.283185482025146f),
+									cosf(clamped_second * 6.283185482025146f),
+									clamped_second,
+									gfx_fbv.float_time
+								};
+
+								game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
+							}*/
+
 							// set fog
 							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG)
 							{
@@ -1771,7 +1786,7 @@ namespace components
 			call	pre_scene_command_rendering;
 			popad;
 
-			mov     edx, [eax + 0DE1C0h]; 
+			mov     edx, [eax + 0xDE1C0]; 
 			push    edx; // backEndData->execState
 			call	RB_ExecuteRenderCommandsLoop;
 			add		esp, 4;
@@ -1807,12 +1822,11 @@ namespace components
 	{
 		if (game::dx->targetWindowIndex != ggui::CCAMERAWND)
 		{
-			int dbg = 0;
 			return;
 		}
 
-		const auto frontEndDataOut = game::get_frontenddata();
-		auto viewInfo = &frontEndDataOut->viewInfo[0];
+		//const auto frontEndDataOut = game::get_frontenddata();
+		//auto viewInfo = &frontEndDataOut->viewInfo[0];
 
 		//frontEndDataOut->viewInfoIndex = 0;
 		//frontEndDataOut->viewInfoCount = 1;
@@ -1901,40 +1915,28 @@ namespace components
 
 		if (game::comworld->isInUse)
 		{
-			auto asd = game::rg->viewInfoCount_0x42E8;
-			auto asd2 = game::get_frontenddata();
+			//auto asd = game::rg->viewInfoCount_0x42E8;
+			//auto asd2 = game::get_frontenddata();
 
 			// R_RenderScene
 			//utils::hook::call<void(__cdecl)(game::GfxSceneParms*, game::GfxViewParms* _lock, game::GfxViewParms* _actualview)>(0x504B40)(&scene, viewParms, viewParms);
 
-			struct refdef_s
-			{
-				unsigned int x;
-				unsigned int y;
-				unsigned int width;
-				unsigned int height;
-				float tanHalfFovX;
-				float tanHalfFovY;
-				float vieworg[3];
-				float viewaxis[3][3];
-				float viewOffset[3];
-				int time;
-				float zNear;
-				float blurRadius;
-				game::GfxDepthOfField dof;
-				game::GfxFilm film;
-				game::GfxGlow glow;
-				game::GfxLight primaryLights[255];
-				game::GfxViewport scissorViewport;
-				bool useScissorViewport;
-				int localClientNum;
-			};
-
-			refdef_s refdef = {};
+			game::refdef_s refdef = {};
 			utils::vector::copy(viewParms->origin, refdef.vieworg);
 			utils::vector::copy(viewParms->axis[0], refdef.viewaxis[0]);
 			utils::vector::copy(viewParms->axis[1], refdef.viewaxis[1]);
 			utils::vector::copy(viewParms->axis[2], refdef.viewaxis[2]);
+
+			/*const auto ccam = &cmainframe::activewnd->m_pCamWnd->camera;
+			refdef.viewaxis[0][0] = ccam->vpn[0];
+			refdef.viewaxis[0][1] = ccam->vpn[1];
+			refdef.viewaxis[0][2] = ccam->vpn[2];
+			refdef.viewaxis[1][0] = -ccam->vright[0];
+			refdef.viewaxis[1][1] = -ccam->vright[1];
+			refdef.viewaxis[1][2] = -ccam->vright[2];
+			refdef.viewaxis[2][0] = ccam->vup[0];
+			refdef.viewaxis[2][1] = ccam->vup[1];
+			refdef.viewaxis[2][2] = ccam->vup[2];*/
 
 			refdef.width = game::dx->windows[ggui::CCAMERAWND].width;
 			refdef.height = game::dx->windows[ggui::CCAMERAWND].height;
@@ -1943,17 +1945,16 @@ namespace components
 			refdef.tanHalfFovY = tanf(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
 			refdef.tanHalfFovX = refdef.tanHalfFovY * (static_cast<float>(cam->width) / static_cast<float>(cam->height));
 
-			refdef.zNear = 0.1f;
-
-			refdef.time = static_cast<int>(gfx_fbv.float_time);
-
+			refdef.zNear = game::Dvar_FindVar("r_zNear")->current.value; // 0.1f
+			refdef.time = static_cast<int>(timeGetTime());
+			
 			refdef.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
 			refdef.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
 
 			memcpy(&refdef.primaryLights, &d3dbsp::scene_lights, sizeof(d3dbsp::scene_lights));
 
 			// CL_RenderScene
-			utils::hook::call<void(__cdecl)(refdef_s* _refdef)>(0x506030)(&refdef);
+			utils::hook::call<void(__cdecl)(game::refdef_s* _refdef)>(0x506030)(&refdef);
 		}
 	}
 
@@ -2233,9 +2234,6 @@ namespace components
 	{
 		game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FRAME_BUFFER);
 
-		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
-		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(source, state, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
-
 		R_Set3D(source);
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
 
@@ -2274,7 +2272,7 @@ namespace components
 
 	void R_DepthPrepass(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
 	{
-		game::R_ClearScreen(cmdbuf->device, 6, game::color_white, 1.0f, false, nullptr);
+		//game::R_ClearScreen(cmdbuf->device, 6, game::color_white, 1.0f, false, nullptr);
 
 		game::GfxCmdBufSourceState source = {};
 		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
@@ -2316,6 +2314,44 @@ namespace components
 		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DrawDecalCallback, viewinfo, &source, viewinfo, &viewinfo->decalInfo, viewinfo, cmdbuf, 0);
 	}
 
+	void R_DrawPointLitSurfs(game::GfxViewInfo* viewinfo /*esi*/, game::GfxCmdBufSourceState* source, game::GfxCmdBuf* cmdbuf)
+	{
+		const static uint32_t func_addr = 0x55BD40;
+		__asm
+		{
+			pushad;
+			push	cmdbuf;
+			push	source;
+			mov		esi, viewinfo;
+			call	func_addr;
+			add		esp, 8;
+			popad;
+		}
+	}
+
+	void R_DrawLights(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
+	{
+		if(viewinfo->pointLightCount)
+		{
+			__debugbreak();
+		}
+
+		game::GfxCmdBufSourceState source = {};
+		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FRAME_BUFFER);
+
+		// R_SetSceneViewport
+		source.viewportBehavior = game::GFX_USE_VIEWPORT_FOR_VIEW;
+		source.sceneViewport = viewinfo->sceneViewport;
+		source.viewMode = game::VIEW_MODE_NONE;
+		source.viewportIsDirty = true;
+
+		auto x = game::rg;
+		auto scene = game::scene;
+
+		R_DrawPointLitSurfs(viewinfo, &source, cmdbuf);
+	}
+
 	void R_DrawEmissive(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
 	{
 		game::GfxCmdBufSourceState source = {};
@@ -2345,13 +2381,14 @@ namespace components
 			// R_SetFrameFog
 			// R_SetSunConstants
 
+			//R_DepthPrepass(&cmdBuf, viewInfo);	// no need to do a depth prepass, only causes issues upon resizing
+													// needs depthbuffer resize logic
 
-			R_DepthPrepass(&cmdBuf, viewInfo);
 			R_DrawLit(&cmdBuf, viewInfo);
 			R_DrawDecal(&cmdBuf, viewInfo);
 
 			// RB_DrawSun
-			// R_DrawLights
+			//R_DrawLights(&cmdBuf, viewInfo); // not needed, sm_enable was the issue
 
 			R_DrawEmissive(&cmdBuf, viewInfo);
 

@@ -3521,7 +3521,29 @@ namespace game
 		float axis[3][3];
 	};
 
-	
+	struct refdef_s
+	{
+		unsigned int x;
+		unsigned int y;
+		unsigned int width;
+		unsigned int height;
+		float tanHalfFovX;
+		float tanHalfFovY;
+		float vieworg[3];
+		float viewaxis[3][3];
+		float viewOffset[3];
+		int time;
+		float zNear;
+		float blurRadius;
+		game::GfxDepthOfField dof;
+		game::GfxFilm film;
+		game::GfxGlow glow;
+		game::GfxLight primaryLights[255];
+		game::GfxViewport scissorViewport;
+		bool useScissorViewport;
+		int localClientNum;
+	};
+
 	enum ENTITY_DEFS
 	{
 		ENTITY_WIREFRAME		= 0x1,

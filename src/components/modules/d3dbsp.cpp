@@ -108,10 +108,10 @@ namespace components
 	char* Com_GetHunkStringCopy(const char* string)
 	{
 		const auto len = strlen(string);
-		auto hunkCopy = reinterpret_cast<char*>(game::Hunk_Alloc(len + 1));
+		const auto hunk_copy = reinterpret_cast<char*>(game::Hunk_Alloc(len + 1));
 
-		memcpy(hunkCopy, string, len + 1);
-		return hunkCopy;
+		memcpy(hunk_copy, string, len + 1);
+		return hunk_copy;
 	}
 
 	char* Com_GetLightDefName(const char* defName, game::ComPrimaryLight* primaryLights, unsigned int primaryLightCount)
@@ -127,18 +127,14 @@ namespace components
 		return Com_GetHunkStringCopy(defName);
 	}
 
-	game::ComPrimaryLight* Com_LoadPrimaryLights()
+	void Com_LoadPrimaryLights()
 	{
-		game::ComPrimaryLight* result;
-
 		unsigned int primary_light_count;
 		auto bsp_lights = (game::DiskPrimaryLight*)(d3dbsp::Com_GetBspLump(d3dbsp::LUMP_PRIMARY_LIGHTS, 128, &primary_light_count));
 
-		auto asd = &bsp_lights[1];
-
 		if (primary_light_count <= 1)
 		{
-			//Com_Error(ERR_DROP, "no primary lights in bsp\n");
+			game::Com_Error("Com_LoadPrimaryLights: no primary lights in bsp\n");
 		}
 
 		game::comworld->primaryLightCount = primary_light_count;
@@ -151,7 +147,7 @@ namespace components
 		{
 			out->type = bsp_lights->type;
 			out->canUseShadowMap = bsp_lights->canUseShadowMap;
-			out->exponent = bsp_lights->exponent;
+			out->exponent = static_cast<char>(bsp_lights->exponent);
 			out->color[0] = bsp_lights->color[0];
 			out->color[1] = bsp_lights->color[1];
 			out->color[2] = bsp_lights->color[2];
@@ -195,10 +191,8 @@ namespace components
 
 			++lightIndex;
 			++bsp_lights;
-			result = ++out;
+			++out;
 		}
-
-		return result;
 	}
 
 	bool d3dbsp::Com_LoadBsp(const char* filename)
@@ -232,25 +226,27 @@ namespace components
 		return d3dbsp::Com_IsBspLoaded();
 	}
 
-	void R_LoadPrimaryLights(unsigned int bspVersion)
+	void R_LoadPrimaryLights(unsigned int bsp_version)
 	{
-		if (bspVersion > 14)
+		if (bsp_version > 14)
 		{
-			game::s_world->primaryLightCount = game::comworld->primaryLightCount;//Com_GetPrimaryLightCount();
+			game::s_world->primaryLightCount = game::comworld->primaryLightCount; // Com_GetPrimaryLightCount();
+
 			if (game::s_world->primaryLightCount <= 1)
 			{
 				game::s_world->sunPrimaryLightIndex = 0;
 			}
 			else
 			{
-				game::s_world->sunPrimaryLightIndex = game::comworld->primaryLights[1].type == 1; //Com_GetPrimaryLight(1u)->type == 1;
+				game::s_world->sunPrimaryLightIndex = game::comworld->primaryLights[1].type == 1; // Com_GetPrimaryLight(1u)->type == 1;
 			}
-			for (auto lightIndex = 0u; lightIndex < game::s_world->primaryLightCount; ++lightIndex)
+
+			for (auto light_index = 0u; light_index < game::s_world->primaryLightCount; ++light_index)
 			{
-				game::ComPrimaryLight* primaryLight = &game::comworld->primaryLights[lightIndex]; //Com_GetPrimaryLight(lightIndex);
-				if (primaryLight->defName)
+				const auto primary_light = &game::comworld->primaryLights[light_index]; // Com_GetPrimaryLight(lightIndex);
+				if (primary_light->defName)
 				{
-					utils::hook::call<game::GfxLightDef*(__cdecl)(const char*)>(0x53D510)(primaryLight->defName);
+					utils::hook::call<game::GfxLightDef*(__cdecl)(const char*)>(0x53D510)(primary_light->defName);
 				}
 			}
 		}
@@ -265,15 +261,11 @@ namespace components
 
 	void R_InitPrimaryLights(game::GfxLight* primaryLights)
 	{
-		game::GfxLight* out; // [esp+70h] [ebp-Ch]
-		game::ComPrimaryLight* in; // [esp+74h] [ebp-8h]
-		int savedregs; // [esp+7Ch] [ebp+0h] BYREF
-
-		
 		for (auto lightIndex = 0u; lightIndex < game::s_world->primaryLightCount; ++lightIndex)
 		{
-			in = &game::comworld->primaryLights[lightIndex]; //Com_GetPrimaryLight(lightIndex);
-			out = &primaryLights[lightIndex];
+			const auto in = &game::comworld->primaryLights[lightIndex]; //Com_GetPrimaryLight(lightIndex);
+			const auto out = &primaryLights[lightIndex];
+
 			out->type = in->type;
 			out->canUseShadowMap = in->canUseShadowMap;
 			out->color[0] = in->color[0];
@@ -288,27 +280,19 @@ namespace components
 			out->radius = in->radius;
 			out->cosHalfFovOuter = in->cosHalfFovOuter;
 			out->cosHalfFovInner = in->cosHalfFovInner;
-			out->exponent = (unsigned __int8)in->exponent;
+			out->exponent = static_cast<std::uint8_t>(in->exponent);
+			out->def = nullptr;
+
 			if (in->defName)
 			{
-				out->def = utils::hook::call<game::GfxLightDef* (__cdecl)(const char*)>(0x53D510)(in->defName);
-			}
-			else
-			{
-				out->def = nullptr;
-			}
-
-			if (out->type == 2)
-			{
-				//SpotLightViewMatrix((unsigned int)&savedregs, out->dir, out->angles[2], out->viewMatrix.m);
-				//SpotLightProjectionMatrix(out->cosHalfFovOuter, out->falloff[0], out->falloff[1], out->projMatrix.m);
+				out->def = game::R_RegisterLightDef(in->defName);
 			}
 		}
 
-		if (game::s_world->sunPrimaryLightIndex)
+		/*if (game::s_world->sunPrimaryLightIndex)
 		{
-			//memcpy(&primaryLights[game::s_world->sunPrimaryLightIndex], game::rgp->world->sunLight, sizeof(game::GfxLight));
-		}
+			memcpy(&primaryLights[game::s_world->sunPrimaryLightIndex], game::s_world->sunLight, sizeof(game::GfxLight));
+		}*/
 	}
 
 	void CMod_LoadPlanes()
@@ -325,56 +309,9 @@ namespace components
 		}
 
 		d3dbsp::cm.planes = reinterpret_cast<game::cplane_s*>(game::Hunk_Alloc(sizeof(game::cplane_s) * count));
-		d3dbsp::cm.planeCount = count;
+		d3dbsp::cm.planeCount = static_cast<int>(count);
 
 		game::cplane_s* out = d3dbsp::cm.planes;
-
-		/*for (auto i = out; count; --count)
-		{
-			char v5 = 0;
-			i->normal[0] = in->normal[0];
-			if (in->normal[0] < 0.0f)
-			{
-				v5 = 1;
-			}
-
-			i->normal[1] = in->normal[1];
-			if (in->normal[1] < 0.0f)
-			{
-				v5 |= 2u;
-			}
-
-			i->normal[2] = in->normal[2];
-			if (in->normal[2] < 0.0f)
-			{
-				v5 |= 4u;
-			}
-
-			i->dist = in->dist;
-
-			char n0;
-
-			if (1.0f == i->normal[0])
-			{
-				n0 = 0;
-			}
-			else if (1.0f == i->normal[1])
-			{
-				n0 = 1;
-			}
-			else
-			{
-				n0 = 2;
-				if (1.0f != i->normal[2])
-				{
-					n0 = 3;
-				}
-			}
-			i->type = n0;
-			i->signbits = v5;
-			++in;
-			++i;
-		}*/
 
 		for (auto planeIter = 0u; planeIter < count; ++planeIter)
 		{
@@ -445,27 +382,66 @@ namespace components
 			Com_LoadPrimaryLights();
 			game::comworld->name = Com_GetHunkStringCopy("mp_shadertest");
 			game::comworld->isInUse = true;
-			//game::rgp->world = game::s_world;
 
 			// R_LoadPrimaryLights is missing in R_LoadWorldInternal (s_world ...)
+			// so load it here and nop s_world memset at the beginning of R_LoadWorld->R_LoadWorldInternal
 			R_LoadPrimaryLights(d3dbsp::Com_GetBspVersion());
 			R_InitPrimaryLights(d3dbsp::scene_lights);
 
 			unsigned int checksum;
 			utils::hook::call<void(__cdecl)(const char* _name, unsigned int* _checksum, int _savegame)>(0x52E450)("mp_shadertest", &checksum, 0); // R_LoadWorld
+
+			if (game::s_world->sunPrimaryLightIndex)
+			{
+				memcpy(&d3dbsp::scene_lights[game::s_world->sunPrimaryLightIndex], game::s_world->sunLight, sizeof(game::GfxLight));
+			}
 		}
 	}
-	
+
+	void d3dbsp::force_dvars()
+	{
+		if (const auto& sm_enable = game::Dvar_FindVar("sm_enable"); sm_enable && sm_enable->current.enabled) {
+			dvars::set_bool(sm_enable, false);
+		}
+
+		if (const auto& r_distortion = game::Dvar_FindVar("r_distortion"); r_distortion && !r_distortion->current.enabled) {
+			dvars::set_bool(r_distortion, true);
+		}
+
+		if (const auto& r_zFeather = game::Dvar_FindVar("r_zFeather"); r_zFeather && !r_zFeather->current.enabled) {
+			dvars::set_bool(r_zFeather, true);
+		}
+
+		if (const auto& r_useLayeredMaterials = game::Dvar_FindVar("r_useLayeredMaterials"); r_useLayeredMaterials && r_useLayeredMaterials->current.enabled) {
+			dvars::set_bool(r_useLayeredMaterials, false);
+		}
+
+		if (const auto& r_polygonOffsetBias = game::Dvar_FindVar("r_polygonOffsetBias"); r_polygonOffsetBias) {
+			dvars::set_float(r_polygonOffsetBias, 0.0f);
+		}
+
+		if (const auto& r_polygonOffsetScale = game::Dvar_FindVar("r_polygonOffsetScale"); r_polygonOffsetScale) {
+			dvars::set_float(r_polygonOffsetScale, 0.0f);
+		}
+
+		if (const auto& r_zNear = game::Dvar_FindVar("r_zNear"); r_zNear) {
+			dvars::set_float(r_zNear, 4.0f);
+		}
+	}
 
 	d3dbsp::d3dbsp()
 	{
 		// #
+		// NOTES
+		// * resizing the viewport does not resize the depth buffer (dont do prepass)
+		// * sm_enable culls lights
+		// * ^ shadows are completly wrong
+		// * TODO: disable usage of CONST_SRC_CODE_LIGHT_SPOTDIR and CONST_SRC_CODE_LIGHT_SPOTFACTORS when using bsp
+
+		// #
 		// R_LoadWorldInternal patches
-
-		// disable check that checks the "r_useLayeredMaterials" dvar (not implemented)
-		//utils::hook::nop(0x5101BD, 10);
-
-		// re-implement a LUMP_UNLAYERED_TRIANGLES check
+		
+		// re-implement a LUMP_UNLAYERED_TRIANGLES check (r_useLayeredMaterials)
 		utils::hook::detour(0x4161B0, d3dbsp::Com_GetBspLumpBool, HK_JUMP);
 
 		// re-implement Com_GetBspVersion
@@ -480,44 +456,31 @@ namespace components
 		// re-implement CM_GetPlaneCount
 		utils::hook::detour(0x4161F0, d3dbsp::CM_GetPlaneCount, HK_JUMP);
 
-
+		// #
 		// dirty hacks
 
-		utils::hook::nop(0x5525A2, 5);
+		utils::hook::nop(0x5525A2, 5); // Outdoor_ComputeTexels call
 		utils::hook::nop(0x5101A4, 5); // memset of s_world in R_LoadWorldInternal
 
 		utils::hook::nop(0x41625A, 5); // CM_BoxSightTrace Assert
 		utils::hook::nop(0x56C8DC, 5); // bspSurf->material->info.name) = %s", "(!lightmapSecondaryFlag) Assert
 
-		// RB_FullbrightDrawCommands : R_RENDERTARGET_SCENE to FRAMEBUFFER
-		//utils::hook::nop(0x55B695, 5); // R_SetAndClearSceneTarget
+		// RENDERTARGET_SCENE to FRAMEBUFFER in R_DrawPointLitSurfsCallback
+		utils::hook::set<BYTE>(0x55BC8F + 1, 0x1);
 
-		//utils::hook::set<BYTE>(0x55B733 + 1, 1);
-		//utils::hook::set<BYTE>(0x55B73E + 1, 1);
-		//utils::hook::set<BYTE>(0x55B5D0 + 1, 1);
+		// #
+		// no bsp culling
 
 		// R_AddCellSceneEntSurfacesInFrustumCmd :: active ents like destructible cars / players (disable all culling)
-		utils::hook::nop(0x56998B, 3);
+		//utils::hook::nop(0x56998B, 3);
 
 		// R_AddWorldSurfacesPortalWalk :: less culling :: 0x7C -> 0xEB (jl -> jmp)
-		utils::hook::set<BYTE>(0x527370, 0xEB);
+		//utils::hook::set<BYTE>(0x527370, 0xEB);
 
 		// R_AddAabbTreeSurfacesInFrustum_r :: less culling :: 0x74 -> 0xEB (je to jmp)
-		utils::hook::set<BYTE>(0x555C4C, 0xEB);
-
-		// less culling: 0x527370 -> 0x7C -> 0xEB (jl -> jmp)
-		// nop 0x00555C1B ?
-		// 0x555C4C -> 0x74 -> 0xEB (je to jmp)
+		//utils::hook::set<BYTE>(0x555C4C, 0xEB);
 		
-
-		// 
-
-		command::register_command("offset"s, [](auto)
-		{
-			auto off1 = offsetof(game::GfxViewInfo, localClientNum);
-			game::printf_to_console("GfxViewInfo::localClientNum %d", off1);
-		});
-
+		
 		command::register_command("bsp"s, [](auto)
 		{
 			load_test_bsp();

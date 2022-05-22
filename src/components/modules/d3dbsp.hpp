@@ -102,6 +102,8 @@ namespace components
 		static bool Com_GetBspLumpBool(LumpType type);
 		static bool Com_LoadBsp(const char* filename);
 
+		static void force_dvars();
+
 		d3dbsp();
 		~d3dbsp();
 		const char* get_name() override { return "d3dbsp"; };
