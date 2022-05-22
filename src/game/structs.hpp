@@ -331,9 +331,12 @@ namespace game
 
 	struct qtexture_s
 	{
-		qtexture_s* next;
+		qtexture_s* next; // not qtexture_s
 		const char* name;
-		int unk_flags1;
+		bool visible;
+		__int8 unk1;
+		__int8 usage_index;
+		__int8 unk2;
 		int unk_flags2;
 		int tex_num;
 		int width;
