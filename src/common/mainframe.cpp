@@ -814,11 +814,17 @@ void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* ed
 
 void __fastcall cmainframe::on_destroy(cmainframe* pThis)
 {
+	// restore states filter states
+	if (components::gameview::p_this->get_all_geo_state())		components::gameview::p_this->toggle_all_geo(false);
+	if (components::gameview::p_this->get_all_ents_state())		components::gameview::p_this->toggle_all_entities(false);
+	if (components::gameview::p_this->get_all_triggers_state()) components::gameview::p_this->toggle_all_triggers(false);
+	if (components::gameview::p_this->get_all_others_state())	components::gameview::p_this->toggle_all_others(false);
+
 	if (dvars::radiant_gameview->current.enabled)
 	{
 		components::gameview::p_this->set_state(false);
 	}
-	
+
 	components::remote_net::on_shutdown();
 
 	components::config::write_dvars();

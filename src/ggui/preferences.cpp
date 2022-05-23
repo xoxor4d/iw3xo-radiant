@@ -242,6 +242,7 @@ namespace ggui
 			ImGui::title_with_seperator("Toolbar");
 			ImGui::Checkbox("Draw FPS within the camera window", &dvars::gui_draw_fps->current.enabled);
 			ImGui::Checkbox("Default Open - Toolbar", &dvars::gui_camera_toolbar_defaultopen->current.enabled);
+			ImGui::Checkbox("Merge BSP/Radiant buttons", &dvars::gui_camera_toolbar_merge_bsp_buttons->current.enabled); TT(dvars::gui_camera_toolbar_merge_bsp_buttons->description);
 
 		});
 	}
@@ -492,6 +493,12 @@ namespace ggui
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "Use new grid context menu");
+
+		dvars::gui_camera_toolbar_merge_bsp_buttons = dvars::register_bool(
+			/* name		*/ "gui_camera_toolbar_merge_bsp_buttons",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "Enable: merge 'hide/show bsp/radiant' buttons to toggle between bsp and radiant with a single click.\nDisable: split buttons");
 	}
 
 	REGISTER_GUI(preferences_dialog);

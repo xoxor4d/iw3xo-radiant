@@ -87,7 +87,8 @@ namespace components
 			LumpType loadedLumpType;
 			const void* loadedLumpData;
 		};
-		
+
+		static std::string loaded_bsp_path;
 		static bspGlob_s comBspGlob;
 		static game::clipMap_t cm;
 		static game::GfxLight scene_lights[255];

@@ -4,11 +4,251 @@ namespace components
 {
 	gameview* gameview::p_this = nullptr;
 
+	void gameview::toggle_all_geo(bool state)
+	{
+		if (!gameview::p_this)
+		{
+			game::printf_to_console("[ERR] Gameview module seems to be disabled ...");
+			return;
+		}
+
+		// t off
+		if (!state)
+		{
+			int i_geo = 0;
+			const auto filter = GET_GUI(ggui::filter_dialog);
+
+			for(const auto& f_entry : filter->_geofilters)
+			{
+				if(i_geo < 50)
+				{
+					if (this->var.all_geo_states[i_geo])
+					{
+						filter->toggle_by_name(f_entry->name, ggui::filter_dialog::GEOMETRY, true);
+					}
+
+					i_geo++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			this->var.all_geo_enabled = false;
+		}
+
+		// toggle on
+		else
+		{
+			this->set_state(false); // turn off gameview
+
+			int i_geo = 0;
+			const auto filter = GET_GUI(ggui::filter_dialog);
+
+			for (const auto& f_entry : filter->_geofilters)
+			{
+				if (i_geo < 50)
+				{
+					if(f_entry->name != "NonDecals"s)
+					{
+						this->var.all_geo_states[i_geo] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::GEOMETRY, false);
+					}
+
+					i_geo++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			this->var.all_geo_enabled = true;
+		}
+	}
+
+	void gameview::toggle_all_entities(bool state)
+	{
+		if (!gameview::p_this)
+		{
+			game::printf_to_console("[ERR] Gameview module seems to be disabled ...");
+			return;
+		}
+
+		// t off
+		if (!state)
+		{
+			int i_ents = 0;
+			const auto filter = GET_GUI(ggui::filter_dialog);
+
+			for (const auto& f_entry : filter->_entityfilters)
+			{
+				if (i_ents < 50)
+				{
+					if (this->var.all_ents_states[i_ents])
+					{
+						filter->toggle_by_name(f_entry->name, ggui::filter_dialog::ENTITY, true);
+					}
+
+					i_ents++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			this->var.all_ents_enabled = false;
+		}
+
+		// toggle on
+		else
+		{
+			this->set_state(false); // turn off gameview
+
+			int i_ents = 0;
+			const auto filter = GET_GUI(ggui::filter_dialog);
+
+			for (const auto& f_entry : filter->_entityfilters)
+			{
+				if (i_ents < 50)
+				{
+					this->var.all_ents_states[i_ents] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::ENTITY, false);
+					i_ents++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			this->var.all_ents_enabled = true;
+		}
+	}
+
+	void gameview::toggle_all_triggers(bool state)
+	{
+		if (!gameview::p_this)
+		{
+			game::printf_to_console("[ERR] Gameview module seems to be disabled ...");
+			return;
+		}
+
+		// t off
+		if (!state)
+		{
+			int i_triggers = 0;
+			const auto filter = GET_GUI(ggui::filter_dialog);
+
+			for (const auto& f_entry : filter->_triggerfilters)
+			{
+				if (i_triggers < 50)
+				{
+					if (this->var.all_triggers_states[i_triggers])
+					{
+						filter->toggle_by_name(f_entry->name, ggui::filter_dialog::TRIGGER, true);
+					}
+
+					i_triggers++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			this->var.all_triggers_enabled = false;
+		}
+
+		// toggle on
+		else
+		{
+			this->set_state(false); // turn off gameview
+
+			int i_triggers = 0;
+			const auto filter = GET_GUI(ggui::filter_dialog);
+
+			for (const auto& f_entry : filter->_triggerfilters)
+			{
+				if (i_triggers < 50)
+				{
+					this->var.all_triggers_states[i_triggers] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::TRIGGER, false);
+					i_triggers++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			this->var.all_triggers_enabled = true;
+		}
+	}
+
+	void gameview::toggle_all_others(bool state)
+	{
+		if (!gameview::p_this)
+		{
+			game::printf_to_console("[ERR] Gameview module seems to be disabled ...");
+			return;
+		}
+
+		// t off
+		if (!state)
+		{
+			int i_others = 0;
+			const auto filter = GET_GUI(ggui::filter_dialog);
+
+			for (const auto& f_entry : filter->_otherfilters)
+			{
+				if (i_others < 50)
+				{
+					if (this->var.all_others_states[i_others])
+					{
+						filter->toggle_by_name(f_entry->name, ggui::filter_dialog::OTHER, true);
+					}
+
+					i_others++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			this->var.all_others_enabled = false;
+		}
+
+		// toggle on
+		else
+		{
+			this->set_state(false); // turn off gameview
+
+			int i_others = 0;
+			const auto filter = GET_GUI(ggui::filter_dialog);
+
+			for (const auto& f_entry : filter->_otherfilters)
+			{
+				if (i_others < 50)
+				{
+					this->var.all_others_states[i_others] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::OTHER, false);
+					i_others++;
+				}
+				else
+				{
+					break;
+				}
+			}
+
+			this->var.all_others_enabled = true;
+		}
+	}
+
 	void gameview::set_state(bool state)
 	{
 		if(!gameview::p_this)
 		{
-			game::printf_to_console("[RED]Gameview module seems to be disabled, returning ...");
+			game::printf_to_console("[ERR] Gameview module seems to be disabled ...");
 			return;
 		}
 
@@ -180,7 +420,44 @@ namespace components
 
 		command::register_command_with_hotkey("xo_gameview"s, [this](auto)
 		{
-			components::gameview::set_state(!dvars::radiant_gameview->current.enabled);
+			gameview::set_state(!dvars::radiant_gameview->current.enabled);
+		});
+
+		command::register_command_with_hotkey("filter_toggle_geo"s, [this](auto)
+		{
+			gameview::toggle_all_geo(!gameview::get_all_geo_state());
+		});
+
+		command::register_command_with_hotkey("filter_toggle_ents"s, [this](auto)
+		{
+			gameview::toggle_all_entities(!gameview::get_all_ents_state());
+		});
+
+		command::register_command_with_hotkey("filter_toggle_trigger"s, [this](auto)
+		{
+			gameview::toggle_all_triggers(!gameview::get_all_triggers_state());
+		});
+
+		command::register_command_with_hotkey("filter_toggle_others"s, [this](auto)
+		{
+			gameview::toggle_all_others(!gameview::get_all_others_state());
+		});
+
+		command::register_command_with_hotkey("filter_toggle_all"s, [this](auto)
+		{
+			// restore states if was toggled manually
+			if (gameview::get_all_geo_state())		gameview::toggle_all_geo(false);
+			if (gameview::get_all_ents_state())		gameview::toggle_all_entities(false);
+			if (gameview::get_all_triggers_state()) gameview::toggle_all_triggers(false);
+			if (gameview::get_all_others_state())	gameview::toggle_all_others(false);
+
+			// toggle global
+			gameview::toggle_all_geo(!gameview::var.all_off);
+			gameview::toggle_all_entities(!gameview::var.all_off);
+			gameview::toggle_all_triggers(!gameview::var.all_off);
+			gameview::toggle_all_others(!gameview::var.all_off);
+
+			gameview::var.all_off = !gameview::var.all_off;
 		});
 	}
 

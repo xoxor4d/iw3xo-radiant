@@ -35,7 +35,8 @@ namespace dvars
 	game::dvar_s* gui_use_new_filedialog = nullptr;
 
 	game::dvar_s* gui_camera_toolbar_defaultopen = nullptr;
-	
+	game::dvar_s* gui_camera_toolbar_merge_bsp_buttons = nullptr;
+
 	game::dvar_s* gui_saved_state_console = nullptr;
 	game::dvar_s* gui_saved_state_filter = nullptr;
 	game::dvar_s* gui_saved_state_entity = nullptr;

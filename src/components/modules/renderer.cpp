@@ -3294,6 +3294,9 @@ namespace components
 		utils::hook::nop(0x52A6F7, 3);
 		utils::hook::nop(0x500F4C, 5); // < on shutdown
 
+		// silence assert 'localDrawSurf->fields.prepass == MTL_PREPASS_NONE'
+		utils::hook::nop(0x52EE39, 5); 
+
 		// * ------
 
 		// load depth prepass and build-floatz technique (Material_LoadTechniqueSet -> g_useTechnique)

@@ -2,6 +2,7 @@
 
 namespace components
 {
+	std::string d3dbsp::loaded_bsp_path;
 	d3dbsp::bspGlob_s d3dbsp::comBspGlob = {};
 	game::clipMap_t d3dbsp::cm = {};
 
@@ -392,21 +393,21 @@ namespace components
 
 		if(d3dbsp::Com_LoadBsp(bsppath))
 		{
-			std::string bspname;
-			utils::replace(bspname, ".d3dbsp", bsppath);
+			//std::string bspname = bsppath;
+			//utils::replace(bspname, ".d3dbsp", "");
 
 			// load cm
 			// link cm
 
 			// CM_LoadMapFromBsp
-			d3dbsp::cm.name = Com_GetHunkStringCopy(bspname.c_str());
+			d3dbsp::cm.name = Com_GetHunkStringCopy(bsppath);
 			CMod_LoadPlanes();
 			d3dbsp::cm.isInUse = 1;
 
 
 			// load world
 			Com_LoadPrimaryLights();
-			game::comworld->name = Com_GetHunkStringCopy(bspname.c_str());
+			game::comworld->name = Com_GetHunkStringCopy(bsppath);
 			game::comworld->isInUse = true;
 
 			// R_LoadPrimaryLights is missing in R_LoadWorldInternal (s_world ...)
@@ -415,7 +416,7 @@ namespace components
 			R_InitPrimaryLights(d3dbsp::scene_lights);
 
 			unsigned int checksum;
-			utils::hook::call<void(__cdecl)(const char* _name, unsigned int* _checksum, int _savegame)>(0x52E450)(bspname.c_str(), &checksum, 0); // R_LoadWorld
+			utils::hook::call<void(__cdecl)(const char* _name, unsigned int* _checksum, int _savegame)>(0x52E450)(bsppath, &checksum, 0); // R_LoadWorld
 
 			if (game::s_world->sunPrimaryLightIndex)
 			{
@@ -423,6 +424,8 @@ namespace components
 			}
 
 			game::R_SortWorldSurfaces();
+			d3dbsp::loaded_bsp_path = bsppath;
+				
 			return true;
 		}
 
@@ -545,14 +548,25 @@ namespace components
 		//utils::hook::set<BYTE>(0x555C4C, 0xEB);
 		
 		
-		command::register_command("bsp"s, [](auto)
+		command::register_command_with_hotkey("reload_bsp"s, [](auto)
 		{
-			d3dbsp::radiant_load_bsp("maps/mp/mp_shadertest.d3dbsp");
+			if(d3dbsp::Com_IsBspLoaded() && !d3dbsp::loaded_bsp_path.empty())
+			{
+				d3dbsp::radiant_load_bsp(d3dbsp::loaded_bsp_path.c_str());
+			}
 		});
 
 		command::register_command_with_hotkey("toggle_bsp"s, [this](auto)
 		{
 			dvars::set_bool(dvars::r_draw_bsp, !dvars::r_draw_bsp->current.enabled);
+		});
+
+		command::register_command_with_hotkey("toggle_bsp_radiant"s, [this](auto)
+		{
+			const bool tstate = gameview::p_this->get_all_geo_state() || gameview::p_this->get_all_ents_state() || gameview::p_this->get_all_triggers_state() || gameview::p_this->get_all_others_state();
+
+			dvars::set_bool(dvars::r_draw_bsp, !tstate);
+			command::execute("filter_toggle_all");
 		});
 	}
 

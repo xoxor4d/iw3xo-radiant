@@ -68,7 +68,7 @@ namespace ggui
 					cdeclcall(void, 0x423AA0); //cmainframe::OnFileNew
 				}
 
-				if (ImGui::MenuItem("Open", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) 
+				if (ImGui::MenuItem("Open ..", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) 
 				{
 					// logic :: ggui::file_dialog_frame
 					if(dvars::gui_use_new_filedialog->current.enabled)
@@ -93,7 +93,7 @@ namespace ggui
 					cdeclcall(void, 0x423B80); //cmainframe::OnFileSave
 				}
 
-				if (ImGui::MenuItem("Save As")) 
+				if (ImGui::MenuItem("Save As ..")) 
 				{
 					// logic :: ggui::file_dialog_frame
 					if (dvars::gui_use_new_filedialog->current.enabled)
@@ -137,7 +137,9 @@ namespace ggui
 					ImGui::EndMenu(); // Open Recent
 				}
 
-				if (ImGui::MenuItem("Load d3dbsp"))
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Load d3dbsp .."))
 				{
 					const auto egui = GET_GUI(ggui::entity_dialog);
 					const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath") + "\\raw\\maps\\mp\\"s;
@@ -150,9 +152,21 @@ namespace ggui
 					file->open();
 				}
 
+				const bool can_reload_bsp = components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
+				ImGui::BeginDisabled(!can_reload_bsp);
+				{
+					if (ImGui::MenuItem("Reload d3dbsp"))
+					{
+						components::command::execute("reload_bsp");
+					}
+
+					ImGui::EndDisabled();
+				}
+				
+
 				SEPERATORV(0.0f);
 
-				if (ImGui::BeginMenu("Generate File .."))
+				if (ImGui::BeginMenu("Generate File"))
 				{
 					if (ImGui::MenuItem("Save Selected"))
 					{

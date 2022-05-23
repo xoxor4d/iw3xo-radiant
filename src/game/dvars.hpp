@@ -35,7 +35,8 @@ namespace dvars
 	extern game::dvar_s* gui_use_new_filedialog;
 
 	extern game::dvar_s* gui_camera_toolbar_defaultopen;
-	
+	extern game::dvar_s* gui_camera_toolbar_merge_bsp_buttons;
+
 	extern game::dvar_s* gui_saved_state_console;
 	extern game::dvar_s* gui_saved_state_filter;
 	extern game::dvar_s* gui_saved_state_entity;
