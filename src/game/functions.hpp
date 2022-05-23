@@ -276,6 +276,7 @@ namespace game
 	inline auto R_AddDebugBox = reinterpret_cast<void (*)(game::DebugGlobals * debugGlobalsEntry, const float* mins, const float* maxs, const float* color)>(0x528710);
 	inline auto R_CmdBufSet3D = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*)>(0x53CFB0);
 	inline auto R_SetGameTime = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, float)>(0x55A4A0);
+	inline auto R_SortWorldSurfaces = reinterpret_cast<void (*)()>(0x52E9F0);
 
 	// sampler_index = the index used in shader_vars.h
 	inline auto R_SetSampler = reinterpret_cast<void (*)(int unused, game::GfxCmdBufState * state, int sampler_index, char sampler_state, game::GfxImage * img)>(0x538D70);

@@ -388,8 +388,6 @@ namespace components
 			game::rgp->world = nullptr;
 
 			memset(game::s_world, 0, 0x2D0 /*sizeof(game::GfxWorld)*/);
-
-			game::R_SortMaterials();
 		}
 
 		if(d3dbsp::Com_LoadBsp(bsppath))
@@ -424,6 +422,7 @@ namespace components
 				memcpy(&d3dbsp::scene_lights[game::s_world->sunPrimaryLightIndex], game::s_world->sunLight, sizeof(game::GfxLight));
 			}
 
+			game::R_SortWorldSurfaces();
 			return true;
 		}
 
@@ -453,7 +452,7 @@ namespace components
 		}
 
 		if (const auto& r_polygonOffsetScale = game::Dvar_FindVar("r_polygonOffsetScale"); r_polygonOffsetScale) {
-			dvars::set_float(r_polygonOffsetScale, 0.0f);
+			dvars::set_float(r_polygonOffsetScale, -0.05f); // or radiant brushes/decals start to flicker
 		}
 
 		if (const auto& r_zNear = game::Dvar_FindVar("r_zNear"); r_zNear) {
@@ -526,6 +525,9 @@ namespace components
 
 		utils::hook::nop(0x41625A, 5); // CM_BoxSightTrace Assert
 		utils::hook::nop(0x56C8DC, 5); // bspSurf->material->info.name) = %s", "(!lightmapSecondaryFlag) Assert
+
+		// Material_Add :: set rgp.needSortMaterials = 1 to 0 (do not re-sort materials when loading new ones; fixes bsp texture issues)
+		utils::hook::set<BYTE>(0x510CF1 + 6, 0x0);
 
 		// RENDERTARGET_SCENE to FRAMEBUFFER in R_DrawPointLitSurfsCallback
 		utils::hook::set<BYTE>(0x55BC8F + 1, 0x1);
