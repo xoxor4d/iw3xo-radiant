@@ -365,22 +365,50 @@ namespace components
 		}
 	}
 
-	void load_test_bsp()
+	bool d3dbsp::radiant_load_bsp(const char* bsppath)
 	{
-		if(d3dbsp::Com_LoadBsp("mp_shadertest.d3dbsp"))
+		if (d3dbsp::Com_IsBspLoaded())
 		{
+			comBspGlob.loadedLumpData = nullptr;
+
+			// free(comBspGlob.header);
+			utils::hook::call<void(__cdecl)(void*)>(0x4AC2A0)(comBspGlob.header);
+
+			comBspGlob.header = nullptr;
+			comBspGlob.name[0] = 0;
+
+			memset(&d3dbsp::cm, 0, sizeof(d3dbsp::cm));
+			memset(&d3dbsp::scene_lights, 0, sizeof(d3dbsp::scene_lights));
+
+			game::comworld->isInUse = false;
+
+			cdeclcall(void, 0x52E7D0); // R_ShutdownWorld
+			cdeclcall(void, 0x529D50); // R_ResetModelLighting
+
+			game::rgp->world = nullptr;
+
+			memset(game::s_world, 0, 0x2D0 /*sizeof(game::GfxWorld)*/);
+
+			game::R_SortMaterials();
+		}
+
+		if(d3dbsp::Com_LoadBsp(bsppath))
+		{
+			std::string bspname;
+			utils::replace(bspname, ".d3dbsp", bsppath);
+
 			// load cm
 			// link cm
 
 			// CM_LoadMapFromBsp
-			d3dbsp::cm.name = Com_GetHunkStringCopy("mp_shadertest");
+			d3dbsp::cm.name = Com_GetHunkStringCopy(bspname.c_str());
 			CMod_LoadPlanes();
 			d3dbsp::cm.isInUse = 1;
 
 
 			// load world
 			Com_LoadPrimaryLights();
-			game::comworld->name = Com_GetHunkStringCopy("mp_shadertest");
+			game::comworld->name = Com_GetHunkStringCopy(bspname.c_str());
 			game::comworld->isInUse = true;
 
 			// R_LoadPrimaryLights is missing in R_LoadWorldInternal (s_world ...)
@@ -389,13 +417,17 @@ namespace components
 			R_InitPrimaryLights(d3dbsp::scene_lights);
 
 			unsigned int checksum;
-			utils::hook::call<void(__cdecl)(const char* _name, unsigned int* _checksum, int _savegame)>(0x52E450)("mp_shadertest", &checksum, 0); // R_LoadWorld
+			utils::hook::call<void(__cdecl)(const char* _name, unsigned int* _checksum, int _savegame)>(0x52E450)(bspname.c_str(), &checksum, 0); // R_LoadWorld
 
 			if (game::s_world->sunPrimaryLightIndex)
 			{
 				memcpy(&d3dbsp::scene_lights[game::s_world->sunPrimaryLightIndex], game::s_world->sunLight, sizeof(game::GfxLight));
 			}
+
+			return true;
 		}
+
+		return false;
 	}
 
 	void d3dbsp::force_dvars()
@@ -429,6 +461,23 @@ namespace components
 		}
 	}
 
+	void d3dbsp::register_dvars()
+	{
+		dvars::r_draw_bsp = dvars::register_bool(
+			/* name		*/ "r_draw_bsp",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::none,
+			/* desc		*/ "enable to render bsp (if loaded)");
+
+		dvars::r_draw_bsp_overwrite_sunlight = dvars::register_bool(
+			/* name		*/ "r_draw_bsp_overwrite_sunlight",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::none,
+			/* desc		*/ "enable to overwrite bsp sunlight with fakesun settings");
+
+		
+	}
+
 	d3dbsp::d3dbsp()
 	{
 		// #
@@ -437,6 +486,7 @@ namespace components
 		// * sm_enable culls lights
 		// * ^ shadows are completly wrong
 		// * TODO: disable usage of CONST_SRC_CODE_LIGHT_SPOTDIR and CONST_SRC_CODE_LIGHT_SPOTFACTORS when using bsp
+		// * TODO: load "dynamic" entities like exploding cars 
 
 		// #
 		// R_LoadWorldInternal patches
@@ -483,7 +533,12 @@ namespace components
 		
 		command::register_command("bsp"s, [](auto)
 		{
-			load_test_bsp();
+			d3dbsp::radiant_load_bsp("maps/mp/mp_shadertest.d3dbsp");
+		});
+
+		command::register_command_with_hotkey("toggle_bsp"s, [this](auto)
+		{
+			dvars::set_bool(dvars::r_draw_bsp, !dvars::r_draw_bsp->current.enabled);
 		});
 	}
 

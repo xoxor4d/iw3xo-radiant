@@ -1275,6 +1275,19 @@ namespace game
 		return image;
 	}
 
+	void Material_Add(int idx/*eax*/, game::Material* material/*esi*/)
+	{
+		const static uint32_t func_addr = 0x510CC0;
+		__asm
+		{
+			pushad;
+			mov     eax, idx;
+			mov     esi, material;
+			call	func_addr;
+			popad;
+		}
+	}
+
 	// *
 	// * --------------------- FX ----------------------------------
 

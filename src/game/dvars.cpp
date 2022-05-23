@@ -51,6 +51,9 @@ namespace dvars
 	game::dvar_s* grid_zoom_to_cursor = nullptr;
 	game::dvar_s* grid_draw_edge_coordinates = nullptr;
 
+	game::dvar_s* r_draw_bsp = nullptr;
+	game::dvar_s* r_draw_bsp_overwrite_sunlight = nullptr;
+
 	game::dvar_s* r_draw_model_origin = nullptr;
 	game::dvar_s* r_draw_model_shadowcaster = nullptr;
 	game::dvar_s* r_draw_patch_backface_wireframe = nullptr;
@@ -190,6 +193,7 @@ namespace dvars
 		components::remote_net::register_dvars();
 		components::renderer::register_dvars();
 		components::gameview::register_dvars();
+		components::d3dbsp::register_dvars();
 
 		cmainframe::register_dvars();
 		cxywnd::register_dvars();

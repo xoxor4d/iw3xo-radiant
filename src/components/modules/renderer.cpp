@@ -654,6 +654,8 @@ namespace components
 
 		if (source && state && state->pass)
 		{
+			const bool d3dbsp_visible = renderer::is_rendering_camerawnd() && d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled;
+
 			// 2D: set required shader constants for backend passes
 			if(renderer::is_rendering_camerawnd() && source->viewMode == game::VIEW_MODE_2D)
 			{
@@ -743,7 +745,7 @@ namespace components
 
 			// 3D
 			if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
-				(renderer::is_rendering_camerawnd() && dvars::r_fakesun_preview->current.enabled))
+				(renderer::is_rendering_camerawnd() /*&& (dvars::r_fakesun_preview->current.enabled || dvars::r_fakesun_fog_enabled->current.enabled)*/))
 			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
@@ -804,35 +806,38 @@ namespace components
 							
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
 							{
-								bool worldspawn_valid = false;
-								game::vec4_t sun_diffuse = {};
-
-								if (dvars::r_fakesun_use_worldspawn->current.enabled)
+								if (!d3dbsp_visible || dvars::r_draw_bsp_overwrite_sunlight->current.enabled)
 								{
-									const auto world_ent = game::g_world_entity();
+									bool worldspawn_valid = false;
+									game::vec4_t sun_diffuse = {};
 
-									float sunlight = 0.0f;
-									game::vec3_t suncolor = {};
-
-									if(world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, suncolor, "suncolor"))
+									if (dvars::r_fakesun_use_worldspawn->current.enabled)
 									{
-										if (!GET_GUI(ggui::entity_dialog)->get_value_for_key_from_entity(world_ent->firstActive, &sunlight, "sunlight"))
+										const auto world_ent = game::g_world_entity();
+
+										float sunlight = 0.0f;
+										game::vec3_t suncolor = {};
+
+										if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, suncolor, "suncolor"))
 										{
-											// default value
-											sunlight = 1.35f;
+											if (!GET_GUI(ggui::entity_dialog)->get_value_for_key_from_entity(world_ent->firstActive, &sunlight, "sunlight"))
+											{
+												// default value
+												sunlight = 1.35f;
+											}
+
+											sunlight *= 1.5f;
+											utils::vector::scale(suncolor, sunlight, sun_diffuse);
+
+											worldspawn_valid = true;
 										}
-
-										sunlight *= 1.5f;
-										utils::vector::scale(suncolor, sunlight, sun_diffuse);
-
-										worldspawn_valid = true;
 									}
+
+									const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+									const game::vec4_t temp = { cs->sun_diffuse[0], cs->sun_diffuse[1], cs->sun_diffuse[2], 1.0f };
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
 								}
-
-								const auto cs = GET_GUI(ggui::camera_settings_dialog);
-
-								const game::vec4_t temp = { cs->sun_diffuse[0], cs->sun_diffuse[1], cs->sun_diffuse[2], 1.0f };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
 							}
 							
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
@@ -857,7 +862,7 @@ namespace components
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_specular : temp, 1);
 							}
 							
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
+							else if (renderer::is_rendering_layeredwnd() && arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
 							{
 								const auto cs = GET_GUI(ggui::camera_settings_dialog);
 
@@ -865,7 +870,7 @@ namespace components
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 							
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
+							else if (renderer::is_rendering_layeredwnd() && arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
 							{
 								//bool worldspawn_valid = false;
 								//game::vec4_t ambient = {};
@@ -1579,18 +1584,6 @@ namespace components
 			// render emissive surfs (effects)
 			renderer::RB_Draw3D();
 
-
-			//const auto backend = game::get_backenddata();
-
-			//if (backend->viewInfo->displayViewport.width != 0 && backend->viewInfoCount)
-			//{
-			//	// &backend->viewInfo[0]
-			//	//cdeclcall(void, 0x55B670); //
-
-			//	utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x55B670)(&backend->viewInfo[0]);
-			//	
-			//}
-
 			// post effects logic (filmtweaks)
 			camera_postfx();
 		}
@@ -1825,119 +1818,92 @@ namespace components
 			return;
 		}
 
-		//const auto frontEndDataOut = game::get_frontenddata();
-		//auto viewInfo = &frontEndDataOut->viewInfo[0];
-
-		//frontEndDataOut->viewInfoIndex = 0;
-		//frontEndDataOut->viewInfoCount = 1;
-
-		//memcpy(&viewInfo->input, game::gfxCmdBufInput, sizeof(viewInfo->input));
-		//viewInfo->input.data = frontEndDataOut;
-		//viewInfo->sceneDef = game::scene->def;
-
-		//memcpy(&viewInfo->viewParms, viewParms, sizeof(game::GfxViewParms));
-
-		//const auto window = game::dx->windows[ggui::CCAMERAWND];
-		//game::GfxViewport viewport = { 0, 0, window.width, window.height };
-
-		//viewInfo->sceneViewport = viewport;
-		//viewInfo->displayViewport = viewport;
-
-
-		//// needed for debug plumes (3D text in space)
-		//game::rg->debugViewParms = viewParms;
-
-		//// R_DrawAllSceneEnt - add/draw effect xmodels 
-		//utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523E50)(viewInfo);
-
-		//// R_AddAllSceneEntSurfacesCamera (Worker CMD) - add/draw effect xmodels 
-		//utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523660)(viewInfo);
-
-		//// *
-		//// lit drawlist (effect xmodels)
-
-		//R_InitDrawSurfListInfo(&viewInfo->litInfo);
-
-		//viewInfo->litInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL; 
-		//viewInfo->litInfo.viewInfo = viewInfo;
-		//viewInfo->litInfo.viewOrigin[0] = viewParms->origin[0];
-		//viewInfo->litInfo.viewOrigin[1] = viewParms->origin[1];
-		//viewInfo->litInfo.viewOrigin[2] = viewParms->origin[2];
-		//viewInfo->litInfo.viewOrigin[3] = viewParms->origin[3];
-		//viewInfo->litInfo.cameraView = 1;
-
-		//int initial_lit_drawSurfCount = frontEndDataOut->drawSurfCount;
-
-		//// R_MergeAndEmitDrawSurfLists
-		//utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(0, 3);
-
-		//viewInfo->litInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_lit_drawSurfCount];
-		//viewInfo->litInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_lit_drawSurfCount;
-
-
-		//// *
-		//// emissive drawlist (effects)
-
-		//auto emissiveList = &viewInfo->emissiveInfo;
-		//R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
-
-		//viewInfo->emissiveInfo.baseTechType = game::TECHNIQUE_EMISSIVE;
-		//viewInfo->emissiveInfo.viewInfo = viewInfo;
-		//viewInfo->emissiveInfo.viewOrigin[0] = viewParms->origin[0];
-		//viewInfo->emissiveInfo.viewOrigin[1] = viewParms->origin[1];
-		//viewInfo->emissiveInfo.viewOrigin[2] = viewParms->origin[2];
-		//viewInfo->emissiveInfo.viewOrigin[3] = viewParms->origin[3];
-		//viewInfo->emissiveInfo.cameraView = 1;
-
-		//int initial_emissive_drawSurfCount = frontEndDataOut->drawSurfCount;
-
-		//// R_MergeAndEmitDrawSurfLists
-		//utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(9, 6);
-
-		//emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_emissive_drawSurfCount];
-
-		//renderer::effect_drawsurf_count_ = frontEndDataOut->drawSurfCount;
-
-		//viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
-
-
-
-		/*game::GfxSceneParms scene = {};
-		scene.displayViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
-		scene.displayViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
-		scene.sceneViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
-		scene.sceneViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
-		scene.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
-		scene.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
-		scene.primaryLights = d3dbsp::scene_lights;*/
-
-
-
-		if (game::comworld->isInUse)
+		if(dvars::r_draw_bsp && !dvars::r_draw_bsp->current.enabled)
 		{
-			//auto asd = game::rg->viewInfoCount_0x42E8;
-			//auto asd2 = game::get_frontenddata();
+			const auto frontEndDataOut = game::get_frontenddata();
+			const auto viewInfo = &frontEndDataOut->viewInfo[0];
 
-			// R_RenderScene
-			//utils::hook::call<void(__cdecl)(game::GfxSceneParms*, game::GfxViewParms* _lock, game::GfxViewParms* _actualview)>(0x504B40)(&scene, viewParms, viewParms);
+			frontEndDataOut->viewInfoIndex = 0;
+			frontEndDataOut->viewInfoCount = 1;
 
+			memcpy(&viewInfo->input, game::gfxCmdBufInput, sizeof(viewInfo->input));
+			viewInfo->input.data = frontEndDataOut;
+			viewInfo->sceneDef = game::scene->def;
+
+			memcpy(&viewInfo->viewParms, viewParms, sizeof(game::GfxViewParms));
+
+			const auto window = game::dx->windows[ggui::CCAMERAWND];
+			const game::GfxViewport viewport = { 0, 0, window.width, window.height };
+
+			viewInfo->sceneViewport = viewport;
+			viewInfo->displayViewport = viewport;
+
+
+			// needed for debug plumes (3D text in space)
+			game::rg->debugViewParms = viewParms;
+
+			// R_DrawAllSceneEnt - add/draw effect xmodels 
+			utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523E50)(viewInfo);
+
+			// R_AddAllSceneEntSurfacesCamera (Worker CMD) - add/draw effect xmodels 
+			utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523660)(viewInfo);
+
+			// *
+			// lit drawlist (effect xmodels)
+
+			R_InitDrawSurfListInfo(&viewInfo->litInfo);
+
+			viewInfo->litInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL;
+			viewInfo->litInfo.viewInfo = viewInfo;
+			viewInfo->litInfo.viewOrigin[0] = viewParms->origin[0];
+			viewInfo->litInfo.viewOrigin[1] = viewParms->origin[1];
+			viewInfo->litInfo.viewOrigin[2] = viewParms->origin[2];
+			viewInfo->litInfo.viewOrigin[3] = viewParms->origin[3];
+			viewInfo->litInfo.cameraView = 1;
+
+			const int initial_lit_drawSurfCount = frontEndDataOut->drawSurfCount;
+
+			// R_MergeAndEmitDrawSurfLists
+			utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(0, 3);
+
+			viewInfo->litInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_lit_drawSurfCount];
+			viewInfo->litInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_lit_drawSurfCount;
+
+
+			// *
+			// emissive drawlist (effects)
+
+			const auto emissiveList = &viewInfo->emissiveInfo;
+			R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
+
+			viewInfo->emissiveInfo.baseTechType = game::TECHNIQUE_EMISSIVE;
+			viewInfo->emissiveInfo.viewInfo = viewInfo;
+			viewInfo->emissiveInfo.viewOrigin[0] = viewParms->origin[0];
+			viewInfo->emissiveInfo.viewOrigin[1] = viewParms->origin[1];
+			viewInfo->emissiveInfo.viewOrigin[2] = viewParms->origin[2];
+			viewInfo->emissiveInfo.viewOrigin[3] = viewParms->origin[3];
+			viewInfo->emissiveInfo.cameraView = 1;
+
+			const int initial_emissive_drawSurfCount = frontEndDataOut->drawSurfCount;
+
+			// R_MergeAndEmitDrawSurfLists
+			utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(9, 6);
+
+			emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_emissive_drawSurfCount];
+
+			renderer::effect_drawsurf_count_ = frontEndDataOut->drawSurfCount;
+
+			viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
+		}
+
+		else if (game::comworld->isInUse)
+		{
 			game::refdef_s refdef = {};
 			utils::vector::copy(viewParms->origin, refdef.vieworg);
 			utils::vector::copy(viewParms->axis[0], refdef.viewaxis[0]);
 			utils::vector::copy(viewParms->axis[1], refdef.viewaxis[1]);
 			utils::vector::copy(viewParms->axis[2], refdef.viewaxis[2]);
-
-			/*const auto ccam = &cmainframe::activewnd->m_pCamWnd->camera;
-			refdef.viewaxis[0][0] = ccam->vpn[0];
-			refdef.viewaxis[0][1] = ccam->vpn[1];
-			refdef.viewaxis[0][2] = ccam->vpn[2];
-			refdef.viewaxis[1][0] = -ccam->vright[0];
-			refdef.viewaxis[1][1] = -ccam->vright[1];
-			refdef.viewaxis[1][2] = -ccam->vright[2];
-			refdef.viewaxis[2][0] = ccam->vup[0];
-			refdef.viewaxis[2][1] = ccam->vup[1];
-			refdef.viewaxis[2][2] = ccam->vup[2];*/
-
+			
 			refdef.width = game::dx->windows[ggui::CCAMERAWND].width;
 			refdef.height = game::dx->windows[ggui::CCAMERAWND].height;
 
@@ -1945,7 +1911,7 @@ namespace components
 			refdef.tanHalfFovY = tanf(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
 			refdef.tanHalfFovX = refdef.tanHalfFovY * (static_cast<float>(cam->width) / static_cast<float>(cam->height));
 
-			refdef.zNear = game::Dvar_FindVar("r_zNear")->current.value; // 0.1f
+			refdef.zNear = game::Dvar_FindVar("r_zNear")->current.value;
 			refdef.time = static_cast<int>(timeGetTime());
 			
 			refdef.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
@@ -2346,8 +2312,8 @@ namespace components
 		source.viewMode = game::VIEW_MODE_NONE;
 		source.viewportIsDirty = true;
 
-		auto x = game::rg;
-		auto scene = game::scene;
+		//auto x = game::rg;
+		//auto scene = game::scene;
 
 		R_DrawPointLitSurfs(viewinfo, &source, cmdbuf);
 	}
@@ -2370,7 +2336,9 @@ namespace components
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
 
-		if (game::dx->device /*&& (effects::effect_is_playing() || fx_system::ed_is_paused && !effects::effect_is_playing())*/)
+		if (game::dx->device && (effects::effect_is_playing() 
+				|| (fx_system::ed_is_paused && !effects::effect_is_playing())
+				|| (dvars::r_draw_bsp && dvars::r_draw_bsp->current.enabled)))
 		{
 			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];
@@ -2384,16 +2352,23 @@ namespace components
 			//R_DepthPrepass(&cmdBuf, viewInfo);	// no need to do a depth prepass, only causes issues upon resizing
 													// needs depthbuffer resize logic
 
-			R_DrawLit(&cmdBuf, viewInfo);
-			R_DrawDecal(&cmdBuf, viewInfo);
+			if (viewInfo->litInfo.viewInfo && viewInfo->litInfo.drawSurfs)
+			{
+				R_DrawLit(&cmdBuf, viewInfo);
+			}
+
+			if(viewInfo->decalInfo.viewInfo && viewInfo->decalInfo.drawSurfs)
+			{
+				R_DrawDecal(&cmdBuf, viewInfo);
+			}			
 
 			// RB_DrawSun
 			//R_DrawLights(&cmdBuf, viewInfo); // not needed, sm_enable was the issue
 
-			R_DrawEmissive(&cmdBuf, viewInfo);
-
-			
-			
+			if (viewInfo->emissiveInfo.viewInfo && viewInfo->emissiveInfo.drawSurfs)
+			{
+				R_DrawEmissive(&cmdBuf, viewInfo);
+			}
 		}
 
 //#ifdef DEBUG
@@ -2425,10 +2400,10 @@ namespace components
 			return;
 		}
 
-		if(backend->viewInfo->viewParms.origin[0] == 0.0f)
+		/*if(backend->viewInfo->viewParms.origin[0] == 0.0f)
 		{
 			return;
-		}
+		}*/
 
 		if(backend->viewInfoCount)
 		{

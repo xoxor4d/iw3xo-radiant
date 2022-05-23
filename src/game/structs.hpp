@@ -2180,7 +2180,7 @@ namespace game
 		GfxLightRegion* lightRegion;
 		GfxWorldDpvsStatic dpvs;
 		GfxWorldDpvsDynamic dpvsDyn;
-	}; STATIC_ASSERT_SIZE(GfxWorld, 0x2DC);
+	}; STATIC_ASSERT_SIZE(GfxWorld, 0x2DC); // should be 0x2D0 ?
 
 	struct r_global_permanent_t
 	{

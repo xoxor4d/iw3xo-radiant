@@ -157,6 +157,23 @@ namespace ggui
 
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
+					if(components::d3dbsp::Com_IsBspLoaded())
+					{
+						static bool hov_bsp_rendering;
+						if (tb->image_togglebutton("toggle_bsp"
+							, hov_bsp_rendering
+							, dvars::r_draw_bsp->current.enabled
+							, std::string("Toggle visibility of loaded d3dbsp " + ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp")).c_str()
+							, &toolbar_button_background
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &toolbar_button_size))
+						{
+							dvars::set_bool(dvars::r_draw_bsp, !dvars::r_draw_bsp->current.enabled);
+
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+					}
+
 					ImGui::PopStyleVar();
 				}
 

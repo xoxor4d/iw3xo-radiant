@@ -118,7 +118,7 @@ void setup_scene_modelselector(float* origin, float* axis, int x, int y, int wid
 	
 	game::GfxMatrix projection = {};
 	
-	game::R_SetupProjection(&projection, fov_x, fov_y, 0.0099999998f);
+	game::R_SetupProjection(&projection, fov_x, fov_y, 4.0f);
 	set_scene_params_modelselector(origin, axis, &projection, x, y, width, height, false);
 }
 
@@ -130,7 +130,7 @@ void calc_raydir_modelselector(int x, int y, float* dir)
 	const float xa = tan_half_x * (static_cast<float>(y) - (static_cast<float>(layercam.height) / 2.0f));
 	const float xb = tan_half_x * (static_cast<float>(x) - (static_cast<float>(layercam.width) / 2.0f));
 
-	                                                                   dir[0] = layercam.vup[0] * xa + layercam.vright[0] * xb + layercam.vpn[0];
+	dir[0] = layercam.vup[0] * xa + layercam.vright[0] * xb + layercam.vpn[0];
 	dir[1] = layercam.vup[1] * xa + layercam.vright[1] * xb + layercam.vpn[1];
 	dir[2] = layercam.vup[2] * xa + layercam.vright[2] * xb + layercam.vpn[2];
 

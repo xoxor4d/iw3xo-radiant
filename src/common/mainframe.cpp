@@ -179,26 +179,8 @@ void on_createclient()
 	{
 		dvars::set_bool(r_showSurfCounts, false);
 	}
-
-	if (const auto& r_polygonOffsetBias = game::Dvar_FindVar("r_polygonOffsetBias");
-					r_polygonOffsetBias && r_polygonOffsetBias->current.value)
-	{
-		dvars::set_float(r_polygonOffsetBias, 0.0f);
-	}
-
-	if (const auto& r_polygonOffsetScale = game::Dvar_FindVar("r_polygonOffsetScale");
-					r_polygonOffsetScale&& r_polygonOffsetScale->current.value)
-	{
-		dvars::set_float(r_polygonOffsetScale, 0.0f);
-	}
-
-	if (const auto& r_useLayeredMaterials = game::Dvar_FindVar("r_useLayeredMaterials");
-					r_useLayeredMaterials&& r_useLayeredMaterials->current.enabled)
-	{
-		dvars::set_bool(r_useLayeredMaterials, false);
-	}
-
 	
+	components::d3dbsp::force_dvars();
 
 	// hide original windows and show the z-view (rendering canvas for imgui)
 	if(cmainframe::activewnd)

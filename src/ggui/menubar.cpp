@@ -137,6 +137,21 @@ namespace ggui
 					ImGui::EndMenu(); // Open Recent
 				}
 
+				if (ImGui::MenuItem("Load d3dbsp"))
+				{
+					const auto egui = GET_GUI(ggui::entity_dialog);
+					const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath") + "\\raw\\maps\\mp\\"s;
+
+					const auto file = GET_GUI(ggui::file_dialog);
+					file->set_default_path(path_str);
+					file->set_file_handler(ggui::FILE_DIALOG_HANDLER::D3DBSP_LOAD);
+					file->set_file_op_type(file_dialog::FileDialogType::OpenFile);
+					file->set_file_ext(".d3dbsp");
+					file->open();
+				}
+
+				SEPERATORV(0.0f);
+
 				if (ImGui::BeginMenu("Generate File .."))
 				{
 					if (ImGui::MenuItem("Save Selected"))
@@ -719,6 +734,71 @@ namespace ggui
 				{
 					memset(game::com_fileDataHashTable, 0, sizeof(uintptr_t) * 1024);
 				}
+
+				// ugly hacks - ref for later
+
+				//if (ImGui::MenuItem("Reload Material Hashtable"))
+				//{
+				//	/*memset(game::rg->Material_materialHashTable, 0, sizeof(game::rg->Material_materialHashTable));
+				//	memset(game::rgp->sortedMaterials, 0, sizeof(game::rgp->sortedMaterials));
+				//	game::rgp->materialCount = 0;*/
+
+				//	cdeclcall(void, 0x51C020); // Material_Sort
+
+				//	unsigned int index = 0;
+				//	bool exists = false;
+
+				//	// Material_GetHashIndex
+				//	utils::hook::call<int(__cdecl)(const char* _name, unsigned int* _index_out, bool* _exists)>(0x510E10)("wc/case1024", &index, &exists);
+
+				//	// Material_Load
+				//	const auto t_mat = utils::hook::call<game::Material* (__cdecl)(const char* _name, int _type)>(0x51B690)("case1024", 9); //game::Material_RegisterHandle("wc/case1024", 9);
+
+				//	//if(exists && t_mat)
+				//	//{
+				//	//	utils::hook::call<void(__cdecl)(void*)>(0x4AC2A0)(game::rg->Material_materialHashTable[index]);
+				//	//	game::rg->Material_materialHashTable[index] = nullptr;
+				//	//	game::Material_Add(index, t_mat);
+				//	//}
+
+				//	game::rgp->sortedMaterials[game::rgp->materialCount] = t_mat;
+				//	game::rgp->materialCount++;
+				//	game::rgp->needSortMaterials = true;
+
+				//	cdeclcall(void, 0x51C020); // Material_Sort
+
+				//	components::exec::on_gui_once([]() 
+				//	{
+				//		bool found = false;
+				//		for(auto i = 0; i < game::rgp->materialCount; i++)
+				//		{
+				//			if(!found && game::rgp->sortedMaterials[i]->info.name == "case1024"s)
+				//			{
+				//				game::rgp->sortedMaterials[i] = nullptr;
+				//				//game::rgp->materialCount--;
+				//				game::rgp->needSortMaterials = true;
+
+				//				found = true;
+				//			}
+				//			else if(found)
+				//			{
+				//				game::rgp->sortedMaterials[i - 1] = game::rgp->sortedMaterials[i];
+				//			}
+				//		}
+
+				//		if(found)
+				//		{
+				//			game::rgp->sortedMaterials[game::rgp->materialCount - 1] = nullptr;
+				//			game::rgp->materialCount--;
+				//		}
+
+				//		cdeclcall(void, 0x51C020); // Material_Sort
+
+				//		
+				//	});
+
+				//	//game::Material_RegisterHandle("css_portal", 3);
+				//}
 
 				SEPERATORV(0.0f);
 

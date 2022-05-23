@@ -364,7 +364,7 @@ namespace game
 
 	game::GfxImage* Image_FindExisting(const char* name);
 	game::GfxImage* Image_RegisterHandle(const char* name);
-
+	void Material_Add(int idx/*eax*/, game::Material* material/*esi*/);
 	inline auto Material_RegisterHandle = reinterpret_cast<game::Material* (*)(const char* name, int)>(0x511BE0);
 	inline auto R_RegisterModel = reinterpret_cast<game::XModel* (*)(const char* name)>(0x51D450);
 	inline auto R_RegisterLightDef = reinterpret_cast<game::GfxLightDef* (*)(const char* name)>(0x53D510);

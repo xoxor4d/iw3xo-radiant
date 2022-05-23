@@ -87,7 +87,7 @@ namespace components
 			LumpType loadedLumpType;
 			const void* loadedLumpData;
 		};
-
+		
 		static bspGlob_s comBspGlob;
 		static game::clipMap_t cm;
 		static game::GfxLight scene_lights[255];
@@ -101,8 +101,10 @@ namespace components
 		static const void* Com_GetBspLump(LumpType type, unsigned int elemSize, unsigned int* count);
 		static bool Com_GetBspLumpBool(LumpType type);
 		static bool Com_LoadBsp(const char* filename);
+		static bool radiant_load_bsp(const char* bsppath);
 
 		static void force_dvars();
+		static void register_dvars();
 
 		d3dbsp();
 		~d3dbsp();
