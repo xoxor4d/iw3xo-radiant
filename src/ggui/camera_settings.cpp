@@ -13,6 +13,18 @@ namespace ggui
 		ImGui::Checkbox("Use Worldspawn Settings", &dvars::r_fakesun_use_worldspawn->current.enabled);
 		TT("Uses some of the default values below if a required worldspawn key can not be found");
 
+		if(components::d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled)
+		{
+			ImGui::Checkbox("d3dbsp: overwrite sundir", &dvars::r_draw_bsp_overwrite_sundir->current.enabled);
+			TT(dvars::r_draw_bsp_overwrite_sundir->description);
+
+			ImGui::Checkbox("d3dbsp: overwrite sunlight", &dvars::r_draw_bsp_overwrite_sunlight->current.enabled);
+			TT(dvars::r_draw_bsp_overwrite_sunlight->description);
+
+			ImGui::Checkbox("d3dbsp: overwrite sunspecular", &dvars::r_draw_bsp_overwrite_sunspecular->current.enabled);
+			TT(dvars::r_draw_bsp_overwrite_sunspecular->description);
+		}
+
 		ImGui::DragFloat3("Sun Dir", sun_dir, 0.1f);
 		ImGui::ColorEdit3("Sun Diffuse", sun_diffuse, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 		ImGui::ColorEdit4("Sun Specular", sun_specular, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);

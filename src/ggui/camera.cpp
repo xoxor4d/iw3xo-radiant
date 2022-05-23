@@ -185,7 +185,7 @@ namespace ggui
 					if (tb->image_togglebutton("sunpreview"
 						, hov_fakesunpreview
 						, dvars::r_fakesun_preview->current.enabled
-						, std::string("Fake sun preview " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()
+						, std::string("Fake sun preview " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.\n(Does not affect d3dbsp)").c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
@@ -196,13 +196,13 @@ namespace ggui
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
-					if (dvars::r_fakesun_preview->current.enabled)
-					{
+					//if (dvars::r_fakesun_preview->current.enabled)
+					//{
 						static bool hov_fakesun_fog;
 						if (tb->image_togglebutton("fakesun_fog"
 							, hov_fakesun_fog
 							, dvars::r_fakesun_fog_enabled->current.enabled
-							, std::string("Toggle Fog " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_fog_toggle")).c_str()
+							, std::string("Toggle Fog " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_fog_toggle") + "\n(needs 'Fake sun preview' to work on radiant brushes / models)\n(Does affect d3dbsp)").c_str()
 							, &toolbar_button_background
 							, &toolbar_button_background_hovered
 							, &toolbar_button_background_active
@@ -211,7 +211,7 @@ namespace ggui
 							components::command::execute("fakesun_fog_toggle");
 
 						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-					}
+					//}
 
 
 					static bool hov_filmtweaks_settings;

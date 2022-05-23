@@ -475,7 +475,19 @@ namespace components
 			/* flags	*/ game::dvar_flags::none,
 			/* desc		*/ "enable to overwrite bsp sunlight with fakesun settings");
 
-		
+		dvars::r_draw_bsp_overwrite_sundir = dvars::register_bool(
+			/* name		*/ "r_draw_bsp_overwrite_sundir",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::none,
+			/* desc		*/ "enable to overwrite bsp sundir with fakesun settings");
+
+		dvars::r_draw_bsp_overwrite_sunspecular = dvars::register_bool(
+			/* name		*/ "r_draw_bsp_overwrite_sunspecular",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::none,
+			/* desc		*/ "enable to overwrite bsp sunspecular with fakesun settings");
+		extern game::dvar_s* r_draw_bsp_overwrite_sundir;
+		extern game::dvar_s* r_draw_bsp_overwrite_suncolor;
 	}
 
 	d3dbsp::d3dbsp()

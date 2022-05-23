@@ -362,9 +362,8 @@ namespace components
 			fclose(shader_binary);
 			return false;
 		}
-
-		// Z_Malloc :: alloc memory (programm size in bytes)
-		auto chached_shader = utils::hook::call<unsigned int* (__cdecl)(size_t)>(0x4AC330)(*shader_len);
+		
+		auto chached_shader = game::Z_Malloc(*shader_len); // programm size in bytes
 		if (chached_shader)
 		{
 			// assign buffer addr to our ptr
@@ -654,8 +653,7 @@ namespace components
 
 		if (source && state && state->pass)
 		{
-			const bool d3dbsp_visible = renderer::is_rendering_camerawnd() && d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled;
-
+			// #
 			// 2D: set required shader constants for backend passes
 			if(renderer::is_rendering_camerawnd() && source->viewMode == game::VIEW_MODE_2D)
 			{
@@ -743,16 +741,154 @@ namespace components
 				}
 			}
 
-			// 3D
-			if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
-				(renderer::is_rendering_camerawnd() /*&& (dvars::r_fakesun_preview->current.enabled || dvars::r_fakesun_fog_enabled->current.enabled)*/))
+
+			// #
+			// 3D (a bit of dupe code - makes it more readable and manageable)
+
+			bool is_d3dbsp = false;
+			if (state->viewport.x == 1)
+			{
+				state->viewport.x = 0;
+				is_d3dbsp = true;
+			}
+
+			// model previewer - fake sun shader
+			if(renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY)
 			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
 					const auto arg_def = &state->pass->args[arg];
-					if (arg_def && arg_def->type == 5)
+					if (arg_def && arg_def->type == 5 && state->pass->pixelShader)
 					{
-						if (state->pass->pixelShader)
+						if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_ENVMAP_PARMS)
+						{
+							game::vec4_t temp;
+							game::dx->device->GetPixelShaderConstantF(arg_def->dest, temp, 1);
+
+							// set envmapparams from material
+							if (state->material && state->material->constantCount && state->material->constantTable)
+							{
+								for (auto constant = 0; constant < state->material->constantCount; constant++)
+								{
+									if (state->material->constantTable[constant].name[0] != 0)
+									{
+										if (utils::string_equals(state->material->constantTable[constant].name, "envMapParms"))
+										{
+											game::dx->device->SetPixelShaderConstantF(arg_def->dest, state->material->constantTable[constant].literal, 1);
+											break;
+										}
+									}
+
+								}
+							}
+						}
+
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
+						{
+							bool worldspawn_valid = false;
+							game::vec3_t sun_dir = {};
+
+							if (dvars::r_fakesun_use_worldspawn->current.enabled)
+							{
+								const auto world_ent = game::g_world_entity();
+								if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_dir, "sundirection"))
+								{
+									worldspawn_valid = true;
+								}
+							}
+
+							game::vec4_t temp = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+							// AngleVectors(float* angles, float* vpn, float* right, float* up)
+							utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : GET_GUI(ggui::camera_settings_dialog)->sun_dir, temp, nullptr, nullptr);
+							game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+						}
+
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
+						{
+							bool worldspawn_valid = false;
+							game::vec4_t sun_diffuse = {};
+
+							if (dvars::r_fakesun_use_worldspawn->current.enabled)
+							{
+								const auto world_ent = game::g_world_entity();
+
+								float sunlight = 0.0f;
+								game::vec3_t suncolor = {};
+
+								if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, suncolor, "suncolor"))
+								{
+									if (!GET_GUI(ggui::entity_dialog)->get_value_for_key_from_entity(world_ent->firstActive, &sunlight, "sunlight"))
+									{
+										// default value
+										sunlight = 1.35f;
+									}
+
+									sunlight *= 1.5f;
+									utils::vector::scale(suncolor, sunlight, sun_diffuse);
+
+									worldspawn_valid = true;
+								}
+							}
+
+							const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+							const game::vec4_t temp = { cs->sun_diffuse[0], cs->sun_diffuse[1], cs->sun_diffuse[2], 1.0f };
+							game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
+						}
+
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
+						{
+							bool worldspawn_valid = false;
+							game::vec4_t sun_specular = {};
+
+							if (dvars::r_fakesun_use_worldspawn->current.enabled)
+							{
+								const auto world_ent = game::g_world_entity();
+								if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_specular, "suncolor"))
+								{
+									// worldspawn suncolor
+									utils::vector::ma(game::vec3_t(1.0f, 1.0f, 1.0f), 2.0f, sun_specular, sun_specular);
+									worldspawn_valid = true;
+								}
+							}
+
+							const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+							const game::vec4_t temp = { cs->sun_specular[0], cs->sun_specular[1], cs->sun_specular[2], cs->sun_specular[3] };
+							game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_specular : temp, 1);
+						}
+
+						// "envMapParams" in camera settings
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
+						{
+							const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+							const game::vec4_t temp = { cs->material_specular[0], cs->material_specular[1], cs->material_specular[2], cs->material_specular[3] };
+							game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+						}
+
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
+						{
+							const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+							const game::vec4_t temp = { cs->ambient[0], cs->ambient[1], cs->ambient[2], cs->ambient[3] };
+							game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+						}
+						
+					}
+				}
+			}
+
+			// camera - fake sun shader - bsp
+			if(renderer::is_rendering_camerawnd())
+			{
+				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
+				{
+					const auto arg_def = &state->pass->args[arg];
+					if (arg_def && arg_def->type == 5 && state->pass->pixelShader)
+					{
+						if(!is_d3dbsp)
 						{
 							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_ENVMAP_PARMS)
 							{
@@ -760,11 +896,11 @@ namespace components
 								game::dx->device->GetPixelShaderConstantF(arg_def->dest, temp, 1);
 
 								// set envmapparams from material
-								if(state->material && state->material->constantCount && state->material->constantTable)
+								if (state->material && state->material->constantCount && state->material->constantTable)
 								{
-									for(auto constant = 0; constant < state->material->constantCount; constant++)
+									for (auto constant = 0; constant < state->material->constantCount; constant++)
 									{
-										if(state->material->constantTable[constant].name)
+										if (state->material->constantTable[constant].name)
 										{
 											if (utils::string_equals(state->material->constantTable[constant].name, "envMapParms"))
 											{
@@ -772,75 +908,100 @@ namespace components
 												break;
 											}
 										}
-										
+
 									}
 								}
 							}
 
-							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
 							{
-								game::vec4_t temp = { dvars::r_fakesun_fog_color->current.vector[0], dvars::r_fakesun_fog_color->current.vector[1], dvars::r_fakesun_fog_color->current.vector[2], dvars::r_fakesun_fog_color->current.vector[3] };
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->material_specular[0], cs->material_specular[1], cs->material_specular[2], cs->material_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
+
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
+							{
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->ambient[0], cs->ambient[1], cs->ambient[2], cs->ambient[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+						} // !is_d3dbsp
+
+						if(dvars::r_fakesun_fog_enabled->current.enabled)
+						{
+							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
+							{
+								const game::vec4_t temp = { dvars::r_fakesun_fog_color->current.vector[0], dvars::r_fakesun_fog_color->current.vector[1], dvars::r_fakesun_fog_color->current.vector[2], dvars::r_fakesun_fog_color->current.vector[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+						}
 							
-							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
+						if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
+						{
+							if (!is_d3dbsp || (is_d3dbsp && dvars::r_draw_bsp_overwrite_sundir->current.enabled))
 							{
 								bool worldspawn_valid = false;
 								game::vec3_t sun_dir = {};
-								
-								if(dvars::r_fakesun_use_worldspawn->current.enabled)
+
+								if (dvars::r_fakesun_use_worldspawn->current.enabled)
 								{
 									const auto world_ent = game::g_world_entity();
-									if(world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_dir, "sundirection"))
+									if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_dir, "sundirection"))
 									{
 										worldspawn_valid = true;
 									}
 								}
 
 								game::vec4_t temp = { 0.0f, 0.0f, 0.0f, 0.0f };
-								
+
 								// AngleVectors(float* angles, float* vpn, float* right, float* up)
 								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : GET_GUI(ggui::camera_settings_dialog)->sun_dir, temp, nullptr, nullptr);
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
+						}
 							
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
+						{
+							if (!is_d3dbsp || (is_d3dbsp && dvars::r_draw_bsp_overwrite_sunlight->current.enabled))
 							{
-								if (!d3dbsp_visible || dvars::r_draw_bsp_overwrite_sunlight->current.enabled)
+								bool worldspawn_valid = false;
+								game::vec4_t sun_diffuse = {};
+
+								if (dvars::r_fakesun_use_worldspawn->current.enabled)
 								{
-									bool worldspawn_valid = false;
-									game::vec4_t sun_diffuse = {};
+									const auto world_ent = game::g_world_entity();
 
-									if (dvars::r_fakesun_use_worldspawn->current.enabled)
+									float sunlight = 0.0f;
+									game::vec3_t suncolor = {};
+
+									if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, suncolor, "suncolor"))
 									{
-										const auto world_ent = game::g_world_entity();
-
-										float sunlight = 0.0f;
-										game::vec3_t suncolor = {};
-
-										if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, suncolor, "suncolor"))
+										if (!GET_GUI(ggui::entity_dialog)->get_value_for_key_from_entity(world_ent->firstActive, &sunlight, "sunlight"))
 										{
-											if (!GET_GUI(ggui::entity_dialog)->get_value_for_key_from_entity(world_ent->firstActive, &sunlight, "sunlight"))
-											{
-												// default value
-												sunlight = 1.35f;
-											}
-
-											sunlight *= 1.5f;
-											utils::vector::scale(suncolor, sunlight, sun_diffuse);
-
-											worldspawn_valid = true;
+											// default value
+											sunlight = 1.35f;
 										}
+
+										sunlight *= 1.5f;
+										utils::vector::scale(suncolor, sunlight, sun_diffuse);
+
+										worldspawn_valid = true;
 									}
-
-									const auto cs = GET_GUI(ggui::camera_settings_dialog);
-
-									const game::vec4_t temp = { cs->sun_diffuse[0], cs->sun_diffuse[1], cs->sun_diffuse[2], 1.0f };
-									game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
 								}
+
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->sun_diffuse[0], cs->sun_diffuse[1], cs->sun_diffuse[2], 1.0f };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
 							}
-							
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
+						}
+						
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
+						{
+							if (!is_d3dbsp || (is_d3dbsp && dvars::r_draw_bsp_overwrite_sunspecular->current.enabled))
 							{
 								bool worldspawn_valid = false;
 								game::vec4_t sun_specular = {};
@@ -857,46 +1018,9 @@ namespace components
 								}
 
 								const auto cs = GET_GUI(ggui::camera_settings_dialog);
-								
+
 								const game::vec4_t temp = { cs->sun_specular[0], cs->sun_specular[1], cs->sun_specular[2], cs->sun_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_specular : temp, 1);
-							}
-							
-							else if (renderer::is_rendering_layeredwnd() && arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
-							{
-								const auto cs = GET_GUI(ggui::camera_settings_dialog);
-
-								const game::vec4_t temp = { cs->material_specular[0], cs->material_specular[1], cs->material_specular[2], cs->material_specular[3] };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-							}
-							
-							else if (renderer::is_rendering_layeredwnd() && arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
-							{
-								//bool worldspawn_valid = false;
-								//game::vec4_t ambient = {};
-
-								//if (dvars::r_fakesun_use_worldspawn->current.enabled)
-								//{
-								//	const auto world_ent = reinterpret_cast<game::entity_s_def*>(game::g_world_entity()->firstActive);
-
-								//	// not proper at all
-								//	
-								//	float ambient_scale = 0.0f;
-								//	if (!ggui::entity::Entity_GetValueForKey(reinterpret_cast<game::entity_s*>(world_ent), &ambient_scale, "ambient"))
-								//	{
-								//		// default value
-								//		ambient_scale = 0.2f;
-								//	}
-								//	
-								//	utils::vector::set_vec4(ambient, ambient_scale);
-	
-								//	worldspawn_valid = true;
-								//}
-
-								const auto cs = GET_GUI(ggui::camera_settings_dialog);
-
-								const game::vec4_t temp = { cs->ambient[0], cs->ambient[1], cs->ambient[2], cs->ambient[3] };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 						}
 					}
@@ -941,41 +1065,23 @@ namespace components
 				{
 					const auto arg_def = &state->pass->args[arg];
 
-					if (arg_def && arg_def->type == 3)
+					if (arg_def && arg_def->type == 3 && state->pass->vertexShader)
 					{
-						if (state->pass->vertexShader)
+						// set fog
+						if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG)
 						{
-							/*if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_GAMETIME)
-							{
-								const float clamped_second = gfx_fbv.float_time - floorf(gfx_fbv.float_time);
+							const float density = 0.69314f / dvars::r_fakesun_fog_half->current.value;
+							const float start = dvars::r_fakesun_fog_start->current.value * density;
+							
+							game::vec4_t temp = { 0.0f, 1.0f, -density, start };
+							game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
+						}
 
-								const game::vec4_t temp =
-								{
-									sinf(clamped_second * 6.283185482025146f),
-									cosf(clamped_second * 6.283185482025146f),
-									clamped_second,
-									gfx_fbv.float_time
-								};
-
-								game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
-							}*/
-
-							// set fog
-							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG)
-							{
-								const float density = 0.69314f / dvars::r_fakesun_fog_half->current.value;
-								const float start = dvars::r_fakesun_fog_start->current.value * density;
-								
-								game::vec4_t temp = { 0.0f, 1.0f, -density, start };
-								game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
-							}
-
-							// needed for vertcol_mul_fog (2 pass technique for some decals)
-							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
-							{
-								game::vec4_t temp = { dvars::r_fakesun_fog_color->current.vector[0], dvars::r_fakesun_fog_color->current.vector[1], dvars::r_fakesun_fog_color->current.vector[2], dvars::r_fakesun_fog_color->current.vector[3] };
-								game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
-							}
+						// needed for vertcol_mul_fog (2 pass technique for some decals)
+						if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
+						{
+							game::vec4_t temp = { dvars::r_fakesun_fog_color->current.vector[0], dvars::r_fakesun_fog_color->current.vector[1], dvars::r_fakesun_fog_color->current.vector[2], dvars::r_fakesun_fog_color->current.vector[3] };
+							game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
 						}
 					}
 				}
@@ -1196,7 +1302,7 @@ namespace components
 				if (has_spec && has_normal)
 				{
 					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun", 1); // fakesun_normal
-						tech)
+									tech)
 					{
 						state->technique = tech;
 
@@ -1211,7 +1317,7 @@ namespace components
 				else if (!has_spec && has_normal)
 				{
 					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_no_spec", 1); // fakesun_normal_no_spec_img
-						tech)
+									tech)
 					{
 						state->technique = tech;
 
@@ -1230,13 +1336,13 @@ namespace components
 
 		if (renderer::is_rendering_camerawnd())
 		{
-			if (const auto draw_water = game::Dvar_FindVar("r_drawWater");
-				draw_water && draw_water->current.enabled)
+			if (const auto	draw_water = game::Dvar_FindVar("r_drawWater");
+							draw_water && draw_water->current.enabled)
 			{
 				if (utils::string_equals(state->material->techniqueSet->name, "wc_water"))
 				{
 					if (const auto	tech = Material_RegisterTechnique("water_l_sun", 1);
-						tech)
+									tech)
 					{
 						state->technique = tech;
 					}
@@ -1288,6 +1394,12 @@ namespace components
 
 	void r_setup_pass_surflists(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
 	{
+		if(d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled)
+		{
+			//state->depthRangeNear = 0.01337f;
+			state->viewport.x = 1;
+		}
+		
 		r_setup_pass_general(source, state, passIndex);
 	}
 

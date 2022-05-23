@@ -53,6 +53,8 @@ namespace dvars
 
 	game::dvar_s* r_draw_bsp = nullptr;
 	game::dvar_s* r_draw_bsp_overwrite_sunlight = nullptr;
+	game::dvar_s* r_draw_bsp_overwrite_sundir = nullptr;
+	game::dvar_s* r_draw_bsp_overwrite_sunspecular = nullptr;
 
 	game::dvar_s* r_draw_model_origin = nullptr;
 	game::dvar_s* r_draw_model_shadowcaster = nullptr;
