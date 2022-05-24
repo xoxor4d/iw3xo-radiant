@@ -12,6 +12,8 @@ namespace fx_system
 
 namespace ImGui
 {
+	bool	Spinner(const char* label, float radius, float thickness, const ImU32& color);
+	
 	bool	IsVertScollbarVisible();
 	void	left_label_drag(const char* label, const float text_y_offset, const float sameline_offset = 80.0f);
 	void	left_label_checkbox(const char* label, const float text_y_offset);

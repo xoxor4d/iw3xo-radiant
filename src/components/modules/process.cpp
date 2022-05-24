@@ -11,7 +11,7 @@ namespace components
 		{
 			game::printf_to_console("^1[PROCESS] Tried to spawn a process with no arguments!");
 			return true;
-		}
+		}		
 		
 		HANDLE hPipeRead, hPipeWrite;
 
@@ -106,6 +106,21 @@ namespace components
 				{
 					if (console)
 					{
+						const std::string buf_str = buf;
+						const size_t status_pos = buf_str.rfind("[CSTATUS]");
+						std::string status_str;
+
+						if(status_pos != std::string::npos)
+						{
+							status_str = buf_str.substr(status_pos + 10);
+							status_str = status_str.substr(0, status_str.find_first_of('\r'));
+						}
+
+						if(!status_str.empty())
+						{
+							GET_GUI(ggui::menubar_dialog)->set_process_status(status_str);
+						}
+
 						console->addline_no_format(buf);
 					}
 				}
@@ -128,6 +143,7 @@ namespace components
 		}
 
 		process::pthis->reset();
+		GET_GUI(ggui::menubar_dialog)->set_process_status("");
 
 		game::printf_to_console(pthis->m_kill_thread ? "^1[PROCESS] Process was killed" : "^2[PROCESS] Process ended successfully!");
 		return true;

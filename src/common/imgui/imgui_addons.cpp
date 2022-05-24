@@ -3,6 +3,58 @@
 
 namespace ImGui
 {
+	// https://github.com/ocornut/imgui/issues/1901 (zfedoran)
+	bool Spinner(const char* label, float radius, float thickness, const ImU32& color)
+	{
+		ImGuiWindow* window = GetCurrentWindow();
+
+		if (window->SkipItems)
+		{
+			return false;
+		}
+
+		ImGuiContext& g = *GImGui;
+		const ImGuiStyle& style = g.Style;
+		const ImGuiID id = window->GetID(label);
+
+		const ImVec2 pos = window->DC.CursorPos;
+		const ImVec2 size((radius) * 2, (radius + style.FramePadding.y) * 2);
+
+		const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
+		ItemSize(bb, style.FramePadding.y);
+
+		if (!ItemAdd(bb, id))
+		{
+			return false;
+		}
+			
+
+		// Render
+		window->DrawList->PathClear();
+
+		const int num_segments = 30;
+		const auto num_segments_f = static_cast<float>(num_segments);
+
+		const int start = static_cast<int>(abs(ImSin(static_cast<float>(g.Time * 1.8)) * (num_segments - 5)));
+
+		const float a_min = IM_PI * 2.0f * static_cast<float>(start) / num_segments_f;
+		const float a_max = IM_PI * 2.0f * (num_segments_f - 3.0f) / num_segments_f;
+
+		const ImVec2 centre = ImVec2(pos.x + radius, pos.y + radius + style.FramePadding.y);
+
+		for (int i = 0; i < num_segments; i++) 
+		{
+			const float a = a_min + ((float)i / num_segments_f) * (a_max - a_min);
+			window->DrawList->PathLineTo(
+				ImVec2(centre.x + ImCos(a + static_cast<float>(g.Time * 8.0)) * radius,
+				centre.y + ImSin(a + static_cast<float>(g.Time * 8.0)) * radius));
+		}
+
+		window->DrawList->PathStroke(color, false, thickness);
+
+		return true;
+	}
+
 	bool IsVertScollbarVisible()
 	{
 		ImGuiWindow* window = GImGui->CurrentWindow;

@@ -298,7 +298,7 @@ namespace ggui
 				{
 					if (ImGui::ButtonEx("Toggle All Geo", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
-						components::command::execute("filter_toggle_geo");
+						components::gameview::p_this->toggle_all_geo(!components::gameview::p_this->get_all_geo_state());
 					}
 
 					ImGui::Indent(6.0f);
@@ -357,7 +357,7 @@ namespace ggui
 				{
 					if (ImGui::ButtonEx("Toggle All Entities", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
-						components::command::execute("filter_toggle_ents");
+						components::gameview::p_this->toggle_all_entities(!components::gameview::p_this->get_all_ents_state());
 					}
 
 					ImGui::Indent(6.0f);
@@ -413,7 +413,7 @@ namespace ggui
 				{
 					if (ImGui::ButtonEx("Toggle All Triggers", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
-						components::command::execute("filter_toggle_trigger");
+						components::gameview::p_this->toggle_all_triggers(!components::gameview::p_this->get_all_triggers_state());
 					}
 
 					ImGui::Indent(6.0f);
@@ -469,7 +469,7 @@ namespace ggui
 				{
 					if (ImGui::ButtonEx("Toggle All Others", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
-						components::command::execute("filter_toggle_others");
+						components::gameview::p_this->toggle_all_others(!components::gameview::p_this->get_all_others_state());
 					}
 
 					ImGui::Indent(6.0f);

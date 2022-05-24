@@ -21,10 +21,8 @@ bool should_draw_grid_text()
 
 void reposition_viewtype_hint(const char* text, game::Font_s* font, [[maybe_unused]] float* origin, float* pixel_step_x, float* pixel_step_y, float* color)
 {
-	float new_org[3];
-
-	const float w = static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nWidth / 2) / cmainframe::activewnd->m_pXYWnd->m_fScale;
-	const float h = static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nHeight / 2) / cmainframe::activewnd->m_pXYWnd->m_fScale;
+	const float w = static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nWidth) / 2.0f / cmainframe::activewnd->m_pXYWnd->m_fScale;
+	const float h = static_cast<float>(cmainframe::activewnd->m_pXYWnd->m_nHeight) / 2.0f / cmainframe::activewnd->m_pXYWnd->m_fScale;
 
 	const int nDim1 = cmainframe::activewnd->m_pXYWnd->m_nViewType == YZ;
 	const int nDim2 = (cmainframe::activewnd->m_pXYWnd->m_nViewType != XY) + 1;
@@ -40,11 +38,31 @@ void reposition_viewtype_hint(const char* text, game::Font_s* font, [[maybe_unus
 		hd = 0.5f / cmainframe::activewnd->m_pXYWnd->m_fScale;
 	}
 
+	float new_org[3];
 	new_org[nDim1] = (cmainframe::activewnd->m_pXYWnd->m_vOrigin[nDim1] - w + 28.0f / cmainframe::activewnd->m_pXYWnd->m_fScale) + hc;
-	new_org[nDim2] = (cmainframe::activewnd->m_pXYWnd->m_vOrigin[nDim2] - h + 28.0f / cmainframe::activewnd->m_pXYWnd->m_fScale) + hd;
+	new_org[nDim2] = (cmainframe::activewnd->m_pXYWnd->m_vOrigin[nDim2] - h + 32.0f / cmainframe::activewnd->m_pXYWnd->m_fScale) + hd;
 	new_org[nDim3] = 0.0f;
 
+
+	//pixel_step_x[0] += 0.5f;
+	//pixel_step_y[1] -= 0.5f;
+
+	//*pixel_step_y += 0.5f;
+
 	components::renderer::R_AddCmdDrawTextAtPosition(text, font, new_org, pixel_step_x, pixel_step_y, color);
+
+	if (dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
+	{
+		float mouse_coords_org[3];		
+		mouse_coords_org[nDim1] = (cmainframe::activewnd->m_pXYWnd->m_vOrigin[nDim1] - w + 28.0f / cmainframe::activewnd->m_pXYWnd->m_fScale) + hc;
+		mouse_coords_org[nDim2] = (cmainframe::activewnd->m_pXYWnd->m_vOrigin[nDim2] - h + 18.0f / cmainframe::activewnd->m_pXYWnd->m_fScale) + hd;
+		mouse_coords_org[nDim3] = 0.0f;
+		
+		if (cmainframe::activewnd->m_strStatus[1])
+		{
+			components::renderer::R_AddCmdDrawTextAtPosition(cmainframe::activewnd->m_strStatus[1], font, mouse_coords_org, pixel_step_x, pixel_step_y, color);
+		}
+	}
 }
 
 
@@ -579,6 +597,9 @@ void cxywnd::register_dvars()
 
 void cxywnd::hooks()
 {
+	// mouse cursor position print format
+	utils::hook::set_string(0x6E7018, "[ %.1f ] [ %.1f ] [ %.1f ]");
+
 	// reposition xy - xz - yz hint text
 	utils::hook(0x4690C5, reposition_viewtype_hint, HOOK_CALL).install()->quick();
 

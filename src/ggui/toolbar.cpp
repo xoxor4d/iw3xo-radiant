@@ -122,6 +122,57 @@ namespace ggui
 		}
 	}
 
+	bool toolbar_dialog::image_button_label(const char* label, const char* image_name, bool image_uv, bool& hovered_state_bg, const char* tooltip, const ImVec4* bg_col_hovered, const ImVec4* bg_col_active, const ImVec2* btn_size)
+	{
+		bool ret_state = false;
+
+		if (const auto	image = game::Image_RegisterHandle(image_name);
+						image && image->texture.data)
+		{
+			const ImVec2 uv0 = image_uv ? ImVec2(0.5f, 0.0f) : ImVec2(0.0f, 0.0f);
+			const ImVec2 uv1 = image_uv ? ImVec2(1.0f, 1.0f) : ImVec2(0.5f, 1.0f);
+
+			const ImVec4 bg_col = hovered_state_bg ? *bg_col_hovered : *bg_col_active;
+
+			ImGui::BeginGroup();
+			{
+				const float cursor_y = ImGui::GetCursorPos().y;
+				ImGui::SetCursorPosY(cursor_y - 4.0f);
+				ImGui::TextUnformatted(label);
+
+				ImGui::SameLine(0, 2.0f);
+				ImGui::SetCursorPosY(cursor_y);
+				if (ImGui::ImageButton(image->texture.data, *btn_size, uv0, uv1, 0, bg_col))
+				{
+					ret_state = true;
+				}
+
+				hovered_state_bg = ImGui::IsItemHovered();
+
+				ImGui::EndGroup();
+			}
+
+			if (tooltip)
+			{
+				TT(tooltip);
+			}
+		}
+		else
+		{
+			if (ImGui::Button(image_name))
+			{
+				ret_state = true;
+			}
+
+			if (tooltip)
+			{
+				TT(tooltip);
+			}
+		}
+
+		return ret_state;
+	}
+
 	bool toolbar_dialog::image_togglebutton(const char* image_name, bool& hovered_state, bool toggle_state, const char* tooltip, ImVec4* bg_col, ImVec4* bg_col_hovered, ImVec4* bg_col_active, ImVec2* btn_size)
 	{
 		ImVec2 button_size = TB_IMAGEBUTTON_SIZE;

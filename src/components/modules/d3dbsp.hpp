@@ -102,9 +102,13 @@ namespace components
 		static const void* Com_GetBspLump(LumpType type, unsigned int elemSize, unsigned int* count);
 		static bool Com_GetBspLumpBool(LumpType type);
 		static bool Com_LoadBsp(const char* filename);
-		static bool radiant_load_bsp(const char* bsppath);
-		static void compile_bsp(const std::string& bsp_name);
 
+		static bool radiant_load_bsp(const char* bsppath);
+		static void reload_bsp();
+
+		static void compile_bsp(const std::string& bsp_name);
+		static void compile_current_map();
+		
 		static void force_dvars();
 		static void register_dvars();
 

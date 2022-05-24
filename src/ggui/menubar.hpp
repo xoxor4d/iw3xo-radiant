@@ -6,12 +6,13 @@ namespace ggui
 	class menubar_dialog final : public ggui::ggui_module
 	{
 		float m_height;
+		std::string process_str;
 
 	public:
 		menubar_dialog()
 		{
 			set_gui_type(GUI_TYPE_DEF);
-			m_height = 8.0f;
+			this->m_height = 8.0f;
 		}
 
 
@@ -20,14 +21,19 @@ namespace ggui
 
 		void menubar();
 
-		float get_height() const
+		[[nodiscard]] float get_height() const
 		{
-			return m_height;
+			return this->m_height;
 		}
 
 		void set_height(const float new_height)
 		{
-			m_height = new_height;
+			this->m_height = new_height;
+		}
+
+		void set_process_status(const std::string& str)
+		{
+			this->process_str = str;
 		}
 
 	private:

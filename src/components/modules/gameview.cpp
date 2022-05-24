@@ -423,27 +423,27 @@ namespace components
 			gameview::set_state(!dvars::radiant_gameview->current.enabled);
 		});
 
-		command::register_command_with_hotkey("filter_toggle_geo"s, [this](auto)
+		command::register_command_with_hotkey("toggle_filter_geo"s, [this](auto)
 		{
 			gameview::toggle_all_geo(!gameview::get_all_geo_state());
 		});
 
-		command::register_command_with_hotkey("filter_toggle_ents"s, [this](auto)
+		command::register_command_with_hotkey("toggle_filter_ents"s, [this](auto)
 		{
 			gameview::toggle_all_entities(!gameview::get_all_ents_state());
 		});
 
-		command::register_command_with_hotkey("filter_toggle_trigger"s, [this](auto)
+		command::register_command_with_hotkey("toggle_filter_trigger"s, [this](auto)
 		{
 			gameview::toggle_all_triggers(!gameview::get_all_triggers_state());
 		});
 
-		command::register_command_with_hotkey("filter_toggle_others"s, [this](auto)
+		command::register_command_with_hotkey("toggle_filter_others"s, [this](auto)
 		{
 			gameview::toggle_all_others(!gameview::get_all_others_state());
 		});
 
-		command::register_command_with_hotkey("filter_toggle_all"s, [this](auto)
+		command::register_command_with_hotkey("toggle_filter_all"s, [this](auto)
 		{
 			// restore states if was toggled manually
 			if (gameview::get_all_geo_state())		gameview::toggle_all_geo(false);

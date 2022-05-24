@@ -953,7 +953,8 @@ namespace ggui
 
 				if (ImGui::MenuItem("Reload d3dbsp"))
 				{
-					components::command::execute("reload_bsp");
+					components::d3dbsp::reload_bsp();
+
 				} TT("Reload the currently loaded bsp.\nTries to automatically load a bsp based of the .map name if no bsp is loaded.");
 
 				SEPERATORV(0.0f);
@@ -974,19 +975,17 @@ namespace ggui
 						components::command::execute("toggle_bsp_radiant");
 					}
 					
-					if (ImGui::MenuItem("Draw Radiant World", ggui::hotkey_dialog::get_hotkey_for_command("filter_toggle_all").c_str(), !tstate))
+					if (ImGui::MenuItem("Draw Radiant World", ggui::hotkey_dialog::get_hotkey_for_command("toggle_filter_all").c_str(), !tstate))
 					{
-						components::command::execute("filter_toggle_all");
+						components::command::execute("toggle_filter_all");
 					}
 
 					SEPERATORV(0.0f);
 
-					if(ImGui::MenuItem("Compile current map"))
+					if(ImGui::MenuItem("Compile current map", ggui::hotkey_dialog::get_hotkey_for_command("bsp_compile").c_str()))
 					{
-						std::string d3dbsp_name = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
-						utils::erase_substring(d3dbsp_name, ".map");
+						components::d3dbsp::compile_current_map();
 
-						components::d3dbsp::compile_bsp(d3dbsp_name);
 					} TT("Compile currently loaded .map with setting specified within 'Compile Settings'.\nAutomatically reloads the bsp when finished.");
 
 					if (ImGui::MenuItem("Compile Settings .."))
@@ -1897,7 +1896,7 @@ namespace ggui
 			//}
 			ImGui::EndGroup(); // used to calculate total width below
 
-			if (dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
+			/*if (dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
 			{
 				const auto menubar_width = ImGui::GetItemRectSize().x + 24.0f;
 				const auto gridpos_text_width = ImGui::CalcTextSize(cmainframe::activewnd->m_strStatus[1]).x;
@@ -1914,6 +1913,41 @@ namespace ggui
 						ImGui::TextUnformatted(cmainframe::activewnd->m_strStatus[1]);
 					}
 				}
+			}*/
+
+			if(components::process::pthis->is_active())
+			{
+				const auto menubar_height = ImGui::GetItemRectSize().y;
+				const auto tb = GET_GUI(ggui::toolbar_dialog);
+
+				ImVec4 spinner_color = ImVec4(0.49f, 0.2f, 0.2f, 1.0f);
+
+				ImVec4 toolbar_button_background_active = ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector);
+				ImVec4 toolbar_button_background_hovered = toolbar_button_background_active + ImVec4(0.10f, 0.1f, 0.1f, 0.0f);
+				ImVec2 toolbar_button_size = ImVec2(menubar_height, menubar_height);
+
+				const char* proc_str = process_str.empty() ? "Spawning Process" : process_str.c_str();
+				const float proc_str_width = ImGui::CalcTextSize(proc_str).x;
+
+				// not using a group to calculate the widget size because it flickers upon text change (frame delay)
+
+				ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height - 32.0f);
+
+				static bool hov_active_proc;
+				if (tb->image_button_label(proc_str
+					, "fx_stop"
+					, true
+					, hov_active_proc
+					, "Kill active process."
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					components::process::pthis->kill_process();
+				}
+
+				ImGui::SameLine(ImGui::GetWindowWidth() - 26.0f);
+				ImGui::Spinner("##proc_spinner", 6.0, 2.0f, ImGui::ColorConvertFloat4ToU32(spinner_color));
 			}
 
 			ImGui::PopStyleVar(2); // ImGuiStyleVar_WindowPadding | ImGuiStyleVar_ItemSpacing

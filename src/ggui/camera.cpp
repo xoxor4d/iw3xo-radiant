@@ -209,13 +209,13 @@ namespace ggui
 							if (tb->image_togglebutton("toggle_radiant_world"
 								, hov_toggle_world
 								, !tstate
-								, std::string("Toggle radiant rendering " + ggui::hotkey_dialog::get_hotkey_for_command("filter_toggle_all")).c_str()
+								, std::string("Toggle radiant rendering " + ggui::hotkey_dialog::get_hotkey_for_command("toggle_filter_all")).c_str()
 								, &toolbar_button_background
 								, &toolbar_button_background_hovered
 								, &toolbar_button_background_active
 								, &toolbar_button_size))
 							{
-								components::command::execute("filter_toggle_all");
+								components::command::execute("toggle_filter_all");
 
 							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 						}
@@ -362,7 +362,7 @@ namespace ggui
 								if (tb->image_togglebutton("fx_pause"
 									, hov_fx_pause
 									, can_fx_play
-									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str()
+									, std::string("Pause Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str()
 									, &toolbar_button_background
 									, &toolbar_button_background_hovered
 									, &toolbar_button_background_active
