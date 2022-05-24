@@ -103,6 +103,7 @@ namespace components
 		static bool Com_GetBspLumpBool(LumpType type);
 		static bool Com_LoadBsp(const char* filename);
 		static bool radiant_load_bsp(const char* bsppath);
+		static void compile_bsp(const std::string& bsp_name);
 
 		static void force_dvars();
 		static void register_dvars();

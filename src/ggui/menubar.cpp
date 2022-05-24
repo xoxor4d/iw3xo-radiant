@@ -68,6 +68,8 @@ namespace ggui
 					cdeclcall(void, 0x423AA0); //cmainframe::OnFileNew
 				}
 
+				SEPERATORV(0.0f);
+
 				if (ImGui::MenuItem("Open ..", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) 
 				{
 					// logic :: ggui::file_dialog_frame
@@ -88,6 +90,29 @@ namespace ggui
 						cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
 					}
 				}
+
+				if (ImGui::BeginMenu("Open Recent", game::g_qeglobals->d_lpMruMenu->wNbItemFill))
+				{
+					// itemfill = amount of strings inside "lpMRU"
+					for (std::uint16_t i = 0; i < game::g_qeglobals->d_lpMruMenu->wNbItemFill; i++)
+					{
+						// "lpMRU" strings are 128chars wide
+						const char* mru_item_str = game::g_qeglobals->d_lpMruMenu->lpMRU + (game::g_qeglobals->d_lpMruMenu->wMaxSizeLruItem * i);
+
+						if (mru_item_str && ImGui::MenuItem(mru_item_str))
+						{
+							typedef  BOOL(__thiscall* CMainFrame_OnMru_t)(cmainframe* pThis, std::uint16_t nID);
+							CMainFrame_OnMru_t CMainFrame_OnMru = reinterpret_cast<CMainFrame_OnMru_t>(0x423FE0);
+
+							//mru id's start at 8000 (wIdMru) + 1 for the first item as DoMru() subtracts 1
+							CMainFrame_OnMru(cmainframe::activewnd, i + 1 + game::g_qeglobals->d_lpMruMenu->wIdMru);
+						}
+					}
+
+					ImGui::EndMenu(); // Open Recent
+				}
+
+				SEPERATORV(0.0f);
 
 				if (ImGui::MenuItem("Save", ggui::hotkey_dialog::get_hotkey_for_command("FileSave").c_str())) {
 					cdeclcall(void, 0x423B80); //cmainframe::OnFileSave
@@ -113,56 +138,6 @@ namespace ggui
 						cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
 					}
 				}
-
-				SEPERATORV(0.0f);
-
-				if (ImGui::BeginMenu("Open Recent", game::g_qeglobals->d_lpMruMenu->wNbItemFill))
-				{
-					// itemfill = amount of strings inside "lpMRU"
-					for (std::uint16_t i = 0; i < game::g_qeglobals->d_lpMruMenu->wNbItemFill; i++)
-					{
-						// "lpMRU" strings are 128chars wide
-						const char* mru_item_str = game::g_qeglobals->d_lpMruMenu->lpMRU + (game::g_qeglobals->d_lpMruMenu->wMaxSizeLruItem * i);
-
-						if (mru_item_str && ImGui::MenuItem(mru_item_str))
-						{
-							typedef  BOOL(__thiscall* CMainFrame_OnMru_t)(cmainframe* pThis, std::uint16_t nID);
-							CMainFrame_OnMru_t CMainFrame_OnMru = reinterpret_cast<CMainFrame_OnMru_t>(0x423FE0);
-
-							//mru id's start at 8000 (wIdMru) + 1 for the first item as DoMru() subtracts 1
-							CMainFrame_OnMru(cmainframe::activewnd, i + 1 + game::g_qeglobals->d_lpMruMenu->wIdMru);
-						}
-					}
-
-					ImGui::EndMenu(); // Open Recent
-				}
-
-				SEPERATORV(0.0f);
-
-				if (ImGui::MenuItem("Load d3dbsp .."))
-				{
-					const auto egui = GET_GUI(ggui::entity_dialog);
-					const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath") + "\\raw\\maps\\mp\\"s;
-
-					const auto file = GET_GUI(ggui::file_dialog);
-					file->set_default_path(path_str);
-					file->set_file_handler(ggui::FILE_DIALOG_HANDLER::D3DBSP_LOAD);
-					file->set_file_op_type(file_dialog::FileDialogType::OpenFile);
-					file->set_file_ext(".d3dbsp");
-					file->open();
-				}
-
-				const bool can_reload_bsp = components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
-				ImGui::BeginDisabled(!can_reload_bsp);
-				{
-					if (ImGui::MenuItem("Reload d3dbsp"))
-					{
-						components::command::execute("reload_bsp");
-					}
-
-					ImGui::EndDisabled();
-				}
-				
 
 				SEPERATORV(0.0f);
 
@@ -574,23 +549,7 @@ namespace ggui
 					if (ImGui::MenuItem("Filmtweak Settings"))
 					{
 						const auto cs = GET_GUI(ggui::camera_settings_dialog);
-						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
-						{
-							// close entire window if tab is in-front
-							cs->close(); // toggle
-						}
-						else if (!cs->is_active())
-						{
-							// open window with focused fakesun tab
-							cs->set_tabstate_fakesun(true);
-							cs->open(); // toggle
-						}
-						else
-						{
-							// window is open but tab not focused
-							cs->set_tabstate_fakesun(true);
-							cs->focus_fakesun();
-						}
+						cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
 					}
 
 					SEPERATORV(0.0f);
@@ -606,23 +565,7 @@ namespace ggui
 					if (ImGui::MenuItem("Fake Sun Settings"))
 					{
 						const auto cs = GET_GUI(ggui::camera_settings_dialog);
-						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
-						{
-							// close entire window if tab is in-front
-							cs->close(); // toggle
-						}
-						else if (!cs->is_active())
-						{
-							// open window with focused fakesun tab
-							cs->set_tabstate_fakesun(true);
-							cs->open(); // toggle
-						}
-						else
-						{
-							// window is open but tab not focused
-							cs->set_tabstate_fakesun(true);
-							cs->focus_fakesun();
-						}
+						cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
 					}
 
 					SEPERATORV(0.0f);
@@ -954,29 +897,12 @@ namespace ggui
 				ImGui::EndMenu(); // Renderer
 			}
 
-
 			if (ImGui::BeginMenu("Effects"))
 			{
 				if (ImGui::MenuItem("Effect Settings .."))
 				{
 					const auto cs = GET_GUI(ggui::camera_settings_dialog);
-					if (cs->get_tabstate_effects() && cs->is_tabstate_effects_active())
-					{
-						// close entire window if tab is in-front
-						cs->close();
-					}
-					else if (!cs->is_active())
-					{
-						// open window with focused effects tab
-						cs->set_tabstate_effects(true);
-						cs->open();
-					}
-					else
-					{
-						// window is open but tab not focused
-						cs->set_tabstate_effects(true);
-						cs->focus_effects();
-					}
+					cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
 				}
 
 				if (ImGui::MenuItem("Edit Current Effect", 0, nullptr, components::effects::effect_can_play()))
@@ -1008,6 +934,71 @@ namespace ggui
 				IMGUI_MENU_WIDGET_SINGLE("Timescale", ImGui::DragFloat("##timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f));
 				IMGUI_MENU_WIDGET_SINGLE("Repeat Delay", ImGui::DragFloat("##repeatdelay", &fx_system::ed_looppause, 0.01f, 0.05f, FLT_MAX, "%.2f"));
 				ImGui::EndMenu(); // Effects
+			}
+
+			if (ImGui::BeginMenu("d3dbsp"))
+			{
+				if (ImGui::MenuItem("Load d3dbsp .."))
+				{
+					const auto egui = GET_GUI(ggui::entity_dialog);
+					const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath") + "\\raw\\maps\\mp\\"s;
+
+					const auto file = GET_GUI(ggui::file_dialog);
+					file->set_default_path(path_str);
+					file->set_file_handler(ggui::FILE_DIALOG_HANDLER::D3DBSP_LOAD);
+					file->set_file_op_type(file_dialog::FileDialogType::OpenFile);
+					file->set_file_ext(".d3dbsp");
+					file->open();
+				}
+
+				if (ImGui::MenuItem("Reload d3dbsp"))
+				{
+					components::command::execute("reload_bsp");
+				} TT("Reload the currently loaded bsp.\nTries to automatically load a bsp based of the .map name if no bsp is loaded.");
+
+				SEPERATORV(0.0f);
+
+				const bool can_reload_bsp = components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
+				ImGui::BeginDisabled(!can_reload_bsp);
+				{
+					const auto gameview = components::gameview::p_this;
+					const bool tstate = gameview->get_all_geo_state() || gameview->get_all_ents_state() || gameview->get_all_triggers_state() || gameview->get_all_others_state();
+
+					if (ImGui::MenuItem("Draw d3dbsp", ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp").c_str(), dvars::r_draw_bsp->current.enabled))
+					{
+						dvars::set_bool(dvars::r_draw_bsp, !dvars::r_draw_bsp->current.enabled);
+					}
+
+					if (ImGui::MenuItem("Toggle d3dbsp/radiant", ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp_radiant").c_str()))
+					{
+						components::command::execute("toggle_bsp_radiant");
+					}
+					
+					if (ImGui::MenuItem("Draw Radiant World", ggui::hotkey_dialog::get_hotkey_for_command("filter_toggle_all").c_str(), !tstate))
+					{
+						components::command::execute("filter_toggle_all");
+					}
+
+					SEPERATORV(0.0f);
+
+					if(ImGui::MenuItem("Compile current map"))
+					{
+						std::string d3dbsp_name = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
+						utils::erase_substring(d3dbsp_name, ".map");
+
+						components::d3dbsp::compile_bsp(d3dbsp_name);
+					} TT("Compile currently loaded .map with setting specified within 'Compile Settings'.\nAutomatically reloads the bsp when finished.");
+
+					if (ImGui::MenuItem("Compile Settings .."))
+					{
+						const auto cs = GET_GUI(ggui::camera_settings_dialog);
+						cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
+					}
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::EndMenu(); // BSP
 			}
 
 

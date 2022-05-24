@@ -151,6 +151,7 @@ namespace components
 
 		this->m_is_running = false;
 		this->m_kill_thread = false;
+		this->m_disable_callback = false;
 		this->m_callback = nullptr;
 		this->m_output_to_console = false;
 	}

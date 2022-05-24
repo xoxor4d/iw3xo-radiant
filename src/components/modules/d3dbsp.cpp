@@ -432,6 +432,75 @@ namespace components
 		return false;
 	}
 
+	// <bsp_name> plain map name with no extension or pathing
+	void d3dbsp::compile_bsp(const std::string& bsp_name)
+	{
+		const auto egui = GET_GUI(ggui::entity_dialog);
+		const auto settings = GET_GUI(ggui::camera_settings_dialog);
+
+		const char* base_path = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+		const char* map_path = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+		//std::string d3dbsp_name = components::d3dbsp::loaded_bsp_path.substr(components::d3dbsp::loaded_bsp_path.find_last_of("\\") + 1);
+		//utils::erase_substring(d3dbsp_name, ".d3dbsp");
+
+		const bool is_mp = utils::starts_with(bsp_name, "mp_");
+		const std::string bsp_path = (is_mp ? R"(maps\mp\)"s : R"(maps\)"s) + bsp_name + ".d3dbsp";
+
+		std::string bps_args;
+		bps_args += (settings->m_bsp_bsp_only_ents ? "-onlyents" : "") + " "s;
+		bps_args += (settings->m_bsp_bsp_samplescale_enabled ? ("-samplescale " + std::to_string(settings->m_bsp_bsp_samplescale)) : "") + " "s;
+		bps_args += (settings->m_bsp_bsp_custom_cmd_enabled ? settings->m_bsp_bsp_custom_cmd : "") + " "s;
+		utils::rtrim(bps_args);
+
+		std::string light_args;
+		light_args += (settings->m_bsp_light_fast ? "-fast" : "") + " "s;
+		light_args += (settings->m_bsp_light_extra ? "-extra" : "") + " "s;
+		light_args += (settings->m_bsp_light_modelshadow ? "-modelshadow" : "") + " "s;
+		light_args += (settings->m_bsp_light_dump ? "-dumpoptions" : "") + " "s;
+		light_args += (settings->m_bsp_light_traces_enabled ? ("-traces " + std::to_string(settings->m_bsp_light_traces)) : "") + " "s;
+		light_args += (settings->m_bsp_light_custom_cmd_enabled ? settings->m_bsp_light_custom_cmd : "") + " "s;
+		utils::rtrim(light_args);
+
+		std::string args;
+
+		// launch arg
+		args += R"(")"s + base_path + R"(\bin\IW3xRadiant\batch\compile_bsp.bat")"s + " ";
+
+		// bsppath
+		args += R"(")"s + base_path + (is_mp ? R"(\raw\maps\mp\")"s : R"(\raw\maps\")"s) + " "s;
+
+		// mapsourcepath
+		args += R"(")"s + map_path + R"(\")"s + " "s;
+
+		// treepath
+		args += R"(")"s + base_path + R"(\")"s + " "s;
+
+		// mapname
+		args += bsp_name + " "s;
+
+		// parmBSPOptions
+		args += (!bps_args.empty() ? R"(")" + bps_args + R"(" )" : "- ");
+
+		// parmLightOptions
+		args += (!light_args.empty() ? R"(")" + light_args + R"(" )" : "- ");
+
+		// compileBSP
+		args += (settings->m_bsp_bsp_compile ? "1 "s : "0 "s);
+
+		// compileLight
+		args += (settings->m_bsp_light_compile ? "1 "s : "0 "s);
+		
+		process::pthis->set_output(true);
+		process::pthis->set_arguments(args);
+		process::pthis->set_callback([bsp_path]
+		{
+			d3dbsp::radiant_load_bsp(bsp_path.c_str());
+		});
+
+		process::pthis->create_process();
+	}
+
 	void d3dbsp::force_dvars()
 	{
 		if (const auto& sm_enable = game::Dvar_FindVar("sm_enable"); sm_enable && sm_enable->current.enabled) {
@@ -490,7 +559,7 @@ namespace components
 			/* desc		*/ "enable to overwrite bsp sunspecular with fakesun settings");
 	}
 
-	void compile_bsp()
+	void compile_bsp_old()
 	{
 		const auto egui = GET_GUI(ggui::entity_dialog);
 		const char* base_path = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
@@ -570,6 +639,8 @@ namespace components
 		// * sm_enable culls lights
 		// * ^ shadows are completly wrong
 		// * TODO: load "dynamic" entities like exploding cars 
+		// * TODO: draw sun / load sun dvars from sun file
+		// * TODO: cancel compile process gui
 
 		// #
 		// R_LoadWorldInternal patches
@@ -603,6 +674,9 @@ namespace components
 
 		// RENDERTARGET_SCENE to FRAMEBUFFER in R_DrawPointLitSurfsCallback
 		utils::hook::set<BYTE>(0x55BC8F + 1, 0x1);
+
+		// R_LoadSunThroughDvars
+		utils::hook::nop(0x52DAFA, 5); // Com_LoadDvarsFromBuffer (not implemented)
 
 		// #
 		// no bsp culling
@@ -659,12 +733,11 @@ namespace components
 			dvars::set_bool(dvars::r_draw_bsp, !tstate);
 			command::execute("filter_toggle_all");
 		});
-
-		// TODO: remove
-		command::register_command("bsp"s, [this](auto)
+		
+		/*command::register_command("bsp"s, [this](auto)
 		{
-			compile_bsp();
-		});
+				compile_bsp_old();
+		});*/
 
 		// TODO: remove
 		command::register_command("kill"s, [this](auto)

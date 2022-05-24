@@ -174,7 +174,7 @@ namespace ggui
 							if (tb->image_togglebutton(show_bsp_icon ? "toggle_bsp" : "toggle_radiant_world"
 								, hov_toggle_bsp_radiant
 								, dvars::r_draw_bsp->current.enabled
-								, std::string("Toggle between visibility of the loaded d3dbsp and radiant" + ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp_radiant") + "\nButton can be split into two via 'Preferences > Camera > Merge BSP/Radiant buttons'").c_str()
+								, std::string("Toggle between visibility of the loaded d3dbsp and radiant " + ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp_radiant") + "\nButton can be split into two via 'Preferences > Camera > Merge BSP/Radiant buttons'").c_str()
 								, &toolbar_button_background
 								, &toolbar_button_background_hovered
 								, &toolbar_button_background_active
@@ -209,7 +209,7 @@ namespace ggui
 							if (tb->image_togglebutton("toggle_radiant_world"
 								, hov_toggle_world
 								, !tstate
-								, std::string("Toggle radiant rendering" + ggui::hotkey_dialog::get_hotkey_for_command("filter_toggle_all")).c_str()
+								, std::string("Toggle radiant rendering " + ggui::hotkey_dialog::get_hotkey_for_command("filter_toggle_all")).c_str()
 								, &toolbar_button_background
 								, &toolbar_button_background_hovered
 								, &toolbar_button_background_active
@@ -219,7 +219,24 @@ namespace ggui
 
 							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 						}
-						
+
+						ImGui::PushID("settings3");
+						static bool hov_bsp_settings;
+						if (tb->image_togglebutton("fakesun_settings"
+							, hov_bsp_settings
+							, hov_bsp_settings
+							, "Open BSP settings menu"
+							, &toolbar_button_background
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &toolbar_button_size))
+						{
+							const auto cs = GET_GUI(ggui::camera_settings_dialog);
+							cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
+
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+						ImGui::PopID();
+
 						ImGui::PopStyleVar();
 					}
 				}
@@ -289,24 +306,8 @@ namespace ggui
 						, &toolbar_button_size))
 					{
 						const auto cs = GET_GUI(ggui::camera_settings_dialog);
-						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
-						{
-							// close entire window if tab is in-front
-							cs->close(); // toggle
-						}
-						else if (!cs->is_active())
-						{
-							// open window with focused fakesun tab
-							cs->set_tabstate_fakesun(true);
-							cs->open(); // toggle
-						}
-						else
-						{
-							// window is open but tab not focused
-							cs->set_tabstate_fakesun(true);
-							cs->focus_fakesun();
-						}
-
+						cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
+						
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 					ImGui::PopStyleVar();
@@ -422,23 +423,7 @@ namespace ggui
 								, &toolbar_button_size))
 							{
 								const auto cs = GET_GUI(ggui::camera_settings_dialog);
-								if (cs->get_tabstate_effects() && cs->is_tabstate_effects_active())
-								{
-									// close entire window if tab is in-front
-									cs->close(); // toggle
-								}
-								else if (!cs->is_active())
-								{
-									// open window with focused effects tab
-									cs->set_tabstate_effects(true);
-									cs->open(); // toggle
-								}
-								else
-								{
-									// window is open but tab not focused
-									cs->set_tabstate_effects(true);
-									cs->focus_effects();
-								}
+								cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
 
 							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 							ImGui::PopID();

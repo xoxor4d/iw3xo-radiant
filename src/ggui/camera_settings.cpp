@@ -65,6 +65,8 @@ namespace ggui
 		SPACING(0.0f, 2.0f);
 	}
 
+	// --------------------
+
 	void camera_settings_dialog::effect_settings()
 	{
 		const auto& style = ImGui::GetStyle();
@@ -143,6 +145,101 @@ namespace ggui
 		}
 	}
 
+	// --------------------
+
+	void camera_settings_dialog::bsp_settings()
+	{
+		const auto& style = ImGui::GetStyle();
+		const float second_column = ImGui::GetWindowContentRegionWidth() * 0.5f;
+
+		ImGui::Indent(8.0f);
+		ImGui::Spacing();
+
+		// -----------------
+		ImGui::title_with_seperator("BSP", false, 0, 2, 6.0f);
+
+
+		ImGui::Checkbox("Compile BSP", &this->m_bsp_bsp_compile);
+		ImGui::SameLine(second_column);
+		ImGui::Checkbox("Only Ents", &this->m_bsp_bsp_only_ents);
+
+		ImGui::Checkbox("Samplescale", &this->m_bsp_bsp_samplescale_enabled);
+		ImGui::SameLine(second_column);
+		ImGui::BeginDisabled(!this->m_bsp_bsp_samplescale_enabled);
+		{
+			ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX() - 4.0f);
+			ImGui::DragFloat("##num_samplescale", &this->m_bsp_bsp_samplescale, 0.01f, 0.1f, 16.0f, "%.2f");
+			ImGui::EndDisabled();
+		}
+
+		SPACING(0.0f, 4.0f);
+
+		ImGui::Checkbox("Custom Commandline Settings - BSP", &this->m_bsp_bsp_custom_cmd_enabled);
+		ImGui::BeginDisabled(!this->m_bsp_bsp_custom_cmd_enabled);
+		{
+			ImGui::SetNextItemWidth(-8);
+			ImGui::InputText("##bsp_commandline", &this->m_bsp_bsp_custom_cmd, ImGuiInputTextFlags_None);
+			ImGui::EndDisabled();
+		}
+
+
+		// -----------------
+		ImGui::title_with_seperator("Light", true, 0, 2, 6.0f);
+
+		ImGui::Checkbox("Compile Light", &this->m_bsp_light_compile);
+
+		ImGui::Checkbox("Fast", &this->m_bsp_light_fast);
+		ImGui::SameLine(second_column);
+		ImGui::Checkbox("Extra", &this->m_bsp_light_extra);
+
+		ImGui::Checkbox("Modelshadow", &this->m_bsp_light_modelshadow);
+		ImGui::SameLine(second_column);
+		ImGui::Checkbox("Dump Options", &this->m_bsp_light_dump);
+
+		ImGui::Checkbox("Traces", &this->m_bsp_light_traces_enabled);
+		ImGui::SameLine(second_column);
+		ImGui::BeginDisabled(!this->m_bsp_light_traces_enabled);
+		{
+			ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX() - 4.0f);
+			ImGui::DragInt("##num_traces", &this->m_bsp_light_traces, 0.01f, 1, 512);
+			ImGui::EndDisabled();
+		}
+
+		SPACING(0.0f, 4.0f);
+
+		ImGui::Checkbox("Custom Commandline Settings - Light", &this->m_bsp_light_custom_cmd_enabled);
+		ImGui::BeginDisabled(!this->m_bsp_light_custom_cmd_enabled);
+		{
+			ImGui::SetNextItemWidth(-style.FramePadding.x);
+			ImGui::InputText("##light_commandline", &this->m_bsp_light_custom_cmd, ImGuiInputTextFlags_None);
+			ImGui::EndDisabled();
+		}
+
+
+		// -----------------
+		ImGui::title_with_seperator("Compiling", true, 0, 2, 6.0f);
+
+
+		const bool can_compile = components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
+		ImGui::BeginDisabled(!can_compile);
+		{
+			//const std::string d3dbsp_name = components::d3dbsp::loaded_bsp_path.substr(components::d3dbsp::loaded_bsp_path.find_last_of("\\") + 1);
+			std::string d3dbsp_name = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
+			utils::erase_substring(d3dbsp_name, ".map");
+
+			const std::string button_str = can_compile ? ("Compile " + d3dbsp_name) : "Compile BSP";
+
+			if(ImGui::Button(button_str.c_str(), ImVec2(-style.FramePadding.x, ImGui::GetFrameHeight())))
+			{
+				components::d3dbsp::compile_bsp(d3dbsp_name);
+			}
+
+			ImGui::EndDisabled();
+		}
+	}
+	
+	// --------------------
+
 	void camera_settings_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 220.0f);
@@ -213,6 +310,10 @@ namespace ggui
 
 					case tab_state_effects:
 						effect_settings();
+						break;
+
+					case tab_state_bsp:
+						bsp_settings();
 						break;
 
 					default:
