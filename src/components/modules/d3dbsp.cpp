@@ -488,8 +488,78 @@ namespace components
 			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::none,
 			/* desc		*/ "enable to overwrite bsp sunspecular with fakesun settings");
-		extern game::dvar_s* r_draw_bsp_overwrite_sundir;
-		extern game::dvar_s* r_draw_bsp_overwrite_suncolor;
+	}
+
+	void compile_bsp()
+	{
+		const auto egui = GET_GUI(ggui::entity_dialog);
+		const char* base_path = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+		const char* map_path = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+		std::string mapname;
+		bool is_mp = false;
+
+		if (game::current_map_filepath && game::current_map_filepath != "unnamed.map"s)
+		{
+			mapname = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
+			utils::erase_substring(mapname, ".map");
+			is_mp = utils::starts_with(mapname, "mp_");
+		}
+		else
+		{
+			game::printf_to_console("^1 compile_bsp: Failed to get map name. (unnamed.map?)");
+			return;
+		}
+
+		bool compile_bsp = true;
+		bool compile_lights = true;
+
+		bool has_bsp_args = false;
+		std::string bps_args = "-onlyents";
+
+		bool has_light_args = true;
+		std::string light_args = "-fast";
+
+		std::string args;
+
+		// launch arg
+		args += R"(")"s + base_path + R"(\bin\IW3xRadiant\batch\compile_bsp.bat")"s + " ";
+
+		// bsppath
+		args += R"(")"s + base_path + (is_mp ? R"(\raw\maps\mp\")"s : R"(\raw\maps\")"s) + " "s;
+
+		// mapsourcepath
+		args += R"(")"s + map_path + R"(\")"s + " "s;
+
+		// treepath
+		args += R"(")"s + base_path + R"(\")"s + " "s;
+
+		// mapname
+		args += mapname + " "s;
+
+		// parmBSPOptions
+		args += (has_bsp_args ? R"(")" + bps_args + R"(" )" : "- ");
+
+		// parmLightOptions
+		args += (has_light_args ? R"(")" + light_args + R"(" )" : "- ");
+
+		// compileBSP
+		args += (compile_bsp ? "1 "s : "0 "s);
+
+		// compileLight
+		args += (compile_lights ? "1 "s : "0 "s);
+
+		// compileLight
+		//args += R"(- "-extra" 1 1 0  1)";
+
+		process::pthis->set_output(true);
+		process::pthis->set_arguments(args);
+		process::pthis->set_callback([]
+		{
+			command::execute("reload_bsp");
+		});
+
+		process::pthis->create_process();
 	}
 
 	d3dbsp::d3dbsp()
@@ -499,7 +569,6 @@ namespace components
 		// * resizing the viewport does not resize the depth buffer (dont do prepass)
 		// * sm_enable culls lights
 		// * ^ shadows are completly wrong
-		// * TODO: disable usage of CONST_SRC_CODE_LIGHT_SPOTDIR and CONST_SRC_CODE_LIGHT_SPOTFACTORS when using bsp
 		// * TODO: load "dynamic" entities like exploding cars 
 
 		// #
@@ -546,27 +615,61 @@ namespace components
 
 		// R_AddAabbTreeSurfacesInFrustum_r :: less culling :: 0x74 -> 0xEB (je to jmp)
 		//utils::hook::set<BYTE>(0x555C4C, 0xEB);
-		
-		
+
+
+		// reload the currently loaded bsp
+		// tries to automatically load a bsp based of the .map name if no bsp is loaded
 		command::register_command_with_hotkey("reload_bsp"s, [](auto)
 		{
 			if(d3dbsp::Com_IsBspLoaded() && !d3dbsp::loaded_bsp_path.empty())
 			{
 				d3dbsp::radiant_load_bsp(d3dbsp::loaded_bsp_path.c_str());
 			}
+			else
+			{
+				std::string mapname;
+				if (game::current_map_filepath && game::current_map_filepath != "unnamed.map"s)
+				{
+					mapname = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
+					utils::replace(mapname, ".map", ".d3dbsp");
+
+					const bool is_mp = utils::starts_with(mapname, "mp_");
+					const std::string bsp_path = (is_mp ? R"(maps\mp\)"s : R"(maps\)"s) + mapname;
+
+					d3dbsp::radiant_load_bsp(bsp_path.c_str());
+				}
+				else
+				{
+					game::printf_to_console("Load a .map first!");
+				}
+			}
 		});
 
+		// toggle bsp rendering on/off
 		command::register_command_with_hotkey("toggle_bsp"s, [this](auto)
 		{
 			dvars::set_bool(dvars::r_draw_bsp, !dvars::r_draw_bsp->current.enabled);
 		});
 
+		// toggle between bsp and radiant rendering 
 		command::register_command_with_hotkey("toggle_bsp_radiant"s, [this](auto)
 		{
 			const bool tstate = gameview::p_this->get_all_geo_state() || gameview::p_this->get_all_ents_state() || gameview::p_this->get_all_triggers_state() || gameview::p_this->get_all_others_state();
 
 			dvars::set_bool(dvars::r_draw_bsp, !tstate);
 			command::execute("filter_toggle_all");
+		});
+
+		// TODO: remove
+		command::register_command("bsp"s, [this](auto)
+		{
+			compile_bsp();
+		});
+
+		// TODO: remove
+		command::register_command("kill"s, [this](auto)
+		{
+			process::pthis->kill_process();
 		});
 	}
 
