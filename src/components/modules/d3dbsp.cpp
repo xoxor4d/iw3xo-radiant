@@ -537,8 +537,12 @@ namespace components
 
 	void d3dbsp::force_dvars()
 	{
-		if (const auto& sm_enable = game::Dvar_FindVar("sm_enable"); sm_enable && sm_enable->current.enabled) {
+		/*if (const auto& sm_enable = game::Dvar_FindVar("sm_enable"); sm_enable && sm_enable->current.enabled) {
 			dvars::set_bool(sm_enable, false);
+		}*/
+
+		if (const auto& r_floatz = game::Dvar_FindVar("r_floatz"); r_floatz && !r_floatz->current.enabled) {
+			dvars::set_bool(r_floatz, true);
 		}
 
 		if (const auto& r_distortion = game::Dvar_FindVar("r_distortion"); r_distortion && !r_distortion->current.enabled) {
@@ -602,7 +606,6 @@ namespace components
 		// * ^ shadows are completly wrong
 		// * TODO: load "dynamic" entities like exploding cars 
 		// * TODO: draw sun / load sun dvars from sun file
-		// * TODO: cancel compile process gui
 
 		// #
 		// R_LoadWorldInternal patches

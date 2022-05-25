@@ -1695,7 +1695,7 @@ namespace components
 		{
 			// render emissive surfs (effects)
 			renderer::RB_Draw3D();
-
+			
 			// post effects logic (filmtweaks)
 			camera_postfx();
 		}
@@ -2350,11 +2350,14 @@ namespace components
 
 	void R_DepthPrepass(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
 	{
-		//game::R_ClearScreen(cmdbuf->device, 6, game::color_white, 1.0f, false, nullptr);
-
 		game::GfxCmdBufSourceState source = {};
 		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+
+		
+
 		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FLOAT_Z);
+
+		//game::R_ClearScreen(cmdbuf->device, 6, game::color_white, 1.0f, false, nullptr);
 
 		// R_SetSceneViewport
 		source.sceneViewport = viewinfo->sceneViewport;
@@ -2460,6 +2463,21 @@ namespace components
 
 			// R_SetFrameFog
 			// R_SetSunConstants
+
+
+			const auto backend = game::get_backenddata();
+			const auto dyn_shadow_type = viewInfo->dynamicShadowType;
+
+			if (dyn_shadow_type == game::SHADOW_MAP)
+			{
+				if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+				{
+					game::RB_SunShadowMaps(backend, viewInfo);
+				}
+
+				game::RB_SpotShadowMaps(backend, viewInfo);
+			}
+
 
 			//R_DepthPrepass(&cmdBuf, viewInfo);	// no need to do a depth prepass, only causes issues upon resizing
 													// needs depthbuffer resize logic

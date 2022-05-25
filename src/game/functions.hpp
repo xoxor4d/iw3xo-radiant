@@ -285,6 +285,10 @@ namespace game
 	inline auto R_ShowTris = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x55B100);
 	inline auto R_InitCmdBufSourceState = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput * input, int)>(0x53CB20);
 
+	inline auto Com_BitCheckAssert = reinterpret_cast<BOOL (*)(const unsigned int* array, unsigned int bitNum, int size)>(0x501BA0);
+	inline auto RB_SunShadowMaps = reinterpret_cast<void (*)(game::GfxBackEndData * backend, const game::GfxViewInfo * viewinfo)>(0x56E380);
+	inline auto RB_SpotShadowMaps = reinterpret_cast<void (*)(game::GfxBackEndData * backend, const game::GfxViewInfo * viewinfo)>(0x56E100);
+
 	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/);
 	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
 
@@ -302,7 +306,7 @@ namespace game
 	inline auto DX_ResetDevice = reinterpret_cast<void (*)()>(0x5015F0);
 	inline auto Hunk_Alloc = reinterpret_cast<int* (*)(size_t)>(0x5104E0);
 	inline auto Z_Malloc = reinterpret_cast<int* (*)(size_t)>(0x4AC330);
-
+	
 
 	// *
 	// * --------------------- dvars ------------------------------
