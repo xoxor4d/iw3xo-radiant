@@ -80,7 +80,50 @@ namespace ImGui
 		ImGui::SetCursorPosY(og_cursor_y);
 	};
 
+	void DvarBool_External(const char* checkbox_label, const char* dvar_name)
+	{
+		if (const auto handle = game::Dvar_FindVar(dvar_name); handle)
+		{
+			if (ImGui::Checkbox(checkbox_label, &handle->current.enabled))
+			{
+				//dvars::set_bool(handle, handle->current.enabled);
+				handle->modified = true;
+			} TT(utils::va("%s :: %s", dvar_name, handle->description));
+		}
+	}
 
+	void DvarInt_External(const char* checkbox_label, const char* dvar_name)
+	{
+		if (const auto handle = game::Dvar_FindVar(dvar_name); handle)
+		{
+			if (ImGui::DragInt(checkbox_label, &handle->current.integer, 0.01f, handle->domain.integer.min, handle->domain.integer.max))
+			{
+				handle->modified = true;
+			} TT(utils::va("%s :: %s", dvar_name, handle->description));
+		}
+	}
+
+	void DvarFloat_External(const char* checkbox_label, const char* dvar_name)
+	{
+		if (const auto handle = game::Dvar_FindVar(dvar_name); handle)
+		{
+			if (ImGui::DragFloat(checkbox_label, &handle->current.value, 0.01f, handle->domain.value.min, handle->domain.value.max, "%.2f"))
+			{
+				handle->modified = true;
+			} TT(utils::va("%s :: %s", dvar_name, handle->description));
+		}
+	}
+
+	void DvarEnum_External(const char* label, const char* dvar_name)
+	{
+		const auto handle = game::Dvar_FindVar(dvar_name);
+
+		if (ImGui::SliderInt(label, &handle->current.integer, 0, handle->domain.enumeration.stringCount - 1, handle->domain.enumeration.strings[handle->current.integer]))
+		{
+			handle->modified = true;
+		} TT(utils::va("%s :: %s", dvar_name, handle->description));
+	}
+		
 	bool Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ED_FLAG_ flag, bool* result, bool invert_selected)
 	{
 		bool flag_wrapper = elem->editorFlags & flag;

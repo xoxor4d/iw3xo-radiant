@@ -54,11 +54,12 @@ namespace ggui
 		void	hooks();
 
 	private:
-		const std::string CAT_GUI = "Gui";
 		const std::string CAT_GENERAL = "General";
+		const std::string CAT_GUI = "Gui";
 		const std::string CAT_GRID = "Grid";
 		const std::string CAT_CAMERA = "Camera";
 		const std::string CAT_TEXTURES = "Textures";
+		const std::string CAT_RENDERER = "Renderer / BSP";
 		const std::string CAT_LIVELINK = "Live Link";
 		const std::string CAT_DEVELOPER = "Developer";
 
@@ -68,11 +69,12 @@ namespace ggui
 		void  register_child(const std::string& _child_name, const std::function<void()>& _callback);
 		float pref_child_lambda(const std::string& child_name, const float child_height, const float* bg_color, const float* border_color, const std::function<void()>& cb);
 
-		void child_gui();
 		void child_general();
+		void child_gui();
 		void child_grid();
 		void child_camera();
 		void child_textures();
+		void child_renderer_bsp();
 		void child_livelink();
 		void child_developer();
 	};

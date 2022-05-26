@@ -544,7 +544,7 @@ namespace components
 			 /* "script_exploder"
 			  * "script_gameobjectname" */
 
-			if (d3dbsp::cm.isInUse && d3dbsp::cm.mapEnts && d3dbsp::cm.mapEnts->numEntityChars)
+			if (dvars::bsp_load_entities->current.enabled && d3dbsp::cm.isInUse && d3dbsp::cm.mapEnts && d3dbsp::cm.mapEnts->numEntityChars)
 			{
 				// create a spawnvar for each map entity
 				utils::spawnvars script_models(d3dbsp::cm.mapEnts->entityString);
@@ -772,6 +772,12 @@ namespace components
 
 	void d3dbsp::register_dvars()
 	{
+		dvars::bsp_load_entities = dvars::register_bool(
+			/* name		*/ "bsp_load_entities",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "enable to load entities when loading a bsp (static_models only)");
+
 		dvars::r_draw_bsp = dvars::register_bool(
 			/* name		*/ "r_draw_bsp",
 			/* default	*/ false,

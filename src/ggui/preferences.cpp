@@ -302,6 +302,71 @@ namespace ggui
 		});
 	}
 
+	void preferences_dialog::child_renderer_bsp()
+	{
+		static float height = 0.0f;
+		height = pref_child_lambda(CAT_RENDERER, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
+		{
+			const float second_column = ImGui::GetWindowContentRegionWidth() * 0.5f;
+
+			ImGui::title_with_seperator("General", false);
+
+			ImGui::DvarBool_External("Draw water", "r_drawWater");
+			ImGui::SameLine(second_column);
+			ImGui::DvarBool_External("Enable normalmapping", "r_normalMap");
+			
+			ImGui::DvarBool_External("Display model triangle count", "r_showTriCounts");
+			ImGui::SameLine(second_column);
+			ImGui::DvarBool_External("Display model surface count", "r_showSurfCounts");
+
+			
+			ImGui::DvarBool_External("Display model vertex count", "r_showVertCounts");
+			ImGui::SameLine(second_column);
+			ImGui::DvarBool_External("Display model names", "r_showSModelNames");
+
+			SPACING(0.0f, 6.0f);
+
+			ImGui::DvarInt_External("Display aabb Trees", "r_showaabbtrees");
+			ImGui::DvarInt_External("Display portals", "r_showportals");
+
+
+			// -----------------
+			ImGui::title_with_seperator("BSP Only");
+			
+			ImGui::DvarBool_External("Load and draw BSP entities", "bsp_load_entities");
+
+			SPACING(0.0f, 4.0f);
+
+			ImGui::DvarBool_External("Draw detail", "r_detail");
+			ImGui::SameLine(second_column);
+			ImGui::DvarBool_External("Draw decals", "r_drawDecals");
+
+			ImGui::DvarBool_External("Draw world", "r_drawWorld");
+			ImGui::SameLine(second_column);
+			ImGui::DvarBool_External("Draw static models", "r_drawsmodels");
+
+			ImGui::DvarBool_External("Draw xmodels", "r_drawXModels");
+			ImGui::SameLine(second_column);
+			ImGui::DvarBool_External("Draw entities", "r_drawEntities");
+
+			ImGui::DvarBool_External("Enable fullbright", "r_fullbright");
+			ImGui::SameLine(second_column);
+			ImGui::DvarBool_External("Enable specular", "r_specular");
+
+			SPACING(0.0f, 6.0f);
+
+			ImGui::DvarBool_External("Enable shadows", "sm_enable");
+			ImGui::DvarFloat_External("Shadow samplesize", "sm_sunSampleSizeNear");
+
+			SPACING(0.0f, 6.0f);
+
+			ImGui::DvarEnum_External("Debugshader", "r_debugshader");
+			ImGui::DvarEnum_External("Colormap", "r_colorMap");
+			ImGui::DvarEnum_External("Specularmap", "r_specularmap");
+			ImGui::DvarEnum_External("Lightmap", "r_lightmap");
+		});
+	}
+
 	void preferences_dialog::child_livelink()
 	{
 		static float height = 0.0f;
@@ -361,6 +426,7 @@ namespace ggui
 			register_child(CAT_GRID, std::bind(&preferences_dialog::child_grid, this));
 			register_child(CAT_CAMERA, std::bind(&preferences_dialog::child_camera, this));
 			register_child(CAT_TEXTURES, std::bind(&preferences_dialog::child_textures, this));
+			register_child(CAT_RENDERER, std::bind(&preferences_dialog::child_renderer_bsp, this));
 			register_child(CAT_LIVELINK, std::bind(&preferences_dialog::child_livelink, this));
 			register_child(CAT_DEVELOPER, std::bind(&preferences_dialog::child_developer, this));
 

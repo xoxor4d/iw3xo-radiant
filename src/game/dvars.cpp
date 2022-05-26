@@ -52,6 +52,8 @@ namespace dvars
 	game::dvar_s* grid_zoom_to_cursor = nullptr;
 	game::dvar_s* grid_draw_edge_coordinates = nullptr;
 
+	game::dvar_s* bsp_load_entities = nullptr;
+
 	game::dvar_s* r_draw_bsp = nullptr;
 	game::dvar_s* r_draw_bsp_overwrite_sunlight = nullptr;
 	game::dvar_s* r_draw_bsp_overwrite_sundir = nullptr;

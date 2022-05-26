@@ -52,6 +52,8 @@ namespace dvars
 	extern game::dvar_s* grid_zoom_to_cursor;
 	extern game::dvar_s* grid_draw_edge_coordinates;
 
+	extern game::dvar_s* bsp_load_entities;
+
 	extern game::dvar_s* r_draw_bsp;
 	extern game::dvar_s* r_draw_bsp_overwrite_sunlight;
 	extern game::dvar_s* r_draw_bsp_overwrite_sundir;
