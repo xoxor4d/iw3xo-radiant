@@ -64,12 +64,6 @@
 
 #include "std_include.hpp"
 
-#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
-					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
-
-#define AssertS(str)	if(IsDebuggerPresent()) __debugbreak();	else {	\
-						game::Com_Error("%s\nLine %d :: %s\n%s ", str, __LINE__, __func__, __FILE__); }
-
 namespace components
 {
 	enum EDITOR_SURF_TYPE
@@ -1675,7 +1669,6 @@ namespace components
 		}
 	}
 
-	
 
 	// called before rendering the command queue
 	void pre_scene_command_rendering()
@@ -1687,6 +1680,7 @@ namespace components
 			g_line_depth_testing = true;
 		}
 	}
+
 
 	// called after rendering the command queue
 	void post_scene_command_rendering()
@@ -1930,7 +1924,7 @@ namespace components
 			return;
 		}
 
-		if(dvars::r_draw_bsp && !dvars::r_draw_bsp->current.enabled)
+		if(!d3dbsp::Com_IsBspLoaded())
 		{
 			const auto frontEndDataOut = game::get_frontenddata();
 			const auto viewInfo = &frontEndDataOut->viewInfo[0];
@@ -2007,9 +2001,11 @@ namespace components
 
 			viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
 		}
-
-		else if (game::comworld->isInUse)
+		else
 		{
+			d3dbsp::add_entities_to_scene();
+
+			
 			game::refdef_s refdef = {};
 			utils::vector::copy(viewParms->origin, refdef.vieworg);
 			utils::vector::copy(viewParms->axis[0], refdef.viewaxis[0]);
@@ -2447,6 +2443,7 @@ namespace components
 		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DrawEmissiveCallback, viewinfo, &source, viewinfo, &viewinfo->emissiveInfo, viewinfo, cmdbuf, 0);
 	}
 
+	// render bsp and effects
 	void RB_StandardDrawCommands(game::GfxViewInfo* viewInfo)
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
@@ -2461,9 +2458,7 @@ namespace components
 			renderer::copy_scene_to_texture(ggui::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
 			game::gfxCmdBufSourceState->input.codeImages[10] = resolved_post_sun->image;
 
-			// R_SetFrameFog
-			// R_SetSunConstants
-
+			// ------
 
 			const auto backend = game::get_backenddata();
 			const auto dyn_shadow_type = viewInfo->dynamicShadowType;
@@ -2501,23 +2496,6 @@ namespace components
 			}
 		}
 
-//#ifdef DEBUG
-		// Add a debug line
-		//game::vec3_t start = { 0.0f, 0.0f, 0.0f };
-		//game::vec3_t fwd = {};
-		//utils::vector::angle_vectors(game::glob::track_worldspawn.sundirection, fwd, nullptr, nullptr);
-
-		//utils::vector::scale(fwd, 500.0f, fwd);
-
-		////game::vec3_t end = { 0.0f, 0.0f, 20000.0f };
-		//game::vec4_t color = { 1.0f, 0.5f, 0.0f, 1.0f };
-
-		//// R_AddDebugLine(frontEndDataOut->debugGlobals, &v10, &v13, v9);
-		//utils::hook::call<void(__cdecl)(game::DebugGlobals*, const float* start, const float* end, const float* color)>(0x528680)
-		//	(game::get_frontenddata()->debugGlobals, start, fwd, color);
-
-//#endif
-
 		RB_EndSceneRendering(game::gfxCmdBufSourceState, game::gfxCmdBufState, &viewInfo->input, viewInfo);
 	}
 
@@ -2529,11 +2507,6 @@ namespace components
 		{
 			return;
 		}
-
-		/*if(backend->viewInfo->viewParms.origin[0] == 0.0f)
-		{
-			return;
-		}*/
 
 		if(backend->viewInfoCount)
 		{
@@ -2998,6 +2971,71 @@ namespace components
 		utils::hook::call<void(__cdecl)()>(0x535F10)();
 	}
 
+
+	// *
+	// * Fix asserts when playing effects that use xmodels with no bsp loaded 
+	// *
+
+	int R_CalcReflectionProbeIndex(const float* lightingOrigin)
+	{
+		if(game::rgp->world)
+		{
+			return utils::hook::call<int (__cdecl)(const float*)>(0x5235E0)(lightingOrigin);
+		}
+
+		return 0;
+	}
+
+	bool is_rgp_world_loaded()
+	{
+		if (game::rgp->world)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	void __declspec(naked) GetPrimaryLightForBoxCallback_stub()
+	{
+		const static uint32_t retn_addr = 0x52A6FC;
+		__asm
+		{
+			pushad;
+			call    is_rgp_world_loaded;
+			test    al, al;
+			popad;
+
+			je      SKIP;
+			call    dword ptr[ebp + 0Ch];
+
+		SKIP:
+			push    1;
+			jmp		retn_addr;
+		}
+	}
+	
+	void __declspec(naked) R_GetLightingAtPoint_stub()
+	{
+		const static uint32_t func_addr = 0x52A290;
+		const static uint32_t retn_addr = 0x52A704;
+		__asm
+		{
+			pushad;
+			call    is_rgp_world_loaded;
+			test    al, al;
+			popad;
+
+			je      SKIP;
+			call    func_addr;
+			jmp		retn_addr;
+
+		SKIP:
+			mov		eax, 0;
+			jmp		retn_addr;
+		}
+	}
+
 	// *
 	// *
 
@@ -3080,14 +3118,6 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "shadow drawing distance (camera to center of brush)");
 	}
-
-	/*void relocate_struct_ref(const std::uintptr_t code_addr, const void* target_addr, const std::uintptr_t base_addr = 0, const std::uintptr_t dest_addr = 0)
-	{
-		const auto struct_offset = dest_addr - base_addr;
-		const auto struct_final_addr = reinterpret_cast<std::uintptr_t>(target_addr) + struct_offset;
-
-		utils::hook::set<std::uintptr_t>(code_addr, struct_final_addr);
-	}*/
 
 	void relocate_struct_ref(const std::uintptr_t code_addr, const void* target_addr, const unsigned int offset)
 	{
@@ -3274,10 +3304,9 @@ namespace components
 
 		// do not add a clearscreen command at the beginning of CCamWnd::OnPaint
 		// !! spot used to implement effect controlling logic (effects::camera_onpaint_stub)
-		utils::hook::nop(0x40304D, 5);
+		//utils::hook::nop(0x40304D, 5);
 
 		// do not add a clearscreen command before adding lines to the scene (would leave no depth info for effects)
-		// utils::hook::nop(0x4084D2, 5);
 		utils::hook(0x4084D2, disable_line_depth_testing, HOOK_JUMP).install()->quick(); // disable depth testing for lines (same result as clearing the depthbuffer)
 
 		// ^ nop call that adds connection lines (target->targetname) (after disabled depth testing) and call it before disabling depth testing
@@ -3306,10 +3335,14 @@ namespace components
 		// register smalldevfont
 		utils::hook(0x5011B8, post_render_init, HOOK_CALL).install()->quick();
 
-		// nop rgp world related stuff when drawing gfx-scene-entities (effect xmodels)
-		utils::hook::nop(0x52A6E8, 5);
-		utils::hook::nop(0x52A6FF, 5);
-		utils::hook::nop(0x52A6F7, 3);
+
+		// *
+		// * Fix asserts when playing effects that use xmodels (gfx-scene-entities) with no bsp loaded 
+		// *
+
+		utils::hook(0x52A6E8, R_CalcReflectionProbeIndex, HOOK_CALL).install()->quick();
+		utils::hook(0x52A6F7, GetPrimaryLightForBoxCallback_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x52A6FF, R_GetLightingAtPoint_stub, HOOK_JUMP).install()->quick();
 		utils::hook::nop(0x500F4C, 5); // < on shutdown
 
 		// silence assert 'localDrawSurf->fields.prepass == MTL_PREPASS_NONE'
@@ -3318,46 +3351,52 @@ namespace components
 		// * ------
 
 		// load depth prepass and build-floatz technique (Material_LoadTechniqueSet -> g_useTechnique)
-		utils::hook::set<BYTE>(0x633FC4 + 0, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 1, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 2, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 3, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 4, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 5, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 6, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 7, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 8, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 9, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 10, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 11, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 12, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 13, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 14, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 15, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 16, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 17, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 18, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 19, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 20, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 21, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 22, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 23, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 24, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 25, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 26, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 27, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 28, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 29, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 30, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 31, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 32, 0x1);
-		utils::hook::set<BYTE>(0x633FC4 + 33, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 0, 0x1);  // depth prepass
+		utils::hook::set<BYTE>(0x633FC4 + 1, 0x1);  // build floatz
+		utils::hook::set<BYTE>(0x633FC4 + 2, 0x1);  // build shadowmap depth
+		utils::hook::set<BYTE>(0x633FC4 + 3, 0x1);  // build shadowmap color
+		utils::hook::set<BYTE>(0x633FC4 + 4, 0x1);  // unlit
+		utils::hook::set<BYTE>(0x633FC4 + 5, 0x1);  // emissive
+		utils::hook::set<BYTE>(0x633FC4 + 6, 0x1);  // emissive shadow
+		utils::hook::set<BYTE>(0x633FC4 + 7, 0x1);  // lit
+		utils::hook::set<BYTE>(0x633FC4 + 8, 0x1);  // lit sun
+		utils::hook::set<BYTE>(0x633FC4 + 9, 0x1);  // lit sun shadow
+		utils::hook::set<BYTE>(0x633FC4 + 10, 0x1); // lit spot
+		utils::hook::set<BYTE>(0x633FC4 + 11, 0x1); // lit spot shadow
+		utils::hook::set<BYTE>(0x633FC4 + 12, 0x1); // lit omni
+		utils::hook::set<BYTE>(0x633FC4 + 13, 0x1); // lit omni shadow
+		utils::hook::set<BYTE>(0x633FC4 + 14, 0x1); // lit instanced
+		utils::hook::set<BYTE>(0x633FC4 + 15, 0x1); // lit instanced sun
+		utils::hook::set<BYTE>(0x633FC4 + 16, 0x1); // lit instanced sun shadow
+		utils::hook::set<BYTE>(0x633FC4 + 17, 0x1); // lit instanced spot
+		utils::hook::set<BYTE>(0x633FC4 + 18, 0x1); // lit instanced spot shadow
+		utils::hook::set<BYTE>(0x633FC4 + 19, 0x1); // lit instanced omni
+		utils::hook::set<BYTE>(0x633FC4 + 20, 0x1); // lit instanced omni shadow
+		utils::hook::set<BYTE>(0x633FC4 + 21, 0x1); // light spot
+		utils::hook::set<BYTE>(0x633FC4 + 22, 0x1); // light omni
+		utils::hook::set<BYTE>(0x633FC4 + 23, 0x1); // light spot shadow
+		utils::hook::set<BYTE>(0x633FC4 + 24, 0x1); // fakelight normal
+		utils::hook::set<BYTE>(0x633FC4 + 25, 0x1); // fakelight view
+		utils::hook::set<BYTE>(0x633FC4 + 26, 0x1); // sunlight preview
+		utils::hook::set<BYTE>(0x633FC4 + 27, 0x1); // case texture
+		utils::hook::set<BYTE>(0x633FC4 + 28, 0x1); // solid wireframe
+		utils::hook::set<BYTE>(0x633FC4 + 29, 0x1); // shaded wireframe
+		utils::hook::set<BYTE>(0x633FC4 + 30, 0x1); // shadowcookie caster
+		utils::hook::set<BYTE>(0x633FC4 + 31, 0x1); // shadowcookie receiver
+		utils::hook::set<BYTE>(0x633FC4 + 32, 0x1); // debug bumpmap
+		utils::hook::set<BYTE>(0x633FC4 + 33, 0x1); // debug bumpmap instanced
 
+		// * ------
+
+
+		// write a logfile showing all rendercommands for a single frame
 		command::register_command("g_log_rendercommands"s, [this](auto)
 		{
 			g_log_rendercommands = true;
 		});
 
+
+		// only affects materials registered / used post init
 		command::register_command("reload_shaders"s, [this](auto)
 		{
 			auto& vs_count = *reinterpret_cast<int*>(0x14E7C2C);
@@ -3381,6 +3420,8 @@ namespace components
 			memset(tech_hashtable, 0, sizeof(int[8192]));
 		});
 
+
+		// dump vertex and pixelshader for given technique
 		command::register_command("dump_shaders_technique", [this](std::vector<std::string> args)
 		{
 			if (args.size() != 2)

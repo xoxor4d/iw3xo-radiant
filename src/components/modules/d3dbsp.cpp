@@ -2,9 +2,100 @@
 
 namespace components
 {
+	// *
+	// * Entity Handling
+	// *
+
+	int d3dbsp::radiant_dobj_count = 0;
+	d3dbsp::radiant_dobj_s d3dbsp::radiant_dobj[512] = {};
+
+	void d3dbsp::dobj_clear_list()
+	{
+		memset(d3dbsp::radiant_dobj, 0, sizeof(d3dbsp::radiant_dobj));
+		d3dbsp::radiant_dobj_count = 0;
+	}
+
+	// hack but works
+	unsigned short lightinghandle = 0;
+
+	// R_AddDObjToScene
+	void dobj_add_to_scene(game::DObj_s* obj, game::cpose_t* pose, unsigned int ent_num, float* lighting_origin)
+	{
+		if (!obj)
+		{
+			Assert();
+		}
+
+		if (!pose)
+		{
+			Assert();
+		}
+
+		unsigned int& gfxCfg_entCount = *reinterpret_cast<unsigned int*>(0x13683DC);
+		//DWORD& scene_dpvs_sceneDObjIndex = *reinterpret_cast<DWORD*>(0x14C564C);
+		DWORD& scene_dpvs_sceneXModelIndex = *reinterpret_cast<DWORD*>(0x14C5648);
+
+		if (ent_num >= gfxCfg_entCount)
+		{
+			Assert();
+		}
+
+		if (game::Dvar_FindVar("r_drawEntities")->current.enabled)
+		{
+			const unsigned int scene_ent_index = utils::hook::call<unsigned int(__cdecl)()>(0x501D80)(); // R_AllocSceneModel()
+			if (scene_ent_index < 0x400)
+			{
+				game::GfxSceneModel* sceneModel = &game::scene->sceneModel[scene_ent_index];
+				sceneModel->model = obj->models[0];
+				sceneModel->DObj_s_obj = obj;
+				sceneModel->entnum = static_cast<unsigned short>(ent_num);
+				sceneModel->cachedLightingHandle = &lightinghandle;
+				sceneModel->placement.base.origin[0] = pose->origin[0];
+				sceneModel->placement.base.origin[1] = pose->origin[1];
+				sceneModel->placement.base.origin[2] = pose->origin[2];
+
+				//float *__cdecl AnglesToQuat(const float *angles, float *quat) .... AnglesToQuat(pose->angles, sceneModel->placement.base.quat);
+				utils::hook::call<void(__cdecl)(const float* angles, float* quat)>(0x4AC050)(pose->angles, sceneModel->placement.base.quat);
+
+				sceneModel->placement.scale = 1.0f;
+				sceneModel->radius = sceneModel->model->radius;
+				sceneModel->lightingOrigin[0] = *lighting_origin;
+				sceneModel->lightingOrigin[1] = lighting_origin[1];
+				sceneModel->lightingOrigin[2] = lighting_origin[2];
+				sceneModel->gfxEntIndex = 0;
+
+				*((WORD*)scene_dpvs_sceneXModelIndex + ent_num) = static_cast<unsigned short>(scene_ent_index);
+			}
+		}
+	}
+
+	void dobj_get_lighting_origin(game::cpose_t* pose, float* lighting_origin)
+	{
+		lighting_origin[0] = pose->origin[0];
+		lighting_origin[1] = pose->origin[1];
+		lighting_origin[2] = pose->origin[2] + 4.0f;
+	}
+	
+	void d3dbsp::add_entities_to_scene()
+	{
+		for(auto i = 0; i < radiant_dobj_count; i++)
+		{
+			game::vec3_t lighting_origin = {};
+			dobj_get_lighting_origin(&radiant_dobj[i].pose, lighting_origin);
+			dobj_add_to_scene(&radiant_dobj[i].obj, &radiant_dobj[i].pose, 0, lighting_origin);
+		}
+	}
+
+
+	// *
+	// * BSP Loading
+	// *
+	
 	std::string d3dbsp::loaded_bsp_path;
 	d3dbsp::bspGlob_s d3dbsp::comBspGlob = {};
 	game::clipMap_t d3dbsp::cm = {};
+	game::GfxLight d3dbsp::scene_lights[255] = {};
+
 
 	game::cplane_s* d3dbsp::CM_GetPlanes()
 	{
@@ -94,10 +185,6 @@ namespace components
 
 			*count = 0;
 		}
-		/*else if (type < Com_GetBspLumpCountForVersion(comBspGlob.header->version))
-		{
-			result = Com_ValidateBspLumpData(type, comBspGlob.header->chunks[type].type, *(&comBspGlob.header->chunkCount + 2 * type), elemSize, count);
-		}*/
 		else
 		{
 			*count = 0;
@@ -195,38 +282,7 @@ namespace components
 			++out;
 		}
 	}
-
-	bool d3dbsp::Com_LoadBsp(const char* filename)
-	{
-		int h;
-		comBspGlob.fileSize = game::FS_FOpenFileRead(filename, &h);
-
-		if(!h)
-		{
-			game::printf_to_console("[ERR][BSP] Couldn't open %s\n", filename);
-			return false;
-		}
-
-		comBspGlob.header = reinterpret_cast<BspHeader*>(game::Z_Malloc(comBspGlob.fileSize));
-
-		unsigned int bytesRead;
-		bytesRead = game::FS_Read(comBspGlob.header, comBspGlob.fileSize, h);
-		game::FS_FCloseFile(h);
-
-		if (bytesRead != comBspGlob.fileSize)
-		{
-			free(comBspGlob.header);
-			game::printf_to_console("[ERR][BSP] bytesRead != comBspGlob.fileSize");
-			return false;
-		}
-
-		// skip checksum and version checks for now
-
-		memcpy(comBspGlob.name, filename, strlen(filename) + 1);
-
-		return d3dbsp::Com_IsBspLoaded();
-	}
-
+	
 	void R_LoadPrimaryLights(unsigned int bsp_version)
 	{
 		if (bsp_version > 14)
@@ -258,8 +314,6 @@ namespace components
 		}
 	}
 
-	game::GfxLight d3dbsp::scene_lights[255] = {};
-
 	void R_InitPrimaryLights(game::GfxLight* primaryLights)
 	{
 		for (auto lightIndex = 0u; lightIndex < game::s_world->primaryLightCount; ++lightIndex)
@@ -289,11 +343,6 @@ namespace components
 				out->def = game::R_RegisterLightDef(in->defName);
 			}
 		}
-
-		/*if (game::s_world->sunPrimaryLightIndex)
-		{
-			memcpy(&primaryLights[game::s_world->sunPrimaryLightIndex], game::s_world->sunLight, sizeof(game::GfxLight));
-		}*/
 	}
 
 	void CMod_LoadPlanes()
@@ -366,57 +415,181 @@ namespace components
 		}
 	}
 
+	const char* Com_EntityString(unsigned int* num_entity_chars)
+	{
+		if (!d3dbsp::Com_IsBspLoaded())
+		{
+			Assert();
+		}
+
+		unsigned int count;
+		const char* entity_string = static_cast<const char*>(d3dbsp::Com_GetBspLump(d3dbsp::LUMP_ENTITIES, 1u, &count));
+
+		if (num_entity_chars)
+		{
+			*num_entity_chars = count;
+		}
+
+		return entity_string;
+	}
+
+	game::MapEnts* MapEnts_GetFromString(const char* name, const char* entity_string, int num_entity_chars)
+	{
+		const auto ents = reinterpret_cast<game::MapEnts*>(game::Hunk_Alloc(sizeof(game::MapEnts)));
+		ents->name = Com_GetHunkStringCopy(name);
+
+		ents->entityString = reinterpret_cast<char*>(game::Hunk_Alloc(num_entity_chars));
+		memcpy(ents->entityString, entity_string, num_entity_chars);
+		ents->numEntityChars = num_entity_chars;
+
+		return ents;
+	}
+
+	void CMod_LoadEntityString()
+	{
+		unsigned int numEntityChars;
+
+		const char* entityString = Com_EntityString(&numEntityChars);
+		d3dbsp::cm.mapEnts = MapEnts_GetFromString(d3dbsp::cm.name, entityString, numEntityChars);
+	}
+
+	bool d3dbsp::Com_LoadBsp(const char* filename)
+	{
+		int h;
+		comBspGlob.fileSize = game::FS_FOpenFileRead(filename, &h);
+
+		if (!h)
+		{
+			game::printf_to_console("[ERR][BSP] Couldn't open %s\n", filename);
+			return false;
+		}
+
+		comBspGlob.header = reinterpret_cast<BspHeader*>(game::Z_Malloc(comBspGlob.fileSize));
+
+		unsigned int bytesRead;
+		bytesRead = game::FS_Read(comBspGlob.header, comBspGlob.fileSize, h);
+		game::FS_FCloseFile(h);
+
+		if (bytesRead != comBspGlob.fileSize)
+		{
+			free(comBspGlob.header);
+			game::printf_to_console("[ERR][BSP] bytesRead != comBspGlob.fileSize");
+			return false;
+		}
+
+		// skip checksum and version checks for now
+
+		memcpy(comBspGlob.name, filename, strlen(filename) + 1);
+
+		return d3dbsp::Com_IsBspLoaded();
+	}
+
+	void d3dbsp::shutdown_bsp()
+	{
+		d3dbsp::dobj_clear_list();
+
+		comBspGlob.loadedLumpData = nullptr;
+
+		// free(comBspGlob.header);
+		utils::hook::call<void(__cdecl)(void*)>(0x4AC2A0)(comBspGlob.header);
+
+		comBspGlob.header = nullptr;
+		comBspGlob.name[0] = 0;
+
+		memset(&d3dbsp::cm, 0, sizeof(d3dbsp::cm));
+		memset(&d3dbsp::scene_lights, 0, sizeof(d3dbsp::scene_lights));
+
+		game::comworld->isInUse = false;
+
+		cdeclcall(void, 0x52E7D0); // R_ShutdownWorld
+		game::rgp->world = nullptr;
+
+		memset(game::s_world, 0, 0x2D0 /*sizeof(game::GfxWorld)*/);
+
+		if(game::rg->registered)
+		{
+			cdeclcall(void, 0x529D50); // R_ResetModelLighting
+		}
+	}
+
 	bool d3dbsp::radiant_load_bsp(const char* bsppath)
 	{
 		if (d3dbsp::Com_IsBspLoaded())
 		{
-			comBspGlob.loadedLumpData = nullptr;
-
-			// free(comBspGlob.header);
-			utils::hook::call<void(__cdecl)(void*)>(0x4AC2A0)(comBspGlob.header);
-
-			comBspGlob.header = nullptr;
-			comBspGlob.name[0] = 0;
-
-			memset(&d3dbsp::cm, 0, sizeof(d3dbsp::cm));
-			memset(&d3dbsp::scene_lights, 0, sizeof(d3dbsp::scene_lights));
-
-			game::comworld->isInUse = false;
-
-			cdeclcall(void, 0x52E7D0); // R_ShutdownWorld
-			cdeclcall(void, 0x529D50); // R_ResetModelLighting
-
-			game::rgp->world = nullptr;
-
-			memset(game::s_world, 0, 0x2D0 /*sizeof(game::GfxWorld)*/);
+			d3dbsp::shutdown_bsp();
 		}
 
 		if(d3dbsp::Com_LoadBsp(bsppath))
 		{
-			//std::string bspname = bsppath;
-			//utils::replace(bspname, ".d3dbsp", "");
-
-			// load cm
-			// link cm
+			// *
+			// clipmap
 
 			// CM_LoadMapFromBsp
 			d3dbsp::cm.name = Com_GetHunkStringCopy(bsppath);
 			CMod_LoadPlanes();
+			CMod_LoadEntityString();
 			d3dbsp::cm.isInUse = 1;
 
 
-			// load world
+			// *
+			// entities (script_models only for now)
+
+			// spawn:
+			/* "classname" "script_model"
+			 * "model" "vehicle_80s_sedan1_red_destructible_mp"
+			 * "origin" "-235.1 1394.7 230.2"
+			 * "angles" "358.94 101.765 3.47606" */
+
+			 // exclude:
+			 /* "script_exploder"
+			  * "script_gameobjectname" */
+
+			if (d3dbsp::cm.isInUse && d3dbsp::cm.mapEnts && d3dbsp::cm.mapEnts->numEntityChars)
+			{
+				// create a spawnvar for each map entity
+				utils::spawnvars script_models(d3dbsp::cm.mapEnts->entityString);
+
+				// get name, origin and angles for script_models (see spawn/exclude note)
+				std::vector<utils::spawnvars::script_model_for_dobj_s> dobjs;
+				script_models.get_script_models_for_dobj(dobjs);
+
+				if(!dobjs.empty())
+				{
+					for(radiant_dobj_count = 0; radiant_dobj_count < static_cast<int>(dobjs.size()) && radiant_dobj_count < 512; radiant_dobj_count++)
+					{
+						game::DObjModel_s dobjModels = {};
+						dobjModels.model = game::R_RegisterModel(dobjs[radiant_dobj_count].model_name.c_str());
+						dobjModels.boneName = 0;
+						dobjModels.ignoreCollision = true;
+
+						game::DObjCreate(&dobjModels, &radiant_dobj[radiant_dobj_count].obj, 1, nullptr, 0);
+
+						utils::vector::copy(dobjs[radiant_dobj_count].origin, radiant_dobj[radiant_dobj_count].pose.origin);
+						utils::vector::copy(dobjs[radiant_dobj_count].angles, radiant_dobj[radiant_dobj_count].pose.angles);
+					}
+				}
+			}
+
+
+			// *
+			// load com world
+
 			Com_LoadPrimaryLights();
 			game::comworld->name = Com_GetHunkStringCopy(bsppath);
 			game::comworld->isInUse = true;
 
+
+			// *
 			// R_LoadPrimaryLights is missing in R_LoadWorldInternal (s_world ...)
 			// so load it here and nop s_world memset at the beginning of R_LoadWorld->R_LoadWorldInternal
+
 			R_LoadPrimaryLights(d3dbsp::Com_GetBspVersion());
 			R_InitPrimaryLights(d3dbsp::scene_lights);
 
 			unsigned int checksum;
-			utils::hook::call<void(__cdecl)(const char* _name, unsigned int* _checksum, int _savegame)>(0x52E450)(bsppath, &checksum, 0); // R_LoadWorld
+
+			// R_LoadWorld
+			utils::hook::call<void(__cdecl)(const char* _name, unsigned int* _checksum, int _savegame)>(0x52E450)(bsppath, &checksum, 0);
 
 			if (game::s_world->sunPrimaryLightIndex)
 			{
@@ -535,6 +708,33 @@ namespace components
 		components::d3dbsp::compile_bsp(d3dbsp_name);
 	}
 
+
+	// *
+	// *
+
+
+	float* CG_GetEntityOrigin(int scene_model_index)
+	{
+		return game::scene->sceneModel[scene_model_index].placement.base.origin;
+	}
+
+	void __declspec(naked) CG_GetEntityOrigin_stub()
+	{
+		const static uint32_t retn_addr = 0x5274D1;
+		__asm
+		{
+			push	edi; // curr index in do-while loop (i < sceneModelCount)
+			call	CG_GetEntityOrigin;
+			add		esp, 4;
+			jmp		retn_addr;
+		}
+	}
+
+
+	// *
+	// *
+
+
 	void d3dbsp::force_dvars()
 	{
 		/*if (const auto& sm_enable = game::Dvar_FindVar("sm_enable"); sm_enable && sm_enable->current.enabled) {
@@ -600,12 +800,12 @@ namespace components
 	d3dbsp::d3dbsp()
 	{
 		// #
-		// NOTES
-		// * resizing the viewport does not resize the depth buffer (dont do prepass)
-		// * sm_enable culls lights
-		// * ^ shadows are completly wrong
-		// * TODO: load "dynamic" entities like exploding cars 
-		// * TODO: draw sun / load sun dvars from sun file
+		// * NOTES
+		// * TODO:	load "dynamic" entities like exploding cars (scene.sceneModelCount :: R_AddXModelSurfacesCamera :: R_AddAllSceneEntSurfacesCamera)
+		// *		^ CG_ProcessEntity :: CG_ScriptMover :: R_AddDObjToScene
+		// *		^ G_InitGame :: G_SpawnEntitiesFromString .... G_ModelIndex -> XModelPrecache_LoadObj
+
+		// * TODO:  draw sun / load sun dvars from sun file
 
 		// #
 		// R_LoadWorldInternal patches
@@ -625,6 +825,10 @@ namespace components
 		// re-implement CM_GetPlaneCount
 		utils::hook::detour(0x4161F0, d3dbsp::CM_GetPlaneCount, HK_JUMP);
 
+		// re-implement CG_GetEntityOrigin in R_ShowCull
+		utils::hook(0x5274CC, CG_GetEntityOrigin_stub, HOOK_JUMP).install()->quick();
+
+
 		// #
 		// dirty hacks
 
@@ -634,6 +838,10 @@ namespace components
 		utils::hook::nop(0x41625A, 5); // CM_BoxSightTrace Assert
 		utils::hook::nop(0x56C8DC, 5); // bspSurf->material->info.name) = %s", "(!lightmapSecondaryFlag) Assert
 
+		utils::hook::nop(0x41637A, 5); // Ragdoll_HandleBody Assert
+		
+
+
 		// Material_Add :: set rgp.needSortMaterials = 1 to 0 (do not re-sort materials when loading new ones; fixes bsp texture issues)
 		utils::hook::set<BYTE>(0x510CF1 + 6, 0x0);
 
@@ -642,6 +850,8 @@ namespace components
 
 		// R_LoadSunThroughDvars
 		utils::hook::nop(0x52DAFA, 5); // Com_LoadDvarsFromBuffer (not implemented)
+
+
 
 		// #
 		// no bsp culling
@@ -689,5 +899,7 @@ namespace components
 	}
 
 	d3dbsp::~d3dbsp()
-	{ }
+	{
+		d3dbsp::shutdown_bsp();
+	}
 }

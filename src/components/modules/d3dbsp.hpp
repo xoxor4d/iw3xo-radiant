@@ -5,6 +5,28 @@ namespace components
 	class d3dbsp : public component
 	{
 	public:
+
+		// *
+		// * Entity Handling
+		// *
+
+		struct radiant_dobj_s
+		{
+			game::DObj_s obj;
+			game::cpose_t pose;
+		};
+
+		static int radiant_dobj_count;
+		static radiant_dobj_s radiant_dobj[512];
+
+		static void dobj_clear_list();
+
+
+
+		// *
+		// * BSP Loading
+		// *
+
 		enum LumpType
 		{
 			LUMP_MATERIALS = 0x0,
@@ -93,6 +115,8 @@ namespace components
 		static game::clipMap_t cm;
 		static game::GfxLight scene_lights[255];
 
+		static void add_entities_to_scene();
+
 		static game::cplane_s* CM_GetPlanes();
 		static int CM_GetPlaneCount();
 
@@ -102,6 +126,8 @@ namespace components
 		static const void* Com_GetBspLump(LumpType type, unsigned int elemSize, unsigned int* count);
 		static bool Com_GetBspLumpBool(LumpType type);
 		static bool Com_LoadBsp(const char* filename);
+
+		static void shutdown_bsp();
 
 		static bool radiant_load_bsp(const char* bsppath);
 		static void reload_bsp();

@@ -1288,6 +1288,23 @@ namespace game
 		}
 	}
 
+	void DObjCreate(game::DObjModel_s* dobjModels /*edi*/, game::DObj_s* obj /*esi*/, size_t numModels, game::XAnimTree_s* tree, int entnum)
+	{
+		const static uint32_t func_addr = 0x4BE9D0;
+		__asm
+		{
+			pushad;
+			mov		edi, dobjModels;
+			mov		esi, obj;
+			push	entnum;
+			push	tree;
+			push	numModels;
+			call	func_addr;
+			add		esp, 12;
+			popad;
+		}
+	}
+
 	// *
 	// * --------------------- FX ----------------------------------
 

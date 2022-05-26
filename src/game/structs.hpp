@@ -3388,6 +3388,13 @@ namespace game
 		char edgeCount[2][3];
 	};
 
+	struct MapEnts
+	{
+		const char* name;
+		char* entityString;
+		int numEntityChars;
+	};
+
 	struct clipMap_t
 	{
 		const char* name;
@@ -3431,7 +3438,7 @@ namespace game
 		int clusterBytes;
 		char* visibility;
 		int vised;
-		void* mapEnts; // MapEnts*
+		MapEnts* mapEnts;
 		cbrush_t* box_brush;
 		cmodel_t box_model;
 		unsigned __int16 dynEntCount[2];
@@ -3442,6 +3449,55 @@ namespace game
 		unsigned int checksum;
 	};
 
+	/* 1165 */
+	struct DSkelPartBits
+	{
+		int anim[4];
+		int control[4];
+		int skel[4];
+	};
+	
+	/* 1166 */
+	struct DSkel
+	{
+		DSkelPartBits partBits;
+		int timeStamp;
+		DObjAnimMat* mat;
+	};
+
+	/* 1164 */
+	struct __declspec(align(4)) XAnimTree_s
+	{
+		void* anims; // XAnim_s* 
+		int info_usage;
+		volatile int calcRefCount;
+		volatile int modifyRefCount;
+		unsigned __int16 children;
+	};
+
+	struct DObjModel_s
+	{
+		XModel* model;
+		unsigned __int16 boneName;
+		bool ignoreCollision;
+	};
+
+	/* 1167 */
+	struct DObj_s
+	{
+		XAnimTree_s* tree;
+		unsigned __int16 duplicateParts;
+		unsigned __int16 entnum;
+		char duplicatePartsSize;
+		char numModels;
+		char numBones;
+		unsigned int ignoreCollision;
+		volatile int locked;
+		DSkel skel;
+		float radius;
+		unsigned int hidePartBits[4];
+		XModel** models;
+	};
 
 	struct filter_material_t
 	{
