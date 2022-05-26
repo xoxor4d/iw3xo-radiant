@@ -22,7 +22,7 @@ namespace components
 			{
 				if(i_geo < 50)
 				{
-					if (this->var.all_geo_states[i_geo])
+					if (this->all_geo_states[i_geo])
 					{
 						filter->toggle_by_name(f_entry->name, ggui::filter_dialog::GEOMETRY, true);
 					}
@@ -35,7 +35,7 @@ namespace components
 				}
 			}
 
-			this->var.all_geo_enabled = false;
+			this->all_geo_enabled = false;
 		}
 
 		// toggle on
@@ -52,7 +52,7 @@ namespace components
 				{
 					if(f_entry->name != "NonDecals"s)
 					{
-						this->var.all_geo_states[i_geo] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::GEOMETRY, false);
+						this->all_geo_states[i_geo] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::GEOMETRY, false);
 					}
 
 					i_geo++;
@@ -63,7 +63,7 @@ namespace components
 				}
 			}
 
-			this->var.all_geo_enabled = true;
+			this->all_geo_enabled = true;
 		}
 	}
 
@@ -85,7 +85,7 @@ namespace components
 			{
 				if (i_ents < 50)
 				{
-					if (this->var.all_ents_states[i_ents])
+					if (this->all_ents_states[i_ents])
 					{
 						filter->toggle_by_name(f_entry->name, ggui::filter_dialog::ENTITY, true);
 					}
@@ -98,7 +98,7 @@ namespace components
 				}
 			}
 
-			this->var.all_ents_enabled = false;
+			this->all_ents_enabled = false;
 		}
 
 		// toggle on
@@ -113,7 +113,7 @@ namespace components
 			{
 				if (i_ents < 50)
 				{
-					this->var.all_ents_states[i_ents] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::ENTITY, false);
+					this->all_ents_states[i_ents] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::ENTITY, false);
 					i_ents++;
 				}
 				else
@@ -122,7 +122,7 @@ namespace components
 				}
 			}
 
-			this->var.all_ents_enabled = true;
+			this->all_ents_enabled = true;
 		}
 	}
 
@@ -144,7 +144,7 @@ namespace components
 			{
 				if (i_triggers < 50)
 				{
-					if (this->var.all_triggers_states[i_triggers])
+					if (this->all_triggers_states[i_triggers])
 					{
 						filter->toggle_by_name(f_entry->name, ggui::filter_dialog::TRIGGER, true);
 					}
@@ -157,7 +157,7 @@ namespace components
 				}
 			}
 
-			this->var.all_triggers_enabled = false;
+			this->all_triggers_enabled = false;
 		}
 
 		// toggle on
@@ -172,7 +172,7 @@ namespace components
 			{
 				if (i_triggers < 50)
 				{
-					this->var.all_triggers_states[i_triggers] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::TRIGGER, false);
+					this->all_triggers_states[i_triggers] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::TRIGGER, false);
 					i_triggers++;
 				}
 				else
@@ -181,7 +181,7 @@ namespace components
 				}
 			}
 
-			this->var.all_triggers_enabled = true;
+			this->all_triggers_enabled = true;
 		}
 	}
 
@@ -203,7 +203,7 @@ namespace components
 			{
 				if (i_others < 50)
 				{
-					if (this->var.all_others_states[i_others])
+					if (this->all_others_states[i_others])
 					{
 						filter->toggle_by_name(f_entry->name, ggui::filter_dialog::OTHER, true);
 					}
@@ -216,7 +216,7 @@ namespace components
 				}
 			}
 
-			this->var.all_others_enabled = false;
+			this->all_others_enabled = false;
 		}
 
 		// toggle on
@@ -231,7 +231,7 @@ namespace components
 			{
 				if (i_others < 50)
 				{
-					this->var.all_others_states[i_others] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::OTHER, false);
+					this->all_others_states[i_others] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::OTHER, false);
 					i_others++;
 				}
 				else
@@ -240,8 +240,25 @@ namespace components
 				}
 			}
 
-			this->var.all_others_enabled = true;
+			this->all_others_enabled = true;
 		}
+	}
+
+	void gameview::toggle_all_filters()
+	{
+		// restore states if was toggled manually
+		if (gameview::get_all_geo_state())		gameview::toggle_all_geo(false);
+		if (gameview::get_all_ents_state())		gameview::toggle_all_entities(false);
+		if (gameview::get_all_triggers_state()) gameview::toggle_all_triggers(false);
+		if (gameview::get_all_others_state())	gameview::toggle_all_others(false);
+
+		// toggle global
+		gameview::toggle_all_geo(!gameview::all_off);
+		gameview::toggle_all_entities(!gameview::all_off);
+		gameview::toggle_all_triggers(!gameview::all_off);
+		gameview::toggle_all_others(!gameview::all_off);
+
+		gameview::all_off = !gameview::all_off;
 	}
 
 	void gameview::set_state(bool state)
@@ -445,19 +462,7 @@ namespace components
 
 		command::register_command_with_hotkey("toggle_filter_all"s, [this](auto)
 		{
-			// restore states if was toggled manually
-			if (gameview::get_all_geo_state())		gameview::toggle_all_geo(false);
-			if (gameview::get_all_ents_state())		gameview::toggle_all_entities(false);
-			if (gameview::get_all_triggers_state()) gameview::toggle_all_triggers(false);
-			if (gameview::get_all_others_state())	gameview::toggle_all_others(false);
-
-			// toggle global
-			gameview::toggle_all_geo(!gameview::var.all_off);
-			gameview::toggle_all_entities(!gameview::var.all_off);
-			gameview::toggle_all_triggers(!gameview::var.all_off);
-			gameview::toggle_all_others(!gameview::var.all_off);
-
-			gameview::var.all_off = !gameview::var.all_off;
+			gameview::toggle_all_filters();
 		});
 	}
 
