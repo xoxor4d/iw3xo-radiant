@@ -2857,14 +2857,12 @@ namespace components
 						game::GfxPointVertex pts[2] = {};
 
 						game::Byte4PackPixelColor(color_start, &pts[0].color);
-						pts[0].xyz[0] = game::glob::debug_sundir_startpos[0];
-						pts[0].xyz[1] = game::glob::debug_sundir_startpos[1];
-						pts[0].xyz[2] = game::glob::debug_sundir_startpos[2];
+						utils::vector::copy(game::glob::debug_sundir_startpos, pts[0].xyz);						
 
 						game::Byte4PackPixelColor(color_end, &pts[1].color);
-						pts[1].xyz[0] = end_pt[0];
-						pts[1].xyz[1] = end_pt[1];
-						pts[1].xyz[2] = end_pt[2];
+
+						utils::vector::add(game::glob::debug_sundir_startpos, end_pt, end_pt);
+						utils::vector::copy(end_pt, pts[1].xyz);
 
 						renderer::R_AddLineCmd(1, 4, 3, pts);
 					}

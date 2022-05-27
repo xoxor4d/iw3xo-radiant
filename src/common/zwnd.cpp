@@ -93,7 +93,7 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			ctexwnd::on_mousebutton_down(nFlags);
 
 			// handle IO because we have an overlay toolbar within the texture window
-			ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
+			//ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
 			return;
 		}
 
@@ -169,7 +169,7 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 			ctexwnd::on_mousebutton_up(nFlags);
 
 			// handle IO because we have an overlay toolbar within the texture window
-			ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
+			//ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
 			return;
 		}
 		

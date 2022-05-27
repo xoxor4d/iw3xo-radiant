@@ -650,7 +650,7 @@ namespace ggui
 		SPACING(0.0f, 2.0f);
 
 		if (ImGui::BeginTable("bind_table", 5,
-			ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
+			ImGuiTableFlags_SizingFixedFit /*| ImGuiTableFlags_NoPadOuterX*/ | ImGuiTableFlags_ScrollY /*| ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH*/))
 		{
 			ImGui::TableSetupScrollFreeze(0, 1);
 			ImGui::TableSetupColumn("                  Command", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHide, 200.0f);

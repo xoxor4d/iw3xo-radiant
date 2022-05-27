@@ -1472,40 +1472,50 @@ namespace ggui
 
 		ImGui::Begin("Toolbar Editor##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse);
 
-		if (ImGui::Button("Add Separator"))
+
+		static float button_group_width = 140.0f;
+		ImGui::SetCursorPosX((ImGui::GetWindowWidth() - button_group_width) * 0.5f - 8.0f);
+
+		ImGui::BeginGroup();
 		{
-			tb->register_element(";"s, nullptr);
-		}
-
-		ImGui::SameLine();
-		if (ImGui::Button("Delete Selected Separator"))
-		{
-			const bool out_of_bounds = this->tbedit_selection.element_pos >= tb->m_sorted_elements.size();
-
-			if (   this->tbedit_selection.is_selected
-				&& !out_of_bounds
-				&& tb->m_sorted_elements[this->tbedit_selection.element_pos].is_separator)
+			if (ImGui::Button("Add Separator"))
 			{
-				//game::printf_to_console("selected sep, deleting ...\n");
-				tb->m_sorted_elements.erase(tb->m_sorted_elements.begin() + this->tbedit_selection.element_pos);
+				tb->register_element(";"s, nullptr);
 			}
-			else if (out_of_bounds)
-			{
-				this->tbedit_selection.is_selected = false;
-				game::printf_to_console("Selection out of bounds!\n");
-			}
-		}
 
-		ImGui::SameLine();
-		ImGui::HelpMarker("Rearrange elements by dragging them up and down the list using the left mousebutton");
+			ImGui::SameLine();
+			if (ImGui::Button("Delete Selected Separator"))
+			{
+				const bool out_of_bounds = this->tbedit_selection.element_pos >= tb->m_sorted_elements.size();
+
+				if (this->tbedit_selection.is_selected
+					&& !out_of_bounds
+					&& tb->m_sorted_elements[this->tbedit_selection.element_pos].is_separator)
+				{
+					//game::printf_to_console("selected sep, deleting ...\n");
+					tb->m_sorted_elements.erase(tb->m_sorted_elements.begin() + this->tbedit_selection.element_pos);
+				}
+				else if (out_of_bounds)
+				{
+					this->tbedit_selection.is_selected = false;
+					game::printf_to_console("Selection out of bounds!\n");
+				}
+			}
+
+			ImGui::SameLine();
+			ImGui::HelpMarker("Rearrange elements by dragging them up and down the list using the left mousebutton");
+
+			ImGui::EndGroup();
+			button_group_width = ImGui::GetItemRectSize().x;
+		}
 
 		// this does not work with the way we order the list -> flickering
-		//ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(1.0f, 4.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(8.0f, 2.0f)); // Y needs to be at 2 so each elem slightly overlaps the next one
 
 		if (ImGui::BeginTable(
 			"element_sort_table", 
 			3,
-			ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_ScrollY,
+			ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_PadOuterX | /*ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH |*/ ImGuiTableFlags_ScrollY,
 			ImVec2(0.0f, ImGui::GetContentRegionAvail().y - 6.0f)))
 		{
 			ImGui::TableSetupScrollFreeze(0, 1);
@@ -1626,6 +1636,7 @@ namespace ggui
 			ImGui::EndTable();
 		}
 
+		ImGui::PopStyleVar();
 		ImGui::End();
 	}
 
