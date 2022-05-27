@@ -34,6 +34,8 @@ namespace dvars
 	extern game::dvar_s* gui_use_new_context_menu;
 	extern game::dvar_s* gui_use_new_filedialog;
 
+	extern game::dvar_s* gui_grid_context_show_select;
+
 	extern game::dvar_s* gui_camera_toolbar_defaultopen;
 	extern game::dvar_s* gui_camera_toolbar_merge_bsp_buttons;
 

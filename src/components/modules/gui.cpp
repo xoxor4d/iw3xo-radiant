@@ -661,6 +661,11 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "use new filedialogs, turn off to use windows file dialogs");
 
+		dvars::gui_grid_context_show_select = dvars::register_bool(
+			/* name		*/ "gui_grid_context_show_select",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "show select menu in grid context menu (when a brush is selected)");
 
 		// *
 		// gui::saved_windowstates()

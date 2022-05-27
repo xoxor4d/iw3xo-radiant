@@ -34,6 +34,8 @@ namespace dvars
 	game::dvar_s* gui_use_new_context_menu = nullptr;
 	game::dvar_s* gui_use_new_filedialog = nullptr;
 
+	game::dvar_s* gui_grid_context_show_select = nullptr;
+
 	game::dvar_s* gui_camera_toolbar_defaultopen = nullptr;
 	game::dvar_s* gui_camera_toolbar_merge_bsp_buttons = nullptr;
 

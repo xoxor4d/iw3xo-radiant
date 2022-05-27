@@ -27,7 +27,7 @@ namespace ggui
 			set_gui_type(GUI_TYPE_DEF);
 
 			m_update_scroll = false;
-			m_child_current = -1;
+			m_child_current = 0;
 			m_child_count = 0;
 
 			dev_num_01 = 0;

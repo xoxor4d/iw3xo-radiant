@@ -221,6 +221,32 @@ namespace ggui
 
 				if (game::is_any_brush_selected())
 				{
+					if(dvars::gui_grid_context_show_select->current.enabled)
+					{
+						if (ImGui::BeginMenu("Select"))
+						{
+							if (ImGui::MenuItem("Select Complete Tall")) {
+								cdeclcall(void, 0x426340); // CMainFrame::OnSelectionSelectcompletetall
+							}
+
+							if (ImGui::MenuItem("Select Partial Tall")) {
+								cdeclcall(void, 0x426360); // CMainFrame::OnSelectionSelectpartialtall
+							}
+
+							if (ImGui::MenuItem("Select Touching")) {
+								cdeclcall(void, 0x426370); // CMainFrame::OnSelectionSelecttouching
+							}
+
+							if (ImGui::MenuItem("Select Inside")) {
+								cdeclcall(void, 0x426350); // CMainFrame::OnSelectionSelectinside
+							}
+
+							ImGui::EndMenu(); // Select
+						}
+
+						SEPERATORV(0.0f);
+					}
+
 					if (ImGui::MenuItem("Make Structural"))
 					{
 						// CMainFrame::OnSelectionMakeStructural

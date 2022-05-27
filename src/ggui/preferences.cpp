@@ -75,8 +75,6 @@ namespace ggui
 		{
 			ImGui::title_with_seperator("General", false);
 
-			ImGui::Checkbox("Show mousecursor origin within the menubar", &dvars::gui_menubar_show_mouseorigin->current.enabled);
-
 			if (ImGui::Button("Edit Colors ..")) {
 				GET_GUI(ggui::gui_colors_dialog)->toggle();
 			}
@@ -103,10 +101,6 @@ namespace ggui
 			ImGui::Checkbox("Use new vertex edit dialog", &dvars::gui_use_new_vertedit_dialog->current.enabled); TT(dvars::gui_use_new_vertedit_dialog->description);
 			ImGui::Checkbox("Use new file dialogs", &dvars::gui_use_new_filedialog->current.enabled); TT(dvars::gui_use_new_filedialog->description);
 
-			if (ImGui::Checkbox("Use new grid context menu", &dvars::gui_use_new_context_menu->current.enabled))
-			{
-				game::g_PrefsDlg()->m_bRightClick = !dvars::gui_use_new_context_menu->current.enabled;
-			}
 
 			// -----------------
 			ImGui::title_with_seperator("Property Editor");
@@ -136,6 +130,8 @@ namespace ggui
 				TT("Brush will be removed if ANY side is below the threshold. Not a saved setting!");
 			}
 			ImGui::EndDisabled();
+
+			SPACING(0.0f, 6.0f);
 
 			ImGui::Checkbox("Loose changes dialog on exit", &prefs->loose_changes);
 			ImGui::Checkbox("Enable snapshots", &prefs->m_bSnapShots);
@@ -189,6 +185,16 @@ namespace ggui
 		{
 			const auto prefs = game::g_PrefsDlg();
 
+			ImGui::title_with_seperator("Gui");
+			if (ImGui::Checkbox("Use new grid context menu", &dvars::gui_use_new_context_menu->current.enabled))
+			{
+				game::g_PrefsDlg()->m_bRightClick = !dvars::gui_use_new_context_menu->current.enabled;
+			}
+
+			ImGui::Checkbox("Show 'Select' menu in grid context menu", &dvars::gui_grid_context_show_select->current.enabled);
+
+
+			// -----------------
 			ImGui::title_with_seperator("Mouse", false);
 			ImGui::Checkbox("Zoom to cursor", &dvars::grid_zoom_to_cursor->current.enabled);
 			ImGui::Checkbox("Disable grid snapping", &prefs->m_bNoClamp); TT("Org: Don't clamp plane points");
@@ -202,6 +208,7 @@ namespace ggui
 
 			// -----------------
 			ImGui::title_with_seperator("Visuals");
+			ImGui::Checkbox("Show mousecursor origin", &dvars::gui_menubar_show_mouseorigin->current.enabled);
 			ImGui::Checkbox("Show sizing info", &prefs->m_bSizePaint);
 			ImGui::Checkbox("Draw edge and grid block coordinates", &dvars::grid_draw_edge_coordinates->current.enabled);
 			ImGui::Checkbox("Thick selection lines", &prefs->thick_selection_lines);
@@ -483,6 +490,8 @@ namespace ggui
 			ImGui::End();
 			return;
 		}
+
+		SPACING(0.0f, 0.0f);
 
 		// draw all "childs" 
 		for (const auto& child : _pref_childs)
