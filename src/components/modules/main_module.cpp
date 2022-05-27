@@ -437,6 +437,10 @@ namespace components
 		// set max undo memory
 		utils::hook::set<int32_t>(0x739F70, 0x01000000); // default 2mb, now 16mb
 
+		// increase s_hunkTotal x3 (200 to 600 mb)
+		utils::hook::set<int32_t>(0x4AC582 + 1, 0x25800000);
+		utils::hook::set<int32_t>(0x4AC588 + 6, 0x25800000);
+
 		// read parsed entities counter for debug printing
 		utils::hook::nop(0x4865FB, 8);
 		utils::hook(0x4865FB, map_parse_error_stub_01, HOOK_JUMP).install()->quick();

@@ -392,7 +392,7 @@ void clayermatwnd::on_paint()
 
 				game::R_EndFrame();
 				game::R_IssueRenderCommands(-1);
-				game::R_SortMaterials(); // not needed because only a single model
+				//game::R_SortMaterials(); // not needed because only a single model
 				components::renderer::copy_scene_to_texture(ggui::LAYERED, gui->rtt_get_texture());
 			}
 		}
@@ -542,4 +542,7 @@ void clayermatwnd::create_layermatwnd()
 void clayermatwnd::hooks()
 {
 	utils::hook(0x422694, clayermatwnd::create_layermatwnd, HOOK_CALL).install()->quick();
+
+	// silence 'comparison' assert
+	utils::hook::nop(0x51AD2E, 5);
 }
