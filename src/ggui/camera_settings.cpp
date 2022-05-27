@@ -220,7 +220,7 @@ namespace ggui
 		ImGui::title_with_seperator("Compiling", true, 0, 2, 6.0f);
 
 
-		const bool can_compile = components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
+		const bool can_compile = true; //components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
 		ImGui::BeginDisabled(!can_compile);
 		{
 			//const std::string d3dbsp_name = components::d3dbsp::loaded_bsp_path.substr(components::d3dbsp::loaded_bsp_path.find_last_of("\\") + 1);

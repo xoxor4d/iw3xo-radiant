@@ -980,21 +980,21 @@ namespace ggui
 						components::command::execute("toggle_filter_all");
 					}
 
-					SEPERATORV(0.0f);
-
-					if(ImGui::MenuItem("Compile current map", ggui::hotkey_dialog::get_hotkey_for_command("bsp_compile").c_str()))
-					{
-						components::d3dbsp::compile_current_map();
-
-					} TT("Compile currently loaded .map with setting specified within 'Compile Settings'.\nAutomatically reloads the bsp when finished.");
-
-					if (ImGui::MenuItem("Compile Settings .."))
-					{
-						const auto cs = GET_GUI(ggui::camera_settings_dialog);
-						cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
-					}
-
 					ImGui::EndDisabled();
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Compile current map", ggui::hotkey_dialog::get_hotkey_for_command("bsp_compile").c_str()))
+				{
+					components::d3dbsp::compile_current_map();
+
+				} TT("Compile currently loaded .map with setting specified within 'Compile Settings'.\nAutomatically reloads the bsp when finished.");
+
+				if (ImGui::MenuItem("Compile Settings .."))
+				{
+					const auto cs = GET_GUI(ggui::camera_settings_dialog);
+					cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
 				}
 
 				ImGui::EndMenu(); // BSP
