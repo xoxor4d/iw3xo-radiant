@@ -305,7 +305,7 @@ namespace fx_system
 
 		if (system->activeSpotLightElemCount > 0)
 		{
-			if (system->activeSpotLightEffectCount != 1 || system->activeSpotLightElemCount != 1)
+			if (system->activeSpotLightEffectCount != 1 /*|| system->activeSpotLightElemCount != 1*/)
 			{
 				Assert();
 			}

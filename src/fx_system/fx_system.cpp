@@ -706,7 +706,7 @@ namespace fx_system
 
 	void FX_SpawnSpotLightElem(FxSystem* system, FxElem* elem)
 	{
-		if (system->activeSpotLightEffectCount != 0)
+		if (system->activeSpotLightEffectCount <= 0)
 		{
 			Assert();
 		}

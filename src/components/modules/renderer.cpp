@@ -2420,11 +2420,6 @@ namespace components
 
 	void R_DrawLights(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
 	{
-		if(viewinfo->pointLightCount)
-		{
-			__debugbreak();
-		}
-
 		game::GfxCmdBufSourceState source = {};
 		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
 		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FRAME_BUFFER);
@@ -2499,8 +2494,9 @@ namespace components
 				R_DrawDecal(&cmdBuf, viewInfo);
 			}			
 
-			// RB_DrawSun
-			//R_DrawLights(&cmdBuf, viewInfo); // not needed, sm_enable was the issue
+			// impl. RB_DrawSun? :p
+
+			R_DrawLights(&cmdBuf, viewInfo); // fx lights
 
 			if (viewInfo->emissiveInfo.viewInfo && viewInfo->emissiveInfo.drawSurfs)
 			{

@@ -512,8 +512,10 @@ namespace components
 		}
 	}
 
-	bool d3dbsp::radiant_load_bsp(const char* bsppath)
+	bool d3dbsp::radiant_load_bsp(const char* bsppath, bool reload)
 	{
+		const auto con = GetConsoleWindow();
+
 		if (d3dbsp::Com_IsBspLoaded())
 		{
 			d3dbsp::shutdown_bsp();
@@ -521,8 +523,13 @@ namespace components
 
 		if(d3dbsp::Com_LoadBsp(bsppath))
 		{
+			if (!reload) ShowWindow(con, SW_SHOW);
+			game::printf_to_console("[BSP] loading bsp: %s\n", bsppath);
+
 			// *
 			// clipmap
+
+			if(!reload) game::printf_to_console("[BSP] clipmap ..\n");
 
 			// CM_LoadMapFromBsp
 			d3dbsp::cm.name = Com_GetHunkStringCopy(bsppath);
@@ -546,6 +553,8 @@ namespace components
 
 			if (dvars::bsp_load_entities->current.enabled && d3dbsp::cm.isInUse && d3dbsp::cm.mapEnts && d3dbsp::cm.mapEnts->numEntityChars)
 			{
+				if (!reload) game::printf_to_console("[BSP] entities ..\n");
+
 				// create a spawnvar for each map entity
 				utils::spawnvars script_models(d3dbsp::cm.mapEnts->entityString);
 
@@ -568,11 +577,15 @@ namespace components
 						utils::vector::copy(dobjs[radiant_dobj_count].angles, radiant_dobj[radiant_dobj_count].pose.angles);
 					}
 				}
+
+				if (!reload) game::printf_to_console("[BSP] loaded %d entities\n", radiant_dobj_count);
 			}
 
 
 			// *
 			// load com world
+
+			if (!reload) game::printf_to_console("[BSP] primary lights ..\n");
 
 			Com_LoadPrimaryLights();
 			game::comworld->name = Com_GetHunkStringCopy(bsppath);
@@ -588,6 +601,8 @@ namespace components
 
 			unsigned int checksum;
 
+			if (!reload) game::printf_to_console("[BSP] the world ..\n");
+
 			// R_LoadWorld
 			utils::hook::call<void(__cdecl)(const char* _name, unsigned int* _checksum, int _savegame)>(0x52E450)(bsppath, &checksum, 0);
 
@@ -598,7 +613,10 @@ namespace components
 
 			game::R_SortWorldSurfaces();
 			d3dbsp::loaded_bsp_path = bsppath;
-				
+
+			game::printf_to_console("[BSP] finished loading bsp\n");
+			if (!reload) ShowWindow(con, SW_HIDE);
+
 			return true;
 		}
 
@@ -609,7 +627,7 @@ namespace components
 	{
 		if (d3dbsp::Com_IsBspLoaded() && !d3dbsp::loaded_bsp_path.empty())
 		{
-			d3dbsp::radiant_load_bsp(d3dbsp::loaded_bsp_path.c_str());
+			d3dbsp::radiant_load_bsp(d3dbsp::loaded_bsp_path.c_str(), true);
 		}
 		else
 		{
@@ -634,6 +652,8 @@ namespace components
 	// <bsp_name> plain map name with no extension or pathing
 	void d3dbsp::compile_bsp(const std::string& bsp_name)
 	{
+		game::printf_to_console("[BSP] Compiling bsp for map: %s ...", bsp_name.c_str());
+		
 		const auto egui = GET_GUI(ggui::entity_dialog);
 		const auto settings = GET_GUI(ggui::camera_settings_dialog);
 
@@ -694,7 +714,7 @@ namespace components
 		process::pthis->set_arguments(args);
 		process::pthis->set_callback([bsp_path]
 		{
-			d3dbsp::radiant_load_bsp(bsp_path.c_str());
+			d3dbsp::radiant_load_bsp(bsp_path.c_str(), true);
 		});
 
 		process::pthis->create_process();
@@ -854,7 +874,10 @@ namespace components
 		// RENDERTARGET_SCENE to FRAMEBUFFER in R_DrawPointLitSurfsCallback
 		utils::hook::set<BYTE>(0x55BC8F + 1, 0x1);
 
-		// R_LoadSunThroughDvars
+		// R_LoadSun (not needed and prints irrelevant info)
+		utils::hook::nop(0x51047D, 5); 
+
+		// R_LoadSunThroughDvars :: no longer called because above nop ^
 		utils::hook::nop(0x52DAFA, 5); // Com_LoadDvarsFromBuffer (not implemented)
 
 

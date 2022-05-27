@@ -129,7 +129,7 @@ namespace components
 
 		static void shutdown_bsp();
 
-		static bool radiant_load_bsp(const char* bsppath);
+		static bool radiant_load_bsp(const char* bsppath, bool reload = false);
 		static void reload_bsp();
 
 		static void compile_bsp(const std::string& bsp_name);

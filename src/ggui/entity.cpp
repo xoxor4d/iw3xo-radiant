@@ -1369,6 +1369,16 @@ namespace ggui
 									eprop_sorted.push_back(eprop);
 									continue;
 								}
+
+								if (key == "modelscale")
+								{
+									eprop.type = EPAIR_VALUETYPE::FLOAT;
+									eprop.v_speed = 0.01f;
+									eprop.v_min = 0.05f;
+									eprop.v_max = 100.0f;
+									eprop_sorted.push_back(eprop);
+									continue;
+								}
 							}
 							else
 							{
