@@ -1219,7 +1219,13 @@ namespace components
 
 				if (has_spec && has_normal)
 				{
-					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_dtex", 1); // fakesun_normal_dtex
+					bool has_scroll = false;
+					if(state->material->techniqueSet && state->material->techniqueSet->techniques[5])
+					{
+						has_scroll = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "scroll");
+					}
+	
+					if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_scroll_dtex" : "radiant_fakesun_dtex", 1); // fakesun_normal_dtex
 									tech)
 					{
 						state->technique = tech;
@@ -1234,7 +1240,13 @@ namespace components
 				}
 				else if (!has_spec && has_normal)
 				{
-					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
+					bool has_scroll = false;
+					if (state->material->techniqueSet && state->material->techniqueSet->techniques[5])
+					{
+						has_scroll = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "scroll");
+					}
+
+					if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_no_spec_scroll_dtex" : "radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
 									tech)
 					{
 						state->technique = tech;
