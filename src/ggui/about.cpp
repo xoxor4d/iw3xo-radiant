@@ -51,6 +51,10 @@ namespace ggui
 			ImGui::PushFontFromIndex(BOLD_18PX);
 			ImGui::SetCursorForCenteredText(version_str);
 			ImGui::TextUnformatted(version_str);
+#if DEBUG
+			ImGui::SetCursorForCenteredText("DEBUG BUILD");
+			ImGui::TextColored(ImVec4(0.64f, 0.23f, 0.18f, 1.0f), "DEBUG BUILD");
+#endif
 			ImGui::PopFont();
 
 			SPACING(0.0f, 8.0f);
