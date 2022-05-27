@@ -9,6 +9,12 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_BEGIN_CZWND if(ggui::is_ggui_initialized()) ImGui::SetCurrentContext(ggui::m_ggui_context)
 
+#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
+					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
+
+#define AssertS(str)	if(IsDebuggerPresent()) __debugbreak();	else {	\
+						game::Com_Error("%s\nLine %d :: %s\n%s ", str, __LINE__, __func__, __FILE__); }
+
 // Version number
 #include <version.hpp>
 
@@ -97,6 +103,7 @@
 #include "utils/hooking.hpp"
 #include "utils/function.hpp"
 #include "utils/vector.hpp"
+#include "utils/spawnvars.hpp"
 
 #include "common/afx.hpp"
 #include "game/functions.hpp"

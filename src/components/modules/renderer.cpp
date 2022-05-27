@@ -64,12 +64,6 @@
 
 #include "std_include.hpp"
 
-#define Assert()	if(IsDebuggerPresent()) __debugbreak();	else {	\
-					game::Com_Error("Line %d :: %s\n%s ", __LINE__, __func__, __FILE__); }
-
-#define AssertS(str)	if(IsDebuggerPresent()) __debugbreak();	else {	\
-						game::Com_Error("%s\nLine %d :: %s\n%s ", str, __LINE__, __func__, __FILE__); }
-
 namespace components
 {
 	enum EDITOR_SURF_TYPE
@@ -362,9 +356,8 @@ namespace components
 			fclose(shader_binary);
 			return false;
 		}
-
-		// Z_Malloc :: alloc memory (programm size in bytes)
-		auto chached_shader = utils::hook::call<unsigned int* (__cdecl)(size_t)>(0x4AC330)(*shader_len);
+		
+		auto chached_shader = game::Z_Malloc(*shader_len); // programm size in bytes
 		if (chached_shader)
 		{
 			// assign buffer addr to our ptr
@@ -654,6 +647,7 @@ namespace components
 
 		if (source && state && state->pass)
 		{
+			// #
 			// 2D: set required shader constants for backend passes
 			if(renderer::is_rendering_camerawnd() && source->viewMode == game::VIEW_MODE_2D)
 			{
@@ -741,16 +735,154 @@ namespace components
 				}
 			}
 
-			// 3D
-			if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
-				(renderer::is_rendering_camerawnd() && dvars::r_fakesun_preview->current.enabled))
+
+			// #
+			// 3D (a bit of dupe code - makes it more readable and manageable)
+
+			bool is_d3dbsp = false;
+			if (state->viewport.x == 1)
+			{
+				state->viewport.x = 0;
+				is_d3dbsp = true;
+			}
+
+			// model previewer - fake sun shader
+			if(renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY)
 			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
 					const auto arg_def = &state->pass->args[arg];
-					if (arg_def && arg_def->type == 5)
+					if (arg_def && arg_def->type == 5 && state->pass->pixelShader)
 					{
-						if (state->pass->pixelShader)
+						if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_ENVMAP_PARMS)
+						{
+							game::vec4_t temp;
+							game::dx->device->GetPixelShaderConstantF(arg_def->dest, temp, 1);
+
+							// set envmapparams from material
+							if (state->material && state->material->constantCount && state->material->constantTable)
+							{
+								for (auto constant = 0; constant < state->material->constantCount; constant++)
+								{
+									if (state->material->constantTable[constant].name[0] != 0)
+									{
+										if (utils::string_equals(state->material->constantTable[constant].name, "envMapParms"))
+										{
+											game::dx->device->SetPixelShaderConstantF(arg_def->dest, state->material->constantTable[constant].literal, 1);
+											break;
+										}
+									}
+
+								}
+							}
+						}
+
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
+						{
+							bool worldspawn_valid = false;
+							game::vec3_t sun_dir = {};
+
+							if (dvars::r_fakesun_use_worldspawn->current.enabled)
+							{
+								const auto world_ent = game::g_world_entity();
+								if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_dir, "sundirection"))
+								{
+									worldspawn_valid = true;
+								}
+							}
+
+							game::vec4_t temp = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+							// AngleVectors(float* angles, float* vpn, float* right, float* up)
+							utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : GET_GUI(ggui::camera_settings_dialog)->sun_dir, temp, nullptr, nullptr);
+							game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+						}
+
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
+						{
+							bool worldspawn_valid = false;
+							game::vec4_t sun_diffuse = {};
+
+							if (dvars::r_fakesun_use_worldspawn->current.enabled)
+							{
+								const auto world_ent = game::g_world_entity();
+
+								float sunlight = 0.0f;
+								game::vec3_t suncolor = {};
+
+								if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, suncolor, "suncolor"))
+								{
+									if (!GET_GUI(ggui::entity_dialog)->get_value_for_key_from_entity(world_ent->firstActive, &sunlight, "sunlight"))
+									{
+										// default value
+										sunlight = 1.35f;
+									}
+
+									sunlight *= 1.5f;
+									utils::vector::scale(suncolor, sunlight, sun_diffuse);
+
+									worldspawn_valid = true;
+								}
+							}
+
+							const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+							const game::vec4_t temp = { cs->sun_diffuse[0], cs->sun_diffuse[1], cs->sun_diffuse[2], 1.0f };
+							game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
+						}
+
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
+						{
+							bool worldspawn_valid = false;
+							game::vec4_t sun_specular = {};
+
+							if (dvars::r_fakesun_use_worldspawn->current.enabled)
+							{
+								const auto world_ent = game::g_world_entity();
+								if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_specular, "suncolor"))
+								{
+									// worldspawn suncolor
+									utils::vector::ma(game::vec3_t(1.0f, 1.0f, 1.0f), 2.0f, sun_specular, sun_specular);
+									worldspawn_valid = true;
+								}
+							}
+
+							const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+							const game::vec4_t temp = { cs->sun_specular[0], cs->sun_specular[1], cs->sun_specular[2], cs->sun_specular[3] };
+							game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_specular : temp, 1);
+						}
+
+						// "envMapParams" in camera settings
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
+						{
+							const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+							const game::vec4_t temp = { cs->material_specular[0], cs->material_specular[1], cs->material_specular[2], cs->material_specular[3] };
+							game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+						}
+
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
+						{
+							const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+							const game::vec4_t temp = { cs->ambient[0], cs->ambient[1], cs->ambient[2], cs->ambient[3] };
+							game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+						}
+						
+					}
+				}
+			}
+
+			// camera - fake sun shader - bsp
+			if(renderer::is_rendering_camerawnd())
+			{
+				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
+				{
+					const auto arg_def = &state->pass->args[arg];
+					if (arg_def && arg_def->type == 5 && state->pass->pixelShader)
+					{
+						if(!is_d3dbsp)
 						{
 							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_ENVMAP_PARMS)
 							{
@@ -758,11 +890,11 @@ namespace components
 								game::dx->device->GetPixelShaderConstantF(arg_def->dest, temp, 1);
 
 								// set envmapparams from material
-								if(state->material && state->material->constantCount && state->material->constantTable)
+								if (state->material && state->material->constantCount && state->material->constantTable)
 								{
-									for(auto constant = 0; constant < state->material->constantCount; constant++)
+									for (auto constant = 0; constant < state->material->constantCount; constant++)
 									{
-										if(state->material->constantTable[constant].name)
+										if (state->material->constantTable[constant].name)
 										{
 											if (utils::string_equals(state->material->constantTable[constant].name, "envMapParms"))
 											{
@@ -770,39 +902,64 @@ namespace components
 												break;
 											}
 										}
-										
+
 									}
 								}
 							}
 
-							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
 							{
-								game::vec4_t temp = { dvars::r_fakesun_fog_color->current.vector[0], dvars::r_fakesun_fog_color->current.vector[1], dvars::r_fakesun_fog_color->current.vector[2], dvars::r_fakesun_fog_color->current.vector[3] };
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->material_specular[0], cs->material_specular[1], cs->material_specular[2], cs->material_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
+
+							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
+							{
+								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+
+								const game::vec4_t temp = { cs->ambient[0], cs->ambient[1], cs->ambient[2], cs->ambient[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+						} // !is_d3dbsp
+
+						if(dvars::r_fakesun_fog_enabled->current.enabled)
+						{
+							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
+							{
+								const game::vec4_t temp = { dvars::r_fakesun_fog_color->current.vector[0], dvars::r_fakesun_fog_color->current.vector[1], dvars::r_fakesun_fog_color->current.vector[2], dvars::r_fakesun_fog_color->current.vector[3] };
+								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+							}
+						}
 							
-							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
+						if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_POSITION)
+						{
+							if (!is_d3dbsp || (is_d3dbsp && dvars::r_draw_bsp_overwrite_sundir->current.enabled))
 							{
 								bool worldspawn_valid = false;
 								game::vec3_t sun_dir = {};
-								
-								if(dvars::r_fakesun_use_worldspawn->current.enabled)
+
+								if (dvars::r_fakesun_use_worldspawn->current.enabled)
 								{
 									const auto world_ent = game::g_world_entity();
-									if(world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_dir, "sundirection"))
+									if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_dir, "sundirection"))
 									{
 										worldspawn_valid = true;
 									}
 								}
 
 								game::vec4_t temp = { 0.0f, 0.0f, 0.0f, 0.0f };
-								
+
 								// AngleVectors(float* angles, float* vpn, float* right, float* up)
 								utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(worldspawn_valid ? sun_dir : GET_GUI(ggui::camera_settings_dialog)->sun_dir, temp, nullptr, nullptr);
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
+						}
 							
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_DIFFUSE)
+						{
+							if (!is_d3dbsp || (is_d3dbsp && dvars::r_draw_bsp_overwrite_sunlight->current.enabled))
 							{
 								bool worldspawn_valid = false;
 								game::vec4_t sun_diffuse = {};
@@ -814,7 +971,7 @@ namespace components
 									float sunlight = 0.0f;
 									game::vec3_t suncolor = {};
 
-									if(world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, suncolor, "suncolor"))
+									if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, suncolor, "suncolor"))
 									{
 										if (!GET_GUI(ggui::entity_dialog)->get_value_for_key_from_entity(world_ent->firstActive, &sunlight, "sunlight"))
 										{
@@ -834,8 +991,11 @@ namespace components
 								const game::vec4_t temp = { cs->sun_diffuse[0], cs->sun_diffuse[1], cs->sun_diffuse[2], 1.0f };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_diffuse : temp, 1);
 							}
-							
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
+						}
+						
+						else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_SUN_SPECULAR)
+						{
+							if (!is_d3dbsp || (is_d3dbsp && dvars::r_draw_bsp_overwrite_sunspecular->current.enabled))
 							{
 								bool worldspawn_valid = false;
 								game::vec4_t sun_specular = {};
@@ -852,46 +1012,9 @@ namespace components
 								}
 
 								const auto cs = GET_GUI(ggui::camera_settings_dialog);
-								
+
 								const game::vec4_t temp = { cs->sun_specular[0], cs->sun_specular[1], cs->sun_specular[2], cs->sun_specular[3] };
 								game::dx->device->SetPixelShaderConstantF(arg_def->dest, worldspawn_valid ? sun_specular : temp, 1);
-							}
-							
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
-							{
-								const auto cs = GET_GUI(ggui::camera_settings_dialog);
-
-								const game::vec4_t temp = { cs->material_specular[0], cs->material_specular[1], cs->material_specular[2], cs->material_specular[3] };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
-							}
-							
-							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
-							{
-								//bool worldspawn_valid = false;
-								//game::vec4_t ambient = {};
-
-								//if (dvars::r_fakesun_use_worldspawn->current.enabled)
-								//{
-								//	const auto world_ent = reinterpret_cast<game::entity_s_def*>(game::g_world_entity()->firstActive);
-
-								//	// not proper at all
-								//	
-								//	float ambient_scale = 0.0f;
-								//	if (!ggui::entity::Entity_GetValueForKey(reinterpret_cast<game::entity_s*>(world_ent), &ambient_scale, "ambient"))
-								//	{
-								//		// default value
-								//		ambient_scale = 0.2f;
-								//	}
-								//	
-								//	utils::vector::set_vec4(ambient, ambient_scale);
-	
-								//	worldspawn_valid = true;
-								//}
-
-								const auto cs = GET_GUI(ggui::camera_settings_dialog);
-
-								const game::vec4_t temp = { cs->ambient[0], cs->ambient[1], cs->ambient[2], cs->ambient[3] };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
 							}
 						}
 					}
@@ -936,26 +1059,23 @@ namespace components
 				{
 					const auto arg_def = &state->pass->args[arg];
 
-					if (arg_def && arg_def->type == 3)
+					if (arg_def && arg_def->type == 3 && state->pass->vertexShader)
 					{
-						if (state->pass->vertexShader)
+						// set fog
+						if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG)
 						{
-							// set fog
-							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG)
-							{
-								const float density = 0.69314f / dvars::r_fakesun_fog_half->current.value;
-								const float start = dvars::r_fakesun_fog_start->current.value * density;
-								
-								game::vec4_t temp = { 0.0f, 1.0f, -density, start };
-								game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
-							}
+							const float density = 0.69314f / dvars::r_fakesun_fog_half->current.value;
+							const float start = dvars::r_fakesun_fog_start->current.value * density;
+							
+							game::vec4_t temp = { 0.0f, 1.0f, -density, start };
+							game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
+						}
 
-							// needed for vertcol_mul_fog (2 pass technique for some decals)
-							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
-							{
-								game::vec4_t temp = { dvars::r_fakesun_fog_color->current.vector[0], dvars::r_fakesun_fog_color->current.vector[1], dvars::r_fakesun_fog_color->current.vector[2], dvars::r_fakesun_fog_color->current.vector[3] };
-								game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
-							}
+						// needed for vertcol_mul_fog (2 pass technique for some decals)
+						if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
+						{
+							game::vec4_t temp = { dvars::r_fakesun_fog_color->current.vector[0], dvars::r_fakesun_fog_color->current.vector[1], dvars::r_fakesun_fog_color->current.vector[2], dvars::r_fakesun_fog_color->current.vector[3] };
+							game::dx->device->SetVertexShaderConstantF(arg_def->dest, temp, 1);
 						}
 					}
 				}
@@ -1176,7 +1296,7 @@ namespace components
 				if (has_spec && has_normal)
 				{
 					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun", 1); // fakesun_normal
-						tech)
+									tech)
 					{
 						state->technique = tech;
 
@@ -1191,7 +1311,7 @@ namespace components
 				else if (!has_spec && has_normal)
 				{
 					if (const auto	tech = Material_RegisterTechnique("radiant_fakesun_no_spec", 1); // fakesun_normal_no_spec_img
-						tech)
+									tech)
 					{
 						state->technique = tech;
 
@@ -1210,13 +1330,13 @@ namespace components
 
 		if (renderer::is_rendering_camerawnd())
 		{
-			if (const auto draw_water = game::Dvar_FindVar("r_drawWater");
-				draw_water && draw_water->current.enabled)
+			if (const auto	draw_water = game::Dvar_FindVar("r_drawWater");
+							draw_water && draw_water->current.enabled)
 			{
 				if (utils::string_equals(state->material->techniqueSet->name, "wc_water"))
 				{
 					if (const auto	tech = Material_RegisterTechnique("water_l_sun", 1);
-						tech)
+									tech)
 					{
 						state->technique = tech;
 					}
@@ -1268,6 +1388,12 @@ namespace components
 
 	void r_setup_pass_surflists(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
 	{
+		if(d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled)
+		{
+			//state->depthRangeNear = 0.01337f;
+			state->viewport.x = 1;
+		}
+		
 		r_setup_pass_general(source, state, passIndex);
 	}
 
@@ -1543,7 +1669,6 @@ namespace components
 		}
 	}
 
-	
 
 	// called before rendering the command queue
 	void pre_scene_command_rendering()
@@ -1556,6 +1681,7 @@ namespace components
 		}
 	}
 
+
 	// called after rendering the command queue
 	void post_scene_command_rendering()
 	{
@@ -1563,7 +1689,7 @@ namespace components
 		{
 			// render emissive surfs (effects)
 			renderer::RB_Draw3D();
-
+			
 			// post effects logic (filmtweaks)
 			camera_postfx();
 		}
@@ -1749,7 +1875,8 @@ namespace components
 		}
 	}
 
-	void __declspec(naked) RB_ExecuteRenderCommandsLoop_stub()
+	void __declspec(naked)
+	RB_ExecuteRenderCommandsLoop_stub()
 	{
 		const static uint32_t retn_addr = 0x535B1F;
 		__asm
@@ -1758,7 +1885,7 @@ namespace components
 			call	pre_scene_command_rendering;
 			popad;
 
-			mov     edx, [eax + 0DE1C0h]; 
+			mov     edx, [eax + 0xDE1C0]; 
 			push    edx; // backEndData->execState
 			call	RB_ExecuteRenderCommandsLoop;
 			add		esp, 4;
@@ -1792,80 +1919,117 @@ namespace components
 
 	void setup_viewinfo(game::GfxViewParms* viewParms)
 	{
-		const auto frontEndDataOut = game::get_frontenddata();
-		auto viewInfo = &frontEndDataOut->viewInfo[0];
+		if (game::dx->targetWindowIndex != ggui::CCAMERAWND)
+		{
+			return;
+		}
 
-		frontEndDataOut->viewInfoIndex = 0;
-		frontEndDataOut->viewInfoCount = 1;
+		if(!d3dbsp::Com_IsBspLoaded())
+		{
+			const auto frontEndDataOut = game::get_frontenddata();
+			const auto viewInfo = &frontEndDataOut->viewInfo[0];
 
-		memcpy(&viewInfo->input, game::gfxCmdBufInput, sizeof(viewInfo->input));
-		viewInfo->input.data = frontEndDataOut;
-		viewInfo->sceneDef = game::scene->def;
+			frontEndDataOut->viewInfoIndex = 0;
+			frontEndDataOut->viewInfoCount = 1;
 
-		memcpy(&viewInfo->viewParms, viewParms, sizeof(game::GfxViewParms));
+			memcpy(&viewInfo->input, game::gfxCmdBufInput, sizeof(viewInfo->input));
+			viewInfo->input.data = frontEndDataOut;
+			viewInfo->sceneDef = game::scene->def;
 
-		const auto window = game::dx->windows[ggui::CCAMERAWND];
-		game::GfxViewport viewport = { 0, 0, window.width, window.height };
+			memcpy(&viewInfo->viewParms, viewParms, sizeof(game::GfxViewParms));
 
-		viewInfo->sceneViewport = viewport;
-		viewInfo->displayViewport = viewport;
+			const auto window = game::dx->windows[ggui::CCAMERAWND];
+			const game::GfxViewport viewport = { 0, 0, window.width, window.height };
 
-
-		// needed for debug plumes (3D text in space)
-		game::rg->debugViewParms = viewParms;
-
-		// R_DrawAllSceneEnt - add/draw effect xmodels 
-		utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523E50)(viewInfo);
-
-		// R_AddAllSceneEntSurfacesCamera (Worker CMD) - add/draw effect xmodels 
-		utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523660)(viewInfo);
-
-		// *
-		// lit drawlist (effect xmodels)
-
-		R_InitDrawSurfListInfo(&viewInfo->litInfo);
-
-		viewInfo->litInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL; 
-		viewInfo->litInfo.viewInfo = viewInfo;
-		viewInfo->litInfo.viewOrigin[0] = viewParms->origin[0];
-		viewInfo->litInfo.viewOrigin[1] = viewParms->origin[1];
-		viewInfo->litInfo.viewOrigin[2] = viewParms->origin[2];
-		viewInfo->litInfo.viewOrigin[3] = viewParms->origin[3];
-		viewInfo->litInfo.cameraView = 1;
-
-		int initial_lit_drawSurfCount = frontEndDataOut->drawSurfCount;
-
-		// R_MergeAndEmitDrawSurfLists
-		utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(0, 3);
-
-		viewInfo->litInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_lit_drawSurfCount];
-		viewInfo->litInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_lit_drawSurfCount;
+			viewInfo->sceneViewport = viewport;
+			viewInfo->displayViewport = viewport;
 
 
-		// *
-		// emissive drawlist (effects)
+			// needed for debug plumes (3D text in space)
+			game::rg->debugViewParms = viewParms;
 
-		auto emissiveList = &viewInfo->emissiveInfo;
-		R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
+			// R_DrawAllSceneEnt - add/draw effect xmodels 
+			utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523E50)(viewInfo);
 
-		viewInfo->emissiveInfo.baseTechType = game::TECHNIQUE_EMISSIVE;
-		viewInfo->emissiveInfo.viewInfo = viewInfo;
-		viewInfo->emissiveInfo.viewOrigin[0] = viewParms->origin[0];
-		viewInfo->emissiveInfo.viewOrigin[1] = viewParms->origin[1];
-		viewInfo->emissiveInfo.viewOrigin[2] = viewParms->origin[2];
-		viewInfo->emissiveInfo.viewOrigin[3] = viewParms->origin[3];
-		viewInfo->emissiveInfo.cameraView = 1;
+			// R_AddAllSceneEntSurfacesCamera (Worker CMD) - add/draw effect xmodels 
+			utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523660)(viewInfo);
 
-		int initial_emissive_drawSurfCount = frontEndDataOut->drawSurfCount;
+			// *
+			// lit drawlist (effect xmodels)
 
-		// R_MergeAndEmitDrawSurfLists
-		utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(9, 6);
+			R_InitDrawSurfListInfo(&viewInfo->litInfo);
 
-		emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_emissive_drawSurfCount];
+			viewInfo->litInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL;
+			viewInfo->litInfo.viewInfo = viewInfo;
+			viewInfo->litInfo.viewOrigin[0] = viewParms->origin[0];
+			viewInfo->litInfo.viewOrigin[1] = viewParms->origin[1];
+			viewInfo->litInfo.viewOrigin[2] = viewParms->origin[2];
+			viewInfo->litInfo.viewOrigin[3] = viewParms->origin[3];
+			viewInfo->litInfo.cameraView = 1;
 
-		renderer::effect_drawsurf_count_ = frontEndDataOut->drawSurfCount;
+			const int initial_lit_drawSurfCount = frontEndDataOut->drawSurfCount;
 
-		viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
+			// R_MergeAndEmitDrawSurfLists
+			utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(0, 3);
+
+			viewInfo->litInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_lit_drawSurfCount];
+			viewInfo->litInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_lit_drawSurfCount;
+
+
+			// *
+			// emissive drawlist (effects)
+
+			const auto emissiveList = &viewInfo->emissiveInfo;
+			R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
+
+			viewInfo->emissiveInfo.baseTechType = game::TECHNIQUE_EMISSIVE;
+			viewInfo->emissiveInfo.viewInfo = viewInfo;
+			viewInfo->emissiveInfo.viewOrigin[0] = viewParms->origin[0];
+			viewInfo->emissiveInfo.viewOrigin[1] = viewParms->origin[1];
+			viewInfo->emissiveInfo.viewOrigin[2] = viewParms->origin[2];
+			viewInfo->emissiveInfo.viewOrigin[3] = viewParms->origin[3];
+			viewInfo->emissiveInfo.cameraView = 1;
+
+			const int initial_emissive_drawSurfCount = frontEndDataOut->drawSurfCount;
+
+			// R_MergeAndEmitDrawSurfLists
+			utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(9, 6);
+
+			emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_emissive_drawSurfCount];
+
+			renderer::effect_drawsurf_count_ = frontEndDataOut->drawSurfCount;
+
+			viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
+		}
+		else
+		{
+			d3dbsp::add_entities_to_scene();
+
+			
+			game::refdef_s refdef = {};
+			utils::vector::copy(viewParms->origin, refdef.vieworg);
+			utils::vector::copy(viewParms->axis[0], refdef.viewaxis[0]);
+			utils::vector::copy(viewParms->axis[1], refdef.viewaxis[1]);
+			utils::vector::copy(viewParms->axis[2], refdef.viewaxis[2]);
+			
+			refdef.width = game::dx->windows[ggui::CCAMERAWND].width;
+			refdef.height = game::dx->windows[ggui::CCAMERAWND].height;
+
+			const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
+			refdef.tanHalfFovY = tanf(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
+			refdef.tanHalfFovX = refdef.tanHalfFovY * (static_cast<float>(cam->width) / static_cast<float>(cam->height));
+
+			refdef.zNear = game::Dvar_FindVar("r_zNear")->current.value;
+			refdef.time = static_cast<int>(timeGetTime());
+			
+			refdef.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
+			refdef.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
+
+			memcpy(&refdef.primaryLights, &d3dbsp::scene_lights, sizeof(d3dbsp::scene_lights));
+
+			// CL_RenderScene
+			utils::hook::call<void(__cdecl)(game::refdef_s* _refdef)>(0x506030)(&refdef);
+		}
 	}
 
 	void __declspec(naked) setup_viewinfo_stub()
@@ -1919,9 +2083,8 @@ namespace components
 
 			source->eyeOffset[2] = eye_offset;
 			source->eyeOffset[3] = 1.0f;
-
-			//R_CmdBufSet3D(source);
-			utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*)>(0x53CFB0)(source);
+			
+			game::R_CmdBufSet3D(source);
 		}
 	}
 
@@ -1974,10 +2137,8 @@ namespace components
 
 		R_Set3D(source);
 		source->materialTime = 0.0f;
-
-		// R_SetGameTime(source, source->sceneDef.floatTime);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, float)>(0x55A4A0)(source, source->sceneDef.floatTime);
-
+		
+		game::R_SetGameTime(source, source->sceneDef.floatTime);
 		R_SetViewParms(source);
 	}
 
@@ -2036,25 +2197,19 @@ namespace components
 
 		memset(buf_state->vertexShaderConstState, 0, sizeof(buf_state->vertexShaderConstState));
 		memset(buf_state->pixelShaderConstState, 0, sizeof(buf_state->pixelShaderConstState));
-
-		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(buf_source_state, game::R_RENDERTARGET_FRAME_BUFFER); //game::R_RENDERTARGET_SCENE);
-
-		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(buf_source_state, buf_state, game::R_RENDERTARGET_FRAME_BUFFER); //game::R_RENDERTARGET_SCENE);
+		
+		game::R_SetupRendertarget(buf_source_state, game::R_RENDERTARGET_FRAME_BUFFER);
+		game::R_SetRenderTarget(buf_source_state, buf_state, game::R_RENDERTARGET_FRAME_BUFFER);
 
 		if(clear)
 		{
-			//R_ClearScreen(gfxCmdBufState.prim.device, 6, colorWhite, 1.0, 0, (GfxViewport*)a1);
-			utils::hook::call<void(__cdecl)(IDirect3DDevice9*, int whichToClear, const float* color, float depth, bool stencil, game::GfxViewport*)>(0x539AA0)
-				(buf_state->prim.device, 7, game::g_qeglobals->d_savedinfo.colors[4], 1.0f, false, nullptr);
+			game::R_ClearScreen(buf_state->prim.device, 7, game::g_qeglobals->d_savedinfo.colors[4], 1.0f, false, nullptr);
 		}
 	}
 
-	void R_DrawLitCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
+	void R_DepthPrepassCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
 		R_Set3D(source);
-
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
 
 		const RECT rect =
@@ -2067,25 +2222,93 @@ namespace components
 
 		state->prim.device->SetScissorRect(&rect);
 
-		//R_DrawSurfs(source, state, 0, &viewInfo->emissiveInfo);
-		// int __cdecl R_DrawSurfs(GfxCmdBufSourceState *source, GfxCmdBufState *state, GfxCmdBufState *prepassstate, GfxDrawSurfListInfo *info)
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x5324E0)
-			(source, state, nullptr, &viewInfo->litInfo);
+		game::MaterialTechniqueType tech_type;
 
-		//R_ShowTris(source, state, &viewInfo->emissiveInfo);
-		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState* a1, game::GfxCmdBufState* a2, game::GfxDrawSurfListInfo*)>(0x55B100)
-		//	(source, state, &viewInfo->emissiveInfo);
+		if (viewInfo->needsFloatZ)
+		{
+			game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FLOAT_Z);
+			tech_type = game::TECHNIQUE_BUILD_FLOAT_Z;
+
+			//R_DrawQuadMesh(source, state, game::rgp->shadowClearMaterial, &viewInfo->fullSceneViewMesh->meshData);
+			utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::Material*, game::GfxMeshData*)>(0x52B9F0)
+				(source, state, game::rgp->shadowClearMaterial, &viewInfo->fullSceneViewMesh->meshData);
+
+			source->input.consts[game::CONST_SRC_CODE_DEPTH_FROM_CLIP][0] = 0.0f;
+			source->input.consts[game::CONST_SRC_CODE_DEPTH_FROM_CLIP][1] = 0.0f;
+			source->input.consts[game::CONST_SRC_CODE_DEPTH_FROM_CLIP][2] = 0.0f;
+			source->input.consts[game::CONST_SRC_CODE_DEPTH_FROM_CLIP][3] = 1.0f;
+			++source->constVersions[54];
+		}
+		else
+		{
+			game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_DYNAMICSHADOWS);
+			tech_type = game::TECHNIQUE_DEPTH_PREPASS;
+		}
+
+		game::GfxDrawSurfListInfo info;
+
+		memcpy(&info, &viewInfo->litInfo, sizeof(info));
+		info.baseTechType = tech_type;
+		game::R_DrawSurfs(source, state, nullptr, &info);
+
+		memcpy(&info, &viewInfo->decalInfo, sizeof(info));
+		info.baseTechType = tech_type;
+		game::R_DrawSurfs(source, state, nullptr, &info);
+
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
+	}
+
+	void R_DrawLitCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
+	{
+		game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FRAME_BUFFER);
+
+		R_Set3D(source);
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
+
+		const RECT rect =
+		{
+			viewInfo->sceneViewport.x,
+			viewInfo->sceneViewport.y,
+			viewInfo->sceneViewport.x + viewInfo->sceneViewport.width,
+			viewInfo->sceneViewport.y + viewInfo->sceneViewport.height
+		};
+
+		state->prim.device->SetScissorRect(&rect);
+
+		game::R_DrawSurfs(source, state, nullptr, &viewInfo->litInfo);
+		//game::R_ShowTris(source, state, &viewInfo->emissiveInfo);
+
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
+	}
+
+	void R_DrawDecalCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
+	{
+		game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FRAME_BUFFER);
+
+		R_Set3D(source);
+		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
+
+		const RECT rect =
+		{
+			viewInfo->sceneViewport.x,
+			viewInfo->sceneViewport.y,
+			viewInfo->sceneViewport.x + viewInfo->sceneViewport.width,
+			viewInfo->sceneViewport.y + viewInfo->sceneViewport.height
+		};
+
+		state->prim.device->SetScissorRect(&rect);
+
+		game::R_DrawSurfs(source, state, nullptr, &viewInfo->decalInfo);
+		//game::R_ShowTris(source, state, &viewInfo->decalInfo);
 
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
 	}
 
 	void R_DrawEmissiveCallback(game::GfxViewInfo* viewInfo, game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state)
 	{
-		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
-		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(source, state, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
+		game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FRAME_BUFFER);
 
 		R_Set3D(source);
-
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 1);
 
 		const RECT rect =
@@ -2100,14 +2323,8 @@ namespace components
 
 		//auto& rg = *reinterpret_cast<game::r_globals_t*>(0x13683F0);
 
-		//R_DrawSurfs(source, state, 0, &viewInfo->emissiveInfo);
-		// int __cdecl R_DrawSurfs(GfxCmdBufSourceState *source, GfxCmdBufState *state, GfxCmdBufState *prepassstate, GfxDrawSurfListInfo *info)
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x5324E0)
-			(source, state, nullptr, &viewInfo->emissiveInfo);
-
-		//R_ShowTris(source, state, &viewInfo->emissiveInfo);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState* a1, game::GfxCmdBufState* a2, game::GfxDrawSurfListInfo*)>(0x55B100)
-			(source, state, &viewInfo->emissiveInfo);
+		game::R_DrawSurfs(source, state, nullptr, &viewInfo->emissiveInfo);
+		game::R_ShowTris(source, state, &viewInfo->emissiveInfo);
 
 		state->prim.device->SetRenderState(D3DRS_SCISSORTESTENABLE, 0);
 	}
@@ -2127,15 +2344,30 @@ namespace components
 		memcpy(game::gfxCmdBufState, &state1, sizeof(game::GfxCmdBufState));
 	}
 
+	void R_DepthPrepass(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
+	{
+		game::GfxCmdBufSourceState source = {};
+		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+
+		
+
+		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FLOAT_Z);
+
+		//game::R_ClearScreen(cmdbuf->device, 6, game::color_white, 1.0f, false, nullptr);
+
+		// R_SetSceneViewport
+		source.sceneViewport = viewinfo->sceneViewport;
+		source.viewMode = game::VIEW_MODE_NONE;
+		source.viewportIsDirty = true;
+
+		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DepthPrepassCallback, viewinfo, &source, viewinfo, nullptr, viewinfo, cmdbuf, 0);
+	}
+
 	void R_DrawLit(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
 	{
 		game::GfxCmdBufSourceState source = {};
-
-		//R_InitCmdBufSourceState(GfxCmdBufSourceState *source, GfxCmdBufInput *input, int a3)
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput* input, int)>(0x53CB20)(&source, &viewinfo->input, 1);
-
-		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
+		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
 
 		// R_SetSceneViewport
 		source.sceneViewport = viewinfo->sceneViewport;
@@ -2145,15 +2377,63 @@ namespace components
 		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DrawLitCallback, viewinfo, &source, viewinfo, &viewinfo->litInfo, viewinfo, cmdbuf, 0);
 	}
 
+	void R_DrawDecal(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
+	{
+		game::GfxCmdBufSourceState source = {};
+		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
+
+		// R_SetSceneViewport
+		source.sceneViewport = viewinfo->sceneViewport;
+		source.viewMode = game::VIEW_MODE_NONE;
+		source.viewportIsDirty = true;
+
+		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DrawDecalCallback, viewinfo, &source, viewinfo, &viewinfo->decalInfo, viewinfo, cmdbuf, 0);
+	}
+
+	void R_DrawPointLitSurfs(game::GfxViewInfo* viewinfo /*esi*/, game::GfxCmdBufSourceState* source, game::GfxCmdBuf* cmdbuf)
+	{
+		const static uint32_t func_addr = 0x55BD40;
+		__asm
+		{
+			pushad;
+			push	cmdbuf;
+			push	source;
+			mov		esi, viewinfo;
+			call	func_addr;
+			add		esp, 8;
+			popad;
+		}
+	}
+
+	void R_DrawLights(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
+	{
+		if(viewinfo->pointLightCount)
+		{
+			__debugbreak();
+		}
+
+		game::GfxCmdBufSourceState source = {};
+		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FRAME_BUFFER);
+
+		// R_SetSceneViewport
+		source.viewportBehavior = game::GFX_USE_VIEWPORT_FOR_VIEW;
+		source.sceneViewport = viewinfo->sceneViewport;
+		source.viewMode = game::VIEW_MODE_NONE;
+		source.viewportIsDirty = true;
+
+		//auto x = game::rg;
+		//auto scene = game::scene;
+
+		R_DrawPointLitSurfs(viewinfo, &source, cmdbuf);
+	}
+
 	void R_DrawEmissive(game::GfxCmdBuf* cmdbuf, game::GfxViewInfo* viewinfo)
 	{
 		game::GfxCmdBufSourceState source = {};
-
-		//R_InitCmdBufSourceState(GfxCmdBufSourceState *source, GfxCmdBufInput *input, int a3)
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput* input, int)>(0x53CB20)(&source, &viewinfo->input, 1);
-
-		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
-		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
+		game::R_InitCmdBufSourceState(&source, &viewinfo->input, 1);
+		game::R_SetupRendertarget(&source, game::R_RENDERTARGET_FRAME_BUFFER); //dest_rendertarget);
 
 		// R_SetSceneViewport
 		source.sceneViewport = viewinfo->sceneViewport;
@@ -2163,11 +2443,14 @@ namespace components
 		R_DrawCall((void(__cdecl*)(game::GfxViewInfo*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufSourceState*, game::GfxCmdBufState*))R_DrawEmissiveCallback, viewinfo, &source, viewinfo, &viewinfo->emissiveInfo, viewinfo, cmdbuf, 0);
 	}
 
+	// render bsp and effects
 	void RB_StandardDrawCommands(game::GfxViewInfo* viewInfo)
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
 
-		if (game::dx->device && (effects::effect_is_playing() || fx_system::ed_is_paused && !effects::effect_is_playing()))
+		if (game::dx->device && (effects::effect_is_playing() 
+				|| (fx_system::ed_is_paused && !effects::effect_is_playing())
+				|| (dvars::r_draw_bsp && dvars::r_draw_bsp->current.enabled)))
 		{
 			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];
@@ -2175,26 +2458,43 @@ namespace components
 			renderer::copy_scene_to_texture(ggui::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
 			game::gfxCmdBufSourceState->input.codeImages[10] = resolved_post_sun->image;
 
-			R_DrawLit(&cmdBuf, viewInfo);
-			R_DrawEmissive(&cmdBuf, viewInfo);
+			// ------
+
+			const auto backend = game::get_backenddata();
+			const auto dyn_shadow_type = viewInfo->dynamicShadowType;
+
+			if (dyn_shadow_type == game::SHADOW_MAP)
+			{
+				if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+				{
+					game::RB_SunShadowMaps(backend, viewInfo);
+				}
+
+				game::RB_SpotShadowMaps(backend, viewInfo);
+			}
+
+
+			//R_DepthPrepass(&cmdBuf, viewInfo);	// no need to do a depth prepass, only causes issues upon resizing
+													// needs depthbuffer resize logic
+
+			if (viewInfo->litInfo.viewInfo && viewInfo->litInfo.drawSurfs)
+			{
+				R_DrawLit(&cmdBuf, viewInfo);
+			}
+
+			if(viewInfo->decalInfo.viewInfo && viewInfo->decalInfo.drawSurfs)
+			{
+				R_DrawDecal(&cmdBuf, viewInfo);
+			}			
+
+			// RB_DrawSun
+			//R_DrawLights(&cmdBuf, viewInfo); // not needed, sm_enable was the issue
+
+			if (viewInfo->emissiveInfo.viewInfo && viewInfo->emissiveInfo.drawSurfs)
+			{
+				R_DrawEmissive(&cmdBuf, viewInfo);
+			}
 		}
-
-//#ifdef DEBUG
-		// Add a debug line
-		//game::vec3_t start = { 0.0f, 0.0f, 0.0f };
-		//game::vec3_t fwd = {};
-		//utils::vector::angle_vectors(game::glob::track_worldspawn.sundirection, fwd, nullptr, nullptr);
-
-		//utils::vector::scale(fwd, 500.0f, fwd);
-
-		////game::vec3_t end = { 0.0f, 0.0f, 20000.0f };
-		//game::vec4_t color = { 1.0f, 0.5f, 0.0f, 1.0f };
-
-		//// R_AddDebugLine(frontEndDataOut->debugGlobals, &v10, &v13, v9);
-		//utils::hook::call<void(__cdecl)(game::DebugGlobals*, const float* start, const float* end, const float* color)>(0x528680)
-		//	(game::get_frontenddata()->debugGlobals, start, fwd, color);
-
-//#endif
 
 		RB_EndSceneRendering(game::gfxCmdBufSourceState, game::gfxCmdBufState, &viewInfo->input, viewInfo);
 	}
@@ -2204,11 +2504,6 @@ namespace components
 		const auto backend = game::get_backenddata();
 
 		if(backend->viewInfo->displayViewport.width == 0)
-		{
-			return;
-		}
-
-		if(backend->viewInfo->viewParms.origin[0] == 0.0f)
 		{
 			return;
 		}
@@ -2676,6 +2971,71 @@ namespace components
 		utils::hook::call<void(__cdecl)()>(0x535F10)();
 	}
 
+
+	// *
+	// * Fix asserts when playing effects that use xmodels with no bsp loaded 
+	// *
+
+	int R_CalcReflectionProbeIndex(const float* lightingOrigin)
+	{
+		if(game::rgp->world)
+		{
+			return utils::hook::call<int (__cdecl)(const float*)>(0x5235E0)(lightingOrigin);
+		}
+
+		return 0;
+	}
+
+	bool is_rgp_world_loaded()
+	{
+		if (game::rgp->world)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	void __declspec(naked) GetPrimaryLightForBoxCallback_stub()
+	{
+		const static uint32_t retn_addr = 0x52A6FC;
+		__asm
+		{
+			pushad;
+			call    is_rgp_world_loaded;
+			test    al, al;
+			popad;
+
+			je      SKIP;
+			call    dword ptr[ebp + 0Ch];
+
+		SKIP:
+			push    1;
+			jmp		retn_addr;
+		}
+	}
+	
+	void __declspec(naked) R_GetLightingAtPoint_stub()
+	{
+		const static uint32_t func_addr = 0x52A290;
+		const static uint32_t retn_addr = 0x52A704;
+		__asm
+		{
+			pushad;
+			call    is_rgp_world_loaded;
+			test    al, al;
+			popad;
+
+			je      SKIP;
+			call    func_addr;
+			jmp		retn_addr;
+
+		SKIP:
+			mov		eax, 0;
+			jmp		retn_addr;
+		}
+	}
+
 	// *
 	// *
 
@@ -2758,14 +3118,6 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "shadow drawing distance (camera to center of brush)");
 	}
-
-	/*void relocate_struct_ref(const std::uintptr_t code_addr, const void* target_addr, const std::uintptr_t base_addr = 0, const std::uintptr_t dest_addr = 0)
-	{
-		const auto struct_offset = dest_addr - base_addr;
-		const auto struct_final_addr = reinterpret_cast<std::uintptr_t>(target_addr) + struct_offset;
-
-		utils::hook::set<std::uintptr_t>(code_addr, struct_final_addr);
-	}*/
 
 	void relocate_struct_ref(const std::uintptr_t code_addr, const void* target_addr, const unsigned int offset)
 	{
@@ -2952,10 +3304,9 @@ namespace components
 
 		// do not add a clearscreen command at the beginning of CCamWnd::OnPaint
 		// !! spot used to implement effect controlling logic (effects::camera_onpaint_stub)
-		utils::hook::nop(0x40304D, 5);
+		//utils::hook::nop(0x40304D, 5);
 
 		// do not add a clearscreen command before adding lines to the scene (would leave no depth info for effects)
-		// utils::hook::nop(0x4084D2, 5);
 		utils::hook(0x4084D2, disable_line_depth_testing, HOOK_JUMP).install()->quick(); // disable depth testing for lines (same result as clearing the depthbuffer)
 
 		// ^ nop call that adds connection lines (target->targetname) (after disabled depth testing) and call it before disabling depth testing
@@ -2984,23 +3335,68 @@ namespace components
 		// register smalldevfont
 		utils::hook(0x5011B8, post_render_init, HOOK_CALL).install()->quick();
 
-		// nop rgp world related stuff when drawing gfx-scene-entities (effect xmodels)
-		utils::hook::nop(0x52A6E8, 5);
-		utils::hook::nop(0x52A6FF, 5);
-		utils::hook::nop(0x52A6F7, 3);
+
+		// *
+		// * Fix asserts when playing effects that use xmodels (gfx-scene-entities) with no bsp loaded 
+		// *
+
+		utils::hook(0x52A6E8, R_CalcReflectionProbeIndex, HOOK_CALL).install()->quick();
+		utils::hook(0x52A6F7, GetPrimaryLightForBoxCallback_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x52A6FF, R_GetLightingAtPoint_stub, HOOK_JUMP).install()->quick();
 		utils::hook::nop(0x500F4C, 5); // < on shutdown
+
+		// silence assert 'localDrawSurf->fields.prepass == MTL_PREPASS_NONE'
+		utils::hook::nop(0x52EE39, 5); 
 
 		// * ------
 
 		// load depth prepass and build-floatz technique (Material_LoadTechniqueSet -> g_useTechnique)
-		//utils::hook::set<BYTE>(0x633FC4 + 0, 0x1);
-		//utils::hook::set<BYTE>(0x633FC4 + 1, 0x1);
+		utils::hook::set<BYTE>(0x633FC4 + 0, 0x1);  // depth prepass
+		utils::hook::set<BYTE>(0x633FC4 + 1, 0x1);  // build floatz
+		utils::hook::set<BYTE>(0x633FC4 + 2, 0x1);  // build shadowmap depth
+		utils::hook::set<BYTE>(0x633FC4 + 3, 0x1);  // build shadowmap color
+		utils::hook::set<BYTE>(0x633FC4 + 4, 0x1);  // unlit
+		utils::hook::set<BYTE>(0x633FC4 + 5, 0x1);  // emissive
+		utils::hook::set<BYTE>(0x633FC4 + 6, 0x1);  // emissive shadow
+		utils::hook::set<BYTE>(0x633FC4 + 7, 0x1);  // lit
+		utils::hook::set<BYTE>(0x633FC4 + 8, 0x1);  // lit sun
+		utils::hook::set<BYTE>(0x633FC4 + 9, 0x1);  // lit sun shadow
+		utils::hook::set<BYTE>(0x633FC4 + 10, 0x1); // lit spot
+		utils::hook::set<BYTE>(0x633FC4 + 11, 0x1); // lit spot shadow
+		utils::hook::set<BYTE>(0x633FC4 + 12, 0x1); // lit omni
+		utils::hook::set<BYTE>(0x633FC4 + 13, 0x1); // lit omni shadow
+		utils::hook::set<BYTE>(0x633FC4 + 14, 0x1); // lit instanced
+		utils::hook::set<BYTE>(0x633FC4 + 15, 0x1); // lit instanced sun
+		utils::hook::set<BYTE>(0x633FC4 + 16, 0x1); // lit instanced sun shadow
+		utils::hook::set<BYTE>(0x633FC4 + 17, 0x1); // lit instanced spot
+		utils::hook::set<BYTE>(0x633FC4 + 18, 0x1); // lit instanced spot shadow
+		utils::hook::set<BYTE>(0x633FC4 + 19, 0x1); // lit instanced omni
+		utils::hook::set<BYTE>(0x633FC4 + 20, 0x1); // lit instanced omni shadow
+		utils::hook::set<BYTE>(0x633FC4 + 21, 0x1); // light spot
+		utils::hook::set<BYTE>(0x633FC4 + 22, 0x1); // light omni
+		utils::hook::set<BYTE>(0x633FC4 + 23, 0x1); // light spot shadow
+		utils::hook::set<BYTE>(0x633FC4 + 24, 0x1); // fakelight normal
+		utils::hook::set<BYTE>(0x633FC4 + 25, 0x1); // fakelight view
+		utils::hook::set<BYTE>(0x633FC4 + 26, 0x1); // sunlight preview
+		utils::hook::set<BYTE>(0x633FC4 + 27, 0x1); // case texture
+		utils::hook::set<BYTE>(0x633FC4 + 28, 0x1); // solid wireframe
+		utils::hook::set<BYTE>(0x633FC4 + 29, 0x1); // shaded wireframe
+		utils::hook::set<BYTE>(0x633FC4 + 30, 0x1); // shadowcookie caster
+		utils::hook::set<BYTE>(0x633FC4 + 31, 0x1); // shadowcookie receiver
+		utils::hook::set<BYTE>(0x633FC4 + 32, 0x1); // debug bumpmap
+		utils::hook::set<BYTE>(0x633FC4 + 33, 0x1); // debug bumpmap instanced
 
+		// * ------
+
+
+		// write a logfile showing all rendercommands for a single frame
 		command::register_command("g_log_rendercommands"s, [this](auto)
 		{
 			g_log_rendercommands = true;
 		});
 
+
+		// only affects materials registered / used post init
 		command::register_command("reload_shaders"s, [this](auto)
 		{
 			auto& vs_count = *reinterpret_cast<int*>(0x14E7C2C);
@@ -3024,6 +3420,8 @@ namespace components
 			memset(tech_hashtable, 0, sizeof(int[8192]));
 		});
 
+
+		// dump vertex and pixelshader for given technique
 		command::register_command("dump_shaders_technique", [this](std::vector<std::string> args)
 		{
 			if (args.size() != 2)

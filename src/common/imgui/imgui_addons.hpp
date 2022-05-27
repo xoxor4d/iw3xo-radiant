@@ -12,9 +12,16 @@ namespace fx_system
 
 namespace ImGui
 {
+	bool	Spinner(const char* label, float radius, float thickness, const ImU32& color);
+	
 	bool	IsVertScollbarVisible();
 	void	left_label_drag(const char* label, const float text_y_offset, const float sameline_offset = 80.0f);
 	void	left_label_checkbox(const char* label, const float text_y_offset);
+
+	void	DvarBool_External(const char* checkbox_label, const char* dvar_name);
+	void	DvarInt_External(const char* checkbox_label, const char* dvar_name);
+	void	DvarFloat_External(const char* checkbox_label, const char* dvar_name);
+	void	DvarEnum_External(const char* label, const char* dvar_name);
 
 	bool	Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ED_FLAG_ flag, bool* result = nullptr, bool invert_selected = false);
 	bool	Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ELEM_ flag, bool* result = nullptr);

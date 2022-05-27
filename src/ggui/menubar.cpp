@@ -68,7 +68,9 @@ namespace ggui
 					cdeclcall(void, 0x423AA0); //cmainframe::OnFileNew
 				}
 
-				if (ImGui::MenuItem("Open", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) 
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Open ..", ggui::hotkey_dialog::get_hotkey_for_command("FileOpen").c_str())) 
 				{
 					// logic :: ggui::file_dialog_frame
 					if(dvars::gui_use_new_filedialog->current.enabled)
@@ -88,33 +90,6 @@ namespace ggui
 						cdeclcall(void, 0x423AE0); //cmainframe::OnFileOpen
 					}
 				}
-
-				if (ImGui::MenuItem("Save", ggui::hotkey_dialog::get_hotkey_for_command("FileSave").c_str())) {
-					cdeclcall(void, 0x423B80); //cmainframe::OnFileSave
-				}
-
-				if (ImGui::MenuItem("Save As")) 
-				{
-					// logic :: ggui::file_dialog_frame
-					if (dvars::gui_use_new_filedialog->current.enabled)
-					{
-						const auto egui = GET_GUI(ggui::entity_dialog);
-						const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
-
-						const auto file = GET_GUI(ggui::file_dialog);
-						file->set_default_path(path_str);
-						file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_SAVE);
-						file->set_file_op_type(file_dialog::FileDialogType::SaveFile);
-						file->set_file_ext(".map");
-						file->open();
-					}
-					else
-					{
-						cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
-					}
-				}
-
-				SEPERATORV(0.0f);
 
 				if (ImGui::BeginMenu("Open Recent", game::g_qeglobals->d_lpMruMenu->wNbItemFill))
 				{
@@ -137,7 +112,36 @@ namespace ggui
 					ImGui::EndMenu(); // Open Recent
 				}
 
-				if (ImGui::BeginMenu("Generate File .."))
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Save", ggui::hotkey_dialog::get_hotkey_for_command("FileSave").c_str())) {
+					cdeclcall(void, 0x423B80); //cmainframe::OnFileSave
+				}
+
+				if (ImGui::MenuItem("Save As ..")) 
+				{
+					// logic :: ggui::file_dialog_frame
+					if (dvars::gui_use_new_filedialog->current.enabled)
+					{
+						const auto egui = GET_GUI(ggui::entity_dialog);
+						const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+						const auto file = GET_GUI(ggui::file_dialog);
+						file->set_default_path(path_str);
+						file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_SAVE);
+						file->set_file_op_type(file_dialog::FileDialogType::SaveFile);
+						file->set_file_ext(".map");
+						file->open();
+					}
+					else
+					{
+						cdeclcall(void, 0x423BC0); //cmainframe::OnFileSaveas
+					}
+				}
+
+				SEPERATORV(0.0f);
+
+				if (ImGui::BeginMenu("Generate File"))
 				{
 					if (ImGui::MenuItem("Save Selected"))
 					{
@@ -545,23 +549,7 @@ namespace ggui
 					if (ImGui::MenuItem("Filmtweak Settings"))
 					{
 						const auto cs = GET_GUI(ggui::camera_settings_dialog);
-						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
-						{
-							// close entire window if tab is in-front
-							cs->close(); // toggle
-						}
-						else if (!cs->is_active())
-						{
-							// open window with focused fakesun tab
-							cs->set_tabstate_fakesun(true);
-							cs->open(); // toggle
-						}
-						else
-						{
-							// window is open but tab not focused
-							cs->set_tabstate_fakesun(true);
-							cs->focus_fakesun();
-						}
+						cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
 					}
 
 					SEPERATORV(0.0f);
@@ -577,23 +565,7 @@ namespace ggui
 					if (ImGui::MenuItem("Fake Sun Settings"))
 					{
 						const auto cs = GET_GUI(ggui::camera_settings_dialog);
-						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
-						{
-							// close entire window if tab is in-front
-							cs->close(); // toggle
-						}
-						else if (!cs->is_active())
-						{
-							// open window with focused fakesun tab
-							cs->set_tabstate_fakesun(true);
-							cs->open(); // toggle
-						}
-						else
-						{
-							// window is open but tab not focused
-							cs->set_tabstate_fakesun(true);
-							cs->focus_fakesun();
-						}
+						cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
 					}
 
 					SEPERATORV(0.0f);
@@ -711,6 +683,8 @@ namespace ggui
 					ImGui::EndMenu(); // Texture Resolution
 				}
 
+				SEPERATORV(0.0f);
+
 				if (ImGui::MenuItem("Reload Textures", ggui::hotkey_dialog::get_hotkey_for_command("RefreshTextures").c_str())) {
 					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
 				}
@@ -718,6 +692,75 @@ namespace ggui
 				if (ImGui::MenuItem("Reload XModels")) 
 				{
 					memset(game::com_fileDataHashTable, 0, sizeof(uintptr_t) * 1024);
+				}
+
+				if (ImGui::MenuItem("Sort World Surfaces"))
+				{
+					game::R_SortWorldSurfaces();
+
+					// ugly hacks - ref for later
+
+					///*memset(game::rg->Material_materialHashTable, 0, sizeof(game::rg->Material_materialHashTable));
+					//memset(game::rgp->sortedMaterials, 0, sizeof(game::rgp->sortedMaterials));
+					//game::rgp->materialCount = 0;*/
+
+					//cdeclcall(void, 0x51C020); // Material_Sort
+
+					//unsigned int index = 0;
+					//bool exists = false;
+
+					//// Material_GetHashIndex
+					//utils::hook::call<int(__cdecl)(const char* _name, unsigned int* _index_out, bool* _exists)>(0x510E10)("wc/case1024", &index, &exists);
+
+					//// Material_Load
+					//const auto t_mat = utils::hook::call<game::Material* (__cdecl)(const char* _name, int _type)>(0x51B690)("case1024", 9); //game::Material_RegisterHandle("wc/case1024", 9);
+
+					////if(exists && t_mat)
+					////{
+					////	utils::hook::call<void(__cdecl)(void*)>(0x4AC2A0)(game::rg->Material_materialHashTable[index]);
+					////	game::rg->Material_materialHashTable[index] = nullptr;
+					////	game::Material_Add(index, t_mat);
+					////}
+
+					//game::rgp->sortedMaterials[game::rgp->materialCount] = t_mat;
+					//game::rgp->materialCount++;
+					//game::rgp->needSortMaterials = 1;
+
+					////cdeclcall(void, 0x51C020); // Material_Sort
+
+					//components::exec::on_gui_once([]() 
+					//{
+					//	bool found = false;
+					//	for(auto i = 0; i < game::rgp->materialCount; i++)
+					//	{
+					//		if(!found && game::rgp->sortedMaterials[i]->info.name == "case1024"s)
+					//		{
+					//			game::rgp->sortedMaterials[i] = nullptr;
+					//			//game::rgp->materialCount--;
+					//			game::rgp->needSortMaterials = true;
+
+					//			found = true;
+					//		}
+					//		else if(found)
+					//		{
+					//			game::rgp->sortedMaterials[i - 1] = game::rgp->sortedMaterials[i];
+					//		}
+					//	}
+
+					//	if(found)
+					//	{
+					//		game::rgp->sortedMaterials[game::rgp->materialCount - 1] = nullptr;
+					//		game::rgp->materialCount--;
+					//	}
+
+					//	game::rgp->needSortMaterials = 1;
+
+					//	cdeclcall(void, 0x52E9F0); // R_SortWorldSurfaces
+
+					//	
+					//});
+
+					//game::Material_RegisterHandle("css_portal", 3);
 				}
 
 				SEPERATORV(0.0f);
@@ -854,29 +897,12 @@ namespace ggui
 				ImGui::EndMenu(); // Renderer
 			}
 
-
 			if (ImGui::BeginMenu("Effects"))
 			{
 				if (ImGui::MenuItem("Effect Settings .."))
 				{
 					const auto cs = GET_GUI(ggui::camera_settings_dialog);
-					if (cs->get_tabstate_effects() && cs->is_tabstate_effects_active())
-					{
-						// close entire window if tab is in-front
-						cs->close();
-					}
-					else if (!cs->is_active())
-					{
-						// open window with focused effects tab
-						cs->set_tabstate_effects(true);
-						cs->open();
-					}
-					else
-					{
-						// window is open but tab not focused
-						cs->set_tabstate_effects(true);
-						cs->focus_effects();
-					}
+					cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
 				}
 
 				if (ImGui::MenuItem("Edit Current Effect", 0, nullptr, components::effects::effect_can_play()))
@@ -908,6 +934,70 @@ namespace ggui
 				IMGUI_MENU_WIDGET_SINGLE("Timescale", ImGui::DragFloat("##timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f));
 				IMGUI_MENU_WIDGET_SINGLE("Repeat Delay", ImGui::DragFloat("##repeatdelay", &fx_system::ed_looppause, 0.01f, 0.05f, FLT_MAX, "%.2f"));
 				ImGui::EndMenu(); // Effects
+			}
+
+			if (ImGui::BeginMenu("d3dbsp"))
+			{
+				if (ImGui::MenuItem("Load d3dbsp .."))
+				{
+					const auto egui = GET_GUI(ggui::entity_dialog);
+					const std::string path_str = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath") + "\\raw\\maps\\mp\\"s;
+
+					const auto file = GET_GUI(ggui::file_dialog);
+					file->set_default_path(path_str);
+					file->set_file_handler(ggui::FILE_DIALOG_HANDLER::D3DBSP_LOAD);
+					file->set_file_op_type(file_dialog::FileDialogType::OpenFile);
+					file->set_file_ext(".d3dbsp");
+					file->open();
+				}
+
+				if (ImGui::MenuItem("Reload d3dbsp"))
+				{
+					components::d3dbsp::reload_bsp();
+
+				} TT("Reload the currently loaded bsp.\nTries to automatically load a bsp based of the .map name if no bsp is loaded.");
+
+				SEPERATORV(0.0f);
+
+				const bool can_reload_bsp = components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
+				ImGui::BeginDisabled(!can_reload_bsp);
+				{
+					const auto gameview = components::gameview::p_this;
+					const bool tstate = gameview->get_all_geo_state() || gameview->get_all_ents_state() || gameview->get_all_triggers_state() || gameview->get_all_others_state();
+
+					if (ImGui::MenuItem("Draw d3dbsp", ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp").c_str(), dvars::r_draw_bsp->current.enabled))
+					{
+						dvars::set_bool(dvars::r_draw_bsp, !dvars::r_draw_bsp->current.enabled);
+					}
+
+					if (ImGui::MenuItem("Toggle d3dbsp/radiant", ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp_radiant").c_str()))
+					{
+						components::command::execute("toggle_bsp_radiant");
+					}
+					
+					if (ImGui::MenuItem("Draw Radiant World", ggui::hotkey_dialog::get_hotkey_for_command("toggle_filter_all").c_str(), !tstate))
+					{
+						components::command::execute("toggle_filter_all");
+					}
+
+					SEPERATORV(0.0f);
+
+					if(ImGui::MenuItem("Compile current map", ggui::hotkey_dialog::get_hotkey_for_command("bsp_compile").c_str()))
+					{
+						components::d3dbsp::compile_current_map();
+
+					} TT("Compile currently loaded .map with setting specified within 'Compile Settings'.\nAutomatically reloads the bsp when finished.");
+
+					if (ImGui::MenuItem("Compile Settings .."))
+					{
+						const auto cs = GET_GUI(ggui::camera_settings_dialog);
+						cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
+					}
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::EndMenu(); // BSP
 			}
 
 
@@ -1806,7 +1896,7 @@ namespace ggui
 			//}
 			ImGui::EndGroup(); // used to calculate total width below
 
-			if (dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
+			/*if (dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
 			{
 				const auto menubar_width = ImGui::GetItemRectSize().x + 24.0f;
 				const auto gridpos_text_width = ImGui::CalcTextSize(cmainframe::activewnd->m_strStatus[1]).x;
@@ -1823,6 +1913,41 @@ namespace ggui
 						ImGui::TextUnformatted(cmainframe::activewnd->m_strStatus[1]);
 					}
 				}
+			}*/
+
+			if(components::process::pthis->is_active())
+			{
+				const auto menubar_height = ImGui::GetItemRectSize().y;
+				const auto tb = GET_GUI(ggui::toolbar_dialog);
+
+				ImVec4 spinner_color = ImVec4(0.49f, 0.2f, 0.2f, 1.0f);
+
+				ImVec4 toolbar_button_background_active = ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector);
+				ImVec4 toolbar_button_background_hovered = toolbar_button_background_active + ImVec4(0.10f, 0.1f, 0.1f, 0.0f);
+				ImVec2 toolbar_button_size = ImVec2(menubar_height, menubar_height);
+
+				const char* proc_str = process_str.empty() ? "Spawning Process" : process_str.c_str();
+				const float proc_str_width = ImGui::CalcTextSize(proc_str).x;
+
+				// not using a group to calculate the widget size because it flickers upon text change (frame delay)
+
+				ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height - 32.0f);
+
+				static bool hov_active_proc;
+				if (tb->image_button_label(proc_str
+					, "fx_stop"
+					, true
+					, hov_active_proc
+					, "Kill active process."
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					components::process::pthis->kill_process();
+				}
+
+				ImGui::SameLine(ImGui::GetWindowWidth() - 26.0f);
+				ImGui::Spinner("##proc_spinner", 6.0, 2.0f, ImGui::ColorConvertFloat4ToU32(spinner_color));
 			}
 
 			ImGui::PopStyleVar(2); // ImGuiStyleVar_WindowPadding | ImGuiStyleVar_ItemSpacing

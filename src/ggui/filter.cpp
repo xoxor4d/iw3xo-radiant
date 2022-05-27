@@ -250,7 +250,7 @@ namespace ggui
 		imgui_filter.Draw("#filter_filter", ImGui::GetContentRegionAvail().x);
 		input_focused = ImGui::IsItemFocused();
 
-		if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0) && !ImGui::IsWindowAppearing())
+		/*if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0) && !ImGui::IsWindowAppearing())
 		{
 			if (needs_window_hovered_once && window_hovered)
 			{
@@ -260,7 +260,7 @@ namespace ggui
 			{
 				ImGui::SetKeyboardFocusHere(-1);
 			}
-		}
+		}*/
 
 		const auto post_filter_pos = ImGui::GetCursorScreenPos();
 
@@ -273,143 +273,246 @@ namespace ggui
 			ImGui::SetCursorScreenPos(post_filter_pos);
 		}
 
-		static ImGuiTableFlags flags = ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_BordersOuter;
+		static ImGuiTableFlags flags = ImGuiTableFlags_SizingStretchSame /*| ImGuiTableFlags_BordersOuter*/;
 
 		const float column_width = 140.0f;
 		int column_count = static_cast<int>(ImGui::GetWindowContentRegionMax().x / column_width);
 		column_count = column_count < 2 ? 2 : column_count;
 		column_count = column_count > 6 ? 6 : column_count;
 
-		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f);
+		SPACING(0.0f, 4.0f);
+
+		int sflags = 0;
+		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); sflags++;
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 12.0f); sflags++;
+
 		if (ImGui::TreeNodeEx("Geometry Filters", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::BeginTable("##geofilter_table", column_count, flags))
+			static float geo_child_height = 200.0f;
+
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
+			ImGui::BeginChild("##geo_child", ImVec2(0.0f, geo_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
 			{
-				for (size_t i = 0; i < _geofilters.size(); i++)
+				ImGui::BeginGroup();
 				{
-					if (const auto	filter = _geofilters[i];
-									filter->name)
+					if (ImGui::ButtonEx("Toggle All Geo", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
-						if (imgui_filter.IsActive())
+						components::gameview::p_this->toggle_all_geo(!components::gameview::p_this->get_all_geo_state());
+					}
+
+					ImGui::Indent(6.0f);
+
+					if (ImGui::BeginTable("##geofilter_table", column_count, flags))
+					{
+						for (size_t i = 0; i < _geofilters.size(); i++)
 						{
-							if (!imgui_filter.PassFilter(filter->name)) {
-								continue;
+							if (const auto	filter = _geofilters[i];
+											filter->name)
+							{
+								if (imgui_filter.IsActive())
+								{
+									if (!imgui_filter.PassFilter(filter->name))
+									{
+										continue;
+									}
+								}
+
+								ImGui::TableNextColumn();
+
+								ImGui::PushStyleCompact();
+								ImGui::PushID("geofilter");
+
+								handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->geometry_filters, filter, i);
+
+								ImGui::PopID();
+								ImGui::PopStyleCompact();
 							}
 						}
 
-						ImGui::TableNextColumn();
-
-						ImGui::PushStyleCompact();
-						ImGui::PushID("geofilter");
-
-						handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->geometry_filters, filter, i);
-
-						ImGui::PopID();
-						ImGui::PopStyleCompact();
+						ImGui::EndTable();
 					}
+
+					ImGui::EndGroup();
+					geo_child_height = ImGui::GetItemRectSize().y + 8.0f;
 				}
-				ImGui::EndTable();
+				
 			}
+			ImGui::EndChild();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar();
 			ImGui::TreePop();
 		}
+
+		SPACING(0.0f, 4.0f);
 
 		if (ImGui::TreeNodeEx("Entity Filters", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::BeginTable("##entityfilter_table", column_count, flags))
+			static float ent_child_height = 200.0f;
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
+			ImGui::BeginChild("##geo_child", ImVec2(0.0f, ent_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
 			{
-				for (size_t i = 0; i < _entityfilters.size(); i++)
+				ImGui::BeginGroup();
 				{
-					if (const auto	filter = _entityfilters[i];
-									filter->name)
+					if (ImGui::ButtonEx("Toggle All Entities", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
-						if (imgui_filter.IsActive())
+						components::gameview::p_this->toggle_all_entities(!components::gameview::p_this->get_all_ents_state());
+					}
+
+					ImGui::Indent(6.0f);
+
+					if (ImGui::BeginTable("##entityfilter_table", column_count, flags))
+					{
+						for (size_t i = 0; i < _entityfilters.size(); i++)
 						{
-							if (!imgui_filter.PassFilter(filter->name)) {
-								continue;
+							if (const auto	filter = _entityfilters[i];
+											filter->name)
+							{
+								if (imgui_filter.IsActive())
+								{
+									if (!imgui_filter.PassFilter(filter->name)) 
+									{
+										continue;
+									}
+								}
+
+								ImGui::TableNextColumn();
+
+								ImGui::PushStyleCompact();
+								ImGui::PushID("entityfilter");
+
+								handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->entity_filters, filter, i);
+
+								ImGui::PopID();
+								ImGui::PopStyleCompact();
 							}
 						}
-
-						ImGui::TableNextColumn();
-
-						ImGui::PushStyleCompact();
-						ImGui::PushID("entityfilter");
-
-						handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->entity_filters, filter, i);
-
-						ImGui::PopID();
-						ImGui::PopStyleCompact();
+						ImGui::EndTable();
 					}
+					ImGui::EndGroup();
+					ent_child_height = ImGui::GetItemRectSize().y + 8.0f;
 				}
-				ImGui::EndTable();
 			}
+			ImGui::EndChild();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar();
 			ImGui::TreePop();
 		}
+
+		SPACING(0.0f, 4.0f);
 
 		if (ImGui::TreeNodeEx("Trigger Filters", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::BeginTable("##triggerfilter_table", column_count, flags))
+			static float trigger_child_height = 200.0f;
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
+			ImGui::BeginChild("##geo_child", ImVec2(0.0f, trigger_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
 			{
-				for (size_t i = 0; i < _triggerfilters.size(); i++)
+				ImGui::BeginGroup();
 				{
-					if (const auto	filter = _triggerfilters[i];
-									filter->name)
+					if (ImGui::ButtonEx("Toggle All Triggers", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
-						if (imgui_filter.IsActive())
+						components::gameview::p_this->toggle_all_triggers(!components::gameview::p_this->get_all_triggers_state());
+					}
+
+					ImGui::Indent(6.0f);
+
+					if (ImGui::BeginTable("##triggerfilter_table", column_count, flags))
+					{
+						for (size_t i = 0; i < _triggerfilters.size(); i++)
 						{
-							if (!imgui_filter.PassFilter(filter->name)) {
-								continue;
+							if (const auto	filter = _triggerfilters[i];
+											filter->name)
+							{
+								if (imgui_filter.IsActive())
+								{
+									if (!imgui_filter.PassFilter(filter->name)) 
+									{
+										continue;
+									}
+								}
+
+								ImGui::TableNextColumn();
+
+								ImGui::PushStyleCompact();
+								ImGui::PushID("triggerfilter");
+
+								handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->trigger_filters, filter, i);
+
+								ImGui::PopID();
+								ImGui::PopStyleCompact();
 							}
 						}
-
-						ImGui::TableNextColumn();
-
-						ImGui::PushStyleCompact();
-						ImGui::PushID("triggerfilter");
-
-						handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->trigger_filters, filter, i);
-
-						ImGui::PopID();
-						ImGui::PopStyleCompact();
+						ImGui::EndTable();
 					}
+					ImGui::EndGroup();
+					trigger_child_height = ImGui::GetItemRectSize().y + 8.0f;
 				}
-				ImGui::EndTable();
 			}
+			ImGui::EndChild();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar();
 			ImGui::TreePop();
 		}
+
+		SPACING(0.0f, 4.0f);
 
 		if (ImGui::TreeNodeEx("Other Filters", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (ImGui::BeginTable("##otherfilter_table", column_count, flags))
+			static float other_child_height = 200.0f;
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
+			ImGui::BeginChild("##geo_child", ImVec2(0.0f, other_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
 			{
-				for (size_t i = 0; i < _otherfilters.size(); i++)
+				ImGui::BeginGroup();
 				{
-					if (const auto	filter = _otherfilters[i];
-									filter->name)
+					if (ImGui::ButtonEx("Toggle All Others", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
-						if (imgui_filter.IsActive())
+						components::gameview::p_this->toggle_all_others(!components::gameview::p_this->get_all_others_state());
+					}
+
+					ImGui::Indent(6.0f);
+
+					if (ImGui::BeginTable("##otherfilter_table", column_count, flags))
+					{
+						for (size_t i = 0; i < _otherfilters.size(); i++)
 						{
-							if (!imgui_filter.PassFilter(filter->name)) {
-								continue;
+							if (const auto	filter = _otherfilters[i];
+											filter->name)
+							{
+								if (imgui_filter.IsActive())
+								{
+									if (!imgui_filter.PassFilter(filter->name)) 
+									{
+										continue;
+									}
+								}
+
+								ImGui::TableNextColumn();
+
+								ImGui::PushStyleCompact();
+								ImGui::PushID("otherfilter");
+
+								handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->other_filters, filter, i);
+
+								ImGui::PopID();
+								ImGui::PopStyleCompact();
 							}
 						}
-
-						ImGui::TableNextColumn();
-
-						ImGui::PushStyleCompact();
-						ImGui::PushID("otherfilter");
-
-						handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->other_filters, filter, i);
-
-						ImGui::PopID();
-						ImGui::PopStyleCompact();
+						ImGui::EndTable();
 					}
+					ImGui::EndGroup();
+					other_child_height = ImGui::GetItemRectSize().y + 8.0f;
 				}
-				ImGui::EndTable();
 			}
+			ImGui::EndChild();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleVar();
 			ImGui::TreePop();
 		}
 
-		ImGui::PopStyleVar();
+		ImGui::PopStyleVar(sflags);
 		ImGui::End();
 	}
 

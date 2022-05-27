@@ -160,6 +160,87 @@ namespace ggui
 					ImGui::PopStyleVar();
 				}
 
+				if (components::d3dbsp::Com_IsBspLoaded())
+				{
+					SPACING(0.0f, 0.0f);
+
+					ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
+					{
+						if(dvars::gui_camera_toolbar_merge_bsp_buttons && dvars::gui_camera_toolbar_merge_bsp_buttons->current.enabled)
+						{
+							static bool hov_toggle_bsp_radiant;
+							const bool show_bsp_icon = dvars::r_draw_bsp->current.enabled;
+
+							if (tb->image_togglebutton(show_bsp_icon ? "toggle_bsp" : "toggle_radiant_world"
+								, hov_toggle_bsp_radiant
+								, dvars::r_draw_bsp->current.enabled
+								, std::string("Toggle between visibility of the loaded d3dbsp and radiant " + ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp_radiant") + "\nButton can be split into two via 'Preferences > Camera > Merge BSP/Radiant buttons'").c_str()
+								, &toolbar_button_background
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								components::command::execute("toggle_bsp_radiant");
+
+							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+						}
+						else
+						{
+							static bool hov_bsp_rendering;
+							if (tb->image_togglebutton("toggle_bsp"
+								, hov_bsp_rendering
+								, dvars::r_draw_bsp->current.enabled
+								, std::string("Toggle visibility of loaded d3dbsp " + ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp")).c_str()
+								, &toolbar_button_background
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								dvars::set_bool(dvars::r_draw_bsp, !dvars::r_draw_bsp->current.enabled);
+
+							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+
+
+							static bool hov_toggle_world;
+
+							const auto gameview = components::gameview::p_this;
+							const bool tstate = gameview->get_all_geo_state() || gameview->get_all_ents_state() || gameview->get_all_triggers_state() || gameview->get_all_others_state();
+
+							if (tb->image_togglebutton("toggle_radiant_world"
+								, hov_toggle_world
+								, !tstate
+								, std::string("Toggle radiant rendering " + ggui::hotkey_dialog::get_hotkey_for_command("toggle_filter_all")).c_str()
+								, &toolbar_button_background
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								components::command::execute("toggle_filter_all");
+
+							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+						}
+
+						ImGui::PushID("settings3");
+						static bool hov_bsp_settings;
+						if (tb->image_togglebutton("fakesun_settings"
+							, hov_bsp_settings
+							, hov_bsp_settings
+							, "Open BSP settings menu"
+							, &toolbar_button_background
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &toolbar_button_size))
+						{
+							const auto cs = GET_GUI(ggui::camera_settings_dialog);
+							cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
+
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+						ImGui::PopID();
+
+						ImGui::PopStyleVar();
+					}
+				}
+				
 				SPACING(0.0f, 0.0f);
 
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
@@ -168,7 +249,7 @@ namespace ggui
 					if (tb->image_togglebutton("sunpreview"
 						, hov_fakesunpreview
 						, dvars::r_fakesun_preview->current.enabled
-						, std::string("Fake sun preview " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.").c_str()
+						, std::string("Fake sun preview " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.\n(Does not affect d3dbsp)").c_str()
 						, &toolbar_button_background
 						, &toolbar_button_background_hovered
 						, &toolbar_button_background_active
@@ -179,13 +260,13 @@ namespace ggui
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
-					if (dvars::r_fakesun_preview->current.enabled)
-					{
+					//if (dvars::r_fakesun_preview->current.enabled)
+					//{
 						static bool hov_fakesun_fog;
 						if (tb->image_togglebutton("fakesun_fog"
 							, hov_fakesun_fog
 							, dvars::r_fakesun_fog_enabled->current.enabled
-							, std::string("Toggle Fog " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_fog_toggle")).c_str()
+							, std::string("Toggle Fog " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_fog_toggle") + "\n(needs 'Fake sun preview' to work on radiant brushes / models)\n(Does affect d3dbsp)").c_str()
 							, &toolbar_button_background
 							, &toolbar_button_background_hovered
 							, &toolbar_button_background_active
@@ -194,7 +275,7 @@ namespace ggui
 							components::command::execute("fakesun_fog_toggle");
 
 						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-					}
+					//}
 
 
 					static bool hov_filmtweaks_settings;
@@ -225,24 +306,8 @@ namespace ggui
 						, &toolbar_button_size))
 					{
 						const auto cs = GET_GUI(ggui::camera_settings_dialog);
-						if (cs->get_tabstate_fakesun() && cs->is_tabstate_fakesun_active())
-						{
-							// close entire window if tab is in-front
-							cs->close(); // toggle
-						}
-						else if (!cs->is_active())
-						{
-							// open window with focused fakesun tab
-							cs->set_tabstate_fakesun(true);
-							cs->open(); // toggle
-						}
-						else
-						{
-							// window is open but tab not focused
-							cs->set_tabstate_fakesun(true);
-							cs->focus_fakesun();
-						}
-
+						cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
+						
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 					ImGui::PopStyleVar();
@@ -297,7 +362,7 @@ namespace ggui
 								if (tb->image_togglebutton("fx_pause"
 									, hov_fx_pause
 									, can_fx_play
-									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str()
+									, std::string("Pause Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str()
 									, &toolbar_button_background
 									, &toolbar_button_background_hovered
 									, &toolbar_button_background_active
@@ -358,23 +423,7 @@ namespace ggui
 								, &toolbar_button_size))
 							{
 								const auto cs = GET_GUI(ggui::camera_settings_dialog);
-								if (cs->get_tabstate_effects() && cs->is_tabstate_effects_active())
-								{
-									// close entire window if tab is in-front
-									cs->close(); // toggle
-								}
-								else if (!cs->is_active())
-								{
-									// open window with focused effects tab
-									cs->set_tabstate_effects(true);
-									cs->open(); // toggle
-								}
-								else
-								{
-									// window is open but tab not focused
-									cs->set_tabstate_effects(true);
-									cs->focus_effects();
-								}
+								cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
 
 							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 							ImGui::PopID();

@@ -35,7 +35,8 @@ namespace dvars
 	game::dvar_s* gui_use_new_filedialog = nullptr;
 
 	game::dvar_s* gui_camera_toolbar_defaultopen = nullptr;
-	
+	game::dvar_s* gui_camera_toolbar_merge_bsp_buttons = nullptr;
+
 	game::dvar_s* gui_saved_state_console = nullptr;
 	game::dvar_s* gui_saved_state_filter = nullptr;
 	game::dvar_s* gui_saved_state_entity = nullptr;
@@ -50,6 +51,13 @@ namespace dvars
 
 	game::dvar_s* grid_zoom_to_cursor = nullptr;
 	game::dvar_s* grid_draw_edge_coordinates = nullptr;
+
+	game::dvar_s* bsp_load_entities = nullptr;
+
+	game::dvar_s* r_draw_bsp = nullptr;
+	game::dvar_s* r_draw_bsp_overwrite_sunlight = nullptr;
+	game::dvar_s* r_draw_bsp_overwrite_sundir = nullptr;
+	game::dvar_s* r_draw_bsp_overwrite_sunspecular = nullptr;
 
 	game::dvar_s* r_draw_model_origin = nullptr;
 	game::dvar_s* r_draw_model_shadowcaster = nullptr;
@@ -190,6 +198,7 @@ namespace dvars
 		components::remote_net::register_dvars();
 		components::renderer::register_dvars();
 		components::gameview::register_dvars();
+		components::d3dbsp::register_dvars();
 
 		cmainframe::register_dvars();
 		cxywnd::register_dvars();

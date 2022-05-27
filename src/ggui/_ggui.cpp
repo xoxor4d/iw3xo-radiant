@@ -433,8 +433,31 @@ namespace ggui
 
 					case FX_EDITOR_DEF:
 					{
-						// asd
+						// aaaaaaa
+					}
 
+					case D3DBSP_LOAD:
+					{
+						if (!file->was_canceled() && !path_out.empty())
+						{
+							const std::string replace_path = "raw\\";
+							const std::size_t pos = path_out.find(replace_path) + replace_path.length();
+
+							std::string loc_filepath = path_out.substr(pos);
+							utils::replace(loc_filepath, "\\", "/");
+
+							if(components::d3dbsp::radiant_load_bsp(loc_filepath.c_str()))
+							{
+								dvars::set_bool(dvars::r_draw_bsp, true);
+							}
+
+							// fix stuck left mouse button
+							ImGuiIO& io = ImGui::GetIO();
+							io.AddMouseButtonEvent(0, false);
+
+						}
+
+						break;
 					}
 				}
 			}

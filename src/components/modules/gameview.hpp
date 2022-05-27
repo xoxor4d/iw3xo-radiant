@@ -11,13 +11,59 @@ namespace components
 		
 		static gameview* p_this;
 
+		[[nodiscard]] bool get_all_geo_state() const
+		{
+			return this->all_geo_enabled;
+		}
+
+		[[nodiscard]] bool get_all_ents_state() const
+		{
+			return this->all_ents_enabled;
+		}
+
+		[[nodiscard]] bool get_all_triggers_state() const
+		{
+			return this->all_triggers_enabled;
+		}
+
+		[[nodiscard]] bool get_all_others_state() const
+		{
+			return this->all_others_enabled;
+		}
+
+		void 			toggle_all_geo(bool state);
+		void 			toggle_all_entities(bool state);
+		void 			toggle_all_triggers(bool state);
+		void 			toggle_all_others(bool state);
+		void			toggle_all_filters();
+		
 		void 			set_state(bool state);
 		static void		register_dvars();
 
 
 	private:
+
+		bool all_off = false;
+
+		// all geo
+		bool all_geo_enabled = false;
+		bool all_geo_states[50] = {};
+
+		// all ents
+		bool all_ents_enabled = false;
+		bool all_ents_states[50] = {};
+
+		// all triggers
+		bool all_triggers_enabled = false;
+		bool all_triggers_states[50] = {};
+
+		// all others
+		bool all_others_enabled = false;
+		bool all_others_states[50] = {};
+
 		struct vars_s
 		{
+			// gameview
 			bool enabled;
 			bool s_model_origin;
 			bool s_patch_backface_wireframe;

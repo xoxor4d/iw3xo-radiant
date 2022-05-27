@@ -3,6 +3,58 @@
 
 namespace ImGui
 {
+	// https://github.com/ocornut/imgui/issues/1901 (zfedoran)
+	bool Spinner(const char* label, float radius, float thickness, const ImU32& color)
+	{
+		ImGuiWindow* window = GetCurrentWindow();
+
+		if (window->SkipItems)
+		{
+			return false;
+		}
+
+		ImGuiContext& g = *GImGui;
+		const ImGuiStyle& style = g.Style;
+		const ImGuiID id = window->GetID(label);
+
+		const ImVec2 pos = window->DC.CursorPos;
+		const ImVec2 size((radius) * 2, (radius + style.FramePadding.y) * 2);
+
+		const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
+		ItemSize(bb, style.FramePadding.y);
+
+		if (!ItemAdd(bb, id))
+		{
+			return false;
+		}
+			
+
+		// Render
+		window->DrawList->PathClear();
+
+		const int num_segments = 30;
+		const auto num_segments_f = static_cast<float>(num_segments);
+
+		const int start = static_cast<int>(abs(ImSin(static_cast<float>(g.Time * 1.8)) * (num_segments - 5)));
+
+		const float a_min = IM_PI * 2.0f * static_cast<float>(start) / num_segments_f;
+		const float a_max = IM_PI * 2.0f * (num_segments_f - 3.0f) / num_segments_f;
+
+		const ImVec2 centre = ImVec2(pos.x + radius, pos.y + radius + style.FramePadding.y);
+
+		for (int i = 0; i < num_segments; i++) 
+		{
+			const float a = a_min + ((float)i / num_segments_f) * (a_max - a_min);
+			window->DrawList->PathLineTo(
+				ImVec2(centre.x + ImCos(a + static_cast<float>(g.Time * 8.0)) * radius,
+				centre.y + ImSin(a + static_cast<float>(g.Time * 8.0)) * radius));
+		}
+
+		window->DrawList->PathStroke(color, false, thickness);
+
+		return true;
+	}
+
 	bool IsVertScollbarVisible()
 	{
 		ImGuiWindow* window = GImGui->CurrentWindow;
@@ -28,7 +80,50 @@ namespace ImGui
 		ImGui::SetCursorPosY(og_cursor_y);
 	};
 
+	void DvarBool_External(const char* checkbox_label, const char* dvar_name)
+	{
+		if (const auto handle = game::Dvar_FindVar(dvar_name); handle)
+		{
+			if (ImGui::Checkbox(checkbox_label, &handle->current.enabled))
+			{
+				//dvars::set_bool(handle, handle->current.enabled);
+				handle->modified = true;
+			} TT(utils::va("%s :: %s", dvar_name, handle->description));
+		}
+	}
 
+	void DvarInt_External(const char* checkbox_label, const char* dvar_name)
+	{
+		if (const auto handle = game::Dvar_FindVar(dvar_name); handle)
+		{
+			if (ImGui::DragInt(checkbox_label, &handle->current.integer, 0.01f, handle->domain.integer.min, handle->domain.integer.max))
+			{
+				handle->modified = true;
+			} TT(utils::va("%s :: %s", dvar_name, handle->description));
+		}
+	}
+
+	void DvarFloat_External(const char* checkbox_label, const char* dvar_name)
+	{
+		if (const auto handle = game::Dvar_FindVar(dvar_name); handle)
+		{
+			if (ImGui::DragFloat(checkbox_label, &handle->current.value, 0.01f, handle->domain.value.min, handle->domain.value.max, "%.2f"))
+			{
+				handle->modified = true;
+			} TT(utils::va("%s :: %s", dvar_name, handle->description));
+		}
+	}
+
+	void DvarEnum_External(const char* label, const char* dvar_name)
+	{
+		const auto handle = game::Dvar_FindVar(dvar_name);
+
+		if (ImGui::SliderInt(label, &handle->current.integer, 0, handle->domain.enumeration.stringCount - 1, handle->domain.enumeration.strings[handle->current.integer]))
+		{
+			handle->modified = true;
+		} TT(utils::va("%s :: %s", dvar_name, handle->description));
+	}
+		
 	bool Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ED_FLAG_ flag, bool* result, bool invert_selected)
 	{
 		bool flag_wrapper = elem->editorFlags & flag;

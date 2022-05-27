@@ -35,7 +35,8 @@ namespace dvars
 	extern game::dvar_s* gui_use_new_filedialog;
 
 	extern game::dvar_s* gui_camera_toolbar_defaultopen;
-	
+	extern game::dvar_s* gui_camera_toolbar_merge_bsp_buttons;
+
 	extern game::dvar_s* gui_saved_state_console;
 	extern game::dvar_s* gui_saved_state_filter;
 	extern game::dvar_s* gui_saved_state_entity;
@@ -50,6 +51,13 @@ namespace dvars
 
 	extern game::dvar_s* grid_zoom_to_cursor;
 	extern game::dvar_s* grid_draw_edge_coordinates;
+
+	extern game::dvar_s* bsp_load_entities;
+
+	extern game::dvar_s* r_draw_bsp;
+	extern game::dvar_s* r_draw_bsp_overwrite_sunlight;
+	extern game::dvar_s* r_draw_bsp_overwrite_sundir;
+	extern game::dvar_s* r_draw_bsp_overwrite_sunspecular;
 
 	extern game::dvar_s* r_draw_model_origin;
 	extern game::dvar_s* r_draw_model_shadowcaster;

@@ -65,6 +65,13 @@ namespace ggui
 
 			utils::ltrim(item_s);
 		}
+		else if (utils::starts_with(item_s, "^2", true))
+		{
+			color = ImVec4(0.13f, 0.4f, 0.79f, 1.0f);
+			has_color = true;
+
+			utils::ltrim(item_s);
+		}
 		else if (  utils::starts_with(item_s, "[WARN]", true)
 				|| utils::starts_with(item_s, "^3WARNING:", true)
 				|| utils::starts_with(item_s, "^3", true)

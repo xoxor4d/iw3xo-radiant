@@ -95,6 +95,9 @@ namespace game
 	game::GfxScene* scene = reinterpret_cast<game::GfxScene*>(0x1370980);
 	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
 
+	game::ComWorld* comworld = reinterpret_cast<game::ComWorld*>(0x241DDC8);
+	game::GfxWorld* s_world = reinterpret_cast<game::GfxWorld*>(0x174F688);
+
 	HWND* entitywnd_hwnds = reinterpret_cast<HWND*>(0x240A118);
 
 	game::GfxBackEndData* get_backenddata()
@@ -1270,6 +1273,36 @@ namespace game
 		}
 
 		return image;
+	}
+
+	void Material_Add(int idx/*eax*/, game::Material* material/*esi*/)
+	{
+		const static uint32_t func_addr = 0x510CC0;
+		__asm
+		{
+			pushad;
+			mov     eax, idx;
+			mov     esi, material;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void DObjCreate(game::DObjModel_s* dobjModels /*edi*/, game::DObj_s* obj /*esi*/, size_t numModels, game::XAnimTree_s* tree, int entnum)
+	{
+		const static uint32_t func_addr = 0x4BE9D0;
+		__asm
+		{
+			pushad;
+			mov		edi, dobjModels;
+			mov		esi, obj;
+			push	entnum;
+			push	tree;
+			push	numModels;
+			call	func_addr;
+			add		esp, 12;
+			popad;
+		}
 	}
 
 	// *
