@@ -1219,18 +1219,15 @@ namespace ggui
 						ImGui::EndDisabled();
 					}
 
-					// update sb because the selection is no longer valid (was stamped) 
+					// update sb because the selection could be invalid (if it was stamped) 
 					sb = game::g_selected_brushes();
 
-					if (sb->def && sb->def->owner)
+					ImGui::BeginDisabled(!(sb->def&& sb->def->owner));
 					{
 						camera_dialog::convert_selection_to_prefab_imgui_menu();
+						ImGui::EndDisabled();
 					}
 				}
-
-				
-
-				
 
 				SEPERATORV(0.0f);
 

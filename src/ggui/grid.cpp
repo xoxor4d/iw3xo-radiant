@@ -305,7 +305,8 @@ namespace ggui
 					SEPERATORV(0.0f);
 
 					const auto sb = game::g_selected_brushes();
-
+					bool do_prefab_separator = false;
+					
 					if (sb && sb->def && sb->def->owner)
 					{
 						if (const auto  val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(sb->def->owner->epairs, "classname");
@@ -317,9 +318,19 @@ namespace ggui
 							}
 
 							camera_dialog::stamp_prefab_imgui_imgui_menu(sb);
-							
-							SEPERATORV(0.0f);
+							do_prefab_separator = true;
 						}
+
+						if (game::is_any_brush_selected())
+						{
+							camera_dialog::convert_selection_to_prefab_imgui_menu();
+							do_prefab_separator = true;
+						}
+					}
+
+					if(do_prefab_separator)
+					{
+						SEPERATORV(0.0f);
 					}
 				}
 
