@@ -113,7 +113,11 @@ namespace components
 			{
 				if (i_ents < 50)
 				{
-					this->all_ents_states[i_ents] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::ENTITY, false);
+					if (f_entry->name != "Entities"s)
+					{
+						this->all_ents_states[i_ents] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::ENTITY, false);
+					}
+					
 					i_ents++;
 				}
 				else
@@ -231,7 +235,11 @@ namespace components
 			{
 				if (i_others < 50)
 				{
-					this->all_others_states[i_others] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::OTHER, false);
+					if (f_entry->name != "FX"s)
+					{
+						this->all_others_states[i_others] = filter->toggle_by_name(f_entry->name, ggui::filter_dialog::OTHER, false);
+					}
+
 					i_others++;
 				}
 				else
@@ -263,13 +271,14 @@ namespace components
 
 	void gameview::set_state(bool state)
 	{
+		const auto filter = GET_GUI(ggui::filter_dialog);
+		filter->build_radiant_filterlists();
+
 		if(!gameview::p_this)
 		{
 			game::printf_to_console("[ERR] Gameview module seems to be disabled ...");
 			return;
 		}
-
-		const auto filter = GET_GUI(ggui::filter_dialog);
 
 		// toggle off
 		if(!state)

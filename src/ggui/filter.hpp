@@ -45,6 +45,7 @@ namespace ggui
 
 		void gui() override;
 		bool toggle_by_name(const char* name, E_FILTERS filter_type, bool on_off);
+		void build_radiant_filterlists();
 
 		// *
 		// asm related
@@ -58,7 +59,6 @@ namespace ggui
 
 
 	private:
-		void build_radiant_filterlists();
 		void handle_radiant_filter(CCheckListBox* checklist, game::filter_entry_s* filter, int index);
 	};
 }
