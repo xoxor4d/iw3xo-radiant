@@ -74,7 +74,9 @@ namespace dvars
 
 	extern game::dvar_s* r_sunpreview_shadow_dist;
 	extern game::dvar_s* r_sunpreview_shadow_enable;
-	
+
+	extern game::dvar_s* r_generate_reflectionprobes;
+
 	extern game::dvar_s* guizmo_enable;
 	extern game::dvar_s* guizmo_snapping;
 	extern game::dvar_s* guizmo_brush_mode;

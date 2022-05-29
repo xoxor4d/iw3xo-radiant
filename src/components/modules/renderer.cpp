@@ -1701,7 +1701,7 @@ namespace components
 		{
 			// render emissive surfs (effects)
 			renderer::RB_Draw3D();
-			
+
 			// post effects logic (filmtweaks)
 			camera_postfx();
 		}
@@ -3123,6 +3123,12 @@ namespace components
 			/* maxs		*/ FLT_MAX,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "shadow drawing distance (camera to center of brush)");
+		
+		dvars::r_generate_reflectionprobes = dvars::register_bool(
+			/* name		*/ "r_generate_reflectionprobes",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::none,
+			/* desc		*/ "generate all reflection probes for the loaded d3dbsp");
 	}
 
 	void relocate_struct_ref(const std::uintptr_t code_addr, const void* target_addr, const unsigned int offset)

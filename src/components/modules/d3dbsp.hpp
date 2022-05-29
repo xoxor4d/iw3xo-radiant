@@ -123,6 +123,8 @@ namespace components
 		static bool Com_IsBspLoaded();
 		static std::uint32_t Com_GetBspVersion();
 		static char* Com_ValidateBspLumpData(LumpType type, unsigned int offset, unsigned int length, unsigned int elemSize, unsigned int* count);
+
+		static void Com_SaveLump(LumpType type, const void* newLump, unsigned int size);
 		static const void* Com_GetBspLump(LumpType type, unsigned int elemSize, unsigned int* count);
 		static bool Com_GetBspLumpBool(LumpType type);
 		static bool Com_LoadBsp(const char* filename);

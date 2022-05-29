@@ -38,5 +38,6 @@ namespace components
 #include "modules/main_module.hpp"
 #include "modules/pmesh.hpp"
 #include "modules/process.hpp"
+#include "modules/reflectionprobes.hpp"
 #include "modules/renderer.hpp"
 #include "modules/remote_net.hpp"
