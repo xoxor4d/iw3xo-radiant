@@ -137,6 +137,7 @@
 #include "ggui/entity.hpp"
 #include "ggui/filter.hpp"
 #include "ggui/grid.hpp"
+#include "ggui/help.hpp"
 #include "ggui/hotkeys.hpp"
 #include "ggui/l2d_file_dialog.hpp"
 #include "ggui/menubar.hpp"

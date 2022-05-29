@@ -1861,6 +1861,11 @@ namespace ggui
 				ImGui::EndMenu(); // Patch
 			}
 
+			if (ImGui::MenuItem("Help"))
+			{
+				GET_GUI(help_dialog)->toggle();
+			}
+
 			const char* about_str = game::glob::gh_update_avail ? "Update Available" : "About";
 
 			if(game::glob::gh_update_avail)
