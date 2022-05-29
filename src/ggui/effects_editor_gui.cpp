@@ -239,12 +239,9 @@ namespace ggui
 			selected_editor_elemdef = ed_effect->elemCount - 1;
 		}
 
-		float devz = GET_GUI(ggui::preferences_dialog)->dev_vec_01[0];
-
 		const ImVec4 toolbar_button_background_active = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector) + ImVec4(0.2f, 0.2f, 0.2f, 0.0f);
 		const ImVec4 toolbar_button_background_hovered = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector) + ImVec4(0.05f, 0.05f, 0.05f, 0.0f);
 		const ImVec2 toolbar_button_size = ImVec2(ImGui::GetFrameHeight() - 5.0f, ImGui::GetFrameHeight() - 5.0f);
-		const float zoom = 0.98f;
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 4.0f));
 		if (ImGui::BeginMenuBar())
