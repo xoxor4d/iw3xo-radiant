@@ -3,6 +3,7 @@
 
 namespace fx_system
 {
+	void	FxCurveIterator_AddRef(FxCurve* original);
 	void	FxCurveIterator_FreeRef(FxCurve* releasee);
 
 	float	FX_SampleCurve1D(FxCurve* curve, float scale, float time);

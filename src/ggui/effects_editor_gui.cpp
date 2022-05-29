@@ -12,6 +12,11 @@ namespace ggui
 
 	void effects_editor_dialog::elemdef_elem(fx_system::FxEditorElemDef* elemdef, int row, int* selected_index)
 	{
+		static bool is_renaming = false;
+		static char rename_buf[48] = {};
+		static int remame_index = -1;
+		static bool rename_focus = false;
+
 		// enabled / disabled state
 		bool elem_enabled = !((elemdef->editorFlags & fx_system::FX_ED_FLAG_DISABLED) != 0);
 
@@ -51,10 +56,78 @@ namespace ggui
 				break;
 
 			case 1: // Name
-				if (ImGui::Selectable(elemdef->name, row == *selected_index, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap))
+
+				if(is_renaming && remame_index == row)
+				{
+					if(ImGui::InputText("##elemdef_name", rename_buf, sizeof(rename_buf), ImGuiInputTextFlags_EnterReturnsTrue))
+					{
+						const auto len = strlen(rename_buf);
+						if(len && len < sizeof(rename_buf))
+						{
+							strcpy_s(elemdef->name, sizeof(rename_buf), rename_buf);
+						}
+
+						is_renaming = false;
+						rename_focus = false;
+					}
+
+					if (rename_focus && !ImGui::IsItemFocused())
+					{
+						is_renaming = false;
+						rename_focus = false;
+					}
+
+					if(!rename_focus)
+					{
+						ImGui::SetKeyboardFocusHere(-1);
+						rename_focus = true;
+					}
+				}
+				else
+				{
+					if(*selected_index != remame_index)
+					{
+						is_renaming = false;
+						rename_focus = false;
+					}
+
+					if (ImGui::Selectable(elemdef->name, row == *selected_index, ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap))
+					{
+						*selected_index = row;
+					}
+				}
+
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 4.0f));
+				if (ImGui::BeginPopupContextItem()) // <-- use last item id as popup id
 				{
 					*selected_index = row;
+
+					if(ImGui::MenuItem("Rename"))
+					{
+						const auto len = strlen(elemdef->name);
+
+						if(len && len < sizeof(rename_buf))
+						{
+							memset(rename_buf, 0, sizeof(rename_buf));
+							strcpy_s(rename_buf, sizeof(rename_buf), elemdef->name);
+
+							is_renaming = true;
+							rename_focus = false;
+							remame_index = *selected_index;
+						}
+
+						ImGui::CloseCurrentPopup();
+					}
+
+					if (ImGui::MenuItem("Delete segment"))
+					{
+						components::effects_editor::editor_delete_segment(selected_editor_elemdef);
+						m_effect_was_modified = true;
+					}
+
+					ImGui::EndPopup();
 				}
+				ImGui::PopStyleVar();
 
 				break;
 
@@ -106,9 +179,10 @@ namespace ggui
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 4.0f));
 		if (ImGui::BeginPopupModal(label, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			const char* str = "\nUnsaved Effect Changes!\nDo you want to continue?\n\n";
+			const char* str = "\n         Unsaved Effect!\n  This will loose changes.\n\nDo you want to continue?\n\n";
 			ImGui::SetCursorForCenteredText(str);
 			ImGui::TextUnformatted(str);
 			ImGui::Separator();
@@ -130,6 +204,7 @@ namespace ggui
 
 			ImGui::EndPopup();
 		}
+		ImGui::PopStyleVar();
 
 		return result;
 	}
@@ -150,8 +225,11 @@ namespace ggui
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		if (!ImGui::Begin("ElemList##window", nullptr, ImGuiWindowFlags_NoCollapse))
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+		if (!ImGui::Begin("FX ElemList##window", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar))
 		{
+			ImGui::PopStyleVar();
 			ImGui::End();
 			return;
 		}
@@ -161,30 +239,279 @@ namespace ggui
 			selected_editor_elemdef = ed_effect->elemCount - 1;
 		}
 
-		if (ImGui::Button("Add Segment"))
-		{
-			components::effects_editor::editor_add_new_segment();
-			m_effect_was_modified = true;
-		}
+		float devz = GET_GUI(ggui::preferences_dialog)->dev_vec_01[0];
 
-		ImGui::SameLine();
-		if (ImGui::Button("Delete Segment"))
+		const ImVec4 toolbar_button_background_active = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector) + ImVec4(0.2f, 0.2f, 0.2f, 0.0f);
+		const ImVec4 toolbar_button_background_hovered = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector) + ImVec4(0.05f, 0.05f, 0.05f, 0.0f);
+		const ImVec2 toolbar_button_size = ImVec2(ImGui::GetFrameHeight() - 5.0f, ImGui::GetFrameHeight() - 5.0f);
+		const float zoom = 0.98f;
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 4.0f));
+		if (ImGui::BeginMenuBar())
+		{
+			if(ImGui::BeginMenu("File##efx"))
+			{
+				if(ImGui::MenuItem("Save Effect"))
+				{
+					if (fx_system::FX_SaveEditorEffect())
+					{
+						m_effect_was_modified = false;
+					}
+				}
+
+				if (ImGui::MenuItem("Save Effect As"))
+				{
+					if (components::effects_editor::save_as())
+					{
+						//m_effect_was_modified = false;
+					}
+				}
+
+				if (ImGui::MenuItem("Save As to fx_origin"))
+				{
+					if (components::effects_editor::save_as(true))
+					{
+						m_effect_was_modified = false;
+					}
+				} TT("Save effect as .. and changes the key-value-pair of the fx_origin to the new effect");
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Effect##efx"))
+			{
+				if (ImGui::MenuItem("Add segment"))
+				{
+					components::effects_editor::editor_add_new_segment();
+					m_effect_was_modified = true;
+				}
+
+				if (ImGui::MenuItem("Delete selected segment"))
+				{
+					components::effects_editor::editor_delete_segment(selected_editor_elemdef);
+					m_effect_was_modified = true;
+				}
+
+				if (ImGui::MenuItem("Duplicate selected segment"))
+				{
+					components::effects_editor::editor_clone_segment(selected_editor_elemdef);
+					m_effect_was_modified = true;
+				}
+
+				ImGui::EndMenu();
+			}
+
+
+			const float menubar_y_offset = 3.0f;
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + menubar_y_offset);
+
+			static bool fx_save_hov = false;
+			if (toolbar_dialog::image_button_label(""
+				, "save"
+				, fx_save_hov
+				, fx_save_hov
+				, "Save effect"
+				, &toolbar_button_background_active
+				, &toolbar_button_background_hovered
+				, &toolbar_button_size, 0.95f))
+			{
+				if (fx_system::FX_SaveEditorEffect())
+				{
+					m_effect_was_modified = false;
+				}
+			}
+
+			static bool fx_seg_plus_hov = false;
+			if (toolbar_dialog::image_button_label(""
+				, "plus_minus"
+				, false
+				, fx_seg_plus_hov
+				, "Add segment to effect"
+				, &toolbar_button_background_active
+				, &toolbar_button_background_hovered
+				, &toolbar_button_size, 0.985f))
+			{
+				components::effects_editor::editor_add_new_segment();
+				m_effect_was_modified = true;
+			}
+
+			ImGui::SameLine();
+			ImGui::PushID("##seg_delete");
+			ImGui::BeginDisabled(ed_effect->elemCount <= 1);
+			{
+				static bool fx_seg_minus_hov = false;
+				if (toolbar_dialog::image_button_label(""
+					, "plus_minus"
+					, true
+					, fx_seg_minus_hov
+					, "Delete selected segment from effect"
+					, &toolbar_button_background_active
+					, &toolbar_button_background_hovered
+					, &toolbar_button_size, 0.985f))
+				{
+					components::effects_editor::editor_delete_segment(selected_editor_elemdef);
+					m_effect_was_modified = true;
+				}
+
+				ImGui::EndDisabled();
+			}
+			ImGui::PopID();
+
+
+			static bool fx_seg_dupe_hov = false;
+			if (toolbar_dialog::image_button_label(""
+				, "duplicate_reload"
+				, false
+				, fx_seg_dupe_hov
+				, "Duplicate segment"
+				, &toolbar_button_background_active
+				, &toolbar_button_background_hovered
+				, &toolbar_button_size, 0.985f))
+			{
+				components::effects_editor::editor_clone_segment(selected_editor_elemdef);
+				m_effect_was_modified = true;
+			}
+
+			// ----
+
+			const char* reload_fx_modal_str = "Unsaved Changes##fx_reload";
+
+			ImGui::PushID("##reload");
+			ImGui::BeginDisabled(ed_effect->elemCount <= 1);
+			{
+				static bool fx_reload_hov = false;
+				if (m_pending_reload || 
+					toolbar_dialog::image_button_label(""
+					, "duplicate_reload"
+					, true
+					, fx_reload_hov
+					, "Reload effect"
+					, &toolbar_button_background_active
+					, &toolbar_button_background_hovered
+					, &toolbar_button_size, 0.985f)
+					)
+				{
+					m_pending_reload = false;
+					if (m_effect_was_modified)
+					{
+						ImGui::OpenPopup(reload_fx_modal_str);
+					}
+					else
+					{
+						m_pending_close = false;
+						components::command::execute("fx_reload");
+					}
+				}
+
+				if (modal_unsaved_changes(reload_fx_modal_str)) // true if clicked OK ^
+				{
+					m_effect_was_modified = false;
+					components::command::execute("fx_reload");
+				}
+
+				// ----------
+
+				ImGui::EndDisabled();
+			}
+			ImGui::PopID();
+
+			ImGui::PushFontFromIndex(ggui::BOLD_18PX);
+			const char* effect_name = ed_effect->name;
+			const auto width = ImGui::CalcTextSize(effect_name).x + 16.0f;
+			ImGui::SameLine(ImGui::GetWindowWidth() - width - 90.0f);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - menubar_y_offset);
+			ImGui::Text("%s %s", effect_name, m_effect_was_modified ? "*" : "");
+			ImGui::PopFont();
+
+			// ------
+
+			const char* close_editor_modal_str = "Unsaved Changes##editor_close";
+			if (m_pending_close || ImGui::MenuItem("Close Editor"))
+			{
+				m_pending_close = false;
+				if (m_effect_was_modified)
+				{
+					ImGui::OpenPopup(close_editor_modal_str);
+				}
+				else
+				{
+					m_effect_was_modified = false;
+
+					components::effects::edit();
+					components::command::execute("fx_reload");
+				}
+			}
+
+			if (modal_unsaved_changes(close_editor_modal_str)) // true if clicked OK ^
+			{
+				m_effect_was_modified = false;
+
+				components::effects::edit();
+				components::command::execute("fx_reload");
+			}
+
+			// ------
+
+			ImGui::EndMenuBar();
+		}
+		ImGui::PopStyleVar();
+
+		/*if (ImGui::Button("Add Segment"))
+			{
+				components::effects_editor::editor_add_new_segment();
+				m_effect_was_modified = true;
+		}*/
+
+		/*if (ImGui::Button("Delete Segment"))
 		{
 			components::effects_editor::editor_delete_segment(selected_editor_elemdef);
 			m_effect_was_modified = true;
-		}
+		}*/
 
-		ImGui::SameLine();
+		/*static bool fx_save_hov = false;
+		if (toolbar_dialog::image_button_label(""
+			, "save"
+			, fx_save_hov
+			, fx_save_hov
+			, "Save Effect"
+			, &toolbar_button_background_hovered
+			, &toolbar_button_background_active
+			, &toolbar_button_size, 0.93f))
+		{
+			if (fx_system::FX_SaveEditorEffect())
+			{
+				m_effect_was_modified = false;
+			}
+		}*/
+
+		/*ImGui::SameLine();
 		if (ImGui::Button("Save Effect"))
 		{
 			if (fx_system::FX_SaveEditorEffect())
 			{
 				m_effect_was_modified = false;
 			}
-		}
+		}*/
 
-		ImGui::SameLine();
-		if (ImGui::Button("Save Effect As"))
+		//ImGui::SameLine();
+		//if (ImGui::Button("Save As"))
+		//{
+		//	if (components::effects_editor::save_as())
+		//	{
+		//		m_effect_was_modified = false;
+		//	}
+		//}
+
+		/*ImGui::SameLine();
+		static bool fx_save_as_hov = false;
+		if (toolbar_dialog::image_button_label(""
+			, "save_as"
+			, fx_save_as_hov
+			, fx_save_as_hov
+			, "Save Effect As (does not affect currently loaded efx)"
+			, &toolbar_button_background_hovered
+			, &toolbar_button_background_active
+			, &toolbar_button_size, 0.93f))
 		{
 			if (components::effects_editor::save_as())
 			{
@@ -193,62 +520,121 @@ namespace ggui
 		}
 
 		ImGui::SameLine();
-		const char* reload_fx_modal_str = "Unsaved Changes##fx_reload";
-		if (ImGui::Button("Reload Effect") || m_pending_reload)
+		static bool fx_seg_plus_hov = false;
+		if (toolbar_dialog::image_button_label(""
+			, "plus_minus"
+			, false
+			, fx_seg_plus_hov
+			, "Add Segment"
+			, &toolbar_button_background_hovered
+			, &toolbar_button_background_active
+			, &toolbar_button_size, zoom))
 		{
-			m_pending_reload = false;
-			if (m_effect_was_modified)
-			{
-				ImGui::OpenPopup(reload_fx_modal_str);
-			}
-			else
-			{
-				m_pending_close = false;
-				components::command::execute("fx_reload");
-			}
-		}
+			components::effects_editor::editor_add_new_segment();
+			m_effect_was_modified = true;
+		}*/
 
-		if (modal_unsaved_changes(reload_fx_modal_str)) // true if clicked OK ^
+		/*if (ImGui::Button("Add Segment"))
 		{
-			m_effect_was_modified = false;
-			components::command::execute("fx_reload");
-		}
+			components::effects_editor::editor_add_new_segment();
+			m_effect_was_modified = true;
+		}*/
+
+		//ImGui::SameLine();
+		//ImGui::PushID("##seg_delete");
+		//ImGui::BeginDisabled(ed_effect->elemCount <= 1);
+		//{
+		//	static bool fx_seg_minus_hov = false;
+		//	if (toolbar_dialog::image_button_label(""
+		//		, "plus_minus"
+		//		, true
+		//		, fx_seg_minus_hov
+		//		, "Delete Segment"
+		//		, &toolbar_button_background_hovered
+		//		, &toolbar_button_background_active
+		//		, &toolbar_button_size, zoom))
+		//	{
+		//		components::effects_editor::editor_delete_segment(selected_editor_elemdef);
+		//		m_effect_was_modified = true;
+		//	}
+
+		//	/*if (ImGui::Button("Delete Segment"))
+		//	{
+		//		components::effects_editor::editor_delete_segment(selected_editor_elemdef);
+		//		m_effect_was_modified = true;
+		//	}*/
+
+		//	ImGui::EndDisabled();
+		//}
+		//ImGui::PopID();
+		
+
+		//ImGui::SameLine();
+		//if (ImGui::Button("Save As and Overwrite"))
+		//{
+		//	if (components::effects_editor::save_as())
+		//	{
+		//		m_effect_was_modified = false;
+		//	}
+		//}
+
+		//ImGui::SameLine();
+		//const char* reload_fx_modal_str = "Unsaved Changes##fx_reload";
+		//if (ImGui::Button("Reload Effect") || m_pending_reload)
+		//{
+		//	m_pending_reload = false;
+		//	if (m_effect_was_modified)
+		//	{
+		//		ImGui::OpenPopup(reload_fx_modal_str);
+		//	}
+		//	else
+		//	{
+		//		m_pending_close = false;
+		//		components::command::execute("fx_reload");
+		//	}
+		//}
+
+		//if (modal_unsaved_changes(reload_fx_modal_str)) // true if clicked OK ^
+		//{
+		//	m_effect_was_modified = false;
+		//	components::command::execute("fx_reload");
+		//}
 
 		// ----
 
-		ImGui::SameLine();
-		const char* close_editor_modal_str = "Unsaved Changes##editor_close";
-		if (ImGui::Button("Close Editor") || m_pending_close)
-		{
-			m_pending_close = false;
-			if (m_effect_was_modified)
-			{
-				ImGui::OpenPopup(close_editor_modal_str);
-			}
-			else
-			{
-				m_effect_was_modified = false;
+		//ImGui::SameLine();
+		//const char* close_editor_modal_str = "Unsaved Changes##editor_close";
+		//if (ImGui::Button("Close Editor") || m_pending_close)
+		//{
+		//	m_pending_close = false;
+		//	if (m_effect_was_modified)
+		//	{
+		//		ImGui::OpenPopup(close_editor_modal_str);
+		//	}
+		//	else
+		//	{
+		//		m_effect_was_modified = false;
 
-				components::effects::edit();
-				components::command::execute("fx_reload");
-			}
-		}
+		//		components::effects::edit();
+		//		components::command::execute("fx_reload");
+		//	}
+		//}
 
-		if (modal_unsaved_changes(close_editor_modal_str)) // true if clicked OK ^
-		{
-			m_effect_was_modified = false;
+		//if (modal_unsaved_changes(close_editor_modal_str)) // true if clicked OK ^
+		//{
+		//	m_effect_was_modified = false;
 
-			components::effects::edit();
-			components::command::execute("fx_reload");
-		}
+		//	components::effects::edit();
+		//	components::command::execute("fx_reload");
+		//}
 
 
-		ImGui::PushFontFromIndex(ggui::BOLD_18PX);
+		/*ImGui::PushFontFromIndex(ggui::BOLD_18PX);
 		const char* effect_name = ed_effect->name;
 		const auto width = ImGui::CalcTextSize(effect_name).x + 16.0f;
 		ImGui::SameLine(ImGui::GetWindowWidth() - width);
 		ImGui::Text("%s %s", effect_name, m_effect_was_modified ? "*" : "");
-		ImGui::PopFont();
+		ImGui::PopFont();*/
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 0));
 		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4, 6));
@@ -256,7 +642,7 @@ namespace ggui
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(9, 9));
 
 		if (ImGui::BeginTable("bind_table", 6,
-			ImGuiTableFlags_Resizable | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoBordersInBodyUntilResize | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH))
+			ImGuiTableFlags_Resizable | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoBordersInBody /*| ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH*/))
 		{
 			ImGui::TableSetupScrollFreeze(0, 1);
 			ImGui::TableSetupColumn("##enabled_disabled", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 28.0f);
@@ -284,6 +670,7 @@ namespace ggui
 			ImGui::PopStyleVar(4);
 		}
 
+		ImGui::PopStyleVar(); // WindowPadding
 		ImGui::End();
 	}
 

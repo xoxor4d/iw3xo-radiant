@@ -122,15 +122,16 @@ namespace ggui
 		}
 	}
 
-	bool toolbar_dialog::image_button_label(const char* label, const char* image_name, bool image_uv, bool& hovered_state_bg, const char* tooltip, const ImVec4* bg_col_hovered, const ImVec4* bg_col_active, const ImVec2* btn_size)
+	bool toolbar_dialog::image_button_label(const char* label, const char* image_name, bool image_uv, bool& hovered_state_bg, const char* tooltip, const ImVec4* bg_col_hovered, const ImVec4* bg_col_active, const ImVec2* btn_size, float zoom)
 	{
 		bool ret_state = false;
 
 		if (const auto	image = game::Image_RegisterHandle(image_name);
 						image && image->texture.data)
 		{
-			const ImVec2 uv0 = image_uv ? ImVec2(0.5f, 0.0f) : ImVec2(0.0f, 0.0f);
-			const ImVec2 uv1 = image_uv ? ImVec2(1.0f, 1.0f) : ImVec2(0.5f, 1.0f);
+			const ImVec2 zoom_factor = ImVec2(1.0f - zoom, 1.0f - zoom) * 0.5f;
+			const ImVec2 uv0 = (image_uv ? ImVec2(0.5f, 0.0f) : ImVec2(0.0f, 0.0f)) + zoom_factor;
+			const ImVec2 uv1 = (image_uv ? ImVec2(1.0f, 1.0f) : ImVec2(0.5f, 1.0f)) - zoom_factor;
 
 			const ImVec4 bg_col = hovered_state_bg ? *bg_col_hovered : *bg_col_active;
 

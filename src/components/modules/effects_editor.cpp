@@ -23,6 +23,47 @@ namespace components
 		return fx_system::get_editor_effect()->elemCount != 0;
 	}
 
+	// CMainframe::OnCloneSegment
+	void effects_editor::editor_clone_segment(int index)
+	{
+		if (effects_editor::editor_can_add_segment())
+		{
+			// #NOT_IMPLEMENTED
+			// UNDO
+
+			effects::stop();
+
+			const auto editor_effect = fx_system::get_editor_effect();
+
+			fx_system::FxEditorElemDef* free_elem = &editor_effect->elems[editor_effect->elemCount];
+			++editor_effect->elemCount;
+
+			memset(free_elem, 0, sizeof(fx_system::FxEditorElemDef));
+			memcpy(free_elem, &editor_effect->elems[index], sizeof(fx_system::FxEditorElemDef));
+			sprintf(free_elem->name, "%s copy %d", free_elem->name, editor_effect->elemCount);
+
+			for (auto i = 0; i < 2; i++)
+			{
+				for (auto x = 0; x < 2; x++)
+				{
+					for (auto y = 0; y < 3; y++)
+					{
+						fx_system::FxCurveIterator_AddRef(free_elem->velShape[x][y][i]);
+					}
+
+					fx_system::FxCurveIterator_AddRef(free_elem->sizeShape[x][i]);
+				}
+
+				fx_system::FxCurveIterator_AddRef(free_elem->rotationShape[i]);
+				fx_system::FxCurveIterator_AddRef(free_elem->scaleShape[i]);
+				fx_system::FxCurveIterator_AddRef(free_elem->color[i]);
+				fx_system::FxCurveIterator_AddRef(free_elem->alpha[i]);
+			}
+
+			//effects::play();
+			components::effects::apply_changes();
+		}
+	}
 	
 	// CMainframe::OnAddSegment
 	void effects_editor::editor_add_new_segment()
@@ -112,7 +153,7 @@ namespace components
 		components::effects::apply_changes();
 	}
 
-	bool effects_editor::save_as()
+	bool effects_editor::save_as(bool overwrite_fx_origin)
 	{
 		// logic :: ggui::file_dialog_frame
 		if (dvars::gui_use_new_filedialog->current.enabled)
@@ -126,7 +167,7 @@ namespace components
 			file->set_file_handler(ggui::FILE_DIALOG_HANDLER::MAP_LOAD);
 			file->set_file_op_type(ggui::file_dialog::FileDialogType::SaveFile);
 			file->set_file_ext(".efx");
-			file->set_callback([]
+			file->set_callback([overwrite_fx_origin]
 				{
 					const auto dlg = GET_GUI(ggui::file_dialog);
 					const std::string filename = dlg->get_path_result();
@@ -134,6 +175,25 @@ namespace components
 					if (fx_system::FX_SaveEditorEffect(filename.c_str()))
 					{
 						game::printf_to_console("[*] Successfully saved effect: %s", filename.c_str());
+
+						if(overwrite_fx_origin)
+						{
+#if 1 // this will save to a new file and change the def within the fx_origin
+							const std::string filepath = filename;
+							const std::string replace_path = "raw\\fx\\";
+
+							std::size_t pos = filepath.find(replace_path) + replace_path.length();
+							std::string loc_filepath = filepath.substr(pos);
+							utils::erase_substring(loc_filepath, ".efx"s);
+
+							effects::last_fx_name_ = loc_filepath;
+
+							const auto ent = GET_GUI(ggui::entity_dialog);
+							ent->add_prop("fx", loc_filepath.c_str());
+#endif						
+						}
+
+						components::command::execute("fx_reload");
 						//GET_GUI(ggui::effects_editor_dialog)->m_effect_was_modified = false;
 					}
 				});

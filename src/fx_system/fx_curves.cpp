@@ -37,6 +37,7 @@ namespace fx_system
 		if (!releasee || releasee->refCount <= 0)
 		{
 			Assert();
+			return;
 		}
 		
 		if (releasee->refCount-- == 1)

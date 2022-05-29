@@ -222,6 +222,14 @@ namespace ggui
 				else
 				{
 					m_last_filepath = this->m_current_path + (this->m_current_path.back() == '\\' ? "" : "\\") + this->m_save_file_name;
+					if(!this->m_file_ext.empty())
+					{
+						if(!this->m_last_filepath.ends_with(this->m_file_ext))
+						{
+							m_last_filepath += this->m_file_ext;
+						}
+					}
+
 					strcpy_s(this->m_error, "");
 
 					this->reset();

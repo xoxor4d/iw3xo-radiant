@@ -41,7 +41,7 @@ namespace ggui
 
 		static bool image_button(const char* image_name, bool& hovered_state, const char* tooltip);
 		static void image_button(const char* image_name, bool& hovered_state, E_CALLTYPE calltype, uint32_t func_addr, const char* tooltip);
-		static bool image_button_label(const char* label, const char* image_name, bool image_uv, bool& hovered_state, const char* tooltip, const ImVec4* bg_col_hovered, const ImVec4* bg_col_active, const ImVec2* btn_size);
+		static bool image_button_label(const char* label, const char* image_name, bool image_uv, bool& hovered_state, const char* tooltip, const ImVec4* bg_col_hovered, const ImVec4* bg_col_active, const ImVec2* btn_size, float zoom = 1.0f);
 		static bool image_togglebutton(const char* image_name, bool& hovered_state, bool toggle_state, const char* tooltip, ImVec4* bg_col = nullptr, ImVec4* bg_col_hovered = nullptr, ImVec4* bg_col_active = nullptr, ImVec2* btn_size = nullptr);
 
 		void register_element(const std::string& name, bool default_visible, std::function<void()> callback);
