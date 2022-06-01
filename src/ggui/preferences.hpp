@@ -18,6 +18,7 @@ namespace ggui
 		unsigned int m_child_count;
 
 	public:
+		bool	dev_bool_01;
 		int		dev_num_01;
 		int		dev_num_02;
 		float	dev_vec_01[4];
@@ -31,6 +32,7 @@ namespace ggui
 			m_child_current = 0;
 			m_child_count = 0;
 
+			dev_bool_01 = false;
 			dev_num_01 = 256;
 			dev_num_02 = 1;
 			utils::vector::set_vec4(dev_vec_01, 1.0f);

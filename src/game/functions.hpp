@@ -282,7 +282,7 @@ namespace game
 	inline auto R_ClearScene = reinterpret_cast<void (*)(int clientnum)>(0x505770);
 	inline auto R_SetLodOrigin = reinterpret_cast<void (*)(game::refdef_s* refdef)>(0x505F90);
 	inline auto CL_RenderScene = reinterpret_cast<void (*)(game::refdef_s * refdef)>(0x506030);
-	inline auto R_GenerateReflectionImages = reinterpret_cast<void (*)(GfxReflectionProbe * probes, DiskGfxReflectionProbe * probeRawGeneratedData, int probeCount, int mip)>(0x550F00);
+	inline auto R_GenerateReflectionImages = reinterpret_cast<void (*)(GfxReflectionProbe * probes, DiskGfxReflectionProbe * probeRawGeneratedData, unsigned int probeCount, int mip)>(0x550F00);
 
 	// sampler_index = the index used in shader_vars.h
 	inline auto R_SetSampler = reinterpret_cast<void (*)(int unused, game::GfxCmdBufState * state, int sampler_index, char sampler_state, game::GfxImage * img)>(0x538D70);

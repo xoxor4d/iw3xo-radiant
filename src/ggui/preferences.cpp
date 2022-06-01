@@ -420,6 +420,7 @@ namespace ggui
 
 			ImGui::DragInt("Cubemap Size", &dev_num_01, 0.1f);
 			ImGui::DragInt("Cubemap Pixelborder", &dev_num_02, 0.1f);
+			ImGui::Checkbox("Blend Edges", &dev_bool_01);
 
 			if(ImGui::Button("Gen Reflections"))
 			{
