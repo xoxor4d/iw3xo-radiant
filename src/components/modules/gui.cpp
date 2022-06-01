@@ -402,9 +402,37 @@ namespace components
 					&& game::s_world->reflectionProbes->reflectionImage->texture.data)
 				{
 					ImGui::Begin("Depthbuffer", nullptr);
+
 					ImGui::Image(game::s_world->reflectionProbes[0].reflectionImage->texture.data, ImVec2(300, 300));
+					ImGui::SameLine();
 					ImGui::Image(game::s_world->reflectionProbes[1].reflectionImage->texture.data, ImVec2(300, 300));
-					ImGui::Image(game::s_world->reflectionProbeTextures->data, ImVec2(300, 300));
+					
+
+					if(reflectionprobes::imgui_cube_surfaces[0]) 
+						ImGui::Image(reflectionprobes::imgui_cube_surfaces[0], ImVec2(300, 300));
+					
+
+					ImGui::SameLine();
+					if (reflectionprobes::imgui_cube_surfaces[1]) 
+						ImGui::Image(reflectionprobes::imgui_cube_surfaces[1], ImVec2(300, 300));
+					
+
+					ImGui::SameLine();
+					if (reflectionprobes::imgui_cube_surfaces[2])
+						ImGui::Image(reflectionprobes::imgui_cube_surfaces[2], ImVec2(300, 300));
+
+
+					if (reflectionprobes::imgui_cube_surfaces[3])
+						ImGui::Image(reflectionprobes::imgui_cube_surfaces[3], ImVec2(300, 300));
+
+					ImGui::SameLine();
+					if (reflectionprobes::imgui_cube_surfaces[4])
+						ImGui::Image(reflectionprobes::imgui_cube_surfaces[4], ImVec2(300, 300));
+
+					ImGui::SameLine();
+					if (reflectionprobes::imgui_cube_surfaces[5])
+						ImGui::Image(reflectionprobes::imgui_cube_surfaces[5], ImVec2(300, 300));
+
 					ImGui::End();
 				}
 				

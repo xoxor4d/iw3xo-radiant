@@ -1887,8 +1887,7 @@ namespace components
 		}
 	}
 
-	void __declspec(naked)
-	RB_ExecuteRenderCommandsLoop_stub()
+	void __declspec(naked) RB_ExecuteRenderCommandsLoop_stub()
 	{
 		const static uint32_t retn_addr = 0x535B1F;
 		__asm

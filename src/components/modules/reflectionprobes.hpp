@@ -11,6 +11,8 @@ namespace components
 		const char* get_name() override { return "reflectionprobes"; };
 
 		static std::uint8_t* cubemapshot_image_ptr[6];
+		static std::uint8_t* cubemapshot_temp_image_ptr;
+		static IDirect3DTexture9* imgui_cube_surfaces[6];
 
 		static void generate_reflections_for_bsp();
 

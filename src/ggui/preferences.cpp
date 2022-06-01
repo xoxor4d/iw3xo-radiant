@@ -418,7 +418,14 @@ namespace ggui
 
 			SPACING(0.0f, 4.0f);
 
-			ImGui::DragInt("Int 01", &dev_num_01, 0.1f);
+			ImGui::DragInt("Cubemap Size", &dev_num_01, 0.1f);
+			ImGui::DragInt("Cubemap Pixelborder", &dev_num_02, 0.1f);
+
+			if(ImGui::Button("Gen Reflections"))
+			{
+				dvars::set_bool(dvars::r_generate_reflectionprobes, true);
+			}
+
 			ImGui::DragFloat3("Vec4 01", dev_vec_01, 25.0f);
 			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 		});
