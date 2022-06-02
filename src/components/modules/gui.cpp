@@ -257,6 +257,11 @@ namespace components
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
 	void gui::render_loop()
 	{
+		if(dvars::r_reflectionprobe_generate->current.enabled)
+		{
+			return;
+		}
+
 		exec::on_gui_execute();
 
 		/* - radiant draws multiple windows using d3d
@@ -378,8 +383,47 @@ namespace components
 				ShowWindow(con, SW_HIDE);
 			}
 
-			// debug
+#if 0
+			if (game::s_world->reflectionProbes && game::s_world->reflectionProbes->reflectionImage
+				&& game::s_world->reflectionProbes->reflectionImage->texture.data)
+			{
+				ImGui::Begin("Reflection Probes Debug", nullptr);
 
+				ImGui::Image(game::s_world->reflectionProbes[0].reflectionImage->texture.data, ImVec2(300, 300));
+				ImGui::SameLine();
+				ImGui::Image(game::s_world->reflectionProbes[1].reflectionImage->texture.data, ImVec2(300, 300));
+
+
+				if (reflectionprobes::imgui_cube_surfaces[0])
+					ImGui::Image(reflectionprobes::imgui_cube_surfaces[0], ImVec2(300, 300));
+
+
+				ImGui::SameLine();
+				if (reflectionprobes::imgui_cube_surfaces[1])
+					ImGui::Image(reflectionprobes::imgui_cube_surfaces[1], ImVec2(300, 300));
+
+
+				ImGui::SameLine();
+				if (reflectionprobes::imgui_cube_surfaces[2])
+					ImGui::Image(reflectionprobes::imgui_cube_surfaces[2], ImVec2(300, 300));
+
+
+				if (reflectionprobes::imgui_cube_surfaces[3])
+					ImGui::Image(reflectionprobes::imgui_cube_surfaces[3], ImVec2(300, 300));
+
+				ImGui::SameLine();
+				if (reflectionprobes::imgui_cube_surfaces[4])
+					ImGui::Image(reflectionprobes::imgui_cube_surfaces[4], ImVec2(300, 300));
+
+				ImGui::SameLine();
+				if (reflectionprobes::imgui_cube_surfaces[5])
+					ImGui::Image(reflectionprobes::imgui_cube_surfaces[5], ImVec2(300, 300));
+
+				ImGui::End();
+			}
+#endif
+
+			// debug
 			//game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			//game::GfxRenderTarget* depth = &targets[game::R_RENDERTARGET_FLOAT_Z];
 
@@ -387,12 +431,12 @@ namespace components
 			ImGui::Image(postSun->image->texture.data, ImVec2(game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].width, game::dx->windows[ggui::e_gfxwindow::CCAMERAWND].height));
 			ImGui::End();*/
 
-			//if(depth && depth->image && depth->image->texture.data)
-			//{
-			//	ImGui::Begin("Depthbuffer", nullptr);
-			//	ImGui::Image(depth->image->texture.data, ImVec2(ggui::get_rtt_camerawnd()->scene_size_imgui.x, ggui::get_rtt_camerawnd()->scene_size_imgui.y));
-			//	ImGui::End();
-			//}
+			/*if(depth && depth->image && depth->image->texture.data)
+			{
+				ImGui::Begin("Depthbuffer", nullptr);
+				ImGui::Image(depth->image->texture.data, ImVec2(300, 300));
+				ImGui::End();
+			}*/
 
 			// end the current context frame
 			goto END_FRAME;

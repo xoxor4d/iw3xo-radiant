@@ -112,6 +112,12 @@ namespace game
 		return out;
 	}
 
+	game::GfxCmdArray* get_cmdlist()
+	{
+		const auto out = reinterpret_cast<game::GfxCmdArray*>(*game::s_cmdList_ptr);
+		return out;
+	}
+
 	game::entity_s* g_world_entity()
 	{
 		const auto ent = reinterpret_cast<game::entity_s*>(*game::worldEntity_ptr);
@@ -1248,6 +1254,16 @@ namespace game
 			mov		ebx, data_type;
 			mov		edi, name;
 
+			call	func_addr;
+		}
+	}
+
+	int FS_OpenFileOverwrite(const char* path /*esi*/)
+	{
+		const static uint32_t func_addr = 0x4A05D0;
+		__asm
+		{
+			mov		esi, path;
 			call	func_addr;
 		}
 	}

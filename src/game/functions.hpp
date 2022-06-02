@@ -83,6 +83,7 @@ namespace game
 
 	static DWORD* frontEndDataOut_ptr = (DWORD*)(0x73D480);  // frontEndDataOut pointer
 	static DWORD* backEndDataOut_ptr = (DWORD*)(0x174F970);  // backendEndDataOut pointer
+	static DWORD* s_cmdList_ptr = (DWORD*)(0x73D4A0);
 	static DWORD* active_brushes_ptr = (DWORD*)(0x23F189C);
 	static DWORD* active_brushes_next_ptr = (DWORD*)(0x23F18A0);
 	static DWORD* currSelectedBrushes = (DWORD*)(0x23F1864); // (selected_brushes array pointer)
@@ -146,6 +147,7 @@ namespace game
 
 	extern game::GfxBackEndData* get_backenddata();
 	extern game::GfxBackEndData* get_frontenddata();
+	extern game::GfxCmdArray* get_cmdlist();
 
 	extern game::entity_s* g_world_entity();
 	extern game::selbrush_def_t* g_active_brushes();
@@ -277,6 +279,10 @@ namespace game
 	inline auto R_CmdBufSet3D = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*)>(0x53CFB0);
 	inline auto R_SetGameTime = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, float)>(0x55A4A0);
 	inline auto R_SortWorldSurfaces = reinterpret_cast<void (*)()>(0x52E9F0);
+	inline auto R_ClearScene = reinterpret_cast<void (*)(int clientnum)>(0x505770);
+	inline auto R_SetLodOrigin = reinterpret_cast<void (*)(game::refdef_s* refdef)>(0x505F90);
+	inline auto CL_RenderScene = reinterpret_cast<void (*)(game::refdef_s * refdef)>(0x506030);
+	inline auto R_GenerateReflectionImages = reinterpret_cast<void (*)(GfxReflectionProbe * probes, DiskGfxReflectionProbe * probeRawGeneratedData, unsigned int probeCount, int mip)>(0x550F00);
 
 	// sampler_index = the index used in shader_vars.h
 	inline auto R_SetSampler = reinterpret_cast<void (*)(int unused, game::GfxCmdBufState * state, int sampler_index, char sampler_state, game::GfxImage * img)>(0x538D70);
@@ -306,7 +312,9 @@ namespace game
 	inline auto DX_ResetDevice = reinterpret_cast<void (*)()>(0x5015F0);
 	inline auto Hunk_Alloc = reinterpret_cast<int* (*)(size_t)>(0x5104E0);
 	inline auto Z_Malloc = reinterpret_cast<int* (*)(size_t)>(0x4AC330);
-	
+	inline auto Z_Free = reinterpret_cast<void (*)(void*)>(0x4AC2A0);
+	inline auto Z_VirtualAlloc = reinterpret_cast<void* (*)(size_t)>(0x4AC380);
+
 
 	// *
 	// * --------------------- dvars ------------------------------
@@ -366,6 +374,8 @@ namespace game
 	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count);
 	std::uint32_t FS_HashFileName(const char* fname, int hash_size);
 	void* Hunk_FindDataForFileInternal(int hash /*eax*/, int data_type /*ebx*/, const char* name /*edi*/);
+	int FS_OpenFileOverwrite(const char* path /*esi*/);
+	inline auto FS_Write = reinterpret_cast<int (*)(const void* buffer, size_t len, int h)>(0x49FF10);
 
 	game::GfxImage* Image_FindExisting(const char* name);
 	game::GfxImage* Image_RegisterHandle(const char* name);

@@ -1960,6 +1960,25 @@ namespace game
 		GfxImage* reflectionImage;
 	};
 
+	struct DiskGfxReflectionProbe
+	{
+		float origin[3];
+		char colorCorrectionFilename[64];
+		char pixels[131064];
+	};
+
+	enum CubemapShot
+	{
+		CUBEMAPSHOT_NONE = 0x0,
+		CUBEMAPSHOT_RIGHT = 0x1,
+		CUBEMAPSHOT_LEFT = 0x2,
+		CUBEMAPSHOT_BACK = 0x3,
+		CUBEMAPSHOT_FRONT = 0x4,
+		CUBEMAPSHOT_UP = 0x5,
+		CUBEMAPSHOT_DOWN = 0x6,
+		CUBEMAPSHOT_COUNT = 0x7,
+	};
+
 	struct cplane_s;
 
 	struct dplane_t
@@ -3244,7 +3263,7 @@ namespace game
 		int viewInfoIndex;
 		int viewInfoCount;
 		GfxViewInfo* viewInfo;
-		char execState_cmd[4];
+		const void* cmds;
 		GfxLight sunLight[1];
 		int hasApproxSunDirChanged;
 		int primDrawSurfPos;

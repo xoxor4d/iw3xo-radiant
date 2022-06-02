@@ -60,6 +60,7 @@ namespace fx_system
 	void				FX_SetNextUpdateTime(int localClientNum, int time);
 
 #ifndef FXEDITOR
+	void				FX_SetupCamera(FxCamera* camera, const float* vieworg, const float(*viewaxis)[3], const float tanHalfFovX, const float tanHalfFovY, const float zfar);
 	void				FX_SetupCamera_Radiant();
 #endif
 

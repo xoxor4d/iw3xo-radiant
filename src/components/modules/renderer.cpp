@@ -1345,7 +1345,8 @@ namespace components
 			if (const auto	draw_water = game::Dvar_FindVar("r_drawWater");
 							draw_water && draw_water->current.enabled)
 			{
-				if (utils::string_equals(state->material->techniqueSet->name, "wc_water"))
+				if (state && state->material && state->material->techniqueSet && 
+					utils::string_equals(state->material->techniqueSet->name, "wc_water"))
 				{
 					if (const auto	tech = Material_RegisterTechnique("water_l_sun", 1);
 									tech)
@@ -1701,7 +1702,7 @@ namespace components
 		{
 			// render emissive surfs (effects)
 			renderer::RB_Draw3D();
-			
+
 			// post effects logic (filmtweaks)
 			camera_postfx();
 		}
@@ -1887,8 +1888,7 @@ namespace components
 		}
 	}
 
-	void __declspec(naked)
-	RB_ExecuteRenderCommandsLoop_stub()
+	void __declspec(naked) RB_ExecuteRenderCommandsLoop_stub()
 	{
 		const static uint32_t retn_addr = 0x535B1F;
 		__asm

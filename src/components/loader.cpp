@@ -22,6 +22,7 @@ namespace components
 		loader::_register(new main_module());
 		loader::_register(new pmesh());
 		loader::_register(new process());
+		loader::_register(new reflectionprobes());
 		loader::_register(new renderer());
 		loader::_register(new remote_net());
 

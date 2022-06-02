@@ -163,6 +163,76 @@ namespace components
 		return false;
 	}
 
+#pragma warning(push)
+#pragma warning(disable: 4146)
+	void d3dbsp::Com_SaveLump(LumpType type, const void* newLump, unsigned int size)
+	{
+		const void* chunkData[100];
+
+		BspHeader new_header = {};
+		new_header.ident = 1347633737;
+		new_header.version = 22;
+		new_header.chunkCount = 0;
+
+		bool isNewChunk = true;
+		unsigned int offset = 8 * comBspGlob.header->chunkCount + 12;
+
+		for (auto chunkIter = 0u; chunkIter < comBspGlob.header->chunkCount; ++chunkIter)
+		{
+			const BspChunk* chunk = &comBspGlob.header->chunks[chunkIter];
+			if (chunk->type == type)
+			{
+				isNewChunk = false;
+				if (size)
+				{
+					new_header.chunks[new_header.chunkCount].type = type;
+					new_header.chunks[new_header.chunkCount].length = size;
+					chunkData[new_header.chunkCount++] = newLump;
+				}
+			}
+			else
+			{
+				new_header.chunks[new_header.chunkCount].type = chunk->type;
+				new_header.chunks[new_header.chunkCount].length = chunk->length;
+				chunkData[new_header.chunkCount++] = (char*)comBspGlob.header + offset;
+			}
+
+			offset += (chunk->length + 3) & 0xFFFFFFFC;
+		}
+		if (isNewChunk && size)
+		{
+			new_header.chunks[new_header.chunkCount].type = type;
+			new_header.chunks[new_header.chunkCount].length = size;
+			chunkData[new_header.chunkCount++] = newLump;
+		}
+
+		const auto h = game::FS_OpenFileOverwrite(comBspGlob.name);
+		if (h)
+		{
+			game::FS_Write(&new_header, 8 * new_header.chunkCount + 12, h);
+			for (auto chunkIter = 0u; chunkIter < new_header.chunkCount; ++chunkIter)
+			{
+				game::FS_Write(chunkData[chunkIter], new_header.chunks[chunkIter].length, h);
+				const unsigned int zeroCount = -new_header.chunks[chunkIter].length & 3;
+
+				if (zeroCount)
+				{
+					unsigned int zero;
+					game::FS_Write(&zero, zeroCount, h);
+				}
+					
+			}
+			
+			game::FS_FCloseFile(h);
+			d3dbsp::radiant_load_bsp(d3dbsp::loaded_bsp_path.c_str(), true);
+		}
+		else
+		{
+			game::Com_Error("Failed to open file %s for writing", comBspGlob.name);
+		}
+	}
+#pragma warning(pop)
+	
 	const void* d3dbsp::Com_GetBspLump(LumpType type, unsigned int elemSize, unsigned int* count)
 	{
 		const void* result = nullptr;
@@ -472,7 +542,7 @@ namespace components
 
 		if (bytesRead != comBspGlob.fileSize)
 		{
-			free(comBspGlob.header);
+			game::Z_Free(comBspGlob.header);
 			game::printf_to_console("[ERR][BSP] bytesRead != comBspGlob.fileSize");
 			return false;
 		}
@@ -489,9 +559,8 @@ namespace components
 		d3dbsp::dobj_clear_list();
 
 		comBspGlob.loadedLumpData = nullptr;
-
-		// free(comBspGlob.header);
-		utils::hook::call<void(__cdecl)(void*)>(0x4AC2A0)(comBspGlob.header);
+		
+		game::Z_Free(comBspGlob.header);
 
 		comBspGlob.header = nullptr;
 		comBspGlob.name[0] = 0;
@@ -715,6 +784,11 @@ namespace components
 		process::pthis->set_callback([bsp_path]
 		{
 			d3dbsp::radiant_load_bsp(bsp_path.c_str(), true);
+
+			if(dvars::bsp_gen_reflections_on_compile->current.enabled)
+			{
+				dvars::set_bool(dvars::r_reflectionprobe_generate, true);
+			}
 		});
 
 		process::pthis->create_process();
@@ -797,6 +871,12 @@ namespace components
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "enable to load entities when loading a bsp (static_models only)");
+
+		dvars::bsp_gen_reflections_on_compile = dvars::register_bool(
+			/* name		*/ "bsp_gen_reflections_on_compile",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "automatically build reflections when compiling the bsp");
 
 		dvars::r_draw_bsp = dvars::register_bool(
 			/* name		*/ "r_draw_bsp",

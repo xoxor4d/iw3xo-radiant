@@ -55,6 +55,7 @@ namespace dvars
 	extern game::dvar_s* grid_draw_edge_coordinates;
 
 	extern game::dvar_s* bsp_load_entities;
+	extern game::dvar_s* bsp_gen_reflections_on_compile;
 
 	extern game::dvar_s* r_draw_bsp;
 	extern game::dvar_s* r_draw_bsp_overwrite_sunlight;
@@ -74,7 +75,10 @@ namespace dvars
 
 	extern game::dvar_s* r_sunpreview_shadow_dist;
 	extern game::dvar_s* r_sunpreview_shadow_enable;
-	
+
+	extern game::dvar_s* r_reflectionprobe_generate;
+	extern game::dvar_s* r_reflectionprobe_export_tga;
+
 	extern game::dvar_s* guizmo_enable;
 	extern game::dvar_s* guizmo_snapping;
 	extern game::dvar_s* guizmo_brush_mode;

@@ -215,6 +215,16 @@ namespace ggui
 			ImGui::EndDisabled();
 		}
 
+		// -----------------
+		ImGui::title_with_seperator("Reflections", true, 0, 2, 6.0f);
+
+		ImGui::Checkbox("Automatically compile reflections when building bsp", &dvars::bsp_gen_reflections_on_compile->current.enabled); TT(dvars::bsp_gen_reflections_on_compile->description);
+
+		if (ImGui::Button("Generate Reflections", ImVec2(-style.FramePadding.x, ImGui::GetFrameHeight())))
+		{
+			dvars::set_bool(dvars::r_reflectionprobe_generate, true);
+		} TT("Probes within the loaded bsp will be used to take screenshots ..\nso make sure your bsp is up-to-date.");
+
 
 		// -----------------
 		ImGui::title_with_seperator("Compiling", true, 0, 2, 6.0f);
@@ -243,7 +253,7 @@ namespace ggui
 	void camera_settings_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 220.0f);
-		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 700.0f);
+		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 720.0f); 
 		
 		auto initial_window_pos = ggui::get_initial_window_pos();
 		

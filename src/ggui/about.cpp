@@ -1,13 +1,17 @@
 #include "std_include.hpp"
 
+#define CENTER_URL(text, link)					\
+	ImGui::SetCursorForCenteredText((text));	\
+	ImGui::TextURL((text), (link));
+
 namespace ggui
 {
 	void about_dialog::gui()
 	{
-		ImGui::SetNextWindowSize(game::glob::gh_update_avail ? ImVec2(480.0f, 740.0f) : ImVec2(400.0f, 490.0f));
+		ImGui::SetNextWindowSize(game::glob::gh_update_avail ? ImVec2(480.0f, 810.0f) : ImVec2(400.0f, 560.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		if (ImGui::Begin("About##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse /*| ImGuiWindowFlags_NoResize*/ | ImGuiWindowFlags_NoDocking))
+		if (ImGui::Begin("About##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking))
 		{
 			SPACING(0.0f, 8.0f);
 
@@ -59,21 +63,10 @@ namespace ggui
 
 			SPACING(0.0f, 8.0f);
 
-			const char* github_repo_str = "Github Repository";
-			ImGui::SetCursorForCenteredText(github_repo_str);
-			ImGui::TextURL(github_repo_str, "https://github.com/xoxor4d/iw3xo-radiant");
-
-			const char* github_project_str = "Github Project Page";
-			ImGui::SetCursorForCenteredText(github_project_str);
-			ImGui::TextURL(github_project_str, "https://xoxor4d.github.io/projects/iw3xo-radiant/");
-
-			const char* latest_release_str = "Latest build";
-			ImGui::SetCursorForCenteredText(latest_release_str);
-			ImGui::TextURL(latest_release_str, "https://github.com/xoxor4d/iw3xo-radiant/releases");
-
-			const char* discord_invite_str = "Discord";
-			ImGui::SetCursorForCenteredText(discord_invite_str);
-			ImGui::TextURL(discord_invite_str, "https://discord.gg/t5jRGbj");
+			CENTER_URL("Github Repository", "https://github.com/xoxor4d/iw3xo-radiant");
+			CENTER_URL("Github Project Page", "https://xoxor4d.github.io/projects/iw3xo-radiant/");
+			CENTER_URL("Latest build", "https://github.com/xoxor4d/iw3xo-radiant/releases");
+			CENTER_URL("Discord", "https://discord.gg/t5jRGbj");
 
 			SPACING(0.0f, 8.0f);
 			ImGui::Separator();
@@ -87,41 +80,19 @@ namespace ggui
 
 			SPACING(0.0f, 8.0f);
 
-			const char* cred01_str = "The X-Labs Team (especially Snake)";
-			ImGui::SetCursorForCenteredText(cred01_str);
-			ImGui::TextURL(cred01_str, "https://github.com/XLabsProject/");
-
-			const char* cred02_str = "The Plutonium Project Team (especially Rektinator)";
-			ImGui::SetCursorForCenteredText(cred02_str);
-			ImGui::TextURL(cred02_str, "https://plutonium.pw/");
-
-			const char* cred03_str = "Nukem (LinkerMod / Detours)";
-			ImGui::SetCursorForCenteredText(cred03_str);
-			ImGui::TextURL(cred03_str, "https://github.com/Nukem9");
-
-			const char* cred04_str = "ocornut (Dear ImGui)";
-			ImGui::SetCursorForCenteredText(cred04_str);
-			ImGui::TextURL(cred04_str, "https://github.com/ocornut/imgui");
-
-			const char* cred05_str = "CedricGuillemet (ImGuizmo)";
-			ImGui::SetCursorForCenteredText(cred05_str);
-			ImGui::TextURL(cred05_str, "https://github.com/CedricGuillemet/ImGuizmo");
-
-			const char* cred06_str = "nlohmann (fifo_map)";
-			ImGui::SetCursorForCenteredText(cred06_str);
-			ImGui::TextURL(cred06_str, "https://github.com/nlohmann/fifo_map");
-
-			const char* cred07_str = "David Gallardo (imgui_color_gradient)";
-			ImGui::SetCursorForCenteredText(cred07_str);
-			ImGui::TextURL(cred07_str, "https://gist.github.com/galloscript/8a5d179e432e062550972afcd1ecf112");
-
-			const char* cred08_str = "nem0 (CurveEditor)";
-			ImGui::SetCursorForCenteredText(cred08_str);
-			ImGui::TextURL(cred08_str, "https://github.com/nem0/LumixEngine/blob/39e46c18a58111cc3c8c10a4d5ebbb614f19b1b8/external/imgui/imgui_user.inl#L505-L930");
-
-			const char* cred09_str = "Infinity Ward (OG. Radiant and Effects Framework)";
-			ImGui::SetCursorForCenteredText(cred09_str);
-			ImGui::TextURL(cred09_str, "https://www.infinityward.com/");
+			CENTER_URL("The X-Labs Team (especially Snake)", "https://github.com/XLabsProject/");
+			CENTER_URL("The Plutonium Project Team (especially Rektinator)", "https://plutonium.pw/");
+			CENTER_URL("Nukem (LinkerMod / Detours)", "https://github.com/Nukem9");
+			CENTER_URL("JTAG (NootNoot)", "https://twitter.com/imjtagmodz");
+			CENTER_URL("ocornut (Dear ImGui)", "https://github.com/ocornut/imgui");
+			CENTER_URL("CedricGuillemet (ImGuizmo)", "https://github.com/CedricGuillemet/ImGuizmo");
+			CENTER_URL("nlohmann (fifo_map)", "https://github.com/nlohmann/fifo_map");
+			CENTER_URL("David Gallardo (imgui_color_gradient)", "https://gist.github.com/galloscript/8a5d179e432e062550972afcd1ecf112");
+			CENTER_URL("nem0 (CurveEditor)", "https://github.com/nem0/LumixEngine/blob/39e46c18a58111cc3c8c10a4d5ebbb614f19b1b8/external/imgui/imgui_user.inl#L505-L930");
+			CENTER_URL("zfedoran (ImGui Spinner)", "https://github.com/ocornut/imgui/issues/1901");
+			CENTER_URL("maluoi (tga writer)", "https://gist.github.com/maluoi/ade07688e741ab188841223b8ffeed22");
+			CENTER_URL("Infinity Ward (OG. Radiant and Effects Framework)", "https://www.infinityward.com/");
+			CENTER_URL("id-Software (OG. OG. Radiant)", "https://github.com/id-Software/Quake-III-Arena/tree/master/q3radiant");
 
 			SPACING(0.0f, 8.0f);
 
