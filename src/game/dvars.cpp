@@ -55,6 +55,7 @@ namespace dvars
 	game::dvar_s* grid_draw_edge_coordinates = nullptr;
 
 	game::dvar_s* bsp_load_entities = nullptr;
+	game::dvar_s* bsp_gen_reflections_on_compile = nullptr;
 
 	game::dvar_s* r_draw_bsp = nullptr;
 	game::dvar_s* r_draw_bsp_overwrite_sunlight = nullptr;
@@ -75,7 +76,8 @@ namespace dvars
 	game::dvar_s* r_sunpreview_shadow_dist = nullptr;
 	game::dvar_s* r_sunpreview_shadow_enable = nullptr;
 
-	game::dvar_s* r_generate_reflectionprobes = nullptr;
+	game::dvar_s* r_reflectionprobe_generate = nullptr;
+	game::dvar_s* r_reflectionprobe_export_tga = nullptr;
 
 	game::dvar_s* guizmo_enable = nullptr;
 	game::dvar_s* guizmo_snapping = nullptr;
@@ -198,11 +200,12 @@ namespace dvars
 	{
 		game::printf_to_console("[Dvars]: register_addon_dvars() start ...\n");
 
+		components::d3dbsp::register_dvars();
+		components::gameview::register_dvars();
 		components::gui::register_dvars();
+		components::reflectionprobes::register_dvars();
 		components::remote_net::register_dvars();
 		components::renderer::register_dvars();
-		components::gameview::register_dvars();
-		components::d3dbsp::register_dvars();
 
 		cmainframe::register_dvars();
 		cxywnd::register_dvars();

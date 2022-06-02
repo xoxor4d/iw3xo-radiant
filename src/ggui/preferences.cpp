@@ -339,8 +339,10 @@ namespace ggui
 
 			// -----------------
 			ImGui::title_with_seperator("BSP Only");
-			
+
 			ImGui::DvarBool_External("Load and draw BSP entities", "bsp_load_entities");
+			ImGui::Checkbox("Export reflections as tga files", &dvars::r_reflectionprobe_export_tga->current.enabled); TT(dvars::r_reflectionprobe_export_tga->description);
+			ImGui::Checkbox("Automatically compile reflections when building bsp", &dvars::bsp_gen_reflections_on_compile->current.enabled); TT(dvars::bsp_gen_reflections_on_compile->description);
 
 			SPACING(0.0f, 4.0f);
 
@@ -418,14 +420,9 @@ namespace ggui
 
 			SPACING(0.0f, 4.0f);
 
-			ImGui::DragInt("Cubemap Size", &dev_num_01, 0.1f);
-			ImGui::DragInt("Cubemap Pixelborder", &dev_num_02, 0.1f);
-			ImGui::Checkbox("Blend Edges", &dev_bool_01);
-
-			if(ImGui::Button("Gen Reflections"))
-			{
-				dvars::set_bool(dvars::r_generate_reflectionprobes, true);
-			}
+			ImGui::DragInt("Integer01", &dev_num_01, 0.1f);
+			ImGui::DragInt("Integer02", &dev_num_02, 0.1f);
+			ImGui::Checkbox("Bool01", &dev_bool_01);
 
 			ImGui::DragFloat3("Vec4 01", dev_vec_01, 25.0f);
 			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);

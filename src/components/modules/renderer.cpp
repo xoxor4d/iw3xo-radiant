@@ -1345,7 +1345,8 @@ namespace components
 			if (const auto	draw_water = game::Dvar_FindVar("r_drawWater");
 							draw_water && draw_water->current.enabled)
 			{
-				if (utils::string_equals(state->material->techniqueSet->name, "wc_water"))
+				if (state && state->material && state->material->techniqueSet && 
+					utils::string_equals(state->material->techniqueSet->name, "wc_water"))
 				{
 					if (const auto	tech = Material_RegisterTechnique("water_l_sun", 1);
 									tech)
@@ -3122,12 +3123,6 @@ namespace components
 			/* maxs		*/ FLT_MAX,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "shadow drawing distance (camera to center of brush)");
-		
-		dvars::r_generate_reflectionprobes = dvars::register_bool(
-			/* name		*/ "r_generate_reflectionprobes",
-			/* default	*/ false,
-			/* flags	*/ game::dvar_flags::none,
-			/* desc		*/ "generate all reflection probes for the loaded d3dbsp");
 	}
 
 	void relocate_struct_ref(const std::uintptr_t code_addr, const void* target_addr, const unsigned int offset)

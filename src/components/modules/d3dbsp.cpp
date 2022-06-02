@@ -162,7 +162,9 @@ namespace components
 
 		return false;
 	}
-	
+
+#pragma warning(push)
+#pragma warning(disable: 4146)
 	void d3dbsp::Com_SaveLump(LumpType type, const void* newLump, unsigned int size)
 	{
 		const void* chunkData[100];
@@ -229,6 +231,7 @@ namespace components
 			game::Com_Error("Failed to open file %s for writing", comBspGlob.name);
 		}
 	}
+#pragma warning(pop)
 	
 	const void* d3dbsp::Com_GetBspLump(LumpType type, unsigned int elemSize, unsigned int* count)
 	{
@@ -781,6 +784,11 @@ namespace components
 		process::pthis->set_callback([bsp_path]
 		{
 			d3dbsp::radiant_load_bsp(bsp_path.c_str(), true);
+
+			if(dvars::bsp_gen_reflections_on_compile->current.enabled)
+			{
+				dvars::set_bool(dvars::r_reflectionprobe_generate, true);
+			}
 		});
 
 		process::pthis->create_process();
@@ -863,6 +871,12 @@ namespace components
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "enable to load entities when loading a bsp (static_models only)");
+
+		dvars::bsp_gen_reflections_on_compile = dvars::register_bool(
+			/* name		*/ "bsp_gen_reflections_on_compile",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "automatically build reflections when compiling the bsp");
 
 		dvars::r_draw_bsp = dvars::register_bool(
 			/* name		*/ "r_draw_bsp",

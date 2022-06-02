@@ -28,6 +28,7 @@ namespace ggui
 			if (ImGui::TreeNodeEx("d3dbsp", ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				BULLET_LINK("Loading and Compiling", "https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp/");
+				BULLET_LINK("Generating Reflections", "https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp-reflections/");
 				ImGui::TreePop();
 			}
 

@@ -95,4 +95,6 @@ namespace utils
 	std::string &ltrim(std::string &s);
 	std::string &rtrim(std::string &s);
 	std::string &trim(std::string &s);
+
+	void tga_write(const char* filename, uint32_t width, uint32_t height, uint8_t* dataBGRA, uint8_t dataChannels = 4, uint8_t fileChannels = 3);
 }
