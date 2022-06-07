@@ -541,7 +541,7 @@ namespace ggui
 			const bool is_alt_key_pressed = GetKeyState(VK_MENU) < 0;
 
 			// extend / extrude selected brush to traced face (ala bo3's reflection probe bounds)
-			if (is_alt_key_pressed && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && game::is_single_brush_selected())
+			if (is_alt_key_pressed && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && game::is_single_brush_selected())
 			{
 				cam_context_menu_open = false;
 				cam_context_menu_pending_open = false;
@@ -623,6 +623,17 @@ namespace ggui
 							}
 
 							game::Undo_End();
+
+
+							if(	   selbrush->def->mins[0] == selbrush->def->maxs[0]
+								|| selbrush->def->mins[1] == selbrush->def->maxs[1]
+								|| selbrush->def->mins[2] == selbrush->def->maxs[2])
+							{
+								game::printf_to_console("^1 Can not extrude to own face. Aborting ...\n");
+
+								// CMainFrame::OnEditUndo
+								mainframe_thiscall(void, 0x428730);
+							}
 						}
 					}
 				}
