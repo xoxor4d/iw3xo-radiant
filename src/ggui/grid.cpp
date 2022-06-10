@@ -200,7 +200,10 @@ namespace ggui
 
 		static std::string grid_context_last_spawned_entity;
 
-		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+		// alt detection is kinda bugged via imgui
+		const bool is_alt_key_pressed = GetKeyState(VK_MENU) < 0;
+
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !is_alt_key_pressed && !ImGui::IsKeyDown(ImGuiKey_ModCtrl))
 		{
 			if(cxywnd->m_ptDrag.x == cxywnd->m_ptDown.x && cxywnd->m_ptDrag.y == cxywnd->m_ptDown.y)
 			{
