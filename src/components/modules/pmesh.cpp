@@ -181,10 +181,18 @@ namespace components
 		}
 	}
 
+	void on_thicken_dialog()
+	{
+		GET_GUI(ggui::thicken_patch_dialog)->toggle();
+	}
+
 	pmesh::pmesh()
 	{
 		// implement terrain patch thickenning
 		utils::hook(0x448752, thicken_terrain_patch_stub, HOOK_JUMP).install()->quick();
+
+		// replace stock thicken dialog with our own
+		utils::hook::detour(0x42B0D0, on_thicken_dialog, HK_JUMP);
 	}
 
 	pmesh::~pmesh()

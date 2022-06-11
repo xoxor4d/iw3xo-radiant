@@ -874,7 +874,7 @@ namespace ggui
 
 							if (any_selected)
 							{
-								if (!game::multiple_edit_entities)
+								//if (!game::multiple_edit_entities)
 								{
 									if (const auto	 selbrush = game::g_selected_brushes();
 													(selbrush && selbrush->def && selbrush->patch))

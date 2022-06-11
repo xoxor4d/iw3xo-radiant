@@ -187,4 +187,82 @@ namespace ggui
 	{ }
 
 	REGISTER_GUI(terrain_patch_dialog);
+
+
+	// -----------------------------------------------------------------------------
+
+
+	void thicken_patch_dialog::gui()
+	{
+		ImGui::SetNextWindowSize(ImVec2(245.0f, 170.0f));
+		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_Appearing);
+
+		if (ImGui::Begin("Thicken Patch##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar))
+		{
+			SPACING(0.0f, 2.0f);
+			ImGui::Indent(8.0f);
+
+			static bool thicken_with_seams = true;
+			static int thickness_in_units = 8.0f;
+			const int thickness_step = 1.0f;
+
+			ImGui::SetNextItemWidth(80.0f);
+			if (ImGui::DragInt("Thickness in units", &thickness_in_units, 0.01f, 1.0f, INT16_MAX))
+			{
+				thickness_in_units =
+					thickness_in_units < 1 ? 1 : thickness_in_units;
+			}
+
+			/*if (ImGui::InputScalar("Thickness in units", ImGuiDataType_U32, &thickness_in_units, &thickness_step, nullptr, "%d"))
+			{
+				thickness_in_units =
+					thickness_in_units < 1 ? 1 : thickness_in_units;
+			}*/
+
+			ImGui::Checkbox("Create Seams", &thicken_with_seams); TT("Create outer seams if checked");
+
+			SPACING(0.0f, 2.0f);
+
+			const float button_height = ImGui::GetFrameHeightWithSpacing();
+			const float button_width = (ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX()) * 0.5f - 8.0f;
+
+			SPACING(0.0f, 2.0f);
+
+			ImGui::BeginGroup();
+			{
+				if (ImGui::Button("Ok", ImVec2(button_width, button_height)))
+				{
+					game::Undo_ClearRedo();
+					game::Undo_GeneralStart("thicken patch");
+					game::Undo_AddBrushList_Selected();
+
+					utils::hook::call<void (__cdecl)(int, bool)>(0x448700)(thickness_in_units, thicken_with_seams);
+
+					game::Undo_EndBrushList_Selected();
+					game::Undo_End();
+
+					this->close();
+				}
+
+				ImGui::EndGroup();
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("Cancel", ImVec2(button_width, button_height)))
+			{
+				this->close();
+			}
+
+			ImGui::End();
+		}
+	}
+
+	void thicken_patch_dialog::on_open()
+	{ }
+
+	void thicken_patch_dialog::on_close()
+	{ }
+
+	REGISTER_GUI(thicken_patch_dialog);
 }
