@@ -13,15 +13,9 @@ namespace ggui
 		void gui() override;
 		void on_open() override;
 		void on_close() override;
-
-		// *
-		// asm related
-
-		// *
-		// init
-		
 	};
 
+	// #
 	// ---------------
 
 	class terrain_patch_dialog final : public ggui::ggui_module
@@ -35,15 +29,9 @@ namespace ggui
 		void gui() override;
 		void on_open() override;
 		void on_close() override;
-
-		// *
-		// asm related
-
-		// *
-		// init
-
 	};
 
+	// #
 	// ---------------
 
 	class thicken_patch_dialog final : public ggui::ggui_module
@@ -57,12 +45,21 @@ namespace ggui
 		void gui() override;
 		void on_open() override;
 		void on_close() override;
+	};
+
+	// #
+	// ---------------
+
+	class cap_patch_dialog final : public ggui::ggui_module
+	{
+	public:
+		cap_patch_dialog() { set_gui_type(GUI_TYPE_DEF); }
 
 		// *
-		// asm related
+		// public member functions
 
-		// *
-		// init
-
+		void gui() override;
+		void on_open() override;
+		void on_close() override;
 	};
 }

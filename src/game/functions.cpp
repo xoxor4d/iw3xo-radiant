@@ -281,6 +281,18 @@ namespace game
 		}
 	}
 
+	void Undo_SetIdForEntity(game::entity_s* ent /*edx*/)
+	{
+		const static uint32_t func_addr = 0x45E9E0;
+		__asm
+		{
+			pushad;
+			mov		edx, ent;
+			call	func_addr;
+			popad;
+		}
+	}
+
 	bool is_single_brush_selected(bool print_warning)
 	{
 		if ((DWORD*)g_selected_brushes_next() == game::currSelectedBrushes || (DWORD*)g_selected_brushes_next()->next != game::currSelectedBrushes)
@@ -609,6 +621,32 @@ namespace game
 		}
 	}
 
+	game::selbrush_def_t* Patch_Cap(patchMesh_t* pm /*ecx*/, int bByColumn, int bFirst)
+	{
+		const static uint32_t func_addr = 0x439C00;
+		__asm
+		{
+			push	bFirst;
+			push	bByColumn;
+			mov		ecx, pm;
+			call	func_addr;
+			add		esp, 8;
+		}
+	}
+
+	game::selbrush_def_t* Patch_CapSpecial(patchMesh_t* pm /*ecx*/, int nType, int bFirst)
+	{
+		const static uint32_t func_addr = 0x43A170;
+		__asm
+		{
+			push	bFirst;
+			push	nType;
+			mov		ecx, pm;
+			call	func_addr;
+			add		esp, 8;
+		}
+	}
+
 	void Patch_Invert(game::patchMesh_t* p /*ebx*/)
 	{
 		const static uint32_t func_addr = 0x446480;
@@ -846,6 +884,28 @@ namespace game
 			call	func_addr;
 			add     esp, 4;
 			popad;
+		}
+	}
+
+	game::entity_s* Entity_Create(eclass_t* eclass /*eax*/)
+	{
+		const static uint32_t func_addr = 0x484980;
+		__asm
+		{
+			mov		eax, eclass;
+			call	func_addr;
+		}
+	}
+
+	game::eclass_t* Eclass_ForName(const char* name /*ecx*/, int has_brushes)
+	{
+		const static uint32_t func_addr = 0x482190;
+		__asm
+		{
+			mov		ecx, name;
+			push	has_brushes;
+			call	func_addr;
+			add     esp, 4;
 		}
 	}
 

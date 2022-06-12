@@ -177,6 +177,7 @@ namespace game
 	void Undo_EndBrushList(void* sb); //(game::selbrush_def_t* sb /*esi*/);
 	void Undo_EndBrushList_Selected();
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/);
+	void Undo_SetIdForEntity(game::entity_s* ent /*edx*/);
 	inline auto Undo_AddBrush = reinterpret_cast<void (*)(game::brush_t_with_custom_def*)>(0x45E680);
 	inline auto Undo_End = reinterpret_cast<void (*)()>(0x45EA20);
 
@@ -213,6 +214,8 @@ namespace game
 	void Patch_CalcBounds(game::patchMesh_t* p, game::vec3_t& vMin, game::vec3_t& vMax);
 	void Patch_Adjust(game::patchMesh_t* p, bool insert, bool column, bool flag);
 	game::patchMesh_t* Patch_Duplicate(game::patchMesh_t* p /*edi*/);
+	game::selbrush_def_t* Patch_Cap(patchMesh_t* pm /*ecx*/, int bByColumn, int bFirst);
+	game::selbrush_def_t* Patch_CapSpecial(patchMesh_t* pm /*ecx*/, int nType, int bFirst);
 	void Patch_Invert(game::patchMesh_t* p /*ebx*/);
 	void Patch_Rebuild(game::patchMesh_t* p /*esi*/, int reset);
 	void Patch_InsertColumn(patchMesh_t* p, bool flag /*cl*/);
@@ -222,6 +225,7 @@ namespace game
 	inline auto Patch_MeshNormals = reinterpret_cast<void (*)(game::patchMesh_t*)>(0x437C80);
 	inline auto Patch_GenericMesh = reinterpret_cast<game::selbrush_def_t* (*)(int nWidth, int nHeight, int nOrientation, bool bDeleteSource, bool bOverwrite)>(0x43B310);
 	inline auto Create_Terrain = reinterpret_cast<game::selbrush_def_t* (*)(int nWidth, int nHeight, int nOrientation)>(0x43B660);
+	inline auto Patch_Thicken = reinterpret_cast<void (*)(int thickness, bool create_seams)>(0x448700);
 
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
@@ -239,9 +243,11 @@ namespace game
 	inline auto SetKeyValue = reinterpret_cast<void (*)(game::entity_s * ent, const char* key, const char* value)>(0x483690);
 	inline auto SetKeyValuePairs = reinterpret_cast<void (*)()>(0x496CF0);
 	inline auto CreateEntity = reinterpret_cast<void (*)()>(0x497300);
+	game::eclass_t* Eclass_ForName(const char* name /*ecx*/, int has_brushes);
 	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y);
 	inline auto CreateEntityFromName = reinterpret_cast<void (*)(const char* name)>(0x465CC0); // does not add an undo
 	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* cxywnd);
+	game::entity_s* Entity_Create(eclass_t* eclass /*eax*/);
 
 	inline auto Test_Ray = reinterpret_cast<void (*)(float* start, float* dir, int contents, game::trace_t * trace, int num_traces)>(0x48D7C0);
 	game::trace_t* Trace_AllDirectionsIfFailed(float* cam_origin /*ebx*/, void* trace_result, float* dir, int contents);

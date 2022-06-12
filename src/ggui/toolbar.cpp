@@ -137,16 +137,22 @@ namespace ggui
 
 			ImGui::BeginGroup();
 			{
-				const float cursor_y = ImGui::GetCursorPos().y;
-				ImGui::SetCursorPosY(cursor_y - 4.0f);
-				ImGui::TextUnformatted(label);
+				if(label && !utils::starts_with(label, "##"))
+				{
+					const float cursor_y = ImGui::GetCursorPos().y;
+					ImGui::SetCursorPosY(cursor_y - 4.0f);
+					ImGui::TextUnformatted(label);
 
-				ImGui::SameLine(0, 2.0f);
-				ImGui::SetCursorPosY(cursor_y);
+					ImGui::SameLine(0, 2.0f);
+					ImGui::SetCursorPosY(cursor_y);
+				}
+
+				ImGui::PushID(label);
 				if (ImGui::ImageButton(image->texture.data, *btn_size, uv0, uv1, 0, bg_col))
 				{
 					ret_state = true;
 				}
+				ImGui::PopID();
 
 				hovered_state_bg = ImGui::IsItemHovered();
 
