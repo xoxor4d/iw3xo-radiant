@@ -109,7 +109,7 @@ namespace ggui
 						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
-						static bool hov_guizmo_brush_mode;
+						/*static bool hov_guizmo_brush_mode;
 						if (tb->image_togglebutton("guizmo_brush_mode"
 							, hov_guizmo_brush_mode
 							, dvars::guizmo_brush_mode->current.enabled
@@ -120,7 +120,7 @@ namespace ggui
 							, &toolbar_button_size))
 						{
 							dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
-						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());*/
 					}
 
 					ImGui::PopStyleVar();

@@ -911,7 +911,7 @@ namespace ggui
 				ImGui::EndDisabled();
 			});
 
-		register_element("guizmo_brush_mode"s, false, []()
+		/*register_element("guizmo_brush_mode"s, false, []()
 			{
 				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
 				{
@@ -926,7 +926,7 @@ namespace ggui
 					}
 				}
 				ImGui::EndDisabled();
-			});
+			});*/
 
 		register_element("gameview"s, false, []()
 			{

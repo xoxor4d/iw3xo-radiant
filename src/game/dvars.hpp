@@ -81,7 +81,7 @@ namespace dvars
 
 	extern game::dvar_s* guizmo_enable;
 	extern game::dvar_s* guizmo_snapping;
-	extern game::dvar_s* guizmo_brush_mode;
+	//extern game::dvar_s* guizmo_brush_mode;
 	
 	extern game::dvar_s* radiant_gameview;
 	extern game::dvar_s* radiant_maxfps_grid;

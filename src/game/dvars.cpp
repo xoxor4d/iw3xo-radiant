@@ -81,7 +81,7 @@ namespace dvars
 
 	game::dvar_s* guizmo_enable = nullptr;
 	game::dvar_s* guizmo_snapping = nullptr;
-	game::dvar_s* guizmo_brush_mode = nullptr;
+	//game::dvar_s* guizmo_brush_mode = nullptr;
 	
 	game::dvar_s* radiant_gameview = nullptr;
 	game::dvar_s* radiant_maxfps_grid = nullptr;
