@@ -460,15 +460,30 @@ namespace ggui
 
 		for (auto& addon_bind : ggui::cmd_addon_hotkeys)
 		{
+			bool found = false;
+
 			for (commandbinds& hotkey : cmd_hotkeys)
 			{
+				// assign key to addon hotkey if found in ini
 				if (addon_bind.m_strCommand == hotkey.cmd_name)
 				{
 					addon_bind.m_nKey = cmdbinds_key_to_ascii(hotkey.modifier_key);
 					addon_bind.m_nModifiers = hotkey.modifier_shift
 						| (hotkey.modifier_alt == 1 ? 2 : 0)
 						| (hotkey.modifier_ctrl == 1 ? 4 : 0);
+
+					found = true;
+					break;
 				}
+			}
+
+			if (!found)
+			{
+				cmd_hotkeys.push_back(
+					commandbinds
+					{
+						addon_bind.m_strCommand, "", 0, 0, 0, ""
+					});
 			}
 		}
 
@@ -697,11 +712,11 @@ namespace ggui
 
 	void hotkey_dialog::on_open()
 	{
-		if (!hotkey_dialog::cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
+		/*if (!hotkey_dialog::cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
 		{
 			GET_GUI(hotkey_helper_dialog)->open();
 			this->close();
-		}
+		}*/
 	}
 
 	void hotkey_dialog::on_close()

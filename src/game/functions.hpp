@@ -114,6 +114,9 @@ namespace game
 
 	extern float*	g_vRotateOrigin;
 	extern int&		g_prefab_stack_level;
+
+	extern bool&	g_bDoCone;
+	extern bool&	g_bDoSphere;
 	
 	extern game::SCommandInfo*	g_Commands;
 	extern int		g_nCommandCount;
@@ -236,8 +239,10 @@ namespace game
 	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/);
 	void Brush_Deselect(game::brush_t* b /*esi*/);
 	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection);
-	inline auto QE_SingleBrush = reinterpret_cast<bool (*)()>(0x48C8B0); // no warnings when bQuiet
+	inline auto QE_SingleBrush = reinterpret_cast<bool (*)()>(0x48C8B0); // use is_single_brush_selected when used in loops
 	inline auto Brush_MakeFacePlanes = reinterpret_cast<void (*)(game::brush_t_with_custom_def* b)>(0x470A50); // calculate normal and dist from planepts
+	inline auto Brush_MakeSidedCone = reinterpret_cast<void (*)(int num_sides)>(0x47BC10);
+	inline auto Brush_MakeSided_Axis = reinterpret_cast<void (*)(int num_sides, bool snap)>(0x4735E0);
 	int CM_ForEachBrushPlaneIntersection(game::brush_t_with_custom_def* b /*esi*/, game::BrushPt_t* brush_pts);
 	
 	inline auto SetKeyValue = reinterpret_cast<void (*)(game::entity_s * ent, const char* key, const char* value)>(0x483690);

@@ -21,7 +21,7 @@ void cmainframe::routine_processing()
 	{
 		return;
 	}
-	
+
 	if (0.0 == game::g_time)
 	{
 		game::g_time = 0.0;
@@ -887,6 +887,25 @@ void __declspec(naked) set_windowplacement_stub()
 	}
 }
 
+void set_default_texture()
+{
+	cdeclcall(void, 0x45B650); // Texture_ResetPosition
+}
+
+void __declspec(naked) set_default_texture_stub()
+{
+	const static uint32_t retn_pt = 0x420025;
+
+	__asm
+	{
+		pushad;
+		call	set_default_texture;
+		popad;
+
+		jmp		retn_pt;
+	}
+}
+
 
 void cmainframe::register_dvars()
 {
@@ -939,6 +958,10 @@ void cmainframe::hooks()
 	utils::hook::nop(0x420B04, 12 + 29 + 22); // create
 	utils::hook::nop(0x4210ED, 59); // font stuff
 #endif
+
+	// set default selected texture to caulk
+	utils::hook::nop(0x41FC69, 6);
+	utils::hook(0x41FC69, set_default_texture_stub, HOOK_JUMP).install()->quick();
 
 	// hook SetWindowPlacement (Radiant::MainWindowPlace) in OnCreateClient to fix minimize issue
 	utils::hook::nop(0x4225CB, 8);

@@ -65,8 +65,12 @@ namespace game
 	bool& g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
 	bool& g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
 	int& g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
+
 	float* g_vRotateOrigin = reinterpret_cast<float*>(0x23F1658);
 	int& g_prefab_stack_level = *reinterpret_cast<int*>(0x25D5B34);
+
+	bool& g_bDoCone = *reinterpret_cast<bool*>(0x25D5B38);
+	bool& g_bDoSphere = *reinterpret_cast<bool*>(0x25D5B39);
 
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;

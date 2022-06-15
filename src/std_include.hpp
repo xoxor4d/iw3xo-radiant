@@ -148,6 +148,7 @@
 #include "ggui/surface_inspector.hpp"
 #include "ggui/textures.hpp"
 #include "ggui/toolbar.hpp"
+#include "ggui/toolbox.hpp"
 #include "ggui/vertex_edit.hpp"
 
 #include "common/mainframe.hpp"
