@@ -338,6 +338,10 @@ namespace ggui
 						GET_GUI(ggui::modelselector_dialog)->toggle();
 					}
 
+					if (ImGui::MenuItem("Toolbox", ggui::hotkey_dialog::get_hotkey_for_command("toggle_toolbox").c_str())) {
+						GET_GUI(ggui::toolbox_dialog)->toggle();
+					}
+
 					if (ImGui::MenuItem("ImGui Demo")) {
 						ggui::m_demo_menu_state = !ggui::m_demo_menu_state;
 					}

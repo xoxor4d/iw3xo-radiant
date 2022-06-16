@@ -157,6 +157,8 @@ namespace game
 	extern game::selbrush_def_t* g_active_brushes_next();
 	extern game::selbrush_def_t* g_selected_brushes();
 	extern game::selbrush_def_t* g_selected_brushes_next();
+
+	extern const int& g_selected_faces_count;
 	extern game::selface_t* g_selected_faces();
 	extern game::entity_s_def* g_edit_entity();
 	extern int& multiple_edit_entities;

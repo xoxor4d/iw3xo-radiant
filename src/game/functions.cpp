@@ -152,6 +152,8 @@ namespace game
 		return brush;
 	}
 
+	const int& g_selected_faces_count = *reinterpret_cast<const int*>(0x73C714);
+
 	// g_selected_faces is a CArray
 	game::selface_t* g_selected_faces()
 	{

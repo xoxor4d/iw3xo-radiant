@@ -20,8 +20,8 @@ namespace game
 		PATCH_CONE =		0x10,
 		PATCH_TRIANGLE =	0x20,	// unused?
 		PATCH_TERRAIN =		0x40,
+		PATCH_SEAM =		0x100,	//PATCH_SEAM =		0x2000,
 		PATCH_CAP =			0x1000,
-		PATCH_SEAM =		0x2000,
 		PATCH_THICK =		0x4000,
 	};
 
@@ -661,7 +661,7 @@ namespace game
 		int height;
 		int contents;
 		int flags;
-		int type;
+		int type; // PATCH_TYPE
 		int subDivType;
 		patchMesh_material texture;
 		patchMesh_material lightmap;

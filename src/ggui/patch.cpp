@@ -19,6 +19,11 @@ namespace ggui
 
 			if (ImGui::InputScalar("Width", ImGuiDataType_U32, &curvepatch_width, &curvepatch_step, nullptr, "%d"))
 			{
+				// check or make uneven
+				curvepatch_width =
+					curvepatch_width % 2 != 0 ? curvepatch_width : curvepatch_width - 1;
+
+				// clamp
 				curvepatch_width =
 					curvepatch_width < 3 ? 3 :
 					curvepatch_width > 15 ? 15 : curvepatch_width;
@@ -26,6 +31,11 @@ namespace ggui
 
 			if (ImGui::InputScalar("Height", ImGuiDataType_U32, &curvepatch_height, &curvepatch_step, nullptr, "%d"))
 			{
+				// check or make uneven
+				curvepatch_height =
+					curvepatch_height % 2 != 0 ? curvepatch_height : curvepatch_height - 1;
+
+				// clamp
 				curvepatch_height =
 					curvepatch_height < 3 ? 3 :
 					curvepatch_height > 15 ? 15 : curvepatch_height;
