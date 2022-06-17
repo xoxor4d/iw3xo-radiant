@@ -1693,6 +1693,13 @@ namespace ggui
 
 					if (ImGui::MenuItem("Cone")) {
 						cdeclcall(void, 0x42A360); // CMainFrame::OnCurvePatchcone
+
+						// fix cone not showing before moving or editing the patch in any way afterwards
+						const auto b = game::g_selected_brushes();
+						if (b && b->def && b->def->patch)
+						{
+							game::Patch_UpdateSelected(b->def->patch, 1);
+						}
 					}
 
 					// not implemented
@@ -1813,11 +1820,11 @@ namespace ggui
 					ImGui::EndMenu(); // Weld
 				}
 
-				if (ImGui::MenuItem("Inc Subdevision", ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftUp").c_str())) {
+				if (ImGui::MenuItem("Inc Subdivision", ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftUp").c_str())) {
 					cdeclcall(void, 0x428EB0); // CMainFrame::OnOverBrightShiftUp
 				} TT("Curve Patches: increase vertex count (subdivide)");
 
-				if (ImGui::MenuItem("Dec Subdevision", ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftDown").c_str())) {
+				if (ImGui::MenuItem("Dec Subdivision", ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftDown").c_str())) {
 					cdeclcall(void, 0x428EE0); // CMainFrame::OnOverBrightShiftDown
 				} TT("Curve Patches: decrease vertex count (decimate)");
 

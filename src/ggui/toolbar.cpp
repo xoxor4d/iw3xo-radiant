@@ -799,7 +799,7 @@ namespace ggui
 					game::g_qeglobals->d_select_mode == 9,
 					"Toggle terrain-quad edge cycle mode"))
 				{
-					mainframe_thiscall(LRESULT, 0x42B530);
+					mainframe_thiscall(LRESULT, 0x42B530); // CMainFrame::OnCycleTerrainEdge
 				}
 			});
 
@@ -813,7 +813,7 @@ namespace ggui
 					prefs->m_bTolerantWeld,
 					"Toggle tolerant weld / Draw tolerant weld lines"))
 				{
-					mainframe_thiscall(LRESULT, 0x42A130);
+					mainframe_thiscall(LRESULT, 0x42A130); // CMainFrame::OnTolerantWeld
 				}
 			});
 

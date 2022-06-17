@@ -37,7 +37,7 @@ namespace ggui
 		static int cmdbinds_key_to_ascii(std::string key);
 		static std::string cmdbinds_ascii_to_keystr(int key);
 		static bool cmdbinds_load_from_file(std::string file);
-		static std::string get_hotkey_for_command(const char* command);
+		static std::string get_hotkey_for_command(const char* command, bool unbound_str = false);
 
 		// *
 		// asm related

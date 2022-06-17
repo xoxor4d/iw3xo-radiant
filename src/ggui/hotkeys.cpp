@@ -241,7 +241,7 @@ namespace ggui
 		return out;
 	}
 
-	std::string hotkey_dialog::get_hotkey_for_command(const char* command)
+	std::string hotkey_dialog::get_hotkey_for_command(const char* command, bool unbound_str)
 	{
 		// find command in cmd_hotkeys (ini)
 		for (const auto& bind : cmd_hotkeys)
@@ -285,7 +285,7 @@ namespace ggui
 			}
 		}
 
-		return "";
+		return unbound_str ? "[Unbound Command]" : "";
 	}
 
 	// populates std::vector<commandbinds> cmd_hotkeys

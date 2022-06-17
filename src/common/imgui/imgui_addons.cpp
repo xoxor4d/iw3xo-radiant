@@ -727,8 +727,10 @@ namespace ImGui
 		SPACING(0.0f, post_spacing);
 	}
 
-	void title_with_seperator_helpmark(const char* title_text, bool pre_spacing, float width, float height, float post_spacing, const char* helper_text)
+	void title_inside_seperator(const char* title_text, bool pre_spacing, float width, float post_spacing, float thickness)
 	{
+		ImGui::BeginGroup();
+
 		if (pre_spacing)
 		{
 			SPACING(0.0f, 12.0f);
@@ -736,7 +738,55 @@ namespace ImGui
 
 		if (width == 0.0f)
 		{
-			width = ImGui::GetContentRegionAvail().x - 16.0f;
+			width = ImGui::GetContentRegionAvail().x - 8.0f;
+		}
+
+		const float text_spacing = 6.0f;
+
+		ImGui::PushFontFromIndex(ggui::REGULAR_12PX);
+		const auto text_size = ImGui::CalcTextSize(title_text, nullptr, true);
+
+		const float first_sep_width = (width * 0.1f);
+
+		ImVec2 seperator_pos = ImGui::GetCursorScreenPos();
+			   seperator_pos.y += (text_size.y * 0.5f);
+
+		ImGui::GetWindowDrawList()->AddLine(seperator_pos, ImVec2(seperator_pos.x + first_sep_width, seperator_pos.y), ImGui::GetColorU32(ImGuiCol_Separator), thickness);
+
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + first_sep_width + text_spacing);
+		//ImGui::TextUnformatted(title_text);
+		ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ImGui::GetColorU32(ImGuiCol_Separator)), title_text);
+		ImGui::PopFont();
+
+		ImGui::SameLine(0.0f, text_spacing);
+
+		const auto second_sep_width = width - text_size.x - first_sep_width - (text_spacing * 2.0f);
+
+		seperator_pos = ImGui::GetCursorScreenPos();
+		seperator_pos.y += (text_size.y * 0.5f);
+
+		ImGui::GetWindowDrawList()->AddLine(seperator_pos, ImVec2(seperator_pos.x + second_sep_width, seperator_pos.y), ImGui::GetColorU32(ImGuiCol_Separator), thickness);
+
+		//ImGui::SameLine(width - 12.0f);
+		//ImGui::HelpMarker(helper_text);
+
+		SPACING(0.0f, post_spacing);
+
+		ImGui::EndGroup();
+	}
+
+	void title_with_seperator_helpmark(const char* title_text, bool pre_spacing, float width, float height, float post_spacing, const char* helper_text)
+	{
+		ImGui::BeginGroup();
+
+		if (pre_spacing)
+		{
+			SPACING(0.0f, 12.0f);
+		}
+
+		if (width == 0.0f)
+		{
+			width = ImGui::GetContentRegionAvail().x - 8.0f;
 		}
 
 		ImGui::PushFontFromIndex(ggui::BOLD_18PX);
@@ -746,10 +796,12 @@ namespace ImGui
 		const ImVec2 seperator_pos = ImGui::GetCursorScreenPos();
 		ImGui::GetWindowDrawList()->AddLine(seperator_pos, ImVec2(seperator_pos.x + width, seperator_pos.y + height), ImGui::GetColorU32(ImGuiCol_Separator));
 
-		ImGui::SameLine(width - 6.0f);
+		ImGui::SameLine(width - 12.0f);
 		ImGui::HelpMarker(helper_text);
 
 		SPACING(0.0f, post_spacing);
+
+		ImGui::EndGroup();
 	}
 
 	bool InputScalarDir(const char* label, ImGuiDataType data_type, void* p_data, int* dir, void* p_step, const void* p_step_fast, bool display_p_step, const char* format, ImGuiInputTextFlags flags)

@@ -8,11 +8,24 @@ namespace ggui
 {
 	void about_dialog::gui()
 	{
-		ImGui::SetNextWindowSize(game::glob::gh_update_avail ? ImVec2(480.0f, 810.0f) : ImVec2(400.0f, 560.0f));
+		ImGui::SetNextWindowSize(game::glob::gh_update_avail ? ImVec2(480.0f, 880.0f) : ImVec2(400.0f, 630.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
 		if (ImGui::Begin("About##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking))
 		{
+			const float cursor_y = ImGui::GetCursorPosY();
+
+			if (const auto	image = game::Image_RegisterHandle("cycle_xyz");
+							image && image->texture.data)
+			{
+				const ImVec2 uv0 = ImVec2(0.5f, 0.0f);
+				const ImVec2 uv1 = ImVec2(1.0f, 1.0f);
+
+				ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 52.0f);
+				ImGui::Image(image->texture.data, ImVec2(40.0f, 40.0f), uv0, uv1);
+				ImGui::SetCursorPosY(cursor_y);
+			}
+
 			SPACING(0.0f, 8.0f);
 
 			if (game::glob::gh_update_avail)
@@ -89,6 +102,7 @@ namespace ggui
 			CENTER_URL("nlohmann (fifo_map)", "https://github.com/nlohmann/fifo_map");
 			CENTER_URL("David Gallardo (imgui_color_gradient)", "https://gist.github.com/galloscript/8a5d179e432e062550972afcd1ecf112");
 			CENTER_URL("nem0 (CurveEditor)", "https://github.com/nem0/LumixEngine/blob/39e46c18a58111cc3c8c10a4d5ebbb614f19b1b8/external/imgui/imgui_user.inl#L505-L930");
+			CENTER_URL("Limeoats (L2DFileDialog)", "https://github.com/Limeoats/L2DFileDialog/");
 			CENTER_URL("zfedoran (ImGui Spinner)", "https://github.com/ocornut/imgui/issues/1901");
 			CENTER_URL("maluoi (tga writer)", "https://gist.github.com/maluoi/ade07688e741ab188841223b8ffeed22");
 			CENTER_URL("Infinity Ward (OG. Radiant and Effects Framework)", "https://www.infinityward.com/");

@@ -15,11 +15,14 @@ namespace ggui
 
 	void setup_child()
 	{
+		const auto window = ImGui::GetCurrentWindow();
+
 		const float child_indent = 12.0f;
 		const auto child_size = ImGui::GetContentRegionAvail();
+		const float window_height = window->ContentSize.y > window->SizeFull.y ? window->ContentSize.y : window->SizeFull.y;
 
 		const auto min = ImGui::GetCursorScreenPos();
-		const auto max = ImVec2(min.x + child_size.x, min.y + child_size.y);
+		const auto max = ImVec2(min.x + child_size.x, min.y + window_height);
 		ImGui::GetWindowDrawList()->AddRect(min, max, ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 1.0f)), 0.0f, ImDrawFlags_RoundCornersBottom);
 
 		SPACING(0.0f, 6.0f);
@@ -51,7 +54,7 @@ namespace ggui
 		//const ImRect total_bb(min_coords, max_coords);
 		//ImGui::ItemHoverable(total_bb, ImGui::GetID(name));
 
-		if (!ImGui::TreeNodeEx(name, default_open ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None))
+		if (!ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_SpanFullWidth | (default_open ? ImGuiTreeNodeFlags_DefaultOpen : ImGuiTreeNodeFlags_None)))
 		{
 			ImGui::PopStyleColor(style_colors);
 			ImGui::PopStyleVar(style_vars);
@@ -104,6 +107,8 @@ namespace ggui
 		ImGui::PushID("child_brush");
 		setup_child();
 		{
+			const float max_widget_width = 251.0f;
+
 			const ImVec4 toolbar_button_background_active = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);
 			const ImVec4 toolbar_button_background_hovered = ImVec4(0.225f, 0.225f, 0.225f, 1.0f);
 			const ImVec2 toolbar_button_size = ImVec2(32.0f, 32.0f);
@@ -222,15 +227,16 @@ namespace ggui
 				static float manipulation_l2_width = 100.0f;
 				center_horz_begin(manipulation_l2_width);
 				{
-					if (ImGui::Button("Hollow Brush"))
+					if (ImGui::Button("Hollow Brush", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
 					{
 						cdeclcall(void, 0x425570); // CMainFrame::OnSelectionMakehollow
-					}
-					ImGui::SameLine();
-					if (ImGui::Button("Auto Caulk"))
+					} TT("Hollows the selected brush. Uses current grid size as wall size");
+
+					ImGui::SameLine(0.0f, 4.0f);
+					if (ImGui::Button("Auto Caulk", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
 					{
 						cdeclcall(void, 0x425600); // CMainFrame::OnSelectionAutoCaulk
-					}
+					} TT(std::string("Automatically caulk invisible faces\n" + ggui::hotkey_dialog::get_hotkey_for_command("AutoCaulk", true)).c_str());
 
 					center_horz_end(manipulation_l2_width);
 				}
@@ -243,31 +249,29 @@ namespace ggui
 				static float brush_contents_l1_width = 100.0f;
 				center_horz_begin(brush_contents_l1_width);
 				{
-					if (ImGui::Button("Detail", ImVec2(120.0f, 0.0f)))
+					if (ImGui::Button("Detail", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
 					{
 						cdeclcall(void, 0x4261C0); // CMainFrame::OnSelectionMakeDetail
 					}
 
-					ImGui::SameLine();
-					if (ImGui::Button("Non-Colliding", ImVec2(120.0f, 0.0f)))
+					ImGui::SameLine(0.0f, 4.0f);
+					if (ImGui::Button("Non-Colliding", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
 					{
 						cdeclcall(void, 0x426280); // CMainFrame::OnSelectionMakeNonColliding
 					}
 				}
 				center_horz_end(brush_contents_l1_width);
 
-				SPACING(0.0f, 0.0f);
-
 				static float brush_contents_l2_width = 100.0f;
 				center_horz_begin(brush_contents_l2_width);
 				{
-					if (ImGui::Button("Structural", ImVec2(120.0f, 0.0f)))
+					if (ImGui::Button("Structural", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
 					{
 						cdeclcall(void, 0x426200); // CMainFrame::OnSelectionMakeStructural
 					}
 
-					ImGui::SameLine();
-					if (ImGui::Button("Weapon Clip", ImVec2(120.0f, 0.0f)))
+					ImGui::SameLine(0.0f, 4.0f);
+					if (ImGui::Button("Weapon Clip", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
 					{
 						cdeclcall(void, 0x426240); // CMainFrame::OnSelectionMakeWeaponclip
 					}
@@ -288,13 +292,16 @@ namespace ggui
 					static float cone_l1_width = 100.0f;
 					center_horz_begin(cone_l1_width);
 					{
-						ImGui::SetNextItemWidth(130.0f);
+						ImGui::SetNextItemWidth(max_widget_width * 0.5f - 2.0f);
+						ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(4.0f, 4.0f));
 						if (ImGui::InputScalar("##sides_cone", ImGuiDataType_U32, &sides_cone, &step_size, nullptr, "%d"))
 						{
 							sides_cone = sides_cone < 3 ? 3 : sides_cone;
 						}
-						ImGui::SameLine();
-						if (ImGui::Button("Make Cone", ImVec2(110.0f, 0.0f)))
+						ImGui::PopStyleVar();
+
+						ImGui::SameLine(0.0f, 4.0f);
+						if (ImGui::Button("Make Cone", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
 						{
 							game::Undo_ClearRedo();
 							game::Undo_GeneralStart("make cone");
@@ -311,13 +318,16 @@ namespace ggui
 					static float cone_l2_width = 100.0f;
 					center_horz_begin(cone_l2_width);
 					{
-						ImGui::SetNextItemWidth(130.0f);
+						ImGui::SetNextItemWidth(max_widget_width * 0.5f - 2.0f);
+						ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(4.0f, 4.0f));
 						if (ImGui::InputScalar("##sides_cylinder", ImGuiDataType_U32, &sides_cylinder, &step_size, nullptr, "%d"))
 						{
 							sides_cylinder = sides_cylinder < 3 ? 3 : sides_cylinder;
 						}
-						ImGui::SameLine();
-						if (ImGui::Button("Make Cylinder", ImVec2(110.0f, 0.0f)))
+						ImGui::PopStyleVar();
+
+						ImGui::SameLine(0.0f, 4.0f);
+						if (ImGui::Button("Make Cylinder", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
 						{
 							game::Undo_ClearRedo();
 							game::Undo_GeneralStart("make cylinder");
@@ -354,6 +364,14 @@ namespace ggui
 			const ImVec2 toolbar_button_size = ImVec2(32.0f, 32.0f);
 
 			const auto tb = GET_GUI(ggui::toolbar_dialog);
+
+			static float max_widget_width = 240.0f; // assumed first value - depends on total width of curve patch creation widget
+			static float widget_start_offset_screen = 0.0f;
+
+			const auto selbrush = game::g_selected_brushes();
+			const auto is_patch = selbrush && selbrush->def && selbrush->def->patch;
+			const auto is_curve_patch = selbrush && selbrush->def && selbrush->def->patch && (selbrush->def->patch->type == game::PATCH_TYPE::PATCH_GENERIC || selbrush->def->patch->type == game::PATCH_TYPE::PATCH_SEAM);
+			const auto atleast_two_verts_selected = game::g_qeglobals->d_num_move_points >= 2;
 
 			if (toolbox_treenode_begin("Manipulation", true, style_colors, style_vars))
 			{
@@ -446,8 +464,64 @@ namespace ggui
 					center_horz_end(manipulation_l1_width);
 				}
 
+				static float manipulation_l2_width = 100.0f;
+				center_horz_begin(manipulation_l2_width);
+				{
+					const auto prefs = game::g_PrefsDlg();
+
+					static bool hov_cycle_edges;
+					if (tb->image_button_label("##cycle_patch_edge_direction"
+						, "cycle_patch_edge_direction"
+						, game::g_qeglobals->d_select_mode == 9
+						, hov_cycle_edges
+						, "Toggle terrain-quad edge cycle mode"
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						mainframe_thiscall(void, 0x42B530); // CMainFrame::OnCycleTerrainEdge
+					}
+
+					ImGui::SameLine();
+					static bool hov_tolerant_weld;
+					if (tb->image_button_label("##tolerant_weld"
+						, "tolerant_weld"
+						, prefs->m_bTolerantWeld
+						, hov_tolerant_weld
+						, "Toggle tolerant weld / Draw tolerant weld lines"
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						mainframe_thiscall(void, 0x42A130); // CMainFrame::OnTolerantWeld
+					}
+
+					ImGui::SameLine();
+					static bool hov_redisp_patch_pts;
+					if (tb->image_button_label("##redisperse_patch_points"
+						, "redisperse_patch_points"
+						, false
+						, hov_redisp_patch_pts
+						, std::string("Redisperse Patch Points " + ggui::hotkey_dialog::get_hotkey_for_command("RedisperseVertices", true)).c_str()
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						cdeclcall(void, 0x42A270); // CMainFrame::OnRedistPatchPoints
+					}
+
+					ImGui::SameLine();
+					if (ImGui::Button("Adv. Edit Dialog", ImVec2(116.0f, 32.0f)))
+					{
+						cdeclcall(void, 0x42BC90); // CMainFrame::OnAdvancedEditDlg
+					} TT(std::string("Toggle the advanced vertex edit dialog\n" + ggui::hotkey_dialog::get_hotkey_for_command("AdvancedCurveEdit", true)).c_str());
+					
+
+					center_horz_end(manipulation_l2_width);
+				}
+
 				toolbox_treenode_end(style_colors, style_vars);
-			}
+			} // manipulation node
 
 			if (toolbox_treenode_begin("Terrain", true, style_colors, style_vars))
 			{
@@ -492,7 +566,7 @@ namespace ggui
 							// only update group width if change is larger then 1px because floorf in 'center_horz_begin' causes a wiggle
 							const float new_width = ImGui::GetItemRectSize().x;
 							width_height_settings_width = abs(width_height_settings_width - new_width) != 1.0f ? new_width : width_height_settings_width;
-						}
+						} // group 2
 
 						ImGui::SameLine(0, terrain_button_spacing);
 						ImGui::SetCursorPosY(cursor_y);
@@ -512,10 +586,10 @@ namespace ggui
 
 						ImGui::EndGroup(); // total widget
 						total_widget_width = ImGui::GetItemRectSize().x;
-					}
+					} // group 1
 
-					ImGui::EndDisabled(); // game::is_single_brush_selected()
-				}
+					ImGui::EndDisabled(); 
+				} // game::is_single_brush_selected()
 
 				static float faces_to_terrain_width = 100.0f;
 				center_horz_begin(faces_to_terrain_width);
@@ -530,17 +604,17 @@ namespace ggui
 						ImGui::EndDisabled();
 					}
 					center_horz_end(faces_to_terrain_width);
-				}
+				} // faces to terrain
 
 				toolbox_treenode_end(style_colors, style_vars);
-			}
+			} // terrain node
 
 			if (toolbox_treenode_begin("Curve", true, style_colors, style_vars))
 			{
-				const int step_size = 1;
 				static int curvepatch_width = 2;
 				static int curvepatch_height = 2;
-				static float total_widget_width = 100.0f;
+				//static float total_widget_start_offset = 0.0f;
+				
 
 				ImGui::BeginDisabled(!game::is_single_brush_selected());
 				{
@@ -553,6 +627,9 @@ namespace ggui
 
 					// floorf to ensure no half pixel offsets (image 1px borders)
 					ImGui::SetCursorPosX(floorf((ImGui::GetWindowWidth() - ImGui::GetCursorPos().x) * 0.5f - (width_height_settings_width * 0.5f) + 4.0f - (curve_button_width * 0.5f) - (curve_button_spacing * 0.5f)));
+
+					//total_widget_start_offset = ImGui::GetCursorPosX();
+					widget_start_offset_screen = ImGui::GetCursorScreenPos().x;
 
 					ImGui::BeginGroup();
 					{
@@ -589,7 +666,7 @@ namespace ggui
 							// only update group width if change is larger then 1px because floorf in 'center_horz_begin' causes a wiggle
 							const float new_width = ImGui::GetItemRectSize().x;
 							width_height_settings_width = abs(width_height_settings_width - new_width) != 1.0f ? new_width : width_height_settings_width;
-						}
+						} // group 2
 
 						ImGui::SameLine(0, curve_button_spacing);
 						ImGui::SetCursorPosY(cursor_y);
@@ -609,21 +686,18 @@ namespace ggui
 						}
 
 						ImGui::EndGroup(); // total widget
-						total_widget_width = ImGui::GetItemRectSize().x;
-					}
+						max_widget_width = ImGui::GetItemRectSize().x;
+					} // group 1
 
 					ImGui::EndDisabled(); // game::is_single_brush_selected()
-				}
+				} // !is_single_brush_selected
 
 				static float faces_to_terrain_width = 100.0f;
 				center_horz_begin(faces_to_terrain_width);
 				{
-					const auto curr = game::g_selected_brushes();
-					//if(curr && curr->def && curr->def->patch && curr->def->patch->flags == game::PATCH_TYPE::PATCH_GENERIC)
-
-					ImGui::BeginDisabled(!(curr && curr->def && curr->def->patch && (curr->def->patch->type == game::PATCH_TYPE::PATCH_GENERIC || curr->def->patch->type == game::PATCH_TYPE::PATCH_SEAM)));
+					ImGui::BeginDisabled(!is_curve_patch);
 					{
-						if (ImGui::Button("Curve to terrain", ImVec2(total_widget_width, 0.0f)))
+						if (ImGui::Button("Curve to terrain", ImVec2(max_widget_width, 0.0f)))
 						{
 							cdeclcall(void, 0x429B30); // CMainFrame::OnCurveToTerrain
 						}
@@ -631,10 +705,333 @@ namespace ggui
 						ImGui::EndDisabled();
 					}
 					center_horz_end(faces_to_terrain_width);
+				} // curve to terrain
+
+				static float subdevision_width = 100.0f;
+				center_horz_begin(subdevision_width);
+				{
+					ImGui::BeginDisabled(!is_curve_patch);
+					{
+						if (ImGui::Button("-- Subdivision", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x428EE0); // CMainFrame::OnOverBrightShiftDown
+						} TT(std::string("Curve Patches: decrease vertex count (decimate)\n" + ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftDown", true)).c_str());
+
+						ImGui::SameLine(0.0f, 4.0f);
+						if (ImGui::Button("++ Subdivision", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x428EB0); // CMainFrame::OnOverBrightShiftUp
+						} TT(std::string("Curve Patches: increase vertex count (subdivide)\n" + ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftUp", true)).c_str());
+
+						ImGui::EndDisabled();
+					}
+					center_horz_end(subdevision_width);
+				} // subdivision
+
+				SPACING(0.0f, 0.0f);
+				ImGui::SetCursorScreenPos(ImVec2(widget_start_offset_screen, ImGui::GetCursorScreenPos().y));
+				ImGui::title_inside_seperator("Cap Patch", false, max_widget_width, 4.0f, 1.0f); 
+
+				const auto min_coords = ImVec2(widget_start_offset_screen, ImGui::GetCursorScreenPos().y) - ImVec2(0.0f, 0.0f);
+				const auto max_coords = ImVec2(min_coords.x + max_widget_width, min_coords.y + 68.0f);
+
+				const auto cap_button_size = ImVec2(48.0f, 48.0f);
+				const auto& style = ImGui::GetStyle();
+
+				ImGui::GetWindowDrawList()->AddRectFilled(min_coords, max_coords, 
+					is_curve_patch ? ImGui::ColorConvertFloat4ToU32(ImVec4(0.173f, 0.173f, 0.173f, 1.0f))
+								   : ImGui::ColorConvertFloat4ToU32(ImVec4(0.175f, 0.175f, 0.175f, 1.0f)), style.FrameRounding);
+
+				SPACING(0.0f, 4.0f);
+
+				static float cap_width = 100.0f;
+				center_horz_begin(cap_width);
+				{
+					ImGui::BeginDisabled(!is_curve_patch);
+					{
+						static bool hov_bevel;
+						if (tb->image_button_label("##patch_cap_bevel"
+							, "patch_cap_bevel"
+							, false
+							, hov_bevel
+							, "Create inside bevel"
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &cap_button_size))
+						{
+							components::pmesh::cap_current(0);
+						}
+
+						ImGui::SameLine();
+
+						static bool hov_bevel_inverted;
+						if (tb->image_button_label("##patch_cap_bevel_inv"
+							, "patch_cap_bevel"
+							, true
+							, hov_bevel_inverted
+							, "Create outside bevel"
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &cap_button_size))
+						{
+							components::pmesh::cap_current(2);
+						}
+
+						ImGui::SameLine(0.0f, 16.0f);
+
+						static bool hov_endcap;
+						if (tb->image_button_label(""
+							, "patch_cap_endcap"
+							, false
+							, hov_endcap
+							, "Create inside endcap"
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &cap_button_size))
+						{
+							components::pmesh::cap_current(1);
+						}
+
+						ImGui::SameLine();
+
+						static bool hov_endcap_inverted;
+						if (tb->image_button_label("##endcapinverted"
+							, "patch_cap_endcap"
+							, true
+							, hov_endcap_inverted
+							, "Create outside endcap"
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &cap_button_size))
+						{
+							components::pmesh::cap_current(3);
+						}
+
+						ImGui::EndDisabled();
+
+						SPACING(0.0f, 4.0f);
+					}
+					center_horz_end(cap_width);
+				} // bevel
+
+				toolbox_treenode_end(style_colors, style_vars);
+			} // curve node
+
+			if (toolbox_treenode_begin("General / Vertices", true, style_colors, style_vars))
+			{
+				static float _l0_width = 100.0f;
+				center_horz_begin(_l0_width);
+				{
+					ImGui::BeginDisabled(!is_patch);
+					{
+						static int thickness_in_units = 8;
+						ImGui::SetNextItemWidth(max_widget_width * 0.5f - 2.0f - ImGui::CalcTextSize("Units").x - 20.0f);
+						if (ImGui::DragInt("Units##thickness", &thickness_in_units, 0.01f, 1, INT16_MAX))
+						{
+							thickness_in_units =
+								thickness_in_units < 1 ? 1 : thickness_in_units;
+						}
+
+						ImGui::SameLine(0, 14.0f);
+						if (ImGui::Button("Thicken", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							game::Undo_ClearRedo();
+							game::Undo_GeneralStart("thicken patch");
+							game::Undo_AddBrushList_Selected();
+
+							game::Patch_Thicken(thickness_in_units, true);
+
+							game::Undo_EndBrushList_Selected();
+							game::Undo_End();
+						}
+
+						ImGui::EndDisabled();
+					}
+
+					center_horz_end(_l0_width);
+				}
+
+				// #
+
+				SPACING(0.0f, 0.0f);
+				ImGui::SetCursorScreenPos(ImVec2(widget_start_offset_screen, ImGui::GetCursorScreenPos().y));
+				ImGui::title_inside_seperator("Between Two Vertices", false, max_widget_width, 4.0f, 1.0f);
+
+				static float _l1_width = 100.0f;
+				center_horz_begin(_l1_width);
+				{
+					ImGui::BeginDisabled(!atleast_two_verts_selected);
+					{
+						if (ImGui::Button("-- Row / Column", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42B0B0); // CMainFrame::OnRemoveTerrainRowColumn
+						} TT(std::string("Delete row / column along selected vertices\n" + ggui::hotkey_dialog::get_hotkey_for_command("RemoveTerrainRow", true)).c_str());
+
+						ImGui::SameLine(0.0f, 4.0f);
+						if (ImGui::Button("++ Row / Column", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42B080); // CMainFrame::OnAddTerrainRowColumn
+						} TT(std::string("Adds a new row / column inbetween selected vertices\n" + ggui::hotkey_dialog::get_hotkey_for_command("AddTerrainRow", true)).c_str());
+
+						// #
+
+						if (ImGui::Button("Split", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42B0C0); // CMainFrame::OnSplitPatch
+						} TT(std::string("Split patch along selected vertices\n" + ggui::hotkey_dialog::get_hotkey_for_command("SplitPatch", true)).c_str());
+
+						ImGui::EndDisabled(); // atleast_two_verts_selected
+
+						ImGui::BeginDisabled(!(atleast_two_verts_selected || is_patch));
+						{
+							ImGui::SameLine(0.0f, 4.0f);
+							if (ImGui::Button("Weld", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+							{
+								cdeclcall(void, 0x425510); // CMainFrame::OnSelectionConnect
+							} TT(std::string("Weld two vertices or patches if not in vertex edit mode\n" + ggui::hotkey_dialog::get_hotkey_for_command("ConnectSelection", true)).c_str());
+
+							ImGui::EndDisabled();
+						}
+
+						ImGui::BeginDisabled(!atleast_two_verts_selected);
+
+						if (ImGui::Button("Extrude", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42B0A0); // CMainFrame::ExtrudeTerrainRow
+						} TT(std::string("Extrude row / column at selected vertices\n" + ggui::hotkey_dialog::get_hotkey_for_command("ExtrudeTerrainRow", true)).c_str());
+
+						
+						ImGui::EndDisabled();
+					} // 2 selected verts
+					center_horz_end(_l1_width);
+				}
+
+				// #
+
+				SPACING(0.0f, 0.0f);
+				ImGui::SetCursorScreenPos(ImVec2(widget_start_offset_screen, ImGui::GetCursorScreenPos().y));
+				ImGui::title_inside_seperator("Vertex Color", false, max_widget_width, 4.0f, 1.0f);
+				//SPACING(0.0f, 0.0f);
+
+				static float _l2_width = 100.0f;
+				center_horz_begin(_l2_width);
+				{
+					static float vertex_edit_color[4] = {};
+					const bool enable_vert_color_edit = game::g_qeglobals->d_num_move_points > 0;
+
+					ImGui::BeginDisabled(!enable_vert_color_edit);
+					{
+						ImGui::SetNextItemWidth(max_widget_width);
+						if (ImGui::ColorPicker4("##vertex_color", vertex_edit_color, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_AlphaPreviewHalf | ImGuiColorEditFlags_NoSidePreview))
+						{
+							for (auto pt = 0; pt < game::g_qeglobals->d_num_move_points; pt++)
+							{
+								const auto vert = game::g_qeglobals->d_move_points[pt];
+								vert->vert_color.r = utils::pack_float(vertex_edit_color[0]);
+								vert->vert_color.g = utils::pack_float(vertex_edit_color[1]);
+								vert->vert_color.b = utils::pack_float(vertex_edit_color[2]);
+								vert->vert_color.a = utils::pack_float(vertex_edit_color[3]);
+							}
+
+							FOR_ALL_SELECTED_BRUSHES(sb)
+							{
+								if (sb->patch && sb->patch->def)
+								{
+									game::Patch_UpdateSelected(sb->patch->def, true);
+								}
+							}
+						}
+
+						ImGui::EndDisabled();
+					}
+					center_horz_end(_l2_width);
+				}
+
+
+				toolbox_treenode_end(style_colors, style_vars);
+			} // general node
+
+			if (toolbox_treenode_begin("Primitives", false, style_colors, style_vars))
+			{
+				static float primitives_width = 100.0f;
+				center_horz_begin(primitives_width);
+				{
+					ImGui::BeginDisabled(!game::is_single_brush_selected());
+					{
+						if (ImGui::Button("Bevel", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42A450); // CMainFrame::OnCurvePatchbevel
+						}
+
+						ImGui::SameLine(0.0f, 4.0f);
+						if (ImGui::Button("Square Bevel", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42B5E0); // CMainFrame::OnCuveSquareBevel
+						}
+
+						// #
+
+						if (ImGui::Button("End Cap", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42A4A0); // CMainFrame::OnCurvePatchendcap
+						}
+
+						ImGui::SameLine(0.0f, 4.0f);
+						if (ImGui::Button("Square End Cap", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42B590); // CMainFrame::OnCurveSquareEndCap
+						}
+
+						// #
+
+						if (ImGui::Button("Cylinder", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42A3B0); // CMainFrame::OnCurvePatchtube
+						}
+
+						ImGui::SameLine(0.0f, 4.0f);
+						if (ImGui::Button("Square Cylinder", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42AF00); // CMainFrame::OnCurvePatchsquare
+						}
+
+						// #
+
+						if (ImGui::Button("Dense Cylinder", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42AB90); // CMainFrame::OnCurvePatchdensetube
+						}
+
+						ImGui::SameLine(0.0f, 4.0f);
+						if (ImGui::Button("Very Dense Cyl.", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+						{
+							cdeclcall(void, 0x42AC40); // CMainFrame::OnCurvePatchverydensetube
+						}
+
+						// #
+
+						if (ImGui::Button("Cone", ImVec2(max_widget_width, 0.0f)))
+						{
+							cdeclcall(void, 0x42A360); // CMainFrame::OnCurvePatchcone
+
+							// fix cone not showing before moving or editing the patch in any way afterwards
+							const auto b = game::g_selected_brushes();
+							if(b && b->def && b->def->patch)
+							{
+								game::Patch_UpdateSelected(b->def->patch, 1);
+							}
+							
+						}
+
+						ImGui::EndDisabled();
+					} // 2 selected verts
+					center_horz_end(primitives_width);
 				}
 
 				toolbox_treenode_end(style_colors, style_vars);
-			}
+			} // primitives node
+
+			SPACING(0.0f, 6.0f);
 		}
 		ImGui::PopID();
 	}
