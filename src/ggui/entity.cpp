@@ -1237,27 +1237,20 @@ namespace ggui
 				int row = 0;
 				eprop_sorted.clear();
 
-				const auto ws = game::g_world_entity();
-
 				bool is_worldspawn = (m_sel_list_ent && !_stricmp(m_sel_list_ent->name, "worldspawn"));
+				const auto selbrush = game::g_selected_brushes();
+
+				if(selbrush && !selbrush->def)
+				{
+					cdeclcall(void, 0x4972F0); // UpdateEntitySel - updates edit_entity <- worldspawn
+				}
 
 				// only draw entprops if something is selected or if nothing is selected and sel_list_ent == the worldspawn
-				if (const auto	 selbrush = game::g_selected_brushes();
-								(selbrush && selbrush->def) || is_worldspawn || (selbrush && !selbrush->def && ws && ws->firstActive))
+				if (selbrush && selbrush->def || is_worldspawn)
 
 				{
-					// on startup if noting was selected
-					auto edit_entity = game::g_edit_entity();
-					if(selbrush && !selbrush->def)
-					{
-						edit_entity = reinterpret_cast<game::entity_s_def*>(ws->firstActive);
-						is_worldspawn = true;
-
-						const auto gui = GET_GUI(ggui::entity_dialog);
-						gui->m_sel_list_ent = edit_entity->eclass;
-					}
-
-					if (edit_entity && edit_entity->epairs)
+					if (const auto	edit_entity = game::g_edit_entity(); 
+									edit_entity && edit_entity->epairs)
 					{
 						// add all epairs to our vector
 						for (auto epair = edit_entity->epairs; epair; epair = epair->next)
