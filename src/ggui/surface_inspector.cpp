@@ -650,13 +650,7 @@ namespace ggui
 			/* mins		*/ 0,
 			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "property editor - incorporate surface inspector window");
-			
-		//dvars::gui_props_surfinspector = dvars::register_bool(
-		//	/* name		*/ "gui_props_surfinspector",
-		//	/* default	*/ false,
-		//	/* flags	*/ game::dvar_flags::saved,
-		//	/* desc		*/ "property editor - incorporate surface inspector window");
+			/* desc		*/ "incorporate surface inspector window into entity properties (1) or toolbox (2)");
 
 		dvars::gui_use_new_surfinspector = dvars::register_bool(
 			/* name		*/ "gui_use_new_surfinspector",

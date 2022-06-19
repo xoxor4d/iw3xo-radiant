@@ -29,6 +29,7 @@ namespace dvars
 	game::dvar_s* gui_props_comments_defaultopen = nullptr;
 	game::dvar_s* gui_props_spawnflags_defaultopen = nullptr;
 	game::dvar_s* gui_props_surfinspector = nullptr;
+	game::dvar_s* gui_props_toolbox = nullptr;
 	game::dvar_s* gui_use_new_surfinspector = nullptr;
 	game::dvar_s* gui_use_new_vertedit_dialog = nullptr;
 	game::dvar_s* gui_use_new_context_menu = nullptr;

@@ -1110,34 +1110,92 @@ namespace ggui
 					{
 						cdeclcall(void, 0x424010); // CMainFrame::OnEditLayerCycle
 					}
+					
+					center_horz_end(manipulation_l1_width);
+				}
 
-					//ImGui::SameLine();
-					//static bool hov_rot_z;
-					//if (tb->image_button_label("##rotate_z"
-					//	, "rotate_z"
-					//	, false
-					//	, hov_rot_z
-					//	, "Rotate around z-axis"
-					//	, &toolbar_button_background_hovered
-					//	, &toolbar_button_background_active
-					//	, &toolbar_button_size))
-					//{
-					//	cdeclcall(void, 0x425220); // CMainFrame::OnBrushRotatez
-					//}
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
 
-					//ImGui::SameLine();
-					//static bool hov_flip_z;
-					//if (tb->image_button_label("##flip_z"
-					//	, "flip_z"
-					//	, false
-					//	, hov_flip_z
-					//	, "Flip along z-axis"
-					//	, &toolbar_button_background_hovered
-					//	, &toolbar_button_background_active
-					//	, &toolbar_button_size))
-					//{
-					//	cdeclcall(void, 0x4250E0); // CMainFrame::OnBrushFlipz
-					//}
+			GET_GUI(ggui::surface_dialog)->inspector_controls(true, max_widget_width);
+		}
+		ImGui::PopID();
+	}
+
+	void toolbox_dialog::child_entity_properties()
+	{
+		int style_colors = 0;
+		int style_vars = 0;
+
+		ImGui::PushID("entity_properties");
+		setup_child();
+		{
+			const ImVec4 toolbar_button_background_active = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);
+			const ImVec4 toolbar_button_background_hovered = ImVec4(0.225f, 0.225f, 0.225f, 1.0f);
+			const ImVec2 toolbar_button_size = ImVec2(32.0f, 32.0f);
+
+			const auto tb = GET_GUI(ggui::toolbar_dialog);
+			static float max_widget_width = 251.0f; // assumed first value - depends on total width of curve patch creation widget
+
+			if (treenode_begin("Manipulation", true, style_colors, style_vars))
+			{
+				static float manipulation_l1_width = 100.0f;
+				center_horz_begin(manipulation_l1_width);
+				{
+					static bool hov_texflipx;
+					if (tb->image_button_label("##texflip_x"
+						, "texflip_x"
+						, false
+						, hov_texflipx
+						, "Flip Texture along X-Axis"
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						cdeclcall(void, 0x42BF40); // CMainFrame::OnTextureFlipX
+					}
+
+					ImGui::SameLine();
+					static bool hov_texflipy;
+					if (tb->image_button_label("##texflip_y"
+						, "texflip_y"
+						, false
+						, hov_texflipy
+						, "Flip Texture along Y-Axis"
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						cdeclcall(void, 0x42BF50); // CMainFrame::OnTextureFlipY
+					}
+
+					ImGui::SameLine();
+					static bool hov_texflip90;
+					if (tb->image_button_label("##texflip_90"
+						, "texflip_90"
+						, false
+						, hov_texflip90
+						, "Rotate Texture 90 Degrees"
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						cdeclcall(void, 0x42BF60); // CMainFrame::OnTextureFlip90
+					}
+
+					ImGui::SameLine();
+					static bool hov_cycle_layer;
+					if (tb->image_button_label("##cycle_layer"
+						, "cycle_layer"
+						, false
+						, hov_cycle_layer
+						, std::string("Cycle Texture Layer " + ggui::hotkey_dialog::get_hotkey_for_command("TexLayerCycle")).c_str()
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						cdeclcall(void, 0x424010); // CMainFrame::OnEditLayerCycle
+					}
 
 					center_horz_end(manipulation_l1_width);
 				}
@@ -1145,12 +1203,7 @@ namespace ggui
 				treenode_end(style_colors, style_vars);
 			} // manipulation node
 
-
-			//ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
-
-			GET_GUI(ggui::surface_dialog)->inspector_controls(true, max_widget_width);
-
-			//ImGui::PopStyleVar();
+			//GET_GUI(ggui::surface_dialog)->inspector_controls(true, max_widget_width);
 		}
 		ImGui::PopID();
 	}
@@ -1162,6 +1215,7 @@ namespace ggui
 			register_child(CAT_BRUSH, std::bind(&toolbox_dialog::child_brush, this));
 			register_child(CAT_PATCH, std::bind(&toolbox_dialog::child_patch, this));
 			register_child(CAT_SURF_INSP, std::bind(&toolbox_dialog::child_surface_inspector, this));
+			register_child(CAT_ENTITY_PROPS, std::bind(&toolbox_dialog::child_entity_properties, this));
 
 			this->set_initiated();
 		}
@@ -1247,6 +1301,20 @@ namespace ggui
 			}
 		}
 
+		static bool hov_ent_props;
+		if (tb->image_togglebutton("entity_properties"
+			, hov_ent_props
+			, m_child_current == static_cast<int>(_toolbox_childs[CAT_ENTITY_PROPS].index)
+			, "Entity Properties"
+			, &toolbar_button_background
+			, &toolbar_button_background_hovered
+			, &toolbar_button_background_active
+			, &toolbar_button_size))
+		{
+			m_child_current = static_cast<int>(_toolbox_childs[CAT_ENTITY_PROPS].index);
+			m_update_scroll = true;
+		}
+
 		ImGui::SetCursorPosX(pre_button_cursor.x + toolbar_button_size.x - 1.0f); // -1 to hide right button border
 		ImGui::SetCursorPosY(pre_button_cursor.y - indent_offset);
 
@@ -1265,7 +1333,9 @@ namespace ggui
 		{
 			if (static_cast<int>(child.second.index) == m_child_current)
 			{
-				if(dvars::gui_props_surfinspector->current.integer != 2 && child.first == CAT_SURF_INSP)
+				// switch to other child when user no longer has surface inspector / entity properties incorporated
+				if(	   (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer != 2 && child.first == CAT_SURF_INSP) 
+					|| (dvars::gui_props_toolbox && !dvars::gui_props_toolbox->current.enabled && child.first == CAT_ENTITY_PROPS))
 				{
 					focus_child(toolbox_dialog::TB_CHILD::BRUSH);
 					break;

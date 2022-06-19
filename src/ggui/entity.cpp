@@ -1237,14 +1237,27 @@ namespace ggui
 				int row = 0;
 				eprop_sorted.clear();
 
-				const bool is_worldspawn = (m_sel_list_ent && !_stricmp(m_sel_list_ent->name, "worldspawn"));
+				const auto ws = game::g_world_entity();
+
+				bool is_worldspawn = (m_sel_list_ent && !_stricmp(m_sel_list_ent->name, "worldspawn"));
 
 				// only draw entprops if something is selected or if nothing is selected and sel_list_ent == the worldspawn
 				if (const auto	 selbrush = game::g_selected_brushes();
-								(selbrush && selbrush->def) || is_worldspawn)
+								(selbrush && selbrush->def) || is_worldspawn || (selbrush && !selbrush->def && ws && ws->firstActive))
+
 				{
-					if (const auto	edit_entity = game::g_edit_entity();
-									edit_entity && edit_entity->epairs)
+					// on startup if noting was selected
+					auto edit_entity = game::g_edit_entity();
+					if(selbrush && !selbrush->def)
+					{
+						edit_entity = reinterpret_cast<game::entity_s_def*>(ws->firstActive);
+						is_worldspawn = true;
+
+						const auto gui = GET_GUI(ggui::entity_dialog);
+						gui->m_sel_list_ent = edit_entity->eclass;
+					}
+
+					if (edit_entity && edit_entity->epairs)
 					{
 						// add all epairs to our vector
 						for (auto epair = edit_entity->epairs; epair; epair = epair->next)
@@ -1757,6 +1770,12 @@ namespace ggui
 			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "property editor - default state for treenode spawnflags");
+
+		dvars::gui_props_toolbox = dvars::register_bool(
+			/* name		*/ "gui_props_toolbox",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "incorporate entity window into toolbox");
 	}
 
 	void entity_dialog::hooks()

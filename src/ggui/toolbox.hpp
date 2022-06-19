@@ -20,6 +20,7 @@ namespace ggui
 		const std::string CAT_BRUSH = "brush";
 		const std::string CAT_PATCH = "patch";
 		const std::string CAT_SURF_INSP = "surface_inspector";
+		const std::string CAT_ENTITY_PROPS = "entity_properties";
 
 	public:
 		enum class TB_CHILD : int
@@ -27,7 +28,7 @@ namespace ggui
 			BRUSH,
 			PATCH,
 			SURFACE_INSP,
-
+			ENTITY_PROPS,
 		};
 
 		toolbox_dialog()
@@ -64,5 +65,6 @@ namespace ggui
 		void child_brush();
 		void child_patch();
 		void child_surface_inspector();
+		void child_entity_properties();
 	};
 }
