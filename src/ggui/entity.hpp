@@ -122,6 +122,11 @@ namespace ggui
 		bool	get_vec3_for_key_from_entity(game::entity_s* ent, float* vec3, const char* keyname);
 		bool	has_key_value_pair(game::entity_s_def* ent, const char* key);
 
+		void	draw_classlist();
+		void	draw_comments(const float start_indent = 0.0f);
+		void	draw_checkboxes();
+		void	draw_entprops(const float max_width = 0.0f, const float start_indent = 0.0f);
+
 		// *
 		// asm related
 
@@ -143,11 +148,9 @@ namespace ggui
 		void	get_eclass_template(const template_kvp*& tkvp, int* size_out);
 		void	separator_for_treenode();
 		bool	drag_float_helper_undo(addprop_helper_s* helper, const char* label, float* v, float v_speed, float v_min, float v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0);
-		bool	color_edit3_helper_undo(addprop_helper_s* helper, const char* label, float col[3], ImGuiColorEditFlags flags = 0);
+		bool	color_edit3_helper_undo(addprop_helper_s* helper, const char* label, float col[3], ImGuiColorEditFlags flags = 0, const ImVec2& color_button_size = ImVec2(0, 0));
 
-		void	draw_classlist();
-		void	draw_comments();
-		void	draw_checkboxes();
+		
 		void	gui_entprop_new_keyvalue_pair();
 		void	gui_entprop_add_key(game::epair_t* epair, int row);
 		void	gui_entprop_add_value_text(const epair_wrapper& epw, int row);
@@ -162,7 +165,7 @@ namespace ggui
 		void	gui_entprop_add_value_vec3(const epair_wrapper& epw, float* vec_in, int row = 0);
 		void	gui_entprop_add_value_vec3(const epair_wrapper& epw, int row);
 
-		void	draw_entprops();
+		
 	};
 }
 

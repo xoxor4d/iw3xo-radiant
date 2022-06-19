@@ -1134,76 +1134,33 @@ namespace ggui
 			const ImVec4 toolbar_button_background_hovered = ImVec4(0.225f, 0.225f, 0.225f, 1.0f);
 			const ImVec2 toolbar_button_size = ImVec2(32.0f, 32.0f);
 
-			const auto tb = GET_GUI(ggui::toolbar_dialog);
+			const auto ent = GET_GUI(ggui::entity_dialog);
 			static float max_widget_width = 251.0f; // assumed first value - depends on total width of curve patch creation widget
 
-			if (treenode_begin("Manipulation", true, style_colors, style_vars))
+			if (treenode_begin("Properties", true, style_colors, style_vars))
 			{
-				static float manipulation_l1_width = 100.0f;
-				center_horz_begin(manipulation_l1_width);
-				{
-					static bool hov_texflipx;
-					if (tb->image_button_label("##texflip_x"
-						, "texflip_x"
-						, false
-						, hov_texflipx
-						, "Flip Texture along X-Axis"
-						, &toolbar_button_background_hovered
-						, &toolbar_button_background_active
-						, &toolbar_button_size))
-					{
-						cdeclcall(void, 0x42BF40); // CMainFrame::OnTextureFlipX
-					}
-
-					ImGui::SameLine();
-					static bool hov_texflipy;
-					if (tb->image_button_label("##texflip_y"
-						, "texflip_y"
-						, false
-						, hov_texflipy
-						, "Flip Texture along Y-Axis"
-						, &toolbar_button_background_hovered
-						, &toolbar_button_background_active
-						, &toolbar_button_size))
-					{
-						cdeclcall(void, 0x42BF50); // CMainFrame::OnTextureFlipY
-					}
-
-					ImGui::SameLine();
-					static bool hov_texflip90;
-					if (tb->image_button_label("##texflip_90"
-						, "texflip_90"
-						, false
-						, hov_texflip90
-						, "Rotate Texture 90 Degrees"
-						, &toolbar_button_background_hovered
-						, &toolbar_button_background_active
-						, &toolbar_button_size))
-					{
-						cdeclcall(void, 0x42BF60); // CMainFrame::OnTextureFlip90
-					}
-
-					ImGui::SameLine();
-					static bool hov_cycle_layer;
-					if (tb->image_button_label("##cycle_layer"
-						, "cycle_layer"
-						, false
-						, hov_cycle_layer
-						, std::string("Cycle Texture Layer " + ggui::hotkey_dialog::get_hotkey_for_command("TexLayerCycle")).c_str()
-						, &toolbar_button_background_hovered
-						, &toolbar_button_background_active
-						, &toolbar_button_size))
-					{
-						cdeclcall(void, 0x424010); // CMainFrame::OnEditLayerCycle
-					}
-
-					center_horz_end(manipulation_l1_width);
-				}
+				ImGui::SetNextItemWidth(-1);
+				ent->draw_entprops(ImGui::CalcItemWidth() - 8.0f, 8.0f);
 
 				treenode_end(style_colors, style_vars);
 			} // manipulation node
 
-			//GET_GUI(ggui::surface_dialog)->inspector_controls(true, max_widget_width);
+			if (treenode_begin("Spawnflags", false, style_colors, style_vars))
+			{
+				ent->draw_checkboxes();
+
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+			if (treenode_begin("Comments", false, style_colors, style_vars))
+			{
+				ImGui::SetNextItemWidth(-1);
+				ent->draw_comments(8.0f);
+
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+			SPACING(0.0f, 4.0f);
 		}
 		ImGui::PopID();
 	}
@@ -1222,8 +1179,8 @@ namespace ggui
 
 		const auto indent_offset = 8.0f;
 
-		const auto MIN_WINDOW_SIZE = ImVec2(800.0f, 400.0f);
-		const auto INITIAL_WINDOW_SIZE = ImVec2(800.0f, 600.0f);
+		const auto MIN_WINDOW_SIZE = ImVec2(334.0f, 400.0f); 
+		const auto INITIAL_WINDOW_SIZE = ImVec2(334.0f, 600.0f);
 		ggui::set_next_window_initial_pos_and_constraints(MIN_WINDOW_SIZE, INITIAL_WINDOW_SIZE);
 
 		int stylevars = 0, stylecolors = 0;
@@ -1256,8 +1213,18 @@ namespace ggui
 		const auto tb = GET_GUI(ggui::toolbar_dialog);
 		const auto pre_button_cursor = ImGui::GetCursorPos();
 
+		ImGuiContext& g = *GImGui;
+		const auto actual_button_size = ImVec2(28.0f + g.Style.FramePadding.x, 28.0f + g.Style.FramePadding.y);
+
+		ImVec4 button_border_color = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
+		ImVec2 mins, maxs;
+
+		// #
+
+		mins = ImGui::GetCursorScreenPos();
+
 		static bool hov_brush;
-		if (tb->image_togglebutton("toggle_draw_surfs_portal"
+		if (tb->image_togglebutton("toolbox_brush" // toggle_draw_surfs_portal
 			, hov_brush
 			, m_child_current == static_cast<int>(_toolbox_childs[CAT_BRUSH].index)
 			, "Brushes"
@@ -1270,8 +1237,15 @@ namespace ggui
 			m_update_scroll = true;
 		}
 
+		maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+		ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+		// #
+
+		mins = ImGui::GetCursorScreenPos();
+
 		static bool hov_patch;
-		if(tb->image_togglebutton("cycle_patch_edge_direction"
+		if(tb->image_togglebutton("toolbox_patch"
 			, hov_patch
 			, m_child_current == static_cast<int>(_toolbox_childs[CAT_PATCH].index)
 			, "Patches"
@@ -1283,6 +1257,13 @@ namespace ggui
 			m_child_current = static_cast<int>(_toolbox_childs[CAT_PATCH].index);
 			m_update_scroll = true;
 		}
+
+		maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+		ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+		// #
+
+		mins = ImGui::GetCursorScreenPos();
 
 		if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer == 2)
 		{
@@ -1301,19 +1282,34 @@ namespace ggui
 			}
 		}
 
-		static bool hov_ent_props;
-		if (tb->image_togglebutton("entity_properties"
-			, hov_ent_props
-			, m_child_current == static_cast<int>(_toolbox_childs[CAT_ENTITY_PROPS].index)
-			, "Entity Properties"
-			, &toolbar_button_background
-			, &toolbar_button_background_hovered
-			, &toolbar_button_background_active
-			, &toolbar_button_size))
+		maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+		ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+		// #
+
+		mins = ImGui::GetCursorScreenPos();
+
+		if (dvars::gui_props_toolbox && dvars::gui_props_toolbox->current.enabled)
 		{
-			m_child_current = static_cast<int>(_toolbox_childs[CAT_ENTITY_PROPS].index);
-			m_update_scroll = true;
+			static bool hov_ent_props;
+			if (tb->image_togglebutton("entity_properties"
+				, hov_ent_props
+				, m_child_current == static_cast<int>(_toolbox_childs[CAT_ENTITY_PROPS].index)
+				, "Entity Properties"
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &toolbar_button_background_active
+				, &toolbar_button_size))
+			{
+				m_child_current = static_cast<int>(_toolbox_childs[CAT_ENTITY_PROPS].index);
+				m_update_scroll = true;
+			}
 		}
+
+		maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+		ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+		// #
 
 		ImGui::SetCursorPosX(pre_button_cursor.x + toolbar_button_size.x - 1.0f); // -1 to hide right button border
 		ImGui::SetCursorPosY(pre_button_cursor.y - indent_offset);

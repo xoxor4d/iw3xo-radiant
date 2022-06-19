@@ -194,7 +194,9 @@ namespace components
 					tb->m_toolbar_dock_left = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.01f, nullptr, &main_dock);
 					ImGui::DockBuilderSetNodeSize(tb->m_toolbar_dock_left, ImVec2(36, viewport->Size.y));
 					
-					ggui::m_dockspace_outer_left_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.5f, nullptr, &main_dock);
+					ggui::m_dockspace_outer_left_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.45f, nullptr, &main_dock);
+					const auto dockspace_toolbox_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Right, 0.325f, nullptr, &main_dock);
+
 					const auto dockspace_right_top_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Up, 0.6f, nullptr, &main_dock);
 
 					if (tb->m_toolbar_axis == ImGuiAxis_X)
@@ -209,26 +211,24 @@ namespace components
 					ImGui::DockBuilderDockWindow("Grid Window##rtt", ggui::m_dockspace_outer_left_node);
 					ImGui::DockBuilderDockWindow("Camera Window##rtt", dockspace_right_top_node);
 
+					ImGui::DockBuilderDockWindow("Filters##window", dockspace_toolbox_node);
+					ImGui::DockBuilderDockWindow("Toolbox##window", dockspace_toolbox_node);
+
 					ImGui::DockBuilderDockWindow("Textures##rtt", main_dock);
-					ImGui::DockBuilderDockWindow("Console##window", main_dock);
+					ImGui::DockBuilderDockWindow("Model Selector / Previewer", main_dock);
+					ImGui::DockBuilderDockWindow("Console##window", main_dock); 
 					
 					ImGui::DockBuilderFinish(dockspace_id);
 
-					// ^ open texture window on initial startup
-					if(const auto tex = GET_GUI(ggui::texture_dialog);
-								 !tex->is_initiated())
-					{
-						tex->open();
-						tex->set_initiated();
-					}
-					
-					// ^ open console on initial startup
-					if(const auto con = GET_GUI(ggui::console_dialog); 
-								 !con->is_initiated())
-					{
-						con->open();
-						con->set_initiated();
-					}
+					GET_GUI(ggui::texture_dialog)->open();
+					GET_GUI(ggui::texture_dialog)->set_bring_to_front(true);
+
+					GET_GUI(ggui::console_dialog)->open();
+					GET_GUI(ggui::modelselector_dialog)->open();
+					GET_GUI(ggui::filter_dialog)->open();
+
+					GET_GUI(ggui::toolbox_dialog)->open();
+					GET_GUI(ggui::toolbox_dialog)->set_bring_to_front(true);
 				}
 
 				ggui::m_dockspace_initiated = true;

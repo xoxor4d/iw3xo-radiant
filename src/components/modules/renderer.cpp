@@ -2335,6 +2335,8 @@ namespace components
 
 		//auto& rg = *reinterpret_cast<game::r_globals_t*>(0x13683F0);
 
+		renderer::effect_drawsurf_count_ = viewInfo->emissiveInfo.drawSurfCount;
+
 		game::R_DrawSurfs(source, state, nullptr, &viewInfo->emissiveInfo);
 		game::R_ShowTris(source, state, &viewInfo->emissiveInfo);
 

@@ -609,10 +609,20 @@ namespace ggui
 	{
 		if (dvars::gui_use_new_surfinspector && dvars::gui_props_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
 		{
+			// within entity properties
 			if (dvars::gui_props_surfinspector->current.integer == 1)
 			{
-				GET_GUI(ggui::entity_dialog)->toggle();
+				const auto ent = GET_GUI(ggui::entity_dialog);
+
+				if (ent->is_inactive_tab() && ent->is_active())
+				{
+					ent->set_bring_to_front(true);
+					return;
+				}
+
+				ent->toggle();
 			}
+			// within toolbox
 			else if (dvars::gui_props_surfinspector->current.integer == 2)
 			{
 				const auto tb = GET_GUI(ggui::toolbox_dialog);
@@ -621,9 +631,18 @@ namespace ggui
 				tb->focus_child(toolbox_dialog::TB_CHILD::SURFACE_INSP);
 				tb->open();
 			}
+			// separate 
 			else
 			{
-				GET_GUI(ggui::surface_dialog)->toggle();
+				const auto surf = GET_GUI(ggui::surface_dialog);
+
+				if (surf->is_inactive_tab() && surf->is_active())
+				{
+					surf->set_bring_to_front(true);
+					return;
+				}
+
+				surf->toggle();
 			}
 		}
 		else

@@ -226,7 +226,6 @@ namespace ggui
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-
 		if (!ImGui::Begin("FX ElemList##window", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar))
 		{
 			ImGui::PopStyleVar();
@@ -664,8 +663,8 @@ namespace ggui
 			}
 
 			ImGui::EndTable();
-			ImGui::PopStyleVar(4);
 		}
+		ImGui::PopStyleVar(4);
 
 		ImGui::PopStyleVar(); // WindowPadding
 		ImGui::End();
