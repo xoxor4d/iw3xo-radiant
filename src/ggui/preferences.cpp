@@ -107,7 +107,14 @@ namespace ggui
 			ImGui::Checkbox("Default Open - Classlist", &dvars::gui_props_classlist_defaultopen->current.enabled); TT(dvars::gui_props_classlist_defaultopen->description);
 			ImGui::Checkbox("Default Open - Spawnflags", &dvars::gui_props_spawnflags_defaultopen->current.enabled); TT(dvars::gui_props_spawnflags_defaultopen->description);
 			ImGui::Checkbox("Default Open - Comments", &dvars::gui_props_comments_defaultopen->current.enabled); TT(dvars::gui_props_comments_defaultopen->description);
-			ImGui::Checkbox("Incorporate surface-inspector into property window", &dvars::gui_props_surfinspector->current.enabled); TT(dvars::gui_props_surfinspector->description);
+
+			//ImGui::Checkbox("Incorporate surface-inspector into property window", &dvars::gui_props_surfinspector->current.enabled); TT(dvars::gui_props_surfinspector->description);
+
+			const char* incorp_surf_inspector_strings[4] = { "None", "Entity Properties", "Toolbox" };
+			if (ImGui::SliderInt("Incorporate surface-inspector into", &dvars::gui_props_surfinspector->current.integer, 0, 2, incorp_surf_inspector_strings[dvars::gui_props_surfinspector->current.integer]))
+			{
+				dvars::gui_props_surfinspector->modified = true;
+			}
 		});
 	}
 

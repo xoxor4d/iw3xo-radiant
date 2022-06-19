@@ -182,7 +182,7 @@ namespace ggui
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 4.0f));
 		if (ImGui::BeginPopupModal(label, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			const char* str = "\n         Unsaved Effect!\n  This will loose changes.\n\nDo you want to continue?\n\n";
+			const char* str = "\n         Unsaved Effect!\n  This will lose changes.\n\nDo you want to continue?\n\n";
 			ImGui::SetCursorForCenteredText(str);
 			ImGui::TextUnformatted(str);
 			ImGui::Separator();

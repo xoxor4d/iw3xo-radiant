@@ -1628,7 +1628,7 @@ namespace ggui
 
 			ImGui::TreePop();
 
-			if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
+			if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer == 1)
 			{
 				separator_for_treenode();
 			}
@@ -1671,7 +1671,7 @@ namespace ggui
 
 		m_edit_entity_changed = false;
 
-		if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
+		if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer == 1)
 		{
 			ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
 

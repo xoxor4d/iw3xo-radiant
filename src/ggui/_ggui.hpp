@@ -152,6 +152,12 @@ namespace ggui
 		{
 			if (is_active())
 			{
+				if (this->is_bring_to_front_pending())
+				{
+					set_bring_to_front(false);
+					ImGui::SetNextWindowFocus();
+				}
+
 				if(!was_active())
 				{
 					on_open();

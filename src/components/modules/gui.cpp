@@ -502,6 +502,26 @@ namespace components
 		HANDLE_SAVED_STATE(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE(ggui::surface_dialog, dvars::gui_saved_state_surfinspector, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::m_init_saved_states);
+		//HANDLE_SAVED_STATE(ggui::toolbox_dialog, dvars::gui_saved_state_toolbox, ggui::m_init_saved_states);
+
+		// TODO: track active state using !ImGui::Begin (return bool gui::gui)
+		if (!ggui::m_init_saved_states)																		
+		{																					
+			if (dvars::gui_saved_state_toolbox)
+			{
+				auto tb = GET_GUI(ggui::toolbox_dialog);
+				tb->toggle(true, dvars::gui_saved_state_toolbox->current.integer);
+				tb->set_bring_to_front(dvars::gui_saved_state_toolbox->current.integer == 2);
+			}
+		}																					
+		else																				
+		{
+			auto tb = GET_GUI(ggui::toolbox_dialog);
+			if ((dvars::gui_saved_state_toolbox) && tb->is_active() != dvars::gui_saved_state_toolbox->current.enabled)
+			{
+				dvars::set_int(dvars::gui_saved_state_toolbox, tb->is_active());
+			}
+		}
 
 		ggui::m_init_saved_states = true;
 	}
@@ -749,6 +769,20 @@ namespace components
 			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "saved opened/closed state of surface inspector window");
+
+		//dvars::gui_saved_state_toolbox = dvars::register_bool(
+		//	/* name		*/ "gui_saved_state_toolbox",
+		//	/* default	*/ false,
+		//	/* flags	*/ game::dvar_flags::saved,
+		//	/* desc		*/ "saved opened/closed state of toolbox window");
+
+		dvars::gui_saved_state_toolbox = dvars::register_int(
+			/* name		*/ "gui_saved_state_toolbox",
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved closed/opened/active state of surface inspector window");
 	}
 
 	

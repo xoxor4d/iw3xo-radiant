@@ -17,7 +17,19 @@ namespace ggui
 		int m_child_current;
 		unsigned int m_child_count;
 
+		const std::string CAT_BRUSH = "brush";
+		const std::string CAT_PATCH = "patch";
+		const std::string CAT_SURF_INSP = "surface_inspector";
+
 	public:
+		enum class TB_CHILD : int
+		{
+			BRUSH,
+			PATCH,
+			SURFACE_INSP,
+
+		};
+
 		toolbox_dialog()
 		{
 			set_gui_type(GUI_TYPE_DEF);
@@ -25,6 +37,12 @@ namespace ggui
 			m_update_scroll = false;
 			m_child_current = 0;
 			m_child_count = 0;
+		}
+
+		void focus_child(TB_CHILD child)
+		{
+			m_child_current = static_cast<int>(child);
+			m_update_scroll = true;
 		}
 
 		// *
@@ -35,13 +53,16 @@ namespace ggui
 		// init
 		void	init();
 
-	private:
-		const std::string CAT_BRUSH = "Brush";
-		const std::string CAT_PATCH = "Patch";
+		static bool treenode_begin(const char* name, bool default_open, int& style_colors, int& style_vars);
+		static void treenode_end(int style_colors, int style_vars, float end_spacing = 8.0f);
+		static void center_horz_begin(const float group_width, float indent = 4.0f);
+		static void center_horz_end(float& group_width);
 
+	private:
 		void  register_child(const std::string& _child_name, const std::function<void()>& _callback);
 
 		void child_brush();
 		void child_patch();
+		void child_surface_inspector();
 	};
 }

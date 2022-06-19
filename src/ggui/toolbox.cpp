@@ -29,7 +29,7 @@ namespace ggui
 		ImGui::Indent(child_indent);
 	}
 
-	bool toolbox_treenode_begin(const char* name, bool default_open, int& style_colors, int& style_vars)
+	bool toolbox_dialog::treenode_begin(const char* name, bool default_open, int& style_colors, int& style_vars)
 	{
 		// set/reset
 		style_colors = 0; style_vars = 0;
@@ -68,7 +68,7 @@ namespace ggui
 	}
 
 	// only call if begin returned true
-	void toolbox_treenode_end(int style_colors, int style_vars, float end_spacing = 8.0f)
+	void toolbox_dialog::treenode_end(int style_colors, int style_vars, float end_spacing)
 	{
 		ImGui::TreePop();
 		ImGui::PopStyleColor(style_colors);
@@ -77,7 +77,7 @@ namespace ggui
 		SPACING(0.0f, end_spacing);
 	}
 
-	void center_horz_begin(const float group_width, float indent = 4.0f)
+	void toolbox_dialog::center_horz_begin(const float group_width, float indent)
 	{
 		if (group_width != 0.0f)
 		{
@@ -88,7 +88,7 @@ namespace ggui
 		ImGui::BeginGroup();
 	}
 
-	void center_horz_end(float& group_width)
+	void toolbox_dialog::center_horz_end(float& group_width)
 	{
 		ImGui::EndGroup();
 
@@ -131,7 +131,7 @@ namespace ggui
 			}*/
 
 			
-			if (toolbox_treenode_begin("Manipulation", true, style_colors, style_vars))
+			if (treenode_begin("Manipulation", true, style_colors, style_vars))
 			{
 				static float manipulation_l1_width = 100.0f;
 				center_horz_begin(manipulation_l1_width);
@@ -241,10 +241,10 @@ namespace ggui
 					center_horz_end(manipulation_l2_width);
 				}
 
-				toolbox_treenode_end(style_colors, style_vars);
+				treenode_end(style_colors, style_vars);
 			}
 
-			if(toolbox_treenode_begin("Brush Contents", true, style_colors, style_vars))
+			if(treenode_begin("Brush Contents", true, style_colors, style_vars))
 			{
 				static float brush_contents_l1_width = 100.0f;
 				center_horz_begin(brush_contents_l1_width);
@@ -278,10 +278,10 @@ namespace ggui
 				}
 				center_horz_end(brush_contents_l2_width);
 
-				toolbox_treenode_end(style_colors, style_vars);
+				treenode_end(style_colors, style_vars);
 			}
 
-			if (toolbox_treenode_begin("Brush Primitives", true, style_colors, style_vars))
+			if (treenode_begin("Brush Primitives", true, style_colors, style_vars))
 			{
 				const int step_size = 1;
 				static int sides_cone = 8;
@@ -345,7 +345,7 @@ namespace ggui
 					ImGui::EndDisabled();
 				}
 				
-				toolbox_treenode_end(style_colors, style_vars);
+				treenode_end(style_colors, style_vars);
 			}
 		}
 		ImGui::PopID();
@@ -373,7 +373,7 @@ namespace ggui
 			const auto is_curve_patch = selbrush && selbrush->def && selbrush->def->patch && (selbrush->def->patch->type == game::PATCH_TYPE::PATCH_GENERIC || selbrush->def->patch->type == game::PATCH_TYPE::PATCH_SEAM);
 			const auto atleast_two_verts_selected = game::g_qeglobals->d_num_move_points >= 2;
 
-			if (toolbox_treenode_begin("Manipulation", true, style_colors, style_vars))
+			if (treenode_begin("Manipulation", true, style_colors, style_vars))
 			{
 				static float manipulation_l1_width = 100.0f;
 				center_horz_begin(manipulation_l1_width);
@@ -520,10 +520,10 @@ namespace ggui
 					center_horz_end(manipulation_l2_width);
 				}
 
-				toolbox_treenode_end(style_colors, style_vars);
+				treenode_end(style_colors, style_vars);
 			} // manipulation node
 
-			if (toolbox_treenode_begin("Terrain", true, style_colors, style_vars))
+			if (treenode_begin("Terrain", true, style_colors, style_vars))
 			{
 				const int step_size = 1;
 				static int terrainpatch_width = 2;
@@ -606,10 +606,10 @@ namespace ggui
 					center_horz_end(faces_to_terrain_width);
 				} // faces to terrain
 
-				toolbox_treenode_end(style_colors, style_vars);
+				treenode_end(style_colors, style_vars);
 			} // terrain node
 
-			if (toolbox_treenode_begin("Curve", true, style_colors, style_vars))
+			if (treenode_begin("Curve", true, style_colors, style_vars))
 			{
 				static int curvepatch_width = 2;
 				static int curvepatch_height = 2;
@@ -814,10 +814,10 @@ namespace ggui
 					center_horz_end(cap_width);
 				} // bevel
 
-				toolbox_treenode_end(style_colors, style_vars);
+				treenode_end(style_colors, style_vars);
 			} // curve node
 
-			if (toolbox_treenode_begin("General / Vertices", true, style_colors, style_vars))
+			if (treenode_begin("General / Vertices", true, style_colors, style_vars))
 			{
 				static float _l0_width = 100.0f;
 				center_horz_begin(_l0_width);
@@ -948,10 +948,10 @@ namespace ggui
 				}
 
 
-				toolbox_treenode_end(style_colors, style_vars);
+				treenode_end(style_colors, style_vars);
 			} // general node
 
-			if (toolbox_treenode_begin("Primitives", false, style_colors, style_vars))
+			if (treenode_begin("Primitives", false, style_colors, style_vars))
 			{
 				static float primitives_width = 100.0f;
 				center_horz_begin(primitives_width);
@@ -1028,10 +1028,136 @@ namespace ggui
 					center_horz_end(primitives_width);
 				}
 
-				toolbox_treenode_end(style_colors, style_vars);
+				treenode_end(style_colors, style_vars);
 			} // primitives node
 
 			SPACING(0.0f, 6.0f);
+		}
+		ImGui::PopID();
+	}
+
+	void toolbox_dialog::child_surface_inspector()
+	{
+		int style_colors = 0;
+		int style_vars = 0;
+
+		ImGui::PushID("surface_inspector");
+		setup_child();
+		{
+			const ImVec4 toolbar_button_background_active = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);
+			const ImVec4 toolbar_button_background_hovered = ImVec4(0.225f, 0.225f, 0.225f, 1.0f);
+			const ImVec2 toolbar_button_size = ImVec2(32.0f, 32.0f);
+
+			const auto tb = GET_GUI(ggui::toolbar_dialog);
+
+			static float max_widget_width = 251.0f; // assumed first value - depends on total width of curve patch creation widget
+			static float widget_start_offset_screen = 0.0f;
+
+			const auto selbrush = game::g_selected_brushes();
+			const auto is_patch = selbrush && selbrush->def && selbrush->def->patch;
+			const auto is_curve_patch = selbrush && selbrush->def && selbrush->def->patch && (selbrush->def->patch->type == game::PATCH_TYPE::PATCH_GENERIC || selbrush->def->patch->type == game::PATCH_TYPE::PATCH_SEAM);
+			const auto atleast_two_verts_selected = game::g_qeglobals->d_num_move_points >= 2;
+
+			if (treenode_begin("Manipulation", true, style_colors, style_vars))
+			{
+				static float manipulation_l1_width = 100.0f;
+				center_horz_begin(manipulation_l1_width);
+				{
+					static bool hov_texflipx;
+					if (tb->image_button_label("##texflip_x"
+						, "texflip_x"
+						, false
+						, hov_texflipx
+						, "Flip Texture along X-Axis"
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						cdeclcall(void, 0x42BF40); // CMainFrame::OnTextureFlipX
+					}
+
+					ImGui::SameLine();
+					static bool hov_texflipy;
+					if (tb->image_button_label("##texflip_y"
+						, "texflip_y"
+						, false
+						, hov_texflipy
+						, "Flip Texture along Y-Axis"
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						cdeclcall(void, 0x42BF50); // CMainFrame::OnTextureFlipY
+					}
+
+					ImGui::SameLine();
+					static bool hov_texflip90;
+					if (tb->image_button_label("##texflip_90"
+						, "texflip_90"
+						, false
+						, hov_texflip90
+						, "Rotate Texture 90 Degrees"
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						cdeclcall(void, 0x42BF60); // CMainFrame::OnTextureFlip90
+					}
+
+					ImGui::SameLine();
+					static bool hov_cycle_layer;
+					if (tb->image_button_label("##cycle_layer"
+						, "cycle_layer"
+						, false
+						, hov_cycle_layer
+						, std::string("Cycle Texture Layer " + ggui::hotkey_dialog::get_hotkey_for_command("TexLayerCycle")).c_str()
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						cdeclcall(void, 0x424010); // CMainFrame::OnEditLayerCycle
+					}
+
+					//ImGui::SameLine();
+					//static bool hov_rot_z;
+					//if (tb->image_button_label("##rotate_z"
+					//	, "rotate_z"
+					//	, false
+					//	, hov_rot_z
+					//	, "Rotate around z-axis"
+					//	, &toolbar_button_background_hovered
+					//	, &toolbar_button_background_active
+					//	, &toolbar_button_size))
+					//{
+					//	cdeclcall(void, 0x425220); // CMainFrame::OnBrushRotatez
+					//}
+
+					//ImGui::SameLine();
+					//static bool hov_flip_z;
+					//if (tb->image_button_label("##flip_z"
+					//	, "flip_z"
+					//	, false
+					//	, hov_flip_z
+					//	, "Flip along z-axis"
+					//	, &toolbar_button_background_hovered
+					//	, &toolbar_button_background_active
+					//	, &toolbar_button_size))
+					//{
+					//	cdeclcall(void, 0x4250E0); // CMainFrame::OnBrushFlipz
+					//}
+
+					center_horz_end(manipulation_l1_width);
+				}
+
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+
+			//ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 8.0f);
+
+			GET_GUI(ggui::surface_dialog)->inspector_controls(true, max_widget_width);
+
+			//ImGui::PopStyleVar();
 		}
 		ImGui::PopID();
 	}
@@ -1042,6 +1168,7 @@ namespace ggui
 		{
 			register_child(CAT_BRUSH, std::bind(&toolbox_dialog::child_brush, this));
 			register_child(CAT_PATCH, std::bind(&toolbox_dialog::child_patch, this));
+			register_child(CAT_SURF_INSP, std::bind(&toolbox_dialog::child_surface_inspector, this));
 
 			this->set_initiated();
 		}
@@ -1110,6 +1237,23 @@ namespace ggui
 			m_update_scroll = true;
 		}
 
+		if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer == 2)
+		{
+			static bool hov_surf_inspector;
+			if (tb->image_togglebutton("surface_inspector"
+				, hov_surf_inspector
+				, m_child_current == static_cast<int>(_toolbox_childs[CAT_SURF_INSP].index)
+				, "Surface Inspector"
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &toolbar_button_background_active
+				, &toolbar_button_size))
+			{
+				m_child_current = static_cast<int>(_toolbox_childs[CAT_SURF_INSP].index);
+				m_update_scroll = true;
+			}
+		}
+
 		ImGui::SetCursorPosX(pre_button_cursor.x + toolbar_button_size.x - 1.0f); // -1 to hide right button border
 		ImGui::SetCursorPosY(pre_button_cursor.y - indent_offset);
 
@@ -1128,6 +1272,18 @@ namespace ggui
 		{
 			if (static_cast<int>(child.second.index) == m_child_current)
 			{
+				if(dvars::gui_props_surfinspector->current.integer != 2 && child.first == CAT_SURF_INSP)
+				{
+					focus_child(toolbox_dialog::TB_CHILD::BRUSH);
+					break;
+				}
+
+				if(m_update_scroll)
+				{
+					ImGui::SetScrollHereY();
+					m_update_scroll = false;
+				}
+
 				child.second.callback();
 			}
 		}

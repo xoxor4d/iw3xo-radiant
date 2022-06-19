@@ -103,7 +103,7 @@ namespace ggui
 		void on_open() override;
 		void on_close() override;
 
-		void inspector_controls();
+		void inspector_controls(bool is_toolbox = false, float max_width = 0.0f);
 
 		// *
 		// asm related

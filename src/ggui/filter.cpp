@@ -286,17 +286,26 @@ namespace ggui
 		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); sflags++;
 		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 12.0f); sflags++;
 
+		const auto button_width = ImGui::GetContentRegionAvail().x;
+
 		if (ImGui::TreeNodeEx("Geometry Filters", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			static float geo_child_height = 200.0f;
 
 			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
-			ImGui::BeginChild("##geo_child", ImVec2(0.0f, geo_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
+
+			auto min = ImGui::GetCursorScreenPos();
+				 min.y += ImGui::GetFrameHeight();
+
+			const auto max = ImVec2(min.x + ImGui::GetContentRegionAvail().x, min.y + geo_child_height - ImGui::GetFrameHeight());
+			ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
+
+			//ImGui::BeginChild("##geo_child", ImVec2(0.0f, geo_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
 			{
 				ImGui::BeginGroup();
 				{
-					if (ImGui::ButtonEx("Toggle All Geo", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
+					if (ImGui::ButtonEx("Toggle All Geo", ImVec2(button_width, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
 						components::gameview::p_this->toggle_all_geo(!components::gameview::p_this->get_all_geo_state());
 					}
@@ -336,9 +345,8 @@ namespace ggui
 					ImGui::EndGroup();
 					geo_child_height = ImGui::GetItemRectSize().y + 8.0f;
 				}
-				
 			}
-			ImGui::EndChild();
+			//ImGui::EndChild();
 			ImGui::PopStyleColor();
 			ImGui::PopStyleVar();
 			ImGui::TreePop();
@@ -351,11 +359,18 @@ namespace ggui
 			static float ent_child_height = 200.0f;
 			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
-			ImGui::BeginChild("##geo_child", ImVec2(0.0f, ent_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
+
+			auto min = ImGui::GetCursorScreenPos();
+				 min.y += ImGui::GetFrameHeight();
+
+			const auto max = ImVec2(min.x + ImGui::GetContentRegionAvail().x, min.y + ent_child_height - ImGui::GetFrameHeight());
+			ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
+
+			//ImGui::BeginChild("##geo_child", ImVec2(0.0f, ent_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
 			{
 				ImGui::BeginGroup();
 				{
-					if (ImGui::ButtonEx("Toggle All Entities", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
+					if (ImGui::ButtonEx("Toggle All Entities", ImVec2(button_width, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
 						components::gameview::p_this->toggle_all_entities(!components::gameview::p_this->get_all_ents_state());
 					}
@@ -394,7 +409,7 @@ namespace ggui
 					ent_child_height = ImGui::GetItemRectSize().y + 8.0f;
 				}
 			}
-			ImGui::EndChild();
+			//ImGui::EndChild();
 			ImGui::PopStyleColor();
 			ImGui::PopStyleVar();
 			ImGui::TreePop();
@@ -407,11 +422,18 @@ namespace ggui
 			static float trigger_child_height = 200.0f;
 			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
-			ImGui::BeginChild("##geo_child", ImVec2(0.0f, trigger_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
+
+			auto min = ImGui::GetCursorScreenPos();
+				 min.y += ImGui::GetFrameHeight();
+
+			const auto max = ImVec2(min.x + ImGui::GetContentRegionAvail().x, min.y + trigger_child_height - ImGui::GetFrameHeight());
+			ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
+
+			//ImGui::BeginChild("##geo_child", ImVec2(0.0f, trigger_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
 			{
 				ImGui::BeginGroup();
 				{
-					if (ImGui::ButtonEx("Toggle All Triggers", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
+					if (ImGui::ButtonEx("Toggle All Triggers", ImVec2(button_width, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
 						components::gameview::p_this->toggle_all_triggers(!components::gameview::p_this->get_all_triggers_state());
 					}
@@ -450,7 +472,7 @@ namespace ggui
 					trigger_child_height = ImGui::GetItemRectSize().y + 8.0f;
 				}
 			}
-			ImGui::EndChild();
+			//ImGui::EndChild();
 			ImGui::PopStyleColor();
 			ImGui::PopStyleVar();
 			ImGui::TreePop();
@@ -463,11 +485,18 @@ namespace ggui
 			static float other_child_height = 200.0f;
 			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
 			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
-			ImGui::BeginChild("##geo_child", ImVec2(0.0f, other_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
+
+			auto min = ImGui::GetCursorScreenPos();
+				 min.y += ImGui::GetFrameHeight();
+
+			const auto max = ImVec2(min.x + ImGui::GetContentRegionAvail().x, min.y + other_child_height - ImGui::GetFrameHeight());
+			ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
+
+			//ImGui::BeginChild("##geo_child", ImVec2(0.0f, other_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
 			{
 				ImGui::BeginGroup();
 				{
-					if (ImGui::ButtonEx("Toggle All Others", ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
+					if (ImGui::ButtonEx("Toggle All Others", ImVec2(button_width, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
 					{
 						components::gameview::p_this->toggle_all_others(!components::gameview::p_this->get_all_others_state());
 					}
@@ -506,11 +535,13 @@ namespace ggui
 					other_child_height = ImGui::GetItemRectSize().y + 8.0f;
 				}
 			}
-			ImGui::EndChild();
+			//ImGui::EndChild();
 			ImGui::PopStyleColor();
 			ImGui::PopStyleVar();
 			ImGui::TreePop();
 		}
+
+		SPACING(0.0f, 4.0f);
 
 		ImGui::PopStyleVar(sflags);
 		ImGui::End();

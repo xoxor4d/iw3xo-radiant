@@ -310,7 +310,7 @@ namespace ggui
 					{
 						if (dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
 						{
-							if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
+							if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer)
 							{
 								GET_GUI(ggui::entity_dialog)->toggle();
 							}
@@ -1526,7 +1526,7 @@ namespace ggui
 					cdeclcall(void, 0x424B80); // CMainFrame::OnMiscFindbrush
 				}
 
-				if (ImGui::MenuItem("Got To Position")) {
+				if (ImGui::MenuItem("Go To Position")) {
 					cdeclcall(void, 0x424BA0); // CMainFrame::OnMiscGoToPosition
 				}
 

@@ -215,7 +215,10 @@ namespace game
 	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, int always_true);
 	void Patch_SetTextureInfo(game::texdef_sub_t* texdef /*ebx*/);
 	void Patch_ShiftTexture(game::patchMesh_t* def, float shift_horz, float shift_vert);
+	inline auto Patch_Lightmap_Texturing = reinterpret_cast<void (*)()>(0x448110);
 	void Patch_Lightmap_Texturing_dirty(game::patchMesh_t* p /*esi*/);
+	inline auto Patch_NaturalizeSelected = reinterpret_cast<void (*)(bool unk, bool cap, float x, float y)>(0x447FD0);
+	inline auto Patch_SetTexturing = reinterpret_cast<void (*)(float x, float y, int mode)>(0x446B60);
 	void Patch_CalcBounds(game::patchMesh_t* p, game::vec3_t& vMin, game::vec3_t& vMax);
 	void Patch_Adjust(game::patchMesh_t* p, bool insert, bool column, bool flag);
 	game::patchMesh_t* Patch_Duplicate(game::patchMesh_t* p /*edi*/);
@@ -245,6 +248,8 @@ namespace game
 	inline auto Brush_MakeFacePlanes = reinterpret_cast<void (*)(game::brush_t_with_custom_def* b)>(0x470A50); // calculate normal and dist from planepts
 	inline auto Brush_MakeSidedCone = reinterpret_cast<void (*)(int num_sides)>(0x47BC10);
 	inline auto Brush_MakeSided_Axis = reinterpret_cast<void (*)(int num_sides, bool snap)>(0x4735E0);
+	inline auto Brush_SetSampleSize = reinterpret_cast<void (*)(float sample_size)>(0x48F800);
+	inline auto Brush_FitTexture = reinterpret_cast<void (*)(float x, float y, int bounds)>(0x4939E0);
 	int CM_ForEachBrushPlaneIntersection(game::brush_t_with_custom_def* b /*esi*/, game::BrushPt_t* brush_pts);
 	
 	inline auto SetKeyValue = reinterpret_cast<void (*)(game::entity_s * ent, const char* key, const char* value)>(0x483690);

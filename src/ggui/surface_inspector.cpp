@@ -176,12 +176,12 @@ namespace ggui
 		}
 	}
 
-	void surface_dialog::inspector_controls()
+	void surface_dialog::inspector_controls(bool is_toolbox, float max_width)
 	{
-		//ImGui::Indent(8.0f);
+		int style_colors = 0;
+		int style_vars = 0;
 
-		//const auto avail_width = ImGui::GetContentRegionAvailWidth() * 0.65f;
-		//ImGui::PushItemWidth(avail_width);
+		bool treenode_state = false;
 
 		const float inner_item_spacing = 4.0f;
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(inner_item_spacing, 0.0f));
@@ -193,6 +193,11 @@ namespace ggui
 
 		auto& g_patch_texdef = *reinterpret_cast<patch_texdef_t*>(0x23F15F8);
 		const int selected_faces_count = *reinterpret_cast<int*>(0x73C714);
+
+		if (is_toolbox)
+		{
+			treenode_state = toolbox_dialog::treenode_begin("Manual", true, style_colors, style_vars);
+		}
 
 		if (selected_faces_count > 0)
 		{
@@ -227,199 +232,332 @@ namespace ggui
 			}
 		}
 
-		if (ImGui::InputScalarDir("Shift Horz", ImGuiDataType_Float, &texhelp.shift_horz, &texhelp.scalar_direction, &texhelp.amount_shift, nullptr, true, nullptr, !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
+		if (!is_toolbox || (is_toolbox && treenode_state))
 		{
-			const float amount_specific = texhelp.shift_horz;
-			const float amount_inc = texhelp.amount_shift;
+			static float manual_section_width = 0.0f;
+			const float max_width_manual = max_width - 100.0f;
 
-			const float edit_amount = texhelp.specific_mode ? amount_specific
-				: texhelp.scalar_direction == -1 ? -amount_inc
-				: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
-
-			game::texdef_sub_t texdef_edit = {};
-			texdef_edit.shift[0] = edit_amount;
-
-			edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SHIFT_HORZ, texhelp.scalar_direction);
-		}
-
-		if (ImGui::InputScalarDir("Shift Vert", ImGuiDataType_Float, &texhelp.shift_vert, &texhelp.scalar_direction, &texhelp.amount_shift, nullptr, true, nullptr, !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
-		{
-			const float amount_specific = texhelp.shift_vert;
-			const float amount_inc = texhelp.amount_shift;
-
-			const float edit_amount = texhelp.specific_mode ? amount_specific
-				: texhelp.scalar_direction == -1 ? -amount_inc
-				: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
-
-			game::texdef_sub_t texdef_edit = {};
-			texdef_edit.shift[1] = edit_amount;
-
-			edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SHIFT_VERT, texhelp.scalar_direction);
-		}
-
-		SPACING(0.0f, 4.0f);
-
-		if (ImGui::InputScalarDir("Size Horz", ImGuiDataType_Float, &texhelp.size_horz, &texhelp.scalar_direction, &texhelp.amount_size, nullptr, true, nullptr, !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
-		{
-			const float amount_specific = texhelp.size_horz;
-			const float amount_inc = texhelp.amount_size;
-
-			const float edit_amount = texhelp.specific_mode ? amount_specific
-				: texhelp.scalar_direction == -1 ? -amount_inc
-				: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
-
-			game::texdef_sub_t texdef_edit = {};
-			texdef_edit.size[0] = edit_amount;
-
-			edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SIZE_HORZ, texhelp.scalar_direction);
-		}
-
-		if (ImGui::InputScalarDir("Size Vert", ImGuiDataType_Float, &texhelp.size_vert, &texhelp.scalar_direction, &texhelp.amount_size, nullptr, true, nullptr, !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
-		{
-			const float amount_specific = texhelp.size_vert;
-			const float amount_inc = texhelp.amount_size;
-
-			const float edit_amount = texhelp.specific_mode ? amount_specific
-				: texhelp.scalar_direction == -1 ? -amount_inc
-				: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
-
-			game::texdef_sub_t texdef_edit = {};
-			texdef_edit.size[1] = edit_amount;
-
-			edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SIZE_VERT, texhelp.scalar_direction);
-		}
-
-		SPACING(0.0f, 4.0f);
-
-		if (ImGui::InputScalarDir("Rotation", ImGuiDataType_Float, &texhelp.rotation, &texhelp.scalar_direction, &texhelp.amount_rotate, nullptr, true, nullptr, !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
-		{
-			const float amount_specific = texhelp.rotation;
-			const float amount_inc = texhelp.amount_rotate;
-
-			const float edit_amount = texhelp.specific_mode ? amount_specific
-				: texhelp.scalar_direction == -1 ? -amount_inc
-				: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
-
-			game::texdef_sub_t texdef_edit = {};
-			texdef_edit.rotate = edit_amount;
-
-			edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_ROTATE);
-		}
-
-		if (ImGui::InputScalarDir("Sample Size", ImGuiDataType_Float, &g_patch_texdef.sample_size, nullptr, &texhelp.amount_sample, nullptr, true))
-		{
-			if (g_patch_texdef.sample_size < 4.0f) 
+			if (is_toolbox)
 			{
-				g_patch_texdef.sample_size = 4.0f;
+				ImGui::SetNextItemWidth(max_width_manual);
+				toolbox_dialog::center_horz_begin(manual_section_width);
 			}
 
-			// Brush_SetSampleSize
-			utils::hook::call<void(__cdecl)(int sample_size)>(0x48F800)((int)g_patch_texdef.sample_size);
-		}
-
-		SPACING(0.0f, 4.0f);
-
-		static float group_width = 80.0f;
-		ImGui::SetCursorPosX(clamped_min_widget_width * 0.5f - (group_width * 0.5f));
-
-		ImGui::BeginGroup();
-		{
-			ImGui::Checkbox(" Set Specific Values", &texhelp.specific_mode);
-		}
-		ImGui::EndGroup();
-		group_width = ImGui::GetItemRectSize().x;
-		ImGui::SameLine();
-		ImGui::HelpMarker(
-			"On: (Specific Mode)\n"
-			"- Enables editing values within the textboxes to directly set texture values.\n"
-			"- Set all selected faces/brushes to the specified value.\n\n"
-			"Off: (Inc/Dec Mode)\n"
-			"- Texture edits are only possible via the + and - buttons\n"
-			"- Inc/Dec values per face/brush (eg: brush1 value @ 0.0f + offset, brush2 value @ 45.0f + offset\n\n"
-			"Displayed values are always from the first face that was selected.");
-
-		SPACING(0.0f, 4.0f);
-
-		const float button_size = ImMax(182.0f, ImGui::CalcItemWidth() + inner_item_spacing) * 0.5f;
-
-		if (ImGui::Button("Cap", ImVec2(button_size, ImGui::GetFrameHeight())))
-		{
-			const float sample_size = game::g_qeglobals->current_edit_layer == 1 ? g_patch_texdef.sample_size : 0.25f;
-
-			//Patch_NaturalizeSelected
-			utils::hook::call<void(__cdecl)(bool _unk, bool cap, float _x, float _y)>(0x447FD0)(true, false, texhelp.repeatx * sample_size, texhelp.repeaty * sample_size);
-		}
-
-		ImGui::SameLine(0.0f, inner_item_spacing);
-		if (ImGui::Button("Natural", ImVec2(button_size, ImGui::GetFrameHeight())))
-		{
-			const float sample_size = game::g_qeglobals->current_edit_layer == 1 ? g_patch_texdef.sample_size : 0.25f;
-
-			//Patch_NaturalizeSelected
-			utils::hook::call<void(__cdecl)(bool _unk, bool cap, float _x, float _y)>(0x447FD0)(false, false, texhelp.repeatx * sample_size, texhelp.repeaty * sample_size);
-		}
-
-
-		if (ImGui::Button("Fit", ImVec2(button_size, ImGui::GetFrameHeight())))
-		{
-			//Brush_FitTexture
-			utils::hook::call<void(__cdecl)(float _x, float _y, int _unk)>(0x4939E0)(1.0f, 1.0f, 0);
-		}
-
-		ImGui::SameLine(0.0f, inner_item_spacing);
-		if (ImGui::Button("Lmap", ImVec2(button_size, ImGui::GetFrameHeight())))
-		{
-			//Patch_Lightmap_Texturing
-			utils::hook::call<void(__cdecl)()>(0x448110)();
-		}
-
-		if (ImGui::Button("Cycle Texture Layer", ImVec2(clamped_min_widget_width, ImGui::GetFrameHeight())))
-		{
-			cdeclcall(void, 0x424010);
-		}
-
-		SPACING(0.0f, 12.0f);
-
-		const char* set_mode_items[] = { "2D", "2D - Auto Set", "3D", "3D - Auto Set", "Patch Curve", "Patch Curve - Auto Set" };
-		static int set_mode_current = 1;
-
-		ImGui::SetNextItemWidth(clamped_min_widget_width);
-		ImGui::Combo("Mode", &set_mode_current, set_mode_items, IM_ARRAYSIZE(set_mode_items));
-
-		if (ImGui::InputScalarDir("Repeat X", ImGuiDataType_Float, &texhelp.repeatx, nullptr, &texhelp.amount_repeatx, nullptr, true))
-		{
-			if (texhelp.amount_repeatx < 0.0f) 
+			if (ImGui::InputScalarDir(" Shift Horz", ImGuiDataType_Float, &texhelp.shift_horz, &texhelp.scalar_direction, &texhelp.amount_shift, nullptr, true, "%.2f", !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
 			{
-				texhelp.amount_repeatx = 0.0f;
+				const float amount_specific = texhelp.shift_horz;
+				const float amount_inc = texhelp.amount_shift;
+
+				const float edit_amount = texhelp.specific_mode ? amount_specific
+					: texhelp.scalar_direction == -1 ? -amount_inc
+					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
+
+				game::texdef_sub_t texdef_edit = {};
+				texdef_edit.shift[0] = edit_amount;
+
+				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SHIFT_HORZ, texhelp.scalar_direction);
 			}
 
-			// if auto set mode
-			if (set_mode_current == 1 || set_mode_current == 3 || set_mode_current == 5)
+			if (is_toolbox)
 			{
-				// Patch_SetTexturing
-				utils::hook::call<void(__cdecl)(float _x, float _y, int _unk)>(0x446B60)(texhelp.repeatx, texhelp.repeaty, set_mode_current == 1 ? 0 : set_mode_current == 3 ? 1 : 2);
+				ImGui::SetNextItemWidth(max_width_manual);
+			}
+
+			if (ImGui::InputScalarDir(" Shift Vert", ImGuiDataType_Float, &texhelp.shift_vert, &texhelp.scalar_direction, &texhelp.amount_shift, nullptr, true, "%.2f", !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
+			{
+				const float amount_specific = texhelp.shift_vert;
+				const float amount_inc = texhelp.amount_shift;
+
+				const float edit_amount = texhelp.specific_mode ? amount_specific
+					: texhelp.scalar_direction == -1 ? -amount_inc
+					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
+
+				game::texdef_sub_t texdef_edit = {};
+				texdef_edit.shift[1] = edit_amount;
+
+				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SHIFT_VERT, texhelp.scalar_direction);
+			}
+
+			SPACING(0.0f, 4.0f);
+
+			if (is_toolbox)
+			{
+				ImGui::SetNextItemWidth(max_width_manual);
+			}
+
+			if (ImGui::InputScalarDir(" Size Horz", ImGuiDataType_Float, &texhelp.size_horz, &texhelp.scalar_direction, &texhelp.amount_size, nullptr, true, "%.2f", !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
+			{
+				const float amount_specific = texhelp.size_horz;
+				const float amount_inc = texhelp.amount_size;
+
+				const float edit_amount = texhelp.specific_mode ? amount_specific
+					: texhelp.scalar_direction == -1 ? -amount_inc
+					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
+
+				game::texdef_sub_t texdef_edit = {};
+				texdef_edit.size[0] = edit_amount;
+
+				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SIZE_HORZ, texhelp.scalar_direction);
+			}
+
+			if (is_toolbox)
+			{
+				ImGui::SetNextItemWidth(max_width_manual);
+			}
+
+			if (ImGui::InputScalarDir(" Size Vert", ImGuiDataType_Float, &texhelp.size_vert, &texhelp.scalar_direction, &texhelp.amount_size, nullptr, true, "%.2f", !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
+			{
+				const float amount_specific = texhelp.size_vert;
+				const float amount_inc = texhelp.amount_size;
+
+				const float edit_amount = texhelp.specific_mode ? amount_specific
+					: texhelp.scalar_direction == -1 ? -amount_inc
+					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
+
+				game::texdef_sub_t texdef_edit = {};
+				texdef_edit.size[1] = edit_amount;
+
+				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SIZE_VERT, texhelp.scalar_direction);
+			}
+
+			SPACING(0.0f, 4.0f);
+
+			if (is_toolbox)
+			{
+				ImGui::SetNextItemWidth(max_width_manual);
+			}
+
+			if (ImGui::InputScalarDir(" Rotation", ImGuiDataType_Float, &texhelp.rotation, &texhelp.scalar_direction, &texhelp.amount_rotate, nullptr, true, "%.2f", !texhelp.specific_mode ? ImGuiInputTextFlags_ReadOnly : 0))
+			{
+				const float amount_specific = texhelp.rotation;
+				const float amount_inc = texhelp.amount_rotate;
+
+				const float edit_amount = texhelp.specific_mode ? amount_specific
+					: texhelp.scalar_direction == -1 ? -amount_inc
+					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
+
+				game::texdef_sub_t texdef_edit = {};
+				texdef_edit.rotate = edit_amount;
+
+				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_ROTATE);
+			}
+
+			if (is_toolbox)
+			{
+				ImGui::SetNextItemWidth(max_width_manual);
+			}
+
+			if (ImGui::InputScalarDir(" Sample", ImGuiDataType_Float, &g_patch_texdef.sample_size, nullptr, &texhelp.amount_sample, nullptr, true, "%.2f"))
+			{
+				if (g_patch_texdef.sample_size < 4.0f)
+				{
+					g_patch_texdef.sample_size = 4.0f;
+				}
+
+				game::Brush_SetSampleSize(g_patch_texdef.sample_size);
+			}
+
+			SPACING(0.0f, 4.0f);
+
+			static float specific_values_width = 0.0f;
+			static float group_width = 80.0f;
+
+			if (is_toolbox)
+			{
+				toolbox_dialog::center_horz_end(manual_section_width);
+				toolbox_dialog::center_horz_begin(specific_values_width);
+			}
+			else
+			{
+				ImGui::SetCursorPosX(clamped_min_widget_width * 0.5f - (group_width * 0.5f));
+			}
+			
+			ImGui::BeginGroup();
+			{
+				ImGui::Checkbox(" Set Specific Values", &texhelp.specific_mode);
+				ImGui::EndGroup();
+			}
+
+			group_width = ImGui::GetItemRectSize().x;
+			ImGui::SameLine();
+			ImGui::HelpMarker(
+				"On: (Specific Mode)\n"
+				"- Enables editing values within the textboxes to directly set texture values.\n"
+				"- Set all selected faces/brushes to the specified value.\n\n"
+				"Off: (Inc/Dec Mode)\n"
+				"- Texture edits are only possible via the + and - buttons\n"
+				"- Inc/Dec values per face/brush (eg: brush1 value @ 0.0f + offset, brush2 value @ 45.0f + offset\n\n"
+				"Displayed values are always from the first face that was selected.");
+
+			if (!is_toolbox)
+			{
+				SPACING(0.0f, 4.0f);
+			}
+			else
+			{
+				toolbox_dialog::center_horz_end(specific_values_width);
 			}
 		}
 
-		if (ImGui::InputScalarDir("Repeat Y", ImGuiDataType_Float, &texhelp.repeaty, nullptr, &texhelp.amount_repeaty, nullptr, true))
+		// #
+		// end and begin next node
+
+		if(treenode_state)
 		{
-			if (texhelp.amount_repeaty < 0.0f) 
+			toolbox_dialog::treenode_end(style_colors, style_vars);
+		}
+
+		if(is_toolbox)
+		{
+			treenode_state = toolbox_dialog::treenode_begin("Texture Operations", true, style_colors, style_vars);
+		}
+
+		// ---
+
+		if (!is_toolbox || (is_toolbox && treenode_state))
+		{
+			static float texop_section_width = 0.0f;
+			const ImVec2 button_size = is_toolbox
+					? ImVec2(max_width * 0.5f - 2.0f, 0.0f)
+					: ImVec2(ImMax(182.0f, ImGui::CalcItemWidth() + inner_item_spacing) * 0.5f, 0.0f);
+
+			if (is_toolbox)
 			{
-				texhelp.amount_repeaty = 0.0f;
+				toolbox_dialog::center_horz_begin(texop_section_width);
 			}
 
-			// if auto set mode
-			if (set_mode_current == 1 || set_mode_current == 3 || set_mode_current == 5)
+			if (ImGui::Button("Cap", button_size))
 			{
-				// Patch_SetTexturing
-				utils::hook::call<void(__cdecl)(float _x, float _y, int _unk)>(0x446B60)(texhelp.repeatx, texhelp.repeaty, set_mode_current == 1 ? 0 : set_mode_current == 3 ? 1 : 2);
+				const float sample_size = game::g_qeglobals->current_edit_layer == 1 ? g_patch_texdef.sample_size : 0.25f;
+
+				game::Patch_NaturalizeSelected(true, false, texhelp.repeatx * sample_size, texhelp.repeaty * sample_size);
+			}
+
+			ImGui::SameLine(0.0f, inner_item_spacing);
+			if (ImGui::Button("Natural", button_size))
+			{
+				const float sample_size = game::g_qeglobals->current_edit_layer == 1 ? g_patch_texdef.sample_size : 0.25f;
+
+				game::Patch_NaturalizeSelected(false, false, texhelp.repeatx * sample_size, texhelp.repeaty * sample_size);
+			}
+
+			if (ImGui::Button("Fit", button_size))
+			{
+				game::Brush_FitTexture(1.0f, 1.0f, 0);
+			}
+
+			ImGui::SameLine(0.0f, inner_item_spacing);
+			if (ImGui::Button("Lmap", button_size))
+			{
+				game::Patch_Lightmap_Texturing();
+			}
+
+			if (!is_toolbox)
+			{
+				if (ImGui::Button("Cycle Texture Layer", ImVec2(clamped_min_widget_width, ImGui::GetFrameHeight())))
+				{
+					cdeclcall(void, 0x424010); // CMainFrame::OnEditLayerCycle
+				}
+
+				SPACING(0.0f, 12.0f);
+			}
+			else
+			{
+				toolbox_dialog::center_horz_end(texop_section_width);
 			}
 		}
 
-		if (ImGui::Button("Set##set", ImVec2(clamped_min_widget_width, ImGui::GetFrameHeight())))
+
+		// #
+		// end and begin next node
+
+		if (treenode_state)
 		{
-			// Patch_SetTexturing
-			utils::hook::call<void(__cdecl)(float _x, float _y, int _unk)>(0x446B60)(texhelp.repeatx, texhelp.repeaty, set_mode_current == 1 ? 0 : set_mode_current == 3 ? 1 : 2);
+			toolbox_dialog::treenode_end(style_colors, style_vars);
+		}
+
+		if (is_toolbox)
+		{
+			treenode_state = toolbox_dialog::treenode_begin("Set", true, style_colors, style_vars);
+		}
+
+		if (!is_toolbox || (is_toolbox && treenode_state))
+		{
+			const float max_width_set = max_width - 80.0f;
+
+			static float set_section_width = 0.0f;
+
+			if (is_toolbox)
+			{
+				ImGui::SetNextItemWidth(max_width_set + 15.0f);
+				toolbox_dialog::center_horz_begin(set_section_width);
+			}
+			else
+			{
+				ImGui::SetNextItemWidth(clamped_min_widget_width);
+			}
+
+			const char* set_mode_items[] = { "2D", "2D - Auto Set", "3D", "3D - Auto Set", "Patch Curve", "Patch Curve - Auto Set" };
+			static int set_mode_current = 1;
+			
+			ImGui::Combo(" Mode", &set_mode_current, set_mode_items, IM_ARRAYSIZE(set_mode_items));
+
+			if (is_toolbox)
+			{
+				ImGui::SetNextItemWidth(max_width_set);
+			}
+
+			if (ImGui::InputScalarDir(" Repeat X", ImGuiDataType_Float, &texhelp.repeatx, nullptr, &texhelp.amount_repeatx, nullptr, true, "%.2f"))
+			{
+				if (texhelp.amount_repeatx < 0.0f)
+				{
+					texhelp.amount_repeatx = 0.0f;
+				}
+
+				// if auto set mode
+				if (set_mode_current == 1 || set_mode_current == 3 || set_mode_current == 5)
+				{
+					game::Patch_SetTexturing(texhelp.repeatx, texhelp.repeaty, set_mode_current == 1 ? 0 : set_mode_current == 3 ? 1 : 2);
+				}
+			}
+
+			if (is_toolbox)
+			{
+				ImGui::SetNextItemWidth(max_width_set);
+			}
+
+			if (ImGui::InputScalarDir(" Repeat Y", ImGuiDataType_Float, &texhelp.repeaty, nullptr, &texhelp.amount_repeaty, nullptr, true, "%.2f"))
+			{
+				if (texhelp.amount_repeaty < 0.0f)
+				{
+					texhelp.amount_repeaty = 0.0f;
+				}
+
+				// if auto set mode
+				if (set_mode_current == 1 || set_mode_current == 3 || set_mode_current == 5)
+				{
+					game::Patch_SetTexturing(texhelp.repeatx, texhelp.repeaty, set_mode_current == 1 ? 0 : set_mode_current == 3 ? 1 : 2);
+				}
+			}
+
+			const ImVec2 button_size = is_toolbox
+				? ImVec2(max_width, 0.0f)
+				: ImVec2(clamped_min_widget_width, 0.0f);
+
+			if (ImGui::Button("Set##set", button_size))
+			{
+				game::Patch_SetTexturing(texhelp.repeatx, texhelp.repeaty, set_mode_current == 1 ? 0 : set_mode_current == 3 ? 1 : 2);
+			}
+
+			if (is_toolbox)
+			{
+				toolbox_dialog::center_horz_end(set_section_width);
+			}
+		}
+
+		if (treenode_state)
+		{
+			toolbox_dialog::treenode_end(style_colors, style_vars);
 		}
 
 		ImGui::PopStyleVar(); // ImGuiStyleVar_ItemInnerSpacing
@@ -428,7 +566,7 @@ namespace ggui
 
 	void surface_dialog::gui()
 	{
-		if (dvars::gui_props_surfinspector && !dvars::gui_props_surfinspector->current.enabled)
+		if (dvars::gui_props_surfinspector && !dvars::gui_props_surfinspector->current.integer)
 		{
 			const auto MIN_WINDOW_SIZE = ImVec2(210.0f, 290.0f);
 			const auto INITIAL_WINDOW_SIZE = ImVec2(345.0f, 510.0f);
@@ -465,11 +603,18 @@ namespace ggui
 	// CMainFrame::OnTexturesInspector
 	void surface_dialog::on_surfaceinspector_command()
 	{
-		if (dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
+		if (dvars::gui_use_new_surfinspector && dvars::gui_props_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
 		{
-			if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
+			if (dvars::gui_props_surfinspector->current.integer == 1)
 			{
 				GET_GUI(ggui::entity_dialog)->toggle();
+			}
+			else if (dvars::gui_props_surfinspector->current.integer == 2)
+			{
+				const auto tb = GET_GUI(ggui::toolbox_dialog);
+
+				tb->focus_child(toolbox_dialog::TB_CHILD::SURFACE_INSP);
+				tb->open();
 			}
 			else
 			{
@@ -491,11 +636,22 @@ namespace ggui
 
 	void surface_dialog::register_dvars()
 	{
-		dvars::gui_props_surfinspector = dvars::register_bool(
+		// 0 : off
+		// 1 : within entity property window
+		// 2 : within toolbox
+		dvars::gui_props_surfinspector = dvars::register_int(
 			/* name		*/ "gui_props_surfinspector",
-			/* default	*/ false,
+			/* default	*/ 2,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "property editor - incorporate surface inspector window");
+			
+		//dvars::gui_props_surfinspector = dvars::register_bool(
+		//	/* name		*/ "gui_props_surfinspector",
+		//	/* default	*/ false,
+		//	/* flags	*/ game::dvar_flags::saved,
+		//	/* desc		*/ "property editor - incorporate surface inspector window");
 
 		dvars::gui_use_new_surfinspector = dvars::register_bool(
 			/* name		*/ "gui_use_new_surfinspector",
