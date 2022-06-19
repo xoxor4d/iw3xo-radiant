@@ -34,6 +34,8 @@ namespace ggui
 	bool		m_init_saved_states = false;
 
 	bool		m_ggui_initialized = false;
+	bool		m_ggui_second_frame = false;
+
 	ImGuiContext* m_ggui_context = nullptr;
 
 	bool		m_dockspace_initiated = false;

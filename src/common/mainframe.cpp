@@ -635,6 +635,12 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 	game::printf_to_console("mainframe keydown: %s", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
+	// there is one "bad" keydown on the first frame ..'O'
+	if(nChar == 79 && !nRepCnt && !nFlags)
+	{
+		return;
+	}
+
 	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)

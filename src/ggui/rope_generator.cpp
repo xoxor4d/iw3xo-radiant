@@ -254,7 +254,7 @@ namespace ggui
 		game::Undo_End();
 	}
 
-	void rope_generator_dialog::gui()
+	bool rope_generator_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 270.0f);
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
@@ -327,6 +327,12 @@ namespace ggui
 			
 			ImGui::End();
 		}
+		else
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	void rope_generator_dialog::on_open()

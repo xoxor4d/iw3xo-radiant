@@ -1049,15 +1049,8 @@ namespace ggui
 			const ImVec2 toolbar_button_size = ImVec2(32.0f, 32.0f);
 
 			const auto tb = GET_GUI(ggui::toolbar_dialog);
-
 			static float max_widget_width = 251.0f; // assumed first value - depends on total width of curve patch creation widget
-			static float widget_start_offset_screen = 0.0f;
-
-			const auto selbrush = game::g_selected_brushes();
-			const auto is_patch = selbrush && selbrush->def && selbrush->def->patch;
-			const auto is_curve_patch = selbrush && selbrush->def && selbrush->def->patch && (selbrush->def->patch->type == game::PATCH_TYPE::PATCH_GENERIC || selbrush->def->patch->type == game::PATCH_TYPE::PATCH_SEAM);
-			const auto atleast_two_verts_selected = game::g_qeglobals->d_num_move_points >= 2;
-
+	
 			if (treenode_begin("Manipulation", true, style_colors, style_vars))
 			{
 				static float manipulation_l1_width = 100.0f;
@@ -1162,7 +1155,7 @@ namespace ggui
 		ImGui::PopID();
 	}
 
-	void toolbox_dialog::gui()
+	bool toolbox_dialog::gui()
 	{
 		if (!this->is_initiated())
 		{
@@ -1191,7 +1184,7 @@ namespace ggui
 			ImGui::PopStyleColor(stylecolors);
 			ImGui::PopStyleVar(stylevars);
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		ImGui::Indent(indent_offset - 2.0f);
@@ -1264,7 +1257,7 @@ namespace ggui
 			ImGui::PopStyleColor(stylecolors);
 			ImGui::PopStyleVar(stylevars);
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		// draw selected childs 
@@ -1296,13 +1289,23 @@ namespace ggui
 
 		// end "##toolbox_window"
 		ImGui::End();
+
+		return true;
 	}
 
 	void toolbox_dialog::init()
 	{
 		components::command::register_command_with_hotkey("toggle_toolbox"s, [this](auto)
 		{
-			GET_GUI(ggui::toolbox_dialog)->toggle();
+			const auto gui = GET_GUI(ggui::toolbox_dialog);
+
+			if (gui->is_inactive_tab() && gui->is_active())
+			{
+				gui->set_bring_to_front(true);
+				return;
+			}
+
+			gui->toggle();
 		});
 	}
 

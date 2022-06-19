@@ -114,7 +114,7 @@ namespace ggui
 		// *
 		// public member functions
 
-		void	gui() override;
+		bool gui() override;
 		void	add_prop(const char* key, const char* value, addprop_helper_s* helper = nullptr);
 		void	del_prop(const char* key, bool overwrite_classname_check = false);
 		char*	get_value_for_key_from_epairs(game::epair_t*& e, const char* key);

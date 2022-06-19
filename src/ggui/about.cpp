@@ -6,7 +6,7 @@
 
 namespace ggui
 {
-	void about_dialog::gui()
+	bool about_dialog::gui()
 	{
 		ImGui::SetNextWindowSize(game::glob::gh_update_avail ? ImVec2(480.0f, 880.0f) : ImVec2(400.0f, 630.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
@@ -112,6 +112,12 @@ namespace ggui
 
 			ImGui::End();
 		}
+		else
+		{
+		return false;
+		}
+
+		return true;
 	}
 
 	REGISTER_GUI(about_dialog);

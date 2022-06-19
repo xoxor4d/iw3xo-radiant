@@ -564,7 +564,7 @@ namespace ggui
 		//ImGui::PopItemWidth();
 	}
 
-	void surface_dialog::gui()
+	bool surface_dialog::gui()
 	{
 		if (dvars::gui_props_surfinspector && !dvars::gui_props_surfinspector->current.integer)
 		{
@@ -581,7 +581,7 @@ namespace ggui
 				ImGui::PopStyleColor(stylecolors);
 				ImGui::PopStyleVar(stylevars);
 				ImGui::End();
-				return;
+				return false;
 			}
 
 			ImGui::Indent(8.0f);
@@ -591,7 +591,11 @@ namespace ggui
 			ImGui::PopStyleColor(stylecolors);
 			ImGui::PopStyleVar(stylevars);
 			ImGui::End();
+
+			return true;
 		}
+
+		return false;
 	}
 
 	void surface_dialog::on_open()
@@ -613,6 +617,7 @@ namespace ggui
 			{
 				const auto tb = GET_GUI(ggui::toolbox_dialog);
 
+				tb->set_bring_to_front(true);
 				tb->focus_child(toolbox_dialog::TB_CHILD::SURFACE_INSP);
 				tb->open();
 			}

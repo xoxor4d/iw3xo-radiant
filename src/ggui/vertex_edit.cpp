@@ -49,7 +49,7 @@ namespace ggui
 		}
 	}
 
-	void vertex_edit_dialog::gui()
+	bool vertex_edit_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 800.0f);
@@ -61,7 +61,7 @@ namespace ggui
 		if (!ImGui::Begin("Vertex Edit Dialog##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
 			ImGui::End();
-			return;
+			return false ;
 		}
 
 		ImGui::Indent(4.0f);
@@ -102,6 +102,7 @@ namespace ggui
 		vertex_edit_dialog::feature_noise();
 
 		ImGui::End();
+		return true;
 	}
 
 	void vertex_edit_dialog::on_vertex_edit_dialog_command()

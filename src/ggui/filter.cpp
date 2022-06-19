@@ -217,7 +217,7 @@ namespace ggui
 		return return_val;
 	}
 
-	void filter_dialog::gui()
+	bool filter_dialog::gui()
 	{
 		build_radiant_filterlists();
 
@@ -228,21 +228,12 @@ namespace ggui
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		
-		if (this->is_bring_to_front_pending())
-		{
-			this->set_bring_to_front(false);
-			ImGui::SetNextWindowFocus();
-		}
-
 		if (!ImGui::Begin("Filters##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
-			this->set_inactive_tab(true);
 			ImGui::End();
-			return;
+			return false;
 		}
 
-		this->set_inactive_tab(false);
 		window_hovered = ImGui::IsWindowHovered();
 
 		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
@@ -545,6 +536,7 @@ namespace ggui
 
 		ImGui::PopStyleVar(sflags);
 		ImGui::End();
+		return true;
 	}
 
 	// *

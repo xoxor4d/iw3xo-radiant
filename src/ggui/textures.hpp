@@ -6,7 +6,7 @@ namespace ggui
 	{
 	public:
 		texture_dialog() { set_gui_type(GUI_TYPE_RTT); }
-		void gui() override;
+		bool gui() override;
 
 		auto& get_filter()
 		{

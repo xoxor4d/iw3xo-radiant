@@ -1638,7 +1638,7 @@ namespace ggui
 		SPACING(0.0f, 0.01f);
 	}
 
-	void entity_dialog::gui()
+	bool entity_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 800.0f);
@@ -1647,22 +1647,11 @@ namespace ggui
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		const auto gui = GET_GUI(ggui::entity_dialog);
-
-		if (gui->is_bring_to_front_pending())
-		{
-			gui->set_bring_to_front(false);
-			ImGui::SetNextWindowFocus();
-		}
-
 		if (!ImGui::Begin("Entity##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
-			gui->set_inactive_tab(true);
 			ImGui::End();
-			return;
+			return false;
 		}
-
-		gui->set_inactive_tab(false);
 
 		draw_classlist();
 		draw_comments();
@@ -1687,6 +1676,7 @@ namespace ggui
 		}
 
 		ImGui::End();
+		return true;
 	}
 
 	// ----------------------------------

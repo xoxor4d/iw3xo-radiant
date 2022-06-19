@@ -260,7 +260,7 @@ namespace ggui
 		ImGui::PopStyleCompact();
 	}
 
-	void texture_dialog::gui()
+	bool texture_dialog::gui()
 	{
 		int p_styles = 0;
 		int p_colors = 0;
@@ -300,14 +300,11 @@ namespace ggui
 
 		if (!ImGui::Begin("Textures##rtt", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 		{
-			this->set_inactive_tab(true);
 			ImGui::PopStyleColor(p_colors);
 			ImGui::PopStyleVar(p_styles);
 			ImGui::End();
-			return;
+			return false;
 		}
-
-		this->set_inactive_tab(false);
 
 		if (this->rtt_get_texture())
 		{
@@ -409,6 +406,8 @@ namespace ggui
 		ImGui::PopStyleColor(p_colors);
 		ImGui::PopStyleVar(p_styles);
 		ImGui::End();
+
+		return true;
 	}
 
 	REGISTER_GUI(texture_dialog);

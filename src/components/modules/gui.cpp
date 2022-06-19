@@ -457,6 +457,8 @@ namespace components
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
 		}
+
+		ggui::m_ggui_second_frame = true;
 	}
 
 
@@ -490,38 +492,46 @@ namespace components
 				dvars::set_bool((_DVAR), GET_GUI(_GUI_CLASS)->is_active());					\
 		}																					\
 
+#define HANDLE_SAVED_STATE_INT(_GUI_CLASS, _DVAR, _STARTUP)									\
+		if(!(_STARTUP) && (_DVAR))															\
+		{																					\
+			const auto dialog = GET_GUI(_GUI_CLASS);										\
+			dialog->toggle(true, (_DVAR)->current.integer);									\
+			dialog->set_bring_to_front((_DVAR)->current.integer == 2);						\
+		}																					\
+		else if((_DVAR))																	\
+		{																					\
+			const auto dialog = GET_GUI(_GUI_CLASS);										\
+			const bool open_and_front = dialog->is_active() && !dialog->is_inactive_tab();	\
+			dvars::set_int((_DVAR), open_and_front ? 2 : dialog->is_active() ? 1 : 0);		\
+		}
+
 	// *
 	// handles opened/closed states of windows via dvars
 	// register dvars @ gui::register_dvars()
 	void gui::saved_windowstates()
 	{
 		// handles init and update
-		HANDLE_SAVED_STATE(ggui::console_dialog, dvars::gui_saved_state_console, ggui::m_init_saved_states);
-		HANDLE_SAVED_STATE(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::m_init_saved_states);
-		HANDLE_SAVED_STATE(ggui::filter_dialog, dvars::gui_saved_state_filter, ggui::m_init_saved_states);
-		HANDLE_SAVED_STATE(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::m_init_saved_states);
-		HANDLE_SAVED_STATE(ggui::surface_dialog, dvars::gui_saved_state_surfinspector, ggui::m_init_saved_states);
-		HANDLE_SAVED_STATE(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::m_init_saved_states);
-		//HANDLE_SAVED_STATE(ggui::toolbox_dialog, dvars::gui_saved_state_toolbox, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::console_dialog, dvars::gui_saved_state_console, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::filter_dialog, dvars::gui_saved_state_filter, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::surface_dialog, dvars::gui_saved_state_surfinspector, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::toolbox_dialog, dvars::gui_saved_state_toolbox, ggui::m_init_saved_states);
 
-		// TODO: track active state using !ImGui::Begin (return bool gui::gui)
-		if (!ggui::m_init_saved_states)																		
+		/*if (!ggui::m_init_saved_states && dvars::gui_saved_state_toolbox)
 		{																					
-			if (dvars::gui_saved_state_toolbox)
-			{
-				auto tb = GET_GUI(ggui::toolbox_dialog);
-				tb->toggle(true, dvars::gui_saved_state_toolbox->current.integer);
-				tb->set_bring_to_front(dvars::gui_saved_state_toolbox->current.integer == 2);
-			}
+			const auto gui = GET_GUI(ggui::toolbox_dialog);
+			gui->toggle(true, dvars::gui_saved_state_toolbox->current.integer);
+			gui->set_bring_to_front(dvars::gui_saved_state_toolbox->current.integer == 2);
 		}																					
-		else																				
+		else if ((dvars::gui_saved_state_toolbox))
 		{
-			auto tb = GET_GUI(ggui::toolbox_dialog);
-			if ((dvars::gui_saved_state_toolbox) && tb->is_active() != dvars::gui_saved_state_toolbox->current.enabled)
-			{
-				dvars::set_int(dvars::gui_saved_state_toolbox, tb->is_active());
-			}
-		}
+			const auto gui = GET_GUI(ggui::toolbox_dialog);
+			const bool open_and_front = gui->is_active() && !gui->is_inactive_tab();
+			dvars::set_int(dvars::gui_saved_state_toolbox, open_and_front ? 2 : gui->is_active() ? 1 : 0);
+		}*/
 
 		ggui::m_init_saved_states = true;
 	}
@@ -733,48 +743,54 @@ namespace components
 
 		// *
 		// gui::saved_windowstates()
-		
-		dvars::gui_saved_state_console = dvars::register_bool(
+
+		dvars::gui_saved_state_console = dvars::register_int(
 			/* name		*/ "gui_saved_state_console",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of console window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
-		dvars::gui_saved_state_filter = dvars::register_bool(
+		dvars::gui_saved_state_filter = dvars::register_int(
 			/* name		*/ "gui_saved_state_filter",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of filter window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
-		dvars::gui_saved_state_entity = dvars::register_bool(
+		dvars::gui_saved_state_entity = dvars::register_int(
 			/* name		*/ "gui_saved_state_entity",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of entity window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
-		dvars::gui_saved_state_textures = dvars::register_bool(
+		dvars::gui_saved_state_textures = dvars::register_int(
 			/* name		*/ "gui_saved_state_textures",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of texture window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
-		dvars::gui_saved_state_modelselector = dvars::register_bool(
+		dvars::gui_saved_state_modelselector = dvars::register_int(
 			/* name		*/ "gui_saved_state_modelselector",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of modelselector window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
-		dvars::gui_saved_state_surfinspector = dvars::register_bool(
+		dvars::gui_saved_state_surfinspector = dvars::register_int(
 			/* name		*/ "gui_saved_state_surfinspector",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of surface inspector window");
-
-		//dvars::gui_saved_state_toolbox = dvars::register_bool(
-		//	/* name		*/ "gui_saved_state_toolbox",
-		//	/* default	*/ false,
-		//	/* flags	*/ game::dvar_flags::saved,
-		//	/* desc		*/ "saved opened/closed state of toolbox window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
 		dvars::gui_saved_state_toolbox = dvars::register_int(
 			/* name		*/ "gui_saved_state_toolbox",
@@ -782,7 +798,7 @@ namespace components
 			/* mins		*/ 0,
 			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved closed/opened/active state of surface inspector window");
+			/* desc		*/ "saved closed/opened/active state of window");
 	}
 
 	

@@ -1872,6 +1872,8 @@ namespace ggui
 				ImGui::EndMenu(); // Patch
 			}
 
+			SPACING(4.0f, 0.0f);
+
 			if (ImGui::MenuItem("Help"))
 			{
 				GET_GUI(help_dialog)->toggle();

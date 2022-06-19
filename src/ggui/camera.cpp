@@ -1209,8 +1209,10 @@ namespace ggui
 		ImGui::End();
 	}
 
-	void camera_dialog::gui()
-	{ }
+	bool camera_dialog::gui()
+	{
+		return false;
+	}
 
 	void camera_dialog::on_open()
 	{

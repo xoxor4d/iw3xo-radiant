@@ -2,7 +2,7 @@
 
 namespace ggui
 {
-	void curve_patch_dialog::gui()
+	bool curve_patch_dialog::gui()
 	{
 		ImGui::SetNextWindowSize(ImVec2(245.0f, 205.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_Once);
@@ -98,6 +98,12 @@ namespace ggui
 			
 			ImGui::End();
 		}
+		else
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	void curve_patch_dialog::on_open()
@@ -111,7 +117,7 @@ namespace ggui
 	// #
 	// -----------------------------------------------------------------------------
 
-	void terrain_patch_dialog::gui()
+	bool terrain_patch_dialog::gui()
 	{
 		ImGui::SetNextWindowSize(ImVec2(245.0f, 170.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_Once);
@@ -187,6 +193,12 @@ namespace ggui
 
 			ImGui::End();
 		}
+		else
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	void terrain_patch_dialog::on_open()
@@ -200,7 +212,7 @@ namespace ggui
 	// #
 	// -----------------------------------------------------------------------------
 
-	void thicken_patch_dialog::gui()
+	bool thicken_patch_dialog::gui()
 	{
 		ImGui::SetNextWindowSize(ImVec2(245.0f, 170.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_Once);
@@ -257,6 +269,12 @@ namespace ggui
 
 			ImGui::End();
 		}
+		else
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	void thicken_patch_dialog::on_open()
@@ -270,7 +288,7 @@ namespace ggui
 	// #
 	// -----------------------------------------------------------------------------
 
-	void cap_patch_dialog::gui()
+	bool cap_patch_dialog::gui()
 	{
 		ImGui::SetNextWindowSize(ImVec2(245.0f, 320.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_Once);
@@ -389,6 +407,12 @@ namespace ggui
 
 			ImGui::End();
 		}
+		else
+		{
+		return false;
+		}
+
+		return true;
 	}
 
 	void cap_patch_dialog::on_open()

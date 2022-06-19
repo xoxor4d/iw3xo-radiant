@@ -3,7 +3,7 @@
 
 namespace ggui
 {
-	void hotkey_helper_dialog::gui()
+	bool hotkey_helper_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(450, 160);
 
@@ -16,7 +16,7 @@ namespace ggui
 		if (!ImGui::Begin("Hotkeys Helper##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
@@ -29,6 +29,7 @@ namespace ggui
 		}
 
 		ImGui::End();
+		return true;
 	}
 
 	REGISTER_GUI(hotkey_helper_dialog);
@@ -617,7 +618,7 @@ namespace ggui
 		ImGui::PopID();
 	}
 
-	void hotkey_dialog::gui()
+	bool hotkey_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(450.0f, 342.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(450.0f, 800.0f);
@@ -631,6 +632,7 @@ namespace ggui
 		{
 			ImGui::PopStyleVar(); // ImGuiStyleVar_CellPadding
 			ImGui::End();
+			return false;
 		}
 
 		SPACING(0.0f, 2.0f);
@@ -708,6 +710,8 @@ namespace ggui
 
 		ImGui::PopStyleVar(); // ImGuiStyleVar_CellPadding
 		ImGui::End();
+
+		return true;
 	}
 
 	void hotkey_dialog::on_open()

@@ -436,7 +436,7 @@ namespace ggui
 		});
 	}
 
-	void preferences_dialog::gui()
+	bool preferences_dialog::gui()
 	{
 		if (!this->is_initiated())
 		{
@@ -465,7 +465,7 @@ namespace ggui
 			ImGui::PopStyleColor(stylecolors);
 			ImGui::PopStyleVar(stylevars);
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		if (ImGui::BeginListBox("##pref_cat", ImVec2(180.0f, ImGui::GetContentRegionAvail().y)))
@@ -500,7 +500,7 @@ namespace ggui
 			ImGui::PopStyleColor(stylecolors);
 			ImGui::PopStyleVar(stylevars);
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		SPACING(0.0f, 0.0f);
@@ -519,6 +519,8 @@ namespace ggui
 
 		// end "Preferences##window"
 		ImGui::End();
+
+		return true;
 	}
 
 	// CMainFrame::OnPrefs

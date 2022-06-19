@@ -40,7 +40,7 @@ namespace ggui
 
 		void grid_gui();
 
-		void gui() override;
+		bool gui() override;
 		void on_open() override;
 		void on_close() override;
 

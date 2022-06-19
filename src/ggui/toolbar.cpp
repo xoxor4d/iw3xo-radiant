@@ -1448,8 +1448,10 @@ namespace ggui
 	}
 
 
-	void toolbar_dialog::gui()
-	{ }
+	bool toolbar_dialog::gui()
+	{
+		return false;
+	}
 
 	void toolbar_dialog::on_open()
 	{ }
@@ -1466,7 +1468,7 @@ namespace ggui
 
 namespace ggui
 {
-	void toolbar_edit_dialog::gui()
+	bool toolbar_edit_dialog::gui()
 	{
 		const auto tb = GET_GUI(ggui::toolbar_dialog);
 
@@ -1477,7 +1479,11 @@ namespace ggui
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		ImGui::Begin("Toolbar Editor##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse);
+		if(!ImGui::Begin("Toolbar Editor##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
+		{
+			ImGui::End();
+			return false;
+		}
 
 
 		static float button_group_width = 140.0f;
@@ -1645,6 +1651,7 @@ namespace ggui
 
 		ImGui::PopStyleVar();
 		ImGui::End();
+		return true;
 	}
 
 	void toolbar_edit_dialog::on_open()

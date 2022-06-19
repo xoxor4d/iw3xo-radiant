@@ -641,8 +641,10 @@ namespace ggui
 		ImGui::End();
 	}
 
-	void grid_dialog::gui()
-	{ }
+	bool grid_dialog::gui()
+	{
+		return false;
+	}
 
 	void grid_dialog::on_open()
 	{ }

@@ -181,7 +181,7 @@ namespace ggui
 		// *
 		// public member functions
 
-		void gui() override;
+		bool gui() override;
 
 
 		// *
@@ -212,7 +212,7 @@ namespace ggui
 		void tab_visuals(fx_system::FxEditorElemDef* elem);
 
 		void effect_elemdef_list();
-		void effect_property_window();
+		bool effect_property_window();
 
 		bool modal_unsaved_changes(const char* label);
 	};

@@ -2,6 +2,24 @@
 
 namespace ggui
 {
+	// *
+	// | -------------------- Variables ------------------------
+	// *
+
+	extern bool			m_init_saved_states;
+
+	extern bool			m_ggui_initialized;
+	extern bool			m_ggui_second_frame;
+
+	extern ImGuiContext* m_ggui_context;
+
+	extern ImGuiID		m_dockspace_outer_left_node;
+	extern bool			m_dockspace_initiated;
+	extern bool			m_dockspace_reset;
+	extern bool			mainframe_menubar_enabled;
+
+	extern bool			m_demo_menu_state;
+
 	enum E_FONT
 	{
 		BOLD_18PX = 0,
@@ -138,7 +156,7 @@ namespace ggui
 	public:
 		ggui_module() = default;
 		virtual ~ggui_module() = default;
-		virtual void gui() {}
+		virtual bool gui() { return false; }
 		virtual void on_open() {}
 		virtual void on_close() {}
 
@@ -152,7 +170,7 @@ namespace ggui
 		{
 			if (is_active())
 			{
-				if (this->is_bring_to_front_pending())
+				if (ggui::m_ggui_second_frame && this->is_bring_to_front_pending())
 				{
 					set_bring_to_front(false);
 					ImGui::SetNextWindowFocus();
@@ -161,9 +179,11 @@ namespace ggui
 				if(!was_active())
 				{
 					on_open();
-				}
+				} 
 
-				gui();
+				const bool is_visible = gui();
+				set_inactive_tab(!is_visible);
+
 				set_was_active(true);
 			}
 			else if (was_active())
@@ -513,22 +533,6 @@ namespace											\
 {													\
 	static ggui::loader::installer<name> $_##name;	\
 }
-
-	// *
-	// | -------------------- Variables ------------------------
-	// *
-
-	extern bool			m_init_saved_states;
-
-	extern bool			m_ggui_initialized;
-	extern ImGuiContext* m_ggui_context;
-
-	extern ImGuiID		m_dockspace_outer_left_node;
-	extern bool			m_dockspace_initiated;
-	extern bool			m_dockspace_reset;
-	extern bool			mainframe_menubar_enabled;
-
-	extern bool			m_demo_menu_state;
 
 	// -----------
 
