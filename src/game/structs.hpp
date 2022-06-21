@@ -376,7 +376,7 @@ namespace game
 	{
 		qtexture_s* next; // not qtexture_s
 		const char* name;
-		bool visible;
+		bool is_in_use;
 		__int8 unk1;
 		__int8 usage_index;
 		__int8 unk2;

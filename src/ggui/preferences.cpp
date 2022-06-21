@@ -427,6 +427,34 @@ namespace ggui
 
 			SPACING(0.0f, 4.0f);
 
+			game::qtexture_s* texwndglob_textures = reinterpret_cast<game::qtexture_s*>(*(DWORD*)0x25E79A8);
+
+			const char* mat_names[4] = { "ace_wall_stone1_plain", "ch_factory_floorgrate", "ch_grass_01", "me_wallpaper2" };
+
+			if(ImGui::Button("Texture filter test"))
+			{
+				// hide all
+				game::qtexture_s* tex = texwndglob_textures;
+				for (; tex; tex = tex->prev)
+				{
+					tex->is_in_use = false;
+				}
+
+				tex = texwndglob_textures;
+				for (; tex; tex = tex->prev)
+				{
+					for(auto m = 0; m < IM_ARRAYSIZE(mat_names); m++)
+					{
+						if (utils::string_equals(tex->name, mat_names[m]))
+						{
+							tex->is_in_use = true;
+						}
+					}
+				}
+			}
+
+			SPACING(0.0f, 4.0f);
+
 			ImGui::DragInt("Integer01", &dev_num_01, 0.1f);
 			ImGui::DragInt("Integer02", &dev_num_02, 0.1f);
 			ImGui::Checkbox("Bool01", &dev_bool_01);
