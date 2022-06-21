@@ -28,6 +28,7 @@ struct texwnd_s
 };
 
 extern texwnd_s* g_texwnd;
+extern std::vector<std::vector<std::string>> texwnd_vector_of_favourites;
 
 class ctexwnd : public CWnd
 {
@@ -39,7 +40,11 @@ private:
 public:
     static void				hooks();
 	static void				register_dvars();
-	
+	static void				init();
+
+	static void				apply_favourite(int list);
+	static void				load_favourites();
+
 	static void				on_mousebutton_down(UINT nFlags);
 	static void				on_mousebutton_up(UINT nFlags);
 	static void				on_mousemove(UINT nFlags);

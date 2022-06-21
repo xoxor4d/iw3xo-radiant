@@ -166,6 +166,57 @@ namespace ggui
 			ImGui::EndCombo();
 		} //ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
+		ImGui::SameLine(0.0f, searchbar_spacing);
+		ImGui::SetNextItemWidth(140.0f);
+
+		
+		static int selected_favourite = 0;
+		static std::string selected_favourite_str;
+
+		const char* combo_favourites_preview_str = texwnd_vector_of_favourites.empty() ? "Favourite: none" : !selected_favourite ? "Favourite: none" : selected_favourite_str.c_str();
+
+		if (ImGui::BeginCombo("##combo_favourites", combo_favourites_preview_str, ImGuiComboFlags_HeightLarge))
+		{
+			if (ImGui::Selectable("none", !selected_favourite))
+			{
+				selected_favourite_str = "none";
+				selected_favourite = 0;
+				g_texwnd->nPos = 0; // scroll to top
+
+				// Texture_ShowInuse
+				cdeclcall(void, 0x45B850);
+			}
+
+			if (!selected_favourite)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			int fav_idx = 1;
+			for (const auto& vec : texwnd_vector_of_favourites)
+			{
+				if (ImGui::Selectable(vec[0].c_str(), selected_favourite == fav_idx))
+				{
+					selected_favourite_str = vec[0];
+					selected_favourite = fav_idx;
+					g_texwnd->nPos = 0; // scroll to top
+
+					ctexwnd::apply_favourite(selected_favourite - 1);
+				}
+
+				// set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+				if (selected_favourite == fav_idx)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+
+				fav_idx++;
+			}
+
+			ImGui::EndCombo();
+		}
+
+
 		ImGui::PopStyleVar(2);
 	}
 

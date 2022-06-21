@@ -431,6 +431,11 @@ namespace ggui
 
 			const char* mat_names[4] = { "ace_wall_stone1_plain", "ch_factory_floorgrate", "ch_grass_01", "me_wallpaper2" };
 
+			if (ImGui::Button("Load tex favs"))
+			{
+				ctexwnd::load_favourites();
+			}
+
 			if(ImGui::Button("Texture filter test"))
 			{
 				// hide all

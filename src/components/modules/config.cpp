@@ -6,6 +6,8 @@ namespace components
 	// the game re-registers them and uses the values of the external dvars
 	void config::load_dvars()
 	{
+		ctexwnd::init();
+
 		//game::printf_to_console(utils::va("\n-------------- Modules -------------- \n%s\n", game::glob::loadedModules.c_str()), 0);
 
 		// fs_homepath should be registered internally already
