@@ -136,7 +136,7 @@ enum XY_SHOW_FLAGS
 
 void radiantapp::set_default_savedinfo_colors()
 {
-	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], 0.169f, 0.169f, 0.169f, 1.0f); // 0
+	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_TEXTUREBACK], 0.22f, 0.22f, 0.22f, 1.0f); // 0
 	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBACK], 0.25f, 0.25f, 0.25f, 1.0f); // 1
 	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMINOR], 0.233f, 0.233f, 0.233f, 1.0f); // 2
 	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMAJOR], 0.209f, 0.209f, 0.209f, 1.0f); // 3
