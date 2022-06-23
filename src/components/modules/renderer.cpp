@@ -132,7 +132,7 @@ namespace components
 	// *
 
 	bool g_log_rendercommands = false;
-	//int effect_drawsurf_count = 0;
+	game::Material* g_invalid_material = nullptr;
 
 	bool g_line_depth_testing = true;
 
@@ -2979,6 +2979,117 @@ namespace components
 		utils::hook::call<void(__cdecl)()>(0x535F10)();
 	}
 
+	// called from QE_LoadProject
+	void renderer_init_internal()
+	{
+		g_invalid_material = game::Material_RegisterHandle("invalid_material", 0);
+	}
+
+	void __declspec(naked) r_begin_registration_internal_stub()
+	{
+		const static uint32_t func_addr = 0x5011D0; // overwritten call
+		const static uint32_t retn_addr = 0x4166D4;
+		__asm
+		{
+			call	func_addr;
+			add		esp, 4;
+
+			pushad;
+			call	renderer_init_internal;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
+
+
+	// *
+	// replace missing invisible materials with 'invalid_material' (custom material)
+	// *
+
+	game::Material* Material_Register_LoadObj(const char* name)
+	{
+		if (!name || !*name)
+		{
+			Assert();
+		}
+
+		bool exists;
+		std::uint16_t index;
+		game::Material_GetHashIndex(name, &index, &exists);
+
+		if (exists)
+		{
+			return static_cast<game::Material*>(game::rg->Material_materialHashTable[index]);
+		}
+
+		game::Material* material = game::Material_Load(name, 0);
+		if (!material)
+		{
+			if (!game::rgp->defaultMaterial)
+			{
+				if (strcmp(name, "$default"))
+				{
+					AssertS("!strcmp( name, MATERIAL_DEFAULT_NAME )");
+				}
+
+				game::Com_Error("couldn't load material '$default'");
+			}
+
+			game::printf_to_console("WARNING: Could not find material '%s'\n", name);
+
+			// #
+			// replace missing materials with the invalid material (fixed invisible brushes)
+
+			std::uint16_t invalid_mtl_idx;
+			bool invalid_mtl_exists;
+
+			game::Material_GetHashIndex("invalid_material", &invalid_mtl_idx, &invalid_mtl_exists); // wc/case256
+			if (invalid_mtl_exists)
+			{
+				const auto invalid_mtl = static_cast<game::Material*>(game::rg->Material_materialHashTable[invalid_mtl_idx]);
+				return utils::hook::call<game::Material* (__cdecl)(game::Material*, const char*)>(0x511900)(invalid_mtl, name); // Copy_Material
+			}
+
+			// og
+			return utils::hook::call<game::Material* (__cdecl)(game::Material*, const char*)>(0x511900)(game::rgp->defaultMaterial, name); // Copy_Material
+
+		}
+
+		game::Material_GetHashIndex(name, &index, &exists);
+		if (exists)
+		{
+			Assert();
+		}
+
+		game::Material_Add(index, material);
+		return material;
+	}
+
+	void __declspec(naked) Material_Register_LoadObj_stub01()
+	{
+		const static uint32_t retn_addr = 0x511BCF;
+		__asm
+		{
+			push	eax; // name
+			call	Material_Register_LoadObj;
+			add		esp, 4;
+			jmp		retn_addr;
+		}
+	}
+
+	void __declspec(naked) Material_Register_LoadObj_stub02()
+	{
+		const static uint32_t retn_addr = 0x511C50;
+		__asm
+		{
+			push	eax; // name
+			call	Material_Register_LoadObj;
+			add		esp, 4;
+			jmp		retn_addr;
+		}
+	}
+
 
 	// *
 	// * Fix asserts when playing effects that use xmodels with no bsp loaded 
@@ -3342,6 +3453,13 @@ namespace components
 
 		// register smalldevfont
 		utils::hook(0x5011B8, post_render_init, HOOK_CALL).install()->quick();
+
+		// stub within R_BeginRegistrationInternal (on call to init layermatwnd)
+		utils::hook(0x4166CC, r_begin_registration_internal_stub, HOOK_JUMP).install()->quick();
+
+		// replace missing invisible materials with 'invalid_material' (custom material)
+		utils::hook(0x511BCA, Material_Register_LoadObj_stub01, HOOK_JUMP).install()->quick();
+		utils::hook(0x511C4B, Material_Register_LoadObj_stub02, HOOK_JUMP).install()->quick();
 
 
 		// *
