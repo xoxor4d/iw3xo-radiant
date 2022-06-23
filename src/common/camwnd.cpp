@@ -392,6 +392,13 @@ void ccamwnd::register_dvars()
 		/* default	*/ false,
 		/* flags	*/ game::dvar_flags::saved,
 		/* desc		*/ "Open the camera toolbar by default");
+
+	
+	dvars::gui_toolbox_integrate_cam_toolbar = dvars::register_bool(
+		/* name		*/ "gui_toolbox_integrate_cam_toolbar",
+		/* default	*/ false,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "integrate camera window toolbar into toolbox");
 }
 
 void ccamwnd::hooks()

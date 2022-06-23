@@ -480,18 +480,6 @@ namespace components
 		}
 	}
 
-#define HANDLE_SAVED_STATE(_GUI_CLASS, _DVAR, _STARTUP)										\
-		if(!(_STARTUP))																		\
-		{																					\
-			if ((_DVAR))																	\
-				GET_GUI(_GUI_CLASS)->toggle(true, (_DVAR)->current.enabled);				\
-		}																					\
-		else																				\
-		{																					\
-			if ((_DVAR) && GET_GUI(_GUI_CLASS)->is_active() != (_DVAR)->current.enabled)	\
-				dvars::set_bool((_DVAR), GET_GUI(_GUI_CLASS)->is_active());					\
-		}																					\
-
 #define HANDLE_SAVED_STATE_INT(_GUI_CLASS, _DVAR, _STARTUP)									\
 		if(!(_STARTUP) && (_DVAR))															\
 		{																					\
@@ -519,19 +507,6 @@ namespace components
 		HANDLE_SAVED_STATE_INT(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::surface_dialog, dvars::gui_saved_state_surfinspector, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::toolbox_dialog, dvars::gui_saved_state_toolbox, ggui::m_init_saved_states);
-
-		/*if (!ggui::m_init_saved_states && dvars::gui_saved_state_toolbox)
-		{																					
-			const auto gui = GET_GUI(ggui::toolbox_dialog);
-			gui->toggle(true, dvars::gui_saved_state_toolbox->current.integer);
-			gui->set_bring_to_front(dvars::gui_saved_state_toolbox->current.integer == 2);
-		}																					
-		else if ((dvars::gui_saved_state_toolbox))
-		{
-			const auto gui = GET_GUI(ggui::toolbox_dialog);
-			const bool open_and_front = gui->is_active() && !gui->is_inactive_tab();
-			dvars::set_int(dvars::gui_saved_state_toolbox, open_and_front ? 2 : gui->is_active() ? 1 : 0);
-		}*/
 
 		ggui::m_init_saved_states = true;
 	}

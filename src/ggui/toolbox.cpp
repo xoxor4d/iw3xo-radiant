@@ -1311,6 +1311,427 @@ namespace ggui
 
 		// #
 
+		if(dvars::gui_toolbox_integrate_cam_toolbar && dvars::gui_toolbox_integrate_cam_toolbar->current.enabled)
+		{
+			auto cam_toolbar_active_bg = ImVec4(0.25f, 0.25f, 0.3f, 1.0f);
+
+			//ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
+
+			SPACING(0.0f, 16.0f);
+
+			const auto prefs = game::g_PrefsDlg();
+
+			mins = ImGui::GetCursorScreenPos();
+
+			static bool hov_guizmo_enable;
+			if (tb->image_togglebutton("guizmo_enable"
+				, hov_guizmo_enable
+				, dvars::guizmo_enable->current.enabled
+				, "Enable guizmo"
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &cam_toolbar_active_bg
+				, &toolbar_button_size))
+			{
+				dvars::set_bool(dvars::guizmo_enable, !dvars::guizmo_enable->current.enabled);
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+			// #
+			
+			if (dvars::guizmo_enable->current.enabled)
+			{
+				mins = ImGui::GetCursorScreenPos();
+
+				static bool hov_guizmo_grid_snapping;
+				if (tb->image_togglebutton("guizmo_grid_snapping"
+					, hov_guizmo_grid_snapping
+					, dvars::guizmo_snapping->current.enabled
+					, "Guizmo: Enable grid-snapping"
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &cam_toolbar_active_bg
+					, &toolbar_button_size))
+				{
+					dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
+				}
+
+				maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+				ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+			}
+
+			// #
+
+			mins = ImGui::GetCursorScreenPos();
+
+			static bool hov_cubicclip;
+			if (tb->image_togglebutton("cubic_clip"
+				, hov_cubicclip
+				, prefs->m_bCubicClipping
+				, std::string("Cubic Clipping " + ggui::hotkey_dialog::get_hotkey_for_command("ToggleCubicClip")).c_str()
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &cam_toolbar_active_bg
+				, &toolbar_button_size))
+			{
+				mainframe_thiscall(LRESULT, 0x428F90); // CMainFrame::OnViewCubicclipping
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+			// #
+
+			mins = ImGui::GetCursorScreenPos();
+
+			static bool hov_gameview;
+			if (tb->image_togglebutton("gameview"
+				, hov_gameview
+				, dvars::radiant_gameview->current.enabled
+				, std::string("Gameview " + ggui::hotkey_dialog::get_hotkey_for_command("xo_gameview")).c_str()
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &cam_toolbar_active_bg
+				, &toolbar_button_size))
+			{
+				components::gameview::p_this->set_state(!dvars::radiant_gameview->current.enabled);
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+			// #
+
+			if (components::d3dbsp::Com_IsBspLoaded())
+			{
+				SPACING(0.0f, 0.0f);
+
+				if (dvars::gui_camera_toolbar_merge_bsp_buttons && dvars::gui_camera_toolbar_merge_bsp_buttons->current.enabled)
+				{
+					mins = ImGui::GetCursorScreenPos();
+
+					static bool hov_toggle_bsp_radiant;
+					const bool show_bsp_icon = dvars::r_draw_bsp->current.enabled;
+
+					if (tb->image_togglebutton(show_bsp_icon ? "toggle_bsp" : "toggle_radiant_world"
+						, hov_toggle_bsp_radiant
+						, dvars::r_draw_bsp->current.enabled
+						, std::string("Toggle between visibility of the loaded d3dbsp and radiant " + ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp_radiant") + "\nButton can be split into two via 'Preferences > Camera > Merge BSP/Radiant buttons'").c_str()
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &cam_toolbar_active_bg
+						, &toolbar_button_size))
+					{
+						components::command::execute("toggle_bsp_radiant");
+
+					}
+
+					maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+					ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+				}
+				else
+				{
+					mins = ImGui::GetCursorScreenPos();
+
+					static bool hov_bsp_rendering;
+					if (tb->image_togglebutton("toggle_bsp"
+						, hov_bsp_rendering
+						, dvars::r_draw_bsp->current.enabled
+						, std::string("Toggle visibility of loaded d3dbsp " + ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp")).c_str()
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &cam_toolbar_active_bg
+						, &toolbar_button_size))
+					{
+						dvars::set_bool(dvars::r_draw_bsp, !dvars::r_draw_bsp->current.enabled);
+					}
+
+					maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+					ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+					// #
+
+					mins = ImGui::GetCursorScreenPos();
+
+					static bool hov_toggle_world;
+					const auto gameview = components::gameview::p_this;
+					const bool tstate = gameview->get_all_geo_state() || gameview->get_all_ents_state() || gameview->get_all_triggers_state() || gameview->get_all_others_state();
+
+					if (tb->image_togglebutton("toggle_radiant_world"
+						, hov_toggle_world
+						, !tstate
+						, std::string("Toggle radiant rendering " + ggui::hotkey_dialog::get_hotkey_for_command("toggle_filter_all")).c_str()
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &cam_toolbar_active_bg
+						, &toolbar_button_size))
+					{
+						components::command::execute("toggle_filter_all");
+					}
+
+					maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+					ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+				}
+
+				// #
+
+				mins = ImGui::GetCursorScreenPos();
+
+				ImGui::PushID("settings3");
+				static bool hov_bsp_settings;
+				if (tb->image_togglebutton("fakesun_settings"
+					, hov_bsp_settings
+					, hov_bsp_settings
+					, "Open BSP settings menu"
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &cam_toolbar_active_bg
+					, &toolbar_button_size))
+				{
+					const auto cs = GET_GUI(ggui::camera_settings_dialog);
+					cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
+				}
+				ImGui::PopID();
+
+				maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+				ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+			} // Com_IsBspLoaded
+
+			SPACING(0.0f, 8.0f);
+
+			// #
+
+			mins = ImGui::GetCursorScreenPos();
+
+			static bool hov_fakesunpreview;
+			if (tb->image_togglebutton("sunpreview"
+				, hov_fakesunpreview
+				, dvars::r_fakesun_preview->current.enabled
+				, std::string("Fake sun preview " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_toggle") + "\nSupports specular and bump mapping.\n(Does not affect d3dbsp)").c_str()
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &cam_toolbar_active_bg
+				, &toolbar_button_size))
+			{
+				components::command::execute("fakesun_toggle");
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+			// #
+
+			mins = ImGui::GetCursorScreenPos();
+
+			static bool hov_fakesun_fog;
+			if (tb->image_togglebutton("fakesun_fog"
+				, hov_fakesun_fog
+				, dvars::r_fakesun_fog_enabled->current.enabled
+				, std::string("Toggle Fog " + ggui::hotkey_dialog::get_hotkey_for_command("fakesun_fog_toggle") + "\n(needs 'Fake sun preview' to work on radiant brushes / models)\n(Does affect d3dbsp)").c_str()
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &cam_toolbar_active_bg
+				, &toolbar_button_size))
+			{
+				components::command::execute("fakesun_fog_toggle");
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+			// #
+
+			mins = ImGui::GetCursorScreenPos();
+
+			static bool hov_filmtweaks_settings;
+			const auto r_filmtweakenable = game::Dvar_FindVar("r_filmtweakenable");
+
+			if (tb->image_togglebutton("filmtweaks"
+				, hov_filmtweaks_settings
+				, r_filmtweakenable->current.enabled
+				, std::string("Toggle filmtweaks " + ggui::hotkey_dialog::get_hotkey_for_command("filmtweak_toggle")).c_str()
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &cam_toolbar_active_bg
+				, &toolbar_button_size))
+			{
+				components::command::execute("filmtweak_toggle");
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+			// #
+
+			mins = ImGui::GetCursorScreenPos();
+
+			static bool hov_fakesun_settings;
+			if (tb->image_togglebutton("fakesun_settings"
+				, hov_fakesun_settings
+				, hov_fakesun_settings
+				, "Open Fakesun / PostFX settings menu"
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &cam_toolbar_active_bg
+				, &toolbar_button_size))
+			{
+				const auto cs = GET_GUI(ggui::camera_settings_dialog);
+				cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+			// #
+
+			SPACING(0.0f, 8.0f);
+
+			const bool can_fx_play = components::effects::effect_can_play();
+			ImGui::BeginGroup();
+			{
+				ImGui::BeginDisabled(!can_fx_play || components::effects::effect_is_repeating());
+				{
+					mins = ImGui::GetCursorScreenPos();
+
+					static bool hov_fx_play;
+					if (tb->image_togglebutton("fx_play"
+						, hov_fx_play
+						, can_fx_play && !components::effects::effect_is_repeating()
+						, std::string("Play Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_play")).c_str()
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background
+						, &toolbar_button_size))
+					{
+						components::effects::play();
+					} 
+
+					maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+					ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::BeginDisabled(!can_fx_play);
+				{
+					mins = ImGui::GetCursorScreenPos();
+
+					static bool hov_fx_repeat;
+					if (tb->image_togglebutton("fx_repeat"
+						, hov_fx_repeat
+						, components::effects::effect_is_repeating()
+						, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_repeat")).c_str()
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &cam_toolbar_active_bg
+						, &toolbar_button_size))
+					{
+						components::effects::repeat();
+					}
+
+					maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+					ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+					// #
+
+					mins = ImGui::GetCursorScreenPos();
+
+					static bool hov_fx_pause;
+					if (tb->image_togglebutton("fx_pause"
+						, hov_fx_pause
+						, components::effects::effect_is_paused()
+						, std::string("Pause Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str()
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &cam_toolbar_active_bg
+						, &toolbar_button_size))
+					{
+						components::effects::pause();
+					}
+
+					maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+					ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+					// #
+
+					mins = ImGui::GetCursorScreenPos();
+
+					static bool hov_fx_stop;
+					if (tb->image_togglebutton("fx_stop"
+						, hov_fx_stop
+						, can_fx_play
+						, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_stop")).c_str()
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background
+						, &toolbar_button_size))
+					{
+						components::effects::stop();
+					}
+
+					maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+					ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+					// #
+
+					mins = ImGui::GetCursorScreenPos();
+
+					static bool hov_fx_edit;
+					if (tb->image_togglebutton("fx_edit"
+						, hov_fx_edit
+						, GET_GUI(ggui::effects_editor_dialog)->is_active()
+						, "Edit Effect for last selected fx_origin"
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &cam_toolbar_active_bg
+						, &toolbar_button_size))
+					{
+						components::effects::edit();
+					}
+
+					maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+					ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+					ImGui::EndDisabled();
+				}
+
+				ImGui::EndGroup();
+
+				if (!can_fx_play)
+				{
+					TT("Select an fx_origin to enable controls.");
+				}
+
+				// #
+
+				mins = ImGui::GetCursorScreenPos();
+
+				ImGui::PushID("settings2");
+				static bool hov_fx_settings;
+				if (tb->image_togglebutton("fakesun_settings"
+					, hov_fx_settings
+					, hov_fx_settings
+					, "Open FX settings menu"
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					const auto cs = GET_GUI(ggui::camera_settings_dialog);
+					cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
+				}
+				ImGui::PopID();
+
+				maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+				ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+			}
+
+		} //ImGui::PopStyleVar();
+
+		// #
+
 		ImGui::SetCursorPosX(pre_button_cursor.x + toolbar_button_size.x - 1.0f); // -1 to hide right button border
 		ImGui::SetCursorPosY(pre_button_cursor.y - indent_offset);
 

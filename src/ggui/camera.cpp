@@ -5,7 +5,9 @@ namespace ggui
 	// right hand side toolbar
 	void camera_dialog::toolbar()
 	{
-		constexpr float CAM_DEBUG_TEXT_Y_OFFS = 180.0f;
+		const bool hide_cam_toolbar = dvars::gui_toolbox_integrate_cam_toolbar && dvars::gui_toolbox_integrate_cam_toolbar->current.enabled;
+
+		const auto CAM_DEBUG_TEXT_Y_OFFS = hide_cam_toolbar ? 140.0f : 180.0f;
 		const auto prefs = game::g_PrefsDlg();
 
 		ImVec2 toolbar_button_open_size = ImVec2(22.0f, 22.0f);
@@ -54,6 +56,13 @@ namespace ggui
 			ImGui::SetCursorPosY(cursor_pos.y + 16.0f);
 			ImGui::Text("Fx Drawsurf Count: %d", components::renderer::effect_drawsurf_count_);
 			ImGui::SetCursorPos(cursor_pos);
+		}
+
+		if (hide_cam_toolbar)
+		{
+			ImGui::PopStyleColor(_stylecolors);
+			ImGui::PopStyleVar(_stylevars);
+			return;
 		}
 
 		const auto tb = GET_GUI(ggui::toolbar_dialog);
@@ -1198,7 +1207,7 @@ namespace ggui
 				ggui::camera_guizmo::guizmo(camera_size, accepted_dragdrop);
 
 				// right hand side toolbar
-				toolbar(); 
+				toolbar();
 
 				ImGui::EndChild();
 			}
