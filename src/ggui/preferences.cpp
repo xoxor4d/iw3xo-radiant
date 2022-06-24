@@ -108,14 +108,14 @@ namespace ggui
 			ImGui::Checkbox("Default Open - Spawnflags", &dvars::gui_props_spawnflags_defaultopen->current.enabled); TT(dvars::gui_props_spawnflags_defaultopen->description);
 			ImGui::Checkbox("Default Open - Comments", &dvars::gui_props_comments_defaultopen->current.enabled); TT(dvars::gui_props_comments_defaultopen->description);
 
-			ImGui::Checkbox("Integrate entity-properties into toolbox", &dvars::gui_props_toolbox->current.enabled); TT(dvars::gui_props_toolbox->description);
 			ImGui::Checkbox("Integrate camera toolbar into toolbox", &dvars::gui_toolbox_integrate_cam_toolbar->current.enabled); TT(dvars::gui_toolbox_integrate_cam_toolbar->description);
+			ImGui::Checkbox("Integrate entity-properties into toolbox", &dvars::gui_props_toolbox->current.enabled); TT(dvars::gui_props_toolbox->description);
 
 			const char* incorp_surf_inspector_strings[4] = { "None", "Entity Properties", "Toolbox" };
 			if (ImGui::SliderInt("Integrate surface-inspector into", &dvars::gui_props_surfinspector->current.integer, 0, 2, incorp_surf_inspector_strings[dvars::gui_props_surfinspector->current.integer]))
 			{
 				dvars::gui_props_surfinspector->modified = true;
-			}
+			} TT("Integration into the entity window only works if the entity window is not integrated into the toolbox");
 		});
 	}
 

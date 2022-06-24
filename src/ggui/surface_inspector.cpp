@@ -194,6 +194,58 @@ namespace ggui
 		auto& g_patch_texdef = *reinterpret_cast<patch_texdef_t*>(0x23F15F8);
 		const int selected_faces_count = *reinterpret_cast<int*>(0x73C714);
 
+		static std::string last_texture_name = ctexwnd::get_name_for_selection(); // initial
+		static int last_texture_width = 64;
+		static int last_texture_height = 64;
+
+		if (is_toolbox)
+		{
+			treenode_state = toolbox_dialog::treenode_begin("Info", true, style_colors, style_vars);
+		}
+
+		if (!is_toolbox || (is_toolbox && treenode_state))
+		{
+			static float info_section_width = 0.0f;
+			static float info_tex_dims_width = 0.0f;
+
+			if (is_toolbox)
+			{
+				toolbox_dialog::center_horz_begin(info_section_width);
+				ImGui::SetNextItemWidth(max_width);
+			}
+
+			ImGui::InputText("##curr_tex", &last_texture_name, ImGuiInputTextFlags_ReadOnly);
+
+			if (is_toolbox)
+			{
+				toolbox_dialog::center_horz_end(info_section_width);
+				toolbox_dialog::center_horz_begin(info_tex_dims_width);
+				ImGui::SetNextItemWidth(max_width);
+				ImGui::Text("Width [ %d ] - Height [ %d ]", last_texture_width, last_texture_height);
+			}
+			else
+			{
+				static float group_width = 80.0f;
+				ImGui::SetCursorPosX(clamped_min_widget_width * 0.5f - (group_width * 0.5f));
+
+				ImGui::BeginGroup();
+				{
+					ImGui::Text("Width [ %d ] - Height [ %d ]", last_texture_width, last_texture_height);
+					ImGui::EndGroup();
+				}
+
+				group_width = ImGui::GetItemRectSize().x;
+				SPACING(0.0f, 4.0f);
+
+			}
+
+			if(is_toolbox)
+			{
+				toolbox_dialog::center_horz_end(info_tex_dims_width);
+				toolbox_dialog::treenode_end(style_colors, style_vars);
+			}
+		}
+
 		if (is_toolbox)
 		{
 			treenode_state = toolbox_dialog::treenode_begin("Manual", true, style_colors, style_vars);
@@ -207,6 +259,13 @@ namespace ggui
 			{
 				const auto mat_def = &selected_faces->brush->def->brush_faces[selected_faces->index].mtldef[game::g_qeglobals->current_edit_layer];
 
+				if(mat_def->radMtl)
+				{
+					last_texture_name = mat_def->radMtl->name;
+					last_texture_width = mat_def->radMtl->width;
+					last_texture_height = mat_def->radMtl->height;
+				}
+
 				texhelp.size_horz = mat_def->mat_texDef->size[0];
 				texhelp.size_vert = mat_def->mat_texDef->size[1];
 				texhelp.shift_horz = mat_def->mat_texDef->shift[0];
@@ -219,11 +278,25 @@ namespace ggui
 		{
 			if (sb->patch)
 			{
+				if(sb->patch->def && sb->patch->def->texture.radMtl)
+				{
+					last_texture_name = sb->patch->def->texture.radMtl->name;
+					last_texture_width = sb->patch->def->texture.radMtl->width;
+					last_texture_height = sb->patch->def->texture.radMtl->height;
+				}
+
 				texhelp.reset_values();
 				//texhelp.rotation = g_patch_texdef.def.mat_texDef->rotate;
 			}
-			else if (sb->def && sb->def->brush_faces)
+			else if (sb->def && sb->def->brush_faces && !sb->def->owner->eclass->fixedsize)
 			{
+				if(sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].radMtl)
+				{
+					last_texture_name = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].radMtl->name;
+					last_texture_width = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].radMtl->width;
+					last_texture_height = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].radMtl->height;
+				}
+
 				texhelp.size_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[0];
 				texhelp.size_vert = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[1];
 				texhelp.shift_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[0];
