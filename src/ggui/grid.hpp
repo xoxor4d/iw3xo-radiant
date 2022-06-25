@@ -50,7 +50,7 @@ namespace ggui
 		// *
 		// init
 
-		void	hooks();
+		static void	hooks();
 
 	private:
 		void build_eclass_context_new();

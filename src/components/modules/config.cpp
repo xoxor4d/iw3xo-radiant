@@ -4,10 +4,9 @@ namespace components
 {
 	// load dvars from config and register them as "external" dvars
 	// the game re-registers them and uses the values of the external dvars
+	// called from radiantapp::on_load_project
 	void config::load_dvars()
 	{
-		ctexwnd::init();
-
 		dvars::fs_homepath = game::Dvar_FindVar("fs_homepath");
 
 		// Load cfg file
@@ -100,30 +99,9 @@ namespace components
 		game::glob::radiant_config_loaded = true;
 	}
 
-	// :: Config_Load :: after fs_dvars where registered
-	__declspec(naked) void load_config_after_fs_stub()
-	{
-		const static uint32_t R_Init_Func = 0x416510;
-		const static uint32_t retn_addr = 0x48BCF2; // next op
-
-		__asm
-		{
-			pushad;
-			call	config::load_dvars;
-			popad;
-
-			call	R_Init_Func;
-			jmp		retn_addr;
-		}
-	}
-
-
-	// ~ remote_net::CFrameWnd_OnClose
+	// radiantapp::on_shutdown()
 	void config::write_dvars()
 	{
-		GET_GUI(ggui::toolbar_dialog)->save_settings_ini();
-		GET_GUI(ggui::hotkey_dialog)->on_close();
-
 		// export current dvars to a config file
 		std::ofstream cfg_file;
 
@@ -169,21 +147,16 @@ namespace components
 					continue;
 				}
 
-				const char* dvarString = "%s \"%s\"\n";
-				const char* dvarValue = game::Dvar_DisplayableValue(dvar);
+				const char* dvar_string = "%s \"%s\"\n";
+				const char* dvar_value = game::Dvar_DisplayableValue(dvar);
 
-				if (!dvarValue)
+				if (!dvar_value)
 				{
 					continue;
 				}
 
-				dvarString = utils::va(dvarString, dvar->name, dvarValue);
-				//game::printf_to_console(dvarString);
-
-				cfg_file << dvarString;
-
-				dvarValue = "";
-				dvarString = "";
+				dvar_string = utils::va(dvar_string, dvar->name, dvar_value);
+				cfg_file << dvar_string;
 			}
 		}
 
@@ -198,10 +171,7 @@ namespace components
 
 	
 	config::config()
-	{
-		// stub after fs_dvars where registered
-		utils::hook(0x48BCED, load_config_after_fs_stub, HOOK_JUMP).install()->quick();
-	}
+	{ }
 
 	config::~config()
 	{ }

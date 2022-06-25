@@ -48,7 +48,7 @@ namespace ggui
 		// *
 		// init
 
-		void hooks();
+		static void hooks();
 
 	private:
 		bool cmdbinds_check_dupe(commandbinds& bind, std::string& o_dupebind);

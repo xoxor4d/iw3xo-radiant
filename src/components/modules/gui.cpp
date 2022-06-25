@@ -783,15 +783,16 @@ namespace components
 		// show external console on map load
 		utils::hook(0x4866B8, on_map_load_stub, HOOK_JUMP).install()->quick();
 
-		GET_GUI(ggui::entity_dialog)->hooks();
-		GET_GUI(ggui::filter_dialog)->hooks();
-		GET_GUI(ggui::grid_dialog)->hooks();
-		GET_GUI(ggui::hotkey_dialog)->hooks();
-		GET_GUI(ggui::modelselector_dialog)->init();
-		GET_GUI(ggui::preferences_dialog)->hooks();
-		GET_GUI(ggui::surface_dialog)->hooks();
+		ggui::entity_dialog::hooks();
+		ggui::filter_dialog::hooks();
+		ggui::grid_dialog::hooks();
+		ggui::hotkey_dialog::hooks();
+		ggui::preferences_dialog::hooks();
+		ggui::surface_dialog::hooks();
+		ggui::vertex_edit_dialog::hooks();
+
 		GET_GUI(ggui::toolbox_dialog)->init();
-		GET_GUI(ggui::vertex_edit_dialog)->hooks();
+		GET_GUI(ggui::modelselector_dialog)->init();
 
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{

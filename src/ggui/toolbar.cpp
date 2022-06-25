@@ -1270,6 +1270,8 @@ namespace ggui
 					ini << element.name << "," << element.visible << std::endl;
 				}
 			}
+
+			ini.close();
 		}
 	}
 

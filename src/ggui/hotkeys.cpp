@@ -800,6 +800,8 @@ namespace ggui
 				ini <<  bind.modifier_key << std::endl;
 			}
 
+			ini.close();
+
 			hotkey_dialog::load_commandmap();
 		}
 	}

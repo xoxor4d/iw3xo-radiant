@@ -124,8 +124,9 @@ void __declspec(naked) cmainframe::hk_routine_processing(void)
 
 void on_createclient()
 {
-	const auto prefs = game::g_PrefsDlg();
+	radiantapp::on_create_client();
 
+	const auto prefs = game::g_PrefsDlg();
 	if (!prefs->m_nView || prefs->m_nView == 3)
 	{
 		if(!dvars::mainframe_show_console->current.enabled)
@@ -153,34 +154,6 @@ void on_createclient()
 	{
 		prefs->m_bRightClick = !dvars::gui_use_new_context_menu->current.enabled;
 	}
-
-	// disable r_vsync
-	if (const auto& r_vsync = game::Dvar_FindVar("r_vsync");
-					r_vsync && r_vsync->current.enabled)
-	{
-		dvars::set_bool(r_vsync, false);
-	}
-
-	// disable debug plumes drawing (only effect xmodels)
-	if (const auto& r_showTriCounts = game::Dvar_FindVar("r_showTriCounts");
-					r_showTriCounts && r_showTriCounts->current.enabled)
-	{
-		dvars::set_bool(r_showTriCounts, false);
-	}
-
-	if (const auto& r_showVertCounts = game::Dvar_FindVar("r_showVertCounts");
-					r_showVertCounts && r_showVertCounts->current.enabled) 
-	{
-		dvars::set_bool(r_showVertCounts, false);
-	}
-
-	if (const auto& r_showSurfCounts = game::Dvar_FindVar("r_showSurfCounts");
-					r_showSurfCounts && r_showSurfCounts->current.enabled)
-	{
-		dvars::set_bool(r_showSurfCounts, false);
-	}
-	
-	components::d3dbsp::force_dvars();
 
 	// hide original windows and show the z-view (rendering canvas for imgui)
 	if(cmainframe::activewnd)
@@ -216,7 +189,7 @@ void on_createclient()
 
 void __declspec(naked) hk_on_createclient()
 {
-	const static uint32_t retn_pt = 0x4232F3;
+	const static uint32_t retn_addr = 0x4232F3;
 	__asm
 	{
 		pushad;
@@ -224,7 +197,7 @@ void __declspec(naked) hk_on_createclient()
 		popad;
 
 		mov     eax, 1; // og
-		jmp		retn_pt;
+		jmp		retn_addr;
 	}
 }
 
@@ -820,21 +793,7 @@ void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* ed
 
 void __fastcall cmainframe::on_destroy(cmainframe* pThis)
 {
-	// restore states filter states
-	if (components::gameview::p_this->get_all_geo_state())		components::gameview::p_this->toggle_all_geo(false);
-	if (components::gameview::p_this->get_all_ents_state())		components::gameview::p_this->toggle_all_entities(false);
-	if (components::gameview::p_this->get_all_triggers_state()) components::gameview::p_this->toggle_all_triggers(false);
-	if (components::gameview::p_this->get_all_others_state())	components::gameview::p_this->toggle_all_others(false);
-
-	if (dvars::radiant_gameview->current.enabled)
-	{
-		components::gameview::p_this->set_state(false);
-	}
-
-	components::remote_net::on_shutdown();
-
-	components::config::write_dvars();
-	
+	radiantapp::on_shutdown();
 	__on_destroy(pThis);
 }
 

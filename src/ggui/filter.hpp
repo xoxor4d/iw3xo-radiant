@@ -55,7 +55,7 @@ namespace ggui
 		// *
 		// init
 
-		void hooks();
+		static void hooks();
 
 
 	private:

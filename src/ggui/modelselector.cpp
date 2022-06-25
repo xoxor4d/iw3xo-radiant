@@ -582,17 +582,15 @@ namespace ggui
 
 	void modelselector_dialog::init()
 	{
-		components::command::register_command_with_hotkey("xo_modelselector"s, [](auto)
+		components::command::register_command_with_hotkey("xo_modelselector"s, [this](auto)
 		{
-			const auto gui = GET_GUI(ggui::modelselector_dialog);
-
-			if (gui->is_inactive_tab() && gui->is_active())
+			if (this->is_inactive_tab() && this->is_active())
 			{
-				gui->set_bring_to_front(true);
+				this->set_bring_to_front(true);
 				return;
 			}
 
-			gui->toggle();
+			this->toggle();
 		});
 	}
 

@@ -6,7 +6,14 @@ typedef int(__thiscall* CWinApp_WriteProfileInt_t)(CWinApp* pthis, LPCSTR lpAppN
 typedef int(__thiscall* CWinApp_GetProfileIntA_t)(CWinApp* pthis, LPCSTR cbData, LPCSTR lpValueName, int nDefault);
 						CWinApp_GetProfileIntA_t CWinApp_GetProfileIntA = reinterpret_cast<CWinApp_GetProfileIntA_t>(0x5984D5);
 
-void force_preferences_on_init()
+// init stubs in order:
+// * on_init_radiant_instance
+// * MFCCreate
+// * on_load_project (after mainframe visible)
+// * radiantapp::on_create_client (after material load, right before the first frame)
+
+// force global preferences on init (too early for dvars) (CRadiantApp::InitInstance)
+void on_init_radiant_instance()
 {
 	const auto prefs = game::g_PrefsDlg();
 
@@ -20,20 +27,74 @@ void force_preferences_on_init()
 	prefs->preview_sun_aswell = false;
 }
 
-__declspec(naked) void force_preferences_on_init_stub()
+// stub after FS-dvars are registered (QE_LoadProject)
+void on_load_project()
 {
-	const static uint32_t retn_pt = 0x450735;
-	__asm
+	components::config::load_dvars();
+	components::effects::radiant_init_fx();
+	ctexwnd::init();
+}
+
+void radiantapp::on_create_client()
+{
+	components::d3dbsp::force_dvars();
+
+	// disable r_vsync
+	if (const auto& r_vsync = game::Dvar_FindVar("r_vsync");
+		r_vsync && r_vsync->current.enabled)
 	{
-		push    ecx; // og
-		lea     ecx, [esp + 1Ch]; // og
-
-		pushad;
-		call	force_preferences_on_init;
-		popad;
-
-		jmp retn_pt;
+		dvars::set_bool(r_vsync, false);
 	}
+
+	// disable debug plumes drawing (only effect xmodels)
+	if (const auto& r_showTriCounts = game::Dvar_FindVar("r_showTriCounts");
+		r_showTriCounts && r_showTriCounts->current.enabled)
+	{
+		dvars::set_bool(r_showTriCounts, false);
+	}
+
+	if (const auto& r_showVertCounts = game::Dvar_FindVar("r_showVertCounts");
+		r_showVertCounts && r_showVertCounts->current.enabled)
+	{
+		dvars::set_bool(r_showVertCounts, false);
+	}
+
+	if (const auto& r_showSurfCounts = game::Dvar_FindVar("r_showSurfCounts");
+		r_showSurfCounts && r_showSurfCounts->current.enabled)
+	{
+		dvars::set_bool(r_showSurfCounts, false);
+	}
+}
+
+// called from cmainframe::on_destroy
+void radiantapp::on_shutdown()
+{
+	// restore states filter states
+	if (components::gameview::p_this->get_all_geo_state())		components::gameview::p_this->toggle_all_geo(false);
+	if (components::gameview::p_this->get_all_ents_state())		components::gameview::p_this->toggle_all_entities(false);
+	if (components::gameview::p_this->get_all_triggers_state()) components::gameview::p_this->toggle_all_triggers(false);
+	if (components::gameview::p_this->get_all_others_state())	components::gameview::p_this->toggle_all_others(false);
+
+	if (dvars::radiant_gameview->current.enabled)
+	{
+		components::gameview::p_this->set_state(false);
+	}
+
+	components::remote_net::on_shutdown();
+	components::config::write_dvars();
+
+	GET_GUI(ggui::toolbar_dialog)->save_settings_ini();
+	GET_GUI(ggui::hotkey_dialog)->on_close();
+}
+
+// stub before shutting down the fs and dvar system
+bool on_exit_instance()
+{
+	// no logic referencing any win32 ui because the mainframe is already destroyed
+	// > use cmainframe::on_destroy() instead
+
+	// asm stub logic
+	return game::r_initiated;
 }
 
 void registery_save([[maybe_unused]] CPrefsDlg* prefs)
@@ -44,24 +105,6 @@ void registery_save([[maybe_unused]] CPrefsDlg* prefs)
 	CWinApp_WriteProfileInt(state->m_pCurrentWinApp, "Prefs", "force_zero_dropheight", prefs->m_bForceZeroDropHeight);
 	CWinApp_WriteProfileInt(state->m_pCurrentWinApp, "Prefs", "discord_rpc", components::discord::g_enable_discord_rpc);
 }
-
-__declspec(naked) void registery_save_stub()
-{
-	const static uint32_t AfxGetModuleState_addr = 0x59390E;
-	const static uint32_t retn_pt = 0x44F299;
-	__asm
-	{
-		pushad;
-		push	esi; // CPrefsDlg*
-		call	registery_save;
-		add		esp, 4;
-		popad;
-
-		call	AfxGetModuleState_addr;
-		jmp		retn_pt;
-	}
-}
-
 
 void registery_load()
 {
@@ -74,28 +117,12 @@ void registery_load()
 	// always bothered me ..
 	game::g_qeglobals->preview_at_max_intensity = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "lights_max_intensity", 0);
 
-	const auto prefs = game::g_PrefsDlg();
-	if(prefs)
+	if(const auto prefs = game::g_PrefsDlg(); prefs)
 	{
 		prefs->m_bForceZeroDropHeight = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "force_zero_dropheight", 1);
 	}
 
 	components::discord::g_enable_discord_rpc = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "discord_rpc", 1);
-}
-
-__declspec(naked) void registery_load_stub()
-{
-	const static uint32_t AfxGetModuleState_addr = 0x59390E;
-	const static uint32_t retn_pt = 0x44E391;
-	__asm
-	{
-		pushad;
-		call	registery_load;
-		popad;
-
-		call	AfxGetModuleState_addr;
-		jmp		retn_pt;
-	}
 }
 
 BOOL LoadRegistryInfo(const char* pszName, void* pvBuf, long* plSize)
@@ -114,7 +141,6 @@ BOOL LoadRegistryInfo(const char* pszName, void* pvBuf, long* plSize)
 	}
 	else
 	{
-		//RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\iw\\CoD4Radiant\\CoD4Radiant", 0, KEY_READ, &hKey);
 		RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\iw\\IW3xRadiant\\IW3xRadiant", 0, KEY_READ, &hKey);
 	}
 
@@ -123,16 +149,6 @@ BOOL LoadRegistryInfo(const char* pszName, void* pvBuf, long* plSize)
 	
 	return TRUE;
 }
-
-enum XY_SHOW_FLAGS
-{
-	ANGLES = 0x2,
-	CONNECTIONS = 0x4,
-	NAMES = 0x8,
-	BLOCKS = 0x10,
-	COORDINATES = 0x20,
-	REVERSE_FILTER = 0x40,
-};
 
 void radiantapp::set_default_savedinfo_colors()
 {
@@ -169,15 +185,12 @@ void radiantapp::set_default_savedinfo_colors()
 	utils::vector::set_vec4(game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], 0.0f, 0.0f, 0.0f, 1.0f); // 26 - not used org
 }
 
-
 void MFCCreate()
 {
-	components::effects::radiant_init_fx();
-
 	long savedinfo_size = sizeof(game::g_qeglobals->d_savedinfo);
 	LoadRegistryInfo("SavedInfo", &game::g_qeglobals->d_savedinfo, &savedinfo_size);
 
-	int old_size = game::g_qeglobals->d_savedinfo.iSize;
+	const int old_size = game::g_qeglobals->d_savedinfo.iSize;
 	if (game::g_qeglobals->d_savedinfo.iSize != sizeof(game::g_qeglobals->d_savedinfo))
 	{
 		game::g_qeglobals->d_savedinfo.iSize = sizeof(game::g_qeglobals->d_savedinfo);
@@ -194,48 +207,71 @@ void MFCCreate()
 		}
 	}
 
-	if (HMENU hMenu = GetMenu(game::g_qeglobals->d_hwndMain); 
-			  hMenu)
+	if (const HMENU hMenu = GetMenu(game::g_qeglobals->d_hwndMain); 
+					hMenu)
 	{
-		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & CONNECTIONS) != 0)
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & game::GRID_FLAG_CONNECTIONS) != 0)
 		{
 			CheckMenuItem(hMenu, 0x84B6, 0);
 		}
 		
-		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & NAMES) != 0)
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & game::GRID_FLAG_NAMES) != 0)
 		{
 			CheckMenuItem(hMenu, 0x84B3, 0);
 		}
 		
-		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & BLOCKS) != 0)
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & game::GRID_FLAG_BLOCKS) != 0)
 		{
 			CheckMenuItem(hMenu, 0x84B5, 0);
 		}
 		
-		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & COORDINATES) != 0)
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & game::GRID_FLAG_COORDINATES) != 0)
 		{
 			CheckMenuItem(hMenu, 0x84B7, 0);
 		}
 		
-		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & ANGLES) != 0)
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & game::GRID_FLAG_ANGLES) != 0)
 		{
 			CheckMenuItem(hMenu, 0x84B4, 0);
 		}
 		
-		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & REVERSE_FILTER) != 0)
+		if ((game::g_qeglobals->d_savedinfo.d_xyShowFlags & game::GRID_FLAG_REVERSE_FILTER) != 0)
 		{
 			CheckMenuItem(hMenu, 0x8D1F, 0);
 		}
 	}
 }
 
-bool on_exit_instance()
+__declspec(naked) void on_init_radiant_instance_stub()
 {
-	// no logic referencing any win32 ui because the mainframe is already destroyed
-	// > use cmainframe::on_destroy() instead
-	
-	// asm stub logic
-	return game::r_initiated;
+	const static uint32_t retn_addr = 0x450735;
+	__asm
+	{
+		push    ecx; // og
+		lea     ecx, [esp + 1Ch]; // og
+
+		pushad;
+		call	on_init_radiant_instance;
+		popad;
+
+		jmp		retn_addr;
+	}
+}
+
+__declspec(naked) void on_load_project_stub()
+{
+	const static uint32_t R_BeginRegistrationInternal_func = 0x416510;
+	const static uint32_t retn_addr = 0x48BCF2; // next op
+
+	__asm
+	{
+		pushad;
+		call	on_load_project;
+		popad;
+
+		call	R_BeginRegistrationInternal_func;
+		jmp		retn_addr;
+	}
 }
 
 __declspec(naked) void on_exit_instance_stub()
@@ -253,8 +289,40 @@ __declspec(naked) void on_exit_instance_stub()
 		mov     esi, ecx;
 		je      LOC_450A42;
 		jmp		retn_pt_renderer_initiated;
-		
-		LOC_450A42:
+
+	LOC_450A42:
+		jmp		retn_pt;
+	}
+}
+
+__declspec(naked) void registery_save_stub()
+{
+	const static uint32_t AfxGetModuleState_addr = 0x59390E;
+	const static uint32_t retn_addr = 0x44F299;
+	__asm
+	{
+		pushad;
+		push	esi; // CPrefsDlg*
+		call	registery_save;
+		add		esp, 4;
+		popad;
+
+		call	AfxGetModuleState_addr;
+		jmp		retn_addr;
+	}
+}
+
+__declspec(naked) void registery_load_stub()
+{
+	const static uint32_t AfxGetModuleState_addr = 0x59390E;
+	const static uint32_t retn_pt = 0x44E391;
+	__asm
+	{
+		pushad;
+		call	registery_load;
+		popad;
+
+		call	AfxGetModuleState_addr;
 		jmp		retn_pt;
 	}
 }
@@ -312,19 +380,25 @@ __declspec(naked) void menubar_stub_03()
 
 void radiantapp::hooks()
 {
-	// force global preferences on init
-	utils::hook(0x450730, force_preferences_on_init_stub, HOOK_JUMP).install()->quick();
-	
+	// force global preferences on init (CRadiantApp::InitInstance)
+	utils::hook(0x450730, on_init_radiant_instance_stub, HOOK_JUMP).install()->quick();
+
+	// stub after FS-dvars are registered (QE_LoadProject)
+	utils::hook(0x48BCED, on_load_project_stub, HOOK_JUMP).install()->quick();
+
+	// stub before shutting down the fs and dvar system
+	utils::hook(0x450A27, on_exit_instance_stub, HOOK_JUMP).install()->quick();
+
 	// registery saving stub :: CPrefsDlg::SavePrefs
 	utils::hook(0x44F294, registery_save_stub, HOOK_JUMP).install()->quick();
 
-	// always save preferences (even if loaded map = unnamed.map)
+	// always save preferences (even if loaded map = unnamed.map) (CMainFrame::OnDestroy)
 	utils::hook::nop(0x422115, 2);
 
 	// registery loading stub :: CPrefsDlg::LoadPrefs
 	utils::hook(0x44E38C, registery_load_stub, HOOK_JUMP).install()->quick();
 
-	// default savedinfo values, mainly colors
+	// default savedinfo values, mainly colors (CMainFrame::OnCreate)
 	utils::hook(0x420A39, MFCCreate, HOOK_CALL).install()->quick();
 	
 	// note:
@@ -338,8 +412,6 @@ void radiantapp::hooks()
 
 	// show/hide mainframe menubar on startup 03 :: CMainFrame::OnCreate
 	utils::hook(0x421057, menubar_stub_03, HOOK_JUMP).install()->quick();
-
-	utils::hook(0x450A27, on_exit_instance_stub, HOOK_JUMP).install()->quick();
 
 	// do not use or overwrite stock radiant registry keys - create seperate ones for IW3xRadiant
 	utils::hook::write_string(0x6EBA58, R"(Software\iw\IW3xRadiant\IW3xRadiant)"s);
@@ -362,5 +434,4 @@ void radiantapp::hooks()
 
 	// -----------------------------------------------------------------------
 #endif
-	
 }
