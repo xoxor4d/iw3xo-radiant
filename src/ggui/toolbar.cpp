@@ -8,7 +8,7 @@
 namespace ggui
 {
 	const ImVec2		TB_IMAGEBUTTON_SIZE = ImVec2(28.0f, 28.0f);
-	const std::string	TB_INI_FILENAME = "iw3r_toolbar.ini"s;
+	const std::string	TB_INI_FILENAME = "toolbar.ini"s;
 
 	bool toolbar_dialog::image_button(const char* image_name, bool& hovered_state, const char* tooltip)
 	{
@@ -1127,14 +1127,14 @@ namespace ggui
 
 			
 			std::string ini_path = fs_homepath->current.string;
-						ini_path += "\\" + TB_INI_FILENAME;
+						ini_path += "\\IW3xRadiant\\" + TB_INI_FILENAME;
 
 			std::ifstream ini;
 			ini.open(ini_path.c_str());
 
 			if (!ini.is_open())
 			{
-				game::printf_to_console("[Toolbar] Failed to open ini: \"%s\"", ini_path.c_str());
+				//game::printf_to_console("[!][Toolbar] Failed to open ini: '%s'", ini_path.c_str());
 				no_ini_or_empty = true;
 			}
 
@@ -1167,7 +1167,7 @@ namespace ggui
 
 					if (args.size() != 2)
 					{
-						printf("[Toolbar] malformed element @ line #%d (\"%s\")\n", line, input.c_str());
+						printf("[!][Toolbar] malformed element @ line #%d ('%s')", line, input.c_str());
 						continue;
 					}
 
@@ -1182,7 +1182,7 @@ namespace ggui
 					}
 					else
 					{
-						game::printf_to_console("[Toolbar] not a valid element @ line #%d (\"%s\")\n", line, input.c_str());
+						game::printf_to_console("[!][Toolbar] not a valid element @ line #%d ('%s')", line, input.c_str());
 					}
 				}
 
@@ -1243,12 +1243,12 @@ namespace ggui
 		{
 			std::ofstream ini;
 			std::string ini_path = fs_homepath->current.string;
-			ini_path += "\\" + TB_INI_FILENAME;
+						ini_path += "\\IW3xRadiant\\" + TB_INI_FILENAME;
 
 			ini.open(ini_path.c_str());
 			if (!ini.is_open())
 			{
-				printf("[Toolbar] Failed to write to file: \"%s\"", ini_path.c_str());
+				printf("[ERR][Toolbar] Failed to write to file: '%s'", ini_path.c_str());
 				return;
 			}
 

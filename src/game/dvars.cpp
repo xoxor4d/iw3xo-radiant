@@ -253,7 +253,7 @@ namespace dvars
 	// register all new dvars here (exec. after config was loaded)
 	void register_addon_dvars()
 	{
-		game::printf_to_console("[Dvars]: register_addon_dvars() start ...\n");
+		game::printf_to_console("[DVARS] register_addon_dvars() start ...\n");
 
 		components::d3dbsp::register_dvars();
 		components::gameview::register_dvars();

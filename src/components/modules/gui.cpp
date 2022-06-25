@@ -47,7 +47,7 @@ namespace components
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;			// Enable Multi-Viewport / Platform Windows
 		io.ConfigWindowsResizeFromEdges = true;
-		io.IniFilename = "iw3r_czwnd_imgui.ini";
+		io.IniFilename = "IW3xRadiant\\imgui.ini";
 
 		// implementation
 		ImGui_ImplWin32_Init(cmainframe::activewnd->m_pZWnd->GetWindow());

@@ -22,7 +22,7 @@ namespace ggui
 		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
 						fs_homepath)
 		{
-			const char* apply_hint = utils::va("Could not find file 'iw3r_hotkeys.ini' in\n'%s'.", fs_homepath->current.string);
+			const char* apply_hint = utils::va("Could not find file 'hotkeys.ini' in\n'%s/IW3xRadiant'.", fs_homepath->current.string);
 			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - ImGui::CalcTextSize(apply_hint).x) * 0.5f);
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetWindowHeight() * 0.5f - ImGui::CalcTextSize(apply_hint).y);
 			ImGui::TextUnformatted(apply_hint);
@@ -188,6 +188,11 @@ namespace ggui
 	// get ascii fror keybind key
 	std::string hotkey_dialog::cmdbinds_ascii_to_keystr(int key)
 	{
+		if (!key)
+		{
+			return "";
+		}
+
 		if (key == 0x20)  return "Space"s;
 		if (key == 0x8)   return "Backspace"s;
 		if (key == 0x1B)  return "Escape"s;
@@ -305,7 +310,7 @@ namespace ggui
 			char buffer[512];
 			if (!GetModuleFileNameA(nullptr, buffer, 512))
 			{
-				game::printf_to_console("[Hotkeys] could not get the base directory.\n");
+				game::printf_to_console("[ERR][Hotkeys] could not get the base directory.\n");
 				return false;
 			}
 
@@ -314,14 +319,16 @@ namespace ggui
 		}
 
 		std::string ini_path = home_path;
-					ini_path += "\\" + file;
+					ini_path += "\\IW3xRadiant\\" + file;
 
 		std::ifstream ini;
 		ini.open(ini_path.c_str());
 
 		if (!ini.is_open())
 		{
-			game::printf_to_console("[Hotkeys] Could not find \"iw3r_hotkeys.ini\" in \"%s\"\n", home_path.c_str());
+			game::printf_to_console("[ERR][Hotkeys] Failed to find 'hotkeys.ini' ('%s')\n", ini_path.c_str());
+			game::printf_to_console("[ERR] ^ created upon closing radiant but will only have default bindings. Please consider using the ini file that came with iw3xo-radiant.\n");
+
 			return false;
 		}
 
@@ -398,16 +405,50 @@ namespace ggui
 	// overwrite hardcoded hotkeys with our own
 	void hotkey_dialog::load_commandmap()
 	{
-		if (!cmdbinds_load_from_file("iw3r_hotkeys.ini"s))
+		if (!cmdbinds_load_from_file("hotkeys.ini"s))
 		{
 			// update 'std::map' unkown commandmap (uses g_Commands)
 			cdeclcall(void, 0x420140); // the func that would normally be called
 
-			return;
+			// auto generate hotkeys.ini
+			{
+				for (auto i = 0; i < game::g_nCommandCount; i++)
+				{
+					const auto key = cmdbinds_ascii_to_keystr(static_cast<int>(game::g_Commands[i].m_nKey));
+					const int mod_shift = static_cast<int>(game::g_Commands[i].m_nModifiers) & 1 ? 1 : 0;
+					const int mod_alt = static_cast<int>(game::g_Commands[i].m_nModifiers) & 2 ? 1 : 0;
+					const int mod_ctrl = static_cast<int>(game::g_Commands[i].m_nModifiers) & 4 ? 1 : 0;
+
+					// broken hotkeys
+					if (game::g_Commands[i].m_strCommand == "ToggleTurnTerrainEdges"s)
+					{
+						cmd_hotkeys.push_back(
+							commandbinds
+							{
+								game::g_Commands[i].m_strCommand, "", 0, 0, 0, ""
+							});
+
+						continue;
+					}
+
+					cmd_hotkeys.push_back(
+						commandbinds
+						{
+							game::g_Commands[i].m_strCommand,
+							"",
+							mod_alt,
+							mod_ctrl,
+							mod_shift,
+							key
+						});
+				}
+			}
+
+			//return;
 		}
 
 		int commands_overwritten = 0;
-		game::printf_to_console("[Hotkeys] Loading '%d' hotkeys from 'iw3r_hotkeys.ini'\n", cmd_hotkeys.size());
+		game::printf_to_console("[Hotkeys] Loading '%d' hotkeys\n", cmd_hotkeys.size());
 
 		for (auto i = 0; i < game::g_nCommandCount; i++)
 		{
@@ -737,13 +778,13 @@ namespace ggui
 		{
 			std::ofstream ini;
 			std::string ini_path = fs_homepath->current.string;
-						ini_path += "\\iw3r_hotkeys.ini";
+						ini_path +=  R"(\IW3xRadiant\hotkeys.ini)";
 
 			ini.open(ini_path.c_str());
 
 			if (!ini.is_open())
 			{
-				printf("[Hotkeys] Could not write to \"iw3r_hotkeys.ini\" in \"%s\"", fs_homepath->current.string);
+				game::printf_to_console("[ERR][Hotkeys] Could not write to 'hotkeys.ini' ('%s')\n", ini_path.c_str());
 				return;
 			}
 
