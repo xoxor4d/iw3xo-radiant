@@ -60,6 +60,23 @@ namespace dvars
 	extern game::dvar_s* bsp_load_entities;
 	extern game::dvar_s* bsp_gen_reflections_on_compile;
 
+	extern game::dvar_s* bsp_compile_bsp;
+	extern game::dvar_s* bsp_compile_onlyents;
+	extern game::dvar_s* bsp_compile_samplescale_enabled;
+	extern game::dvar_s* bsp_compile_samplescale;
+	extern game::dvar_s* bsp_compile_custom_cmd_enabled;
+	extern game::dvar_s* bsp_compile_custom_cmd;
+
+	extern game::dvar_s* bsp_compile_light;
+	extern game::dvar_s* bsp_compile_light_fast;
+	extern game::dvar_s* bsp_compile_light_extra;
+	extern game::dvar_s* bsp_compile_light_modelshadow;
+	extern game::dvar_s* bsp_compile_light_dump;
+	extern game::dvar_s* bsp_compile_light_traces_enabled;
+	extern game::dvar_s* bsp_compile_light_traces;
+	extern game::dvar_s* bsp_compile_light_custom_cmd_enabled;
+	extern game::dvar_s* bsp_compile_light_custom_cmd;
+
 	extern game::dvar_s* r_draw_bsp;
 	extern game::dvar_s* r_draw_bsp_overwrite_sunlight;
 	extern game::dvar_s* r_draw_bsp_overwrite_sundir;
@@ -114,11 +131,14 @@ namespace dvars
 	game::dvar_s* register_int(const char* dvar_name, int value, int mins, int maxs, __int16 flags, const char* description);
 	game::dvar_s* register_bool(const char* dvar_name, char value, __int16 flags, const char* description);
 	game::dvar_s* register_float(const char* dvar_name, float value, float mins, float maxs, __int16 flags, const char* description);
+	game::dvar_s* register_string(const char* dvar_name, const char* value, __int16 flags, const char* description);
 	game::dvar_s* register_vec4(const char* dvar_name, float x, float y, float z, float w, float mins, float maxs, __int16 flags, const char* description);
 
 	void set_bool(game::dvar_s* dvar, bool value);
 	void set_int(game::dvar_s* dvar, int value);
 	void set_float(game::dvar_s* dvar, float value);
+	void set_vec(game::dvar_s* dvar, float* value, int len);
+	void set_string(game::dvar_s* dvar, const char* value);
 
 	void assign_stock_dvars();
 

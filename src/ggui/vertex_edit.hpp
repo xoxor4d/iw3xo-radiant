@@ -21,8 +21,8 @@ namespace ggui
 		// *
 		// init
 
-		void hooks();
-		void register_dvars();
+		static void hooks();
+		static void register_dvars();
 
 	private:
 		void feature_noise();

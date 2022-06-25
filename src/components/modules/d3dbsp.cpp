@@ -724,7 +724,7 @@ namespace components
 		game::printf_to_console("[BSP] Compiling bsp for map: %s ...", bsp_name.c_str());
 		
 		const auto egui = GET_GUI(ggui::entity_dialog);
-		const auto settings = GET_GUI(ggui::camera_settings_dialog);
+		//const auto settings = GET_GUI(ggui::camera_settings_dialog);
 
 		const char* base_path = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
 		const char* map_path = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
@@ -736,18 +736,18 @@ namespace components
 		const std::string bsp_path = (is_mp ? R"(maps\mp\)"s : R"(maps\)"s) + bsp_name + ".d3dbsp";
 
 		std::string bps_args;
-		bps_args += (settings->m_bsp_bsp_only_ents ? "-onlyents" : "") + " "s;
-		bps_args += (settings->m_bsp_bsp_samplescale_enabled ? ("-samplescale " + std::to_string(settings->m_bsp_bsp_samplescale)) : "") + " "s;
-		bps_args += (settings->m_bsp_bsp_custom_cmd_enabled ? settings->m_bsp_bsp_custom_cmd : "") + " "s;
+		bps_args += (dvars::bsp_compile_onlyents->current.enabled ? "-onlyents" : "") + " "s;
+		bps_args += (dvars::bsp_compile_samplescale_enabled->current.enabled ? ("-samplescale " + std::to_string(dvars::bsp_compile_samplescale->current.value)) : "") + " "s;
+		bps_args += (dvars::bsp_compile_custom_cmd_enabled->current.enabled ? dvars::bsp_compile_custom_cmd->current.string : "") + " "s;
 		utils::rtrim(bps_args);
 
 		std::string light_args;
-		light_args += (settings->m_bsp_light_fast ? "-fast" : "") + " "s;
-		light_args += (settings->m_bsp_light_extra ? "-extra" : "") + " "s;
-		light_args += (settings->m_bsp_light_modelshadow ? "-modelshadow" : "") + " "s;
-		light_args += (settings->m_bsp_light_dump ? "-dumpoptions" : "") + " "s;
-		light_args += (settings->m_bsp_light_traces_enabled ? ("-traces " + std::to_string(settings->m_bsp_light_traces)) : "") + " "s;
-		light_args += (settings->m_bsp_light_custom_cmd_enabled ? settings->m_bsp_light_custom_cmd : "") + " "s;
+		light_args += (dvars::bsp_compile_light_fast->current.enabled ? "-fast" : "") + " "s;
+		light_args += (dvars::bsp_compile_light_extra->current.enabled ? "-extra" : "") + " "s;
+		light_args += (dvars::bsp_compile_light_modelshadow->current.enabled ? "-modelshadow" : "") + " "s;
+		light_args += (dvars::bsp_compile_light_dump->current.enabled ? "-dumpoptions" : "") + " "s;
+		light_args += (dvars::bsp_compile_light_traces_enabled->current.enabled ? ("-traces " + std::to_string(dvars::bsp_compile_light_traces->current.integer)) : "") + " "s;
+		light_args += (dvars::bsp_compile_light_custom_cmd_enabled->current.enabled ? dvars::bsp_compile_light_custom_cmd->current.string : "") + " "s;
 		utils::rtrim(light_args);
 
 		std::string args;
@@ -774,10 +774,10 @@ namespace components
 		args += (!light_args.empty() ? R"(")" + light_args + R"(" )" : "- ");
 
 		// compileBSP
-		args += (settings->m_bsp_bsp_compile ? "1 "s : "0 "s);
+		args += (dvars::bsp_compile_bsp->current.enabled ? "1 "s : "0 "s);
 
 		// compileLight
-		args += (settings->m_bsp_light_compile ? "1 "s : "0 "s);
+		args += (dvars::bsp_compile_light->current.enabled ? "1 "s : "0 "s);
 		
 		process::pthis->set_output(true);
 		process::pthis->set_arguments(args);

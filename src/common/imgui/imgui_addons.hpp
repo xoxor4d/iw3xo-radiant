@@ -10,6 +10,12 @@ namespace fx_system
 	struct FxFloatRange;
 }
 
+// forward decl
+namespace game
+{
+	struct dvar_s;
+}
+
 namespace ImGui
 {
 	bool	Spinner(const char* label, float radius, float thickness, const ImU32& color);
@@ -18,6 +24,7 @@ namespace ImGui
 	void	left_label_drag(const char* label, const float text_y_offset, const float sameline_offset = 80.0f);
 	void	left_label_checkbox(const char* label, const float text_y_offset);
 
+	void	Dvar(const char* label, game::dvar_s* dvar);
 	void	DvarBool_External(const char* checkbox_label, const char* dvar_name);
 	void	DvarInt_External(const char* checkbox_label, const char* dvar_name);
 	void	DvarFloat_External(const char* checkbox_label, const char* dvar_name);

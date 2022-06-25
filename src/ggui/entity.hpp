@@ -141,8 +141,8 @@ namespace ggui
 		// *
 		// init
 
-		void	register_dvars();
-		void	hooks();
+		static void	register_dvars();
+		static void	hooks();
 
 	private:
 		void	get_eclass_template(const template_kvp*& tkvp, int* size_out);

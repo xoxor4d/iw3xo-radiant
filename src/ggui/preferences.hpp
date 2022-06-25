@@ -54,8 +54,8 @@ namespace ggui
 		// *
 		// init
 
-		void	register_dvars();
-		void	hooks();
+		static void	register_dvars();
+		static void	hooks();
 
 	private:
 		const std::string CAT_GENERAL = "General";

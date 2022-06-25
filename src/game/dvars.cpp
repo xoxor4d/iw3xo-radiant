@@ -60,6 +60,23 @@ namespace dvars
 	game::dvar_s* bsp_load_entities = nullptr;
 	game::dvar_s* bsp_gen_reflections_on_compile = nullptr;
 
+	game::dvar_s* bsp_compile_bsp = nullptr;
+	game::dvar_s* bsp_compile_onlyents = nullptr;
+	game::dvar_s* bsp_compile_samplescale_enabled = nullptr;
+	game::dvar_s* bsp_compile_samplescale = nullptr;
+	game::dvar_s* bsp_compile_custom_cmd_enabled = nullptr;
+	game::dvar_s* bsp_compile_custom_cmd = nullptr;
+
+	game::dvar_s* bsp_compile_light = nullptr;
+	game::dvar_s* bsp_compile_light_fast = nullptr;
+	game::dvar_s* bsp_compile_light_extra = nullptr;
+	game::dvar_s* bsp_compile_light_modelshadow = nullptr;
+	game::dvar_s* bsp_compile_light_dump = nullptr;
+	game::dvar_s* bsp_compile_light_traces_enabled = nullptr;
+	game::dvar_s* bsp_compile_light_traces = nullptr;
+	game::dvar_s* bsp_compile_light_custom_cmd_enabled = nullptr;
+	game::dvar_s* bsp_compile_light_custom_cmd = nullptr;
+
 	game::dvar_s* r_draw_bsp = nullptr;
 	game::dvar_s* r_draw_bsp_overwrite_sunlight = nullptr;
 	game::dvar_s* r_draw_bsp_overwrite_sundir = nullptr;
@@ -137,6 +154,15 @@ namespace dvars
 		return dvar;
 	}
 
+	game::dvar_s* register_string(const char* dvar_name, const char* value, __int16 flags, const char* description)
+	{
+		game::dvar_s* dvar = game::Dvar_RegisterString(dvar_name, value, flags, description);
+		game::printf_to_console(utils::va("|-> %s <string>\n", dvar_name));
+
+		// return a pointer to our dvar
+		return dvar;
+	}
+
 	game::dvar_s* register_vec4(const char* dvar_name, float x, float y, float z, float w, float mins, float maxs, __int16 flags, const char* description)
 	{
 		game::dvar_s* dvar = game::Dvar_RegisterVec4(dvar_name, x, y, z, w, mins, maxs, flags, description);
@@ -161,6 +187,32 @@ namespace dvars
 		game::Dvar_SetFloat(dvar, value);
 	}
 
+	void set_vec(game::dvar_s* dvar, float* value, int len)
+	{
+		switch (len)
+		{
+		case 2:
+			game::Dvar_SetVec2(dvar, value[0], value[1]);
+			break;
+
+		case 3:
+			game::Dvar_SetVec3(dvar, value[0], value[1], value[2]);
+			break;
+
+		case 4:
+			game::Dvar_SetVec4(dvar, value[0], value[1], value[2], value[3]);
+			break;
+
+		default:
+			game::printf_to_console("[set_vec] unsupported len!");
+		}
+	}
+
+	void set_string(game::dvar_s* dvar, const char* value)
+	{
+		game::Dvar_SetString(dvar, value);
+	}
+
 	bool assign_single_dvar(game::dvar_s*& dest, const char* stock_dvar_name)
 	{
 		if (!dest)
@@ -183,12 +235,12 @@ namespace dvars
 	{
 		bool valid_dvars = true;
 
-		valid_dvars = assign_single_dvar(dvars::r_filmtweakenable, "r_filmtweakenable");
-		valid_dvars = assign_single_dvar(dvars::r_filmtweakdesaturation, "r_filmtweakdesaturation");
-		valid_dvars = assign_single_dvar(dvars::r_filmtweakbrightness, "r_filmtweakbrightness");
-		valid_dvars = assign_single_dvar(dvars::r_filmtweakcontrast, "r_filmtweakcontrast");
-		valid_dvars = assign_single_dvar(dvars::r_filmtweakdarktint, "r_filmtweakdarktint");
-		valid_dvars = assign_single_dvar(dvars::r_filmtweaklighttint, "r_filmtweaklighttint");
+		if (!assign_single_dvar(dvars::r_filmtweakenable, "r_filmtweakenable")) valid_dvars = false;
+		if (!assign_single_dvar(dvars::r_filmtweakdesaturation, "r_filmtweakdesaturation")) valid_dvars = false;
+		if (!assign_single_dvar(dvars::r_filmtweakbrightness, "r_filmtweakbrightness")) valid_dvars = false;
+		if (!assign_single_dvar(dvars::r_filmtweakcontrast, "r_filmtweakcontrast")) valid_dvars = false;
+		if (!assign_single_dvar(dvars::r_filmtweakdarktint, "r_filmtweakdarktint")) valid_dvars = false;
+		if (!assign_single_dvar(dvars::r_filmtweaklighttint, "r_filmtweaklighttint")) valid_dvars = false;
 
 		if(!valid_dvars)
 		{
@@ -215,10 +267,11 @@ namespace dvars
 		ccamwnd::register_dvars();
 		ctexwnd::register_dvars();
 
-		GET_GUI(ggui::entity_dialog)->register_dvars();
-		GET_GUI(ggui::preferences_dialog)->register_dvars();
-		GET_GUI(ggui::surface_dialog)->register_dvars();
-		GET_GUI(ggui::vertex_edit_dialog)->register_dvars();
+		ggui::entity_dialog::register_dvars();
+		ggui::preferences_dialog::register_dvars();
+		ggui::surface_dialog::register_dvars();
+		ggui::vertex_edit_dialog::register_dvars();
+		ggui::camera_settings_dialog::register_dvars();
 
 		fx_system::register_dvars();
 

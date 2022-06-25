@@ -80,6 +80,51 @@ namespace ImGui
 		ImGui::SetCursorPosY(og_cursor_y);
 	};
 
+	// only bool, float, integer
+	void Dvar(const char* label, game::dvar_s* dvar)
+	{
+		if (dvar)
+		{
+			bool do_tooltip = true;
+
+			switch(dvar->type)
+			{
+			case game::dvar_type::boolean:
+			{
+				if (ImGui::Checkbox(label, &dvar->current.enabled)) {
+					dvar->modified = true;
+				} break;
+			}
+
+			case game::dvar_type::value:
+			{
+				if (ImGui::DragFloat(label, &dvar->current.value, 0.01f, dvar->domain.value.min, dvar->domain.value.max, "%.2f")) {
+					dvar->modified = true;
+				} break;
+			}
+
+			case game::dvar_type::integer:
+			{
+				if (ImGui::DragInt(label, &dvar->current.integer, 0.01f, dvar->domain.integer.min, dvar->domain.integer.max)) {
+					dvar->modified = true;
+				} break;
+			}
+
+			default:
+				do_tooltip = false;
+			}
+
+			if(do_tooltip)
+			{
+				TT(utils::va("%s :: %s", dvar->name, dvar->description));
+			}
+			else
+			{
+				game::printf_to_console("[ImGui::Dvar] unhandled dvar type!");
+			}
+		}
+	}
+
 	void DvarBool_External(const char* checkbox_label, const char* dvar_name)
 	{
 		if (const auto handle = game::Dvar_FindVar(dvar_name); handle)
