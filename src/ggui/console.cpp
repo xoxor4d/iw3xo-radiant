@@ -26,6 +26,22 @@ namespace ggui
 		for (auto& line : lines)
 		{
 			m_items.push_back(_strdup(line.c_str()));
+
+			std::string t_line = line;
+
+			if (utils::starts_with(t_line, "[ERR]", true)
+				|| utils::starts_with(t_line, "^1ERROR:", true)
+				|| utils::starts_with(t_line, "^1", true)
+				|| utils::starts_with(t_line, "ERROR:")
+				|| utils::starts_with(t_line, "Error:"))
+			{
+				utils::ltrim(t_line);
+
+				ImGuiToast toast(ImGuiToastType_Error, 3000);
+				toast.set_title("Error");
+				toast.set_content(t_line.c_str());
+				ImGui::InsertNotification(toast);
+			}
 		}
 	}
 

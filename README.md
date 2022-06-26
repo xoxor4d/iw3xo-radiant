@@ -18,16 +18,24 @@ Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You 
 
 <br>
 
+### Project Page (Guide / In-Depth)
+https://xoxor4d.github.io/projects/iw3xo-radiant
+
+<br>
+
 ### nightly builds - develop branch
 ( download and install the [latest release](https://github.com/xoxor4d/iw3xo-radiant/releases) before using nightly's )
 
 [![build-develop](https://img.shields.io/github/workflow/status/xoxor4d/iw3xo-radiant/Build-Debug/develop?logo=github&label=nightly-develop)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-debug/develop/Debug%20binaries.zip)&ensp;
 [![build-release](https://img.shields.io/github/workflow/status/xoxor4d/iw3xo-radiant/Build-Release/develop?logo=github&label=nightly-release)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-release/develop/Release%20binaries.zip)&ensp;
 
+
+
 <br>
 
-### Project Page (Guide / In-Depth)
-https://xoxor4d.github.io/projects/iw3xo-radiant
+If you want to buy me a coffee:
+
+[![ko-fi](https://xoxor4d.github.io/assets/img/social/kofi.png)](https://ko-fi.com/xoxor4d)
 
 </div>
 
@@ -68,16 +76,19 @@ ___
 + increased asset limits to allow high poly models
 + realtime viewports
 + context aware grid and camera context menus with QoL features
-+ better surface / property editor
++ a toolbox featuring all related functions for brushes/patches and more
++ better surface / property editor (can be integrated into the ^ toolbox)
 + better vertex edit dialog
 + zoom to cursor
 + editable toolbars, hotkeys, colors
 + new file dialogs with working default paths
 + texture window toolbar for quick filtering
++ custom texture favourite lists that can be created from within radiant (add/remove selected texture to/from the list)
 + rope/wire generator
 + sun direction visualizer
 + a proper console with dvar support (incl. dvar suggestions and autocomplete)
 + increased undo limit
++ missing materials are now using a proper invalid_texture material and are no longer invisible
 + print parsed entity and brush num on map load making it easier to find issues in map files (off by default)
 + bo3 tool textures (optional)
 + [stamp prefabs](https://xoxor4d.github.io/tutorials/iw3xradiant-prefab/) 
@@ -165,6 +176,7 @@ https://discord.gg/t5jRGbj
 - [nem0 - ImGui CurveEditor](https://github.com/nem0/LumixEngine/blob/39e46c18a58111cc3c8c10a4d5ebbb614f19b1b8/external/imgui/imgui_user.inl#L505-L930)
 - [Limeoats - L2DFileDialog](https://github.com/Limeoats/L2DFileDialog/)
 - [zfedoran - ImGui Spinner](https://github.com/ocornut/imgui/issues/1901)
+- [patrickcjk - imgui-notify](https://github.com/patrickcjk/imgui-notify)
 - [maluoi - tga writer](https://gist.github.com/maluoi/ade07688e741ab188841223b8ffeed22)
 - [Infinity Ward - OG. Radiant and Effects Framework](https://www.infinityward.com)
 - [id-Software - OG. Radiant](https://github.com/id-Software/Quake-III-Arena/tree/master/q3radiant)

@@ -20,7 +20,15 @@ namespace components
 
 		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_bold_compressed_data, fonts::opensans_bold_compressed_size, 18.0f);
 		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 12.0f);
-		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f);
+
+
+		ImFontConfig font_cfg;
+		font_cfg.FontDataOwnedByAtlas = false;
+
+		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f, &font_cfg);
+
+		// Initialize notify
+		ImGui::MergeIconsWithLatestFont(18.0f, false);
 	}
 
 
@@ -438,6 +446,28 @@ namespace components
 				ImGui::End();
 			}*/
 
+			/*ImGui::Begin("Test");
+			{
+				if (ImGui::Button("Snapshot Toast"))
+				{
+					ImGuiToast toast(ImGuiToastType_Info, 2500);
+					toast.set_title("Snapshot created");
+					toast.set_content(R"(D:\COD4Modtools\map_source\snapshots\mp_bsptest.map.5)");
+
+					ImGui::InsertNotification(toast);
+				}
+			}
+			ImGui::End();*/
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.0f);
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.1f));
+
+			ImGui::RenderNotifications();
+
+			ImGui::PopStyleVar(2); 
+			ImGui::PopStyleColor(1);
+
 			// end the current context frame
 			goto END_FRAME;
 		}
@@ -553,6 +583,64 @@ namespace components
 			jmp		retn_addr;
 		}
 	}
+
+
+	// *
+	// *
+
+
+	void map_autosave_toast(const char* file, int is_snapshot)
+	{
+		ImGuiToast toast(ImGuiToastType_Info, 2000);
+		toast.set_title(is_snapshot ? "Snapshot created" : "Autosave created");
+		toast.set_content(file);
+
+		ImGui::InsertNotification(toast);
+	}
+
+	__declspec(naked) void map_snapshot_toast_stub()
+	{
+		const static uint32_t retn_addr = 0x48B391; // Map_SaveFile
+		__asm
+		{
+			pushad;
+			push	1;
+			push	ebx;
+			call	map_autosave_toast;
+			add		esp, 8;
+			popad;
+
+			// org
+			push    1; 
+			push    0;
+			mov     ecx, ebx;
+			jmp		retn_addr;
+		}
+	}
+
+	__declspec(naked) void map_autosave_toast_stub()
+	{
+		const char* map_str;
+
+		const static uint32_t func_addr = 0x486C00; // Map_SaveFile
+		const static uint32_t retn_addr = 0x48B5DE;
+		__asm
+		{
+			mov		map_str, ecx;
+			call	func_addr;
+			add		esp, 8;
+
+			pushad;
+			push	0;
+			push	map_str;
+			call	map_autosave_toast;
+			add		esp, 8;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
+
 
 	// *
 	// register_addon_dvars()
@@ -782,6 +870,12 @@ namespace components
 	{
 		// show external console on map load
 		utils::hook(0x4866B8, on_map_load_stub, HOOK_JUMP).install()->quick();
+
+		// add snapshot toast
+		utils::hook::nop(0x48B38B, 6); utils::hook(0x48B38B, map_snapshot_toast_stub, HOOK_JUMP).install()->quick();
+
+		// add autosave toast
+		utils::hook(0x48B5D6, map_autosave_toast_stub, HOOK_JUMP).install()->quick();
 
 		ggui::entity_dialog::hooks();
 		ggui::filter_dialog::hooks();

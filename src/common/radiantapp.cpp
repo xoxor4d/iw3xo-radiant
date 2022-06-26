@@ -395,6 +395,9 @@ void radiantapp::hooks()
 	// always save preferences (even if loaded map = unnamed.map) (CMainFrame::OnDestroy)
 	utils::hook::nop(0x422115, 2);
 
+	// remove m_nAutoSave overwrite with its c-string variant right before saving the pref
+	utils::hook::nop(0x44F4B7, 6);
+
 	// registery loading stub :: CPrefsDlg::LoadPrefs
 	utils::hook(0x44E38C, registery_load_stub, HOOK_JUMP).install()->quick();
 

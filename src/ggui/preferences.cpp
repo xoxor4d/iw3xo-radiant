@@ -141,13 +141,13 @@ namespace ggui
 
 			SPACING(0.0f, 6.0f);
 
-			ImGui::Checkbox("Loose changes dialog on exit", &prefs->loose_changes);
+			ImGui::Checkbox("Enable 'lose changes dialog' on exit", &prefs->loose_changes);
 			ImGui::Checkbox("Enable snapshots", &prefs->m_bSnapShots);
 
 			ImGui::Checkbox("Enable autosave", &prefs->m_bAutoSave);
 			ImGui::BeginDisabled(!prefs->m_bAutoSave);
 			{
-				ImGui::SliderInt("Autosave intervall", &prefs->m_nAutoSave, 1, 60);
+				ImGui::SliderInt("Autosave interval", &prefs->m_nAutoSave, 1, 60);
 			}
 			ImGui::EndDisabled();
 
@@ -460,6 +460,27 @@ namespace ggui
 			}
 
 			SPACING(0.0f, 4.0f);
+
+			if(ImGui::Button("Toast Success"))
+			{
+				ImGui::InsertNotification(
+					{ ImGuiToastType_Success, 2000, "Hello World! This is a success! %s", ICON_FA_APPLE_ALT});
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Toast Info"))
+			{
+				ImGuiToast toast(ImGuiToastType_Info, 2000);
+				toast.set_title("Autosave");
+
+				ImGui::InsertNotification(toast);
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Print Error"))
+			{
+				game::printf_to_console("[ERR] This is an error message!");
+			}
 
 			ImGui::DragInt("Integer01", &dev_num_01, 0.1f);
 			ImGui::DragInt("Integer02", &dev_num_02, 0.1f);

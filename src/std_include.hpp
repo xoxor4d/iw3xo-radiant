@@ -83,17 +83,23 @@
 #include "common/imgui/imgui_addons.hpp"
 #include "common/imgui/imgui_color_gradient.hpp"
 #include "common/imgui/imgui_curves.hpp"
+#pragma warning(push)
+#pragma warning(disable: 4172)
+#include "common/imgui/imgui_notify.hpp"
+#pragma warning(pop)
 
 #include "detours/Detours.h"
 #include "fifo_map.hpp"
 
-#pragma warning(push, 0)  
+#pragma warning(push, 0)
 #include "ImGuizmo.h"
 #pragma warning(pop)
 
+#pragma warning(push, 0)
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
+#pragma warning(pop)
 
 #include <WinHttpClient.h>
 

@@ -8,7 +8,7 @@ namespace ggui
 {
 	bool about_dialog::gui()
 	{
-		ImGui::SetNextWindowSize(game::glob::gh_update_avail ? ImVec2(480.0f, 880.0f) : ImVec2(400.0f, 630.0f));
+		ImGui::SetNextWindowSize(game::glob::gh_update_avail ? ImVec2(480.0f, 900.0f) : ImVec2(400.0f, 650.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
 		if (ImGui::Begin("About##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDocking))
@@ -104,6 +104,7 @@ namespace ggui
 			CENTER_URL("nem0 (CurveEditor)", "https://github.com/nem0/LumixEngine/blob/39e46c18a58111cc3c8c10a4d5ebbb614f19b1b8/external/imgui/imgui_user.inl#L505-L930");
 			CENTER_URL("Limeoats (L2DFileDialog)", "https://github.com/Limeoats/L2DFileDialog/");
 			CENTER_URL("zfedoran (ImGui Spinner)", "https://github.com/ocornut/imgui/issues/1901");
+			CENTER_URL("patrickcjk (imgui-notify)", "https://github.com/patrickcjk/imgui-notify");
 			CENTER_URL("maluoi (tga writer)", "https://gist.github.com/maluoi/ade07688e741ab188841223b8ffeed22");
 			CENTER_URL("Infinity Ward (OG. Radiant and Effects Framework)", "https://www.infinityward.com/");
 			CENTER_URL("id-Software (OG. OG. Radiant)", "https://github.com/id-Software/Quake-III-Arena/tree/master/q3radiant");
