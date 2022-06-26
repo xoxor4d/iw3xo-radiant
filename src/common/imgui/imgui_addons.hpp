@@ -18,6 +18,7 @@ namespace game
 
 namespace ImGui
 {
+	bool	TreeNodeEx(const char* label, bool* is_hovered, bool* is_pressed, ImGuiTreeNodeFlags flags);
 	bool	Spinner(const char* label, float radius, float thickness, const ImU32& color);
 	
 	bool	IsVertScollbarVisible();

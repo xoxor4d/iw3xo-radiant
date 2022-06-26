@@ -104,6 +104,8 @@ namespace game
 
 	HWND* entitywnd_hwnds = reinterpret_cast<HWND*>(0x240A118);
 
+	CLayerDlg* layer_dlg = reinterpret_cast<CLayerDlg*>(0x25d6ea0);
+
 	game::GfxBackEndData* get_backenddata()
 	{
 		const auto out = reinterpret_cast<game::GfxBackEndData*>(*game::backEndDataOut_ptr);

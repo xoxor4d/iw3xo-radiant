@@ -330,6 +330,10 @@ namespace ggui
 						cdeclcall(void, 0x42BD10); // cmainframe::OnLayersDlg
 					}
 
+					if (ImGui::MenuItem("Layers - NEW", ggui::hotkey_dialog::get_hotkey_for_command("ToggleLayers").c_str())) {
+						GET_GUI(ggui::layer_dialog)->toggle();
+					}
+
 					if (ImGui::MenuItem("Textures", ggui::hotkey_dialog::get_hotkey_for_command("ViewTextures").c_str())) {
 						GET_GUI(ggui::texture_dialog)->toggle();
 					}

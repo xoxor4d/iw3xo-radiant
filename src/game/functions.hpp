@@ -163,6 +163,8 @@ namespace game
 	extern game::entity_s_def* g_edit_entity();
 	extern int& multiple_edit_entities;
 	extern HWND* entitywnd_hwnds;
+
+	extern CLayerDlg* layer_dlg;
 	
 	extern game::eclass_t* g_eclass();
 	extern CSurfaceDlg* get_surfacedialog();
