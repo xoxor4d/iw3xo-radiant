@@ -537,8 +537,7 @@ namespace ggui
 	// right click context menu
 	void camera_dialog::context_menu()
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
+		ggui::context_menu_style_begin();
 
 		static game::trace_t cam_trace[21] = {};
 		static bool cam_context_menu_open = false;
@@ -704,8 +703,6 @@ namespace ggui
 				{
 					if (!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##camera"))
 					{
-						ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
-
 						cam_context_menu_open = true;
 						cam_context_menu_pending_open = false;
 
@@ -774,7 +771,7 @@ namespace ggui
 								}
 							}
 
-							SEPERATORV(0.0f);
+							ImGui::Separator();
 
 							if (ImGui::MenuItem("Select All"))
 							{
@@ -810,7 +807,7 @@ namespace ggui
 										if (const auto	val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "classname");
 														val && val == "misc_prefab"s)
 										{
-											SEPERATORV(0.0f);
+											ImGui::Separator();
 											prefab_sep = true;
 
 											if (ImGui::MenuItem("Enter Prefab"))
@@ -835,7 +832,7 @@ namespace ggui
 										}
 										else if (game::g_prefab_stack_level)
 										{
-											SEPERATORV(0.0f);
+											ImGui::Separator();
 											prefab_sep = true;
 
 											if (ImGui::MenuItem("Leave Prefab"))
@@ -851,7 +848,7 @@ namespace ggui
 								{
 									if (!prefab_sep)
 									{
-										SEPERATORV(0.0f);
+										ImGui::Separator();
 										prefab_sep = true;
 									}
 
@@ -870,7 +867,7 @@ namespace ggui
 								{
 									if (!prefab_sep) 
 									{
-										SEPERATORV(0.0f);
+										ImGui::Separator();
 										prefab_sep = true;
 									}
 									
@@ -890,7 +887,7 @@ namespace ggui
 									{
 										if (selbrush->patch->def->type != game::PATCH_TERRAIN)
 										{
-											SEPERATORV(0.0f);
+											ImGui::Separator();
 
 											if (ImGui::Selectable("Subdivision ++", false, ImGuiSelectableFlags_DontClosePopups))
 											{
@@ -905,7 +902,7 @@ namespace ggui
 											}
 										}
 
-										SEPERATORV(0.0f);
+										ImGui::Separator();
 
 										if (ImGui::MenuItem("Texture - Fit"))
 										{
@@ -938,7 +935,7 @@ namespace ggui
 							/*if (game::is_any_brush_selected())
 							{
 								export_selection_as_prefab_menu();
-								SEPERATORV(0.0f);
+								ImGui::Separator();
 							}*/
 						}
 						else if(game::is_any_brush_selected())
@@ -946,7 +943,6 @@ namespace ggui
 							convert_selection_to_prefab_imgui_menu();
 						}
 
-						ImGui::PopStyleColor();
 						ImGui::EndPopup();
 					}
 					else
@@ -967,7 +963,7 @@ namespace ggui
 			}
 		}
 
-		ImGui::PopStyleVar(2);
+		ggui::context_menu_style_end();
 	}
 
 

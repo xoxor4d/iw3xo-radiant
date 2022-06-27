@@ -327,10 +327,6 @@ namespace ggui
 					}
 
 					if (ImGui::MenuItem("Layers", ggui::hotkey_dialog::get_hotkey_for_command("ToggleLayers").c_str())) {
-						cdeclcall(void, 0x42BD10); // cmainframe::OnLayersDlg
-					}
-
-					if (ImGui::MenuItem("Layers - NEW", ggui::hotkey_dialog::get_hotkey_for_command("ToggleLayers").c_str())) {
 						GET_GUI(ggui::layer_dialog)->toggle();
 					}
 
@@ -394,6 +390,12 @@ namespace ggui
 							mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
 						}
 #endif
+
+						if (ImGui::MenuItem("Layers (Original)"))
+						{
+							const auto hwnd = game::layer_dlg->GetWindow();
+							ShowWindow(game::layer_dlg->GetWindow(), IsWindowVisible(hwnd) ? SW_HIDE : SW_SHOW);
+						}
 
 						if (ImGui::MenuItem("Surface Inspector (Original)"))
 						{

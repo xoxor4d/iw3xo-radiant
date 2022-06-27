@@ -15,5 +15,14 @@ namespace ggui
 		void on_open() override;
 		void on_close() override;
 
+		// *
+		// asm related
+
+		static void on_layerdialog_command(); // not a callable method
+
+		// *
+		// init
+
+		static void hooks();
 	};
 }

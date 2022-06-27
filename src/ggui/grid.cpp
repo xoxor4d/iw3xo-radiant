@@ -213,8 +213,7 @@ namespace ggui
 
 		if(grid_context_open || grid_context_pending_open)
 		{
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
+			ggui::context_menu_style_begin();
 
 			if (!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##grid"))
 			{
@@ -470,7 +469,7 @@ namespace ggui
 				grid_context_open = false;
 			}
 
-			ImGui::PopStyleVar(2);
+			ggui::context_menu_style_end();
 		}
 	}
 

@@ -95,6 +95,21 @@ namespace ggui
 		return ggui::m_ggui_initialized;
 	}
 
+	// ends with ggui::context_menu_style_end
+	void context_menu_style_begin()
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 7.0f));
+		ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+	}
+
+	// starts with ggui::context_menu_style_begin
+	void context_menu_style_end()
+	{
+		ImGui::PopStyleVar(2);
+		ImGui::PopStyleColor(1);
+	}
+
 	// handles "window_hovered" for widgets drawn over rtt windows (needs to be called after every widget)
 	bool rtt_handle_windowfocus_overlaywidget(bool* gui_hover_state)
 	{

@@ -558,6 +558,9 @@ namespace											\
 	extern void set_next_window_initial_pos_and_constraints(ImVec2 mins, ImVec2 initial_size, ImVec2 overwrite_pos = ImVec2(0.0f, 0.0f));
 	extern bool is_ggui_initialized();
 
+	extern void context_menu_style_begin();
+	extern void context_menu_style_end();
+
 	extern bool rtt_handle_windowfocus_overlaywidget(bool* gui_hover_state);
 	extern void redraw_undocking_triangle(ImGuiWindow* wnd, bool* gui_hover_state);
 

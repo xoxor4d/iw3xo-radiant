@@ -881,6 +881,7 @@ namespace components
 		ggui::filter_dialog::hooks();
 		ggui::grid_dialog::hooks();
 		ggui::hotkey_dialog::hooks();
+		ggui::layer_dialog::hooks();
 		ggui::preferences_dialog::hooks();
 		ggui::surface_dialog::hooks();
 		ggui::vertex_edit_dialog::hooks();

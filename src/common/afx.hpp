@@ -1493,6 +1493,7 @@ struct CSurfaceDlg : CDialog
 };
 
 
+// actually HTREEITEM (from around 2005?)
 struct clayer_s
 {
 	clayer_s* parent_layer;
@@ -1506,6 +1507,34 @@ struct clayer_s
 	int8_t enabled;
 	char pad_0x001E[30];
 };
+
+/* ---- only version i could find
+struct _TREEITEM
+ {
+   HTREEITEM parent;       
+   HTREEITEM nextSibling;   
+   HTREEITEM firstChild; 
+   UINT      callbackMask;
+   UINT      state;
+   UINT      stateMask;
+   LPWSTR    pszText;
+   int       cchTextMax;
+   int       iImage;
+   int       iSelectedImage;
+   int       iExpandedImage;
+   int       cChildren;
+   LPARAM    lParam;
+   int       iIntegral; 
+   int       iLevel;    
+   HTREEITEM lastChild;
+   HTREEITEM prevSibling;
+   RECT      rect;
+   LONG      linesOffset;
+   LONG      stateOffset;
+   LONG      imageOffset;
+   LONG      textOffset;
+   LONG      textWidth;
+ }; */
 
 struct CTreeCtrl : CWnd
 {
