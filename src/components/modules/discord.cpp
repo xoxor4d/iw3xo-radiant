@@ -17,6 +17,8 @@ namespace components
 		std::string mapname = std::string(game::current_map_filepath);
 		const bool is_editing_prefab = utils::string_contains(mapname, "prefabs");
 
+		const bool fx_editor_active = GET_GUI(ggui::effects_editor_dialog)->is_active();
+
 		utils::replace(mapname, "/", "\\");
 		mapname = mapname.substr(mapname.find_last_of("\\") + 1);
 
@@ -29,16 +31,22 @@ namespace components
 				std::chrono::system_clock::now().time_since_epoch()).count();
 		}
 
-		if(is_editing_prefab)
+		discord_presence.state = "";
+
+		if (fx_editor_active)
+		{
+			if (const auto	editor_effect = fx_system::get_editor_effect();
+							editor_effect)
+			{
+				discord_presence.state = utils::va("Editing effect: %s", editor_effect->name);
+			}
+		}
+		else if (is_editing_prefab)
 		{
 			discord_presence.state = utils::va("Editing prefab: %s", mapname.c_str());
 		}
-		else
-		{
-			discord_presence.state = "";
-			discord_presence.details = last_map_name.c_str();
-		}
 
+		discord_presence.details = last_map_name.c_str();
 		discord_presence.partySize = 0;
 		discord_presence.partyMax = 0;
 

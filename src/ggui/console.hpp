@@ -45,7 +45,7 @@ namespace ggui
 		// *
 		// public member functions
 
-		void	gui() override;
+		bool gui() override;
 		void	clear_log();
 		int		text_edit_callback(ImGuiInputTextCallbackData* data);
 		void	addline_no_format(const char* text);

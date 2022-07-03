@@ -1493,6 +1493,65 @@ struct CSurfaceDlg : CDialog
 };
 
 
+// actually HTREEITEM (from around 2005?)
+struct clayer_s
+{
+	clayer_s* parent_layer;
+	clayer_s* sibling_layer_same_level;
+	clayer_s* child_layers;
+	char pad_0x000C[4];
+	const WCHAR* layer_string;
+	char pad_0x0014[4];
+	int buf_len;
+	int8_t N0000012C;
+	int8_t enabled;
+	char pad_0x001E[30];
+};
+
+/* ---- only version i could find
+struct _TREEITEM
+ {
+   HTREEITEM parent;       
+   HTREEITEM nextSibling;   
+   HTREEITEM firstChild; 
+   UINT      callbackMask;
+   UINT      state;
+   UINT      stateMask;
+   LPWSTR    pszText;
+   int       cchTextMax;
+   int       iImage;
+   int       iSelectedImage;
+   int       iExpandedImage;
+   int       cChildren;
+   LPARAM    lParam;
+   int       iIntegral; 
+   int       iLevel;    
+   HTREEITEM lastChild;
+   HTREEITEM prevSibling;
+   RECT      rect;
+   LONG      linesOffset;
+   LONG      stateOffset;
+   LONG      imageOffset;
+   LONG      textOffset;
+   LONG      textWidth;
+ }; */
+
+struct CTreeCtrl : CWnd
+{
+};
+
+struct CLayerDlg : CWnd
+{
+	char pad_0x0054[32];
+	CTreeCtrl tree;
+	char pad_0x007A[20];
+	clayer_s* root_node_the_map;
+	clayer_s* active_layer;
+	char pad_0x00E4[112];
+}; STATIC_ASSERT_OFFSET(CLayerDlg, root_node_the_map, 0xDC);
+
+
+
 struct CNoTrackObject;
 
 struct /*VFT*/ CNoTrackObject_vtbl

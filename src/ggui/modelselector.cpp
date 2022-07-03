@@ -37,9 +37,8 @@ namespace ggui
 		}
 	}
 
-	void modelselector_dialog::gui()
+	bool modelselector_dialog::gui()
 	{
-		//const auto m_selector = ggui::get_rtt_modelselector();
 		const auto io = ImGui::GetIO();
 
 		const auto MIN_WINDOW_SIZE = ImVec2(500.0f, 400.0f);
@@ -49,20 +48,11 @@ namespace ggui
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
 
-		if (this->is_bring_to_front_pending())
+		if (!ImGui::Begin("Model Browser##rtt", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
-			this->set_bring_to_front(false);
-			ImGui::SetNextWindowFocus();
-		}
-
-		if (!ImGui::Begin("Model Selector / Previewer", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
-		{
-			this->set_inactive_tab(true);
 			ImGui::End();
-			return;
+			return false;
 		}
-
-		this->set_inactive_tab(false);
 
 		// block all hotkeys if window is focused (cmainframe::on_keydown())
 		this->rtt_set_hovered_state(ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows));
@@ -575,6 +565,7 @@ namespace ggui
 
 		ImGui::EndChild();
 		ImGui::End();
+		return true;
 	}
 
 	void modelselector_dialog::on_open()
@@ -591,17 +582,15 @@ namespace ggui
 
 	void modelselector_dialog::init()
 	{
-		components::command::register_command_with_hotkey("xo_modelselector"s, [](auto)
+		components::command::register_command_with_hotkey("xo_modelselector"s, [this](auto)
 		{
-			const auto gui = GET_GUI(ggui::modelselector_dialog); //ggui::get_rtt_modelselector();
-
-			if (gui->is_inactive_tab() && gui->is_active())
+			if (this->is_inactive_tab() && this->is_active())
 			{
-				gui->set_bring_to_front(true);
+				this->set_bring_to_front(true);
 				return;
 			}
 
-			gui->toggle();
+			this->toggle();
 		});
 	}
 

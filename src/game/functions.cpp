@@ -65,8 +65,12 @@ namespace game
 	bool& g_bRotateMode = *reinterpret_cast<bool*>(0x23F16D9);
 	bool& g_bScaleMode = *reinterpret_cast<bool*>(0x23F16DA);
 	int& g_nLastLen = *reinterpret_cast<int*>(0x25D5B14);
+
 	float* g_vRotateOrigin = reinterpret_cast<float*>(0x23F1658);
 	int& g_prefab_stack_level = *reinterpret_cast<int*>(0x25D5B34);
+
+	bool& g_bDoCone = *reinterpret_cast<bool*>(0x25D5B38);
+	bool& g_bDoSphere = *reinterpret_cast<bool*>(0x25D5B39);
 
 	game::SCommandInfo* g_Commands = reinterpret_cast<game::SCommandInfo*>(0x73B240);
 	int		g_nCommandCount = 187;
@@ -94,11 +98,14 @@ namespace game
 	game::r_global_permanent_t* rgp = reinterpret_cast<game::r_global_permanent_t*>(0x136C700);
 	game::GfxScene* scene = reinterpret_cast<game::GfxScene*>(0x1370980);
 	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
+	game::GfxImage** imageGlobals = reinterpret_cast<game::GfxImage**>(0x14C6CF8);
 
 	game::ComWorld* comworld = reinterpret_cast<game::ComWorld*>(0x241DDC8);
 	game::GfxWorld* s_world = reinterpret_cast<game::GfxWorld*>(0x174F688);
 
 	HWND* entitywnd_hwnds = reinterpret_cast<HWND*>(0x240A118);
+
+	CLayerDlg* layer_dlg = reinterpret_cast<CLayerDlg*>(0x25d6ea0);
 
 	game::GfxBackEndData* get_backenddata()
 	{
@@ -147,6 +154,8 @@ namespace game
 		const auto brush = reinterpret_cast<game::selbrush_def_t*>(*(DWORD*)0x23F1868);
 		return brush;
 	}
+
+	const int& g_selected_faces_count = *reinterpret_cast<const int*>(0x73C714);
 
 	// g_selected_faces is a CArray
 	game::selface_t* g_selected_faces()
@@ -276,6 +285,18 @@ namespace game
 		{
 			pushad;
 			mov		eax, ent;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void Undo_SetIdForEntity(game::entity_s* ent /*edx*/)
+	{
+		const static uint32_t func_addr = 0x45E9E0;
+		__asm
+		{
+			pushad;
+			mov		edx, ent;
 			call	func_addr;
 			popad;
 		}
@@ -609,6 +630,32 @@ namespace game
 		}
 	}
 
+	game::selbrush_def_t* Patch_Cap(patchMesh_t* pm /*ecx*/, int bByColumn, int bFirst)
+	{
+		const static uint32_t func_addr = 0x439C00;
+		__asm
+		{
+			push	bFirst;
+			push	bByColumn;
+			mov		ecx, pm;
+			call	func_addr;
+			add		esp, 8;
+		}
+	}
+
+	game::selbrush_def_t* Patch_CapSpecial(patchMesh_t* pm /*ecx*/, int nType, int bFirst)
+	{
+		const static uint32_t func_addr = 0x43A170;
+		__asm
+		{
+			push	bFirst;
+			push	nType;
+			mov		ecx, pm;
+			call	func_addr;
+			add		esp, 8;
+		}
+	}
+
 	void Patch_Invert(game::patchMesh_t* p /*ebx*/)
 	{
 		const static uint32_t func_addr = 0x446480;
@@ -849,6 +896,28 @@ namespace game
 		}
 	}
 
+	game::entity_s* Entity_Create(eclass_t* eclass /*eax*/)
+	{
+		const static uint32_t func_addr = 0x484980;
+		__asm
+		{
+			mov		eax, eclass;
+			call	func_addr;
+		}
+	}
+
+	game::eclass_t* Eclass_ForName(const char* name /*ecx*/, int has_brushes)
+	{
+		const static uint32_t func_addr = 0x482190;
+		__asm
+		{
+			mov		ecx, name;
+			push	has_brushes;
+			call	func_addr;
+			add     esp, 4;
+		}
+	}
+
 	// also adds an undo
 	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y)
 	{
@@ -877,6 +946,73 @@ namespace game
 			push	trace_result;
 			call	func_addr;
 			add     esp, 12;
+		}
+	}
+
+	void map_load_from_file(const char* path)
+	{
+		const static uint32_t func_addr = 0x486680;
+		__asm
+		{
+			pushad;
+			mov		ecx, path;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void map_save_file(const char* path /*ecx*/, int is_reg, int save_to_perforce)
+	{
+		const static uint32_t func_addr = 0x486C00;
+		__asm
+		{
+			pushad;
+			mov		ecx, path;
+			push	save_to_perforce;
+			push	is_reg;
+			call	func_addr;
+			add		esp, 8;
+			popad;
+		}
+	}
+
+	void map_write_selection(const char* path)
+	{
+		const static uint32_t func_addr = 0x488EB0;
+		__asm
+		{
+			pushad;
+			mov		edi, path;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void mru_new_item(game::LPMRUMENU* mru, const char* item_str)
+	{
+		const static uint32_t func_addr = 0x48A2C0;
+		__asm
+		{
+			pushad;
+			mov		esi, mru;
+			push	item_str;
+			call	func_addr;
+			add     esp, 4;
+			popad;
+		}
+	}
+
+	void mru_insert_item(game::LPMRUMENU* mru, HMENU menu)
+	{
+		const static uint32_t func_addr = 0x48A400;
+		__asm
+		{
+			pushad;
+			mov		edi, mru;
+			push	menu;
+			call	func_addr;
+			add     esp, 4;
+			popad;
 		}
 	}
 

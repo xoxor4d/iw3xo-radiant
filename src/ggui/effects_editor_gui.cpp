@@ -182,7 +182,7 @@ namespace ggui
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 4.0f));
 		if (ImGui::BeginPopupModal(label, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			const char* str = "\n         Unsaved Effect!\n  This will loose changes.\n\nDo you want to continue?\n\n";
+			const char* str = "\n         Unsaved Effect!\n  This will lose changes.\n\nDo you want to continue?\n\n";
 			ImGui::SetCursorForCenteredText(str);
 			ImGui::TextUnformatted(str);
 			ImGui::Separator();
@@ -226,7 +226,6 @@ namespace ggui
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-
 		if (!ImGui::Begin("FX ElemList##window", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar))
 		{
 			ImGui::PopStyleVar();
@@ -664,8 +663,8 @@ namespace ggui
 			}
 
 			ImGui::EndTable();
-			ImGui::PopStyleVar(4);
 		}
+		ImGui::PopStyleVar(4);
 
 		ImGui::PopStyleVar(); // WindowPadding
 		ImGui::End();
@@ -2720,7 +2719,7 @@ namespace ggui
 		on_modified(modified);
 	}
 
-	void effects_editor_dialog::effect_property_window()
+	bool effects_editor_dialog::effect_property_window()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(360.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(580.0f, 400.0f);
@@ -2732,14 +2731,14 @@ namespace ggui
 		if (!ImGui::Begin("Effect Properties##window", nullptr, ImGuiWindowFlags_NoCollapse))
 		{
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		const auto ed_effect = fx_system::get_editor_effect();
 		if (!ed_effect)
 		{
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		if (ImGui::BeginTabBar("##effect_properties_tabs", ImGuiTabBarFlags_None | ImGuiTabBarFlags_FittingPolicyResizeDown))
@@ -2792,12 +2791,13 @@ namespace ggui
 		}
 
 		ImGui::End();
+		return true;
 	}
 
-	void effects_editor_dialog::gui()
+	bool effects_editor_dialog::gui()
 	{
 		effect_elemdef_list();
-		effects_editor_dialog::effect_property_window();
+		return effects_editor_dialog::effect_property_window();
 	}
 
 	REGISTER_GUI(effects_editor_dialog);

@@ -2,7 +2,7 @@
 
 namespace components
 {
-	//extern int effect_drawsurf_count;
+	extern game::Material* g_invalid_material;
 
 	class renderer : public component
 	{

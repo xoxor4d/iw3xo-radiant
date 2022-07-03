@@ -310,7 +310,7 @@ namespace ggui
 					{
 						if (dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
 						{
-							if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.enabled)
+							if (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer)
 							{
 								GET_GUI(ggui::entity_dialog)->toggle();
 							}
@@ -327,15 +327,23 @@ namespace ggui
 					}
 
 					if (ImGui::MenuItem("Layers", ggui::hotkey_dialog::get_hotkey_for_command("ToggleLayers").c_str())) {
-						cdeclcall(void, 0x42BD10); // cmainframe::OnLayersDlg
+						GET_GUI(ggui::layer_dialog)->toggle();
 					}
 
 					if (ImGui::MenuItem("Textures", ggui::hotkey_dialog::get_hotkey_for_command("ViewTextures").c_str())) {
 						GET_GUI(ggui::texture_dialog)->toggle();
 					}
 
-					if (ImGui::MenuItem("Model Previewer", ggui::hotkey_dialog::get_hotkey_for_command("xo_modelselector").c_str())) {
+					if (ImGui::MenuItem("Model Browser", ggui::hotkey_dialog::get_hotkey_for_command("xo_modelselector").c_str())) {
 						GET_GUI(ggui::modelselector_dialog)->toggle();
+					}
+
+					if (ImGui::MenuItem("Prefab Browser", hotkey_dialog::get_hotkey_for_command("prefab_browser").c_str())) {
+						GET_GUI(ggui::prefab_preview_dialog)->toggle();
+					}
+
+					if (ImGui::MenuItem("Toolbox", ggui::hotkey_dialog::get_hotkey_for_command("toggle_toolbox").c_str())) {
+						GET_GUI(ggui::toolbox_dialog)->toggle();
 					}
 
 					if (ImGui::MenuItem("ImGui Demo")) {
@@ -386,6 +394,12 @@ namespace ggui
 							mainframe_thiscall(void, 0x426AE0); // cmainframe::OnToggleview
 						}
 #endif
+
+						if (ImGui::MenuItem("Layers (Original)"))
+						{
+							const auto hwnd = game::layer_dlg->GetWindow();
+							ShowWindow(game::layer_dlg->GetWindow(), IsWindowVisible(hwnd) ? SW_HIDE : SW_SHOW);
+						}
 
 						if (ImGui::MenuItem("Surface Inspector (Original)"))
 						{
@@ -1522,7 +1536,7 @@ namespace ggui
 					cdeclcall(void, 0x424B80); // CMainFrame::OnMiscFindbrush
 				}
 
-				if (ImGui::MenuItem("Got To Position")) {
+				if (ImGui::MenuItem("Go To Position")) {
 					cdeclcall(void, 0x424BA0); // CMainFrame::OnMiscGoToPosition
 				}
 
@@ -1689,6 +1703,13 @@ namespace ggui
 
 					if (ImGui::MenuItem("Cone")) {
 						cdeclcall(void, 0x42A360); // CMainFrame::OnCurvePatchcone
+
+						// fix cone not showing before moving or editing the patch in any way afterwards
+						const auto b = game::g_selected_brushes();
+						if (b && b->def && b->def->patch)
+						{
+							game::Patch_UpdateSelected(b->def->patch, 1);
+						}
 					}
 
 					// not implemented
@@ -1809,11 +1830,11 @@ namespace ggui
 					ImGui::EndMenu(); // Weld
 				}
 
-				if (ImGui::MenuItem("Inc Subdevision", ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftUp").c_str())) {
+				if (ImGui::MenuItem("Inc Subdivision", ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftUp").c_str())) {
 					cdeclcall(void, 0x428EB0); // CMainFrame::OnOverBrightShiftUp
 				} TT("Curve Patches: increase vertex count (subdivide)");
 
-				if (ImGui::MenuItem("Dec Subdevision", ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftDown").c_str())) {
+				if (ImGui::MenuItem("Dec Subdivision", ggui::hotkey_dialog::get_hotkey_for_command("OverBrightShiftDown").c_str())) {
 					cdeclcall(void, 0x428EE0); // CMainFrame::OnOverBrightShiftDown
 				} TT("Curve Patches: decrease vertex count (decimate)");
 
@@ -1860,6 +1881,8 @@ namespace ggui
 
 				ImGui::EndMenu(); // Patch
 			}
+
+			SPACING(4.0f, 0.0f);
 
 			if (ImGui::MenuItem("Help"))
 			{

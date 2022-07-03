@@ -26,6 +26,22 @@ namespace ggui
 		for (auto& line : lines)
 		{
 			m_items.push_back(_strdup(line.c_str()));
+
+			std::string t_line = line;
+
+			if (utils::starts_with(t_line, "[ERR]", true)
+				|| utils::starts_with(t_line, "^1ERROR:", true)
+				|| utils::starts_with(t_line, "^1", true)
+				|| utils::starts_with(t_line, "ERROR:")
+				|| utils::starts_with(t_line, "Error:"))
+			{
+				utils::ltrim(t_line);
+
+				ImGuiToast toast(ImGuiToastType_Error, 3000);
+				toast.set_title("Error");
+				toast.set_content(t_line.c_str());
+				ImGui::InsertNotification(toast);
+			}
 		}
 	}
 
@@ -367,7 +383,7 @@ namespace ggui
 		return 0;
 	}
 
-	void console_dialog::gui()
+	bool console_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(520, 600);
@@ -376,20 +392,12 @@ namespace ggui
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		if (this->is_bring_to_front_pending())
-		{
-			this->set_bring_to_front(false);
-			ImGui::SetNextWindowFocus();
-		}
-
 		if (!ImGui::Begin("Console##window", this->get_p_open()))
 		{
-			this->set_inactive_tab(true);
 			ImGui::End();
-			return;
+			return false;
 		}
 
-		this->set_inactive_tab(false);
 		bool copy_to_clipboard = false;
 
 		// Reserve enough left-over height for 1 separator + 1 input text
@@ -530,7 +538,6 @@ namespace ggui
 
 		if (ImGui::IsWindowFocused() && m_autocomplete_candidates.Size != 0 && GET_GUI(console_dialog)->m_old_input_but_len > 0)
 		{
-			//ImGui::SetNextWindowPos(m_post_inputbox_cursor);
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.15f, 0.15f, 0.15f, 0.85f));
 			ImGui::Begin("##console_autocomplete", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings);
 
@@ -641,6 +648,8 @@ namespace ggui
 		}
 
 		ImGui::End(); // console
+
+		return true;
 	}
 
 

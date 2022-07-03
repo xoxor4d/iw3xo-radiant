@@ -43,7 +43,7 @@ namespace ggui
 		// *
 		// public member functions
 
-		void gui() override;
+		bool gui() override;
 		bool toggle_by_name(const char* name, E_FILTERS filter_type, bool on_off);
 		void build_radiant_filterlists();
 
@@ -55,7 +55,7 @@ namespace ggui
 		// *
 		// init
 
-		void hooks();
+		static void hooks();
 
 
 	private:

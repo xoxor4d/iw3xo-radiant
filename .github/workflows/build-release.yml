@@ -70,7 +70,7 @@ jobs:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
           username: "GitHub Workflow"
           avatar-url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-          embed-author-icon-url: "https://raw.githubusercontent.com/xoxor4d/xoxor4d.github.io/master/assets/img/iw3xradiant.png"
+          embed-author-icon-url: "https://raw.githubusercontent.com/xoxor4d/xoxor4d.github.io/master/assets/img/iw3xo-radiant.png"
           embed-author-name: "iw3xo-radiant"
           embed-author-url: "https://github.com/xoxor4d/iw3xo-radiant"
           embed-title: "Successful build (release)"

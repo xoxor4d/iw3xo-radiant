@@ -132,7 +132,7 @@ namespace components
 	// *
 
 	bool g_log_rendercommands = false;
-	//int effect_drawsurf_count = 0;
+	game::Material* g_invalid_material = nullptr;
 
 	bool g_line_depth_testing = true;
 
@@ -1910,6 +1910,60 @@ namespace components
 		}
 	}
 
+
+	// *
+	// trigger reflections / prefab preview generation
+
+	void on_cam_paint_post_rendercommands()
+	{
+		if (dvars::r_reflectionprobe_generate->current.enabled)
+		{
+			if (!dvars::r_draw_bsp->current.enabled)
+			{
+				game::printf_to_console("[Reflections] Turning on bsp view ...");
+				command::execute("toggle_bsp_radiant");
+			}
+
+			reflectionprobes::generate_reflections_for_bsp();
+			dvars::set_bool(dvars::r_reflectionprobe_generate, false);
+		}
+
+		static bool skip_frame = false;
+		const bool drawfps_state = dvars::gui_draw_fps->current.enabled;
+
+		if(ggui::prefab_browser_generate_thumbnails)
+		{
+			if(!skip_frame)
+			{
+				dvars::set_bool(dvars::gui_draw_fps, false);
+				skip_frame = true;
+			}
+			else
+			{
+				generate_previews::generate_prefab_previews(ggui::prefab_browser_generate_thumbnails_folder);
+				ggui::prefab_browser_generate_thumbnails = false;
+				skip_frame = false;
+
+				dvars::set_bool(dvars::gui_draw_fps, drawfps_state);
+			}
+		}
+	}
+
+	void __declspec(naked) on_cam_paint_post_rendercommands_stub()
+	{
+		const static uint32_t func_addr = 0x4FD910; // R_SortMaterials
+		const static uint32_t retn_addr = 0x403070;
+		__asm
+		{
+			pushad;
+			call	on_cam_paint_post_rendercommands;
+			popad;
+
+			call	func_addr;
+			jmp		retn_addr;
+		}
+	}
+
 	
 	// *
 	// part of R_RenderScene
@@ -2334,6 +2388,8 @@ namespace components
 		state->prim.device->SetScissorRect(&rect);
 
 		//auto& rg = *reinterpret_cast<game::r_globals_t*>(0x13683F0);
+
+		renderer::effect_drawsurf_count_ = viewInfo->emissiveInfo.drawSurfCount;
 
 		game::R_DrawSurfs(source, state, nullptr, &viewInfo->emissiveInfo);
 		game::R_ShowTris(source, state, &viewInfo->emissiveInfo);
@@ -2977,6 +3033,139 @@ namespace components
 		utils::hook::call<void(__cdecl)()>(0x535F10)();
 	}
 
+	// called from QE_LoadProject
+	void renderer_init_internal()
+	{
+		g_invalid_material = game::Material_RegisterHandle("invalid_material", 0);
+	}
+
+	void __declspec(naked) r_begin_registration_internal_stub()
+	{
+		const static uint32_t func_addr = 0x5011D0; // overwritten call
+		const static uint32_t retn_addr = 0x4166D4;
+		__asm
+		{
+			call	func_addr;
+			add		esp, 4;
+
+			pushad;
+			call	renderer_init_internal;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
+
+
+	// *
+	// replace missing invisible materials with 'invalid_material' (custom material)
+	// *
+
+	game::Material* Material_Register_LoadObj(const char* name)
+	{
+		if (!name || !*name)
+		{
+			Assert();
+		}
+
+		bool exists;
+		std::uint16_t index;
+		game::Material_GetHashIndex(name, &index, &exists);
+
+		if (exists)
+		{
+			return static_cast<game::Material*>(game::rg->Material_materialHashTable[index]);
+		}
+
+		game::Material* material = game::Material_Load(name, 0);
+		if (!material)
+		{
+			if (!game::rgp->defaultMaterial)
+			{
+				if (strcmp(name, "$default"))
+				{
+					AssertS("!strcmp( name, MATERIAL_DEFAULT_NAME )");
+				}
+
+				game::Com_Error("couldn't load material '$default'");
+			}
+
+			game::printf_to_console("WARNING: Could not find material '%s'\n", name);
+
+			// #
+			// replace missing materials with the invalid material (fixed invisible brushes)
+
+			std::uint16_t invalid_mtl_idx;
+			bool invalid_mtl_exists;
+
+			game::Material_GetHashIndex("invalid_material", &invalid_mtl_idx, &invalid_mtl_exists); // wc/case256
+			if (invalid_mtl_exists)
+			{
+				const auto invalid_mtl = static_cast<game::Material*>(game::rg->Material_materialHashTable[invalid_mtl_idx]);
+				return utils::hook::call<game::Material* (__cdecl)(game::Material*, const char*)>(0x511900)(invalid_mtl, name); // Copy_Material
+			}
+
+			// og
+			return utils::hook::call<game::Material* (__cdecl)(game::Material*, const char*)>(0x511900)(game::rgp->defaultMaterial, name); // Copy_Material
+
+		}
+
+		game::Material_GetHashIndex(name, &index, &exists);
+		if (exists)
+		{
+			Assert();
+		}
+
+		game::Material_Add(index, material);
+		return material;
+	}
+
+	void __declspec(naked) Material_Register_LoadObj_stub01()
+	{
+		const static uint32_t retn_addr = 0x511BCF;
+		__asm
+		{
+			push	eax; // name
+			call	Material_Register_LoadObj;
+			add		esp, 4;
+			jmp		retn_addr;
+		}
+	}
+
+	void __declspec(naked) Material_Register_LoadObj_stub02()
+	{
+		const static uint32_t retn_addr = 0x511C50;
+		__asm
+		{
+			push	eax; // name
+			call	Material_Register_LoadObj;
+			add		esp, 4;
+			jmp		retn_addr;
+		}
+	}
+
+	// called on texture refresh and when chaning texture resolution
+	void on_reload_images()
+	{
+		for (auto img = 0; img < 32768; img++)
+		{
+			if (game::imageGlobals[img])
+			{
+				if (game::imageGlobals[img]->category == 3)
+				{
+					game::R_ReloadImage(game::imageGlobals[img]);
+				}
+				else if (game::imageGlobals[img]->category == 66)
+				{
+					game::Image_Release(game::imageGlobals[img]);
+
+					const auto jpg_string = "prefab_thumbs\\"s + game::imageGlobals[img]->name + ".jpg"s;
+					game::R_LoadJpeg(game::imageGlobals[img], jpg_string.c_str());
+				}
+			}
+		}
+	}
+
 
 	// *
 	// * Fix asserts when playing effects that use xmodels with no bsp loaded 
@@ -3341,6 +3530,18 @@ namespace components
 		// register smalldevfont
 		utils::hook(0x5011B8, post_render_init, HOOK_CALL).install()->quick();
 
+		// stub within R_BeginRegistrationInternal (on call to init layermatwnd)
+		utils::hook(0x4166CC, r_begin_registration_internal_stub, HOOK_JUMP).install()->quick();
+
+		// hk 'R_SortMaterials' call after 'R_IssueRenderCommands' in 'CCamWnd::OnPaint'
+		utils::hook(0x40306B, on_cam_paint_post_rendercommands_stub, HOOK_JUMP).install()->quick();
+
+		// replace missing invisible materials with 'invalid_material' (custom material)
+		utils::hook(0x511BCA, Material_Register_LoadObj_stub01, HOOK_JUMP).install()->quick();
+		utils::hook(0x511C4B, Material_Register_LoadObj_stub02, HOOK_JUMP).install()->quick();
+
+		// rewrite R_ReloadImages (mainly for the prefab previewer -> handle jpg)
+		utils::hook::detour(0x513D70, on_reload_images, HK_JUMP);
 
 		// *
 		// * Fix asserts when playing effects that use xmodels (gfx-scene-entities) with no bsp loaded 

@@ -147,6 +147,7 @@ namespace ggui
 
 	// --------------------
 
+
 	void camera_settings_dialog::bsp_settings()
 	{
 		const auto& style = ImGui::GetStyle();
@@ -158,27 +159,30 @@ namespace ggui
 		// -----------------
 		ImGui::title_with_seperator("BSP", false, 0, 2, 6.0f);
 
-
-		ImGui::Checkbox("Compile BSP", &this->m_bsp_bsp_compile);
+		ImGui::Dvar("Compile BSP", dvars::bsp_compile_bsp);
 		ImGui::SameLine(second_column);
-		ImGui::Checkbox("Only Ents", &this->m_bsp_bsp_only_ents);
+		ImGui::Dvar("Only Ents", dvars::bsp_compile_onlyents);
 
-		ImGui::Checkbox("Samplescale", &this->m_bsp_bsp_samplescale_enabled);
+		ImGui::Dvar("Samplescale", dvars::bsp_compile_samplescale_enabled);
 		ImGui::SameLine(second_column);
-		ImGui::BeginDisabled(!this->m_bsp_bsp_samplescale_enabled);
+		ImGui::BeginDisabled(!dvars::bsp_compile_samplescale_enabled->current.enabled);
 		{
 			ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX() - 4.0f);
-			ImGui::DragFloat("##num_samplescale", &this->m_bsp_bsp_samplescale, 0.01f, 0.1f, 16.0f, "%.2f");
+			ImGui::Dvar("##num_samplescale", dvars::bsp_compile_samplescale);
 			ImGui::EndDisabled();
 		}
 
 		SPACING(0.0f, 4.0f);
 
-		ImGui::Checkbox("Custom Commandline Settings - BSP", &this->m_bsp_bsp_custom_cmd_enabled);
-		ImGui::BeginDisabled(!this->m_bsp_bsp_custom_cmd_enabled);
+		ImGui::Dvar("Custom Commandline Settings - BSP", dvars::bsp_compile_custom_cmd_enabled);
+		ImGui::BeginDisabled(!dvars::bsp_compile_custom_cmd_enabled->current.enabled);
 		{
+			std::string temp_string = dvars::bsp_compile_custom_cmd->current.string;
 			ImGui::SetNextItemWidth(-8);
-			ImGui::InputText("##bsp_commandline", &this->m_bsp_bsp_custom_cmd, ImGuiInputTextFlags_None);
+			if(ImGui::InputText("##bsp_commandline", &temp_string, ImGuiInputTextFlags_None))
+			{
+				dvars::set_string(dvars::bsp_compile_custom_cmd, temp_string.c_str());
+			}
 			ImGui::EndDisabled();
 		}
 
@@ -186,32 +190,37 @@ namespace ggui
 		// -----------------
 		ImGui::title_with_seperator("Light", true, 0, 2, 6.0f);
 
-		ImGui::Checkbox("Compile Light", &this->m_bsp_light_compile);
+		ImGui::Dvar("Compile Light", dvars::bsp_compile_light);
 
-		ImGui::Checkbox("Fast", &this->m_bsp_light_fast);
+		ImGui::Dvar("Fast", dvars::bsp_compile_light_fast);
 		ImGui::SameLine(second_column);
-		ImGui::Checkbox("Extra", &this->m_bsp_light_extra);
+		ImGui::Dvar("Extra", dvars::bsp_compile_light_extra);
 
-		ImGui::Checkbox("Modelshadow", &this->m_bsp_light_modelshadow);
+		ImGui::Dvar("Modelshadow", dvars::bsp_compile_light_modelshadow);
 		ImGui::SameLine(second_column);
-		ImGui::Checkbox("Dump Options", &this->m_bsp_light_dump);
+		ImGui::Dvar("Dump Options", dvars::bsp_compile_light_dump);
 
-		ImGui::Checkbox("Traces", &this->m_bsp_light_traces_enabled);
+		ImGui::Dvar("Traces", dvars::bsp_compile_light_traces_enabled);
 		ImGui::SameLine(second_column);
-		ImGui::BeginDisabled(!this->m_bsp_light_traces_enabled);
+		ImGui::BeginDisabled(!dvars::bsp_compile_light_traces_enabled->current.enabled);
 		{
 			ImGui::SetNextItemWidth(ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX() - 4.0f);
-			ImGui::DragInt("##num_traces", &this->m_bsp_light_traces, 0.01f, 1, 512);
+			ImGui::Dvar("##num_traces", dvars::bsp_compile_light_traces);
 			ImGui::EndDisabled();
 		}
 
 		SPACING(0.0f, 4.0f);
 
-		ImGui::Checkbox("Custom Commandline Settings - Light", &this->m_bsp_light_custom_cmd_enabled);
-		ImGui::BeginDisabled(!this->m_bsp_light_custom_cmd_enabled);
+		ImGui::Dvar("Custom Commandline Settings - Light", dvars::bsp_compile_light_custom_cmd_enabled);
+		ImGui::BeginDisabled(!dvars::bsp_compile_light_custom_cmd_enabled->current.enabled);
 		{
+			std::string temp_string = dvars::bsp_compile_light_custom_cmd->current.string;
 			ImGui::SetNextItemWidth(-style.FramePadding.x);
-			ImGui::InputText("##light_commandline", &this->m_bsp_light_custom_cmd, ImGuiInputTextFlags_None);
+
+			if(ImGui::InputText("##light_commandline", &temp_string, ImGuiInputTextFlags_None))
+			{
+				dvars::set_string(dvars::bsp_compile_light_custom_cmd, temp_string.c_str());
+			}
 			ImGui::EndDisabled();
 		}
 
@@ -250,7 +259,7 @@ namespace ggui
 	
 	// --------------------
 
-	void camera_settings_dialog::gui()
+	bool camera_settings_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 220.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 720.0f); 
@@ -283,13 +292,13 @@ namespace ggui
 
 		if(!any_open)
 		{
-			return;
+			return false;
 		}
 
 		if (!ImGui::Begin("Cam Toolbar Settings##cam_settings_window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings /*| ImGuiWindowFlags_NoTitleBar*/))
 		{
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		static ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_AutoSelectNewTabs | ImGuiTabBarFlags_FittingPolicyResizeDown;
@@ -339,6 +348,8 @@ namespace ggui
 		}
 
 		ImGui::End();
+
+		return true;
 	}
 
 	void camera_settings_dialog::on_open()
@@ -352,6 +363,106 @@ namespace ggui
 		}
 
 		active_tab = -1;
+	}
+
+	void camera_settings_dialog::register_dvars()
+	{
+		dvars::bsp_compile_bsp = dvars::register_bool(
+			/* name		*/ "bsp_compile_bsp",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp compile setting");
+
+		dvars::bsp_compile_onlyents = dvars::register_bool(
+			/* name		*/ "bsp_compile_onlyents",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp compile setting");
+
+		dvars::bsp_compile_samplescale_enabled = dvars::register_bool(
+			/* name		*/ "bsp_compile_samplescale_enabled",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp compile setting");
+
+		dvars::bsp_compile_samplescale = dvars::register_float(
+			/* name		*/ "bsp_compile_samplescale",
+			/* default	*/ 1.0f,
+			/* mins		*/ 0.1f,
+			/* maxs		*/ 16.0f,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp compile setting");
+
+		dvars::bsp_compile_custom_cmd_enabled = dvars::register_bool(
+			/* name		*/ "bsp_compile_custom_cmd_enabled",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp compile setting");
+
+		dvars::bsp_compile_custom_cmd = dvars::register_string(
+			/* name		*/ "bsp_compile_custom_cmd",
+			/* default	*/ "",
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp compile setting");
+
+
+
+
+		dvars::bsp_compile_light = dvars::register_bool(
+			/* name		*/ "bsp_compile_light",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp light compile setting");
+
+		dvars::bsp_compile_light_fast = dvars::register_bool(
+			/* name		*/ "bsp_compile_light_fast",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp light compile setting");
+
+		dvars::bsp_compile_light_extra = dvars::register_bool(
+			/* name		*/ "bsp_compile_light_extra",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp light compile setting");
+
+		dvars::bsp_compile_light_modelshadow = dvars::register_bool(
+			/* name		*/ "bsp_compile_light_modelshadow",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp light compile setting");
+
+		dvars::bsp_compile_light_dump = dvars::register_bool(
+			/* name		*/ "bsp_compile_light_dump",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp light compile setting");
+
+		dvars::bsp_compile_light_traces_enabled = dvars::register_bool(
+			/* name		*/ "bsp_compile_light_traces_enabled",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp light compile setting");
+
+		dvars::bsp_compile_light_traces = dvars::register_int(
+			/* name		*/ "bsp_compile_light_traces",
+			/* default	*/ 64,
+			/* min		*/ 1,
+			/* max		*/ 512,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp light compile setting");
+
+		dvars::bsp_compile_light_custom_cmd_enabled = dvars::register_bool(
+			/* name		*/ "bsp_compile_light_custom_cmd_enabled",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp light compile setting");
+
+		dvars::bsp_compile_light_custom_cmd = dvars::register_string(
+			/* name		*/ "bsp_compile_light_custom_cmd",
+			/* default	*/ "",
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "bsp light compile setting");
 	}
 
 	REGISTER_GUI(camera_settings_dialog);

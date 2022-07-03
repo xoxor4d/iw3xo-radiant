@@ -2,7 +2,7 @@
 
 namespace ggui
 {
-	void gui_colors_dialog::gui()
+	bool gui_colors_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 800.0f);
@@ -18,7 +18,7 @@ namespace ggui
 		{
 			ImGui::PopStyleVar();
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		ImGui::Indent(4.0f);
@@ -106,6 +106,8 @@ namespace ggui
 
 		ImGui::PopStyleVar();
 		ImGui::End();
+
+		return true;
 	}
 
 	REGISTER_GUI(gui_colors_dialog);

@@ -2,7 +2,7 @@
 
 namespace ggui
 {
-	void template_dialog::gui()
+	bool template_dialog::gui()
 	{
 		ImGui::SetNextWindowSize(ImVec2(400.0f, 390.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
@@ -16,6 +16,12 @@ namespace ggui
 			ImGui::Text("Test");
 			ImGui::End();
 		}
+		else
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	void template_dialog::on_open()

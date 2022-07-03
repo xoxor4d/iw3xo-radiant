@@ -78,15 +78,30 @@ DWORD WINAPI update_check(LPVOID)
 
 			if (doc[0].HasMember("assets"))
 			{
-				if (doc[0]["assets"][0].HasMember("browser_download_url"))
+				rapidjson::Value& call_command = doc[0]["assets"][0];
+				const rapidjson::Value::ConstMemberIterator download_url_itr = call_command.FindMember("browser_download_url");
+				const rapidjson::Value::ConstMemberIterator release_name_itr = call_command.FindMember("name");
+
+				if (download_url_itr != call_command.MemberEnd())
 				{
-					game::glob::gh_update_link = doc[0]["assets"][0]["browser_download_url"].GetString();
+					game::glob::gh_update_link = download_url_itr->value.GetString();
 				}
 
-				if (doc[0]["assets"][0].HasMember("name"))
+				if (release_name_itr != call_command.MemberEnd())
+				{
+					game::glob::gh_update_zip_name = release_name_itr->value.GetString();
+				}
+
+				// this fails if the latest release on github has no download attached to it
+				/*if (doc[0]["assets"][0].HasMember("browser_download_url"))
+				{
+					game::glob::gh_update_link = doc[0]["assets"][0]["browser_download_url"].GetString();
+				}*/
+
+				/*if (doc[0]["assets"][0].HasMember("name"))
 				{
 					game::glob::gh_update_zip_name = doc[0]["assets"][0]["name"].GetString();
-				}
+				}*/
 			}
 		}
 
@@ -472,7 +487,6 @@ namespace components
 
 			generate_rope(utils::try_stoi(args[1], false), utils::try_stoi(args[2], false), utils::try_stoi(args[3], false));
 		});*/
-
 
 		// creates a brush that encupsules all selected brushes/patches and uses texture info of the first selected brush
 		// then deletes the original selection

@@ -5,7 +5,9 @@ namespace ggui
 	// right hand side toolbar
 	void camera_dialog::toolbar()
 	{
-		constexpr float CAM_DEBUG_TEXT_Y_OFFS = 180.0f;
+		const bool hide_cam_toolbar = dvars::gui_toolbox_integrate_cam_toolbar && dvars::gui_toolbox_integrate_cam_toolbar->current.enabled;
+
+		const auto CAM_DEBUG_TEXT_Y_OFFS = hide_cam_toolbar ? 140.0f : 180.0f;
 		const auto prefs = game::g_PrefsDlg();
 
 		ImVec2 toolbar_button_open_size = ImVec2(22.0f, 22.0f);
@@ -54,6 +56,13 @@ namespace ggui
 			ImGui::SetCursorPosY(cursor_pos.y + 16.0f);
 			ImGui::Text("Fx Drawsurf Count: %d", components::renderer::effect_drawsurf_count_);
 			ImGui::SetCursorPos(cursor_pos);
+		}
+
+		if (hide_cam_toolbar)
+		{
+			ImGui::PopStyleColor(_stylecolors);
+			ImGui::PopStyleVar(_stylevars);
+			return;
 		}
 
 		const auto tb = GET_GUI(ggui::toolbar_dialog);
@@ -109,7 +118,7 @@ namespace ggui
 						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
-						static bool hov_guizmo_brush_mode;
+						/*static bool hov_guizmo_brush_mode;
 						if (tb->image_togglebutton("guizmo_brush_mode"
 							, hov_guizmo_brush_mode
 							, dvars::guizmo_brush_mode->current.enabled
@@ -120,7 +129,7 @@ namespace ggui
 							, &toolbar_button_size))
 						{
 							dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
-						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());*/
 					}
 
 					ImGui::PopStyleVar();
@@ -528,8 +537,7 @@ namespace ggui
 	// right click context menu
 	void camera_dialog::context_menu()
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
+		ggui::context_menu_style_begin();
 
 		static game::trace_t cam_trace[21] = {};
 		static bool cam_context_menu_open = false;
@@ -541,7 +549,7 @@ namespace ggui
 			const bool is_alt_key_pressed = GetKeyState(VK_MENU) < 0;
 
 			// extend / extrude selected brush to traced face (ala bo3's reflection probe bounds)
-			if (is_alt_key_pressed && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && game::is_single_brush_selected())
+			if (is_alt_key_pressed && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && game::is_single_brush_selected())
 			{
 				cam_context_menu_open = false;
 				cam_context_menu_pending_open = false;
@@ -623,6 +631,17 @@ namespace ggui
 							}
 
 							game::Undo_End();
+
+
+							if(	   selbrush->def->mins[0] == selbrush->def->maxs[0]
+								|| selbrush->def->mins[1] == selbrush->def->maxs[1]
+								|| selbrush->def->mins[2] == selbrush->def->maxs[2])
+							{
+								game::printf_to_console("^1 Can not extrude to own face. Aborting ...\n");
+
+								// CMainFrame::OnEditUndo
+								mainframe_thiscall(void, 0x428730);
+							}
 						}
 					}
 				}
@@ -684,8 +703,6 @@ namespace ggui
 				{
 					if (!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##camera"))
 					{
-						ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
-
 						cam_context_menu_open = true;
 						cam_context_menu_pending_open = false;
 
@@ -754,7 +771,7 @@ namespace ggui
 								}
 							}
 
-							SEPERATORV(0.0f);
+							ImGui::Separator();
 
 							if (ImGui::MenuItem("Select All"))
 							{
@@ -790,7 +807,7 @@ namespace ggui
 										if (const auto	val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "classname");
 														val && val == "misc_prefab"s)
 										{
-											SEPERATORV(0.0f);
+											ImGui::Separator();
 											prefab_sep = true;
 
 											if (ImGui::MenuItem("Enter Prefab"))
@@ -815,7 +832,7 @@ namespace ggui
 										}
 										else if (game::g_prefab_stack_level)
 										{
-											SEPERATORV(0.0f);
+											ImGui::Separator();
 											prefab_sep = true;
 
 											if (ImGui::MenuItem("Leave Prefab"))
@@ -831,7 +848,7 @@ namespace ggui
 								{
 									if (!prefab_sep)
 									{
-										SEPERATORV(0.0f);
+										ImGui::Separator();
 										prefab_sep = true;
 									}
 
@@ -850,7 +867,7 @@ namespace ggui
 								{
 									if (!prefab_sep) 
 									{
-										SEPERATORV(0.0f);
+										ImGui::Separator();
 										prefab_sep = true;
 									}
 									
@@ -863,14 +880,14 @@ namespace ggui
 
 							if (any_selected)
 							{
-								if (!game::multiple_edit_entities)
+								//if (!game::multiple_edit_entities)
 								{
 									if (const auto	 selbrush = game::g_selected_brushes();
 													(selbrush && selbrush->def && selbrush->patch))
 									{
 										if (selbrush->patch->def->type != game::PATCH_TERRAIN)
 										{
-											SEPERATORV(0.0f);
+											ImGui::Separator();
 
 											if (ImGui::Selectable("Subdivision ++", false, ImGuiSelectableFlags_DontClosePopups))
 											{
@@ -885,7 +902,7 @@ namespace ggui
 											}
 										}
 
-										SEPERATORV(0.0f);
+										ImGui::Separator();
 
 										if (ImGui::MenuItem("Texture - Fit"))
 										{
@@ -918,7 +935,7 @@ namespace ggui
 							/*if (game::is_any_brush_selected())
 							{
 								export_selection_as_prefab_menu();
-								SEPERATORV(0.0f);
+								ImGui::Separator();
 							}*/
 						}
 						else if(game::is_any_brush_selected())
@@ -926,7 +943,6 @@ namespace ggui
 							convert_selection_to_prefab_imgui_menu();
 						}
 
-						ImGui::PopStyleColor();
 						ImGui::EndPopup();
 					}
 					else
@@ -947,7 +963,7 @@ namespace ggui
 			}
 		}
 
-		ImGui::PopStyleVar(2);
+		ggui::context_menu_style_end();
 	}
 
 
@@ -1051,6 +1067,80 @@ namespace ggui
 
 				// only drop if trace hit something
 				if(!trace_hit_void)
+				{
+					// CMainFrame::OnDropSelected
+					cdeclcall(void, 0x425BE0);
+				}
+
+				accepted_dragdrop = true;
+			}
+
+			// -----------------------
+
+			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
+			{
+				const auto payload = imgui::GetDragDropPayload();
+				const std::string prefab_path = "prefabs/"s + std::string(static_cast<const char*>(payload->Data), payload->DataSize);
+
+				const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
+				// reset manual left mouse capture
+				ggui::dragdrop_reset_leftmouse_capture();
+
+				ggui::entity_dialog::addprop_helper_s no_undo = {};
+				bool trace_hit_void = false;
+
+				game::Select_Deselect(true);
+				game::Undo_ClearRedo();
+				game::Undo_GeneralStart("create entity");
+
+				if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+				{
+					game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+				}
+
+				// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+				g_block_radiant_modeldialog = true;
+				game::CreateEntityFromName("misc_prefab");
+				g_block_radiant_modeldialog = false;
+
+				entity_gui->add_prop("model", prefab_path.c_str(), &no_undo);
+				
+				float dir[3];
+				ccamwnd::calculate_ray_direction(
+					this->rtt_get_cursor_pos_cpoint().x,
+					static_cast<int>(this->rtt_get_size().y) - this->rtt_get_cursor_pos_cpoint().y,
+					dir);
+
+				game::trace_t trace = {};
+				game::Trace_AllDirectionsIfFailed(cmainframe::activewnd->m_pCamWnd->camera.origin, &trace, dir, 0x1200);
+
+				float origin[3];
+
+				// if trace hit something other then the void
+				if (trace.brush)
+				{
+					utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, trace.dist, dir, origin);
+				}
+				// if trace hit nothing, spawn model infront of the camera
+				else
+				{
+					trace_hit_void = true;
+
+					const float dist = 100.0f;
+					utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, dist, dir, origin);
+				}
+
+				char origin_str_buf[64] = {};
+				if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", origin[0], origin[1], origin[2]))
+				{
+					entity_gui->add_prop("origin", origin_str_buf, &no_undo);
+				}
+
+				game::Undo_End();
+
+				// only drop if trace hit something
+				if (!trace_hit_void)
 				{
 					// CMainFrame::OnDropSelected
 					cdeclcall(void, 0x425BE0);
@@ -1187,7 +1277,7 @@ namespace ggui
 				ggui::camera_guizmo::guizmo(camera_size, accepted_dragdrop);
 
 				// right hand side toolbar
-				toolbar(); 
+				toolbar();
 
 				ImGui::EndChild();
 			}
@@ -1198,8 +1288,10 @@ namespace ggui
 		ImGui::End();
 	}
 
-	void camera_dialog::gui()
-	{ }
+	bool camera_dialog::gui()
+	{
+		return false;
+	}
 
 	void camera_dialog::on_open()
 	{

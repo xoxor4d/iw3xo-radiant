@@ -114,6 +114,9 @@ namespace game
 
 	extern float*	g_vRotateOrigin;
 	extern int&		g_prefab_stack_level;
+
+	extern bool&	g_bDoCone;
+	extern bool&	g_bDoSphere;
 	
 	extern game::SCommandInfo*	g_Commands;
 	extern int		g_nCommandCount;
@@ -141,6 +144,7 @@ namespace game
 	extern game::r_global_permanent_t* rgp;
 	extern game::GfxScene* scene;
 	extern game::DxGlobals* dx;
+	extern game::GfxImage** imageGlobals;
 
 	extern game::ComWorld* comworld;
 	extern game::GfxWorld* s_world;
@@ -154,10 +158,14 @@ namespace game
 	extern game::selbrush_def_t* g_active_brushes_next();
 	extern game::selbrush_def_t* g_selected_brushes();
 	extern game::selbrush_def_t* g_selected_brushes_next();
+
+	extern const int& g_selected_faces_count;
 	extern game::selface_t* g_selected_faces();
 	extern game::entity_s_def* g_edit_entity();
 	extern int& multiple_edit_entities;
 	extern HWND* entitywnd_hwnds;
+
+	extern CLayerDlg* layer_dlg;
 	
 	extern game::eclass_t* g_eclass();
 	extern CSurfaceDlg* get_surfacedialog();
@@ -177,6 +185,7 @@ namespace game
 	void Undo_EndBrushList(void* sb); //(game::selbrush_def_t* sb /*esi*/);
 	void Undo_EndBrushList_Selected();
 	void Undo_AddEntity_W(game::entity_s* ent /*eax*/);
+	void Undo_SetIdForEntity(game::entity_s* ent /*edx*/);
 	inline auto Undo_AddBrush = reinterpret_cast<void (*)(game::brush_t_with_custom_def*)>(0x45E680);
 	inline auto Undo_End = reinterpret_cast<void (*)()>(0x45EA20);
 
@@ -209,10 +218,15 @@ namespace game
 	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, int always_true);
 	void Patch_SetTextureInfo(game::texdef_sub_t* texdef /*ebx*/);
 	void Patch_ShiftTexture(game::patchMesh_t* def, float shift_horz, float shift_vert);
+	inline auto Patch_Lightmap_Texturing = reinterpret_cast<void (*)()>(0x448110);
 	void Patch_Lightmap_Texturing_dirty(game::patchMesh_t* p /*esi*/);
+	inline auto Patch_NaturalizeSelected = reinterpret_cast<void (*)(bool unk, bool cap, float x, float y)>(0x447FD0);
+	inline auto Patch_SetTexturing = reinterpret_cast<void (*)(float x, float y, int mode)>(0x446B60);
 	void Patch_CalcBounds(game::patchMesh_t* p, game::vec3_t& vMin, game::vec3_t& vMax);
 	void Patch_Adjust(game::patchMesh_t* p, bool insert, bool column, bool flag);
 	game::patchMesh_t* Patch_Duplicate(game::patchMesh_t* p /*edi*/);
+	game::selbrush_def_t* Patch_Cap(patchMesh_t* pm /*ecx*/, int bByColumn, int bFirst);
+	game::selbrush_def_t* Patch_CapSpecial(patchMesh_t* pm /*ecx*/, int nType, int bFirst);
 	void Patch_Invert(game::patchMesh_t* p /*ebx*/);
 	void Patch_Rebuild(game::patchMesh_t* p /*esi*/, int reset);
 	void Patch_InsertColumn(patchMesh_t* p, bool flag /*cl*/);
@@ -222,6 +236,7 @@ namespace game
 	inline auto Patch_MeshNormals = reinterpret_cast<void (*)(game::patchMesh_t*)>(0x437C80);
 	inline auto Patch_GenericMesh = reinterpret_cast<game::selbrush_def_t* (*)(int nWidth, int nHeight, int nOrientation, bool bDeleteSource, bool bOverwrite)>(0x43B310);
 	inline auto Create_Terrain = reinterpret_cast<game::selbrush_def_t* (*)(int nWidth, int nHeight, int nOrientation)>(0x43B660);
+	inline auto Patch_Thicken = reinterpret_cast<void (*)(int thickness, bool create_seams)>(0x448700);
 
 	void Brush_Move(const float* delta, game::brush_t_with_custom_def* def, int snap);
 	int  Brush_MoveVertex(const float* delta /*eax*/, game::brush_t_with_custom_def* def, float* move_points, float* end);
@@ -232,29 +247,32 @@ namespace game
 	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/);
 	void Brush_Deselect(game::brush_t* b /*esi*/);
 	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection);
-	inline auto QE_SingleBrush = reinterpret_cast<bool (*)()>(0x48C8B0); // no warnings when bQuiet
+	inline auto QE_SingleBrush = reinterpret_cast<bool (*)()>(0x48C8B0); // use is_single_brush_selected when used in loops
 	inline auto Brush_MakeFacePlanes = reinterpret_cast<void (*)(game::brush_t_with_custom_def* b)>(0x470A50); // calculate normal and dist from planepts
+	inline auto Brush_MakeSidedCone = reinterpret_cast<void (*)(int num_sides)>(0x47BC10);
+	inline auto Brush_MakeSided_Axis = reinterpret_cast<void (*)(int num_sides, bool snap)>(0x4735E0);
+	inline auto Brush_SetSampleSize = reinterpret_cast<void (*)(float sample_size)>(0x48F800);
+	inline auto Brush_FitTexture = reinterpret_cast<void (*)(float x, float y, int bounds)>(0x4939E0);
 	int CM_ForEachBrushPlaneIntersection(game::brush_t_with_custom_def* b /*esi*/, game::BrushPt_t* brush_pts);
 	
 	inline auto SetKeyValue = reinterpret_cast<void (*)(game::entity_s * ent, const char* key, const char* value)>(0x483690);
 	inline auto SetKeyValuePairs = reinterpret_cast<void (*)()>(0x496CF0);
 	inline auto CreateEntity = reinterpret_cast<void (*)()>(0x497300);
+	game::eclass_t* Eclass_ForName(const char* name /*ecx*/, int has_brushes);
 	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y);
 	inline auto CreateEntityFromName = reinterpret_cast<void (*)(const char* name)>(0x465CC0); // does not add an undo
 	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* cxywnd);
+	game::entity_s* Entity_Create(eclass_t* eclass /*eax*/);
 
 	inline auto Test_Ray = reinterpret_cast<void (*)(float* start, float* dir, int contents, game::trace_t * trace, int num_traces)>(0x48D7C0);
 	game::trace_t* Trace_AllDirectionsIfFailed(float* cam_origin /*ebx*/, void* trace_result, float* dir, int contents);
 	inline auto R_GetXModelBounds = reinterpret_cast<void (*)(game::XModel * model, float* axis, float* mins, float* maxs)>(0x4C9150); // world bounds, not local
 
-	
-
-	
-	
-
-
-	
-	
+	void map_load_from_file(const char* path);
+	void map_save_file(const char* path /*ecx*/, int is_reg, int save_to_perforce);
+	void map_write_selection(const char* path);
+	void mru_new_item(game::LPMRUMENU* mru, const char* item_str);
+	void mru_insert_item(game::LPMRUMENU* mru, HMENU menu);
 
 
 	// *
@@ -267,7 +285,7 @@ namespace game
 	inline auto R_SetupViewParms = reinterpret_cast<game::GfxViewParms* (*)()>(0x4FB540);
 	inline auto R_SetupProjection = reinterpret_cast<void (*)(game::GfxMatrix*, float halfx, float halfy, float znear)>(0x4A78E0);
 	inline auto R_SetupRenderCmd = reinterpret_cast<void (*)(game::GfxSceneDef*, game::GfxViewParms*)>(0x4FC3A0);
-	inline auto R_Clear = reinterpret_cast<void (*)(int, const float*, float, bool)>(0x4FCC70);
+	inline auto R_Clear = reinterpret_cast<void (*)(int whichToClear, const float* color, float depth, bool)>(0x4FCC70);
 	inline auto R_ClearScreen = reinterpret_cast<void (*)(IDirect3DDevice9*, int whichToClear, const float* color, float depth, bool stencil, game::GfxViewport*)>(0x539AA0);
 	inline auto R_IssueRenderCommands = reinterpret_cast<void (*)(int)>(0x4FD630);
 	inline auto R_SortMaterials = reinterpret_cast<void (*)()>(0x4FD910);
@@ -377,9 +395,15 @@ namespace game
 	int FS_OpenFileOverwrite(const char* path /*esi*/);
 	inline auto FS_Write = reinterpret_cast<int (*)(const void* buffer, size_t len, int h)>(0x49FF10);
 
+	inline auto Image_Alloc = reinterpret_cast<game::GfxImage* (*)(const char* name, char category, char semantic, char imageTrack)>(0x5128B0);
+	inline auto R_LoadJpeg = reinterpret_cast<bool (*)(game::GfxImage * img, const char* img_path)>(0x54FD40);
+	inline auto R_ReloadImage = reinterpret_cast<bool (*)(game::GfxImage* img)>(0x513490); // release and reload (iwi only)
+	inline auto Image_Release = reinterpret_cast<void (*)(game::GfxImage* img)>(0x5125D0); // release img
 	game::GfxImage* Image_FindExisting(const char* name);
 	game::GfxImage* Image_RegisterHandle(const char* name);
 	void Material_Add(int idx/*eax*/, game::Material* material/*esi*/);
+	inline auto Material_Load = reinterpret_cast<game::Material* (*)(const char* name, int img_track)>(0x51B690);
+	inline auto Material_GetHashIndex = reinterpret_cast<void (*)(const char* name, std::uint16_t * index, bool* exists)>(0x510E10);
 	inline auto Material_RegisterHandle = reinterpret_cast<game::Material* (*)(const char* name, int)>(0x511BE0);
 	inline auto R_RegisterModel = reinterpret_cast<game::XModel* (*)(const char* name)>(0x51D450);
 	inline auto R_RegisterLightDef = reinterpret_cast<game::GfxLightDef* (*)(const char* name)>(0x53D510);

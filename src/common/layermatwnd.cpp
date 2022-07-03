@@ -230,7 +230,7 @@ void clayermatwnd::on_paint()
 
 					// begin a new frame, clear the scene
 					game::R_BeginFrame();
-					game::R_Clear(7, game::g_qeglobals->d_savedinfo.colors[0], 1.0f, 0);
+					game::R_Clear(7, dvars::gui_window_bg_color->current.vector, 1.0f, false);
 
 					// setup scene
 					float axis[9];

@@ -10,14 +10,26 @@ namespace fx_system
 	struct FxFloatRange;
 }
 
+// forward decl
+namespace game
+{
+	struct dvar_s;
+}
+
 namespace ImGui
 {
+	int		popup_close_map();
+
+	bool	ImageButtonScaled(ImTextureID user_texture_id, const ImVec2& size, const float scale, const ImVec2& uv0 = ImVec2(0.0f, 0.0f), const ImVec2& uv1 = ImVec2(1.0f, 1.0f), int frame_padding = -1, const ImVec4& bg_col = ImVec4(0.0f, 0.0f, 0.0f, 0.0f), const ImVec4& tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
+	bool	TreeNodeEx(const char* label, bool* is_hovered, bool* is_pressed, ImGuiTreeNodeFlags flags);
 	bool	Spinner(const char* label, float radius, float thickness, const ImU32& color);
 	
 	bool	IsVertScollbarVisible();
 	void	left_label_drag(const char* label, const float text_y_offset, const float sameline_offset = 80.0f);
 	void	left_label_checkbox(const char* label, const float text_y_offset);
 
+	void	Dvar(const char* label, game::dvar_s* dvar);
 	void	DvarBool_External(const char* checkbox_label, const char* dvar_name);
 	void	DvarInt_External(const char* checkbox_label, const char* dvar_name);
 	void	DvarFloat_External(const char* checkbox_label, const char* dvar_name);
@@ -46,6 +58,7 @@ namespace ImGui
 	void	SetCursorForCenteredText(const char* text);
 	void	title_with_background(const char* title_text, const ImVec2& pos, const float width, const float height, const float* bg_color, const float* border_color, bool pre_spacing = true, const float text_indent = 8.0f);
 	void	title_with_seperator(const char* title_text, bool pre_spacing = true, float width = 0.0f, float height = 2.0f, float post_spacing = 0.0f);
+	void	title_inside_seperator(const char* title_text, bool pre_spacing, float width, float post_spacing, float thickness = 1.0f);
 	void	title_with_seperator_helpmark(const char* title_text, bool pre_spacing, float width, float height, float post_spacing, const char* helper_text);
 	bool    InputScalarDir(const char* label, ImGuiDataType data_type, void* p_data, int* dir, void* p_step = nullptr, const void* p_step_fast = nullptr, bool display_p_step = false, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
 

@@ -381,17 +381,24 @@ void ccamwnd::register_dvars()
 		/* flags	*/ game::dvar_flags::saved,
 		/* desc		*/ "Guizmo: Enable grid-snapping");
 
-	dvars::guizmo_brush_mode = dvars::register_bool(
-		/* name		*/ "guizmo_brush_mode",
-		/* default	*/ true,
-		/* flags	*/ game::dvar_flags::saved,
-		/* desc		*/ "Guizmo: Enable brush mode");
+	//dvars::guizmo_brush_mode = dvars::register_bool(
+	//	/* name		*/ "guizmo_brush_mode",
+	//	/* default	*/ true,
+	//	/* flags	*/ game::dvar_flags::saved,
+	//	/* desc		*/ "Guizmo: Enable brush mode");
 
 	dvars::gui_camera_toolbar_defaultopen = dvars::register_bool(
 		/* name		*/ "gui_camera_toolbar_defaultopen",
 		/* default	*/ false,
 		/* flags	*/ game::dvar_flags::saved,
 		/* desc		*/ "Open the camera toolbar by default");
+
+	
+	dvars::gui_toolbox_integrate_cam_toolbar = dvars::register_bool(
+		/* name		*/ "gui_toolbox_integrate_cam_toolbar",
+		/* default	*/ false,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "integrate camera window toolbar into toolbox");
 }
 
 void ccamwnd::hooks()

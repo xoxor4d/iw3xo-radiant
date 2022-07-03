@@ -103,11 +103,19 @@ namespace ggui
 
 
 			// -----------------
-			ImGui::title_with_seperator("Property Editor");
+			ImGui::title_with_seperator("Property Editor & Toolbox");
 			ImGui::Checkbox("Default Open - Classlist", &dvars::gui_props_classlist_defaultopen->current.enabled); TT(dvars::gui_props_classlist_defaultopen->description);
 			ImGui::Checkbox("Default Open - Spawnflags", &dvars::gui_props_spawnflags_defaultopen->current.enabled); TT(dvars::gui_props_spawnflags_defaultopen->description);
 			ImGui::Checkbox("Default Open - Comments", &dvars::gui_props_comments_defaultopen->current.enabled); TT(dvars::gui_props_comments_defaultopen->description);
-			ImGui::Checkbox("Incorporate surface-inspector into property window", &dvars::gui_props_surfinspector->current.enabled); TT(dvars::gui_props_surfinspector->description);
+
+			ImGui::Checkbox("Integrate camera toolbar into toolbox", &dvars::gui_toolbox_integrate_cam_toolbar->current.enabled); TT(dvars::gui_toolbox_integrate_cam_toolbar->description);
+			ImGui::Checkbox("Integrate entity-properties into toolbox", &dvars::gui_props_toolbox->current.enabled); TT(dvars::gui_props_toolbox->description);
+
+			const char* incorp_surf_inspector_strings[4] = { "None", "Entity Properties", "Toolbox" };
+			if (ImGui::SliderInt("Integrate surface-inspector into", &dvars::gui_props_surfinspector->current.integer, 0, 2, incorp_surf_inspector_strings[dvars::gui_props_surfinspector->current.integer]))
+			{
+				dvars::gui_props_surfinspector->modified = true;
+			} TT("Integration into the entity window only works if the entity window is not integrated into the toolbox");
 		});
 	}
 
@@ -133,13 +141,13 @@ namespace ggui
 
 			SPACING(0.0f, 6.0f);
 
-			ImGui::Checkbox("Loose changes dialog on exit", &prefs->loose_changes);
+			ImGui::Checkbox("Enable 'lose changes dialog' on exit", &prefs->loose_changes);
 			ImGui::Checkbox("Enable snapshots", &prefs->m_bSnapShots);
 
 			ImGui::Checkbox("Enable autosave", &prefs->m_bAutoSave);
 			ImGui::BeginDisabled(!prefs->m_bAutoSave);
 			{
-				ImGui::SliderInt("Autosave intervall", &prefs->m_nAutoSave, 1, 60);
+				ImGui::SliderInt("Autosave interval", &prefs->m_nAutoSave, 1, 60);
 			}
 			ImGui::EndDisabled();
 
@@ -420,6 +428,60 @@ namespace ggui
 
 			SPACING(0.0f, 4.0f);
 
+			game::qtexture_s* texwndglob_textures = reinterpret_cast<game::qtexture_s*>(*(DWORD*)0x25E79A8);
+
+			const char* mat_names[4] = { "ace_wall_stone1_plain", "ch_factory_floorgrate", "ch_grass_01", "me_wallpaper2" };
+
+			if (ImGui::Button("Load tex favs"))
+			{
+				ctexwnd::load_favourites();
+			}
+
+			if(ImGui::Button("Texture filter test"))
+			{
+				// hide all
+				game::qtexture_s* tex = texwndglob_textures;
+				for (; tex; tex = tex->prev)
+				{
+					tex->is_in_use = false;
+				}
+
+				tex = texwndglob_textures;
+				for (; tex; tex = tex->prev)
+				{
+					for(auto m = 0; m < IM_ARRAYSIZE(mat_names); m++)
+					{
+						if (utils::string_equals(tex->name, mat_names[m]))
+						{
+							tex->is_in_use = true;
+						}
+					}
+				}
+			}
+
+			SPACING(0.0f, 4.0f);
+
+			if(ImGui::Button("Toast Success"))
+			{
+				ImGui::InsertNotification(
+					{ ImGuiToastType_Success, 2000, "Hello World! This is a success! %s", ICON_FA_APPLE_ALT});
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Toast Info"))
+			{
+				ImGuiToast toast(ImGuiToastType_Info, 2000);
+				toast.set_title("Autosave");
+
+				ImGui::InsertNotification(toast);
+			}
+
+			ImGui::SameLine();
+			if (ImGui::Button("Print Error"))
+			{
+				game::printf_to_console("[ERR] This is an error message!");
+			}
+
 			ImGui::DragInt("Integer01", &dev_num_01, 0.1f);
 			ImGui::DragInt("Integer02", &dev_num_02, 0.1f);
 			ImGui::Checkbox("Bool01", &dev_bool_01);
@@ -429,7 +491,7 @@ namespace ggui
 		});
 	}
 
-	void preferences_dialog::gui()
+	bool preferences_dialog::gui()
 	{
 		if (!this->is_initiated())
 		{
@@ -458,7 +520,7 @@ namespace ggui
 			ImGui::PopStyleColor(stylecolors);
 			ImGui::PopStyleVar(stylevars);
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		if (ImGui::BeginListBox("##pref_cat", ImVec2(180.0f, ImGui::GetContentRegionAvail().y)))
@@ -493,7 +555,7 @@ namespace ggui
 			ImGui::PopStyleColor(stylecolors);
 			ImGui::PopStyleVar(stylevars);
 			ImGui::End();
-			return;
+			return false;
 		}
 
 		SPACING(0.0f, 0.0f);
@@ -512,6 +574,8 @@ namespace ggui
 
 		// end "Preferences##window"
 		ImGui::End();
+
+		return true;
 	}
 
 	// CMainFrame::OnPrefs

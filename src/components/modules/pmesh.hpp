@@ -8,5 +8,7 @@ namespace components
 		pmesh();
 		~pmesh();
 		const char* get_name() override { return "pmesh"; };
+
+		static void cap_current(int type);
 	};
 }

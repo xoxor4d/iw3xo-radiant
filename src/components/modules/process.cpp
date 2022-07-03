@@ -142,10 +142,16 @@ namespace components
 			});
 		}
 
+		game::printf_to_console(pthis->m_kill_thread ? "^1[PROCESS] Process was killed" : "^2[PROCESS] Process ended successfully!");
+
+		ImGuiToast toast(pthis->m_kill_thread ? ImGuiToastType_Warning : ImGuiToastType_Success, 2500);
+		toast.set_title(pthis->m_kill_thread ? "Process was killed" : "Process ended successfully");
+		//toast.set_content();
+		ImGui::InsertNotification(toast);
+
 		process::pthis->reset();
 		GET_GUI(ggui::menubar_dialog)->set_process_status("");
 
-		game::printf_to_console(pthis->m_kill_thread ? "^1[PROCESS] Process was killed" : "^2[PROCESS] Process ended successfully!");
 		return true;
 	}
 

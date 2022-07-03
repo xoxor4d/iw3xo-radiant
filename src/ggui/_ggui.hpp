@@ -2,11 +2,30 @@
 
 namespace ggui
 {
+	// *
+	// | -------------------- Variables ------------------------
+	// *
+
+	extern bool			m_init_saved_states;
+
+	extern bool			m_ggui_initialized;
+	extern bool			m_ggui_second_frame;
+
+	extern ImGuiContext* m_ggui_context;
+
+	extern ImGuiID		m_dockspace_outer_left_node;
+	extern bool			m_dockspace_initiated;
+	extern bool			m_dockspace_reset;
+	extern bool			mainframe_menubar_enabled;
+
+	extern bool			m_demo_menu_state;
+
 	enum E_FONT
 	{
 		BOLD_18PX = 0,
 		REGULAR_12PX = 1,
-		REGULAR_18PX = 2,
+		REGULAR_14PX = 2,
+		REGULAR_18PX = 3,
 	};
 	
 	enum E_CALLTYPE
@@ -138,7 +157,7 @@ namespace ggui
 	public:
 		ggui_module() = default;
 		virtual ~ggui_module() = default;
-		virtual void gui() {}
+		virtual bool gui() { return false; }
 		virtual void on_open() {}
 		virtual void on_close() {}
 
@@ -152,12 +171,20 @@ namespace ggui
 		{
 			if (is_active())
 			{
+				if (ggui::m_ggui_second_frame && this->is_bring_to_front_pending())
+				{
+					set_bring_to_front(false);
+					ImGui::SetNextWindowFocus();
+				}
+
 				if(!was_active())
 				{
 					on_open();
-				}
+				} 
 
-				gui();
+				const bool is_visible = gui();
+				set_inactive_tab(!is_visible);
+
 				set_was_active(true);
 			}
 			else if (was_active())
@@ -508,22 +535,6 @@ namespace											\
 	static ggui::loader::installer<name> $_##name;	\
 }
 
-	// *
-	// | -------------------- Variables ------------------------
-	// *
-
-	extern bool			m_init_saved_states;
-
-	extern bool			m_ggui_initialized;
-	extern ImGuiContext* m_ggui_context;
-
-	extern ImGuiID		m_dockspace_outer_left_node;
-	extern bool			m_dockspace_initiated;
-	extern bool			m_dockspace_reset;
-	extern bool			mainframe_menubar_enabled;
-
-	extern bool			m_demo_menu_state;
-
 	// -----------
 
 	struct commandbinds
@@ -547,6 +558,9 @@ namespace											\
 	extern ImVec2 get_initial_window_pos();
 	extern void set_next_window_initial_pos_and_constraints(ImVec2 mins, ImVec2 initial_size, ImVec2 overwrite_pos = ImVec2(0.0f, 0.0f));
 	extern bool is_ggui_initialized();
+
+	extern void context_menu_style_begin();
+	extern void context_menu_style_end();
 
 	extern bool rtt_handle_windowfocus_overlaywidget(bool* gui_hover_state);
 	extern void redraw_undocking_triangle(ImGuiWindow* wnd, bool* gui_hover_state);

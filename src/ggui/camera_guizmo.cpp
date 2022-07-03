@@ -221,7 +221,7 @@ namespace ggui::camera_guizmo
 				utils::vector::set_vec3(snap, snap_size);
 			}
 
-			if (dvars::guizmo_brush_mode->current.enabled)
+			//if (dvars::guizmo_brush_mode->current.enabled)
 			{
 				if (const auto b = game::g_selected_brushes()->def; b)
 				{
@@ -442,98 +442,6 @@ namespace ggui::camera_guizmo
 							game::Undo_EndBrushList_Selected();
 							game::Undo_End();
 							added_undo = false;
-						}
-					}
-				}
-			}
-#if 0 // bounds
-
-			game::vec3_t local_mins;
-			game::vec3_t local_maxs;
-
-			utils::vector::subtract(b->currSelection->mins, v_mid, local_mins);
-			utils::vector::subtract(b->currSelection->maxs, v_mid, local_maxs);
-
-			float bounds[] =
-			{
-				local_mins[0], local_mins[1], local_mins[2],
-				local_maxs[0], local_maxs[1], local_maxs[2]
-			};
-
-			float tmp_matrix[16];
-			ImGuizmo::RecomposeMatrixFromComponents(v_mid, angles, mtx_scale, tmp_matrix);
-
-			if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], ImGuizmo::OPERATION::BOUNDS, ImGuizmo::MODE::WORLD, tmp_matrix, nullptr, nullptr, bounds))
-			{
-
-			}
-#endif
-
-			// ----------------------
-			// entities (static models / lights / spawns etc)
-			// actually handled pretty good via "Select_ApplyMatrix" above .. will still keep it for now
-
-			// edit_entity is unsave and can point to junk memory when transitioning into and out of prefabs
-			// use selected_brushes->def->owner instead
-
-			//else if (const auto edit_entity = game::g_edit_entity(); edit_entity && edit_entity->epairs)
-			else if(const auto	b = game::g_selected_brushes();
-								b && b->def && b->def->owner)
-			{
-				const auto edit_entity = b->def->owner;
-
-				if (edit_entity->eclass->name == "worldspawn"s)
-				{
-					// pass mouse input to imgui if guizmo is hovered (TODO: only pass left click)
-					if (ImGuizmo::IsOver())
-					{
-						//camerawnd->window_hovered = false;
-						camerawnd->rtt_set_lmb_capturing(true);
-					}
-
-					for (auto epair = edit_entity->epairs; epair; epair = epair->next)
-					{
-						std::string key = utils::str_to_lower(epair->key);
-						if (key == "angles")
-						{
-							// switch axis
-							if (sscanf(epair->value, "%f %f %f", &angles[1], &angles[2], &angles[0]) == 3)
-							{
-							}
-
-							break;
-						}
-					}
-
-					float tmp_matrix[16];
-					ImGuizmo::RecomposeMatrixFromComponents(edit_entity->origin, angles, mtx_scale, tmp_matrix);
-
-					guizmo_visible = true;
-
-					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, nullptr, snap))
-					{
-						if (ImGuizmo::IsOver())
-						{
-							float t_origin[3], t_angles[3];
-							ImGuizmo::DecomposeMatrixToComponents(tmp_matrix, t_origin, t_angles, mtx_scale);
-
-							char org_str[64] = {};
-
-							ggui::entity_dialog::addprop_helper_s helper = {};
-							helper.add_undo = false;
-
-							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_origin[0], t_origin[1], t_origin[2])) 
-							{
-								helper.is_origin = true;
-								GET_GUI(ggui::entity_dialog)->add_prop("origin", org_str, &helper);
-							}
-
-							// switch axis
-							if (sprintf_s(org_str, "%.5f %.5f %.5f", t_angles[1], t_angles[2], t_angles[0])) 
-							{
-								helper.is_angle = true;
-								GET_GUI(ggui::entity_dialog)->add_prop("angles", org_str, &helper);
-							}
 						}
 					}
 				}

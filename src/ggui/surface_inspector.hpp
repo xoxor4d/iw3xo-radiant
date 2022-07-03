@@ -99,11 +99,11 @@ namespace ggui
 		// *
 		// public member functions
 
-		void gui() override;
+		bool gui() override;
 		void on_open() override;
 		void on_close() override;
 
-		void inspector_controls();
+		void inspector_controls(bool is_toolbox = false, float max_width = 0.0f);
 
 		// *
 		// asm related
@@ -113,8 +113,8 @@ namespace ggui
 		// *
 		// init
 
-		void	hooks();
-		void	register_dvars();
+		static void	hooks();
+		static void	register_dvars();
 
 	private:
 		typedef int TEXMODE;

@@ -83,17 +83,23 @@
 #include "common/imgui/imgui_addons.hpp"
 #include "common/imgui/imgui_color_gradient.hpp"
 #include "common/imgui/imgui_curves.hpp"
+#pragma warning(push)
+#pragma warning(disable: 4172)
+#include "common/imgui/imgui_notify.hpp"
+#pragma warning(pop)
 
 #include "detours/Detours.h"
 #include "fifo_map.hpp"
 
-#pragma warning(push, 0)  
+#pragma warning(push, 0)
 #include "ImGuizmo.h"
 #pragma warning(pop)
 
+#pragma warning(push, 0)
 #include <rapidjson/document.h>
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
+#pragma warning(pop)
 
 #include <WinHttpClient.h>
 
@@ -139,15 +145,18 @@
 #include "ggui/grid.hpp"
 #include "ggui/help.hpp"
 #include "ggui/hotkeys.hpp"
+#include "ggui/layers.hpp"
 #include "ggui/l2d_file_dialog.hpp"
 #include "ggui/menubar.hpp"
 #include "ggui/modelselector.hpp"
 #include "ggui/patch.hpp"
+#include "ggui/prefab_preview.hpp"
 #include "ggui/preferences.hpp"
 #include "ggui/rope_generator.hpp"
 #include "ggui/surface_inspector.hpp"
 #include "ggui/textures.hpp"
 #include "ggui/toolbar.hpp"
+#include "ggui/toolbox.hpp"
 #include "ggui/vertex_edit.hpp"
 
 #include "common/mainframe.hpp"
@@ -160,3 +169,4 @@
 #include "components/loader.hpp"
 
 using namespace std::literals;
+namespace imgui = ImGui;

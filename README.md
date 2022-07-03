@@ -18,16 +18,24 @@ Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You 
 
 <br>
 
+### Project Page (Guide / In-Depth)
+https://xoxor4d.github.io/projects/iw3xo-radiant
+
+<br>
+
 ### nightly builds - develop branch
 ( download and install the [latest release](https://github.com/xoxor4d/iw3xo-radiant/releases) before using nightly's )
 
 [![build-develop](https://img.shields.io/github/workflow/status/xoxor4d/iw3xo-radiant/Build-Debug/develop?logo=github&label=nightly-develop)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-debug/develop/Debug%20binaries.zip)&ensp;
 [![build-release](https://img.shields.io/github/workflow/status/xoxor4d/iw3xo-radiant/Build-Release/develop?logo=github&label=nightly-release)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-release/develop/Release%20binaries.zip)&ensp;
 
+
+
 <br>
 
-### Project Page (Guide / In-Depth)
-https://xoxor4d.github.io/projects/iw3xo-radiant
+If you want to buy me a coffee:
+
+[![ko-fi](https://xoxor4d.github.io/assets/img/social/kofi.png)](https://ko-fi.com/xoxor4d)
 
 </div>
 
@@ -54,30 +62,43 @@ ___
 - extend functionalities across the board
 
 ### New features not found within the original cod4 radiant:
-- play, edit and export effects as createFx files right from within radiant (makes effectsEd _almost_ obsolete)
-- switch / scale / place the individual windows however you want
-- preview xmodels and drag them directly into the scene using the model previewer
-- custom lighting shader with normal-mapping, specular highlights, reflections and fog
-- ability to limit shadow drawing distance when using stock sunpreview (++FPS)
-- filmtweak support
-- render actual water instead of case-textures 
-- guizmo to manipulate entities and brushes from within the camera window
-- live link (sync. brushes (with collision), camera and worldspawn settings between cod4 and radiant)
-- high poly xmodel's no longer crash radiant
-- realtime viewports
-- better surface / property editor
-- context aware grid and camera context menus with QoL features
-- better vertex edit dialog
-- zoom to cursor
-- editable toolbars, hotkeys, colors (all saved)
-- new file dialogs with working default paths
-- texture window toolbar for quick filtering
-- rope/wire generator
-- sun direction visualizer
-- a proper console with dvar support (incl. dvar suggestions and autocomplete)
-- print parsed entity and brush num on map load making it easier to find issues in map files (off by default) 
-- increased undo limit
-- alot of QOL features
+ + completely revamped user interface with docking, tabs, saved layouts and more (Dear ImGui)
++ [play](https://xoxor4d.github.io/tutorials/iw3xradiant-using-effects/) && [edit / create](https://xoxor4d.github.io/tutorials/iw3xradiant-effects-editor/) && [export effects as CreateFX](https://xoxor4d.github.io/tutorials/iw3xradiant-createfx/) files right from within radiant (__makes effectsEd completely obsolete__)
++ [d3dbsp loading](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp/) and bsp/light compilation from within radiant
++ [automatically generate reflections](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp-reflections/) within radiant when compiling the maps bsp
++ [live link](https://xoxor4d.github.io/tutorials/iw3xradiant-livelink/) (sync. brushes (with collision), camera and worldspawn settings between cod4 and radiant)   
++ 3D guizmo to precisely manipulate entities and brushes from the camera window (ImGuizmo)
++ preview xmodels and drag them directly into the scene using the model browser
++ a prefab browser with the ability to generate thumbnails (no more guess work + prefabs can be dragged into the scene)
++ custom lighting shader with normal-mapping, specular highlights, reflections and fog
++ ability to limit shadow drawing distance when using stock sunpreview (++FPS)
++ filmtweak support
++ render actual water instead of case-textures
++ increased asset limits to allow high poly models
++ realtime viewports
++ context aware grid and camera context menus with QoL features
++ a toolbox featuring all related functions for brushes/patches and more
++ better surface / property editor (can be integrated into the ^ toolbox)
++ better vertex edit dialog
++ better layer dialog
++ zoom to cursor
++ toast notifications
++ editable toolbars, hotkeys, colors
++ new file dialogs with working default paths
++ texture window toolbar for quick filtering
++ custom texture favourite lists that can be created from within radiant (add/remove selected texture to/from the list)
++ rope/wire generator
++ sun direction visualizer
++ a proper console with dvar support (incl. dvar suggestions and autocomplete)
++ increased undo limit
++ missing materials are now using a proper invalid_texture material and are no longer invisible
++ print parsed entity and brush num on map load making it easier to find issues in map files (off by default)
++ bo3 tool textures (optional)
++ [stamp prefabs](https://xoxor4d.github.io/tutorials/iw3xradiant-prefab/) 
++ [create prefab from selection](https://xoxor4d.github.io/tutorials/iw3xradiant-prefab/) 
++ terrain patch thickening
++ [extrude selected brush to other brush faces](https://xoxor4d.github.io/tutorials/iw3xradiant-brush-face-extending/) 
++ ++ alot more QoL features
 
 <br>
 
@@ -156,7 +177,9 @@ https://discord.gg/t5jRGbj
 - [nlohmann - fifo_map](https://github.com/nlohmann/fifo_map)
 - [David Gallardo - imgui_color_gradient](https://gist.github.com/galloscript/8a5d179e432e062550972afcd1ecf112)
 - [nem0 - ImGui CurveEditor](https://github.com/nem0/LumixEngine/blob/39e46c18a58111cc3c8c10a4d5ebbb614f19b1b8/external/imgui/imgui_user.inl#L505-L930)
+- [Limeoats - L2DFileDialog](https://github.com/Limeoats/L2DFileDialog/)
 - [zfedoran - ImGui Spinner](https://github.com/ocornut/imgui/issues/1901)
+- [patrickcjk - imgui-notify](https://github.com/patrickcjk/imgui-notify)
 - [maluoi - tga writer](https://gist.github.com/maluoi/ade07688e741ab188841223b8ffeed22)
 - [Infinity Ward - OG. Radiant and Effects Framework](https://www.infinityward.com)
 - [id-Software - OG. Radiant](https://github.com/id-Software/Quake-III-Arena/tree/master/q3radiant)

@@ -21,7 +21,7 @@ void cmainframe::routine_processing()
 	{
 		return;
 	}
-	
+
 	if (0.0 == game::g_time)
 	{
 		game::g_time = 0.0;
@@ -124,8 +124,9 @@ void __declspec(naked) cmainframe::hk_routine_processing(void)
 
 void on_createclient()
 {
-	const auto prefs = game::g_PrefsDlg();
+	radiantapp::on_create_client();
 
+	const auto prefs = game::g_PrefsDlg();
 	if (!prefs->m_nView || prefs->m_nView == 3)
 	{
 		if(!dvars::mainframe_show_console->current.enabled)
@@ -153,34 +154,6 @@ void on_createclient()
 	{
 		prefs->m_bRightClick = !dvars::gui_use_new_context_menu->current.enabled;
 	}
-
-	// disable r_vsync
-	if (const auto& r_vsync = game::Dvar_FindVar("r_vsync");
-					r_vsync && r_vsync->current.enabled)
-	{
-		dvars::set_bool(r_vsync, false);
-	}
-
-	// disable debug plumes drawing (only effect xmodels)
-	if (const auto& r_showTriCounts = game::Dvar_FindVar("r_showTriCounts");
-					r_showTriCounts && r_showTriCounts->current.enabled)
-	{
-		dvars::set_bool(r_showTriCounts, false);
-	}
-
-	if (const auto& r_showVertCounts = game::Dvar_FindVar("r_showVertCounts");
-					r_showVertCounts && r_showVertCounts->current.enabled) 
-	{
-		dvars::set_bool(r_showVertCounts, false);
-	}
-
-	if (const auto& r_showSurfCounts = game::Dvar_FindVar("r_showSurfCounts");
-					r_showSurfCounts && r_showSurfCounts->current.enabled)
-	{
-		dvars::set_bool(r_showSurfCounts, false);
-	}
-	
-	components::d3dbsp::force_dvars();
 
 	// hide original windows and show the z-view (rendering canvas for imgui)
 	if(cmainframe::activewnd)
@@ -216,7 +189,7 @@ void on_createclient()
 
 void __declspec(naked) hk_on_createclient()
 {
-	const static uint32_t retn_pt = 0x4232F3;
+	const static uint32_t retn_addr = 0x4232F3;
 	__asm
 	{
 		pushad;
@@ -224,7 +197,7 @@ void __declspec(naked) hk_on_createclient()
 		popad;
 
 		mov     eax, 1; // og
-		jmp		retn_pt;
+		jmp		retn_addr;
 	}
 }
 
@@ -635,6 +608,12 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 	game::printf_to_console("mainframe keydown: %s", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
+	// there is one "bad" keydown on the first frame ..'O'
+	if(nChar == 79 && !nRepCnt && !nFlags)
+	{
+		return;
+	}
+
 	if (ggui::is_ggui_initialized())
 	{
 		// set cz context (in-case we use multiple imgui context's)
@@ -814,21 +793,7 @@ void __fastcall cmainframe::on_size(cmainframe* pThis, [[maybe_unused]] void* ed
 
 void __fastcall cmainframe::on_destroy(cmainframe* pThis)
 {
-	// restore states filter states
-	if (components::gameview::p_this->get_all_geo_state())		components::gameview::p_this->toggle_all_geo(false);
-	if (components::gameview::p_this->get_all_ents_state())		components::gameview::p_this->toggle_all_entities(false);
-	if (components::gameview::p_this->get_all_triggers_state()) components::gameview::p_this->toggle_all_triggers(false);
-	if (components::gameview::p_this->get_all_others_state())	components::gameview::p_this->toggle_all_others(false);
-
-	if (dvars::radiant_gameview->current.enabled)
-	{
-		components::gameview::p_this->set_state(false);
-	}
-
-	components::remote_net::on_shutdown();
-
-	components::config::write_dvars();
-	
+	radiantapp::on_shutdown();
 	__on_destroy(pThis);
 }
 
@@ -887,6 +852,25 @@ void __declspec(naked) set_windowplacement_stub()
 	}
 }
 
+void set_default_texture()
+{
+	cdeclcall(void, 0x45B650); // Texture_ResetPosition
+}
+
+void __declspec(naked) set_default_texture_stub()
+{
+	const static uint32_t retn_pt = 0x420025;
+
+	__asm
+	{
+		pushad;
+		call	set_default_texture;
+		popad;
+
+		jmp		retn_pt;
+	}
+}
+
 
 void cmainframe::register_dvars()
 {
@@ -939,6 +923,10 @@ void cmainframe::hooks()
 	utils::hook::nop(0x420B04, 12 + 29 + 22); // create
 	utils::hook::nop(0x4210ED, 59); // font stuff
 #endif
+
+	// set default selected texture to caulk
+	utils::hook::nop(0x41FC69, 6);
+	utils::hook(0x41FC69, set_default_texture_stub, HOOK_JUMP).install()->quick();
 
 	// hook SetWindowPlacement (Radiant::MainWindowPlace) in OnCreateClient to fix minimize issue
 	utils::hook::nop(0x4225CB, 8);

@@ -200,7 +200,10 @@ namespace ggui
 
 		static std::string grid_context_last_spawned_entity;
 
-		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+		// alt detection is kinda bugged via imgui
+		const bool is_alt_key_pressed = GetKeyState(VK_MENU) < 0;
+
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !is_alt_key_pressed && !ImGui::IsKeyDown(ImGuiKey_ModCtrl))
 		{
 			if(cxywnd->m_ptDrag.x == cxywnd->m_ptDown.x && cxywnd->m_ptDrag.y == cxywnd->m_ptDown.y)
 			{
@@ -210,8 +213,7 @@ namespace ggui
 
 		if(grid_context_open || grid_context_pending_open)
 		{
-			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
-			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
+			ggui::context_menu_style_begin();
 
 			if (!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##grid"))
 			{
@@ -467,7 +469,7 @@ namespace ggui
 				grid_context_open = false;
 			}
 
-			ImGui::PopStyleVar(2);
+			ggui::context_menu_style_end();
 		}
 	}
 
@@ -523,10 +525,7 @@ namespace ggui
 
 					// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
 					g_block_radiant_modeldialog = true;
-
-					//CreateEntityFromName(classname);
-					utils::hook::call<void(__cdecl)(const char*)>(0x465CC0)("misc_model");
-
+					game::CreateEntityFromName("misc_model");
 					g_block_radiant_modeldialog = false;
 
 					entity_gui->add_prop("model", m_selector->m_preview_model_name.c_str(), &no_undo);
@@ -534,6 +533,44 @@ namespace ggui
 
 					game::Undo_End();
 				}
+			}
+
+			// -------------------------------
+
+			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
+			{
+				const auto payload = imgui::GetDragDropPayload();
+				const std::string prefab_path = "prefabs/"s + std::string(static_cast<const char*>(payload->Data), payload->DataSize);
+
+				const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
+				// reset manual left mouse capture
+				ggui::dragdrop_reset_leftmouse_capture();
+
+				ggui::entity_dialog::addprop_helper_s no_undo = {};
+
+				game::Select_Deselect(true);
+				game::Undo_ClearRedo();
+				game::Undo_GeneralStart("create entity");
+
+				if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+				{
+					game::CreateEntityBrush(
+						static_cast<int>(this->rtt_get_size().y) - this->rtt_get_cursor_pos_cpoint().y,
+						this->rtt_get_cursor_pos_cpoint().x,
+						cmainframe::activewnd->m_pXYWnd);
+				}
+
+				// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+				g_block_radiant_modeldialog = true;
+				game::CreateEntityFromName("misc_prefab");
+				g_block_radiant_modeldialog = false;
+
+				entity_gui->add_prop("model", prefab_path.c_str(), &no_undo);
+				game::Undo_End();
+
+				// CMainFrame::OnDropSelected
+				//cdeclcall(void, 0x425BE0);
 			}
 		}
 	}
@@ -638,8 +675,10 @@ namespace ggui
 		ImGui::End();
 	}
 
-	void grid_dialog::gui()
-	{ }
+	bool grid_dialog::gui()
+	{
+		return false;
+	}
 
 	void grid_dialog::on_open()
 	{ }

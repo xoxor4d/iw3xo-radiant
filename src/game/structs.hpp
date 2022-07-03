@@ -20,8 +20,8 @@ namespace game
 		PATCH_CONE =		0x10,
 		PATCH_TRIANGLE =	0x20,	// unused?
 		PATCH_TERRAIN =		0x40,
+		PATCH_SEAM =		0x100,	//PATCH_SEAM =		0x2000,
 		PATCH_CAP =			0x1000,
-		PATCH_SEAM =		0x2000,
 		PATCH_THICK =		0x4000,
 	};
 
@@ -66,6 +66,16 @@ namespace game
 		RM_NORMALFAKELIGHT,
 		RM_VIEWFAKELIGHT,
 		RM_CASETEXTURES,
+	};
+
+	enum XY_SHOW_FLAGS
+	{
+		GRID_FLAG_ANGLES = 0x2,
+		GRID_FLAG_CONNECTIONS = 0x4,
+		GRID_FLAG_NAMES = 0x8,
+		GRID_FLAG_BLOCKS = 0x10,
+		GRID_FLAG_COORDINATES = 0x20,
+		GRID_FLAG_REVERSE_FILTER = 0x40,
 	};
 	
 	struct ServerCommand
@@ -376,7 +386,7 @@ namespace game
 	{
 		qtexture_s* next; // not qtexture_s
 		const char* name;
-		bool visible;
+		bool is_in_use;
 		__int8 unk1;
 		__int8 usage_index;
 		__int8 unk2;
@@ -661,7 +671,7 @@ namespace game
 		int height;
 		int contents;
 		int flags;
-		int type;
+		int type; // PATCH_TYPE
 		int subDivType;
 		patchMesh_material texture;
 		patchMesh_material lightmap;

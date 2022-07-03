@@ -8,7 +8,7 @@
 namespace ggui
 {
 	const ImVec2		TB_IMAGEBUTTON_SIZE = ImVec2(28.0f, 28.0f);
-	const std::string	TB_INI_FILENAME = "iw3r_toolbar.ini"s;
+	const std::string	TB_INI_FILENAME = "toolbar.ini"s;
 
 	bool toolbar_dialog::image_button(const char* image_name, bool& hovered_state, const char* tooltip)
 	{
@@ -137,16 +137,22 @@ namespace ggui
 
 			ImGui::BeginGroup();
 			{
-				const float cursor_y = ImGui::GetCursorPos().y;
-				ImGui::SetCursorPosY(cursor_y - 4.0f);
-				ImGui::TextUnformatted(label);
+				if(label && !utils::starts_with(label, "##"))
+				{
+					const float cursor_y = ImGui::GetCursorPos().y;
+					ImGui::SetCursorPosY(cursor_y - 4.0f);
+					ImGui::TextUnformatted(label);
 
-				ImGui::SameLine(0, 2.0f);
-				ImGui::SetCursorPosY(cursor_y);
+					ImGui::SameLine(0, 2.0f);
+					ImGui::SetCursorPosY(cursor_y);
+				}
+
+				ImGui::PushID(label);
 				if (ImGui::ImageButton(image->texture.data, *btn_size, uv0, uv1, 0, bg_col))
 				{
 					ret_state = true;
 				}
+				ImGui::PopID();
 
 				hovered_state_bg = ImGui::IsItemHovered();
 
@@ -793,7 +799,7 @@ namespace ggui
 					game::g_qeglobals->d_select_mode == 9,
 					"Toggle terrain-quad edge cycle mode"))
 				{
-					mainframe_thiscall(LRESULT, 0x42B530);
+					mainframe_thiscall(LRESULT, 0x42B530); // CMainFrame::OnCycleTerrainEdge
 				}
 			});
 
@@ -807,7 +813,7 @@ namespace ggui
 					prefs->m_bTolerantWeld,
 					"Toggle tolerant weld / Draw tolerant weld lines"))
 				{
-					mainframe_thiscall(LRESULT, 0x42A130);
+					mainframe_thiscall(LRESULT, 0x42A130); // CMainFrame::OnTolerantWeld
 				}
 			});
 
@@ -905,7 +911,7 @@ namespace ggui
 				ImGui::EndDisabled();
 			});
 
-		register_element("guizmo_brush_mode"s, false, []()
+		/*register_element("guizmo_brush_mode"s, false, []()
 			{
 				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
 				{
@@ -920,7 +926,7 @@ namespace ggui
 					}
 				}
 				ImGui::EndDisabled();
-			});
+			});*/
 
 		register_element("gameview"s, false, []()
 			{
@@ -1121,14 +1127,14 @@ namespace ggui
 
 			
 			std::string ini_path = fs_homepath->current.string;
-						ini_path += "\\" + TB_INI_FILENAME;
+						ini_path += "\\IW3xRadiant\\" + TB_INI_FILENAME;
 
 			std::ifstream ini;
 			ini.open(ini_path.c_str());
 
 			if (!ini.is_open())
 			{
-				game::printf_to_console("[Toolbar] Failed to open ini: \"%s\"", ini_path.c_str());
+				//game::printf_to_console("[!][Toolbar] Failed to open ini: '%s'", ini_path.c_str());
 				no_ini_or_empty = true;
 			}
 
@@ -1161,7 +1167,7 @@ namespace ggui
 
 					if (args.size() != 2)
 					{
-						printf("[Toolbar] malformed element @ line #%d (\"%s\")\n", line, input.c_str());
+						printf("[!][Toolbar] malformed element @ line #%d ('%s')", line, input.c_str());
 						continue;
 					}
 
@@ -1176,7 +1182,7 @@ namespace ggui
 					}
 					else
 					{
-						game::printf_to_console("[Toolbar] not a valid element @ line #%d (\"%s\")\n", line, input.c_str());
+						game::printf_to_console("[!][Toolbar] not a valid element @ line #%d ('%s')", line, input.c_str());
 					}
 				}
 
@@ -1237,12 +1243,12 @@ namespace ggui
 		{
 			std::ofstream ini;
 			std::string ini_path = fs_homepath->current.string;
-			ini_path += "\\" + TB_INI_FILENAME;
+						ini_path += "\\IW3xRadiant\\" + TB_INI_FILENAME;
 
 			ini.open(ini_path.c_str());
 			if (!ini.is_open())
 			{
-				printf("[Toolbar] Failed to write to file: \"%s\"", ini_path.c_str());
+				printf("[ERR][Toolbar] Failed to write to file: '%s'", ini_path.c_str());
 				return;
 			}
 
@@ -1264,6 +1270,8 @@ namespace ggui
 					ini << element.name << "," << element.visible << std::endl;
 				}
 			}
+
+			ini.close();
 		}
 	}
 
@@ -1442,8 +1450,10 @@ namespace ggui
 	}
 
 
-	void toolbar_dialog::gui()
-	{ }
+	bool toolbar_dialog::gui()
+	{
+		return false;
+	}
 
 	void toolbar_dialog::on_open()
 	{ }
@@ -1460,7 +1470,7 @@ namespace ggui
 
 namespace ggui
 {
-	void toolbar_edit_dialog::gui()
+	bool toolbar_edit_dialog::gui()
 	{
 		const auto tb = GET_GUI(ggui::toolbar_dialog);
 
@@ -1471,7 +1481,11 @@ namespace ggui
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		ImGui::Begin("Toolbar Editor##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse);
+		if(!ImGui::Begin("Toolbar Editor##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
+		{
+			ImGui::End();
+			return false;
+		}
 
 
 		static float button_group_width = 140.0f;
@@ -1639,6 +1653,7 @@ namespace ggui
 
 		ImGui::PopStyleVar();
 		ImGui::End();
+		return true;
 	}
 
 	void toolbar_edit_dialog::on_open()

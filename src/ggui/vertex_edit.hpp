@@ -11,7 +11,7 @@ namespace ggui
 		// *
 		// public member functions
 
-		void gui() override;
+		bool gui() override;
 
 		// *
 		// asm related
@@ -21,8 +21,8 @@ namespace ggui
 		// *
 		// init
 
-		void hooks();
-		void register_dvars();
+		static void hooks();
+		static void register_dvars();
 
 	private:
 		void feature_noise();

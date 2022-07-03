@@ -11,23 +11,6 @@ namespace ggui
 		float	material_specular[4] = { 0.35f, 0.45f, 1.0f, 4.0f };
 		float	ambient[4] = { 0.3f, 0.3f, 0.3f, 0.35f };
 
-		bool	m_bsp_bsp_compile = true;
-		bool	m_bsp_bsp_only_ents = false;
-		bool	m_bsp_bsp_custom_cmd_enabled = false;
-		bool	m_bsp_bsp_samplescale_enabled = false;
-		float	m_bsp_bsp_samplescale = 1.0f;
-		std::string m_bsp_bsp_custom_cmd;
-
-		bool	m_bsp_light_compile = true;
-		bool	m_bsp_light_fast = true;
-		bool	m_bsp_light_extra = false;
-		bool	m_bsp_light_modelshadow = false;
-		bool	m_bsp_light_dump = false;
-		bool	m_bsp_light_custom_cmd_enabled = false;
-		bool	m_bsp_light_traces_enabled = false;
-		int		m_bsp_light_traces = 64;
-		std::string m_bsp_light_custom_cmd;
-
 		int		active_tab = -1;
 		bool	refocus_active_tab = false;
 
@@ -102,7 +85,7 @@ namespace ggui
 			}
 		}
 
-		void gui() override;
+		bool gui() override;
 		void on_open() override;
 		void on_close() override;
 
@@ -113,6 +96,8 @@ namespace ggui
 
 		// *
 		// init
+
+		static void register_dvars();
 
 	private:
 		void fakesun_settings();

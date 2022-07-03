@@ -20,7 +20,15 @@ namespace components
 
 		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_bold_compressed_data, fonts::opensans_bold_compressed_size, 18.0f);
 		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 12.0f);
-		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f);
+		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 14.0f);
+
+		ImFontConfig font_cfg;
+		font_cfg.FontDataOwnedByAtlas = false;
+
+		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f, &font_cfg);
+
+		// Initialize notify
+		ImGui::MergeIconsWithLatestFont(18.0f, false);
 	}
 
 
@@ -47,7 +55,7 @@ namespace components
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
 		//io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;			// Enable Multi-Viewport / Platform Windows
 		io.ConfigWindowsResizeFromEdges = true;
-		io.IniFilename = "iw3r_czwnd_imgui.ini";
+		io.IniFilename = "IW3xRadiant\\imgui.ini";
 
 		// implementation
 		ImGui_ImplWin32_Init(cmainframe::activewnd->m_pZWnd->GetWindow());
@@ -194,7 +202,9 @@ namespace components
 					tb->m_toolbar_dock_left = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.01f, nullptr, &main_dock);
 					ImGui::DockBuilderSetNodeSize(tb->m_toolbar_dock_left, ImVec2(36, viewport->Size.y));
 					
-					ggui::m_dockspace_outer_left_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.5f, nullptr, &main_dock);
+					ggui::m_dockspace_outer_left_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Left, 0.45f, nullptr, &main_dock);
+					const auto dockspace_toolbox_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Right, 0.325f, nullptr, &main_dock);
+
 					const auto dockspace_right_top_node = ImGui::DockBuilderSplitNode(main_dock, ImGuiDir_Up, 0.6f, nullptr, &main_dock);
 
 					if (tb->m_toolbar_axis == ImGuiAxis_X)
@@ -209,26 +219,26 @@ namespace components
 					ImGui::DockBuilderDockWindow("Grid Window##rtt", ggui::m_dockspace_outer_left_node);
 					ImGui::DockBuilderDockWindow("Camera Window##rtt", dockspace_right_top_node);
 
+					ImGui::DockBuilderDockWindow("Filters##window", dockspace_toolbox_node);
+					ImGui::DockBuilderDockWindow("Toolbox##window", dockspace_toolbox_node);
+
 					ImGui::DockBuilderDockWindow("Textures##rtt", main_dock);
-					ImGui::DockBuilderDockWindow("Console##window", main_dock);
+					ImGui::DockBuilderDockWindow("Model Browser##rtt", main_dock);
+					ImGui::DockBuilderDockWindow("Prefab Browser##window", main_dock);
+					ImGui::DockBuilderDockWindow("Console##window", main_dock); 
 					
 					ImGui::DockBuilderFinish(dockspace_id);
 
-					// ^ open texture window on initial startup
-					if(const auto tex = GET_GUI(ggui::texture_dialog);
-								 !tex->is_initiated())
-					{
-						tex->open();
-						tex->set_initiated();
-					}
-					
-					// ^ open console on initial startup
-					if(const auto con = GET_GUI(ggui::console_dialog); 
-								 !con->is_initiated())
-					{
-						con->open();
-						con->set_initiated();
-					}
+					GET_GUI(ggui::texture_dialog)->open();
+					GET_GUI(ggui::texture_dialog)->set_bring_to_front(true);
+
+					GET_GUI(ggui::console_dialog)->open();
+					GET_GUI(ggui::modelselector_dialog)->open();
+					GET_GUI(ggui::prefab_preview_dialog)->open();
+					GET_GUI(ggui::filter_dialog)->open();
+
+					GET_GUI(ggui::toolbox_dialog)->open();
+					GET_GUI(ggui::toolbox_dialog)->set_bring_to_front(true);
 				}
 
 				ggui::m_dockspace_initiated = true;
@@ -438,6 +448,28 @@ namespace components
 				ImGui::End();
 			}*/
 
+			/*ImGui::Begin("Test");
+			{
+				if (ImGui::Button("Snapshot Toast"))
+				{
+					ImGuiToast toast(ImGuiToastType_Info, 2500);
+					toast.set_title("Snapshot created");
+					toast.set_content(R"(D:\COD4Modtools\map_source\snapshots\mp_bsptest.map.5)");
+
+					ImGui::InsertNotification(toast);
+				}
+			}
+			ImGui::End();*/
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.0f);
+			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.1f));
+
+			ImGui::RenderNotifications();
+
+			ImGui::PopStyleVar(2); 
+			ImGui::PopStyleColor(1);
+
 			// end the current context frame
 			goto END_FRAME;
 		}
@@ -457,6 +489,8 @@ namespace components
 			ImGui::UpdatePlatformWindows();
 			ImGui::RenderPlatformWindowsDefault();
 		}
+
+		ggui::m_ggui_second_frame = true;
 	}
 
 
@@ -478,17 +512,19 @@ namespace components
 		}
 	}
 
-#define HANDLE_SAVED_STATE(_GUI_CLASS, _DVAR, _STARTUP)										\
-		if(!(_STARTUP))																		\
+#define HANDLE_SAVED_STATE_INT(_GUI_CLASS, _DVAR, _STARTUP)									\
+		if(!(_STARTUP) && (_DVAR))															\
 		{																					\
-			if ((_DVAR))																	\
-				GET_GUI(_GUI_CLASS)->toggle(true, (_DVAR)->current.enabled);				\
+			const auto dialog = GET_GUI(_GUI_CLASS);										\
+			dialog->toggle(true, (_DVAR)->current.integer);									\
+			dialog->set_bring_to_front((_DVAR)->current.integer == 2);						\
 		}																					\
-		else																				\
+		else if((_DVAR))																	\
 		{																					\
-			if ((_DVAR) && GET_GUI(_GUI_CLASS)->is_active() != (_DVAR)->current.enabled)	\
-				dvars::set_bool((_DVAR), GET_GUI(_GUI_CLASS)->is_active());					\
-		}																					\
+			const auto dialog = GET_GUI(_GUI_CLASS);										\
+			const bool open_and_front = dialog->is_active() && !dialog->is_inactive_tab();	\
+			dvars::set_int((_DVAR), open_and_front ? 2 : dialog->is_active() ? 1 : 0);		\
+		}
 
 	// *
 	// handles opened/closed states of windows via dvars
@@ -496,12 +532,14 @@ namespace components
 	void gui::saved_windowstates()
 	{
 		// handles init and update
-		HANDLE_SAVED_STATE(ggui::console_dialog, dvars::gui_saved_state_console, ggui::m_init_saved_states);
-		HANDLE_SAVED_STATE(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::m_init_saved_states);
-		HANDLE_SAVED_STATE(ggui::filter_dialog, dvars::gui_saved_state_filter, ggui::m_init_saved_states);
-		HANDLE_SAVED_STATE(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::m_init_saved_states);
-		HANDLE_SAVED_STATE(ggui::surface_dialog, dvars::gui_saved_state_surfinspector, ggui::m_init_saved_states);
-		HANDLE_SAVED_STATE(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::console_dialog, dvars::gui_saved_state_console, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::filter_dialog, dvars::gui_saved_state_filter, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::prefab_preview_dialog, dvars::gui_saved_state_prefab_browser, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::surface_dialog, dvars::gui_saved_state_surfinspector, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::toolbox_dialog, dvars::gui_saved_state_toolbox, ggui::m_init_saved_states);
 
 		ggui::m_init_saved_states = true;
 	}
@@ -549,6 +587,64 @@ namespace components
 		}
 	}
 
+
+	// *
+	// *
+
+
+	void map_autosave_toast(const char* file, int is_snapshot)
+	{
+		ImGuiToast toast(ImGuiToastType_Info, 2000);
+		toast.set_title(is_snapshot ? "Snapshot created" : "Autosave created");
+		toast.set_content(file);
+
+		ImGui::InsertNotification(toast);
+	}
+
+	__declspec(naked) void map_snapshot_toast_stub()
+	{
+		const static uint32_t retn_addr = 0x48B391; // Map_SaveFile
+		__asm
+		{
+			pushad;
+			push	1;
+			push	ebx;
+			call	map_autosave_toast;
+			add		esp, 8;
+			popad;
+
+			// org
+			push    1; 
+			push    0;
+			mov     ecx, ebx;
+			jmp		retn_addr;
+		}
+	}
+
+	__declspec(naked) void map_autosave_toast_stub()
+	{
+		const char* map_str;
+
+		const static uint32_t func_addr = 0x486C00; // Map_SaveFile
+		const static uint32_t retn_addr = 0x48B5DE;
+		__asm
+		{
+			mov		map_str, ecx;
+			call	func_addr;
+			add		esp, 8;
+
+			pushad;
+			push	0;
+			push	map_str;
+			call	map_autosave_toast;
+			add		esp, 8;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
+
+
 	// *
 	// register_addon_dvars()
 	void gui::register_dvars()
@@ -566,9 +662,9 @@ namespace components
 
 		dvars::gui_window_bg_color = dvars::register_vec4(
 			/* name		*/ "gui_window_bg_color",
-			/* x		*/ 0.172f,
-			/* y		*/ 0.172f,
-			/* z		*/ 0.172f,
+			/* x		*/ 0.173f,
+			/* y		*/ 0.173f,
+			/* z		*/ 0.173f,
 			/* w		*/ 1.0f,
 			/* minVal	*/ 0.0f,
 			/* maxVal	*/ 1.0f,
@@ -577,9 +673,9 @@ namespace components
 		
 		dvars::gui_window_child_bg_color = dvars::register_vec4(
 			/* name		*/ "gui_window_child_bg_color",
-			/* x		*/ 0.17f,
-			/* y		*/ 0.17f,
-			/* z		*/ 0.17f,
+			/* x		*/ 0.173f,
+			/* y		*/ 0.173f,
+			/* z		*/ 0.173f,
 			/* w		*/ 1.0f,
 			/* minVal	*/ 0.0f,
 			/* maxVal	*/ 1.0f,
@@ -713,42 +809,70 @@ namespace components
 
 		// *
 		// gui::saved_windowstates()
-		
-		dvars::gui_saved_state_console = dvars::register_bool(
+
+		dvars::gui_saved_state_console = dvars::register_int(
 			/* name		*/ "gui_saved_state_console",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of console window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
-		dvars::gui_saved_state_filter = dvars::register_bool(
+		dvars::gui_saved_state_filter = dvars::register_int(
 			/* name		*/ "gui_saved_state_filter",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of filter window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
-		dvars::gui_saved_state_entity = dvars::register_bool(
+		dvars::gui_saved_state_entity = dvars::register_int(
 			/* name		*/ "gui_saved_state_entity",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of entity window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
-		dvars::gui_saved_state_textures = dvars::register_bool(
+		dvars::gui_saved_state_textures = dvars::register_int(
 			/* name		*/ "gui_saved_state_textures",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of texture window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
-		dvars::gui_saved_state_modelselector = dvars::register_bool(
+		dvars::gui_saved_state_modelselector = dvars::register_int(
 			/* name		*/ "gui_saved_state_modelselector",
-			/* default	*/ false,
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of modelselector window");
+			/* desc		*/ "saved closed/opened/active state of window");
 
-		dvars::gui_saved_state_surfinspector = dvars::register_bool(
-			/* name		*/ "gui_saved_state_surfinspector",
-			/* default	*/ false,
+		dvars::gui_saved_state_prefab_browser = dvars::register_int(
+			/* name		*/ "gui_saved_state_prefab_browser",
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "saved opened/closed state of surface inspector window");
+			/* desc		*/ "saved closed/opened/active state of window");
+
+		dvars::gui_saved_state_surfinspector = dvars::register_int(
+			/* name		*/ "gui_saved_state_surfinspector",
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved closed/opened/active state of window");
+
+		dvars::gui_saved_state_toolbox = dvars::register_int(
+			/* name		*/ "gui_saved_state_toolbox",
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved closed/opened/active state of window");
 	}
 
 	
@@ -758,13 +882,23 @@ namespace components
 		// show external console on map load
 		utils::hook(0x4866B8, on_map_load_stub, HOOK_JUMP).install()->quick();
 
-		GET_GUI(ggui::entity_dialog)->hooks();
-		GET_GUI(ggui::filter_dialog)->hooks();
-		GET_GUI(ggui::grid_dialog)->hooks();
-		GET_GUI(ggui::hotkey_dialog)->hooks();
-		GET_GUI(ggui::preferences_dialog)->hooks();
-		GET_GUI(ggui::surface_dialog)->hooks();
-		GET_GUI(ggui::vertex_edit_dialog)->hooks();
+		// add snapshot toast
+		utils::hook::nop(0x48B38B, 6); utils::hook(0x48B38B, map_snapshot_toast_stub, HOOK_JUMP).install()->quick();
+
+		// add autosave toast
+		utils::hook(0x48B5D6, map_autosave_toast_stub, HOOK_JUMP).install()->quick();
+
+		ggui::entity_dialog::hooks();
+		ggui::filter_dialog::hooks();
+		ggui::grid_dialog::hooks();
+		ggui::hotkey_dialog::hooks();
+		ggui::layer_dialog::hooks();
+		ggui::preferences_dialog::hooks();
+		ggui::surface_dialog::hooks();
+		ggui::vertex_edit_dialog::hooks();
+
+		GET_GUI(ggui::prefab_preview_dialog)->init();
+		GET_GUI(ggui::toolbox_dialog)->init();
 		GET_GUI(ggui::modelselector_dialog)->init();
 
 		command::register_command("demo"s, [](std::vector<std::string> args)

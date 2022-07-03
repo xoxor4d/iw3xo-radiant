@@ -6,7 +6,7 @@
 
 namespace ggui
 {
-	void help_dialog::gui()
+	bool help_dialog::gui()
 	{
 		ImGui::SetNextWindowSize(ImVec2(400.0f, 490.0f));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
@@ -45,6 +45,12 @@ namespace ggui
 
 			ImGui::End();
 		}
+		else
+		{
+			return false;
+		}
+
+		return true;
 	}
 
 	REGISTER_GUI(help_dialog);
