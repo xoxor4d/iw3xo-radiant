@@ -150,6 +150,7 @@
 #include "ggui/menubar.hpp"
 #include "ggui/modelselector.hpp"
 #include "ggui/patch.hpp"
+#include "ggui/prefab_preview.hpp"
 #include "ggui/preferences.hpp"
 #include "ggui/rope_generator.hpp"
 #include "ggui/surface_inspector.hpp"
@@ -168,3 +169,4 @@
 #include "components/loader.hpp"
 
 using namespace std::literals;
+namespace imgui = ImGui;

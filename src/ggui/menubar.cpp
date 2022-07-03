@@ -334,8 +334,12 @@ namespace ggui
 						GET_GUI(ggui::texture_dialog)->toggle();
 					}
 
-					if (ImGui::MenuItem("Model Previewer", ggui::hotkey_dialog::get_hotkey_for_command("xo_modelselector").c_str())) {
+					if (ImGui::MenuItem("Model Browser", ggui::hotkey_dialog::get_hotkey_for_command("xo_modelselector").c_str())) {
 						GET_GUI(ggui::modelselector_dialog)->toggle();
+					}
+
+					if (ImGui::MenuItem("Prefab Browser", hotkey_dialog::get_hotkey_for_command("prefab_browser").c_str())) {
+						GET_GUI(ggui::prefab_preview_dialog)->toggle();
 					}
 
 					if (ImGui::MenuItem("Toolbox", ggui::hotkey_dialog::get_hotkey_for_command("toggle_toolbox").c_str())) {

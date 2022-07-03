@@ -168,78 +168,13 @@ namespace ggui
 		GET_GUI(ggui::grid_dialog)->rtt_set_lmb_capturing(false);
 	}
 
-	void mru_new_item(game::LPMRUMENU* mru, const char* item_str)
-	{
-		const static uint32_t func_addr = 0x48A2C0;
-		__asm
-		{
-			pushad;
-			mov		esi, mru;
-			push	item_str;
-			call	func_addr;
-			add     esp, 4;
-			popad;
-		}
-	}
-
-	void mru_insert_item(game::LPMRUMENU* mru, HMENU menu)
-	{
-		const static uint32_t func_addr = 0x48A400;
-		__asm
-		{
-			pushad;
-			mov		edi, mru;
-			push	menu;
-			call	func_addr;
-			add     esp, 4;
-			popad;
-		}
-	}
-
-	void map_load_from_file(const char* path)
-	{
-		const static uint32_t func_addr = 0x486680;
-		__asm
-		{
-			pushad;
-			mov		ecx, path;
-			call	func_addr;
-			popad;
-		}
-	}
-
-	void map_save_file(const char* path /*ecx*/, int is_reg, int save_to_perforce)
-	{
-		const static uint32_t func_addr = 0x486C00;
-		__asm
-		{
-			pushad;
-			mov		ecx, path;
-			push	save_to_perforce;
-			push	is_reg;
-			call	func_addr;
-			add		esp, 8;
-			popad;
-		}
-	}
-
-	void map_write_selection(const char* path)
-	{
-		const static uint32_t func_addr = 0x488EB0;
-		__asm
-		{
-			pushad;
-			mov		edi, path;
-			call	func_addr;
-			popad;
-		}
-	}
+	
 
 	void mru_add_recent_map(const char* map_str)
 	{
-		mru_new_item(game::g_qeglobals->d_lpMruMenu, map_str);
+		game::mru_new_item(game::g_qeglobals->d_lpMruMenu, map_str);
 		const auto menu = GetSubMenu(GetMenu(game::g_qeglobals->d_hwndMain), 0);
-		mru_insert_item(game::g_qeglobals->d_lpMruMenu, menu);
+		game::mru_insert_item(game::g_qeglobals->d_lpMruMenu, menu);
 	}
 
 	bool wait_frame = false;
@@ -290,7 +225,7 @@ namespace ggui
 								// Pointfile_Clear
 								utils::hook::call<void(__cdecl)()>(0x410600)();
 
-								map_load_from_file(path_out.c_str());
+								game::map_load_from_file(path_out.c_str());
 
 								// fix stuck left mouse button
 								ImGuiIO& io = ImGui::GetIO();
@@ -312,7 +247,7 @@ namespace ggui
 							}
 
 							mru_add_recent_map(file_path.c_str());
-							map_save_file(file_path.c_str(), 0, 0);
+							game::map_save_file(file_path.c_str(), 0, 0);
 
 							// fix stuck left mouse button
 							ImGuiIO& io = ImGui::GetIO();
@@ -333,7 +268,7 @@ namespace ggui
 								file_path += ".map";
 							}
 
-							map_write_selection(file_path.c_str());
+							game::map_write_selection(file_path.c_str());
 
 							if(handler == MISC_PREFAB_CREATE)
 							{

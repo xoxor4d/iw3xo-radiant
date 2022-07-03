@@ -1075,6 +1075,80 @@ namespace ggui
 				accepted_dragdrop = true;
 			}
 
+			// -----------------------
+
+			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
+			{
+				const auto payload = imgui::GetDragDropPayload();
+				const std::string prefab_path = "prefabs/"s + std::string(static_cast<const char*>(payload->Data), payload->DataSize);
+
+				const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
+				// reset manual left mouse capture
+				ggui::dragdrop_reset_leftmouse_capture();
+
+				ggui::entity_dialog::addprop_helper_s no_undo = {};
+				bool trace_hit_void = false;
+
+				game::Select_Deselect(true);
+				game::Undo_ClearRedo();
+				game::Undo_GeneralStart("create entity");
+
+				if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+				{
+					game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+				}
+
+				// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+				g_block_radiant_modeldialog = true;
+				game::CreateEntityFromName("misc_prefab");
+				g_block_radiant_modeldialog = false;
+
+				entity_gui->add_prop("model", prefab_path.c_str(), &no_undo);
+				
+				float dir[3];
+				ccamwnd::calculate_ray_direction(
+					this->rtt_get_cursor_pos_cpoint().x,
+					static_cast<int>(this->rtt_get_size().y) - this->rtt_get_cursor_pos_cpoint().y,
+					dir);
+
+				game::trace_t trace = {};
+				game::Trace_AllDirectionsIfFailed(cmainframe::activewnd->m_pCamWnd->camera.origin, &trace, dir, 0x1200);
+
+				float origin[3];
+
+				// if trace hit something other then the void
+				if (trace.brush)
+				{
+					utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, trace.dist, dir, origin);
+				}
+				// if trace hit nothing, spawn model infront of the camera
+				else
+				{
+					trace_hit_void = true;
+
+					const float dist = 100.0f;
+					utils::vector::ma(cmainframe::activewnd->m_pCamWnd->camera.origin, dist, dir, origin);
+				}
+
+				char origin_str_buf[64] = {};
+				if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", origin[0], origin[1], origin[2]))
+				{
+					entity_gui->add_prop("origin", origin_str_buf, &no_undo);
+				}
+
+				game::Undo_End();
+
+				// only drop if trace hit something
+				if (!trace_hit_void)
+				{
+					// CMainFrame::OnDropSelected
+					cdeclcall(void, 0x425BE0);
+				}
+
+				accepted_dragdrop = true;
+			}
+
 			ImGui::EndDragDropTarget();
 		}
 	}

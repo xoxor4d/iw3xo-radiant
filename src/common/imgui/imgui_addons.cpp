@@ -3,6 +3,116 @@
 
 namespace ImGui
 {
+	// 0: not open; 1: canceled; 2: ok
+	// popup name: close_map_popup
+	int popup_close_map()
+	{
+		int result = 0;
+
+		ImGui::SetNextWindowSize(ImVec2(360.0f, 100.0f));
+		const ImVec2 center(ImGui::GetWindowPos().x + ImGui::GetWindowSize().x * 0.5f, ImGui::GetWindowPos().y + ImGui::GetWindowSize().y * 0.5f);
+		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 5.0f));
+		if (ImGui::BeginPopup("close_map_popup", ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoMove))
+		{
+			const ImGuiStyle& style = ImGui::GetStyle();
+
+			static float label1_width = 120.0f;
+			static float label2_width = 120.0f;
+
+			imgui::Spacing();
+			ImGui::PushFontFromIndex(ggui::BOLD_18PX);
+
+			ImGui::SetCursorPosX((ImGui::GetWindowSize().x - label1_width + style.FramePadding.x) * 0.5f);
+			ImGui::TextUnformatted("This action will close the currently loaded map!");
+			label1_width = ImGui::GetItemRectSize().x;
+
+			ImGui::SetCursorPosX((ImGui::GetWindowSize().x - label2_width + style.FramePadding.x) * 0.5f);
+			ImGui::TextUnformatted("Unsaved changes will be lost!");
+			label2_width = ImGui::GetItemRectSize().x;
+
+			ImGui::PopFont();
+			ImGui::Spacing();
+
+			static float modal_button_group_width = 100.0f;
+			ImGui::SetCursorPosX((ImGui::GetWindowSize().x - modal_button_group_width + style.FramePadding.x) * 0.5f);
+			ImGui::BeginGroup();
+			{
+				if (ImGui::Button("OK"))
+				{
+					result = 2;
+
+					cdeclcall(void, 0x4870C0); // Map_New
+
+					ImGui::CloseCurrentPopup();
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("Cancel"))
+				{
+					result = 1;
+					ImGui::CloseCurrentPopup();
+				}
+			}
+			ImGui::EndGroup();
+			modal_button_group_width = ImGui::GetItemRectSize().x;
+
+			ImGui::EndPopup();
+		}
+		ImGui::PopStyleVar();
+
+		return result;
+	}
+
+
+	// ImageButton() is flawed as 'id' is always derived from 'texture_id' (see #2464 #1390)
+	// We provide this internal helper to write your own variant while we figure out how to redesign the public ImageButton() API.
+	bool ImageButtonScaledEx(ImGuiID id, ImTextureID texture_id, const ImVec2& size, const float scale, const ImVec2& uv0, const ImVec2& uv1, const ImVec2& padding, const ImVec4& bg_col, const ImVec4& tint_col)
+	{
+		ImGuiContext& g = *GImGui;
+		ImGuiWindow* window = GetCurrentWindow();
+		if (window->SkipItems)
+			return false;
+
+		const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size + padding * 2);
+		ItemSize(bb);
+		if (!ItemAdd(bb, id))
+			return false;
+
+		bool hovered, held;
+		bool pressed = ButtonBehavior(bb, id, &hovered, &held);
+
+		// Render
+		const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+		RenderNavHighlight(bb, id);
+		RenderFrame(bb.Min, bb.Max, col, true, ImClamp((float)ImMin(padding.x, padding.y), 0.0f, g.Style.FrameRounding));
+		if (bg_col.w > 0.0f)
+			window->DrawList->AddRectFilled(bb.Min + padding, bb.Max - padding, GetColorU32(bg_col));
+
+		const auto loc_rect = (bb.GetSize() - (bb.GetSize() * scale)) * 0.5f;
+
+		window->DrawList->AddImage(texture_id, bb.Min + loc_rect + padding, bb.Max - loc_rect - padding, uv0, uv1, GetColorU32(tint_col));
+
+		return pressed;
+	}
+
+	bool ImageButtonScaled(ImTextureID user_texture_id, const ImVec2& size, const float scale, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col)
+	{
+		ImGuiContext& g = *GImGui;
+		ImGuiWindow* window = g.CurrentWindow;
+		if (window->SkipItems)
+			return false;
+
+		// Default to using texture ID as ID. User can still push string/integer prefixes.
+		PushID((void*)(intptr_t)user_texture_id);
+		const ImGuiID id = window->GetID("#image");
+		PopID();
+
+		const ImVec2 padding = (frame_padding >= 0) ? ImVec2((float)frame_padding, (float)frame_padding) : g.Style.FramePadding;
+		return ImageButtonScaledEx(id, user_texture_id, size, scale, uv0, uv1, padding, bg_col, tint_col);
+	}
+
 	bool TreeNodeBehavior_HoveredOut(ImGuiID id, ImGuiTreeNodeFlags flags, const char* label, const char* label_end, bool* is_hovered, bool* is_pressed)
 	{
 		ImGuiWindow* window = GetCurrentWindow();

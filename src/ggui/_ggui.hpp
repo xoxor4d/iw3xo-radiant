@@ -24,7 +24,8 @@ namespace ggui
 	{
 		BOLD_18PX = 0,
 		REGULAR_12PX = 1,
-		REGULAR_18PX = 2,
+		REGULAR_14PX = 2,
+		REGULAR_18PX = 3,
 	};
 	
 	enum E_CALLTYPE

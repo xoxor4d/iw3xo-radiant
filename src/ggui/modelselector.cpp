@@ -48,7 +48,7 @@ namespace ggui
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
 
-		if (!ImGui::Begin("Model Selector / Previewer", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
+		if (!ImGui::Begin("Model Browser##rtt", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
 			ImGui::End();
 			return false;

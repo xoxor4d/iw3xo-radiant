@@ -605,7 +605,7 @@ namespace components
 			SWP_NOZORDER);
 
 		game::dx->targetWindowIndex = -1; // needed or R_SetupRendertarget does not set the resolution
-		utils::hook::call<void(__cdecl)(HWND)>(0x501A70)(cmainframe::activewnd->m_pCamWnd->GetWindow()); // R_SetupRendertarget
+		game::R_SetupRendertarget_CheckDevice(cmainframe::activewnd->m_pCamWnd->GetWindow());
 
 
 		// #
@@ -691,7 +691,7 @@ namespace components
 			SWP_NOZORDER);
 
 		game::dx->targetWindowIndex = -1; // needed or R_SetupRendertarget does not set the resolution
-		utils::hook::call<void(__cdecl)(HWND)>(0x501A70)(cmainframe::activewnd->m_pCamWnd->GetWindow()); // R_SetupRendertarget
+		game::R_SetupRendertarget_CheckDevice(cmainframe::activewnd->m_pCamWnd->GetWindow());
 
 		return true;
 	}
@@ -756,7 +756,7 @@ namespace components
 		}
 	}
 
-	// call after R_IssueRenderCommands
+	// renderer::on_cam_paint_post_rendercommands
 	void reflectionprobes::generate_reflections_for_bsp()
 	{
 		if(game::rgp->world)
@@ -766,35 +766,35 @@ namespace components
 		}
 	}
 
-	void check_for_reflection_generation()
-	{
-		if (dvars::r_reflectionprobe_generate->current.enabled)
-		{
-			if(!dvars::r_draw_bsp->current.enabled)
-			{
-				game::printf_to_console("[Reflections] Turning on bsp view ...");
-				command::execute("toggle_bsp_radiant");
-			}
+	//void check_for_reflection_generation()
+	//{
+	//	if (dvars::r_reflectionprobe_generate->current.enabled)
+	//	{
+	//		if(!dvars::r_draw_bsp->current.enabled)
+	//		{
+	//			game::printf_to_console("[Reflections] Turning on bsp view ...");
+	//			command::execute("toggle_bsp_radiant");
+	//		}
 
-			reflectionprobes::generate_reflections_for_bsp();
-			dvars::set_bool(dvars::r_reflectionprobe_generate, false);
-		}
-	}
+	//		reflectionprobes::generate_reflections_for_bsp();
+	//		dvars::set_bool(dvars::r_reflectionprobe_generate, false);
+	//	}
+	//}
 
-	void __declspec(naked) check_for_reflection_generation_stub()
-	{
-		const static uint32_t func_addr = 0x4FD910; // R_SortMaterials
-		const static uint32_t retn_addr = 0x403070;
-		__asm
-		{
-			pushad;
-			call	check_for_reflection_generation;
-			popad;
+	//void __declspec(naked) check_for_reflection_generation_stub()
+	//{
+	//	const static uint32_t func_addr = 0x4FD910; // R_SortMaterials
+	//	const static uint32_t retn_addr = 0x403070;
+	//	__asm
+	//	{
+	//		pushad;
+	//		call	check_for_reflection_generation;
+	//		popad;
 
-			call	func_addr;
-			jmp		retn_addr;
-		}
-	}
+	//		call	func_addr;
+	//		jmp		retn_addr;
+	//	}
+	//}
 
 	void reflectionprobes::register_dvars()
 	{
@@ -814,7 +814,7 @@ namespace components
 	reflectionprobes::reflectionprobes()
 	{
 		// hk 'R_SortMaterials' call after 'R_IssueRenderCommands' in 'CCamWnd::OnPaint'
-		utils::hook(0x40306B, check_for_reflection_generation_stub, HOOK_JUMP).install()->quick();
+		//utils::hook(0x40306B, check_for_reflection_generation_stub, HOOK_JUMP).install()->quick();
 	}
 
 	reflectionprobes::~reflectionprobes()

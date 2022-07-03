@@ -68,7 +68,8 @@ ___
 + [automatically generate reflections](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp-reflections/) within radiant when compiling the maps bsp
 + [live link](https://xoxor4d.github.io/tutorials/iw3xradiant-livelink/) (sync. brushes (with collision), camera and worldspawn settings between cod4 and radiant)   
 + 3D guizmo to precisely manipulate entities and brushes from the camera window (ImGuizmo)
-+ preview xmodels and drag them directly into the scene using the model previewer
++ preview xmodels and drag them directly into the scene using the model browser
++ a prefab browser with the ability to generate thumbnails (no more guess work + prefabs can be dragged into the scene)
 + custom lighting shader with normal-mapping, specular highlights, reflections and fog
 + ability to limit shadow drawing distance when using stock sunpreview (++FPS)
 + filmtweak support
@@ -79,7 +80,9 @@ ___
 + a toolbox featuring all related functions for brushes/patches and more
 + better surface / property editor (can be integrated into the ^ toolbox)
 + better vertex edit dialog
++ better layer dialog
 + zoom to cursor
++ toast notifications
 + editable toolbars, hotkeys, colors
 + new file dialogs with working default paths
 + texture window toolbar for quick filtering

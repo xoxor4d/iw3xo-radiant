@@ -18,6 +18,7 @@ namespace components
 		loader::_register(new effects_editor());
 		loader::_register(new exec());
 		loader::_register(new gameview());
+		loader::_register(new generate_previews());
 		loader::_register(new gui());
 		loader::_register(new main_module());
 		loader::_register(new pmesh());
@@ -47,7 +48,7 @@ namespace components
 
 	void loader::uninitialize()
 	{
-		std::reverse(loader::components_.begin(), loader::components_.end());
+		std::ranges::reverse(loader::components_.begin(), loader::components_.end());
 		for (auto component : loader::components_)
 		{
 			delete component;

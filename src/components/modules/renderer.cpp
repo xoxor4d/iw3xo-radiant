@@ -1910,6 +1910,60 @@ namespace components
 		}
 	}
 
+
+	// *
+	// trigger reflections / prefab preview generation
+
+	void on_cam_paint_post_rendercommands()
+	{
+		if (dvars::r_reflectionprobe_generate->current.enabled)
+		{
+			if (!dvars::r_draw_bsp->current.enabled)
+			{
+				game::printf_to_console("[Reflections] Turning on bsp view ...");
+				command::execute("toggle_bsp_radiant");
+			}
+
+			reflectionprobes::generate_reflections_for_bsp();
+			dvars::set_bool(dvars::r_reflectionprobe_generate, false);
+		}
+
+		static bool skip_frame = false;
+		const bool drawfps_state = dvars::gui_draw_fps->current.enabled;
+
+		if(ggui::prefab_browser_generate_thumbnails)
+		{
+			if(!skip_frame)
+			{
+				dvars::set_bool(dvars::gui_draw_fps, false);
+				skip_frame = true;
+			}
+			else
+			{
+				generate_previews::generate_prefab_previews(ggui::prefab_browser_generate_thumbnails_folder);
+				ggui::prefab_browser_generate_thumbnails = false;
+				skip_frame = false;
+
+				dvars::set_bool(dvars::gui_draw_fps, drawfps_state);
+			}
+		}
+	}
+
+	void __declspec(naked) on_cam_paint_post_rendercommands_stub()
+	{
+		const static uint32_t func_addr = 0x4FD910; // R_SortMaterials
+		const static uint32_t retn_addr = 0x403070;
+		__asm
+		{
+			pushad;
+			call	on_cam_paint_post_rendercommands;
+			popad;
+
+			call	func_addr;
+			jmp		retn_addr;
+		}
+	}
+
 	
 	// *
 	// part of R_RenderScene
@@ -3090,6 +3144,28 @@ namespace components
 		}
 	}
 
+	// called on texture refresh and when chaning texture resolution
+	void on_reload_images()
+	{
+		for (auto img = 0; img < 32768; img++)
+		{
+			if (game::imageGlobals[img])
+			{
+				if (game::imageGlobals[img]->category == 3)
+				{
+					game::R_ReloadImage(game::imageGlobals[img]);
+				}
+				else if (game::imageGlobals[img]->category == 66)
+				{
+					game::Image_Release(game::imageGlobals[img]);
+
+					const auto jpg_string = "prefab_thumbs\\"s + game::imageGlobals[img]->name + ".jpg"s;
+					game::R_LoadJpeg(game::imageGlobals[img], jpg_string.c_str());
+				}
+			}
+		}
+	}
+
 
 	// *
 	// * Fix asserts when playing effects that use xmodels with no bsp loaded 
@@ -3457,10 +3533,15 @@ namespace components
 		// stub within R_BeginRegistrationInternal (on call to init layermatwnd)
 		utils::hook(0x4166CC, r_begin_registration_internal_stub, HOOK_JUMP).install()->quick();
 
+		// hk 'R_SortMaterials' call after 'R_IssueRenderCommands' in 'CCamWnd::OnPaint'
+		utils::hook(0x40306B, on_cam_paint_post_rendercommands_stub, HOOK_JUMP).install()->quick();
+
 		// replace missing invisible materials with 'invalid_material' (custom material)
 		utils::hook(0x511BCA, Material_Register_LoadObj_stub01, HOOK_JUMP).install()->quick();
 		utils::hook(0x511C4B, Material_Register_LoadObj_stub02, HOOK_JUMP).install()->quick();
 
+		// rewrite R_ReloadImages (mainly for the prefab previewer -> handle jpg)
+		utils::hook::detour(0x513D70, on_reload_images, HK_JUMP);
 
 		// *
 		// * Fix asserts when playing effects that use xmodels (gfx-scene-entities) with no bsp loaded 

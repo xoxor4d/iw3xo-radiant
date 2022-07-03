@@ -24,7 +24,9 @@ namespace dvars
 
 	extern game::dvar_s* gui_texwnd_draw_scrollbar;
 	extern game::dvar_s* gui_texwnd_draw_scrollpercent;
-	
+
+	extern game::dvar_s* gui_prefab_browser_img_size;
+
 	extern game::dvar_s* gui_props_classlist_defaultopen;
 	extern game::dvar_s* gui_props_comments_defaultopen;
 	extern game::dvar_s* gui_props_spawnflags_defaultopen;
@@ -46,6 +48,7 @@ namespace dvars
 	extern game::dvar_s* gui_saved_state_entity;
 	extern game::dvar_s* gui_saved_state_textures;
 	extern game::dvar_s* gui_saved_state_modelselector;
+	extern game::dvar_s* gui_saved_state_prefab_browser;
 	extern game::dvar_s* gui_saved_state_surfinspector;
 	extern game::dvar_s* gui_saved_state_toolbox;
 

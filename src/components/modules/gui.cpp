@@ -20,7 +20,7 @@ namespace components
 
 		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_bold_compressed_data, fonts::opensans_bold_compressed_size, 18.0f);
 		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 12.0f);
-
+		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 14.0f);
 
 		ImFontConfig font_cfg;
 		font_cfg.FontDataOwnedByAtlas = false;
@@ -223,7 +223,8 @@ namespace components
 					ImGui::DockBuilderDockWindow("Toolbox##window", dockspace_toolbox_node);
 
 					ImGui::DockBuilderDockWindow("Textures##rtt", main_dock);
-					ImGui::DockBuilderDockWindow("Model Selector / Previewer", main_dock);
+					ImGui::DockBuilderDockWindow("Model Browser##rtt", main_dock);
+					ImGui::DockBuilderDockWindow("Prefab Browser##window", main_dock);
 					ImGui::DockBuilderDockWindow("Console##window", main_dock); 
 					
 					ImGui::DockBuilderFinish(dockspace_id);
@@ -233,6 +234,7 @@ namespace components
 
 					GET_GUI(ggui::console_dialog)->open();
 					GET_GUI(ggui::modelselector_dialog)->open();
+					GET_GUI(ggui::prefab_preview_dialog)->open();
 					GET_GUI(ggui::filter_dialog)->open();
 
 					GET_GUI(ggui::toolbox_dialog)->open();
@@ -535,6 +537,7 @@ namespace components
 		HANDLE_SAVED_STATE_INT(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::prefab_preview_dialog, dvars::gui_saved_state_prefab_browser, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::surface_dialog, dvars::gui_saved_state_surfinspector, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::toolbox_dialog, dvars::gui_saved_state_toolbox, ggui::m_init_saved_states);
 
@@ -659,9 +662,9 @@ namespace components
 
 		dvars::gui_window_bg_color = dvars::register_vec4(
 			/* name		*/ "gui_window_bg_color",
-			/* x		*/ 0.172f,
-			/* y		*/ 0.172f,
-			/* z		*/ 0.172f,
+			/* x		*/ 0.173f,
+			/* y		*/ 0.173f,
+			/* z		*/ 0.173f,
 			/* w		*/ 1.0f,
 			/* minVal	*/ 0.0f,
 			/* maxVal	*/ 1.0f,
@@ -670,9 +673,9 @@ namespace components
 		
 		dvars::gui_window_child_bg_color = dvars::register_vec4(
 			/* name		*/ "gui_window_child_bg_color",
-			/* x		*/ 0.17f,
-			/* y		*/ 0.17f,
-			/* z		*/ 0.17f,
+			/* x		*/ 0.173f,
+			/* y		*/ 0.173f,
+			/* z		*/ 0.173f,
 			/* w		*/ 1.0f,
 			/* minVal	*/ 0.0f,
 			/* maxVal	*/ 1.0f,
@@ -847,6 +850,14 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "saved closed/opened/active state of window");
 
+		dvars::gui_saved_state_prefab_browser = dvars::register_int(
+			/* name		*/ "gui_saved_state_prefab_browser",
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved closed/opened/active state of window");
+
 		dvars::gui_saved_state_surfinspector = dvars::register_int(
 			/* name		*/ "gui_saved_state_surfinspector",
 			/* default	*/ 0,
@@ -886,6 +897,7 @@ namespace components
 		ggui::surface_dialog::hooks();
 		ggui::vertex_edit_dialog::hooks();
 
+		GET_GUI(ggui::prefab_preview_dialog)->init();
 		GET_GUI(ggui::toolbox_dialog)->init();
 		GET_GUI(ggui::modelselector_dialog)->init();
 

@@ -98,6 +98,7 @@ namespace game
 	game::r_global_permanent_t* rgp = reinterpret_cast<game::r_global_permanent_t*>(0x136C700);
 	game::GfxScene* scene = reinterpret_cast<game::GfxScene*>(0x1370980);
 	game::DxGlobals* dx = reinterpret_cast<game::DxGlobals*>(0x1365684);
+	game::GfxImage** imageGlobals = reinterpret_cast<game::GfxImage**>(0x14C6CF8);
 
 	game::ComWorld* comworld = reinterpret_cast<game::ComWorld*>(0x241DDC8);
 	game::GfxWorld* s_world = reinterpret_cast<game::GfxWorld*>(0x174F688);
@@ -945,6 +946,73 @@ namespace game
 			push	trace_result;
 			call	func_addr;
 			add     esp, 12;
+		}
+	}
+
+	void map_load_from_file(const char* path)
+	{
+		const static uint32_t func_addr = 0x486680;
+		__asm
+		{
+			pushad;
+			mov		ecx, path;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void map_save_file(const char* path /*ecx*/, int is_reg, int save_to_perforce)
+	{
+		const static uint32_t func_addr = 0x486C00;
+		__asm
+		{
+			pushad;
+			mov		ecx, path;
+			push	save_to_perforce;
+			push	is_reg;
+			call	func_addr;
+			add		esp, 8;
+			popad;
+		}
+	}
+
+	void map_write_selection(const char* path)
+	{
+		const static uint32_t func_addr = 0x488EB0;
+		__asm
+		{
+			pushad;
+			mov		edi, path;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	void mru_new_item(game::LPMRUMENU* mru, const char* item_str)
+	{
+		const static uint32_t func_addr = 0x48A2C0;
+		__asm
+		{
+			pushad;
+			mov		esi, mru;
+			push	item_str;
+			call	func_addr;
+			add     esp, 4;
+			popad;
+		}
+	}
+
+	void mru_insert_item(game::LPMRUMENU* mru, HMENU menu)
+	{
+		const static uint32_t func_addr = 0x48A400;
+		__asm
+		{
+			pushad;
+			mov		edi, mru;
+			push	menu;
+			call	func_addr;
+			add     esp, 4;
+			popad;
 		}
 	}
 

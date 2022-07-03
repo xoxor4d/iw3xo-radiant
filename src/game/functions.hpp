@@ -144,6 +144,7 @@ namespace game
 	extern game::r_global_permanent_t* rgp;
 	extern game::GfxScene* scene;
 	extern game::DxGlobals* dx;
+	extern game::GfxImage** imageGlobals;
 
 	extern game::ComWorld* comworld;
 	extern game::GfxWorld* s_world;
@@ -267,14 +268,11 @@ namespace game
 	game::trace_t* Trace_AllDirectionsIfFailed(float* cam_origin /*ebx*/, void* trace_result, float* dir, int contents);
 	inline auto R_GetXModelBounds = reinterpret_cast<void (*)(game::XModel * model, float* axis, float* mins, float* maxs)>(0x4C9150); // world bounds, not local
 
-	
-
-	
-	
-
-
-	
-	
+	void map_load_from_file(const char* path);
+	void map_save_file(const char* path /*ecx*/, int is_reg, int save_to_perforce);
+	void map_write_selection(const char* path);
+	void mru_new_item(game::LPMRUMENU* mru, const char* item_str);
+	void mru_insert_item(game::LPMRUMENU* mru, HMENU menu);
 
 
 	// *
@@ -287,7 +285,7 @@ namespace game
 	inline auto R_SetupViewParms = reinterpret_cast<game::GfxViewParms* (*)()>(0x4FB540);
 	inline auto R_SetupProjection = reinterpret_cast<void (*)(game::GfxMatrix*, float halfx, float halfy, float znear)>(0x4A78E0);
 	inline auto R_SetupRenderCmd = reinterpret_cast<void (*)(game::GfxSceneDef*, game::GfxViewParms*)>(0x4FC3A0);
-	inline auto R_Clear = reinterpret_cast<void (*)(int, const float*, float, bool)>(0x4FCC70);
+	inline auto R_Clear = reinterpret_cast<void (*)(int whichToClear, const float* color, float depth, bool)>(0x4FCC70);
 	inline auto R_ClearScreen = reinterpret_cast<void (*)(IDirect3DDevice9*, int whichToClear, const float* color, float depth, bool stencil, game::GfxViewport*)>(0x539AA0);
 	inline auto R_IssueRenderCommands = reinterpret_cast<void (*)(int)>(0x4FD630);
 	inline auto R_SortMaterials = reinterpret_cast<void (*)()>(0x4FD910);
@@ -397,6 +395,10 @@ namespace game
 	int FS_OpenFileOverwrite(const char* path /*esi*/);
 	inline auto FS_Write = reinterpret_cast<int (*)(const void* buffer, size_t len, int h)>(0x49FF10);
 
+	inline auto Image_Alloc = reinterpret_cast<game::GfxImage* (*)(const char* name, char category, char semantic, char imageTrack)>(0x5128B0);
+	inline auto R_LoadJpeg = reinterpret_cast<bool (*)(game::GfxImage * img, const char* img_path)>(0x54FD40);
+	inline auto R_ReloadImage = reinterpret_cast<bool (*)(game::GfxImage* img)>(0x513490); // release and reload (iwi only)
+	inline auto Image_Release = reinterpret_cast<void (*)(game::GfxImage* img)>(0x5125D0); // release img
 	game::GfxImage* Image_FindExisting(const char* name);
 	game::GfxImage* Image_RegisterHandle(const char* name);
 	void Material_Add(int idx/*eax*/, game::Material* material/*esi*/);

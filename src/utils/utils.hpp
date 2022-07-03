@@ -60,6 +60,11 @@ namespace utils
 		return split(str, std::vector < char >({ delimiter }));
 	}
 
+	static std::vector<std::string> split(const std::string& str, char delimiter)
+	{
+		return split(str, std::vector < char >({ delimiter }));
+	}
+
 	int		try_stoi(const std::string str, bool quite);
 	float	try_stof(const std::string str, bool quite);
 

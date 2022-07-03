@@ -24,7 +24,9 @@ namespace dvars
 
 	game::dvar_s* gui_texwnd_draw_scrollbar = nullptr;
 	game::dvar_s* gui_texwnd_draw_scrollpercent = nullptr;
-	
+
+	game::dvar_s* gui_prefab_browser_img_size = nullptr;
+
 	game::dvar_s* gui_props_classlist_defaultopen = nullptr;
 	game::dvar_s* gui_props_comments_defaultopen = nullptr;
 	game::dvar_s* gui_props_spawnflags_defaultopen = nullptr;
@@ -46,6 +48,7 @@ namespace dvars
 	game::dvar_s* gui_saved_state_entity = nullptr;
 	game::dvar_s* gui_saved_state_textures = nullptr;
 	game::dvar_s* gui_saved_state_modelselector = nullptr;
+	game::dvar_s* gui_saved_state_prefab_browser = nullptr;
 	game::dvar_s* gui_saved_state_surfinspector = nullptr;
 	game::dvar_s* gui_saved_state_toolbox = nullptr;
 
@@ -272,6 +275,7 @@ namespace dvars
 		ggui::surface_dialog::register_dvars();
 		ggui::vertex_edit_dialog::register_dvars();
 		ggui::camera_settings_dialog::register_dvars();
+		ggui::prefab_preview_dialog::register_dvars();
 
 		fx_system::register_dvars();
 

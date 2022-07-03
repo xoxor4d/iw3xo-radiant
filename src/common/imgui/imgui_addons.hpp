@@ -18,6 +18,10 @@ namespace game
 
 namespace ImGui
 {
+	int		popup_close_map();
+
+	bool	ImageButtonScaled(ImTextureID user_texture_id, const ImVec2& size, const float scale, const ImVec2& uv0 = ImVec2(0.0f, 0.0f), const ImVec2& uv1 = ImVec2(1.0f, 1.0f), int frame_padding = -1, const ImVec4& bg_col = ImVec4(0.0f, 0.0f, 0.0f, 0.0f), const ImVec4& tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+
 	bool	TreeNodeEx(const char* label, bool* is_hovered, bool* is_pressed, ImGuiTreeNodeFlags flags);
 	bool	Spinner(const char* label, float radius, float thickness, const ImU32& color);
 	

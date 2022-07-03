@@ -7,7 +7,7 @@ namespace components
 	public:
 		component() {};
 		virtual ~component() {};
-		virtual const char* get_name() { return "Unknown"; };
+		virtual const char* get_name() { return "unknown"; };
 	};
 
 	class loader
@@ -34,6 +34,7 @@ namespace components
 #include "modules/effects_editor.hpp"
 #include "modules/exec.hpp"
 #include "modules/gameview.hpp"
+#include "modules/generate_previews.hpp"
 #include "modules/gui.hpp"
 #include "modules/main_module.hpp"
 #include "modules/pmesh.hpp"

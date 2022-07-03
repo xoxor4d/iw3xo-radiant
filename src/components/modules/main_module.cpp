@@ -488,7 +488,6 @@ namespace components
 			generate_rope(utils::try_stoi(args[1], false), utils::try_stoi(args[2], false), utils::try_stoi(args[3], false));
 		});*/
 
-
 		// creates a brush that encupsules all selected brushes/patches and uses texture info of the first selected brush
 		// then deletes the original selection
 		command::register_command_with_hotkey("brush_from_selected"s, [this](auto)

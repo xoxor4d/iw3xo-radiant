@@ -5,7 +5,6 @@
 #define	PITCH				0		// up / down
 #define	YAW					1		// left / right
 #define	ROLL				2		// fall over
-#define M_PI				3.14159265358979323846f
 
 namespace utils
 {
@@ -300,11 +299,12 @@ namespace utils
 			out[2] = veca[2] + vecb[2];
 		}
 
-		void copy(const vec3_t in, vec3_t out)
+		void copy(const float* in, float* out, const int size)
 		{
-			out[0] = in[0];
-			out[1] = in[1];
-			out[2] = in[2];
+			for (auto i = 0; i < size; i++)
+			{
+				out[i] = in[i];
+			}
 		}
 
 		void scale(const vec3_t in, float scale, vec3_t out)

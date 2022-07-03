@@ -1,5 +1,7 @@
 #pragma once
 
+#define M_PI				3.14159265358979323846f
+
 namespace utils
 {
 	namespace vector // https://github.com/id-Software/Quake-III-Arena/blob/master/code/game/q_shared.h
@@ -43,7 +45,7 @@ namespace utils
 		void	set_vec4(vec4_t v, float x, float y, float z, float w);
 		void	subtract(const vec3_t veca, const vec3_t vecb, vec3_t out);
 		void	add(const vec3_t veca, const vec3_t vecb, vec3_t out);
-		void	copy(const vec3_t in, vec3_t out);
+		void	copy(const float* in, float* out, const int size = 3);
 		void	scale(const vec3_t in, float scale, vec3_t out);
 		void	ma(const vec3_t veca, float scale, const vec3_t vecb, vec3_t out);
 		void	inverse(vec3_t v);
