@@ -2228,29 +2228,24 @@ namespace components
 	void RB_EndSceneRendering(game::GfxCmdBufSourceState* source, [[maybe_unused]] game::GfxCmdBufState* state, [[maybe_unused]] game::GfxCmdBufInput* input, [[maybe_unused]] game::GfxViewInfo* viewInfo)
 	{
 		// R_HW_InsertFence(&backEndData->endFence);
-		//utils::hook::call<void(__cdecl)(IDirect3DQuery9** fence)>(0x530B30)(&game::get_backenddata()->endFence);
+		utils::hook::call<void(__cdecl)(IDirect3DQuery9** fence)>(0x530B30)(&game::get_backenddata()->endFence);
 
 		// R_InitCmdBufSourceState(source, input, 0);
-		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput*, int)>(0x53CB20)(source, input, 0);
+		game::R_InitCmdBufSourceState(source, input, 0);
 
-		//memset(state->vertexShaderConstState, 0, sizeof(state->vertexShaderConstState));
-		//memset(state->pixelShaderConstState, 0, sizeof(state->pixelShaderConstState));
+		memset(state->vertexShaderConstState, 0, sizeof(state->vertexShaderConstState));
+		memset(state->pixelShaderConstState, 0, sizeof(state->pixelShaderConstState));
 
-		// R_SetupRenderTarget(&gfxCmdBufSourceState, R_RENDERTARGET_SCENE);
-		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670)(source, dest_rendertarget); //game::R_RENDERTARGET_SCENE);
+		game::R_SetupRendertarget(source, game::R_RENDERTARGET_FRAME_BUFFER);
 
 		//R_BeginView(source, &viewInfo->sceneDef, viewInfo);
-		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxSceneDef*, game::GfxViewInfo*)>(0x53D2F0)(source, &viewInfo->sceneDef, viewInfo);
+		utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxSceneDef*, game::GfxViewInfo*)>(0x53D2F0)(source, &viewInfo->sceneDef, viewInfo);
 
-		//R_SetSceneViewport(source, &viewInfo->sceneViewport);
-
-		// R_SetRenderTarget(&gfxCmdBufSourceState, &gfxCmdBufState, R_RENDERTARGET_SCENE);
-		//utils::hook::call<void(__cdecl)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0)(source, state, dest_rendertarget); //game::R_RENDERTARGET_SCENE);
+		R_SetSceneViewport(source, &viewInfo->sceneViewport);
+		game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FRAME_BUFFER);
 
 		// developer
-		//R_Set3D(source);
-
-		// ^ not needed
+		R_Set3D(source);
 
 		//RB_DrawDebug(&gfxCmdBufSourceState.viewParms);
 		utils::hook::call<void(__cdecl)(game::GfxViewParms*)>(0x56D420)(&source->viewParms);
