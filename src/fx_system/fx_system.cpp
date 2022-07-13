@@ -585,6 +585,46 @@ namespace fx_system
 		}
 	}
 
+	bool FX_SpawnModelPhysics(FxElemDef* elem, FxEffect* effect, int random_seed, FxElem* remote_elem)
+	{
+		game::orientation_t orientation = {};
+		FX_GetOrientation(elem, &effect->frameAtSpawn, &effect->frameNow, random_seed, &orientation);
+
+		float world_pos[3] = {};
+		FX_OrientationPosToWorldPos(&orientation, remote_elem->___u8.origin, world_pos);
+
+		float axis[3][3] = {};
+		FX_GetElemAxis(elem, random_seed, &orientation, 0.0, axis);
+
+		float quat[4] = {};
+		AxisToQuat(axis, quat);
+
+		const auto msecLifeSpan = elem->lifeSpanMsec.base + (((elem->lifeSpanMsec.amplitude + 1) * static_cast<std::uint16_t>(fx_randomTable[17 + random_seed])) >> 16);
+
+		float velocity[3] = {};
+		FX_GetVelocityAtTime(elem, random_seed, static_cast<float>(msecLifeSpan), 0.0f, &orientation, remote_elem->baseVel, velocity);
+
+		float vel[3] = {};
+		vel[0] = 1000.0f * (fx_randomTable[3 + random_seed] * elem->angularVelocity[0].amplitude + elem->angularVelocity[0].base);
+		vel[1] = 1000.0f * (fx_randomTable[4 + random_seed] * elem->angularVelocity[1].amplitude + elem->angularVelocity[1].base);
+		vel[2] = 1000.0f * (fx_randomTable[5 + random_seed] * elem->angularVelocity[2].amplitude + elem->angularVelocity[2].base);
+
+		const auto visuals = FX_GetElemVisuals(elem, random_seed);
+		if (!visuals.model->physPreset)
+		{
+			Assert();
+		}
+
+		dxBody* obj = physics::Phys_ObjCreate(1, world_pos, quat, velocity, visuals.model->physPreset);
+		remote_elem->___u8.physObjId = reinterpret_cast<int>(obj);
+		if (obj)
+		{
+			physics::Phys_ObjSetCollisionFromXModel(visuals.model, 1, obj);
+			physics::Phys_ObjSetAngularVelocity(remote_elem->___u8.physObjId, vel);
+		}
+		return remote_elem->___u8.physObjId != 0;
+	}
+
 	void FX_SpawnElem(FxSystem* system, FxEffect* effect, int elemDefIndex, FxSpatialFrame* effectFrameWhenPlayed, int msecWhenPlayed, float distanceWhenPlayed, int sequence)
 	{
 		if (!system || !effect || !effect->def)
@@ -686,11 +726,11 @@ namespace fx_system
 						remoteElem->u.lightingHandle = 0;
 
 						// #PHYS
-						//if ((elemDef->flags & FX_ELEM_USE_MODEL_PHYSICS) != 0 && !FX_SpawnModelPhysics(elemDef, effect, randomSeed, remoteElem))
-						if ((elemDef->flags & FX_ELEM_USE_MODEL_PHYSICS) != 0)
+						if ((elemDef->flags & FX_ELEM_USE_MODEL_PHYSICS) != 0 && !FX_SpawnModelPhysics(elemDef, effect, randomSeed, remoteElem))
+						//if ((elemDef->flags & FX_ELEM_USE_MODEL_PHYSICS) != 0)
 						{
 							// remove physics flag (does not alter the fx project file)
-							elemDef->flags &= ~FX_ELEM_USE_MODEL_PHYSICS;
+							//elemDef->flags &= ~FX_ELEM_USE_MODEL_PHYSICS;
 
 							FX_FreeElem(system, FX_ElemToHandle(system->elems, remoteElem), effect, elemClass);
 						}
@@ -1476,7 +1516,7 @@ namespace fx_system
 			if (remoteElem->___u8.physObjId)
 			{
 				// #PHYS
-				// Phys_ObjDestroy(1, (DWORD*)remoteElem->___u8.physObjId);
+				physics::Phys_ObjDestroy(1, remoteElem->___u8.physObjId);
 			}
 		}
 
@@ -1800,6 +1840,11 @@ namespace fx_system
 		system->visState->blockerCount = 0;
 		system->visStateBufferRead = system->visState;
 		system->visStateBufferWrite = system->visState + 1;
+	}
+
+	void FX_RunPhysics(int localClientNum)
+	{
+		physics::Phys_RunToTime(1, FX_GetSystem(localClientNum)->msecNow);
 	}
 
 	void FX_InitSystem(int localClientNum)

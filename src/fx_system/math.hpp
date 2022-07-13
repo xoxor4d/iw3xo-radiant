@@ -4,6 +4,7 @@ namespace fx_system
 {
 	int		Clamp(int val, int min, int max);
 	void	SetIdentityAxis(float* axis);
+	void	AxisCopy(const float* in, float* out);
 	void	AxisCopy(const float(*in)[3], float(*out)[3]);
 	void	PerpendicularVector(const float* src, float* dst);
 	void	RotatePointAroundVector(float* dst, const float* dir, const float* point, const float degrees);

@@ -1597,15 +1597,16 @@ namespace fx_system
 					if (elemVisual->model)
 					{
 						// #NOT_IMPL
+						// #PHYS
 
-						edElemDef->flags &= ~FX_ELEM_USE_MODEL_PHYSICS;
-						Warning(0, "Physics not yet implemented!");
+						//edElemDef->flags &= ~FX_ELEM_USE_MODEL_PHYSICS;
+						//Warning(0, "Physics not yet implemented!");
 
-						//if (!elemVisual->model->physPreset)
-						//{
-						//	//elemVisual->model->physPreset = FX_RegisterPhysPreset("default");
-						//	Warning(20, "ERROR: no physics preset specified for the FX model [%s]\n", elemVisual->model->name);
-						//}
+						if (!elemVisual->model->physPreset)
+						{
+							elemVisual->model->physPreset = game::FX_RegisterPhysPreset("default");
+							Warning(20, "ERROR: no physics preset specified for the FX model [%s]\n", elemVisual->model->name);
+						}
 					}
 				}
 			}

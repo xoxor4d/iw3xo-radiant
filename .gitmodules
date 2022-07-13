@@ -15,3 +15,6 @@
 [submodule "deps/rapidjson"]
 	path = deps/rapidjson
 	url = https://github.com/Tencent/rapidjson.git
+[submodule "deps/ode"]
+	path = deps/ode
+	url = https://github.com/thomasmarsh/ODE.git
