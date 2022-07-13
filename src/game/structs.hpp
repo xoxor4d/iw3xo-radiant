@@ -359,6 +359,22 @@ namespace game
 		char *value;
 	};
 
+	struct Material;
+
+	struct __declspec(align(4)) faceVisuals_s
+	{
+		game::Material* handle;
+		int vertHandle; // low16_firstIndex__high16_vbOffset
+		int visuals;
+	};
+
+	struct __declspec(align(4)) faceVis_s
+	{
+		int vertcount;
+		int visCount;
+		faceVisuals_s* visArray;
+	};
+
 	struct winding_t
 	{
 		int numPoints;
@@ -756,7 +772,7 @@ namespace game
 		int xx0;		
 		brush_t_with_custom_def* def;
 		int facecount;
-		vec3_t* faces;
+		game::faceVis_s* faces;
 		patch_t* patch;
 		std::int16_t version;
 		std::int16_t unk;
@@ -3562,20 +3578,6 @@ namespace game
 		std::string m_strCommand;
 		unsigned int m_nKey;
 		unsigned int m_nModifiers;
-	};
-
-	struct __declspec(align(4)) faceVisuals_s
-	{
-		game::Material* handle;
-		int vertHandle;
-		int visuals;
-	};
-
-	struct __declspec(align(4)) faceVis_s
-	{
-		int vertcount;
-		int visCount;
-		faceVisuals_s* visArray;
 	};
 
 	struct trace_t
