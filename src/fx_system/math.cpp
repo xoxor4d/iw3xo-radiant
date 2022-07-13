@@ -186,43 +186,36 @@ namespace fx_system
 			{
 				test[2][0] = (*mat)[0] - (*mat)[4] - (*mat)[8] + 1.0f;
 				test[2][1] = (*mat)[3] + (*mat)[1];
-				test[2][2] = test[0][0];
-				test[2][3] = test[1][0];
+				test[2][2] = test[1][0];
+				test[2][3] = test[0][0];
 
 				testSizeSq = Vec4LengthSq(test[2]);
 				if (testSizeSq < 1.0f)
 				{
 					test[3][0] = test[2][1];
 					test[3][1] = (*mat)[4] - (*mat)[0] - (*mat)[8] + 1.0f;
-					test[3][2] = test[0][1];
-					test[3][3] = test[1][1];
-
+					test[3][2] = test[1][1];
+					test[3][3] = test[0][1];
 					testSizeSq = Vec4LengthSq(test[3]);
-					if (testSizeSq < 1.0f)
-					{
-						Assert();
-					}
-
 					best = 3;
 				}
-				else { best = 2; }
+				else
+				{
+					best = 2;
+				}
 			}
-			else { best = 1; }
+			else
+			{
+				best = 1;
+			}
 		}
 		else
 		{
 			best = 0;
 		}
-		if (testSizeSq == 0.0f)
-		{
-			Assert();
-		}
 
-		const float invLength = 1.0f / sqrtf(testSizeSq);
-		out[0] = invLength * test[best][0];
-		out[1] = invLength * test[best][1];
-		out[2] = invLength * test[best][2];
-		out[3] = invLength * test[best][3];
+		const auto invLength = 1.0f / sqrt(testSizeSq);
+		utils::vector::vec4_scale(test[best], invLength, out);
 	}
 
 	void UnitQuatToAxis(const float* quat, float(*axis)[3])
