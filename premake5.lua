@@ -233,11 +233,9 @@ workspace "iw3xo-radiant"
     staticruntime "On"
 
     disablewarnings {
-		"4100",
 		"4239",
 		"4505",
 		"4996",
-		"5054",
 		"6001",
 		"6385",
 		"6386",

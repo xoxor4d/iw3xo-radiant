@@ -392,7 +392,6 @@ namespace game
 	const char** FS_ListFilteredFilesWrapper(const char* path /*edx*/, const char* null /*esi*/, int* file_count);
 	std::uint32_t FS_HashFileName(const char* fname, int hash_size);
 	void* Hunk_FindDataForFileInternal(int hash /*eax*/, int data_type /*ebx*/, const char* name /*edi*/);
-	void* Hunk_SetDataForFile(int asset_type /*eax*/, const char* name /*esi*/, void* file, void* (__cdecl* alloc_func)(size_t));
 	int FS_OpenFileOverwrite(const char* path /*esi*/);
 	inline auto FS_Write = reinterpret_cast<int (*)(const void* buffer, size_t len, int h)>(0x49FF10);
 
@@ -408,8 +407,6 @@ namespace game
 	inline auto Material_RegisterHandle = reinterpret_cast<game::Material* (*)(const char* name, int)>(0x511BE0);
 	inline auto R_RegisterModel = reinterpret_cast<game::XModel* (*)(const char* name)>(0x51D450);
 	inline auto R_RegisterLightDef = reinterpret_cast<game::GfxLightDef* (*)(const char* name)>(0x53D510);
-
-	PhysPreset* FX_RegisterPhysPreset(const char* name);
 
 	void DObjCreate(game::DObjModel_s* dobjModels /*edi*/, game::DObj_s* obj /*esi*/, size_t numModels, game::XAnimTree_s* tree, int entnum);
 

@@ -1990,11 +1990,6 @@ namespace components
 			return;
 		}
 
-		if(effects::effect_can_play())
-		{
-			fx_system::FX_RunPhysics(0);
-		}
-
 		if(!d3dbsp::Com_IsBspLoaded())
 		{
 			const auto frontEndDataOut = game::get_frontenddata();
@@ -3553,10 +3548,7 @@ namespace components
 		utils::hook::nop(0x500F4C, 5); // < on shutdown
 
 		// silence assert 'localDrawSurf->fields.prepass == MTL_PREPASS_NONE'
-		utils::hook::nop(0x52EE39, 5);
-
-		// silence assert  '((region == DRAW_SURF_FX_CAMERA_EMISSIVE) || (drawSurf == scene.drawSurfs[region]) || (drawSurf->fields.primarySortKey >= (drawSurf - 1)->fields.primarySortKey))'
-		utils::hook::nop(0x52EE95, 5);
+		utils::hook::nop(0x52EE39, 5); 
 
 		// * ------
 

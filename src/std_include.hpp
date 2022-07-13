@@ -101,10 +101,6 @@
 #include <rapidjson/stringbuffer.h>
 #pragma warning(pop)
 
-#pragma warning(push, 0)
-#include "ode/ode.h"
-#pragma warning(pop)
-
 #include <WinHttpClient.h>
 
 #include "game/structs.hpp"
@@ -134,15 +130,6 @@
 #include "fx_system/fx_curves.hpp"
 #include "fx_system/fx_load.hpp"
 #include "fx_system/fx_save.hpp"
-
-#include "physics/physics_structs.hpp"
-#include "physics/phys_math.hpp"
-#include "physics/phys_utils.hpp"
-#include "physics/phys_dvars.hpp"
-#include "physics/phys_ode.hpp"
-#include "physics/phys_world_collision.hpp"
-#include "physics/phys_contacts.hpp"
-#include "physics/phys_local.hpp"
 
 #include "ggui/_ggui.hpp"
 #include "ggui/_template_dialog.hpp"

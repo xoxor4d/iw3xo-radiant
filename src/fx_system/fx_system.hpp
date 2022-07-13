@@ -115,6 +115,5 @@ namespace fx_system
 	void			FX_RunGarbageCollection_FreeSpotLight(FxSystem* system, unsigned __int16 effectHandle);
 	void			FX_RunGarbageCollectionAndPrioritySort(FxSystem* system);
 
-	void			FX_RunPhysics(int localClientNum);
 	void			FX_InitSystem(int localClientNum);
 }

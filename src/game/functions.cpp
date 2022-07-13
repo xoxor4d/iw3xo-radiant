@@ -1394,20 +1394,6 @@ namespace game
 		}
 	}
 
-	void* Hunk_SetDataForFile(int asset_type /*eax*/, const char* name /*esi*/, void* file, void* (__cdecl* alloc_func)(size_t))
-	{
-		const static uint32_t func_addr = 0x4AC750;
-		__asm
-		{
-			push	alloc_func;
-			push	file;
-			mov		esi, name;
-			mov		eax, asset_type;
-			call	func_addr;
-			add		esp, 8;
-		}
-	}
-
 	int FS_OpenFileOverwrite(const char* path /*esi*/)
 	{
 		const static uint32_t func_addr = 0x4A05D0;
@@ -1452,52 +1438,6 @@ namespace game
 			call	func_addr;
 			popad;
 		}
-	}
-
-	void* Hunk_AllocPhysPresetPrecache(size_t size)
-	{
-		if (size <= 0)
-		{
-			Assert();
-		}
-
-		return Hunk_Alloc(size);
-	}
-
-	game::PhysPreset* PhysPresetLoadFile(const char* name /*ecx*/, void* (__cdecl* alloc_func)(size_t))
-	{
-		const static uint32_t func_addr = 0x4D6050;
-		__asm
-		{
-			push	alloc_func;
-			mov		ecx, name;
-			call	func_addr;
-			add		esp, 4;
-		}
-	}
-
-	PhysPreset* FX_RegisterPhysPreset(const char* name)
-	{
-		if (!name || !name[0])
-		{
-			Assert();
-		}
-
-		auto phys_preset = static_cast<game::PhysPreset*>(Hunk_FindDataForFileInternal((int)FS_HashFileName(name, 1024), 7, name));
-		if (!phys_preset)
-		{
-			if (const auto	phys_preset_file = PhysPresetLoadFile(name, Hunk_AllocPhysPresetPrecache);
-				phys_preset_file)
-			{
-				phys_preset = static_cast<PhysPreset*>(Hunk_SetDataForFile(7, name, phys_preset_file, Hunk_AllocPhysPresetPrecache));
-			}
-			else
-			{
-				phys_preset = nullptr;
-			}
-		}
-
-		return phys_preset;
 	}
 
 	void DObjCreate(game::DObjModel_s* dobjModels /*edi*/, game::DObj_s* obj /*esi*/, size_t numModels, game::XAnimTree_s* tree, int entnum)

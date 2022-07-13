@@ -493,7 +493,6 @@ namespace components
 	{
 		on_effect_stop();
 		reset_editor_effect();
-		physics::Phys_Init();
 		fx_system::FX_InitSystem(0);
 	}
 
