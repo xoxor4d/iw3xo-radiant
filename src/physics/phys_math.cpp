@@ -2,7 +2,7 @@
 
 namespace physics
 {
-	void Phys_CreateBasisFromNormal(float* o2, float* normal, float* o1)
+	void Phys_CreateBasisFromNormal(float* tangent, float* normal, float* binormal)
 	{
 		float dir[3] = {};
 
@@ -15,10 +15,10 @@ namespace physics
 			dir[1] = 1.0f;
 		}
 
-		utils::vector::cross_product(normal, dir, o1);
-		utils::vector::normalize(o1);
-		utils::vector::cross_product(normal, o1, o2);
-		utils::vector::normalize(o2);
+		utils::vector::cross_product(normal, dir, binormal);
+		utils::vector::normalize(binormal);
+		utils::vector::cross_product(normal, binormal, tangent);
+		utils::vector::normalize(tangent);
 	}
 
 	float ClampMin(float val, float min)

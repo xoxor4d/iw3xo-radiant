@@ -182,13 +182,23 @@ namespace physics
 
 	void Phys_ObjDestroy(int worldIndex, int id)
 	{
-		if (!physInited || !id || reinterpret_cast<dxBody*>(id)->world != physGlob.world[worldIndex])
+		const auto body = reinterpret_cast<dxBody*>(id);
+
+		if (!physInited || !body || body->world != physGlob.world[worldIndex])
 		{
 			Assert();
 		}
 
-		const auto data = static_cast<PhysObjUserData*>(dBodyGetData((dxBody*)id));
-		dBodyDestroy(reinterpret_cast<dxBody*>(id));
+		const auto data = static_cast<PhysObjUserData*>(dBodyGetData(body));
+
+		if (body->geom)
+		{
+
+			//body->geom->bodyRemove();
+			dGeomDestroy(body->geom);
+		}
+		
+		dBodyDestroy(body);
 		Pool_Free(data, &physGlob.userDataPool);
 	}
 
@@ -532,6 +542,7 @@ namespace physics
 		{
 		case PHYS_GEOM_NONE:
 			dMassSetSphereTotal(&mass, totalMass, 1.0f);
+			//new_geom = dCreateSphere(physGlob.space[worldIndex], 1.0f);
 			break;
 
 		case PHYS_GEOM_BOX:
@@ -568,6 +579,11 @@ namespace physics
 		if (!new_geom && state->type != PHYS_GEOM_NONE)
 		{
 			printf("Maximum number of physics geoms exceeded\n");
+		}
+
+		if (new_geom && body)
+		{
+			dGeomSetBody(new_geom, body);
 		}
 
 		if (state->isOriented && new_geom)
@@ -955,7 +971,8 @@ namespace physics
 		const auto userData = static_cast<PhysObjUserData*>(dBodyGetData(body));
 		if (!userData)
 		{
-			Assert();
+			return;
+			//Assert();
 		}
 
 		Phys_GetBodyPosition(body, userData->savedPos);
@@ -1100,6 +1117,68 @@ namespace physics
 		g_phys_msecStep[worldIndex] = g_phys_minMsecStep[worldIndex] + static_cast<int>(( static_cast<float>((g_phys_maxMsecStep[worldIndex] - g_phys_minMsecStep[worldIndex])) * s1));
 	}
 
+	void handle_collisions(void* data, dGeomID geom1, dGeomID geom2)
+	{
+		const int world_type = *(int*)data;
+
+		// Get the rigid bodies associated with the geometries
+		dBodyID body1 = dGeomGetBody(geom1);
+		dBodyID body2 = dGeomGetBody(geom2);
+
+		// Maximum number of contacts to create between bodies (see ODE documentation)
+		const int MAX_NUM_CONTACTS = 8;
+		dContact contacts[MAX_NUM_CONTACTS];
+
+		// Add collision joints
+		int numc = dCollide(geom1, geom2, MAX_NUM_CONTACTS, &contacts[0].geom, sizeof(dContact));
+
+		for (int i = 0; i < numc; ++i) 
+		{
+			auto friction = 0.0f;
+			auto bounce = 1.0f;
+
+			if (body1)
+			{
+				const auto data = static_cast<PhysObjUserData*>(dBodyGetData(body1));
+				bounce = ClampMin(data->bounce, 1.0f);
+				friction = data->friction + 0.0f;
+			}
+
+			if (body2)
+			{
+				const auto data = static_cast<PhysObjUserData*>(dBodyGetData(body2));
+				bounce = ClampMin(data->bounce, bounce);
+				friction = data->friction + friction;
+			}
+
+			contacts[i].surface.mode = dContactSoftERP | dContactSoftCFM | dContactApprox1 | dContactSlip1 | dContactSlip2;
+			contacts[i].surface.soft_erp = phys_contact_erp->current.value;
+			contacts[i].surface.soft_cfm = phys_contact_cfm->current.value;
+			contacts[i].surface.mu2 = 0.0f;
+			contacts[i].surface.mu = phys_frictionScale->current.value * friction;
+			contacts[i].surface.bounce = bounce;
+			contacts[i].surface.bounce_vel = 0.1f;
+
+			// struct dSurfaceParameters {
+			//      int mode;
+			//      dReal mu;
+			//      dReal mu2;
+			//      dReal rho;
+			//      dReal rho2;
+			//      dReal rhoN;
+			//      dReal bounce;
+			//      dReal bounce_vel;
+			//      dReal soft_erp;
+			//      dReal soft_cfm;
+			//      dReal motion1, motion2, motionN;
+			//      dReal slip1, slip2;
+			// };
+
+			dJointID contact = dJointCreateContact(physGlob.world[world_type], physGlob.contactgroup[world_type], &contacts[i]);
+			dJointAttach(contact, body1, body2);
+		}
+	}
+
 	void Phys_NearCallback(void* userData, dxGeom* geom1, dxGeom* geom2)
 	{
 		ContactList list1 = {};
@@ -1192,6 +1271,9 @@ namespace physics
 		}
 	}
 
+	dBodyID sphere;
+	dGeomID plane;
+
 	void Phys_RunFrame(PhysWorld worldIndex, float seconds)
 	{
 		if (!physInited)
@@ -1233,10 +1315,34 @@ namespace physics
 			physGlob.gravityDirection[1] * -phys_gravity->current.value,
 			physGlob.gravityDirection[2] * -phys_gravity->current.value);
 
+		//dWorldSetGravity(world, 0.0, -9.81, 0.0);
+
+		// not supported in cod4 (crashes)
 		if (phys_interBodyCollision->current.enabled)
 		{
 			dSpaceCollide(physGlob.space[worldIndex], &worldIndex, Phys_NearCallback);
+			//dSpaceCollide(physGlob.space[worldIndex], &worldIndex, handle_collisions);
 		}
+
+		//if(sphere)
+		{
+			//const float mins[3] = { -8.0f, -8.0f, -8.0f };
+			//const float maxs[3] = { 8.0f, 8.0f, 8.0f };
+			//const float color[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+			//const float color_g[4] = { 0.0f, 1.0f, 0.0f, 1.0f };
+			//game::R_AddDebugBox(game::get_frontenddata()->debugGlobals, mins, maxs, color);
+
+
+			/*const float mins[3] = { sphere->posr.pos[0] + 16.0f, sphere->posr.pos[2] + 16.0f, sphere->posr.pos[1] + 16.0f };
+			const float maxs[3] = { sphere->posr.pos[0] - 16.0f, sphere->posr.pos[2] - 16.0f, sphere->posr.pos[1] - 16.0f };
+			game::R_AddDebugBox(game::get_frontenddata()->debugGlobals, mins, maxs, color);*/
+
+			//const float mins_plane[3] = { -1024.0f, -1024.0f, 0.25f };
+			//const float maxs_plane[3] = {  1024.0f,  1024.0f, 0.25f };
+			//game::R_AddDebugBox(game::get_frontenddata()->debugGlobals, mins_plane, maxs_plane, color_g);
+			
+		}
+
 
 		const auto callback = physGlob.worldData[worldIndex].collisionCallback;
 		if (callback)
@@ -1246,6 +1352,10 @@ namespace physics
 
 		dWorldQuickStep(world, seconds);
 		physGlob.dumpContacts = false;
+
+		dJointGroupEmpty(physGlob.contactgroup[0]);
+		dJointGroupEmpty(physGlob.contactgroup[1]);
+		dJointGroupEmpty(physGlob.contactgroup[2]);
 	}
 
 	void Phys_RunToTime(int worldIndex, int timeNow)
@@ -1340,7 +1450,7 @@ namespace physics
 				physGlob.world[w] = dWorldCreate();
 				physGlob.space[w] = dSimpleSpaceCreate(nullptr);
 
-				physGlob.contactgroup[w] = &odeGlob.contactsGroup[w];
+				physGlob.contactgroup[w] = dJointGroupCreate(0); //&odeGlob.contactsGroup[w]; .... huh
 
 				dWorldSetAutoDisableFlag(physGlob.world[w], 1);
 				dWorldSetAutoDisableSteps(physGlob.world[w], 0);
@@ -1348,6 +1458,20 @@ namespace physics
 
 			physGlob.dumpContacts = false;
 		}
+
+		// DEGBUG
+		/*sphere = dBodyCreate(physGlob.world[1]);
+		dBodySetPosition(sphere, 0.0f, 1000.0f, 0.0f);
+
+		dMass sphere_mass;
+		dMassSetSphere(&sphere_mass, 1.0f, 0.4f);
+		dBodySetMass(sphere, &sphere_mass);
+
+		dGeomID sphere_geom = dCreateSphere(physGlob.space[1], 0.4f);
+		dGeomSetBody(sphere_geom, sphere);*/
+
+		plane = dCreatePlane(physGlob.space[1], 0, 1, 0, 0);
+		auto plane2 = dCreatePlane(physGlob.space[1], 0, 0, 1, 0);
 
 		register_dvars();
 
@@ -1361,6 +1485,17 @@ namespace physics
 		physGlob.gravityDirection[2] = -1.0f;
 
 		physInited = true;
+
+		components::command::register_command("phys_reset"s, [&](auto)
+		{
+			//dBodySetPosition(sphere, 0.0f, 1000.0f, 0.0f);
+		});
+
+		components::command::register_command("phys_push"s, [&](auto)
+		{
+			//dBodyAddForce(sphere, 100.0f, 0.0f, 0.0f);
+			//dBodySetLinearVel(sphere, 100.0f, 0.0f, 0.0f);
+		});
 	}
 
 	void Phys_Shutdown()

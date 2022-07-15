@@ -78,7 +78,7 @@ end
 table.insert(dependencies, ode)
 
 
-if _ACTION and _ACTION ~= "clean" then
+if _ACTION and _ACTION ~= "clean" and _ACTION ~= "generate-buildinfo" then
 
 	local p = os.getcwd()
 	p = path.getdirectory(p)
@@ -134,7 +134,7 @@ if _ACTION and _ACTION ~= "clean" then
 ----------------------------
 -- Write precision headers
 ----------------------------
-if _ACTION and _ACTION ~= "clean" then
+if _ACTION and _ACTION ~= "clean" and _ACTION ~= "generate-buildinfo" then
     function generateheader(headerfile, placeholder, precstr)
       local outfile = io.open(headerfile, "w")
       for i in io.lines(headerfile .. ".in")

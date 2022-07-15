@@ -393,6 +393,10 @@ namespace components
 				ShowWindow(con, SW_HIDE);
 			}
 
+			//auto xx = game::g_selected_faces();
+			//auto aaa = xx->brush->def->brush_faces[1]
+			//auto yy = 0;
+
 #if 0
 			if (game::s_world->reflectionProbes && game::s_world->reflectionProbes->reflectionImage
 				&& game::s_world->reflectionProbes->reflectionImage->texture.data)

@@ -319,200 +319,412 @@ namespace physics
 
 	void Phys_GenerateGroupContacts(const ContactList* contacts, float(*centroid)[3], int* group, ContactList* out)
 	{
-		float* v4; // edx
-		int v12; // eax
-		int v13; // ebx
-		int v15; // ecx
-		int v17; // edx
-		float* v18; // edx
-		int i; // ecx
-		float v20; // st6
-		float v21; // st6
-		int v22; // ebx
-		int v23; // edx
-		int v24; // ecx
-		int v25; // edi
-		int v26; // edx
-		float v27[3][3]; // [esp+Ch] [ebp-68h] BYREF
-		float v28; // [esp+30h] [ebp-44h]
-		float v29; // [esp+34h] [ebp-40h]
-		float v30; // [esp+38h] [ebp-3Ch]
-		int v31[2]; // [esp+3Ch] [ebp-38h]
-		int v32[2]; // [esp+44h] [ebp-30h]
-		int v33; // [esp+4Ch] [ebp-28h]
-		int v34; // [esp+50h] [ebp-24h]
-		int v35; // [esp+54h] [ebp-20h]
-		int v36; // [esp+58h] [ebp-1Ch]
-		int v37; // [esp+5Ch] [ebp-18h]
-		int v38; // [esp+60h] [ebp-14h]
-		float v39; // [esp+64h] [ebp-10h]
-		float* v40; // [esp+68h] [ebp-Ch]
-		int v41; // [esp+6Ch] [ebp-8h]
-		int v42; // [esp+70h] [ebp-4h]
+		int* v7; // r18
+		float* v8; // r11
+		int v9; // r10
+		int v10; // r8
+		int* v11; // r9
+		//float* v12; // r10
+		//dReal v12;
+		int v13; // r11
+		int v14; // r7
+		float* v15; // r11
+		double v16; // fp0
+		int v17; // r19
+		float(*v18)[3]; // r20
+		int v19; // r11
+		double v20; // fp31
+		int v21; // r21
+		int v22; // r23
+		int v23; // r28
+		//ContactList* v24; // r27
+		int* v25; // r24
+		int v26; // r29
+		int* v27; // r31
+		const float* v28; // r30
+		double v29; // fp1
+		int v30; // r11
+		double v31; // fp13
+		double v32; // fp12
+		float* v33; // r9
+		double v34; // fp11
+		int i; // r11
+		double v36; // fp0
+		int v37; // r28
+		int v38; // r29
+		int v39; // r11
+		BOOL v40; // cr58
+		int v41; // r30
+		int v42; // r31
+		int v43[8]; // [sp+50h] [-E0h] BYREF
+		float v44[4]; // [sp+70h] [-C0h] BYREF
+		float v45[6];
 
-		v4 = (float*)centroid;
+		v7 = group;
+		v8 = &(*centroid)[2];
+		v9 = 3;
 		out->contactCount = 0;
-
-		{
-			auto v6 = &(*centroid)[0]; // started at 2
-			auto idx = 3;
-			do
-			{
-				v6[0] = 0.0f;
-				v6[1] = 0.0f;
-				v6[2] = 0.0f;
-
-				v6 += 3;
-				--idx;
-
-			} while (idx);
-		}
-
-		if (contacts->contactCount)
-		{
-			const auto geom = contacts->contacts;
-			for (auto it = 0; it < contacts->contactCount; it++)
-			{
-				if (group[it] == -1)
-				{
-					Assert();
-				}
-
-				float* cent = centroid[3 * group[it]];
-				cent[0] = geom[it].contact.normal[0] + cent[0];
-				cent[1] = geom[it].contact.normal[1] + cent[1];
-				cent[2] = geom[it].contact.normal[2] + cent[2];
-			}
-		}
-
-		v42 = 0;
-		v40 = v4;
-
 		do
 		{
-			utils::vector::normalize2(v40, v27[2]);
-			Phys_CreateBasisFromNormal(v27[1], v27[2], (float*)v27);
-			v39 = -FLT_MAX;
-			v35 = -1;
-			v36 = -1;
-			v31[0] = -8388609;
-			v31[1] = -8388609;
-			v33 = -1;
-			v34 = -1;
-			v32[0] = 2139095039;
-			v32[1] = 2139095039;
-			v12 = contacts->contactCount;
-			v13 = 0;
-			v38 = -1;
-			v41 = 0;
+			--v9;
+			*(v8 - 2) = 0.0;
+			*(v8 - 1) = 0.0;
+			*v8 = 0.0;
+			v8 += 3;
+		} while (v9);
 
-			if (v12)
+		v10 = 0;
+		if (contacts->contactCount)
+		{
+			v11 = group;
+			auto v12 = &contacts->contacts[0].contact.normal[2];
+			do
 			{
-				auto v14 = &contacts->contacts[0].contact.pos[1];
+				v13 = *v11;
+				++v10;
+				v14 = 2 * *v11++;
+				v15 = &(*centroid)[v13 + v14];
+				*v15 = *(v12 - 2) + *v15;
+				v15[1] = *(v12 - 1) + v15[1];
+				v16 = *v12;
+				v12 += (sizeof(dContactGeomExt) / 4);
+				v15[2] = v15[2] + v16;
+			} while (v10 != contacts->contactCount);
+		}
+
+		v17 = 0;
+		v18 = centroid;
+		do
+		{
+			utils::vector::normalize2(v18[0], v44); //Vec3NormalizeTo(v18, v44);
+			Phys_CreateBasisFromNormal(&v45[3], v44, v45);
+			v19 = contacts->contactCount;
+			v20 = -3.4028235e38;
+			v43[2] = -1;
+			v21 = -1;
+			v43[6] = -8388609;
+			v22 = 0;
+			v43[0] = -1;
+			v23 = 0;
+			v43[3] = -1;
+			v43[4] = 2139095039;
+			v43[7] = -8388609;
+			v43[1] = -1;
+			v43[5] = 2139095039;
+			if (v19)
+			{
+				auto v24 = contacts->contacts;
+				v25 = v7;
 				do
 				{
-					if (group[v13] == v42)
+					if (*v25 == v17)
 					{
-						v15 = v13 + 1;
-						if (v13 + 1 != v12)
+						v26 = v23 + 1;
+						if (v23 + 1 != v19)
 						{
-							auto v16 = v14 + (sizeof(dContactGeomExt) / 4) + 1;//+ 13;
+							v27 = v25 + 1;
+							v28 = v24->contact.pos;
 							do
 							{
-								v17 = group[v15];
-								if (v17 == v42)
+								if (*v27 == v17)
 								{
-									v28 = *(v16 - 2) - *(v14 - 1);
-									v29 = *(v16 - 1) - *v14;
-									v30 = *v16 - v14[1];
-									*(float*)&v37 = v29 * v29 + v28 * v28 + v30 * v30;
-
-									if (*(float*)&v37 < 0.01f)
-									{
-										v17 = -1;
-									}
-									group[v15] = v17;
+									v29 = fx_system::Vec3DistanceSq(v24->contact.pos, v28);
+									v30 = -1;
+									if (v29 >= 0.010000001)
+										v30 = *v27;
+									*v27 = v30;
 								}
-								++v15;
-								v16 += (sizeof(dContactGeomExt) / 4); //12;
-
-							} while (v15 != contacts->contactCount);
+								++v26;
+								v28 += (sizeof(dContactGeomExt) / 4);
+								++v27;
+							} while (v26 != contacts->contactCount);
 						}
 
-						++v41;
-						v18 = &v27[0][2];
+						v31 = v24->contact.pos[0];
+						++v22;
+						v32 = v24->contact.pos[2];
+						v33 = &v45[1];
+						v34 = v24->contact.pos[1];
 
 						for (i = 0; i != 2; ++i)
 						{
-							*(float*)&v37 = *(v18 - 1) * *v14 + *(v18 - 2) * *(v14 - 1) + v14[1] * *v18;
-							v20 = *(float*)&v37;
-							if (*(float*)&v32[i] > (double)*(float*)&v37)
+							v36 = ((*v33 * v34) + ((*(v33 - 1) * v31) + (v33[1] * v32)));
+							if (v36 < *&v43[i + 4])
 							{
-								v32[i] = v37;
-								*(int*)((char*)&v33 + i * 4) = v13;
+								*&v43[i + 4] = (*v33 * v34) + ((*(v33 - 1) * v31) + (v33[1] * v32));
+								v43[i] = v23;
 							}
-							if (*(float*)&v31[i] < v20)
+							if (v36 > *&v43[i + 6])
 							{
-								*(float*)&v31[i] = v20;
-								*(int*)((char*)&v35 + i * 4) = v13;
+								*&v43[i + 6] = v36;
+								v43[i + 2] = v23;
 							}
-							v18 += 3;
+							v33 += 3;
 						}
-
-						if (v39 < v14[7]) // ???? prob wrong
+						if (v24->contact.depth > v20)
 						{
-							v21 = v14[7];
-							v38 = v13;
-							v39 = v21;
+							v20 = v24->contact.depth;
+							v21 = v23;
 						}
 					}
+					v19 = contacts->contactCount;
+					++v23;
+					++v25;
+					++v24; // += (sizeof(dContactGeomExt));
+				} while (v23 != v19);
 
-					v12 = contacts->contactCount;
-					++v13;
-					v14 += (sizeof(dContactGeomExt) / 4); //12;
-
-				} while (v13 != v12);
-
-				if (v41)
+				if (v22)
 				{
-					v22 = v33;
-					v23 = v34;
-					memcpy(&out->contacts[out->contactCount++], &contacts->contacts[v33], sizeof(out->contacts[out->contactCount++]));
-					v24 = out->contactCount;
-					if (v23 != v22)
+					v37 = v43[0];
+					memcpy(
+						&out->contacts[out->contactCount],
+						&contacts->contacts[v43[0]],
+						sizeof(out->contacts[out->contactCount]));
+					v38 = v43[1];
+					v39 = out->contactCount + 1;
+					v40 = v43[1] == v37;
+					out->contactCount = v39;
+					if (!v40)
 					{
-						memcpy(&out->contacts[v24], &contacts->contacts[v23], sizeof(out->contacts[v24]));
-						v24 = ++out->contactCount;
+						memcpy(&out->contacts[v39], &contacts->contacts[v38], sizeof(out->contacts[v39]));
+						v39 = out->contactCount + 1;
+						out->contactCount = v39;
 					}
-
-					v25 = v35;
-					if (v35 != v23 && v35 != v22)
+					v41 = v43[2];
+					if (v43[2] != v38 && v43[2] != v37)
 					{
-						memcpy(&out->contacts[v24], &contacts->contacts[v35], sizeof(out->contacts[v24]));
-						v24 = ++out->contactCount;
-						v25 = v35;
+						memcpy(&out->contacts[v39], &contacts->contacts[v43[2]], sizeof(out->contacts[v39]));
+						v39 = out->contactCount + 1;
+						out->contactCount = v39;
 					}
-
-					v26 = v36;
-					if (v36 != v25 && v36 != v34 && v36 != v22)
+					v42 = v43[3];
+					if (v43[3] != v41 && v43[3] != v38 && v43[3] != v37)
 					{
-						memcpy(&out->contacts[v24], &contacts->contacts[v36], sizeof(out->contacts[v24]));
-						v24 = ++out->contactCount;
-						v25 = v35;
+						memcpy(&out->contacts[v39], &contacts->contacts[v43[3]], sizeof(out->contacts[v39]));
+						v39 = out->contactCount + 1;
+						out->contactCount = v39;
 					}
-					if (v38 != v26 && v38 != v25 && v38 != v34 && v38 != v22)
+					if (v21 != v42 && v21 != v41 && v21 != v38 && v21 != v37)
 					{
-						memcpy(&out->contacts[v24], &contacts->contacts[v38], sizeof(out->contacts[v24]));
+						memcpy(&out->contacts[v39], &contacts->contacts[v21], sizeof(out->contacts[v39]));
 						++out->contactCount;
 					}
 				}
 			}
-
-			v40 += 3;
-			++v42;
-
-		} while (v42 != 3);
+			++v17;
+			++v18;
+		} while (v17 != 3);
 	}
+
+	//void Phys_GenerateGroupContacts(const ContactList* contacts, float(*centroid)[3], int* group, ContactList* out)
+	//{
+	//	float* v4; // edx
+	//	int v12; // eax
+	//	int v13; // ebx
+	//	int v15; // ecx
+	//	int v17; // edx
+	//	float* v18; // edx
+	//	int i; // ecx
+	//	float v20; // st6
+	//	float v21; // st6
+	//	int v22; // ebx
+	//	int v23; // edx
+	//	int v24; // ecx
+	//	int v25; // edi
+	//	int v26; // edx
+	//	//float v27[3][3]; // [esp+Ch] [ebp-68h] BYREF
+	//	float basis[3];
+	//	float v27[3];
+	//	float normal[3];
+	//	float v28; // [esp+30h] [ebp-44h]
+	//	float v29; // [esp+34h] [ebp-40h]
+	//	float v30; // [esp+38h] [ebp-3Ch]
+	//	int v31[9];
+	//	int v38; // [esp+60h] [ebp-14h]
+	//	float v39; // [esp+64h] [ebp-10h]
+	//	float* v40; // [esp+68h] [ebp-Ch]
+	//	int v41; // [esp+6Ch] [ebp-8h]
+	//	int v42; // [esp+70h] [ebp-4h]
+
+	//	out->contactCount = 0;
+	//	{
+	//		auto v6 = &(*centroid)[0]; // started at 2
+	//		auto idx = 3;
+	//		do
+	//		{
+	//			v6[0] = 0.0f;
+	//			v6[1] = 0.0f;
+	//			v6[2] = 0.0f;
+
+	//			v6 += 3;
+	//			--idx;
+
+	//		} while (idx);
+	//	}
+
+	//	if (contacts->contactCount)
+	//	{
+	//		const auto geom = contacts->contacts;
+	//		for (auto it = 0; it < contacts->contactCount; it++)
+	//		{
+	//			if (group[it] == -1)
+	//			{
+	//				Assert();
+	//			}
+
+	//			float* cent = centroid[3 * group[it]];
+	//			cent[0] = geom[it].contact.normal[0] + cent[0];
+	//			cent[1] = geom[it].contact.normal[1] + cent[1];
+	//			cent[2] = geom[it].contact.normal[2] + cent[2];
+	//		}
+	//	}
+
+	//	v42 = 0;
+	//	v40 = (float*)centroid;
+
+	//	do
+	//	{
+	//		utils::vector::normalize2(v40, normal);
+	//		Phys_CreateBasisFromNormal(&v27[3], normal, basis);
+	//		v39 = -FLT_MAX;
+
+	//		v31[6] = -1;
+	//		v31[7] = -1;
+	//		v31[0] = -8388609;
+	//		v31[1] = -8388609;
+	//		v31[4] = -1;
+	//		v31[5] = -1;
+	//		v31[2] = 2139095039;
+	//		v31[3] = 2139095039;
+
+	//		v13 = 0;
+	//		v38 = -1;
+	//		v41 = 0;
+
+	//		// og dContactGeom struct
+	//		// + 2  depth
+	//		// + 3  g1
+	//		// + 4  g2
+	//		// ! + 5  surfFlags (in dContactGeomExt)
+	//		// + 6  next pos0
+	//		// + 10  next normal0
+	//		// + 12  next normal2
+	//		
+	//		// dContactGeom now
+	//		// + 2  depth
+	//		// + 3  g1
+	//		// + 4  g2
+	//		// + 5  side1
+	//		// + 6  side2
+	//		// !+ 7  surfFlags (in dContactGeomExt)
+	//		// + 8  next pos0
+	//		// + 12  next normal0
+	//		// + 14  next normal2
+
+	//		if (contacts->contactCount)
+	//		{
+	//			auto v14 = &contacts->contacts[0].contact.pos[0];
+	//			do
+	//			{
+	//				if (group[v13] == v42)
+	//				{
+	//					v15 = v13 + 1;
+	//					for (auto xx = 1; v15 != contacts->contactCount; xx++)
+	//					{
+	//						v17 = group[v15];
+	//						if (v17 == v42)
+	//						{
+	//							v28 = contacts->contacts[xx].contact.pos[0] - v14[0];
+	//							v29 = contacts->contacts[xx].contact.pos[1] - v14[1];
+	//							v30 = contacts->contacts[xx].contact.pos[2] - v14[2];
+
+	//							if (v29 * v29 + v28 * v28 + v30 * v30 < 0.01f)
+	//							{
+	//								v17 = -1;
+	//							}
+
+	//							group[v15] = v17;
+	//						}
+
+	//						++v15;
+	//					}
+
+
+	//					++v41;
+	//					v18 = &basis[0];
+
+	//					for (i = 0; i != 2; ++i)
+	//					{
+	//						*(float*)&v31[8] = v18[1] * v14[1] + v18[0] * v14[0] + v18[2] * v14[2];  //*(v18 - 1) * *v14 + *(v18 - 2) * *(v14 - 1) + v14[1] * *v18;
+	//						v20 = *(float*)&v31[8];
+
+	//						if (static_cast<float>(v31[i + 2]) > static_cast<float>(v31[8]))
+	//						{
+	//							v31[i + 2] = v31[8];
+	//							v31[i + 4] = v13;
+	//						}
+
+	//						if (static_cast<float>(v31[i]) < v20)
+	//						{
+	//							*(float*)&v31[i] = v20;
+	//							v31[i + 6] = v13;
+	//						}
+	//						v18 += 3;
+	//					}
+
+	//					if (v39 < v14[6]) // depth
+	//					{
+	//						v21 = v14[6];
+	//						v38 = v13;
+	//						v39 = v21;
+	//					}
+	//				}
+
+	//				v12 = contacts->contactCount;
+	//				++v13;
+	//				v14 += (sizeof(dContactGeomExt) / 4); //12;
+
+	//			} while (v13 != v12);
+
+
+	//			if (v41)
+	//			{
+	//				v22 = v31[4];
+	//				v23 = v31[5];
+	//				memcpy(&out->contacts[out->contactCount++], &contacts->contacts[v31[4]], sizeof(out->contacts[out->contactCount++]));
+	//				v24 = out->contactCount;
+	//				if (v23 != v22)
+	//				{
+	//					memcpy(&out->contacts[v24], &contacts->contacts[v23], sizeof(out->contacts[v24]));
+	//					v24 = ++out->contactCount;
+	//				}
+	//				v25 = v31[6];
+	//				if (v31[6] != v23 && v31[6] != v22)
+	//				{
+	//					memcpy(&out->contacts[v24], &contacts->contacts[v31[6]], sizeof(out->contacts[v24]));
+	//					v24 = ++out->contactCount;
+	//					v25 = v31[6];
+	//				}
+	//				v26 = v31[7];
+	//				if (v31[7] != v25 && v31[7] != v31[5] && v31[7] != v22)
+	//				{
+	//					memcpy(&out->contacts[v24], &contacts->contacts[v31[7]], sizeof(out->contacts[v24]));
+	//					v24 = ++out->contactCount;
+	//					v25 = v31[6];
+	//				}
+	//				if (v38 != v26 && v38 != v25 && v38 != v31[5] && v38 != v22)
+	//				{
+	//					memcpy(&out->contacts[v24], &contacts->contacts[v38], sizeof(out->contacts[v24]));
+	//					++out->contactCount;
+	//				}
+	//			}
+	//		}
+
+	//		v40 += 3;
+	//		++v42;
+
+	//	} while (v42 != 3);
+	//}
 
 	void Phys_CheckOpposingNormals(dxBody* body0, dxBody* body1, ContactList* contacts)
 	{
@@ -790,6 +1002,180 @@ namespace physics
 		}
 	}
 
+	void Phys_CreateJointForEachContact_NEW(ContactList* contacts, dxBody* body0, dxBody* body1, dSurfaceParameters* surfParms, PhysWorld worldIndex)
+	{
+		//float* v10; // r4
+		int v11; // r25
+		int v12; // r31
+		dxBody* v13; // r30
+		float* v14; // r29
+		BOOL v15; // r27
+		PhysObjUserData* data; // r3
+		double v17[3]; // fp0
+		//double v18; // fp13
+		//double v19; // fp12
+		const float* v20; // r3
+		int v21; // r16
+		unsigned __int8 v22; // r15
+		float* v23; // r3
+		float* i; // r29
+		dxJoint* v25; // r3
+		dxJoint* v26; // r3
+		dxBody* v27; // r4
+		const float* v28; // r5
+		unsigned __int8 v29[16]; // [sp+60h] [-D0h] BYREF
+		float v30[3]; // [sp+70h] [-C0h] BYREF
+		float v33[6]; // [sp+80h] [-B0h] BYREF
+		//float v34[3]; // [sp+8Ch] [-A4h] BYREF
+
+		Phys_CheckOpposingNormals(body0, body1, contacts);
+		v11 = 0;
+		v12 = 0;
+		v13 = body0;
+		v14 = &v33[2];
+		v15 = physGlob.worldData[worldIndex].useContactCentroids;
+		do
+		{
+			v29[v12] = 0;
+			if (v13)
+			{
+				data = static_cast<PhysObjUserData*>(dBodyGetData(v13));
+				v29[v12] = data->state == PHYS_OBJ_STATE_STUCK;
+				if (v15)
+				{
+					v17[0] = data->contactCentroid[0];
+					v17[1] = data->contactCentroid[1];
+					v17[2] = data->contactCentroid[2];
+				}
+				else
+				{
+					v20 = dBodyGetPosition(v13);
+					v17[0] = *v20;
+					v17[1] = v20[1];
+					v17[2] = v20[2];
+				}
+				*v14 = v17[2];
+				*(v14 - 1) = v17[1];
+				*(v14 - 2) = v17[0];
+			}
+			++v12;
+			v14 += 3;
+			v13 = body1;
+		} while (v12 < 2);
+		v21 = v29[0];
+		v22 = v29[1];
+		if (v29[0])
+		{
+			v23 = v33;
+		LABEL_12:
+			Phys_RemoveOpposingNormalContacts(contacts, v23);
+			goto LABEL_13;
+		}
+		if (v29[1])
+		{
+			v23 = &v33[3];
+			goto LABEL_12;
+		}
+	LABEL_13:
+		if (!contacts->contactCount)
+		{
+			return;
+		}
+
+		for (i = &contacts->contacts[0].contact.normal[2]; ; i += (sizeof(dContactGeomExt) / 4))
+		{
+			dContact c = {};
+			c.surface = *surfParms;
+			c.geom = *(dContactGeom*)(i - 6);
+
+			if (v21)
+			{
+				if(!utils::vector::compare(body0->lvel, game::vec3_origin) || !utils::vector::compare(body0->avel, game::vec3_origin))
+				{
+					dBodyGetPointVel(body0, *(i - 6), *(i - 5), *(i - 4), v30);
+					dNormalize3(v30);
+					if ((float)((float)(*i * v30[2]) + (float)((float)(*(i - 1) * v30[1]) + (float)(*(i - 2) * v30[0]))) > 0.0099999998)
+					{
+						goto LABEL_31;
+					}
+				}
+			}
+
+			if (v22)
+			{
+				if (!utils::vector::compare(body1->lvel, game::vec3_origin) || !utils::vector::compare(body1->avel, game::vec3_origin))
+				{
+					dBodyGetPointVel(body1, *(i - 6), *(i - 5), *(i - 4), v30);
+					dNormalize3(v30);
+					if ((float)((float)(*i * v30[2]) + (float)((float)(*(i - 1) * v30[1]) + (float)(*(i - 2) * v30[0]))) > 0.0099999998)
+					{
+						goto LABEL_31;
+					}
+				}
+				
+			}
+
+			Phys_ApplyContactJitter(body1, body0, worldIndex, (dContactGeom*)(i - 6));
+
+			if (physGlob.dumpContacts)
+			{
+				game::printf_to_console("Contact %i: P:(%g %g %g), N:(%g %g %g), D:%g\n");
+			}
+
+			if (!phys_noIslands->current.enabled || !body0 || !body1)
+			{
+				v26 = dJointCreateContact(physGlob.world[worldIndex], physGlob.contactgroup[worldIndex], &c);
+				if (!v26)
+				{
+					break;
+				}
+
+				v27 = body0;
+				goto LABEL_29;
+			}
+
+			v25 = dJointCreateContact(physGlob.world[worldIndex], physGlob.contactgroup[worldIndex], &c);
+			if (!v25)
+			{
+				break;
+			}
+
+			dJointAttach(v25, body0, 0);
+			v26 = dJointCreateContact(physGlob.world[worldIndex], physGlob.contactgroup[worldIndex], &c);
+
+			if (!v26)
+			{
+				break;
+			}
+			v27 = 0;
+
+		LABEL_29:
+			dJointAttach(v26, v27, body1);
+			if (phys_drawcontacts->current.enabled)
+			{
+				auto gg = (dContactGeom*)(i - 6);
+				//Phys_DebugDrawContactPoint(i - 6, i - 2, i[2], v28);
+
+				float mins[3] = { -1.0f, -1.0f, -1.0f };
+				float maxs[3] = { 1.0f, 1.0f, 1.0f };
+
+				utils::vector::add(gg->pos, mins, mins);
+				utils::vector::add(gg->pos, maxs, maxs);
+
+				const float color[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+				game::R_AddDebugBox(game::get_frontenddata()->debugGlobals, mins, maxs, color);
+			}
+
+		LABEL_31:
+			if (++v11 == contacts->contactCount)
+			{
+				return;
+			}
+		}
+
+		game::printf_to_console("[WARN] Maximum number of ODE physics contact points exceeded.\n");
+	}
+
 	void Phys_CreateJointForEachContact(ContactList* contacts, dxBody* body0, dxBody* body1, dSurfaceParameters* surfParams, PhysWorld worldIndex)
 	{
 		dxBody* v6; // edi
@@ -797,7 +1183,7 @@ namespace physics
 		float* v8; // esi
 		float v11; // st7
 		int v15; // esi
-		float* v16; // edi
+		//float* v16; // edi
 		float v17; // st6
 		float v18; // st7
 		float v19; // st5
@@ -901,10 +1287,11 @@ namespace physics
 		{
 			// we need to wrap it into a dContact
 			// *(v16 - 6) = dContactGeom
-			v16 = &contacts->contacts[0].contact.normal[2];
+			//v16 = &contacts->contacts[0].contact.normal[2];
+			auto v16 = contacts->contacts;
 			do
 			{
-				auto dot = *(v16 - 1) * *(v16 - 1) + *(v16 - 2) * *(v16 - 2) + *v16 * *v16;
+				auto dot = v16->contact.normal[1] * v16->contact.normal[1] + v16->contact.normal[0] * v16->contact.normal[0] + v16->contact.normal[2] * v16->contact.normal[2];
 				if (dot <= ZERO_EPSILON)
 				{
 					Assert();
@@ -912,29 +1299,57 @@ namespace physics
 
 				if (v28[0])
 				{
-					dBodyGetPointVel(body0, *(v16 - 6), *(v16 - 5), *(v16 - 4), v26);
-					dNormalize3(v26);
-					v17 = v26[0];
-					v18 = v26[1];
-					v19 = v26[2];
-					dot = *v16 * v26[2] + *(v16 - 1) * v26[1] + *(v16 - 2) * v26[0];
-					v20 = dot;
-					if (dot > 0.0099999998f)
+					if (!utils::vector::compare(body0->lvel, game::vec3_origin) || !utils::vector::compare(body0->avel, game::vec3_origin))
 					{
-						goto LABEL_30;
+						dBodyGetPointVel(body0, v16->contact.pos[0], v16->contact.pos[1], v16->contact.pos[2], v26);
+						dNormalize3(v26);
+						v17 = v26[0];
+						v18 = v26[1];
+						v19 = v26[2];
+						dot = v16->contact.normal[2] * v26[2] + v16->contact.normal[1] * v26[1] + v16->contact.normal[0] * v26[0];
+						v20 = dot;
+						if (dot > 0.0099999998f)
+						{
+							goto LABEL_30;
+						}
 					}
+					
 				}
-				if (v28[1] && (dBodyGetPointVel(body1, *(v16 - 6), *(v16 - 5), *(v16 - 4), v26), dNormalize3(v26), v17 = v26[0], v18 = v26[1], v19 = v26[2], dot = *v16 * v26[2] + *(v16 - 1) * v26[1] + *(v16 - 2) * v26[0], v20 = dot, dot > 0.0099999998f))
+
+				if (v28[1])
 				{
-				LABEL_30:
-					if (debug_contact)
+					if (!utils::vector::compare(body1->lvel, game::vec3_origin) || !utils::vector::compare(body1->avel, game::vec3_origin))
 					{
-						printf("Killing contact %d, pointvel %f %f %f dot %f\n", v15, v17, v18, v19, v20);
+						dBodyGetPointVel(body1, v16->contact.pos[0], v16->contact.pos[1], v16->contact.pos[2], v26);
+						dNormalize3(v26);
+						v17 = v26[0];
+						v18 = v26[1];
+						v19 = v26[2];
+						dot = v16->contact.normal[2] * v26[2] + v16->contact.normal[1] * v26[1] + v16->contact.normal[0] * v26[0];
+						v20 = dot;
+
+						if (dot > 0.0099999998f)
+						{
+						LABEL_30:
+							if (debug_contact)
+							{
+								printf("Killing contact %d, pointvel %f %f %f dot %f\n", v15, v17, v18, v19, v20);
+							}
+						}
+						else
+						{
+							goto DO_CONTACT;
+						}
+					}
+					else
+					{
+						goto DO_CONTACT;
 					}
 				}
 				else
 				{
-					auto contact_geom = reinterpret_cast<dContactGeom*>(v16 - 6);
+					DO_CONTACT:
+					auto contact_geom = &v16->contact; //reinterpret_cast<dContactGeom*>(v16 - 6);
 
 					Phys_ApplyContactJitter(body1, body0, worldIndex, contact_geom);
 					if (physGlob.dumpContacts || debug_contact)
@@ -944,7 +1359,7 @@ namespace physics
 
 					dContact c = {};
 					c.surface = *surfParams;
-					c.geom = *(dContactGeom*)(v16 - 6);
+					c.geom = v16->contact; //*(dContactGeom*)(v16 - 6);
 
 					if (phys_noIslands->current.enabled && body0 && body1)
 					{
@@ -986,10 +1401,25 @@ namespace physics
 						dJointAttach(j, body0, body1);
 						v15 = worldIndexa;
 					}
+
+					if (phys_drawcontacts->current.enabled)
+					{
+						auto gg = v16->contact;
+						//Phys_DebugDrawContactPoint(i - 6, i - 2, i[2], v28);
+
+						float mins[3] = { -1.0f, -1.0f, -1.0f };
+						float maxs[3] = { 1.0f, 1.0f, 1.0f };
+
+						utils::vector::add(gg.pos, mins, mins);
+						utils::vector::add(gg.pos, maxs, maxs);
+
+						const float color[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+						game::R_AddDebugBox(game::get_frontenddata()->debugGlobals, mins, maxs, color);
+					}
 				}
 
 				++v15;
-				v16 += (sizeof(dContactGeomExt) / 4); //12;
+				++v16; // += (sizeof(dContactGeomExt) / 4); //12;
 				worldIndexa = v15;
 
 			} while (v15 != contacts->contactCount);
