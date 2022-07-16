@@ -1473,7 +1473,7 @@ namespace physics
 			const dTriMeshDataID gfxworld_data = dGeomTriMeshDataCreate();
 
 			gfxworld_verts.reserve(1000);
-			for (auto v = 0; v < game::s_world->vertexCount; v++)
+			for (auto v = 0u; v < game::s_world->vertexCount; v++)
 			{
 				vert tv = { game::s_world->vd.vertices[v].xyz[0], game::s_world->vd.vertices[v].xyz[1], game::s_world->vd.vertices[v].xyz[2] };
 				gfxworld_verts.emplace_back(tv);
