@@ -167,4 +167,27 @@ namespace physics
 			Assert();
 		}
 	}
+
+	int dCollideWorldGeom(dxGeom* o1, dxGeom* o2, int flags, dContactGeom* contact, int skip)
+	{
+		
+		return 0;
+	}
+
+	void Phys_InitWorldCollision()
+	{
+		dGeomClass geom = {};
+		geom.collider = (int(__cdecl * (__cdecl*)(int))(dxGeom*, dxGeom*, int, dContactGeom*, int))dCollideWorldGeom;
+		geom.aabb = (void(__cdecl*)(dxGeom*, float*))dInfiniteAABB;
+		geom.aabb_test = nullptr;
+		geom.bytes = 0;
+
+
+		if (dCreateGeomClass(&geom) != GEOM_CLASS_WORLD)
+		{
+			Assert();
+		}
+
+		physGlob.worldGeom = dCreateGeom(GEOM_CLASS_WORLD);
+	}
 }

@@ -485,6 +485,27 @@ namespace components
 		}
 	}
 
+	void CMod_LoadCollisionVertsAndTris()
+	{
+		unsigned int vert_count;
+		const auto verts = d3dbsp::Com_GetBspLump(d3dbsp::LUMP_COLLISIONVERTS, sizeof(float[3]), &vert_count);
+
+		d3dbsp::cm.verts = reinterpret_cast<float(*)[3]>( game::Hunk_Alloc(sizeof(float[3]) * vert_count) );
+		d3dbsp::cm.vertCount = static_cast<int>(vert_count);
+		memcpy(d3dbsp::cm.verts, verts, sizeof(float[3]) * vert_count);
+
+		// __
+
+		unsigned int tri_count;
+		const auto tris = d3dbsp::Com_GetBspLump(d3dbsp::LUMP_COLLISIONTRIS, sizeof(uint16_t), &tri_count);
+
+		d3dbsp::cm.triIndices = reinterpret_cast<uint16_t*>( game::Hunk_Alloc(sizeof(uint16_t) * tri_count) );
+		d3dbsp::cm.triCount = static_cast<int>(tri_count) / 3;
+		memcpy(d3dbsp::cm.triIndices, tris, sizeof(uint16_t) * tri_count);
+
+		//CMod_LoadCollisionTriangles();
+	}
+
 	const char* Com_EntityString(unsigned int* num_entity_chars)
 	{
 		if (!d3dbsp::Com_IsBspLoaded())
@@ -603,6 +624,7 @@ namespace components
 			// CM_LoadMapFromBsp
 			d3dbsp::cm.name = Com_GetHunkStringCopy(bsppath);
 			CMod_LoadPlanes();
+			CMod_LoadCollisionVertsAndTris();
 			CMod_LoadEntityString();
 			d3dbsp::cm.isInUse = 1;
 

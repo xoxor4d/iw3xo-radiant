@@ -1394,18 +1394,25 @@ namespace game
 		}
 	}
 
+	// broken
 	void* Hunk_SetDataForFile(int asset_type /*eax*/, const char* name /*esi*/, void* file, void* (__cdecl* alloc_func)(size_t))
 	{
+		char* return_value = nullptr;
 		const static uint32_t func_addr = 0x4AC750;
 		__asm
 		{
+			pushad;
 			push	alloc_func;
 			push	file;
 			mov		esi, name;
 			mov		eax, asset_type;
 			call	func_addr;
 			add		esp, 8;
+			mov		return_value, eax;
+			popad;
 		}
+
+		return return_value;
 	}
 
 	int FS_OpenFileOverwrite(const char* path /*esi*/)
@@ -1476,7 +1483,7 @@ namespace game
 		}
 	}
 
-	PhysPreset* FX_RegisterPhysPreset(const char* name)
+	PhysPreset* FX_RegisterPhysPreset_NotWorking(const char* name)
 	{
 		if (!name || !name[0])
 		{
@@ -1487,9 +1494,12 @@ namespace game
 		if (!phys_preset)
 		{
 			if (const auto	phys_preset_file = PhysPresetLoadFile(name, Hunk_AllocPhysPresetPrecache);
-				phys_preset_file)
+							phys_preset_file)
 			{
-				phys_preset = static_cast<PhysPreset*>(Hunk_SetDataForFile(7, name, phys_preset_file, Hunk_AllocPhysPresetPrecache));
+				Assert();
+
+				// broken
+				phys_preset->name = static_cast<char*>(Hunk_SetDataForFile(7, name, phys_preset_file, Hunk_AllocPhysPresetPrecache));
 			}
 			else
 			{
@@ -1498,6 +1508,17 @@ namespace game
 		}
 
 		return phys_preset;
+	}
+
+	PhysPreset* FX_RegisterPhysPreset(const char* name)
+	{
+		const static uint32_t func_addr = 0x4D6350;
+		__asm
+		{
+			mov		eax, Hunk_AllocPhysPresetPrecache;
+			mov		ecx, name;
+			call	func_addr;
+		}
 	}
 
 	void DObjCreate(game::DObjModel_s* dobjModels /*edi*/, game::DObj_s* obj /*esi*/, size_t numModels, game::XAnimTree_s* tree, int entnum)

@@ -62,6 +62,14 @@ namespace utils
 
 		return (char)pack;
 	}
+
+	void Vec3UnpackUnitVec(game::PackedUnitVec in, float* out)
+	{
+		const auto decode_scale = (static_cast<float>( static_cast<unsigned __int8>( in.array[3] )) - -192.0f) / 32385.0f;
+		out[0] = (static_cast<float>( static_cast<unsigned __int8>( in.array[0] )) - 127.0f) * decode_scale;
+		out[1] = (static_cast<float>( static_cast<unsigned __int8>( in.array[1] )) - 127.0f) * decode_scale;
+		out[2] = (static_cast<float>( static_cast<unsigned __int8>( in.array[2] )) - 127.0f) * decode_scale;
+	}
 	
 	// ----------------
 	

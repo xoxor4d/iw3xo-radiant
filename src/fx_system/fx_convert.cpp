@@ -1604,7 +1604,7 @@ namespace fx_system
 
 						if (!elemVisual->model->physPreset)
 						{
-							elemVisual->model->physPreset = game::FX_RegisterPhysPreset("default");
+							elemVisual->model->physPreset = game::FX_RegisterPhysPreset("default"); //game::FX_RegisterPhysPreset("default");
 							Warning(20, "ERROR: no physics preset specified for the FX model [%s]\n", elemVisual->model->name);
 						}
 					}

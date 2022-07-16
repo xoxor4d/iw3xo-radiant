@@ -329,11 +329,11 @@ namespace physics
 		int v13; // r11
 		int v14; // r7
 		float* v15; // r11
-		double v16; // fp0
+		float v16; // fp0
 		int v17; // r19
 		float(*v18)[3]; // r20
 		int v19; // r11
-		double v20; // fp31
+		float v20; // fp31
 		int v21; // r21
 		int v22; // r23
 		int v23; // r28
@@ -342,14 +342,14 @@ namespace physics
 		int v26; // r29
 		int* v27; // r31
 		const float* v28; // r30
-		double v29; // fp1
+		float v29; // fp1
 		int v30; // r11
-		double v31; // fp13
-		double v32; // fp12
+		float v31; // fp13
+		float v32; // fp12
 		float* v33; // r9
-		double v34; // fp11
+		float v34; // fp11
 		int i; // r11
-		double v36; // fp0
+		float v36; // fp0
 		int v37; // r28
 		int v38; // r29
 		int v39; // r11
@@ -399,7 +399,7 @@ namespace physics
 			utils::vector::normalize2(v18[0], v44); //Vec3NormalizeTo(v18, v44);
 			Phys_CreateBasisFromNormal(&v45[3], v44, v45);
 			v19 = contacts->contactCount;
-			v20 = -3.4028235e38;
+			v20 = -FLT_MAX;
 			v43[2] = -1;
 			v21 = -1;
 			v43[6] = -8388609;
@@ -451,12 +451,12 @@ namespace physics
 							v36 = ((*v33 * v34) + ((*(v33 - 1) * v31) + (v33[1] * v32)));
 							if (v36 < *&v43[i + 4])
 							{
-								*&v43[i + 4] = (*v33 * v34) + ((*(v33 - 1) * v31) + (v33[1] * v32));
+								*&v43[i + 4] = static_cast<int>((*v33 * v34) + ((*(v33 - 1) * v31) + (v33[1] * v32)));
 								v43[i] = v23;
 							}
 							if (v36 > *&v43[i + 6])
 							{
-								*&v43[i + 6] = v36;
+								*&v43[i + 6] = static_cast<int>(v36);
 								v43[i + 2] = v23;
 							}
 							v33 += 3;
@@ -851,7 +851,7 @@ namespace physics
 
 	void Phys_ApplyContactJitter(dxBody* body1, dxBody* body0, PhysWorld worldIndex, dContactGeom* contact)
 	{
-		if (!body0 || !body1)
+		if (body0 || body1)
 		{
 			//v4 = contact;
 			if (contact->normal[2] >= 0.69999999f)
@@ -1011,7 +1011,7 @@ namespace physics
 		float* v14; // r29
 		BOOL v15; // r27
 		PhysObjUserData* data; // r3
-		double v17[3]; // fp0
+		float v17[3]; // fp0
 		//double v18; // fp13
 		//double v19; // fp12
 		const float* v20; // r3
@@ -1022,7 +1022,7 @@ namespace physics
 		dxJoint* v25; // r3
 		dxJoint* v26; // r3
 		dxBody* v27; // r4
-		const float* v28; // r5
+		//const float* v28; // r5
 		unsigned __int8 v29[16]; // [sp+60h] [-D0h] BYREF
 		float v30[3]; // [sp+70h] [-C0h] BYREF
 		float v33[6]; // [sp+80h] [-B0h] BYREF

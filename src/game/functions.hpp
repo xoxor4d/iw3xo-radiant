@@ -409,6 +409,7 @@ namespace game
 	inline auto R_RegisterModel = reinterpret_cast<game::XModel* (*)(const char* name)>(0x51D450);
 	inline auto R_RegisterLightDef = reinterpret_cast<game::GfxLightDef* (*)(const char* name)>(0x53D510);
 
+	PhysPreset* FX_RegisterPhysPreset_NotWorking(const char* name);
 	PhysPreset* FX_RegisterPhysPreset(const char* name);
 
 	void DObjCreate(game::DObjModel_s* dobjModels /*edi*/, game::DObj_s* obj /*esi*/, size_t numModels, game::XAnimTree_s* tree, int entnum);

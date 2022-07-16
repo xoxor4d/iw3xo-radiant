@@ -9,18 +9,12 @@ namespace physics
 {
 	bool physInited = false;
 
-	int g_phys_msecStep[3] = { 11, 11, 11 };
-	int g_phys_minMsecStep[3] = { 11, 11, 11 };
-	int g_phys_maxMsecStep[3] = { 67, 67, 67 };
+	int g_phys_msecStep[3] = { 3, 3, 3 }; //{ 11, 11, 11 };
+	int g_phys_minMsecStep[3] = { 3, 3, 3 }; //{ 11, 11, 11 };
+	int g_phys_maxMsecStep[3] = { 11, 11, 11 }; //{ 67, 67, 67 };
 
 	odeGlob_t odeGlob = {};
 	PhysGlob physGlob = {};
-
-	/*void ODE_Init()
-	{
-		Pool_Init(odeGlob.bodies, &odeGlob.bodyPool, 0x150u, 512);
-		Pool_Init(odeGlob.geoms, &odeGlob.geomPool, 0xD0u, 2048);
-	}*/
 
 	void** Pool_Alloc(pooldata_t* pooldata)
 	{
@@ -46,36 +40,6 @@ namespace physics
 
 	void Pool_Init(void* pool, pooldata_t* pooldata, unsigned int itemSize, unsigned int itemCount)
 	{
-		//unsigned int v8; // r11
-		//unsigned int v9; // r8
-		//DWORD* v10; // r10
-
-		//if (!pool || !pooldata || itemSize < 4 || itemCount < 2)
-		//{
-		//	Assert();
-		//}
-
-		//v8 = itemCount - 1;
-		//pooldata->firstFree = pool;
-		//v9 = 0;
-
-		//if (itemCount != 1)
-		//{
-		//	v10 = static_cast<DWORD*>(pool);
-		//	v9 = itemCount - 1;
-		//	do
-		//	{
-		//		--v8;
-		//		*v10 = reinterpret_cast<DWORD>((char*)v10 + itemSize);
-		//		v10 = (DWORD*)((char*)v10 + itemSize);
-
-		//	} while (v8);
-		//}
-
-		//*(DWORD*)((char*)pool + v9 * itemSize) = 0;
-		//pooldata->activeCount = 0;
-
-
 		if (!pool || !pooldata || itemSize < 4 || itemCount < 2)
 		{
 			Assert();
@@ -123,10 +87,6 @@ namespace physics
 		*dd = (DWORD)pooldata->firstFree;
 		pooldata->firstFree = dd;
 		--pooldata->activeCount;
-
-		//*(DWORD*)data = *(DWORD*)pooldata->firstFree; // ????
-		//--pooldata->activeCount;
-		//pooldata->firstFree = data;
 	}
 
 	int Pool_FreeCount(pooldata_t* pooldata)
@@ -1122,60 +1082,67 @@ namespace physics
 		const int world_type = *(int*)data;
 
 		// Get the rigid bodies associated with the geometries
-		dBodyID body1 = dGeomGetBody(geom1);
-		dBodyID body2 = dGeomGetBody(geom2);
+		const dBodyID body1 = dGeomGetBody(geom1);
+		const dBodyID body2 = dGeomGetBody(geom2);
 
 		// Maximum number of contacts to create between bodies (see ODE documentation)
-		const int MAX_NUM_CONTACTS = 8;
+		const int MAX_NUM_CONTACTS = 5;
 		dContact contacts[MAX_NUM_CONTACTS];
 
 		// Add collision joints
-		int numc = dCollide(geom1, geom2, MAX_NUM_CONTACTS, &contacts[0].geom, sizeof(dContact));
+		const int numc = dCollide(geom1, geom2, MAX_NUM_CONTACTS, &contacts[0].geom, sizeof(dContact));
 
-		for (int i = 0; i < numc; ++i) 
+		auto b2 = body2;
+		if (body1)
 		{
-			auto friction = 0.0f;
-			auto bounce = 1.0f;
+			b2 = !body2 ? body1 : nullptr;
+		}
 
-			if (body1)
+		if (numc <= 0)
+		{
+			if (b2)
 			{
-				const auto data = static_cast<PhysObjUserData*>(dBodyGetData(body1));
-				bounce = ClampMin(data->bounce, 1.0f);
-				friction = data->friction + 0.0f;
-			}
+				const auto bodyUserData = static_cast<PhysObjUserData*>(dBodyGetData(b2));
+				if (!bodyUserData)
+				{
+					Assert();
+				}
 
-			if (body2)
+				bodyUserData->state = PHYS_OBJ_STATE_FREE;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < numc; ++i)
 			{
-				const auto data = static_cast<PhysObjUserData*>(dBodyGetData(body2));
-				bounce = ClampMin(data->bounce, bounce);
-				friction = data->friction + friction;
+				auto friction = 0.0f;
+				auto bounce = 1.0f;
+
+				if (body1)
+				{
+					const auto body_data = static_cast<PhysObjUserData*>(dBodyGetData(body1));
+					bounce = ClampMin(body_data->bounce, 1.0f);
+					friction = body_data->friction + 0.0f;
+				}
+
+				if (body2)
+				{
+					const auto body_data = static_cast<PhysObjUserData*>(dBodyGetData(body2));
+					bounce = ClampMin(body_data->bounce, bounce);
+					friction = body_data->friction + friction;
+				}
+
+				contacts[i].surface.mode = dContactSoftERP | dContactSoftCFM | dContactApprox1 | dContactSlip1 | dContactSlip2;
+				contacts[i].surface.soft_erp = phys_contact_erp->current.value;
+				contacts[i].surface.soft_cfm = phys_contact_cfm->current.value;
+				contacts[i].surface.mu2 = 0.0f;
+				contacts[i].surface.mu = phys_frictionScale->current.value * friction;
+				contacts[i].surface.bounce = bounce;
+				contacts[i].surface.bounce_vel = 0.1f;
+
+				const dJointID contact = dJointCreateContact(physGlob.world[world_type], physGlob.contactgroup[world_type], &contacts[i]);
+				dJointAttach(contact, body1, body2);
 			}
-
-			contacts[i].surface.mode = dContactSoftERP | dContactSoftCFM | dContactApprox1 | dContactSlip1 | dContactSlip2;
-			contacts[i].surface.soft_erp = phys_contact_erp->current.value;
-			contacts[i].surface.soft_cfm = phys_contact_cfm->current.value;
-			contacts[i].surface.mu2 = 0.0f;
-			contacts[i].surface.mu = phys_frictionScale->current.value * friction;
-			contacts[i].surface.bounce = bounce;
-			contacts[i].surface.bounce_vel = 0.1f;
-
-			// struct dSurfaceParameters {
-			//      int mode;
-			//      dReal mu;
-			//      dReal mu2;
-			//      dReal rho;
-			//      dReal rho2;
-			//      dReal rhoN;
-			//      dReal bounce;
-			//      dReal bounce_vel;
-			//      dReal soft_erp;
-			//      dReal soft_cfm;
-			//      dReal motion1, motion2, motionN;
-			//      dReal slip1, slip2;
-			// };
-
-			dJointID contact = dJointCreateContact(physGlob.world[world_type], physGlob.contactgroup[world_type], &contacts[i]);
-			dJointAttach(contact, body1, body2);
 		}
 	}
 
@@ -1320,8 +1287,8 @@ namespace physics
 		// not supported in cod4 (crashes)
 		if (phys_interBodyCollision->current.enabled)
 		{
-			dSpaceCollide(physGlob.space[worldIndex], &worldIndex, Phys_NearCallback);
-			//dSpaceCollide(physGlob.space[worldIndex], &worldIndex, handle_collisions);
+			//dSpaceCollide(physGlob.space[worldIndex], &worldIndex, Phys_NearCallback);
+			dSpaceCollide(physGlob.space[worldIndex], &worldIndex, handle_collisions);
 		}
 
 		//if(sphere)
@@ -1349,8 +1316,9 @@ namespace physics
 		{
 			callback();
 		}
-
+		
 		dWorldQuickStep(world, seconds);
+
 		physGlob.dumpContacts = false;
 
 		dJointGroupEmpty(physGlob.contactgroup[0]);
@@ -1436,6 +1404,141 @@ namespace physics
 		}
 	}
 
+	struct vert
+	{
+		float xzy[3];
+	};
+
+	struct normal_s
+	{
+		float normal_xzy[3];
+	};
+
+	std::vector<vert> terrain_verts;
+	std::vector<int> terrain_indices;
+	dGeomID terrain_trimesh;
+
+	std::vector<vert> gfxworld_verts;
+	std::vector<int> gfxworld_indices;
+	dGeomID gfxworld_trimesh;
+
+	void normalize2(const double* v, double* out)
+	{
+		double length, ilength;
+
+		length = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+		length = sqrt(length);
+
+		if (length)
+		{
+			ilength = 1.0 / length;
+			out[0] = v[0] * ilength;
+			out[1] = v[1] * ilength;
+			out[2] = v[2] * ilength;
+		}
+		else
+		{
+			VectorClear(out);
+		}
+	}
+
+	double dsquare(const double* a)
+	{
+		return (a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+	}
+
+	void create_trimesh()
+	{
+		if (components::d3dbsp::Com_IsBspLoaded())
+		{
+			if (terrain_trimesh)
+			{
+				dGeomDestroy(terrain_trimesh);
+				terrain_trimesh = nullptr;
+
+				terrain_verts.clear();
+				terrain_indices.clear();
+			}
+
+#if 0
+			if (gfxworld_trimesh)
+			{
+				dGeomDestroy(gfxworld_trimesh);
+				gfxworld_trimesh = nullptr;
+
+				gfxworld_verts.clear();
+				gfxworld_indices.clear();
+			}
+
+			const dTriMeshDataID gfxworld_data = dGeomTriMeshDataCreate();
+
+			gfxworld_verts.reserve(1000);
+			for (auto v = 0; v < game::s_world->vertexCount; v++)
+			{
+				vert tv = { game::s_world->vd.vertices[v].xyz[0], game::s_world->vd.vertices[v].xyz[1], game::s_world->vd.vertices[v].xyz[2] };
+				gfxworld_verts.emplace_back(tv);
+
+				// --
+
+				/*game::vec3_t normal;
+				utils::Vec3UnpackUnitVec(game::s_world->vd.vertices[v].normal, normal);
+
+				const float kConcaveThreshold = 0.000001f;
+				const float k2 = REAL(0.25) * kConcaveThreshold * kConcaveThreshold;
+
+
+				double dbl_normal[3] = { normal[0], normal[1], normal[2] };
+				normalize2(dbl_normal, dbl_normal);
+				float asd = dFabs(dsquare(dbl_normal));
+				auto asd2 = asd - REAL(1.0);
+
+				if (asd2 < k2)
+				{
+					int x = 0;
+				}
+
+				normal_s tn = { static_cast<float>(dbl_normal[0]), static_cast<float>(dbl_normal[1]), static_cast<float>(dbl_normal[2]) };
+				normals.emplace_back(tn);*/
+			}
+
+			gfxworld_indices.reserve(200);
+			for (auto i = 0; i < game::s_world->indexCount; i += 3)
+			{
+				gfxworld_indices.emplace_back(static_cast<int>(game::s_world->indices[i + 2]));
+				gfxworld_indices.emplace_back(static_cast<int>(game::s_world->indices[i + 1]));
+				gfxworld_indices.emplace_back(static_cast<int>(game::s_world->indices[i + 0]));
+			}
+
+			dGeomTriMeshDataBuildSingle(gfxworld_data, &gfxworld_verts[0].xzy, sizeof(vert), game::s_world->vertexCount, &gfxworld_indices[0], game::s_world->indexCount, 3 * sizeof(int));
+			dGeomTriMeshDataPreprocess2(gfxworld_data, (1U << dTRIDATAPREPROCESS_BUILD_FACE_ANGLES), nullptr);
+			gfxworld_trimesh = dCreateTriMesh(physGlob.space[1], gfxworld_data, nullptr, nullptr, nullptr);
+			
+#endif
+			const dTriMeshDataID terrain_data = dGeomTriMeshDataCreate();
+
+			terrain_verts.reserve(1000);
+			for (auto v = 0u; v < components::d3dbsp::cm.vertCount; v++)
+			{
+				//components::d3dbsp::cm.partitions !!!!
+
+				vert tv = { components::d3dbsp::cm.verts[v][0], components::d3dbsp::cm.verts[v][1], components::d3dbsp::cm.verts[v][2] };
+				terrain_verts.emplace_back(tv);
+			}
+
+			terrain_indices.reserve(1000);
+			for (auto i = 0; i < components::d3dbsp::cm.triCount * 3; i += 3)
+			{
+				terrain_indices.emplace_back(static_cast<int>(components::d3dbsp::cm.triIndices[i + 2]));
+				terrain_indices.emplace_back(static_cast<int>(components::d3dbsp::cm.triIndices[i + 1]));
+				terrain_indices.emplace_back(static_cast<int>(components::d3dbsp::cm.triIndices[i + 0]));
+			}
+
+			dGeomTriMeshDataBuildSingle(terrain_data, &terrain_verts[0].xzy, sizeof(vert), components::d3dbsp::cm.vertCount, &terrain_indices[0], components::d3dbsp::cm.triCount * 3, 3 * sizeof(int));
+			dGeomTriMeshDataPreprocess2(terrain_data, (1U << dTRIDATAPREPROCESS_BUILD_FACE_ANGLES), nullptr);
+			terrain_trimesh = dCreateTriMesh(physGlob.space[1], terrain_data, nullptr, nullptr, nullptr);
+		}
+	}
+
 	void Phys_Init()
 	{
 		if (!physInited)
@@ -1463,15 +1566,17 @@ namespace physics
 		/*sphere = dBodyCreate(physGlob.world[1]);
 		dBodySetPosition(sphere, 0.0f, 1000.0f, 0.0f);
 
-		dMass sphere_mass;
+		dMass sphere_mass;1
 		dMassSetSphere(&sphere_mass, 1.0f, 0.4f);
 		dBodySetMass(sphere, &sphere_mass);
 
 		dGeomID sphere_geom = dCreateSphere(physGlob.space[1], 0.4f);
 		dGeomSetBody(sphere_geom, sphere);*/
 
-		plane = dCreatePlane(physGlob.space[1], 0, 1, 0, 0);
-		auto plane2 = dCreatePlane(physGlob.space[1], 0, 0, 1, 0);
+
+
+		//plane = dCreatePlane(physGlob.space[1], 0, 1, 0, 0);
+		//auto plane2 = dCreatePlane(physGlob.space[1], 0, 0, 1, 0);
 
 		register_dvars();
 
@@ -1485,6 +1590,11 @@ namespace physics
 		physGlob.gravityDirection[2] = -1.0f;
 
 		physInited = true;
+
+		components::command::register_command("phys_trimesh"s, [&](auto)
+		{
+			create_trimesh();
+		});
 
 		components::command::register_command("phys_reset"s, [&](auto)
 		{

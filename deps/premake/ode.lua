@@ -18,11 +18,10 @@ function ode.includes()
     	path.join(ode.source, "GIMPACT/include"),
     	path.join(ode.source, "libccd/src/custom"),
     	path.join(ode.source, "libccd/src"),
-
 		path.join(ode.source, "ou/include")
 	}
 
-	excludes {
+	--[[ excludes {
         path.join(ode.source, "/ode/src/collision_trimesh_colliders.h"),
         path.join(ode.source, "/ode/src/gimpact_contact_export_helper.cpp"),
         path.join(ode.source, "/ode/src/gimpact_contact_export_helper.h"),
@@ -40,7 +39,7 @@ function ode.includes()
         path.join(ode.source, "/ode/src/collision_trimesh_trimesh_old.cpp"),
         path.join(ode.source, "/ode/src/collision_trimesh_plane.cpp"),
         path.join(ode.source, "/ode/src/collision_convex_trimesh.cpp")
-      }
+      } ]]
 end
 
 
@@ -60,7 +59,10 @@ function ode.project()
 
 			path.join(ode.source, "ou/include/**.h"),
 			path.join(ode.source, "ou/src/**.h"),
-			path.join(ode.source, "ou/src/**.cpp")
+			path.join(ode.source, "ou/src/**.cpp"),
+
+			path.join(ode.source, "OPCODE/**.h"),
+			path.join(ode.source, "OPCODE/**.cpp")
     	}
 
     	--[[ includedirs { "../ou/include" }
@@ -89,10 +91,10 @@ if _ACTION and _ACTION ~= "clean" and _ACTION ~= "generate-buildinfo" then
     local infile = io.open(path.join(p, "ode/build/config-default.h"), "r")
     local text = infile:read("*a")
 
-    --[[ if _OPTIONS["no-trimesh"] then ]]
+    --[[ if _OPTIONS["no-trimesh"] then
       text = string.gsub(text, "#define dTRIMESH_ENABLED 1", "/* #define dTRIMESH_ENABLED 1 */")
       text = string.gsub(text, "#define dTRIMESH_OPCODE 1", "/* #define dTRIMESH_OPCODE 1 */")
-    --[[ elseif (_OPTIONS["with-gimpact"]) then
+    elseif (_OPTIONS["with-gimpact"]) then
       text = string.gsub(text, "#define dTRIMESH_OPCODE 1", "#define dTRIMESH_GIMPACT 1")
     end ]]
 
