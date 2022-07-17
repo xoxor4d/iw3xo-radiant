@@ -51,6 +51,7 @@ namespace dvars
 	game::dvar_s* gui_saved_state_prefab_browser = nullptr;
 	game::dvar_s* gui_saved_state_surfinspector = nullptr;
 	game::dvar_s* gui_saved_state_toolbox = nullptr;
+	game::dvar_s* gui_saved_state_toolbox_child = nullptr;
 
 	game::dvar_s* mainframe_show_console = nullptr;
 	game::dvar_s* mainframe_show_zview = nullptr;

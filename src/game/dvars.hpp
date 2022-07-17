@@ -51,6 +51,7 @@ namespace dvars
 	extern game::dvar_s* gui_saved_state_prefab_browser;
 	extern game::dvar_s* gui_saved_state_surfinspector;
 	extern game::dvar_s* gui_saved_state_toolbox;
+	extern game::dvar_s* gui_saved_state_toolbox_child;
 
 	extern game::dvar_s* mainframe_show_console;
 	extern game::dvar_s* mainframe_show_zview;

@@ -873,6 +873,14 @@ namespace components
 			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "saved closed/opened/active state of window");
+
+		dvars::gui_saved_state_toolbox_child = dvars::register_int(
+			/* name		*/ "gui_saved_state_toolbox_child",
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 3,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved closed/opened/active state of window");
 	}
 
 	

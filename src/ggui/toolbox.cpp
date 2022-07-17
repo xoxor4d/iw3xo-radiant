@@ -1174,6 +1174,11 @@ namespace ggui
 			register_child(CAT_SURF_INSP, std::bind(&toolbox_dialog::child_surface_inspector, this));
 			register_child(CAT_ENTITY_PROPS, std::bind(&toolbox_dialog::child_entity_properties, this));
 
+			if (dvars::gui_saved_state_toolbox_child)
+			{
+				m_child_current = dvars::gui_saved_state_toolbox_child->current.integer;
+			}
+
 			this->set_initiated();
 		}
 
@@ -1764,8 +1769,14 @@ namespace ggui
 					m_update_scroll = false;
 				}
 
+				if(child.second.callback)
 				child.second.callback();
 			}
+		}
+
+		if (dvars::gui_saved_state_toolbox_child && dvars::gui_saved_state_toolbox_child->current.integer != m_child_current)
+		{
+			dvars::set_int(dvars::gui_saved_state_toolbox_child, m_child_current);
 		}
 
 		// end "##toolbox_child"
