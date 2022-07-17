@@ -485,6 +485,50 @@ namespace physics
 		return geom;
 	}
 
+					//						  (looking from top-down)
+					//0:  bottom  towards - Z
+					//1:  top     towards + Z
+					//2:  facing  towards - Y (backwards) \/
+					//3:  facing  towards + X (right)     ->
+					//4:  facing  towards + Y (forward)   /\
+					//5:  facing  towards - X (left)      <-
+
+	dReal box_planes[] = // planes for a cube, these should coincide with the face array
+	{
+	  1.0f ,0.0f ,0.0f ,40.0f, // +X
+	  0.0f ,1.0f ,0.0f ,40.0f, // +Y
+	  0.0f ,0.0f ,1.0f ,40.0f, // +Z
+	  -1.0f,0.0f ,0.0f ,40.0f, // -X
+	  0.0f ,-1.0f,0.0f ,40.0f, // -Y
+	  0.0f ,0.0f ,-1.0f,40.0f, // -Z
+	};
+	const unsigned int box_planecount = 6;
+
+	dReal box_points[] = // points for a cube
+	{
+	  40.0f,40.0f,40.0f,  //  point 0
+	  -40.0f,40.0f,40.0f, //  point 1
+
+	  40.0f,-40.0f,40.0f, //  point 2
+	  -40.0f,-40.0f,40.0f,//  point 3
+
+	  40.0f,40.0f,-40.0f, //  point 4
+	  -40.0f,40.0f,-40.0f,//  point 5
+
+	  40.0f,-40.0f,-40.0f,//  point 6
+	  -40.0f,-40.0f,-40.0f,// point 7 
+	};
+	const unsigned int box_pointcount = 8;
+	unsigned int box_polygons[] = //Polygons for a cube (6 squares)
+	{
+	  4,0,2,6,4, // positive X
+	  4,1,0,4,5, // positive Y
+	  4,0,1,3,2, // positive Z
+	  4,3,1,5,7, // negative X 
+	  4,2,3,7,6, // negative Y
+	  4,5,4,6,7, // negative Z
+	};
+
 	void Phys_BodyAddGeomAndSetMass(GeomState* state, dxBody* body, PhysWorld worldIndex, float totalMass, const float* centerOfMass)
 	{
 		if (totalMass <= 0.0f || !dBodyGetData(body))
@@ -507,7 +551,9 @@ namespace physics
 
 		case PHYS_GEOM_BOX:
 			dMassSetBoxTotal(&mass, totalMass, state->u.boxState.extent[0], state->u.boxState.extent[1], state->u.boxState.extent[2]);
-			new_geom = dCreateBox(physGlob.space[worldIndex], state->u.boxState.extent[0], state->u.boxState.extent[1], state->u.boxState.extent[2]);
+			//new_geom = dCreateBox(physGlob.space[worldIndex], state->u.boxState.extent[0], state->u.boxState.extent[1], state->u.boxState.extent[2]);
+			//new_geom = dCreateConvex(physGlob.space[worldIndex], box_planes, box_planecount, box_points, box_pointcount, box_polygons);
+			new_geom = dCreateSphere(physGlob.space[worldIndex], 2.0f);
 			break;
 
 		case PHYS_GEOM_BRUSHMODEL:
@@ -1115,6 +1161,8 @@ namespace physics
 		{
 			for (int i = 0; i < numc; ++i)
 			{
+				game::printf_to_console("COLLISION! [ %d / %d ]", i, numc);
+
 				auto friction = 0.0f;
 				auto bounce = 1.0f;
 
@@ -1238,8 +1286,8 @@ namespace physics
 		}
 	}
 
-	dBodyID sphere;
-	dGeomID plane;
+	//dBodyID sphere;
+	//dGeomID plane;
 
 	void Phys_RunFrame(PhysWorld worldIndex, float seconds)
 	{
@@ -1403,6 +1451,205 @@ namespace physics
 			}
 		}
 	}
+
+
+	// -------
+
+	std::vector<dGeomID> coll_brushes;
+	std::vector<dGeomID> coll_convex_brushes;
+
+	struct v4
+	{
+		float v[4];
+	};
+
+	struct v3
+	{
+		float v[3];
+	};
+
+	std::vector<v4> planes;
+	std::vector<v3> points;
+	std::vector<unsigned> polys;
+
+	void create_brushes()
+	{
+		if(!coll_brushes.empty())
+		{
+			for (auto g : coll_brushes)
+			{
+				dGeomDestroy(g);
+			}
+			
+			coll_brushes.clear();
+		}
+
+		if (!coll_convex_brushes.empty())
+		{
+			for (const auto& g : coll_convex_brushes)
+			{
+				dGeomDestroy(g);
+			}
+
+			coll_convex_brushes.clear();
+		}
+
+		planes.clear();
+		points.clear();
+		polys.clear();
+
+		int point_count = 0;
+
+		int plane_index = 0;
+		int point_index = 0;
+		int poly_index = 0;
+
+		if (game::is_any_brush_selected())
+		{
+			FOR_ALL_SELECTED_BRUSHES(sb)
+			{
+				if (sb->def)
+				{
+					// simple aabb
+
+					//float w, d, h;
+					//w = sb->def->maxs[0] - sb->def->mins[0];
+					//d = sb->def->maxs[1] - sb->def->mins[1];
+					//h = sb->def->maxs[2] - sb->def->mins[2];
+
+					//game::vec3_t center;
+					//utils::vector::add(sb->def->mins, sb->def->maxs, center);
+					//utils::vector::scale(center, 0.5f, center);
+
+					//const auto bbox = dCreateBox(physGlob.space[1], w, d, h);
+
+					//bbox->final_posr->pos[0] = center[0];
+					//bbox->final_posr->pos[1] = center[1];
+					//bbox->final_posr->pos[2] = center[2];
+
+					//bbox->gflags |= GEOM_AABB_BAD;
+					//bbox->recomputeAABB();
+
+					////bbox->gflags &= ~GEOM_PLACEABLE;
+					//coll_brushes.push_back(bbox);
+
+
+					
+					
+
+
+					game::vec3_t brush_center;
+					utils::vector::add(sb->def->mins, sb->def->maxs, brush_center);
+					utils::vector::scale(brush_center, 0.5f, brush_center);
+
+					//						  (looking from top-down)
+					//0:  bottom  towards - Z
+					//1:  top     towards + Z
+					//2:  facing  towards - Y (backwards) \/
+					//3:  facing  towards + X (right)     ->
+					//4:  facing  towards + Y (forward)   /\
+					//5:  facing  towards - X (left)      <-
+
+					for (auto f = 0; f < sb->def->facecount; f++)
+					{
+						const auto face = &sb->def->brush_faces[f];
+						const auto plane = &face->plane;
+
+						// #
+						// calculate locals
+
+						game::vec3_t plane_point = { face->planepts0[0], face->planepts0[1], face->planepts0[2] };
+						utils::vector::subtract(plane_point, brush_center, plane_point);
+
+						const game::vec3_t face_normal = { plane->normal[0], plane->normal[1], plane->normal[2] };
+						const float dist = utils::vector::dot(plane_point, face_normal);
+
+						const v4 t_plane = { plane->normal[0], plane->normal[1], plane->normal[2], dist };
+						planes.push_back(t_plane);
+
+						std::vector<unsigned> curr_poly;
+						polys.push_back(face->w->numPoints);
+
+						//for (auto p = face->w->numPoints - 1; p >= 0; p--)
+						for (auto p = 0; p < face->w->numPoints; p++)
+						{
+							game::vec3_t tw_point = { face->w->points[p][0], face->w->points[p][1], face->w->points[p][2] };
+							utils::vector::subtract(tw_point, brush_center, tw_point);
+
+							const v3 t_point = { tw_point[0], tw_point[1], tw_point[2] };
+
+							bool contains = false;
+							int dupe_index = point_index;
+
+							for (auto x = point_index; x < static_cast<int>(points.size()); x++)
+							{
+								if (utils::vector::compare(points[x].v, t_point.v))
+								{
+									contains = true;
+									curr_poly.push_back(dupe_index);
+									break;
+								}
+								dupe_index++;
+							}
+
+							if (!contains)
+							{
+								points.push_back(t_point);
+								curr_poly.push_back(point_count);
+								point_count++;
+							}
+
+							/*for (auto& x : points)
+							{
+								if(utils::vector::compare(x.v, t_point.v))
+								{
+									contains = true;
+									curr_poly.push_back(dupe_index);
+									break;
+								}
+								dupe_index++;
+							}
+
+							if (!contains)
+							{
+								points.push_back(t_point);
+								curr_poly.push_back(point_count);
+								point_count++;
+							}*/
+						}
+
+						for (int cpoly = curr_poly.size() - 1; cpoly >= 0; cpoly--)
+						{
+							polys.push_back(curr_poly[cpoly]);
+						}
+					}
+
+
+					const auto convex = dCreateConvex(physGlob.space[1],
+					    reinterpret_cast<const float*>(&planes[plane_index]),
+						(planes.size() - plane_index),
+					    reinterpret_cast<const float*>(&points[point_index]),
+						(points.size() - point_index),
+					    &polys[poly_index]);
+
+					convex->final_posr->pos[0] = brush_center[0];
+					convex->final_posr->pos[1] = brush_center[1];
+					convex->final_posr->pos[2] = brush_center[2];
+
+					convex->gflags |= GEOM_AABB_BAD;
+					convex->recomputeAABB();
+
+					coll_convex_brushes.push_back(convex);
+
+					plane_index = planes.size() - plane_index;
+					point_index = points.size() - point_index;
+					poly_index  = polys.size() - poly_index;
+				}
+			}
+		}
+	}
+
+	// -----
 
 	struct vert
 	{
@@ -1575,7 +1822,7 @@ namespace physics
 
 
 
-		//plane = dCreatePlane(physGlob.space[1], 0, 1, 0, 0);
+		//auto xx = dCreatePlane(physGlob.space[1], 0, 1, 0, 0);
 		//auto plane2 = dCreatePlane(physGlob.space[1], 0, 0, 1, 0);
 
 		register_dvars();
@@ -1594,6 +1841,11 @@ namespace physics
 		components::command::register_command("phys_trimesh"s, [&](auto)
 		{
 			create_trimesh();
+		});
+
+		components::command::register_command("phys_brush"s, [&](auto)
+		{
+			create_brushes();
 		});
 
 		components::command::register_command("phys_reset"s, [&](auto)

@@ -494,7 +494,8 @@ namespace components
 		d3dbsp::cm.vertCount = static_cast<int>(vert_count);
 		memcpy(d3dbsp::cm.verts, verts, sizeof(float[3]) * vert_count);
 
-		// __
+		// #
+		// CMod_LoadCollisionTriangles();
 
 		unsigned int tri_count;
 		const auto tris = d3dbsp::Com_GetBspLump(d3dbsp::LUMP_COLLISIONTRIS, sizeof(uint16_t), &tri_count);
@@ -502,8 +503,6 @@ namespace components
 		d3dbsp::cm.triIndices = reinterpret_cast<uint16_t*>( game::Hunk_Alloc(sizeof(uint16_t) * tri_count) );
 		d3dbsp::cm.triCount = static_cast<int>(tri_count) / 3;
 		memcpy(d3dbsp::cm.triIndices, tris, sizeof(uint16_t) * tri_count);
-
-		//CMod_LoadCollisionTriangles();
 	}
 
 	const char* Com_EntityString(unsigned int* num_entity_chars)
