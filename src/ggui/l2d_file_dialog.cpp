@@ -712,6 +712,8 @@ namespace ggui
 
 	void file_dialog::on_close()
 	{
+		m_filter.Clear();
+
 		if(!this->m_fix_on_close)
 		{
 			if (!this->m_track_result)
