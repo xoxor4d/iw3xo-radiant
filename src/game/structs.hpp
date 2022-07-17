@@ -792,8 +792,7 @@ namespace game
 	struct selface_t
 	{
 		game::selbrush_def_t* brush;
-		//game::face_t* face;
-		game::face_t_new* face;
+		game::faceVis_s* face;
 		int index;
 	};
 

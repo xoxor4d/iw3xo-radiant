@@ -1440,6 +1440,27 @@ namespace game
 		}
 	}
 
+	void* Hunk_AllocPhysPresetPrecache(size_t size)
+	{
+		if (size <= 0)
+		{
+			Assert();
+		}
+
+		return Hunk_Alloc(size);
+	}
+
+	PhysPreset* FX_RegisterPhysPreset(const char* name)
+	{
+		const static uint32_t func_addr = 0x4D6350;
+		__asm
+		{
+			mov		eax, Hunk_AllocPhysPresetPrecache;
+			mov		ecx, name;
+			call	func_addr;
+		}
+	}
+
 	void DObjCreate(game::DObjModel_s* dobjModels /*edi*/, game::DObj_s* obj /*esi*/, size_t numModels, game::XAnimTree_s* tree, int entnum)
 	{
 		const static uint32_t func_addr = 0x4BE9D0;
