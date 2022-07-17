@@ -611,8 +611,8 @@ namespace ggui
 
 			if (treenode_begin("Curve", true, style_colors, style_vars))
 			{
-				static int curvepatch_width = 2;
-				static int curvepatch_height = 2;
+				static int curvepatch_width = 3;
+				static int curvepatch_height = 3;
 				//static float total_widget_start_offset = 0.0f;
 				
 
