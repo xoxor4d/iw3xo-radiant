@@ -1127,7 +1127,13 @@ namespace ggui
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##width", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_0));
 				ImGui::SameLine(0, 14.0f);
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
-				MOD_CHECK(ImGui::DragFloat("##width_scale", &elem->sizeScale[0], 0.5f, 0, 0, "%.1f")); TT("Scale");
+
+				if (ImGui::DragFloat("##width_scale", &elem->sizeScale[0], 0.5f, 0.0f, 4000.0f, "%.1f"))
+				{
+					elem->sizeScale[0] = elem->sizeScale[0] < 0.0f ? 0.0f : elem->sizeScale[0];
+					modified = true;
+
+				} TT("Scale");
 			}
 		}
 		else
@@ -1172,7 +1178,13 @@ namespace ggui
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##height", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SIZE_1));
 				ImGui::SameLine(0, 14.0f);
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
-				MOD_CHECK(ImGui::DragFloat("##height_scale", &elem->sizeScale[1], 0.5f, 0, 0, "%.1f")); TT("Scale");
+
+				if (ImGui::DragFloat("##width_scale", &elem->sizeScale[1], 0.5f, 0.0f, 4000.0f, "%.1f"))
+				{
+					elem->sizeScale[1] = elem->sizeScale[1] < 0.0f ? 0.0f : elem->sizeScale[1];
+					modified = true;
+
+				} TT("Scale");
 
 				ImGui::EndDisabled();
 			}
@@ -1221,7 +1233,13 @@ namespace ggui
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Randomize between Graphs##scale", elem, fx_system::FX_ED_FLAG_USE_RANDOM_SCALE));
 				ImGui::SameLine(0, 14.0f);
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
-				MOD_CHECK(ImGui::DragFloat("##scale_scale", &elem->scaleScale, 0.5f, 0, 0, "%.1f")); TT("Scale");
+
+				if (ImGui::DragFloat("##width_scale", &elem->scaleScale, 0.5f, 0.0f, 4000.0f, "%.1f"))
+				{
+					elem->scaleScale = elem->scaleScale < 0.0f ? 0.0f : elem->scaleScale;
+					modified = true;
+
+				} TT("Scale");
 			}
 			ImGui::EndDisabled();
 		}
@@ -1612,17 +1630,21 @@ namespace ggui
 			// *------------------------------
 			ImGui::title_with_seperator("Spawn Angles", true, 0, 2.0f, 8.0f);
 			{
+				ImGui::PushID("Spawn");
 				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Pitch", &elem->spawnAngles[0], 0.1f, -360.0f, 360.0f, "%.2f"));
 				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Yaw", &elem->spawnAngles[1], 0.1f, -360.0f, 360.0f, "%.2f"));
 				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Roll", &elem->spawnAngles[2], 0.1f, -360.0f, 360.0f, "%.2f"));
+				ImGui::PopID();
 			}
 
 			// *------------------------------
 			ImGui::title_with_seperator("Angle Delta / Angular Velocity", true, 0, 2.0f, 8.0f);
 			{
+				ImGui::PushID("Delta");
 				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Pitch", &elem->angularVelocity[0], 0.1f, -360.0f, 360.0f, "%.2f"));
 				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Yaw", &elem->angularVelocity[1], 0.1f, -360.0f, 360.0f, "%.2f"));
 				MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Roll", &elem->angularVelocity[2], 0.1f, -360.0f, 360.0f, "%.2f"));
+				ImGui::PopID();
 			}
 		}
 
@@ -1649,7 +1671,7 @@ namespace ggui
 
 		if (phys_enabled)
 		{
-			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Bounce / Elasticity", &elem->elasticity, 0.1f, 0.0f, 360.0f, "%.2f"));
+			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Bounce / Elasticity", &elem->elasticity, 0.1f, 0.0f, 1.0f, "%.2f"));
 
 			ImGui::title_with_seperator("Impacts", false, 0, 2.0f, 8.0f);
 			{
