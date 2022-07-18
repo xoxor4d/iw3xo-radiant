@@ -1990,6 +1990,11 @@ namespace components
 			return;
 		}
 
+		if (effects::effect_can_play())
+		{
+			components::physx_impl::get()->frame();
+		}
+
 		if(!d3dbsp::Com_IsBspLoaded())
 		{
 			const auto frontEndDataOut = game::get_frontenddata();

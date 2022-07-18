@@ -103,6 +103,12 @@
 
 #include <WinHttpClient.h>
 
+// fix xor define conflicting with inline asm
+#include <PxPhysicsAPI.h>
+#ifdef xor
+	#undef xor
+#endif
+
 #include "game/structs.hpp"
 #include "utils/utils.hpp"
 #include "utils/memory.hpp"

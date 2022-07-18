@@ -210,6 +210,8 @@ namespace fx_system
 			{
 				// #PHYS
 				// FX_SetPlacementFromPhysics(&placement.base, draw);
+
+				components::physx_impl::get()->obj_get_interpolated_state(draw->elem->___u8.physObjId, placement.base.origin, placement.base.quat);
 			}
 
 			FxElemVisuals visuals;

@@ -313,6 +313,13 @@ workspace "iw3xo-radiant"
             "/Zm100 -Zm100" 
         }
 
+		if(os.getenv("COD4_ROOT")) then
+			print ("Setup paths using environment variable 'COD4_ROOT' :: '" .. os.getenv("COD4_ROOT") .. "'")
+			targetdir(os.getenv("COD4_ROOT") .. "/bin/")
+			debugdir (os.getenv("COD4_ROOT") .. "/bin/")
+			debugcommand (os.getenv("COD4_ROOT") .. "/bin/" .. "IW3xRadiant.exe")
+		end
+
         -- Specific configurations
 		flags { "UndefinedIdentifiers" }
 		warnings "Extra"

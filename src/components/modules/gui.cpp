@@ -460,7 +460,7 @@ namespace components
 				}
 			}
 			ImGui::End();*/
-
+			
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.0f);
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.1f));
