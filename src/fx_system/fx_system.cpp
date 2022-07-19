@@ -615,19 +615,50 @@ namespace fx_system
 			Assert();
 		}
 
-		auto q = physx::PxQuat(quat[0], quat[1], quat[2], quat[3]);
+		static bool physGeoms_notify = false;
+		if (visuals.model->physGeoms && !physGeoms_notify)
+		{
+			physGeoms_notify = true;
+
+			ImGuiToast toast(ImGuiToastType_Info, 6000);
+			toast.set_title("physGeoms");
+			toast.set_content("physGeoms detected for current effect. Please notify the developer! Thanks :>");
+			ImGui::InsertNotification(toast);
+		}
 
 		const auto p = components::physx_impl::get();
+		const auto phys_preset = visuals.model->physPreset;
 
-		const float halfExtent = 0.5f;
-		physx::PxShape* shape = p->mPhysics->createShape(physx::PxBoxGeometry(halfExtent, halfExtent, halfExtent), *p->mMaterial, true);
+		const auto material = p->create_material(phys_preset);
 
-		physx::PxTransform t(world_pos[0], world_pos[1], world_pos[2], physx::PxQuat(quat[0], quat[1], quat[2], quat[3]));
+		game::vec3_t half_bounds;
+		utils::vector::subtract(visuals.model->maxs, visuals.model->mins, half_bounds);
+		utils::vector::scale(half_bounds, 0.5f, half_bounds);
+
+		const auto box_geom = physx::PxBoxGeometry(half_bounds[0], half_bounds[2], half_bounds[1]);
+		physx::PxShape* shape = p->mPhysics->createShape(box_geom, *p->mMaterial, true);
+
+
+		const physx::PxTransform t
+		(
+			world_pos[0], world_pos[1], world_pos[2],
+			physx::PxQuat(quat[0], quat[1], quat[2], quat[3])
+		);
 
 		physx::PxRigidDynamic* body = p->mPhysics->createRigidDynamic(t);
+
+		body->userData = material;
 		body->attachShape(*shape);
-		shape->release(); // WHY?
-		physx::PxRigidBodyExt::updateMassAndInertia(*body, 10.0f);
+		shape->release();
+
+		const physx::PxVec3 center_of_mass =
+		{
+			(visuals.model->mins[0] + visuals.model->maxs[0]) * 0.5f,
+			(visuals.model->mins[1] + visuals.model->maxs[1]) * 0.5f,
+			(visuals.model->mins[2] + visuals.model->maxs[2]) * 0.5f,
+		};
+
+		physx::PxRigidBodyExt::updateMassAndInertia(*body, phys_preset->mass, &center_of_mass);
 		p->mScene->addActor(*body);
 
 		//dxBody* obj = physics::Phys_ObjCreate(1, world_pos, quat, velocity, visuals.model->physPreset);

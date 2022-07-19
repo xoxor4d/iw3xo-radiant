@@ -53,8 +53,30 @@ namespace ggui
 		{
 			const auto cursor_pos = ImGui::GetCursorPos();
 			ImGui::SetCursorPosX(cursor_pos.x - CAM_DEBUG_TEXT_Y_OFFS);
-			ImGui::SetCursorPosY(cursor_pos.y + 16.0f);
-			ImGui::Text("Fx Drawsurf Count: %d", components::renderer::effect_drawsurf_count_);
+
+			ImGui::BeginGroup();
+			{
+				const float offset = 16.0f;
+				float y_offset = offset;
+
+				ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
+				ImGui::Text("FX Drawsurf Count: %d", components::renderer::effect_drawsurf_count_);
+
+				if (const auto p = components::physx_impl::get();
+					p->m_effect_is_using_physics)
+				{
+					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
+					ImGui::Text("PhysX %d ms/frame", p->m_phys_msec_step);
+
+					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
+					ImGui::Text("PhysX bodies %d", p->m_active_body_count);
+				}
+
+				ImGui::EndGroup();
+			}
+			
+			
+
 			ImGui::SetCursorPos(cursor_pos);
 		}
 
