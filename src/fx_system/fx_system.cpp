@@ -585,6 +585,37 @@ namespace fx_system
 		}
 	}
 
+
+	void VecPhysXToGame(const game::vec3_t in, game::vec3_t out)
+	{
+		out[0] = in[0];
+		out[1] = -in[2];
+		out[2] = in[1];
+	}
+
+	void VecGameToPhysx(const game::vec3_t in, game::vec3_t out)
+	{
+		out[0] = in[0];
+		out[1] = in[2];
+		out[2] = -in[1];
+	}
+
+	void QuatPhysXToGame(const game::vec3_t in, game::vec3_t out)
+	{
+		out[0] = in[3];
+		out[1] = in[0];
+		out[2] = -in[2];
+		out[3] = in[1];
+	}
+
+	void QuatGameToPhysX(const game::vec3_t in, game::vec3_t out)
+	{
+		out[0] = in[0];
+		out[1] = in[2];
+		out[2] = -in[1];
+		out[3] = in[3];
+	}
+
 	bool FX_SpawnModelPhysics(FxElemDef* elem, FxEffect* effect, int random_seed, FxElem* remote_elem)
 	{
 		game::orientation_t orientation = {};
@@ -626,52 +657,7 @@ namespace fx_system
 			ImGui::InsertNotification(toast);
 		}
 
-		const auto p = components::physx_impl::get();
-		const auto phys_preset = visuals.model->physPreset;
-
-		const auto material = p->create_material(phys_preset);
-
-		game::vec3_t half_bounds;
-		utils::vector::subtract(visuals.model->maxs, visuals.model->mins, half_bounds);
-		utils::vector::scale(half_bounds, 0.5f, half_bounds);
-
-		const auto box_geom = physx::PxBoxGeometry(half_bounds[0], half_bounds[2], half_bounds[1]);
-		physx::PxShape* shape = p->mPhysics->createShape(box_geom, *p->mMaterial, true);
-
-
-		const physx::PxTransform t
-		(
-			world_pos[0], world_pos[1], world_pos[2],
-			physx::PxQuat(quat[0], quat[1], quat[2], quat[3])
-		);
-
-		physx::PxRigidDynamic* body = p->mPhysics->createRigidDynamic(t);
-
-		body->userData = material;
-		body->attachShape(*shape);
-		shape->release();
-
-		const physx::PxVec3 center_of_mass =
-		{
-			(visuals.model->mins[0] + visuals.model->maxs[0]) * 0.5f,
-			(visuals.model->mins[1] + visuals.model->maxs[1]) * 0.5f,
-			(visuals.model->mins[2] + visuals.model->maxs[2]) * 0.5f,
-		};
-
-		physx::PxRigidBodyExt::updateMassAndInertia(*body, phys_preset->mass, &center_of_mass);
-		p->mScene->addActor(*body);
-
-		//dxBody* obj = physics::Phys_ObjCreate(1, world_pos, quat, velocity, visuals.model->physPreset);
-		//remote_elem->___u8.physObjId = reinterpret_cast<int>(obj);
-
-		remote_elem->___u8.physObjId = reinterpret_cast<int>(shape);
-
-		/*if (obj)
-		{
-			physics::Phys_ObjSetCollisionFromXModel(visuals.model, 1, obj);
-			physics::Phys_ObjSetAngularVelocity(remote_elem->___u8.physObjId, vel);
-		}*/
-
+		remote_elem->___u8.physObjId = components::physx_impl::get()->create_physx_object(visuals.model, world_pos, quat);
 		return remote_elem->___u8.physObjId != 0;
 	}
 

@@ -11,6 +11,17 @@ namespace ggui
 		float	material_specular[4] = { 0.35f, 0.45f, 1.0f, 4.0f };
 		float	ambient[4] = { 0.3f, 0.3f, 0.3f, 0.35f };
 
+		// *
+		// physX
+
+		float	phys_material[4];
+		float	phys_plane[4];
+
+		float	phys_debug_vis_scale;
+
+		// *
+		// *
+
 		int		active_tab = -1;
 		bool	refocus_active_tab = false;
 
@@ -37,7 +48,16 @@ namespace ggui
 
 		
 
-		camera_settings_dialog() { set_gui_type(GUI_TYPE_DEF); }
+		camera_settings_dialog()
+		{
+			set_gui_type(GUI_TYPE_DEF);
+
+			utils::vector::set_vec4(phys_material, 0.5f);
+			utils::vector::set_vec4(phys_plane, 0.0f);
+			phys_plane[2] = 1.0f;
+
+			phys_debug_vis_scale = 1.0f;
+		}
 
 
 		// *

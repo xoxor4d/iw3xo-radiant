@@ -93,6 +93,45 @@ namespace components
 				}
 			}
 
+			const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
+			for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
+			{
+				const auto& line = rb.getLines()[i];
+
+				game::GfxPointVertex vert[2];
+				vert[0].xyz[0] = line.pos0.x;
+				vert[0].xyz[1] = line.pos0.y;
+				vert[0].xyz[2] = line.pos0.z;
+				vert[0].color.packed = line.color0;
+
+				vert[1].xyz[0] = line.pos1.x;
+				vert[1].xyz[1] = line.pos1.y;
+				vert[1].xyz[2] = line.pos1.z;
+				vert[1].color.packed = line.color1;
+
+				renderer::R_AddLineCmd(1, 4, 3, vert);
+
+				if (mScene->getVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT) > 0.0f)
+				{
+					renderer::R_AddPointCmd(1, 12, 3, vert);
+				}
+			}
+
+			// physx seems to not use points at all
+			/*for (physx::PxU32 i = 0; i < rb.getNbPoints(); i++)
+			{
+				const auto& point = rb.getPoints()[i];
+
+				game::GfxPointVertex vert;
+				vert.xyz[0] = point.pos.x;
+				vert.xyz[1] = point.pos.y;
+				vert.xyz[2] = point.pos.z;
+				vert.color.packed = point.color;
+
+				renderer::R_AddLineCmd(1, 4, 3, &vert);
+			}*/
+
+
 			if (m_time_last_snapshot > time_now || time_now > m_time_last_update)
 			{
 				Assert();
@@ -156,6 +195,80 @@ namespace components
 		out_quat[3] = quat.w;
 	}
 
+	int physx_impl::create_physx_object(game::XModel* model, const float* world_pos, const float* quat)
+	{
+		const auto material = create_material(model->physPreset);
+
+		game::vec3_t half_bounds;
+		utils::vector::subtract(model->maxs, model->mins, half_bounds);
+		utils::vector::scale(half_bounds, 0.5f, half_bounds);
+
+		const auto box_geom = physx::PxBoxGeometry(half_bounds[0], half_bounds[1], half_bounds[2]);
+		physx::PxShape* shape = mPhysics->createShape(box_geom, *mMaterial, true);
+		shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, true);
+
+		game::vec3_t origin_offset;
+		utils::vector::subtract(model->maxs, half_bounds, origin_offset);
+		shape->setLocalPose(physx::PxTransform(origin_offset[0], origin_offset[1], origin_offset[2]));
+
+		const physx::PxTransform t
+		(
+			world_pos[0], world_pos[1], world_pos[2],
+			physx::PxQuat(quat[0], quat[1], quat[2], quat[3])
+		);
+
+		physx::PxRigidDynamic* body = mPhysics->createRigidDynamic(t);
+
+		body->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
+		body->userData = material;
+		body->attachShape(*shape);
+		shape->release();
+
+		/*const physx::PxVec3 center_of_mass =
+		{
+			(model->mins[0] + model->maxs[0]) * 0.5f,
+			(model->mins[1] + model->maxs[1]) * 0.5f,
+			(model->mins[2] + model->maxs[2]) * 0.5f,
+		};*/
+
+		physx::PxRigidBodyExt::updateMassAndInertia(*body, model->physPreset->mass/*, &center_of_mass*/);
+		mScene->addActor(*body);
+
+		return reinterpret_cast<int>(shape);
+	}
+
+	static physx::PxRigidStatic* groundPlane;
+	void physx_impl::create_plane()
+	{
+		auto gui = GET_GUI(ggui::camera_settings_dialog);
+
+		if (mMaterial)
+		{
+			mMaterial->release();
+		}
+		
+		mMaterial = mPhysics->createMaterial(gui->phys_material[0], gui->phys_material[1], gui->phys_material[2]);
+
+		if (groundPlane)
+		{
+			groundPlane->release();
+		}
+
+		groundPlane = PxCreatePlane(*mPhysics, physx::PxPlane(gui->phys_plane[0], gui->phys_plane[1], gui->phys_plane[2], gui->phys_plane[3]), *mMaterial);
+
+		if (groundPlane)
+		{
+			mScene->addActor(*groundPlane);
+		}
+		else
+		{
+			ImGuiToast toast(ImGuiToastType_Error, 4000);
+			toast.set_title("Invalid groundplane settings!");
+			ImGui::InsertNotification(toast);
+		}
+		
+	}
+
 	physx_impl::physx_impl()
 	{
 		physx_impl::p_this = this;
@@ -181,8 +294,8 @@ namespace components
 		mPvd = PxCreatePvd(*mFoundation);
 		mPvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
 
-		mToleranceScale.length = 100; // typical length of an object
-		mToleranceScale.speed = 981;  // typical speed of an object, gravity*1s is a reasonable choice
+		mToleranceScale.length = 1; // typical length of an object
+		mToleranceScale.speed = 100; //981;  // typical speed of an object, gravity*1s is a reasonable choice
 		mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, mToleranceScale, true, mPvd);
 		mDispatcher = physx::PxDefaultCpuDispatcherCreate(2);
 
@@ -191,8 +304,11 @@ namespace components
 		sceneDesc.cpuDispatcher = mDispatcher;
 		sceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
 		sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-
 		mScene = mPhysics->createScene(sceneDesc);
+
+		// do not ship with 1 enabled by default!
+		//mScene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, 1.0f);
+		//mScene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_AABBS, 1.0f);
 
 		physx::PxPvdSceneClient* pvdClient = mScene->getScenePvdClient();
 		if (pvdClient)
@@ -204,8 +320,15 @@ namespace components
 
 		// add a simple ground plane for now
 		mMaterial = mPhysics->createMaterial(0.5f, 0.5f, 0.6f);
-		physx::PxRigidStatic* groundPlane = PxCreatePlane(*mPhysics, physx::PxPlane(0, 0, 1, 50), *mMaterial);
+		groundPlane = PxCreatePlane(*mPhysics, physx::PxPlane(0, 0, 1, 0), *mMaterial);
 		mScene->addActor(*groundPlane);
+
+		
+
+		components::command::register_command("physx_plane"s, [this](auto)
+		{
+			create_plane();
+		});
 	}
 
 	physx_impl::~physx_impl()

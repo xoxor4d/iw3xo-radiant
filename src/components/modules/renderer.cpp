@@ -2014,7 +2014,7 @@ namespace components
 
 			viewInfo->sceneViewport = viewport;
 			viewInfo->displayViewport = viewport;
-
+			
 
 			// needed for debug plumes (3D text in space)
 			game::rg->debugViewParms = viewParms;
@@ -2935,6 +2935,60 @@ namespace components
 		}
 	}
 
+	// *
+
+	struct GfxCmdDrawPoints
+	{
+		game::GfxCmdHeader header;
+		__int16 pointCount;
+		char width;
+		char dimensions;
+		game::GfxPointVertex point; // + 0x8 
+	};
+
+
+	void renderer::R_AddPointCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* points)
+	{
+		if (count <= 0)
+		{
+			Assert();
+		}
+
+		const game::GfxCmdArray* s_cmdList = reinterpret_cast<game::GfxCmdArray*>(*(DWORD*)0x73D4A0);
+		const auto merged_cmd = reinterpret_cast<GfxCmdDrawPoints*>(s_cmdList->lastCmd);
+
+		if (merged_cmd && merged_cmd->header.id == game::RC_DRAW_POINTS
+			&& count * sizeof(game::GfxPointVertex) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF
+			&& merged_cmd->width == width
+			&& merged_cmd->dimensions == dimension
+			&& count + merged_cmd->pointCount <= 0x7FFF)
+		{
+			// unsure about the name, lets call it R_AddMultipleRendercommands
+			void* cmds = utils::hook::call<void* (__cdecl)(int)>(0x4FB0D0)(count * sizeof(game::GfxPointVertex));
+
+			if (cmds)
+			{
+				memcpy(cmds, points, count * sizeof(game::GfxPointVertex));
+				merged_cmd->pointCount += count;
+			}
+		}
+		else
+		{
+			const size_t vert_mem_size = count * sizeof(game::GfxPointVertex);
+			const auto line = reinterpret_cast<GfxCmdDrawPoints*>(game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawPoints, point), game::RC_DRAW_POINTS));
+
+			if (line)
+			{
+				line->pointCount = count;
+				line->width = width;
+				line->dimensions = dimension;
+				memcpy(&line->point, points, vert_mem_size);
+			}
+		}
+	}
+
+	// *
+
 	void __declspec(naked) disable_line_depth_testing2()
 	{
 		// enable depth testing for connection lines
@@ -2974,7 +3028,7 @@ namespace components
 		}
 
 		const game::GfxCmdArray* s_cmdList = reinterpret_cast<game::GfxCmdArray*>(*(DWORD*)0x73D4A0);
-		GfxCmdDrawLines* merged_cmd = reinterpret_cast<GfxCmdDrawLines*>(s_cmdList->lastCmd);
+		const auto merged_cmd = reinterpret_cast<GfxCmdDrawLines*>(s_cmdList->lastCmd);
 
 		if (merged_cmd && merged_cmd->header.id == game::RC_DRAW_LINES
 			&& (count * sizeof(game::GfxPointVertex) * 2) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF 
@@ -2994,7 +3048,7 @@ namespace components
 		else
 		{
 			const size_t vert_mem_size = count * sizeof(game::GfxPointVertex) * 2;
-			GfxCmdDrawLines* line = reinterpret_cast<GfxCmdDrawLines*>( game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawLines, verts), game::RC_DRAW_LINES));
+			const auto line = reinterpret_cast<GfxCmdDrawLines*>( game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawLines, verts), game::RC_DRAW_LINES));
 
 			if (line)
 			{

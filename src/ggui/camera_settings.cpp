@@ -69,7 +69,7 @@ namespace ggui
 
 	void camera_settings_dialog::effect_settings()
 	{
-		const auto& style = ImGui::GetStyle();
+		//const auto& style = ImGui::GetStyle();
 
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
@@ -108,20 +108,29 @@ namespace ggui
 		ImGui::DragFloat("Timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f);
 		ImGui::DragFloat("Repeat Delay", &fx_system::ed_looppause, 0.01f, 0.05f, FLT_MAX, "%.2f");
 
+		float general_widget_width;
+
 		ImGui::BeginDisabled(!components::effects::effect_can_play());
 		{
 			static int tick_rate = 50;
 			static int held_timeout = 0;
 
-			if (ImGui::Button("Advance Tick")) 
+			ImGui::DragInt("##tick_rate", &tick_rate, 1, 1, INT16_MAX);
+			TT("Tick Increase Amount\nIncrease effect ticks by hand. Useful when effect is paused");
+
+			general_widget_width = ImGui::GetItemRectSize().x;
+			ImGui::SameLine();
+			ImGui::TextUnformatted("Tick Amount");
+
+			if (ImGui::Button("Advance Tick", ImVec2(general_widget_width, ImGui::GetFrameHeight())))
 			{
 				fx_system::ed_playback_tick += tick_rate;
 			}
-			else if(ImGui::IsItemHovered())
+			else if (ImGui::IsItemHovered())
 			{
 				if (ImGui::IsMouseDown(ImGuiMouseButton_Left))
-				{ 
-					if(held_timeout > 50)
+				{
+					if (held_timeout > 50)
 					{
 						fx_system::ed_playback_tick += tick_rate;
 					}
@@ -136,13 +145,69 @@ namespace ggui
 				}
 			}
 
-			ImGui::SameLine();
-			ImGui::SetNextItemWidth(-style.FramePadding.x);
-			ImGui::DragInt("##tick_rate", &tick_rate, 1, 1, INT16_MAX);
-			TT("Tick Increase Amount\nIncrease effect ticks by hand. Useful when effect is paused");
-
 			ImGui::EndDisabled();
 		}
+
+		// -----------------
+		ImGui::title_with_seperator("PhysX :: Groundplane Material Properties", true, 0.0f, 2.0f, 8.0f);
+
+		const auto phys = components::physx_impl::get();
+		//const auto separator_width = ImGui::GetContentRegionAvail().x - 8.0f;
+		//ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+
+		ImGui::DragFloat("Static Friction", &phys_material[0], 0.05f, 0.0f, 100.0f, "%.2f");
+		ImGui::DragFloat("Dynamic Friction", &phys_material[1], 0.05f, 0.0f, 100.0f, "%.2f");
+		ImGui::DragFloat("Restitution", &phys_material[2], 0.05f, 0.0f, 100.0f, "%.2f");
+
+		SPACING(0.0f, 2.0f);
+
+		ImGui::DragFloat3("Plane XYZ", phys_plane, 0.05f, 0.0f, 1.0f, "%.2f");
+		ImGui::DragFloat("Plane Distance", &phys_plane[3], 0.05f, 0.0f, 1000.0f, "%.2f");
+
+		if (ImGui::Button("Create Plane", ImVec2(general_widget_width, ImGui::GetFrameHeight())))
+		{
+			components::command::execute("physx_plane");
+		}
+
+
+		// #
+		ImGui::title_with_seperator("PhysX :: General World Settings", true, 0.0f, 2.0f, 8.0f);
+
+		static float physx_gravity[3] = { 0.0f, 0.0f, -800.0f };
+		if (ImGui::DragFloat3("Gravity", physx_gravity, 0.05f, -4000.0f, 4000.0f, "%.2f"))
+		{
+			phys->mScene->setGravity(physx::PxVec3(physx_gravity[0], physx_gravity[1], physx_gravity[2]));
+		}
+
+
+		// #
+		ImGui::title_with_seperator("PhysX :: Debug Visuals", true, 0.0f, 2.0f, 8.0f);
+
+		static bool physx_draw_debug = false;
+		if (ImGui::Checkbox("Enable debug visuals", &physx_draw_debug))
+		{
+			phys->mScene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, physx_draw_debug ? 1.0f : 0.0f);
+		}
+
+		static bool physx_draw_debug_shapes = false;
+		if (ImGui::Checkbox("Draw shapes", &physx_draw_debug_shapes))
+		{
+			phys->mScene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_SHAPES, physx_draw_debug_shapes ? phys_debug_vis_scale : 0.0f);
+		}
+
+		static bool physx_draw_debug_aabbs = false;
+		if (ImGui::Checkbox("Draw aabbs", &physx_draw_debug_aabbs))
+		{
+			phys->mScene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_AABBS, physx_draw_debug_aabbs ? phys_debug_vis_scale : 0.0f);
+		}
+
+		static bool physx_draw_debug_contacts = false;
+		if (ImGui::Checkbox("Draw contacts", &physx_draw_debug_contacts))
+		{
+			phys->mScene->setVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT, physx_draw_debug_contacts ? phys_debug_vis_scale : 0.0f);
+		}
+
+		//ImGui::PopStyleColor(); // Separator
 	}
 
 	// --------------------
