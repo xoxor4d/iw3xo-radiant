@@ -7,16 +7,17 @@ namespace components
 	public:
 		physx::PxDefaultAllocator      mDefaultAllocatorCallback;
 		physx::PxDefaultErrorCallback  mDefaultErrorCallback;
-		physx::PxDefaultCpuDispatcher* mDispatcher = NULL;
+		physx::PxDefaultCpuDispatcher* mDispatcher = nullptr;
 		physx::PxTolerancesScale       mToleranceScale;
 
-		physx::PxFoundation* mFoundation = NULL;
-		physx::PxPhysics* mPhysics = NULL;
+		physx::PxFoundation* mFoundation = nullptr;
+		physx::PxPhysics* mPhysics = nullptr;
+		physx::PxCooking* mCooking = nullptr;
 
-		physx::PxScene* mScene = NULL;
-		physx::PxMaterial* mMaterial = NULL;
+		physx::PxScene* mScene = nullptr;
+		physx::PxMaterial* mMaterial = nullptr;
 
-		physx::PxPvd* mPvd = NULL;
+		physx::PxPvd* mPvd = nullptr;
 
 		bool m_simulation_running;
 		bool m_effect_is_using_physics;
@@ -26,6 +27,7 @@ namespace components
 		float m_time_now_lerp_frac;
 		int m_phys_msec_step;
 		uint32_t m_active_body_count;
+		uint32_t m_static_brush_count;
 
 	public:
 		physx_impl();

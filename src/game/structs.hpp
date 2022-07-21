@@ -10,6 +10,46 @@ namespace game
 	typedef vec_t vec3_t[3];
 	typedef vec_t vec4_t[4];
 
+	enum BRUSHCONTENTS
+	{
+		BRUSHCONTENTS_SKY = 0x800,
+		BRUSHCONTENTS_PORTAL = 0x20000000,
+		BRUSHCONTENTS_LIGHTGRID = 0x28000004,
+		BRUSHCONTENTS_HINT = 0x30000000,
+		BRUSHCONTENTS_DETAIL = 0x8000000,
+		BRUSHCONTENTS_NONCOLLIDING = 0x8000004,
+		BRUSHCONTENTS_WEAPONCLIP = 0x8002080,
+
+		// 0x20000000 = portal
+		// 0x20000001 = indoor_outdoor
+		// 0x20000002 = clip_foliage
+		// 0x20000020 = clip_water
+		// 0x20000200 = clip_vehicle
+		// 0x200020c0 = clip_weap
+		// 0x20010000 = clip_player
+		// 0x20010000 = ladder
+		// 0x200100c0 = clip_missle
+		// 0x20020000 = clip_ai
+		// 0x20030000 = clip_snow
+		// 0x20030200 = clip
+		// 0x20031640 = clip_nosight
+		// 0x200326c0 = clip_metal
+		// 0x20033240 = clip_full
+		// 0x21000000 = mantle_on
+		// 0x28000004 = lightgrid_vol
+		// 0x30000000 = hint
+	};
+
+	enum BRUSHFLAG
+	{
+		BRUSHFLAG_FIXED_SIZE = 0x0, // script_origin, reflection_probe, fx_origin ...
+		BRUSHFLAG_SELECTED = 0x2,
+		BRUSHFLAG_HIDDEN = 0x4,
+		BRUSHFLAG_TOOL = 0x8, // global intermission, spawn points, lightgrid, tool textures
+		BRUSHFLAG_SOLID = 0x10, // generic solid brushes
+	};
+
+
 	enum PATCH_TYPE
 	{
 		PATCH_GENERIC =		0x0,	// generic curve patch
@@ -473,8 +513,8 @@ namespace game
 		//int mat_unkown_value1;
 		//qtexture_s* mat_unkown;
 		//texdef_sub_t mat_unknown_texdef;
-		int unk01;
-		int unk02;
+		int contents; // BRUSH_CONTENTS_ weaponclip: & 0x8002080, noncolliding: & 0x8000004; detail: & 0x8000000
+		int toolflags; // only splitgeo
 		int unk03;
 		plane_t plane;
 		int unk04;
@@ -733,7 +773,7 @@ namespace game
 		vec3_t mins;
 		vec3_t maxs;
 		int xx1;
-		int xx2;
+		int contents;
 		int facecount;
 		//face_t* brush_faces;
 		face_t_new* brush_faces;

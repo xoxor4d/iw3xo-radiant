@@ -282,12 +282,19 @@ namespace components
 
 		m_phys_msec_step = 3;
 		m_active_body_count = 0;
+		m_static_brush_count = 0;
 
 		// init physx
 		mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, mDefaultAllocatorCallback, mDefaultErrorCallback);
 		if (!mFoundation)
 		{
 			AssertS("PxCreateFoundation failed!");
+		}
+
+		mCooking = PxCreateCooking(PX_PHYSICS_VERSION, *mFoundation, mToleranceScale);
+		if (!mCooking)
+		{
+			AssertS("PxCreateCooking failed!");
 		}
 
 		physx::PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);

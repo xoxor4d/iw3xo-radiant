@@ -67,6 +67,8 @@ namespace ggui
 
 	// --------------------
 
+	std::vector<physx::PxRigidStatic*> static_brushes;
+
 	void camera_settings_dialog::effect_settings()
 	{
 		//const auto& style = ImGui::GetStyle();
@@ -205,6 +207,115 @@ namespace ggui
 		if (ImGui::Checkbox("Draw contacts", &physx_draw_debug_contacts))
 		{
 			phys->mScene->setVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT, physx_draw_debug_contacts ? phys_debug_vis_scale : 0.0f);
+		}
+
+
+		// #
+
+		if (ImGui::Button("Create Convex Meshes for ALL brushes", ImVec2(general_widget_width, ImGui::GetFrameHeight())))
+		{
+			//if (game::is_any_brush_selected())
+			{
+				for (const auto brush : static_brushes)
+				{
+					brush->release();
+				}
+				static_brushes.clear();
+				static_brushes.reserve(1000);
+
+				FOR_ALL_ACTIVE_BRUSHES(sb)
+				{
+					if (sb && sb->def && !sb->def->patch)
+					{
+						// skip sky
+						if (sb->def->contents & game::BRUSHCONTENTS_SKY)
+						{
+							continue;
+						}
+
+						// include all generic solid + detail and weaponclip brushes
+						if (!(sb->brushflags & game::BRUSHFLAG_SOLID) && (sb->def->contents & game::BRUSHCONTENTS_DETAIL || sb->def->contents & game::BRUSHCONTENTS_WEAPONCLIP))
+						{
+							continue;
+						}
+
+						// skip all tooling (spawns, lightgrid ...) but include (some) clip
+						if ((sb->brushflags & game::BRUSHFLAG_TOOL) && !(sb->def->contents & 0x10000 || sb->def->contents & 0x20000 || sb->def->contents & 0x30000))
+						{
+							continue;
+						}
+
+						std::vector<physx::PxVec3> verts;
+						verts.reserve(100);
+
+						game::vec3_t brush_center;
+						utils::vector::add(sb->def->mins, sb->def->maxs, brush_center);
+						utils::vector::scale(brush_center, 0.5f, brush_center);
+
+						for (auto f = 0; f < sb->def->facecount; f++)
+						{
+							const auto face = &sb->def->brush_faces[f];
+							for (auto p = 0; face->w && p < face->w->numPoints; p++)
+							{
+								game::vec3_t tw_point = { face->w->points[p][0], face->w->points[p][1], face->w->points[p][2] };
+								utils::vector::subtract(tw_point, brush_center, tw_point);
+
+								const physx::PxVec3 t_point = { tw_point[0], tw_point[1], tw_point[2] };
+
+								bool contains = false;
+
+								for (auto x = 0; x < static_cast<int>(verts.size()); x++)
+								{
+									if (utils::vector::compare(&verts[x].x, &t_point[0]))
+									{
+										contains = true;
+										break;
+									}
+								}
+
+								if (!contains)
+								{
+									verts.push_back(t_point);
+								}
+							}
+						}
+
+
+						physx::PxConvexMeshDesc convexDesc;
+						convexDesc.points.count = verts.size();
+						convexDesc.points.stride = sizeof(physx::PxVec3);
+						convexDesc.points.data = verts.data();
+						convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+
+						physx::PxDefaultMemoryOutputStream buf;
+						physx::PxConvexMeshCookingResult::Enum result;
+
+						if (phys->mCooking->cookConvexMesh(convexDesc, buf, &result))
+						{
+							physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+							physx::PxConvexMesh* convexMesh = phys->mPhysics->createConvexMesh(input);
+
+							const physx::PxTransform t
+							(
+								brush_center[0], brush_center[1], brush_center[2]
+							);
+
+							auto* actor = phys->mPhysics->createRigidStatic(t);
+							actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
+
+							physx::PxShape* shape = physx::PxRigidActorExt::createExclusiveShape(*actor, physx::PxConvexMeshGeometry(convexMesh), *phys->mMaterial);
+							actor->attachShape(*shape);
+							shape->release();
+
+							phys->mScene->addActor(*actor);
+
+							static_brushes.push_back(actor);
+						}
+					}
+				}
+
+				phys->m_static_brush_count = static_brushes.size();
+			}
 		}
 
 		//ImGui::PopStyleColor(); // Separator

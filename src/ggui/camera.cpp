@@ -70,6 +70,9 @@ namespace ggui
 
 					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
 					ImGui::Text("PhysX bodies %d", p->m_active_body_count);
+
+					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
+					ImGui::Text("PhysX sbrushes %d", p->m_static_brush_count);
 				}
 
 				ImGui::EndGroup();

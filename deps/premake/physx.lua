@@ -10,6 +10,7 @@ function physx.import()
 
 	filter "configurations:Debug"
 		links { "/debug/PhysX_32" }
+		links { "/debug/PhysXCooking_32" }
 		links { "/debug/PhysXCommon_32" }
 		links { "/debug/PhysXExtensions_static_32" }
 		links { "/debug/PhysXFoundation_32" }
@@ -18,6 +19,7 @@ function physx.import()
 
 	filter "configurations:Release"
 		links { "/release/PhysX_32" }
+		links { "/release/PhysXCooking_32" }
 		links { "/release/PhysXCommon_32" }
 		links { "/release/PhysXExtensions_static_32" }
 		links { "/release/PhysXFoundation_32" }
