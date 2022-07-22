@@ -24,6 +24,11 @@
 #define FOR_ALL_SELECTED_BRUSHES(B) for (auto (B) = game::g_selected_brushes_next(); (DWORD*)(B) != game::currSelectedBrushes; (B) = (B)->next)
 #define FOR_ALL_ACTIVE_BRUSHES(B) for (auto (B) = game::g_active_brushes_next(); (DWORD*)(B) != game::active_brushes_ptr; (B) = (B)->next)
 
+// custom brush iter (eg. prefab brushes) - (is_single_brush :: a prefab with a single brush will reference itself)
+#define FOR_ALL_BRUSHES(B, B_CURR, B_NEXT) \
+	int is_single_brush = (DWORD*)(B_NEXT) == (DWORD*)(B_CURR); \
+	for (auto (B) = (B_NEXT); (DWORD*)(B) != (DWORD*)(B_CURR) || --is_single_brush == 0; (B) = (B)->next)
+
 #define mainframe_thiscall(return_val, addr)	\
 		utils::hook::call<return_val(__fastcall)(cmainframe*)>(addr)(cmainframe::activewnd)
 

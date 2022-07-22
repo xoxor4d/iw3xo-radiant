@@ -67,7 +67,8 @@ namespace ggui
 
 	// --------------------
 
-	std::vector<physx::PxRigidStatic*> static_brushes;
+
+	
 
 	void camera_settings_dialog::effect_settings()
 	{
@@ -211,110 +212,104 @@ namespace ggui
 
 
 		// #
+		// TODO:
 
-		if (ImGui::Button("Create Convex Meshes for ALL brushes", ImVec2(general_widget_width, ImGui::GetFrameHeight())))
+		const auto exclude_brushes_from_static_collision = [](game::selbrush_def_t* b) -> bool
 		{
-			//if (game::is_any_brush_selected())
+			// skip sky
+			if (b->def->contents & game::BRUSHCONTENTS_SKY)
 			{
-				for (const auto brush : static_brushes)
+				return true;
+			}
+
+			// skip fixed size objects
+			if (b->brushflags & game::BRUSHFLAG_FIXED_SIZE)
+			{
+				return true;
+			}
+
+			// skip all nodes (reflection_probes, script_origins, lights etc)
+			if (b->owner && b->owner->firstActive && b->owner->firstActive->eclass)
+			{
+				const auto class_type = b->owner->firstActive->eclass->classtype;
+
+				if (class_type & game::ECLASS_RADIANT_NODE)
+				{
+					return true;
+				}
+			}
+
+			// include all generic solid + detail and weaponclip brushes
+			if (!(b->brushflags & game::BRUSHFLAG_SOLID) && (b->def->contents & game::BRUSHCONTENTS_DETAIL || b->def->contents & game::BRUSHCONTENTS_WEAPONCLIP))
+			{
+				return true;
+			}
+
+			// skip all tooling (spawns, lightgrid ...) but include (some) clip
+			if ((b->brushflags & game::BRUSHFLAG_TOOL) && !(b->def->contents & 0x10000 || b->def->contents & 0x20000 || b->def->contents & 0x30000))
+			{
+				return true;
+			}
+
+			return false;
+		};
+
+
+		if (ImGui::Button("Create Static Convex Meshes for ALL brushes", ImVec2(general_widget_width, ImGui::GetFrameHeight())))
+		{
+			{
+				for (const auto brush : phys->m_static_brushes)
 				{
 					brush->release();
 				}
-				static_brushes.clear();
-				static_brushes.reserve(1000);
+				phys->m_static_brushes.clear();
+				phys->m_static_brushes.reserve(1000);
 
 				FOR_ALL_ACTIVE_BRUSHES(sb)
 				{
-					if (sb && sb->def && !sb->def->patch)
+					// prefab brushes
+					if (sb && sb->owner && sb->owner->prefab && sb->owner->firstActive && sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
 					{
-						// skip sky
-						if (sb->def->contents & game::BRUSHCONTENTS_SKY)
+						FOR_ALL_BRUSHES(prefab, sb->owner->prefab->active_brushlist, sb->owner->prefab->active_brushlist_next)
 						{
-							continue;
-						}
-
-						// include all generic solid + detail and weaponclip brushes
-						if (!(sb->brushflags & game::BRUSHFLAG_SOLID) && (sb->def->contents & game::BRUSHCONTENTS_DETAIL || sb->def->contents & game::BRUSHCONTENTS_WEAPONCLIP))
-						{
-							continue;
-						}
-
-						// skip all tooling (spawns, lightgrid ...) but include (some) clip
-						if ((sb->brushflags & game::BRUSHFLAG_TOOL) && !(sb->def->contents & 0x10000 || sb->def->contents & 0x20000 || sb->def->contents & 0x30000))
-						{
-							continue;
-						}
-
-						std::vector<physx::PxVec3> verts;
-						verts.reserve(100);
-
-						game::vec3_t brush_center;
-						utils::vector::add(sb->def->mins, sb->def->maxs, brush_center);
-						utils::vector::scale(brush_center, 0.5f, brush_center);
-
-						for (auto f = 0; f < sb->def->facecount; f++)
-						{
-							const auto face = &sb->def->brush_faces[f];
-							for (auto p = 0; face->w && p < face->w->numPoints; p++)
+							if(prefab && prefab->def && !prefab->def->patch)
 							{
-								game::vec3_t tw_point = { face->w->points[p][0], face->w->points[p][1], face->w->points[p][2] };
-								utils::vector::subtract(tw_point, brush_center, tw_point);
-
-								const physx::PxVec3 t_point = { tw_point[0], tw_point[1], tw_point[2] };
-
-								bool contains = false;
-
-								for (auto x = 0; x < static_cast<int>(verts.size()); x++)
+								// skip brushes that should not be part of the static collision
+								if (exclude_brushes_from_static_collision(prefab))
 								{
-									if (utils::vector::compare(&verts[x].x, &t_point[0]))
-									{
-										contains = true;
-										break;
-									}
+									continue;
 								}
 
-								if (!contains)
+								game::vec3_t prefab_angles = {};
+								game::vec4_t quat = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+								// angles to quat - use identity if prefab has no angles kvp
+								if (GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(sb->owner->firstActive, prefab_angles, "angles"))
 								{
-									verts.push_back(t_point);
+									game::orientation_t orientation = {};
+									game::AnglesToAxis(prefab_angles, &orientation.axis[0][0]);
+									fx_system::AxisToQuat(orientation.axis, quat);
 								}
+								
+								phys->create_static_brush(prefab, true, sb->owner->firstActive->origin, quat);
 							}
 						}
+					}
 
-
-						physx::PxConvexMeshDesc convexDesc;
-						convexDesc.points.count = verts.size();
-						convexDesc.points.stride = sizeof(physx::PxVec3);
-						convexDesc.points.data = verts.data();
-						convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
-
-						physx::PxDefaultMemoryOutputStream buf;
-						physx::PxConvexMeshCookingResult::Enum result;
-
-						if (phys->mCooking->cookConvexMesh(convexDesc, buf, &result))
+					// map brushes
+					else if (sb && sb->def && !sb->def->patch)
+					{
+						// skip brushes that should not be part of the static collision
+						if (exclude_brushes_from_static_collision(sb))
 						{
-							physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-							physx::PxConvexMesh* convexMesh = phys->mPhysics->createConvexMesh(input);
-
-							const physx::PxTransform t
-							(
-								brush_center[0], brush_center[1], brush_center[2]
-							);
-
-							auto* actor = phys->mPhysics->createRigidStatic(t);
-							actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
-
-							physx::PxShape* shape = physx::PxRigidActorExt::createExclusiveShape(*actor, physx::PxConvexMeshGeometry(convexMesh), *phys->mMaterial);
-							actor->attachShape(*shape);
-							shape->release();
-
-							phys->mScene->addActor(*actor);
-
-							static_brushes.push_back(actor);
+							continue;
 						}
+
+						phys->create_static_brush(sb);
 					}
 				}
 
-				phys->m_static_brush_count = static_brushes.size();
+				phys->m_static_brush_count = phys->m_static_brushes.size();
 			}
 		}
 

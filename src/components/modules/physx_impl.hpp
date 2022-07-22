@@ -27,7 +27,9 @@ namespace components
 		float m_time_now_lerp_frac;
 		int m_phys_msec_step;
 		uint32_t m_active_body_count;
+
 		uint32_t m_static_brush_count;
+		std::vector<physx::PxRigidStatic*> m_static_brushes;
 
 	public:
 		physx_impl();
@@ -40,6 +42,8 @@ namespace components
 		void run_frame(float seconds);
 		void frame();
 		physx::PxMaterial* create_material(game::PhysPreset* preset);
+		void create_static_brush(game::selbrush_def_t* sb, bool is_prefab = false, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
+
 		void obj_destroy(int id);
 		void obj_get_interpolated_state(int id, float* out_pos, float* out_quat);
 

@@ -164,6 +164,106 @@ namespace components
 		return mPhysics->createMaterial(preset->friction, preset->friction, preset->bounce);
 	}
 
+	// no nullptr checks besides the selected brush itself
+	// does not exclude brushes
+	void physx_impl::create_static_brush(game::selbrush_def_t* sb, bool is_prefab, const game::vec3_t position_offset, const float* quat)
+	{
+		if (sb)
+		{
+			std::vector<physx::PxVec3> verts;
+			verts.reserve(50);
+
+			game::vec3_t brush_center;
+			utils::vector::add(sb->def->mins, sb->def->maxs, brush_center);
+			utils::vector::scale(brush_center, 0.5f, brush_center);
+
+			for (auto f = 0; f < sb->def->facecount; f++)
+			{
+				const auto face = &sb->def->brush_faces[f];
+				for (auto p = 0; face->w && p < face->w->numPoints; p++)
+				{
+					game::vec3_t tw_point = { face->w->points[p][0], face->w->points[p][1], face->w->points[p][2] };
+
+					if(!is_prefab)
+					{
+						utils::vector::subtract(tw_point, brush_center, tw_point);
+					}
+					
+					const physx::PxVec3 t_point = { tw_point[0], tw_point[1], tw_point[2] };
+					bool contains = false;
+
+					for (auto x = 0; x < static_cast<int>(verts.size()); x++)
+					{
+						if (utils::vector::compare(&verts[x].x, &t_point[0]))
+						{
+							contains = true;
+							break;
+						}
+					}
+
+					if (!contains)
+					{
+						verts.push_back(t_point);
+					}
+				}
+			}
+
+
+			physx::PxConvexMeshDesc convexDesc;
+			convexDesc.points.count = verts.size();
+			convexDesc.points.stride = sizeof(physx::PxVec3);
+			convexDesc.points.data = verts.data();
+			convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+
+			physx::PxDefaultMemoryOutputStream buf;
+			physx::PxConvexMeshCookingResult::Enum result;
+
+			if (mCooking->cookConvexMesh(convexDesc, buf, &result))
+			{
+				physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+				physx::PxConvexMesh* convexMesh = mPhysics->createConvexMesh(input);
+
+				const physx::PxTransform t
+				(
+					brush_center[0], brush_center[1], brush_center[2]
+				);
+
+				// do not offset prefab brushes by their brush center
+				auto* actor = mPhysics->createRigidStatic(is_prefab ? physx::PxTransform(0.0f, 0.0f, 0.0f) : t);
+				actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
+
+				physx::PxShape* shape = physx::PxRigidActorExt::createExclusiveShape(*actor, physx::PxConvexMeshGeometry(convexMesh), *mMaterial);
+
+				physx::PxTransform local;
+				local.p = physx::PxVec3(0.0f, 0.0f, 0.0f);
+				local.q = physx::PxQuat(0.0f, 0.0f, 0.0f, 1.0f);
+
+				// mainly for prefab brushes
+				if (position_offset || quat)
+				{
+					if (position_offset)
+					{
+						local.p = physx::PxVec3(position_offset[0], position_offset[1], position_offset[2]);
+					}
+
+					if (quat)
+					{
+						local.q = physx::PxQuat(quat[0], quat[1], quat[2], quat[3]);
+					}
+
+					shape->setLocalPose(local);
+				}
+				
+				actor->attachShape(*shape);
+				shape->release();
+
+				mScene->addActor(*actor);
+
+				m_static_brushes.push_back(actor);
+			}
+		}
+	}
+
 
 	void physx_impl::obj_destroy(int id)
 	{

@@ -15,6 +15,15 @@ namespace utils
 			return (cos0 * cos1) - sqrt((1.0f - cos0 * cos0) * (1.0f - cos1 * cos1));
 		}
 
+		void rotate_point(float* point, const float *mat)
+		{
+			const game::vec3_t tvec = { point[0], point[1], point[2] };
+
+			point[0] = mat[0] * tvec[0] + mat[1] * tvec[1] + mat[2] * tvec[2];
+			point[1] = mat[3] * tvec[0] + mat[4] * tvec[1] + mat[5] * tvec[2];
+			point[2] = mat[6] * tvec[0] + mat[7] * tvec[1] + mat[8] * tvec[2];
+		}
+
 		void angle_vectors(const game::vec3_t angles, game::vec3_t forward, game::vec3_t right, game::vec3_t up)
 		{
 			float angle;

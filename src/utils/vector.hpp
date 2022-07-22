@@ -25,6 +25,7 @@ namespace utils
 		#define Vector4Copy(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
 
 		float	cos_of_sum_of_arc_cos(float cos0, float cos1);
+		void	rotate_point(float* point, const float *mat);
 		void	angle_vectors(const game::vec3_t angles, game::vec3_t forward, game::vec3_t right, game::vec3_t up);
 		void	vectoangles(const vec3_t value1, vec3_t angles);
 		
