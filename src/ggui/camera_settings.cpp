@@ -182,6 +182,15 @@ namespace ggui
 			phys->mScene->setGravity(physx::PxVec3(physx_gravity[0], physx_gravity[1], physx_gravity[2]));
 		}
 
+		auto bounce_threshold = phys->mScene->getBounceThresholdVelocity(); // 20
+		if (ImGui::DragFloat("Bounce Threshold", &bounce_threshold, 0.025f, 0.0f, 1000.0f, "%.2f"))
+		{
+			phys->mScene->setBounceThresholdVelocity(bounce_threshold);
+		}
+
+		auto friction_threshold = phys->mScene->getFrictionOffsetThreshold(); // 0.0399999991
+		ImGui::DragFloat("Friction Threshold", &friction_threshold, 0.025f, 0.0f, 1000.0f, "%.2f");
+
 
 		// #
 		ImGui::title_with_seperator("PhysX :: Debug Visuals", true, 0.0f, 2.0f, 8.0f);

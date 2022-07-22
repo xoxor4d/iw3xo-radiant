@@ -1,6 +1,6 @@
 #include "std_include.hpp"
-//#include <PxPhysicsAPI.h>
-//using namespace physx;
+
+constexpr bool USE_PVD = false; // PhysX Visual Debugger
 
 namespace components
 {
@@ -332,6 +332,10 @@ namespace components
 		};*/
 
 		physx::PxRigidBodyExt::updateMassAndInertia(*body, model->physPreset->mass/*, &center_of_mass*/);
+
+		//auto m = body->getMass();
+		//body->setMass(model->physPreset->mass);
+
 		mScene->addActor(*body);
 
 		return reinterpret_cast<int>(shape);
@@ -384,7 +388,8 @@ namespace components
 		m_active_body_count = 0;
 		m_static_brush_count = 0;
 
-		// init physx
+		// #
+
 		mFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, mDefaultAllocatorCallback, mDefaultErrorCallback);
 		if (!mFoundation)
 		{
@@ -397,32 +402,47 @@ namespace components
 			AssertS("PxCreateCooking failed!");
 		}
 
-		physx::PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
-		mPvd = PxCreatePvd(*mFoundation);
-		mPvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
+		if (USE_PVD)
+		{
+			physx::PxPvdTransport* transport = physx::PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
+			mPvd = PxCreatePvd(*mFoundation);
+			mPvd->connect(*transport, physx::PxPvdInstrumentationFlag::eALL);
+		}
 
-		mToleranceScale.length = 1; // typical length of an object
-		mToleranceScale.speed = 100; //981;  // typical speed of an object, gravity*1s is a reasonable choice
-		mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, mToleranceScale, true, mPvd);
+		mToleranceScale.length = 1;  // typical length of an object
+		mToleranceScale.speed = 100; // typical speed of an object, gravity*1s is a reasonable choice
+		mPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *mFoundation, mToleranceScale, true, USE_PVD ? mPvd : nullptr);
 		mDispatcher = physx::PxDefaultCpuDispatcherCreate(2);
 
-		physx::PxSceneDesc sceneDesc(mPhysics->getTolerancesScale());
-		sceneDesc.gravity = physx::PxVec3(0.0f, 0.0f, -800.0f); //-9.81f);
-		sceneDesc.cpuDispatcher = mDispatcher;
-		sceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
-		sceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-		mScene = mPhysics->createScene(sceneDesc);
+		/*if (!PxInitExtensions(*mPhysics, mPvd))
+		{
+			AssertS("PxInitExtensions failed!");
+		}*/
+
+		physx::PxSceneDesc scene_desc(mPhysics->getTolerancesScale());
+		scene_desc.gravity = physx::PxVec3(0.0f, 0.0f, -800.0f); // default: -9.81 // scale of 80
+		scene_desc.bounceThresholdVelocity = 1400.0f; // default: 20
+		scene_desc.cpuDispatcher = mDispatcher;
+		scene_desc.filterShader = physx::PxDefaultSimulationFilterShader;
+		scene_desc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+		mScene = mPhysics->createScene(scene_desc);
+
+		//auto xx = mScene->getBounceThresholdVelocity();
+		//mScene->getFrictionOffsetThreshold();
 
 		// do not ship with 1 enabled by default!
 		//mScene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, 1.0f);
 		//mScene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_AABBS, 1.0f);
 
-		physx::PxPvdSceneClient* pvdClient = mScene->getScenePvdClient();
-		if (pvdClient)
+		if (USE_PVD)
 		{
-			pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
-			pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
-			pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+			physx::PxPvdSceneClient* pvdClient = mScene->getScenePvdClient();
+			if (pvdClient)
+			{
+				pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
+				pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+				pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+			}
 		}
 
 		// add a simple ground plane for now
@@ -430,7 +450,7 @@ namespace components
 		groundPlane = PxCreatePlane(*mPhysics, physx::PxPlane(0, 0, 1, 0), *mMaterial);
 		mScene->addActor(*groundPlane);
 
-		
+		// #
 
 		components::command::register_command("physx_plane"s, [this](auto)
 		{
@@ -439,5 +459,11 @@ namespace components
 	}
 
 	physx_impl::~physx_impl()
-	{ }
+	{
+		//PxCloseExtensions();
+
+		mCooking->release();
+		mPhysics->release();
+		mFoundation->release();
+	}
 }
