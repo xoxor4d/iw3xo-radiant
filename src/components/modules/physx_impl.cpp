@@ -532,7 +532,7 @@ namespace components
 			}
 
 			// root map
-			else if (sb && sb->def && !sb->def->patch)
+			else if (sb && sb->def)
 			{
 				// patches
 				if (sb->def->patch)
@@ -553,7 +553,6 @@ namespace components
 				}
 
 				phys->m_static_brush_estimated_count++;
-
 			}
 		}
 

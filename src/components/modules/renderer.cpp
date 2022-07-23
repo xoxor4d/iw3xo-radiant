@@ -1995,7 +1995,36 @@ namespace components
 			components::physx_impl::get()->frame();
 		}
 
-		if(!d3dbsp::Com_IsBspLoaded())
+		if (d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled)
+		{
+			d3dbsp::add_entities_to_scene();
+
+
+			game::refdef_s refdef = {};
+			utils::vector::copy(viewParms->origin, refdef.vieworg);
+			utils::vector::copy(viewParms->axis[0], refdef.viewaxis[0]);
+			utils::vector::copy(viewParms->axis[1], refdef.viewaxis[1]);
+			utils::vector::copy(viewParms->axis[2], refdef.viewaxis[2]);
+
+			refdef.width = game::dx->windows[ggui::CCAMERAWND].width;
+			refdef.height = game::dx->windows[ggui::CCAMERAWND].height;
+
+			const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
+			refdef.tanHalfFovY = tanf(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
+			refdef.tanHalfFovX = refdef.tanHalfFovY * (static_cast<float>(cam->width) / static_cast<float>(cam->height));
+
+			refdef.zNear = game::Dvar_FindVar("r_zNear")->current.value;
+			refdef.time = static_cast<int>(timeGetTime());
+
+			refdef.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
+			refdef.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
+
+			memcpy(&refdef.primaryLights, &d3dbsp::scene_lights, sizeof(d3dbsp::scene_lights));
+
+			// CL_RenderScene
+			utils::hook::call<void(__cdecl)(game::refdef_s* _refdef)>(0x506030)(&refdef);
+		}
+		else
 		{
 			const auto frontEndDataOut = game::get_frontenddata();
 			const auto viewInfo = &frontEndDataOut->viewInfo[0];
@@ -2071,35 +2100,6 @@ namespace components
 			renderer::effect_drawsurf_count_ = frontEndDataOut->drawSurfCount;
 
 			viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
-		}
-		else
-		{
-			d3dbsp::add_entities_to_scene();
-
-			
-			game::refdef_s refdef = {};
-			utils::vector::copy(viewParms->origin, refdef.vieworg);
-			utils::vector::copy(viewParms->axis[0], refdef.viewaxis[0]);
-			utils::vector::copy(viewParms->axis[1], refdef.viewaxis[1]);
-			utils::vector::copy(viewParms->axis[2], refdef.viewaxis[2]);
-			
-			refdef.width = game::dx->windows[ggui::CCAMERAWND].width;
-			refdef.height = game::dx->windows[ggui::CCAMERAWND].height;
-
-			const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
-			refdef.tanHalfFovY = tanf(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
-			refdef.tanHalfFovX = refdef.tanHalfFovY * (static_cast<float>(cam->width) / static_cast<float>(cam->height));
-
-			refdef.zNear = game::Dvar_FindVar("r_zNear")->current.value;
-			refdef.time = static_cast<int>(timeGetTime());
-			
-			refdef.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
-			refdef.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
-
-			memcpy(&refdef.primaryLights, &d3dbsp::scene_lights, sizeof(d3dbsp::scene_lights));
-
-			// CL_RenderScene
-			utils::hook::call<void(__cdecl)(game::refdef_s* _refdef)>(0x506030)(&refdef);
 		}
 	}
 
@@ -2526,16 +2526,18 @@ namespace components
 			const auto backend = game::get_backenddata();
 			const auto dyn_shadow_type = viewInfo->dynamicShadowType;
 
-			if (dyn_shadow_type == game::SHADOW_MAP)
+			if (dvars::r_draw_bsp->current.enabled)
 			{
-				if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+				if (dyn_shadow_type == game::SHADOW_MAP)
 				{
-					game::RB_SunShadowMaps(backend, viewInfo);
+					if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+					{
+						game::RB_SunShadowMaps(backend, viewInfo);
+					}
+
+					game::RB_SpotShadowMaps(backend, viewInfo);
 				}
-
-				game::RB_SpotShadowMaps(backend, viewInfo);
 			}
-
 
 			//R_DepthPrepass(&cmdBuf, viewInfo);	// no need to do a depth prepass, only causes issues upon resizing
 													// needs depthbuffer resize logic
