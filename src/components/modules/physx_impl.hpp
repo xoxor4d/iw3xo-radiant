@@ -34,6 +34,10 @@ namespace components
 		uint32_t m_static_brush_count;
 		std::vector<physx::PxRigidStatic*> m_static_brushes;
 
+		uint32_t m_static_terrain_estimated_count;
+		uint32_t m_static_terrain_count;
+		std::vector<physx::PxRigidStatic*> m_static_terrain;
+
 	public:
 		physx_impl();
 		~physx_impl();
@@ -50,6 +54,7 @@ namespace components
 
 
 		void create_static_brush(game::selbrush_def_t* sb, bool is_prefab = false, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
+		void create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
 		static void create_static_collision();
 
 		void obj_destroy(int id);

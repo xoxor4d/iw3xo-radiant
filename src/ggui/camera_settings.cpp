@@ -248,8 +248,9 @@ namespace ggui
 
 			process->set_progress_callback([]
 			{
-				components::process::get()->m_indicator_progress = 
-					static_cast<float>(components::physx_impl::get()->m_static_brush_count) / static_cast<float>(components::physx_impl::get()->m_static_brush_estimated_count);
+				const auto current = static_cast<float>(components::physx_impl::get()->m_static_brush_count + components::physx_impl::get()->m_static_terrain_count);
+				const auto total = static_cast<float>(components::physx_impl::get()->m_static_brush_estimated_count + components::physx_impl::get()->m_static_terrain_estimated_count);
+				components::process::get()->m_indicator_progress = current / total;
 			});
 
 			process->create_process();

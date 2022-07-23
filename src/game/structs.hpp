@@ -702,7 +702,7 @@ namespace game
 		vec3_t normal;
 		rgba_4byte vert_color;
 		pmesh_texcoord savedTexCoord;
-		int unkown;
+		int turned_edge;
 	}; STATIC_ASSERT_SIZE(drawVert_t, 0x50); //STATIC_ASSERT_SIZE(drawVert_t, 0x4C);
 
 	struct patchMesh_material

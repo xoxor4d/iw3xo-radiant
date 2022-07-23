@@ -1,10 +1,12 @@
 #pragma once
 #include "imgui_internal.h"
 
+#pragma warning(push)
+#pragma warning(disable: 4172)
+#include "imgui_notify.hpp"
+#pragma warning(pop)
+
 // forward decl
-
-enum	ImGuiToastType_;
-
 namespace fx_system
 {
 	enum	FX_ED_FLAG_ : int;

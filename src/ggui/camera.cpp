@@ -72,7 +72,10 @@ namespace ggui
 					ImGui::Text("PhysX bodies %d", p->m_active_body_count);
 
 					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
-					ImGui::Text("PhysX sbrushes %d", p->m_static_brush_count);
+					ImGui::Text("PhysX brushes %d", p->m_static_brush_count);
+
+					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
+					ImGui::Text("PhysX terrain %d", p->m_static_terrain_count);
 				}
 
 				ImGui::EndGroup();

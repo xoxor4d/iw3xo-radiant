@@ -265,6 +265,156 @@ namespace components
 		}
 	}
 
+	void physx_impl::create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset, const float* quat)
+	{
+		// clipmap verts
+		/*verts.reserve(100);
+		for (auto v = 0u; v < components::d3dbsp::cm.vertCount; v++)
+		{
+			physx::PxVec3 tv = { components::d3dbsp::cm.verts[v][0], components::d3dbsp::cm.verts[v][1], components::d3dbsp::cm.verts[v][2] };
+			verts.emplace_back(tv);
+		}
+
+		inds.reserve(100);
+		for (auto i = 0; i < components::d3dbsp::cm.triCount * 3; i += 3)
+		{
+			inds.emplace_back(static_cast<int>(components::d3dbsp::cm.triIndices[i + 2]));
+			inds.emplace_back(static_cast<int>(components::d3dbsp::cm.triIndices[i + 1]));
+			inds.emplace_back(static_cast<int>(components::d3dbsp::cm.triIndices[i + 0]));
+		}
+
+		physx::PxTriangleMeshDesc meshDesc;
+		meshDesc.points.count = components::d3dbsp::cm.vertCount;
+		meshDesc.points.stride = sizeof(physx::PxVec3);
+		meshDesc.points.data = verts.data();
+
+		meshDesc.triangles.count = components::d3dbsp::cm.triCount * 3;
+		meshDesc.triangles.stride = 3 * sizeof(uint32_t);
+		meshDesc.triangles.data = inds.data();*/
+
+		const auto phys = components::physx_impl::get();
+		const auto patch = sb->def->patch;
+
+		std::vector<physx::PxVec3> verts;
+		std::vector<uint32_t> inds;
+		int tri_count = 0;
+
+		for (auto x = 0; x < patch->width - 1; x++)
+		{
+			for (auto y = 0; y < patch->height; y++)
+			{
+				if (y != patch->height - 1)
+				{
+					const game::vec_t* v1;
+					const game::vec_t* v2;
+					const game::vec_t* v3;
+
+					if (patch->ctrl[x][y].turned_edge)
+					{
+						v1 = patch->ctrl[x + 1][y + 0].xyz;
+						v2 = patch->ctrl[x + 1][y + 1].xyz;
+						v3 = patch->ctrl[x + 0][y + 0].xyz;
+					}
+					else
+					{
+						v1 = patch->ctrl[x + 0][y + 0].xyz;
+						v2 = patch->ctrl[x + 1][y + 0].xyz;
+						v3 = patch->ctrl[x + 0][y + 1].xyz;
+					}
+
+					verts.emplace_back(physx::PxVec3(v1[0], v1[1], v1[2]));
+					verts.emplace_back(physx::PxVec3(v2[0], v2[1], v2[2]));
+					verts.emplace_back(physx::PxVec3(v3[0], v3[1], v3[2]));
+
+					inds.push_back(inds.size());
+					inds.push_back(inds.size());
+					inds.push_back(inds.size());
+
+					tri_count++;
+				}
+
+				if (y != 0)
+				{
+					const game::vec_t* v1;
+					const game::vec_t* v2;
+					const game::vec_t* v3;
+
+					if (patch->ctrl[x][y - 1].turned_edge)
+					{
+						v1 = patch->ctrl[x + 0][y + 0].xyz;
+						v2 = patch->ctrl[x + 0][y - 1].xyz;
+						v3 = patch->ctrl[x + 1][y + 0].xyz;
+					}
+					else
+					{
+						v1 = patch->ctrl[x + 1][y + 0].xyz;
+						v2 = patch->ctrl[x + 0][y + 0].xyz;
+						v3 = patch->ctrl[x + 1][y - 1].xyz;
+					}
+
+					verts.emplace_back(physx::PxVec3(v1[0], v1[1], v1[2]));
+					verts.emplace_back(physx::PxVec3(v2[0], v2[1], v2[2]));
+					verts.emplace_back(physx::PxVec3(v3[0], v3[1], v3[2]));
+
+					inds.push_back(inds.size());
+					inds.push_back(inds.size());
+					inds.push_back(inds.size());
+
+					tri_count++;
+				}
+			}
+		}
+
+		physx::PxTriangleMeshDesc meshDesc;
+		meshDesc.points.count = verts.size();
+		meshDesc.points.stride = sizeof(physx::PxVec3);
+		meshDesc.points.data = verts.data();
+
+		meshDesc.triangles.count = tri_count;
+		meshDesc.triangles.stride = 3 * sizeof(uint32_t);
+		meshDesc.triangles.data = inds.data();
+
+		physx::PxDefaultMemoryOutputStream buf;
+		physx::PxTriangleMeshCookingResult::Enum result;
+
+		if (phys->mCooking->cookTriangleMesh(meshDesc, buf, &result))
+		{
+			physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+			physx::PxTriangleMesh* triangleMesh = phys->mPhysics->createTriangleMesh(input);
+
+			auto* actor = phys->mPhysics->createRigidStatic(physx::PxTransform(0.0f, 0.0f, 0.0f));
+			actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
+
+			physx::PxShape* shape = physx::PxRigidActorExt::createExclusiveShape(*actor, physx::PxTriangleMeshGeometry(triangleMesh), *phys->mMaterial);
+
+			physx::PxTransform local;
+			local.p = physx::PxVec3(0.0f, 0.0f, 0.0f);
+			local.q = physx::PxQuat(0.0f, 0.0f, 0.0f, 1.0f);
+
+			// mainly for prefab brushes
+			if (position_offset || quat)
+			{
+				if (position_offset)
+				{
+					local.p = physx::PxVec3(position_offset[0], position_offset[1], position_offset[2]);
+				}
+
+				if (quat)
+				{
+					local.q = physx::PxQuat(quat[0], quat[1], quat[2], quat[3]);
+				}
+
+				shape->setLocalPose(local);
+			}
+
+			actor->attachShape(*shape);
+			shape->release();
+
+			phys->mScene->addActor(*actor);
+			phys->m_static_terrain.push_back(actor);
+		}
+	}
+
 	bool exclude_brushes_from_static_collision(game::selbrush_def_t* b)
 	{
 		// skip sky
@@ -305,12 +455,15 @@ namespace components
 		return false;
 	}
 
+
 	// only call via components::process
 	void physx_impl::create_static_collision()
 	{
 		const auto phys = components::physx_impl::get();
 		phys->m_static_brush_estimated_count = 0;
 		phys->m_static_brush_count = 0;
+		phys->m_static_terrain_estimated_count = 0;
+		phys->m_static_terrain_count = 0;
 
 		for (const auto brush : phys->m_static_brushes)
 		{
@@ -318,6 +471,18 @@ namespace components
 		}
 		phys->m_static_brushes.clear();
 		phys->m_static_brushes.reserve(1000);
+
+		// #
+
+		for (const auto terrain : phys->m_static_terrain) 
+		{
+			terrain->release();
+		}
+		phys->m_static_terrain.clear();
+		phys->m_static_terrain.reserve(100);
+
+
+		// #
 
 		const auto process = process::get();
 
@@ -331,7 +496,7 @@ namespace components
 				return;
 			}
 
-			// prefab brushes
+			// prefabs
 			if (sb && sb->owner && sb->owner->prefab && sb->owner->firstActive && sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
 			{
 				FOR_ALL_BRUSHES(prefab, sb->owner->prefab->active_brushlist, sb->owner->prefab->active_brushlist_next)
@@ -341,9 +506,21 @@ namespace components
 						return;
 					}
 
-					if (prefab && prefab->def && !prefab->def->patch)
+					if (prefab && prefab->def)
 					{
-						// skip brushes that should not be part of the static collision
+						// patches
+						if (prefab->def->patch)
+						{
+							if (sb->def->contents & game::BRUSHCONTENTS_NONCOLLIDING)
+							{
+								continue;
+							}
+
+							phys->m_static_terrain_estimated_count++;
+							continue;
+						}
+
+						// brushes
 						if (exclude_brushes_from_static_collision(prefab))
 						{
 							continue;
@@ -354,18 +531,32 @@ namespace components
 				}
 			}
 
-			// map brushes
+			// root map
 			else if (sb && sb->def && !sb->def->patch)
 			{
-				// skip brushes that should not be part of the static collision
+				// patches
+				if (sb->def->patch)
+				{
+					if (sb->def->contents & game::BRUSHCONTENTS_NONCOLLIDING)
+					{
+						continue;
+					}
+
+					phys->m_static_terrain_estimated_count++;
+					continue;
+				}
+
+				// brushes
 				if (exclude_brushes_from_static_collision(sb))
 				{
 					continue;
 				}
 
 				phys->m_static_brush_estimated_count++;
+
 			}
 		}
+
 
 		// #
 		// generate static collision
@@ -377,7 +568,7 @@ namespace components
 				return;
 			}
 
-			// prefab brushes
+			// prefab brushes and terrain
 			if (sb && sb->owner && sb->owner->prefab && sb->owner->firstActive && sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
 			{
 				FOR_ALL_BRUSHES(prefab, sb->owner->prefab->active_brushlist, sb->owner->prefab->active_brushlist_next)
@@ -387,10 +578,17 @@ namespace components
 						return;
 					}
 
-					if (prefab && prefab->def && !prefab->def->patch)
+					if (prefab && prefab->def)
 					{
-						// skip brushes that should not be part of the static collision
-						if (exclude_brushes_from_static_collision(prefab))
+						const auto is_patch = prefab->def->patch;
+						if (is_patch)
+						{
+							if (sb->def->contents & game::BRUSHCONTENTS_NONCOLLIDING)
+							{
+								continue;
+							}
+						}
+						else if (exclude_brushes_from_static_collision(prefab))
 						{
 							continue;
 						}
@@ -406,26 +604,51 @@ namespace components
 							fx_system::AxisToQuat(orientation.axis, quat);
 						}
 
-						phys->create_static_brush(prefab, true, sb->owner->firstActive->origin, quat);
+						if (is_patch)
+						{
+							phys->create_static_terrain(prefab, sb->owner->firstActive->origin, quat);
+						}
+						else
+						{
+							phys->create_static_brush(prefab, true, sb->owner->firstActive->origin, quat);
+						}
 					}
 				}
 			}
 
-			// map brushes
-			else if (sb && sb->def && !sb->def->patch)
+			// root map brushes and terrain
+			else if (sb && sb->def)
 			{
-				// skip brushes that should not be part of the static collision
-				if (exclude_brushes_from_static_collision(sb))
+				// patches
+				if (sb->def->patch)
 				{
-					continue;
+					if (sb->def->contents & game::BRUSHCONTENTS_NONCOLLIDING)
+					{
+						continue;
+					}
+
+					phys->create_static_terrain(sb);
 				}
 
-				phys->create_static_brush(sb);
+				// brushes
+				else
+				{
+					// skip brushes that should not be part of the static collision
+					if (exclude_brushes_from_static_collision(sb))
+					{
+						continue;
+					}
+
+					phys->create_static_brush(sb);
+				}
 			}
 		}
 
 		phys->m_static_brush_count = phys->m_static_brushes.size();
 		phys->m_static_brush_estimated_count = 0;
+
+		phys->m_static_terrain_count = phys->m_static_terrain.size();
+		phys->m_static_terrain_estimated_count = 0;
 	}
 
 
@@ -563,6 +786,8 @@ namespace components
 		m_active_body_count = 0;
 		m_static_brush_count = 0;
 		m_static_brush_estimated_count = 0;
+		m_static_terrain_estimated_count = 0;
+		m_static_terrain_count = 0;
 
 		// #
 
