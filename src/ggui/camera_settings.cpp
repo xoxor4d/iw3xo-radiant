@@ -67,9 +67,6 @@ namespace ggui
 
 	// --------------------
 
-
-	
-
 	void camera_settings_dialog::effect_settings()
 	{
 		//const auto& style = ImGui::GetStyle();
@@ -219,107 +216,26 @@ namespace ggui
 			phys->mScene->setVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT, physx_draw_debug_contacts ? phys_debug_vis_scale : 0.0f);
 		}
 
+		const auto text_width = ImGui::CalcTextSize("Visualization Box Size").x;
+		ImGui::SetNextItemWidth(general_widget_width - text_width - 8.0f);
+		if (ImGui::DragFloat("Visualization Box Size", &dvars::physx_debug_visualization_box_size->current.value, 0.5f, 0.0f, FLT_MAX, "%.2f"))
+		{
+			const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
+			const auto cbox_size = dvars::physx_debug_visualization_box_size->current.value * 0.5f;
+
+			const auto cbox = physx::PxBounds3(
+				physx::PxVec3(cam->origin[0] - cbox_size, cam->origin[1] - cbox_size, cam->origin[2] - cbox_size),
+				physx::PxVec3(cam->origin[0] + cbox_size, cam->origin[1] + cbox_size, cam->origin[2] + cbox_size));
+
+			components::physx_impl::get()->mScene->setVisualizationCullingBox(cbox);
+		}
 
 		// #
 		// TODO:
 
-		const auto exclude_brushes_from_static_collision = [](game::selbrush_def_t* b) -> bool
+		if (ImGui::Button("Create Static Collision", ImVec2(general_widget_width, ImGui::GetFrameHeight())))
 		{
-			// skip sky
-			if (b->def->contents & game::BRUSHCONTENTS_SKY)
-			{
-				return true;
-			}
-
-			// skip fixed size objects
-			if (b->brushflags & game::BRUSHFLAG_FIXED_SIZE)
-			{
-				return true;
-			}
-
-			// skip all nodes (reflection_probes, script_origins, lights etc)
-			if (b->owner && b->owner->firstActive && b->owner->firstActive->eclass)
-			{
-				const auto class_type = b->owner->firstActive->eclass->classtype;
-
-				if (class_type & game::ECLASS_RADIANT_NODE)
-				{
-					return true;
-				}
-			}
-
-			// include all generic solid + detail and weaponclip brushes
-			if (!(b->brushflags & game::BRUSHFLAG_SOLID) && (b->def->contents & game::BRUSHCONTENTS_DETAIL || b->def->contents & game::BRUSHCONTENTS_WEAPONCLIP))
-			{
-				return true;
-			}
-
-			// skip all tooling (spawns, lightgrid ...) but include (some) clip
-			if ((b->brushflags & game::BRUSHFLAG_TOOL) && !(b->def->contents & 0x10000 || b->def->contents & 0x20000 || b->def->contents & 0x30000))
-			{
-				return true;
-			}
-
-			return false;
-		};
-
-
-		if (ImGui::Button("Create Static Convex Meshes for ALL brushes", ImVec2(general_widget_width, ImGui::GetFrameHeight())))
-		{
-			{
-				for (const auto brush : phys->m_static_brushes)
-				{
-					brush->release();
-				}
-				phys->m_static_brushes.clear();
-				phys->m_static_brushes.reserve(1000);
-
-				FOR_ALL_ACTIVE_BRUSHES(sb)
-				{
-					// prefab brushes
-					if (sb && sb->owner && sb->owner->prefab && sb->owner->firstActive && sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
-					{
-						FOR_ALL_BRUSHES(prefab, sb->owner->prefab->active_brushlist, sb->owner->prefab->active_brushlist_next)
-						{
-							if(prefab && prefab->def && !prefab->def->patch)
-							{
-								// skip brushes that should not be part of the static collision
-								if (exclude_brushes_from_static_collision(prefab))
-								{
-									continue;
-								}
-
-								game::vec3_t prefab_angles = {};
-								game::vec4_t quat = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-								// angles to quat - use identity if prefab has no angles kvp
-								if (GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(sb->owner->firstActive, prefab_angles, "angles"))
-								{
-									game::orientation_t orientation = {};
-									game::AnglesToAxis(prefab_angles, &orientation.axis[0][0]);
-									fx_system::AxisToQuat(orientation.axis, quat);
-								}
-								
-								phys->create_static_brush(prefab, true, sb->owner->firstActive->origin, quat);
-							}
-						}
-					}
-
-					// map brushes
-					else if (sb && sb->def && !sb->def->patch)
-					{
-						// skip brushes that should not be part of the static collision
-						if (exclude_brushes_from_static_collision(sb))
-						{
-							continue;
-						}
-
-						phys->create_static_brush(sb);
-					}
-				}
-
-				phys->m_static_brush_count = phys->m_static_brushes.size();
-			}
+			std::thread(components::physx_impl::create_static_collision).detach();
 		}
 
 		//ImGui::PopStyleColor(); // Separator

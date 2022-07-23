@@ -24,6 +24,7 @@ namespace ImGui
 
 	bool	TreeNodeEx(const char* label, bool* is_hovered, bool* is_pressed, ImGuiTreeNodeFlags flags);
 	bool	Spinner(const char* label, float radius, float thickness, const ImU32& color);
+	bool	BufferingBar(const char* label, float value, const ImVec2& size_arg, const ImU32& bg_col, const ImU32& fg_col);
 	
 	bool	IsVertScollbarVisible();
 	void	left_label_drag(const char* label, const float text_y_offset, const float sameline_offset = 80.0f);

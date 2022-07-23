@@ -73,6 +73,17 @@ void cam_positiondrag()
 		
 		ShowCursor(0);
 	}
+
+	if (dvars::physx_debug_visualization_box_size)
+	{
+		const float cbox_size = dvars::physx_debug_visualization_box_size->current.value * 0.5f;
+
+		const auto cbox = physx::PxBounds3(
+			physx::PxVec3(cam->camera.origin[0] - cbox_size, cam->camera.origin[1] - cbox_size, cam->camera.origin[2] - cbox_size),
+			physx::PxVec3(cam->camera.origin[0] + cbox_size, cam->camera.origin[1] + cbox_size, cam->camera.origin[2] + cbox_size));
+
+		components::physx_impl::get()->mScene->setVisualizationCullingBox(cbox);
+	}
 }
 
 void ccamwnd::mouse_control(float dtime)
