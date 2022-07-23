@@ -305,10 +305,12 @@ namespace components
 		return false;
 	}
 
-	// static because threads
+	// only call via components::process
 	void physx_impl::create_static_collision()
 	{
 		const auto phys = components::physx_impl::get();
+		phys->m_static_brush_estimated_count = 0;
+		phys->m_static_brush_count = 0;
 
 		for (const auto brush : phys->m_static_brushes)
 		{
@@ -316,19 +318,29 @@ namespace components
 		}
 		phys->m_static_brushes.clear();
 		phys->m_static_brushes.reserve(1000);
-		phys->m_static_brush_estimated_count = 0;
 
+		const auto process = process::get();
 
 		// #
 		// count all brushes (used for progressbar)
 
-		FOR_ALL_ACTIVE_BRUSHES(sb)
+ 		FOR_ALL_ACTIVE_BRUSHES(sb)
 		{
+			if (process->pending_termination())
+			{
+				return;
+			}
+
 			// prefab brushes
 			if (sb && sb->owner && sb->owner->prefab && sb->owner->firstActive && sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
 			{
 				FOR_ALL_BRUSHES(prefab, sb->owner->prefab->active_brushlist, sb->owner->prefab->active_brushlist_next)
 				{
+					if (process->pending_termination())
+					{
+						return;
+					}
+
 					if (prefab && prefab->def && !prefab->def->patch)
 					{
 						// skip brushes that should not be part of the static collision
@@ -360,11 +372,21 @@ namespace components
 
 		FOR_ALL_ACTIVE_BRUSHES(sb)
 		{
+			if (process->pending_termination())
+			{
+				return;
+			}
+
 			// prefab brushes
 			if (sb && sb->owner && sb->owner->prefab && sb->owner->firstActive && sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
 			{
 				FOR_ALL_BRUSHES(prefab, sb->owner->prefab->active_brushlist, sb->owner->prefab->active_brushlist_next)
 				{
+					if (process->pending_termination())
+					{
+						return;
+					}
+
 					if (prefab && prefab->def && !prefab->def->patch)
 					{
 						// skip brushes that should not be part of the static collision
@@ -403,6 +425,7 @@ namespace components
 		}
 
 		phys->m_static_brush_count = phys->m_static_brushes.size();
+		phys->m_static_brush_estimated_count = 0;
 	}
 
 

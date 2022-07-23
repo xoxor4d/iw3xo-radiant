@@ -2,12 +2,15 @@
 #include "imgui_internal.h"
 
 // forward decl
+
+enum	ImGuiToastType_;
+
 namespace fx_system
 {
-	enum   FX_ED_FLAG_ : int;
-	enum   FX_ELEM_ : int;
-	struct FxEditorElemDef;
-	struct FxFloatRange;
+	enum	FX_ED_FLAG_ : int;
+	enum	FX_ELEM_ : int;
+	struct	FxEditorElemDef;
+	struct	FxFloatRange;
 }
 
 // forward decl
@@ -18,6 +21,7 @@ namespace game
 
 namespace ImGui
 {
+	void	Toast(const ImGuiToastType_ type, const char* title, const char* content, int time = 2500);
 	int		popup_close_map();
 
 	bool	ImageButtonScaled(ImTextureID user_texture_id, const ImVec2& size, const float scale, const ImVec2& uv0 = ImVec2(0.0f, 0.0f), const ImVec2& uv1 = ImVec2(1.0f, 1.0f), int frame_padding = -1, const ImVec4& bg_col = ImVec4(0.0f, 0.0f, 0.0f, 0.0f), const ImVec4& tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));

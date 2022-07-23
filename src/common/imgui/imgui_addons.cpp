@@ -3,6 +3,14 @@
 
 namespace ImGui
 {
+	void Toast(const ImGuiToastType_ type, const char* title, const char* content, int time)
+	{
+		ImGuiToast toast(type, time);
+		toast.set_title(title);
+		toast.set_content(content);
+		ImGui::InsertNotification(toast);
+	}
+
 	// 0: not open; 1: canceled; 2: ok
 	// popup name: close_map_popup
 	int popup_close_map()

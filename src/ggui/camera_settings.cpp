@@ -235,7 +235,24 @@ namespace ggui
 
 		if (ImGui::Button("Create Static Collision", ImVec2(general_widget_width, ImGui::GetFrameHeight())))
 		{
-			std::thread(components::physx_impl::create_static_collision).detach();
+			const auto process = components::process::get();
+
+			process->set_indicator(components::process::INDICATOR_TYPE_PROGRESS);
+			process->set_indicator_string("Building Static Collision");
+			process->set_process_type(components::process::PROC_TYPE_GENERIC);
+
+			process->set_thread_callback([]
+			{
+				components::physx_impl::create_static_collision();
+			});
+
+			process->set_progress_callback([]
+			{
+				components::process::get()->m_indicator_progress = 
+					static_cast<float>(components::physx_impl::get()->m_static_brush_count) / static_cast<float>(components::physx_impl::get()->m_static_brush_estimated_count);
+			});
+
+			process->create_process();
 		}
 
 		//ImGui::PopStyleColor(); // Separator

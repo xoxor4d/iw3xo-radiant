@@ -800,10 +800,14 @@ namespace components
 
 		// compileLight
 		args += (dvars::bsp_compile_light->current.enabled ? "1 "s : "0 "s);
-		
-		process::pthis->set_output(true);
-		process::pthis->set_arguments(args);
-		process::pthis->set_callback([bsp_path]
+
+		const auto process = components::process::get();
+
+		process->set_process_type(process::PROC_TYPE_BATCH);
+		process->set_indicator(process::INDICATOR_TYPE_SPINNER);
+		process->set_output(true);
+		process->set_arguments(args);
+		process->set_post_process_callback([bsp_path]
 		{
 			d3dbsp::radiant_load_bsp(bsp_path.c_str(), true);
 
@@ -813,7 +817,7 @@ namespace components
 			}
 		});
 
-		process::pthis->create_process();
+		process->create_process();
 	}
 
 	void d3dbsp::compile_current_map()
