@@ -60,7 +60,7 @@ namespace components
 		void obj_destroy(int id);
 		void obj_get_interpolated_state(int id, float* out_pos, float* out_quat);
 
-		int create_physx_object(game::XModel* model, const float* world_pos, const float* quat);
+		int create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity = nullptr, const float* angular_velocity = nullptr);
 		void create_plane();
 	};
 }

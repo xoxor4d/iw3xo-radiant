@@ -748,7 +748,7 @@ namespace components
 		out_quat[3] = quat.w;
 	}
 
-	int physx_impl::create_physx_object(game::XModel* model, const float* world_pos, const float* quat)
+	int physx_impl::create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity, const float* angular_velocity)
 	{
 		const auto material = create_material(model->physPreset);
 
@@ -791,6 +791,16 @@ namespace components
 
 		mScene->addActor(*body);
 
+		if (velocity)
+		{
+			body->setLinearVelocity(physx::PxVec3(velocity[0], velocity[1], velocity[2]));
+		}
+
+		if (angular_velocity)
+		{
+			body->setAngularVelocity(physx::PxVec3(angular_velocity[0], angular_velocity[1], angular_velocity[2]));
+		}
+
 		return reinterpret_cast<int>(shape);
 	}
 
@@ -811,8 +821,7 @@ namespace components
 			groundPlane->release();
 		}
 
-		groundPlane = PxCreatePlane(*mPhysics, physx::PxPlane(gui->phys_plane[0], gui->phys_plane[1], gui->phys_plane[2], gui->phys_plane[3]), *mMaterial);
-
+		/*groundPlane = PxCreatePlane(*mPhysics, physx::PxPlane(gui->phys_plane[0], gui->phys_plane[1], gui->phys_plane[2], gui->phys_plane[3]), *mMaterial);
 		if (groundPlane)
 		{
 			mScene->addActor(*groundPlane);
@@ -822,7 +831,7 @@ namespace components
 			ImGuiToast toast(ImGuiToastType_Error, 4000);
 			toast.set_title("Invalid groundplane settings!");
 			ImGui::InsertNotification(toast);
-		}
+		}*/
 		
 	}
 
@@ -914,8 +923,8 @@ namespace components
 
 		// add a simple ground plane for now
 		mMaterial = mPhysics->createMaterial(0.5f, 0.5f, 0.6f);
-		groundPlane = PxCreatePlane(*mPhysics, physx::PxPlane(0, 0, 1, 0), *mMaterial);
-		mScene->addActor(*groundPlane);
+		//groundPlane = PxCreatePlane(*mPhysics, physx::PxPlane(0, 0, 1, 0), *mMaterial);
+		//mScene->addActor(*groundPlane);
 
 		// #
 

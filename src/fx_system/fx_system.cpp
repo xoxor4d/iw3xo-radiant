@@ -650,14 +650,10 @@ namespace fx_system
 		if (visuals.model->physGeoms && !physGeoms_notify)
 		{
 			physGeoms_notify = true;
-
-			ImGuiToast toast(ImGuiToastType_Info, 6000);
-			toast.set_title("physGeoms");
-			toast.set_content("physGeoms detected for current effect. Please notify the developer! Thanks :>");
-			ImGui::InsertNotification(toast);
+			ImGui::Toast(ImGuiToastType_Info, "physGeoms", "physGeoms detected for current effect. Please notify the developer! Thanks :>", 4000);
 		}
 
-		remote_elem->___u8.physObjId = components::physx_impl::get()->create_physx_object(visuals.model, world_pos, quat);
+		remote_elem->___u8.physObjId = components::physx_impl::get()->create_physx_object(visuals.model, world_pos, quat, velocity, vel);
 		return remote_elem->___u8.physObjId != 0;
 	}
 
