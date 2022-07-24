@@ -1270,7 +1270,8 @@ namespace ggui
 				bool is_worldspawn = (m_sel_list_ent && !_stricmp(m_sel_list_ent->name, "worldspawn"));
 				const auto selbrush = game::g_selected_brushes();
 
-				if(selbrush && !selbrush->def)
+				// do not call every frame
+				if(selbrush && selbrush->def)
 				{
 					cdeclcall(void, 0x4972F0); // UpdateEntitySel - updates edit_entity <- worldspawn
 				}
