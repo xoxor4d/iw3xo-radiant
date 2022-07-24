@@ -292,6 +292,9 @@ namespace components
 		meshDesc.triangles.stride = 3 * sizeof(uint32_t);
 		meshDesc.triangles.data = inds.data();*/
 
+
+		// reference - Q3 - Terrain_GetTriangle
+
 		const auto phys = components::physx_impl::get();
 		const auto patch = sb->def->patch;
 
@@ -299,71 +302,135 @@ namespace components
 		std::vector<uint32_t> inds;
 		int tri_count = 0;
 
-		for (auto x = 0; x < patch->width - 1; x++)
+
+		if ((sb->def->patch->type & game::PATCH_TERRAIN) != 0)
 		{
-			for (auto y = 0; y < patch->height; y++)
+			for (auto x = 0; x < patch->width - 1; x++)
 			{
-				if (y != patch->height - 1)
+				for (auto y = 0; y < patch->height; y++)
 				{
-					const game::vec_t* v1;
-					const game::vec_t* v2;
-					const game::vec_t* v3;
-
-					if (patch->ctrl[x][y].turned_edge)
+					if (y != patch->height - 1)
 					{
-						v1 = patch->ctrl[x + 1][y + 0].xyz;
-						v2 = patch->ctrl[x + 1][y + 1].xyz;
-						v3 = patch->ctrl[x + 0][y + 0].xyz;
-					}
-					else
-					{
-						v1 = patch->ctrl[x + 0][y + 0].xyz;
-						v2 = patch->ctrl[x + 1][y + 0].xyz;
-						v3 = patch->ctrl[x + 0][y + 1].xyz;
-					}
+						const game::vec_t* v1;
+						const game::vec_t* v2;
+						const game::vec_t* v3;
 
-					verts.emplace_back(physx::PxVec3(v1[0], v1[1], v1[2]));
-					verts.emplace_back(physx::PxVec3(v2[0], v2[1], v2[2]));
-					verts.emplace_back(physx::PxVec3(v3[0], v3[1], v3[2]));
+						if (patch->ctrl[x][y].turned_edge)
+						{
+							v1 = patch->ctrl[x + 1][y + 0].xyz;
+							v2 = patch->ctrl[x + 1][y + 1].xyz;
+							v3 = patch->ctrl[x + 0][y + 0].xyz;
+						}
+						else
+						{
+							v1 = patch->ctrl[x + 0][y + 0].xyz;
+							v2 = patch->ctrl[x + 1][y + 0].xyz;
+							v3 = patch->ctrl[x + 0][y + 1].xyz;
+						}
 
-					inds.push_back(inds.size());
-					inds.push_back(inds.size());
-					inds.push_back(inds.size());
+						verts.emplace_back(physx::PxVec3(v1[0], v1[1], v1[2]));
+						verts.emplace_back(physx::PxVec3(v2[0], v2[1], v2[2]));
+						verts.emplace_back(physx::PxVec3(v3[0], v3[1], v3[2]));
 
-					tri_count++;
-				}
+						inds.push_back(inds.size());
+						inds.push_back(inds.size());
+						inds.push_back(inds.size());
 
-				if (y != 0)
-				{
-					const game::vec_t* v1;
-					const game::vec_t* v2;
-					const game::vec_t* v3;
-
-					if (patch->ctrl[x][y - 1].turned_edge)
-					{
-						v1 = patch->ctrl[x + 0][y + 0].xyz;
-						v2 = patch->ctrl[x + 0][y - 1].xyz;
-						v3 = patch->ctrl[x + 1][y + 0].xyz;
-					}
-					else
-					{
-						v1 = patch->ctrl[x + 1][y + 0].xyz;
-						v2 = patch->ctrl[x + 0][y + 0].xyz;
-						v3 = patch->ctrl[x + 1][y - 1].xyz;
+						tri_count++;
 					}
 
-					verts.emplace_back(physx::PxVec3(v1[0], v1[1], v1[2]));
-					verts.emplace_back(physx::PxVec3(v2[0], v2[1], v2[2]));
-					verts.emplace_back(physx::PxVec3(v3[0], v3[1], v3[2]));
+					if (y != 0)
+					{
+						const game::vec_t* v1;
+						const game::vec_t* v2;
+						const game::vec_t* v3;
 
-					inds.push_back(inds.size());
-					inds.push_back(inds.size());
-					inds.push_back(inds.size());
+						if (patch->ctrl[x][y - 1].turned_edge)
+						{
+							v1 = patch->ctrl[x + 0][y + 0].xyz;
+							v2 = patch->ctrl[x + 0][y - 1].xyz;
+							v3 = patch->ctrl[x + 1][y + 0].xyz;
+						}
+						else
+						{
+							v1 = patch->ctrl[x + 1][y + 0].xyz;
+							v2 = patch->ctrl[x + 0][y + 0].xyz;
+							v3 = patch->ctrl[x + 1][y - 1].xyz;
+						}
 
-					tri_count++;
+						verts.emplace_back(physx::PxVec3(v1[0], v1[1], v1[2]));
+						verts.emplace_back(physx::PxVec3(v2[0], v2[1], v2[2]));
+						verts.emplace_back(physx::PxVec3(v3[0], v3[1], v3[2]));
+
+						inds.push_back(inds.size());
+						inds.push_back(inds.size());
+						inds.push_back(inds.size());
+
+						tri_count++;
+					}
 				}
 			}
 		}
+
+		// curve
+		else
+		{
+			const auto width = patch->curveDef->width;
+			const auto height = patch->curveDef->height;
+
+			for (auto x = 0; x < width - 1; x++)
+			{
+				for (auto y = 0; y < height; y++)
+				{
+					if (y != height - 1)
+					{
+						const game::vec_t* v1;
+						const game::vec_t* v2;
+						const game::vec_t* v3;
+
+						{
+							v1 = patch->curveDef->verts[x + 0 + (width * (y + 0))].xyz;
+							v2 = patch->curveDef->verts[x + 1 + (width * (y + 0))].xyz;
+							v3 = patch->curveDef->verts[x + 0 + (width * (y + 1))].xyz;
+						}
+
+						verts.emplace_back(physx::PxVec3(v1[0], v1[1], v1[2]));
+						verts.emplace_back(physx::PxVec3(v2[0], v2[1], v2[2]));
+						verts.emplace_back(physx::PxVec3(v3[0], v3[1], v3[2]));
+
+						inds.push_back(inds.size());
+						inds.push_back(inds.size());
+						inds.push_back(inds.size());
+
+						tri_count++;
+					}
+
+					if (y != 0)
+					{
+						const game::vec_t* v1;
+						const game::vec_t* v2;
+						const game::vec_t* v3;
+
+						{
+							v1 = patch->curveDef->verts[x + 1 + (width * (y + 0))].xyz;
+							v2 = patch->curveDef->verts[x + 0 + (width * (y + 0))].xyz;
+							v3 = patch->curveDef->verts[x + 1 + (width * (y - 1))].xyz;
+						}
+
+						verts.emplace_back(physx::PxVec3(v1[0], v1[1], v1[2]));
+						verts.emplace_back(physx::PxVec3(v2[0], v2[1], v2[2]));
+						verts.emplace_back(physx::PxVec3(v3[0], v3[1], v3[2]));
+
+						inds.push_back(inds.size());
+						inds.push_back(inds.size());
+						inds.push_back(inds.size());
+
+						tri_count++;
+					}
+				}
+			}
+		}
+		
 
 		physx::PxTriangleMeshDesc meshDesc;
 		meshDesc.points.count = verts.size();

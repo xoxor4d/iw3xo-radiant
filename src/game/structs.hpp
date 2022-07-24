@@ -711,14 +711,22 @@ namespace game
 		qtexture_s* radMtl;
 	};
 
+	struct curveVert_t
+	{
+		vec3_t xyz;
+		vec2_t st;
+		vec2_t unk;
+		vec3_t normal;
+		rgba_4byte vert_color;
+	};
+
 	struct curvePatchDef_t
 	{
 		int width;
 		int height;
-		int random_one;
-		float* point_array;
-		int unk;
-		float large_float_array[64];
+		float unkown1;
+		curveVert_t* verts;
+		float unkown2;
 	};
 
 	struct patchMesh_t
