@@ -41,9 +41,9 @@ namespace ggui
 
 		bool tab_states[3]
 		{
-			false,
-			false,
-			false,
+			true,
+			true,
+			true,
 		};
 
 		

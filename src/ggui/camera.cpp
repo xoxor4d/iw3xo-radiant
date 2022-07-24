@@ -270,6 +270,7 @@ namespace ggui
 						{
 							const auto cs = GET_GUI(ggui::camera_settings_dialog);
 							cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
+							cs->focus_tab(camera_settings_dialog::tab_state_bsp);
 
 						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 						ImGui::PopID();
@@ -344,6 +345,7 @@ namespace ggui
 					{
 						const auto cs = GET_GUI(ggui::camera_settings_dialog);
 						cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
+						cs->focus_tab(camera_settings_dialog::tab_state_fakesun);
 						
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
@@ -461,6 +463,7 @@ namespace ggui
 							{
 								const auto cs = GET_GUI(ggui::camera_settings_dialog);
 								cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
+								cs->focus_tab(camera_settings_dialog::tab_state_effects);
 
 							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 							ImGui::PopID();

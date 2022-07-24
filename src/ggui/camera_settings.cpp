@@ -471,10 +471,10 @@ namespace ggui
 
 	void camera_settings_dialog::on_close()
 	{
-		for (int n = 0; n < IM_ARRAYSIZE(tab_states); n++)
+		/*for (int n = 0; n < IM_ARRAYSIZE(tab_states); n++)
 		{
 			tab_states[n] = false;
-		}
+		}*/
 
 		active_tab = -1;
 	}

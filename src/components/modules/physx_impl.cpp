@@ -1,6 +1,11 @@
 #include "std_include.hpp"
 
 constexpr bool USE_PVD = false; // PhysX Visual Debugger
+constexpr bool USE_CONTACT_CALLBACK = false; // can be used to implement effect spawing on impact
+
+// fx_system impacts:
+// - 'play new effect on impact' only works when 'enable model physics simulation' is turned off
+// - 'play new effect on impact' does not kill the elem
 
 namespace components
 {
@@ -253,7 +258,12 @@ namespace components
 
 					shape->setLocalPose(local);
 				}
-				
+
+				physx::PxFilterData filterData;
+				filterData.word0 = 4; // 4 = static collision
+				filterData.word1 = 2; // 2 = physics object
+				shape->setSimulationFilterData(filterData);
+
 				actor->attachShape(*shape);
 				shape->release();
 
@@ -473,6 +483,11 @@ namespace components
 
 				shape->setLocalPose(local);
 			}
+
+			physx::PxFilterData filterData;
+			filterData.word0 = 4; // 4 = static collision
+			filterData.word1 = 2; // 2 = physics object
+			shape->setSimulationFilterData(filterData);
 
 			actor->attachShape(*shape);
 			shape->release();
@@ -720,13 +735,15 @@ namespace components
 
 	void physx_impl::obj_destroy(int id)
 	{
-		const auto shape = reinterpret_cast<physx::PxShape*>(id);
-		const auto actor = shape->getActor();
+		const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(id);
 
 		if (actor->userData)
 		{
-			const auto material = static_cast<physx::PxMaterial*>(actor->userData);
-			material->release();
+			//const auto material = static_cast<physx::PxMaterial*>(actor->userData);
+			const auto data = static_cast<userdata_s*>(actor->userData);
+			data->material->release();
+
+			delete(data);
 		}
 
 		actor->release();
@@ -734,10 +751,10 @@ namespace components
 
 	void physx_impl::obj_get_interpolated_state(int id, float* out_pos, float* out_quat)
 	{
-		const auto shape = reinterpret_cast<physx::PxShape*>(id);
+		const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(id);
 
-		const physx::PxQuat quat = shape->getActor()->getGlobalPose().q;
-		const auto pos = shape->getActor()->getGlobalPose().p;
+		const physx::PxQuat quat = actor->getGlobalPose().q;
+		const auto pos = actor->getGlobalPose().p;
 		out_pos[0] = pos.x;
 		out_pos[1] = pos.y;
 		out_pos[2] = pos.z;
@@ -770,11 +787,21 @@ namespace components
 			physx::PxQuat(quat[0], quat[1], quat[2], quat[3])
 		);
 
-		physx::PxRigidDynamic* body = mPhysics->createRigidDynamic(t);
+		physx::PxRigidDynamic* actor = mPhysics->createRigidDynamic(t);
 
-		body->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
-		body->userData = material;
-		body->attachShape(*shape);
+		actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
+
+		userdata_s* data = new userdata_s();
+		data->material = material;
+
+		actor->userData = data;
+
+		physx::PxFilterData filterData;
+		filterData.word0 = 2; // 2 = physics object
+		filterData.word1 = 4; // 4 = static collision
+		shape->setSimulationFilterData(filterData);
+
+		actor->attachShape(*shape);
 		shape->release();
 
 		/*const physx::PxVec3 center_of_mass =
@@ -784,24 +811,22 @@ namespace components
 			(model->mins[2] + model->maxs[2]) * 0.5f,
 		};*/
 
-		physx::PxRigidBodyExt::updateMassAndInertia(*body, model->physPreset->mass/*, &center_of_mass*/);
+		physx::PxRigidBodyExt::updateMassAndInertia(*actor, model->physPreset->mass/*, &center_of_mass*/);
 
-		//auto m = body->getMass();
-		//body->setMass(model->physPreset->mass);
-
-		mScene->addActor(*body);
+		mScene->addActor(*actor);
 
 		if (velocity)
 		{
-			body->setLinearVelocity(physx::PxVec3(velocity[0], velocity[1], velocity[2]));
+			actor->setLinearVelocity(physx::PxVec3(velocity[0], velocity[1], velocity[2]));
 		}
 
 		if (angular_velocity)
 		{
-			body->setAngularVelocity(physx::PxVec3(angular_velocity[0], angular_velocity[1], angular_velocity[2]));
+			actor->setAngularVelocity(physx::PxVec3(angular_velocity[0], angular_velocity[1], angular_velocity[2]));
 		}
 
-		return reinterpret_cast<int>(shape);
+		return reinterpret_cast<int>(actor);
+		//return reinterpret_cast<int>(shape);
 	}
 
 	static physx::PxRigidStatic* groundPlane;
@@ -833,6 +858,55 @@ namespace components
 			ImGui::InsertNotification(toast);
 		}*/
 		
+	}
+
+
+	// active when 'USE_CONTACT_CALLBACK'
+	void physx_impl::collision_feedback::onContact([[maybe_unused]] const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs)
+	{
+		for (physx::PxU32 i = 0; i < nbPairs; i++)
+		{
+			const physx::PxContactPair& cp = pairs[i];
+
+			if (cp.events & physx::PxPairFlag::eNOTIFY_TOUCH_FOUND)
+			{
+				const auto udata = pairHeader.actors[0]->userData ? pairHeader.actors[0]->userData : pairHeader.actors[1]->userData;
+				if (udata)
+				{
+					const auto userdata = static_cast<userdata_s*>(udata);
+					//game::printf_to_console("dynamic actor");
+				}
+
+				//game::printf_to_console("contact!");
+				break;
+			}
+		}
+	}
+
+	// active when 'USE_CONTACT_CALLBACK'
+	// used to identify collisions between static collision and physic's enabled objects
+	physx::PxFilterFlags FilterShader(	[[maybe_unused]] physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
+										[[maybe_unused]] physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+										physx::PxPairFlags& pairFlags, [[maybe_unused]] const void* constantBlock, [[maybe_unused]] physx::PxU32 constantBlockSize)
+	{
+		//// let triggers through
+		//if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1))
+		//{
+		//	pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
+		//	return physx::PxFilterFlag::eDEFAULT;
+		//}
+
+		// generate contacts for all that were not filtered above
+		pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
+
+		// trigger the contact callback for pairs (A,B) where 
+		// the filtermask of A contains the ID of B and vice versa.
+		if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
+		{
+			pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
+		}
+
+		return physx::PxFilterFlag::eDEFAULT;
 	}
 
 	void physx_impl::register_dvars()
@@ -899,16 +973,19 @@ namespace components
 		scene_desc.gravity = physx::PxVec3(0.0f, 0.0f, -800.0f); // default: -9.81 // scale of 80
 		scene_desc.bounceThresholdVelocity = 1400.0f; // default: 20
 		scene_desc.cpuDispatcher = mDispatcher;
-		scene_desc.filterShader = physx::PxDefaultSimulationFilterShader;
+
+		if (USE_CONTACT_CALLBACK)
+		{
+			scene_desc.filterShader = FilterShader;
+			scene_desc.simulationEventCallback = new collision_feedback();
+		}
+		else
+		{
+			scene_desc.filterShader = physx::PxDefaultSimulationFilterShader;
+		}
+
 		scene_desc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 		mScene = mPhysics->createScene(scene_desc);
-
-		//auto xx = mScene->getBounceThresholdVelocity();
-		//mScene->getFrictionOffsetThreshold();
-
-		// do not ship with 1 enabled by default!
-		//mScene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, 1.0f);
-		//mScene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_AABBS, 1.0f);
 
 		if (USE_PVD)
 		{
