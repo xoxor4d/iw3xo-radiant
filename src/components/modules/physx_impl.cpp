@@ -20,6 +20,7 @@ namespace components
 		mScene->fetchResults(true);
 	}
 
+	// -> renderer::setup_viewinfo
 	void physx_impl::frame()
 	{
 		const auto fxs = fx_system::FX_GetSystem(0);
@@ -77,13 +78,13 @@ namespace components
 					// #
 					// dxPostProcessIslands(static_cast<PhysWorld>(worldIndex));
 
-					mScene->getActiveActors(m_active_body_count);
+					mScene->getActiveActors(m_active_actor_count);
 
 
 					constexpr float REDUCE_MSEC_BEGIN_AT_COUNT = 64.0f; // object count needed to start increasing m_phys_msec_step # og: 32
 					constexpr float REDUCE_MSEC_RANGE_TO_MAX = 64.0f;   // range - how many objects are needed to hit g_phys_maxMsecStep # og: 18
 
-					const auto step_for_count = (static_cast<float>(m_active_body_count) - REDUCE_MSEC_BEGIN_AT_COUNT) / REDUCE_MSEC_RANGE_TO_MAX;
+					const auto step_for_count = (static_cast<float>(m_active_actor_count) - REDUCE_MSEC_BEGIN_AT_COUNT) / REDUCE_MSEC_RANGE_TO_MAX;
 					const auto s0 = step_for_count - 1.0f < 0.0f ? step_for_count : 1.0f;
 					const auto s1 = 0.0f - step_for_count < 0.0f ? s0 : 0.0f;
 
@@ -98,7 +99,7 @@ namespace components
 				}
 			}
 
-			const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
+			/*const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
 			for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
 			{
 				const auto& line = rb.getLines()[i];
@@ -120,7 +121,7 @@ namespace components
 				{
 					renderer::R_AddPointCmd(1, 12, 3, vert);
 				}
-			}
+			}*/
 
 			// physx seems to not use points at all
 			/*for (physx::PxU32 i = 0; i < rb.getNbPoints(); i++)
@@ -160,6 +161,41 @@ namespace components
 				{
 					Assert();
 				}
+			}
+		}
+
+		// keep drawing visualization if 'phys_force_frame_logic' is enabled
+		const bool force_update = GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic;
+		if ((force_update && !efx) || m_simulation_running)
+		{
+			// update 
+			if ((force_update && !efx && !m_simulation_running))
+			{
+				physx_impl::run_frame(1);
+			}
+		}
+
+		const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
+		for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
+		{
+			const auto& line = rb.getLines()[i];
+
+			game::GfxPointVertex vert[2];
+			vert[0].xyz[0] = line.pos0.x;
+			vert[0].xyz[1] = line.pos0.y;
+			vert[0].xyz[2] = line.pos0.z;
+			vert[0].color.packed = line.color0;
+
+			vert[1].xyz[0] = line.pos1.x;
+			vert[1].xyz[1] = line.pos1.y;
+			vert[1].xyz[2] = line.pos1.z;
+			vert[1].color.packed = line.color1;
+
+			renderer::R_AddLineCmd(1, 4, 3, vert);
+
+			if (mScene->getVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT) > 0.0f)
+			{
+				renderer::R_AddPointCmd(1, 12, 3, vert);
 			}
 		}
 	}
@@ -237,7 +273,7 @@ namespace components
 				auto* actor = mPhysics->createRigidStatic(is_prefab ? physx::PxTransform(0.0f, 0.0f, 0.0f) : t);
 				actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
 
-				physx::PxShape* shape = physx::PxRigidActorExt::createExclusiveShape(*actor, physx::PxConvexMeshGeometry(convexMesh), *mMaterial);
+				physx::PxShape* shape = physx::PxRigidActorExt::createExclusiveShape(*actor, physx::PxConvexMeshGeometry(convexMesh), *m_static_collision_material);
 
 				physx::PxTransform local;
 				local.p = physx::PxVec3(0.0f, 0.0f, 0.0f);
@@ -259,10 +295,13 @@ namespace components
 					shape->setLocalPose(local);
 				}
 
-				physx::PxFilterData filterData;
-				filterData.word0 = 4; // 4 = static collision
-				filterData.word1 = 2; // 2 = physics object
-				shape->setSimulationFilterData(filterData);
+				if (USE_CONTACT_CALLBACK)
+				{
+					physx::PxFilterData filterData;
+					filterData.word0 = 4; // 4 = static collision
+					filterData.word1 = 2; // 2 = physics object
+					shape->setSimulationFilterData(filterData);
+				}
 
 				actor->attachShape(*shape);
 				shape->release();
@@ -277,32 +316,6 @@ namespace components
 
 	void physx_impl::create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset, const float* quat)
 	{
-		// clipmap verts
-		/*verts.reserve(100);
-		for (auto v = 0u; v < components::d3dbsp::cm.vertCount; v++)
-		{
-			physx::PxVec3 tv = { components::d3dbsp::cm.verts[v][0], components::d3dbsp::cm.verts[v][1], components::d3dbsp::cm.verts[v][2] };
-			verts.emplace_back(tv);
-		}
-
-		inds.reserve(100);
-		for (auto i = 0; i < components::d3dbsp::cm.triCount * 3; i += 3)
-		{
-			inds.emplace_back(static_cast<int>(components::d3dbsp::cm.triIndices[i + 2]));
-			inds.emplace_back(static_cast<int>(components::d3dbsp::cm.triIndices[i + 1]));
-			inds.emplace_back(static_cast<int>(components::d3dbsp::cm.triIndices[i + 0]));
-		}
-
-		physx::PxTriangleMeshDesc meshDesc;
-		meshDesc.points.count = components::d3dbsp::cm.vertCount;
-		meshDesc.points.stride = sizeof(physx::PxVec3);
-		meshDesc.points.data = verts.data();
-
-		meshDesc.triangles.count = components::d3dbsp::cm.triCount * 3;
-		meshDesc.triangles.stride = 3 * sizeof(uint32_t);
-		meshDesc.triangles.data = inds.data();*/
-
-
 		// reference - Q3 - Terrain_GetTriangle
 
 		const auto phys = components::physx_impl::get();
@@ -462,7 +475,7 @@ namespace components
 			auto* actor = phys->mPhysics->createRigidStatic(physx::PxTransform(0.0f, 0.0f, 0.0f));
 			actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
 
-			physx::PxShape* shape = physx::PxRigidActorExt::createExclusiveShape(*actor, physx::PxTriangleMeshGeometry(triangleMesh), *phys->mMaterial);
+			physx::PxShape* shape = physx::PxRigidActorExt::createExclusiveShape(*actor, physx::PxTriangleMeshGeometry(triangleMesh), *phys->m_static_collision_material);
 
 			physx::PxTransform local;
 			local.p = physx::PxVec3(0.0f, 0.0f, 0.0f);
@@ -484,16 +497,20 @@ namespace components
 				shape->setLocalPose(local);
 			}
 
-			physx::PxFilterData filterData;
-			filterData.word0 = 4; // 4 = static collision
-			filterData.word1 = 2; // 2 = physics object
-			shape->setSimulationFilterData(filterData);
+			if (USE_CONTACT_CALLBACK)
+			{
+				physx::PxFilterData filterData;
+				filterData.word0 = 4; // 4 = static collision
+				filterData.word1 = 2; // 2 = physics object
+				shape->setSimulationFilterData(filterData);
+			}
 
 			actor->attachShape(*shape);
 			shape->release();
 
 			phys->mScene->addActor(*actor);
 			phys->m_static_terrain.push_back(actor);
+			m_static_terrain_count++;
 		}
 	}
 
@@ -732,6 +749,83 @@ namespace components
 		phys->m_static_terrain_estimated_count = 0;
 	}
 
+	void physx_impl::convert_phys_to_misc_models()
+	{
+		const auto system = fx_system::FX_GetSystem(0);
+		const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
+		if (const auto con = GetConsoleWindow(); !IsWindowVisible(con))
+		{
+			ShowWindow(con, SW_SHOW);
+		}
+
+		m_converted_misc_model_count = 0;
+
+		std::uint16_t elemHandle = fx_system::ed_active_effect->firstElemHandle[fx_system::FX_ELEM_CLASS_NONSPRITE];
+		if (elemHandle != UINT16_MAX)
+		{
+			game::Select_Deselect(true);
+			game::Undo_ClearRedo();
+			game::Undo_GeneralStart("create entity from physics");
+			ggui::entity_dialog::addprop_helper_s no_undo = {};
+
+			while (elemHandle != UINT16_MAX)
+			{
+				const fx_system::FxElem* elem = fx_system::FX_ElemFromHandle(system, elemHandle);
+				const fx_system::FxElemDef* elem_def = &fx_system::ed_active_effect->def->elemDefs[static_cast<std::uint8_t>(elem->defIndex)];
+
+				if (elem_def->elemType <= fx_system::FX_ELEM_TYPE_LAST_SPRITE)
+				{
+					Assert();
+				}
+
+				if (elem_def->elemType == fx_system::FX_ELEM_TYPE_MODEL && elem_def->flags & fx_system::FX_ELEM_USE_MODEL_PHYSICS)
+				{
+					const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(elem->___u8.physObjId);
+					const auto pos = actor->getGlobalPose().p;
+
+					if (elem_def->visuals.instance.model)
+					{
+						if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+						{
+							game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+						}
+
+						// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+						g_block_radiant_modeldialog = true;
+						game::CreateEntityFromName("misc_model");
+						g_block_radiant_modeldialog = false;
+
+						entity_gui->add_prop("model", elem_def->visuals.instance.model->name, &no_undo);
+
+						char origin_str_buf[64] = {};
+						if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", pos[0], pos[1], pos[2]))
+						{
+							entity_gui->add_prop("origin", origin_str_buf, &no_undo);
+						}
+
+						game::printf_to_console("spawned model #%d at [ %.2f , %.2f , %.2f ]\n", m_converted_misc_model_count, pos[0], pos[1], pos[2]);
+						m_converted_misc_model_count++;
+
+						game::Select_Deselect(true);
+					}
+				}
+
+				elemHandle = elem->nextElemHandleInEffect;
+			}
+
+			game::Undo_End();
+		}
+
+		m_converted_misc_model_count = 0;
+
+		// hide external console if it is visible
+		if (const auto con = GetConsoleWindow(); IsWindowVisible(con))
+		{
+			ShowWindow(con, SW_HIDE);
+		}
+	}
+
 
 	void physx_impl::obj_destroy(int id)
 	{
@@ -749,6 +843,7 @@ namespace components
 		actor->release();
 	}
 
+
 	void physx_impl::obj_get_interpolated_state(int id, float* out_pos, float* out_quat)
 	{
 		const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(id);
@@ -765,6 +860,7 @@ namespace components
 		out_quat[3] = quat.w;
 	}
 
+
 	int physx_impl::create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity, const float* angular_velocity)
 	{
 		const auto material = create_material(model->physPreset);
@@ -774,7 +870,7 @@ namespace components
 		utils::vector::scale(half_bounds, 0.5f, half_bounds);
 
 		const auto box_geom = physx::PxBoxGeometry(half_bounds[0], half_bounds[1], half_bounds[2]);
-		physx::PxShape* shape = mPhysics->createShape(box_geom, *mMaterial, true);
+		physx::PxShape* shape = mPhysics->createShape(box_geom, *m_static_collision_material, true);
 		shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, true);
 
 		game::vec3_t origin_offset;
@@ -793,13 +889,15 @@ namespace components
 
 		userdata_s* data = new userdata_s();
 		data->material = material;
-
 		actor->userData = data;
 
-		physx::PxFilterData filterData;
-		filterData.word0 = 2; // 2 = physics object
-		filterData.word1 = 4; // 4 = static collision
-		shape->setSimulationFilterData(filterData);
+		if (USE_CONTACT_CALLBACK)
+		{
+			physx::PxFilterData filterData;
+			filterData.word0 = 2; // 2 = physics object
+			filterData.word1 = 4; // 4 = static collision
+			shape->setSimulationFilterData(filterData);
+		}
 
 		actor->attachShape(*shape);
 		shape->release();
@@ -811,10 +909,10 @@ namespace components
 			(model->mins[2] + model->maxs[2]) * 0.5f,
 		};*/
 
-		physx::PxRigidBodyExt::updateMassAndInertia(*actor, model->physPreset->mass/*, &center_of_mass*/);
+		physx::PxRigidBodyExt::updateMassAndInertia(*actor, model->physPreset->mass /*, &center_of_mass*/);
 
 		mScene->addActor(*actor);
-
+	
 		if (velocity)
 		{
 			actor->setLinearVelocity(physx::PxVec3(velocity[0], velocity[1], velocity[2]));
@@ -826,38 +924,23 @@ namespace components
 		}
 
 		return reinterpret_cast<int>(actor);
-		//return reinterpret_cast<int>(shape);
 	}
 
-	static physx::PxRigidStatic* groundPlane;
-	void physx_impl::create_plane()
+
+	void physx_impl::update_static_collision_material()
 	{
-		auto gui = GET_GUI(ggui::camera_settings_dialog);
+		const auto gui = GET_GUI(ggui::camera_settings_dialog);
 
-		if (mMaterial)
+		m_static_collision_material->setStaticFriction(gui->phys_material[0]);
+		m_static_collision_material->setDynamicFriction(gui->phys_material[1]);
+		m_static_collision_material->setRestitution(gui->phys_material[2]);
+
+		/*if (m_static_collision_material)
 		{
-			mMaterial->release();
+			m_static_collision_material->release();
 		}
 		
-		mMaterial = mPhysics->createMaterial(gui->phys_material[0], gui->phys_material[1], gui->phys_material[2]);
-
-		if (groundPlane)
-		{
-			groundPlane->release();
-		}
-
-		/*groundPlane = PxCreatePlane(*mPhysics, physx::PxPlane(gui->phys_plane[0], gui->phys_plane[1], gui->phys_plane[2], gui->phys_plane[3]), *mMaterial);
-		if (groundPlane)
-		{
-			mScene->addActor(*groundPlane);
-		}
-		else
-		{
-			ImGuiToast toast(ImGuiToastType_Error, 4000);
-			toast.set_title("Invalid groundplane settings!");
-			ImGui::InsertNotification(toast);
-		}*/
-		
+		m_static_collision_material = mPhysics->createMaterial(gui->phys_material[0], gui->phys_material[1], gui->phys_material[2]);*/
 	}
 
 
@@ -873,7 +956,7 @@ namespace components
 				const auto udata = pairHeader.actors[0]->userData ? pairHeader.actors[0]->userData : pairHeader.actors[1]->userData;
 				if (udata)
 				{
-					const auto userdata = static_cast<userdata_s*>(udata);
+					//const auto userdata = static_cast<userdata_s*>(udata);
 					//game::printf_to_console("dynamic actor");
 				}
 
@@ -882,6 +965,7 @@ namespace components
 			}
 		}
 	}
+
 
 	// active when 'USE_CONTACT_CALLBACK'
 	// used to identify collisions between static collision and physic's enabled objects
@@ -909,6 +993,7 @@ namespace components
 		return physx::PxFilterFlag::eDEFAULT;
 	}
 
+
 	void physx_impl::register_dvars()
 	{
 		dvars::physx_debug_visualization_box_size = dvars::register_float(
@@ -919,6 +1004,7 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "size of culling box in which to draw debug visualizations. 0 disables the culling box");
 	}
+
 
 	physx_impl::physx_impl()
 	{
@@ -932,11 +1018,12 @@ namespace components
 		m_time_now_lerp_frac = 0;
 
 		m_phys_msec_step = 3;
-		m_active_body_count = 0;
+		m_active_actor_count = 0;
 		m_static_brush_count = 0;
 		m_static_brush_estimated_count = 0;
 		m_static_terrain_estimated_count = 0;
 		m_static_terrain_count = 0;
+		m_converted_misc_model_count = 0;
 
 		// #
 
@@ -998,17 +1085,7 @@ namespace components
 			}
 		}
 
-		// add a simple ground plane for now
-		mMaterial = mPhysics->createMaterial(0.5f, 0.5f, 0.6f);
-		//groundPlane = PxCreatePlane(*mPhysics, physx::PxPlane(0, 0, 1, 0), *mMaterial);
-		//mScene->addActor(*groundPlane);
-
-		// #
-
-		components::command::register_command("physx_plane"s, [this](auto)
-		{
-			create_plane();
-		});
+		m_static_collision_material = mPhysics->createMaterial(0.5f, 0.5f, 0.6f);
 	}
 
 	physx_impl::~physx_impl()

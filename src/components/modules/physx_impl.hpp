@@ -33,10 +33,7 @@ namespace components
 		physx::PxFoundation* mFoundation = nullptr;
 		physx::PxPhysics* mPhysics = nullptr;
 		physx::PxCooking* mCooking = nullptr;
-
 		physx::PxScene* mScene = nullptr;
-		physx::PxMaterial* mMaterial = nullptr;
-
 		physx::PxPvd* mPvd = nullptr;
 
 		bool m_simulation_running;
@@ -46,9 +43,13 @@ namespace components
 		int m_time_last_update;
 		float m_time_now_lerp_frac;
 		int m_phys_msec_step;
-		uint32_t m_active_body_count;
+
+		uint32_t m_active_actor_count;
+		uint32_t m_converted_misc_model_count;
 
 		float m_visualization_cullingbox_size = 1000.0f;
+
+		physx::PxMaterial* m_static_collision_material = nullptr;
 
 		uint32_t m_static_brush_estimated_count;
 		uint32_t m_static_brush_count;
@@ -83,10 +84,12 @@ namespace components
 		void create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
 		static void create_static_collision();
 
+		void convert_phys_to_misc_models();
+
 		void obj_destroy(int id);
 		void obj_get_interpolated_state(int id, float* out_pos, float* out_quat);
 
 		int create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity = nullptr, const float* angular_velocity = nullptr);
-		void create_plane();
+		void update_static_collision_material();
 	};
 }

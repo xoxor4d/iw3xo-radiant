@@ -69,7 +69,7 @@ namespace ggui
 					ImGui::Text("PhysX %d ms/frame", p->m_phys_msec_step);
 
 					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
-					ImGui::Text("PhysX bodies %d", p->m_active_body_count);
+					ImGui::Text("PhysX bodies %d", p->m_active_actor_count);
 
 					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
 					ImGui::Text("PhysX brushes %d", p->m_static_brush_count);

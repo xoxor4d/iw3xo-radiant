@@ -15,9 +15,8 @@ namespace ggui
 		// physX
 
 		float	phys_material[4];
-		float	phys_plane[4];
-
 		float	phys_debug_vis_scale;
+		bool	phys_force_frame_logic = false;
 
 		// *
 		// *
@@ -53,9 +52,6 @@ namespace ggui
 			set_gui_type(GUI_TYPE_DEF);
 
 			utils::vector::set_vec4(phys_material, 0.5f);
-			utils::vector::set_vec4(phys_plane, 0.0f);
-			phys_plane[2] = 1.0f;
-
 			phys_debug_vis_scale = 1.0f;
 		}
 

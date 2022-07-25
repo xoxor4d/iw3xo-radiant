@@ -1990,7 +1990,7 @@ namespace components
 			return;
 		}
 
-		if (effects::effect_can_play())
+		if (effects::effect_can_play() || GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic)
 		{
 			components::physx_impl::get()->frame();
 		}

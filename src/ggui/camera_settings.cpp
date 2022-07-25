@@ -2,6 +2,16 @@
 
 namespace ggui
 {
+#define SET_WIDGET_WIDTH_WITH_LABEL(label)			 \
+		label_size = ImGui::CalcTextSize((label)).x; \
+		ImGui::SetNextItemWidth(general_widget_width - label_size + label_left_offset);
+
+#define SET_WIDGET_WIDTH_REPEAT()					 \
+		ImGui::SetNextItemWidth(general_widget_width - label_size + label_left_offset);
+
+#define GET_WIDGET_WIDTH()							 \
+		general_widget_width - label_size + label_left_offset
+
 	void camera_settings_dialog::fakesun_settings()
 	{
 		ImGui::Indent(8.0f);
@@ -71,6 +81,13 @@ namespace ggui
 	{
 		//const auto& style = ImGui::GetStyle();
 
+		const float label_left_offset = 74.0f;
+
+		float general_widget_width;
+		float label_size;
+
+
+
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
 
@@ -107,8 +124,6 @@ namespace ggui
 
 		ImGui::DragFloat("Timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f);
 		ImGui::DragFloat("Repeat Delay", &fx_system::ed_looppause, 0.01f, 0.05f, FLT_MAX, "%.2f");
-
-		float general_widget_width;
 
 		ImGui::BeginDisabled(!components::effects::effect_can_play());
 		{
@@ -149,48 +164,98 @@ namespace ggui
 		}
 
 		// -----------------
-		ImGui::title_with_seperator("PhysX :: Groundplane Material Properties", true, 0.0f, 2.0f, 8.0f);
+		ImGui::title_with_seperator("PhysX :: General", true, 0.0f, 2.0f, 8.0f);
+
+		SET_WIDGET_WIDTH_WITH_LABEL("");
+
+		if (ImGui::Button("Generate Static Collision", ImVec2(GET_WIDGET_WIDTH(), ImGui::GetFrameHeight())))
+		{
+			const auto process = components::process::get();
+
+			process->set_indicator(components::process::INDICATOR_TYPE_PROGRESS);
+			process->set_indicator_string("Building Static Collision");
+			process->set_process_type(components::process::PROC_TYPE_GENERIC);
+
+			process->set_thread_callback([]
+				{
+					components::physx_impl::create_static_collision();
+				});
+
+			process->set_progress_callback([]
+				{
+					const auto current = static_cast<float>(components::physx_impl::get()->m_static_brush_count + components::physx_impl::get()->m_static_terrain_count);
+					const auto total = static_cast<float>(components::physx_impl::get()->m_static_brush_estimated_count + components::physx_impl::get()->m_static_terrain_estimated_count);
+					components::process::get()->m_indicator_progress = current / total;
+				});
+
+			process->create_process();
+		} TT("generate collision data for all non-selected brushes, terrain and curve patches, so that dynamic actors collide with the world");
+
+		if (ImGui::Button("Convert to misc_models", ImVec2(GET_WIDGET_WIDTH(), ImGui::GetFrameHeight())))
+		{
+			components::physx_impl::get()->convert_phys_to_misc_models();
+		} TT("converts all dynamic actors to misc_models");
+
+		SPACING(0.0f, 6.0f);
+		imgui::Indent(4.0f);
+
+		ImGui::Text("Static Brushes: %d", components::physx_impl::get()->m_static_brush_count);
+
+		const char* num_patches_str = utils::va("Static Patches: %d", components::physx_impl::get()->m_static_terrain_count);
+		imgui::SameLine(GET_WIDGET_WIDTH() - imgui::CalcTextSize(num_patches_str).x);
+		ImGui::Text(num_patches_str);
+
+		imgui::Unindent(4.0f);
+
+		// -----------------
+		ImGui::title_with_seperator("PhysX :: Static Collision Material Properties", true, 0.0f, 2.0f, 8.0f);
 
 		const auto phys = components::physx_impl::get();
 		//const auto separator_width = ImGui::GetContentRegionAvail().x - 8.0f;
 		//ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
 
+		SET_WIDGET_WIDTH_WITH_LABEL("Dynamic Friction");
 		ImGui::DragFloat("Static Friction", &phys_material[0], 0.05f, 0.0f, 100.0f, "%.2f");
+
+		SET_WIDGET_WIDTH_REPEAT();
 		ImGui::DragFloat("Dynamic Friction", &phys_material[1], 0.05f, 0.0f, 100.0f, "%.2f");
+
+		SET_WIDGET_WIDTH_REPEAT();
 		ImGui::DragFloat("Restitution", &phys_material[2], 0.05f, 0.0f, 100.0f, "%.2f");
 
-		SPACING(0.0f, 2.0f);
-
-		ImGui::DragFloat3("Plane XYZ", phys_plane, 0.05f, 0.0f, 1.0f, "%.2f");
-		ImGui::DragFloat("Plane Distance", &phys_plane[3], 0.05f, 0.0f, 1000.0f, "%.2f");
-
-		if (ImGui::Button("Create Plane", ImVec2(general_widget_width, ImGui::GetFrameHeight())))
+		if (ImGui::Button("Update", ImVec2(GET_WIDGET_WIDTH(), ImGui::GetFrameHeight())))
 		{
-			components::command::execute("physx_plane");
+			components::physx_impl::get()->update_static_collision_material();
 		}
 
 
 		// #
-		ImGui::title_with_seperator("PhysX :: General World Settings", true, 0.0f, 2.0f, 8.0f);
+		ImGui::title_with_seperator("PhysX :: World Settings", true, 0.0f, 2.0f, 8.0f);
 
+		SET_WIDGET_WIDTH_WITH_LABEL("Gravity");
 		static float physx_gravity[3] = { 0.0f, 0.0f, -800.0f };
 		if (ImGui::DragFloat3("Gravity", physx_gravity, 0.05f, -4000.0f, 4000.0f, "%.2f"))
 		{
 			phys->mScene->setGravity(physx::PxVec3(physx_gravity[0], physx_gravity[1], physx_gravity[2]));
 		}
 
+		SET_WIDGET_WIDTH_WITH_LABEL("Bounce Threshold");
 		auto bounce_threshold = phys->mScene->getBounceThresholdVelocity(); // 20
 		if (ImGui::DragFloat("Bounce Threshold", &bounce_threshold, 0.025f, 0.0f, 1000.0f, "%.2f"))
 		{
 			phys->mScene->setBounceThresholdVelocity(bounce_threshold);
 		}
 
+		SET_WIDGET_WIDTH_WITH_LABEL("Friction Threshold");
 		auto friction_threshold = phys->mScene->getFrictionOffsetThreshold(); // 0.0399999991
 		ImGui::DragFloat("Friction Threshold", &friction_threshold, 0.025f, 0.0f, 1000.0f, "%.2f");
 
 
 		// #
 		ImGui::title_with_seperator("PhysX :: Debug Visuals", true, 0.0f, 2.0f, 8.0f);
+
+		ImGui::Checkbox("Keep physics code running", &phys_force_frame_logic);
+		TT("Enable to always run physics code even if no effect is playing (useful for debug visualization)");
 
 		static bool physx_draw_debug = false;
 		if (ImGui::Checkbox("Enable debug visuals", &physx_draw_debug))
@@ -216,8 +281,8 @@ namespace ggui
 			phys->mScene->setVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT, physx_draw_debug_contacts ? phys_debug_vis_scale : 0.0f);
 		}
 
-		const auto text_width = ImGui::CalcTextSize("Visualization Box Size").x;
-		ImGui::SetNextItemWidth(general_widget_width - text_width - 8.0f);
+		label_size = ImGui::CalcTextSize("Visualization Box Size").x;
+		ImGui::SetNextItemWidth(general_widget_width - label_size + 74.0f);
 		if (ImGui::DragFloat("Visualization Box Size", &dvars::physx_debug_visualization_box_size->current.value, 0.5f, 0.0f, FLT_MAX, "%.2f"))
 		{
 			const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
@@ -230,31 +295,7 @@ namespace ggui
 			components::physx_impl::get()->mScene->setVisualizationCullingBox(cbox);
 		}
 
-		// #
-		// TODO:
-
-		if (ImGui::Button("Create Static Collision", ImVec2(general_widget_width, ImGui::GetFrameHeight())))
-		{
-			const auto process = components::process::get();
-
-			process->set_indicator(components::process::INDICATOR_TYPE_PROGRESS);
-			process->set_indicator_string("Building Static Collision");
-			process->set_process_type(components::process::PROC_TYPE_GENERIC);
-
-			process->set_thread_callback([]
-			{
-				components::physx_impl::create_static_collision();
-			});
-
-			process->set_progress_callback([]
-			{
-				const auto current = static_cast<float>(components::physx_impl::get()->m_static_brush_count + components::physx_impl::get()->m_static_terrain_count);
-				const auto total = static_cast<float>(components::physx_impl::get()->m_static_brush_estimated_count + components::physx_impl::get()->m_static_terrain_estimated_count);
-				components::process::get()->m_indicator_progress = current / total;
-			});
-
-			process->create_process();
-		}
+		SPACING(0.0f, 2.0f);
 
 		//ImGui::PopStyleColor(); // Separator
 	}
@@ -376,7 +417,7 @@ namespace ggui
 	bool camera_settings_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(400.0f, 220.0f);
-		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 720.0f); 
+		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 730.0f); 
 		
 		auto initial_window_pos = ggui::get_initial_window_pos();
 		
@@ -388,9 +429,9 @@ namespace ggui
 				camerawnd->rtt_get_position().y + 32.0f);
 		}
 
-		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
-		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(initial_window_pos, ImGuiCond_FirstUseEver);
+		imgui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
+		imgui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+		imgui::SetNextWindowPos(initial_window_pos, ImGuiCond_FirstUseEver);
 
 		// do not show window if no tabs are open
 
@@ -409,33 +450,34 @@ namespace ggui
 			return false;
 		}
 
-		if (!ImGui::Begin("Cam Toolbar Settings##cam_settings_window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings /*| ImGuiWindowFlags_NoTitleBar*/))
+		if (!imgui::Begin("Cam Toolbar Settings##cam_settings_window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings /*| ImGuiWindowFlags_NoTitleBar*/))
 		{
-			ImGui::End();
+			imgui::End();
 			return false;
 		}
 
 		static ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_AutoSelectNewTabs | ImGuiTabBarFlags_FittingPolicyResizeDown;
 
-		if (ImGui::BeginTabBar("##camera_window_tabbar", tab_bar_flags))
+		if (imgui::BeginTabBar("##camera_window_tabbar", tab_bar_flags))
 		{
 			for (int n = 0; n < IM_ARRAYSIZE(tab_states); n++)
 			{
 				ImGuiTabBarFlags flags = ImGuiTabItemFlags_None;
-				if(refocus_active_tab && n == active_tab)
+				if (refocus_active_tab && n == active_tab)
 				{
 					flags |= ImGuiTabItemFlags_SetSelected;
 					refocus_active_tab = false;
 				}
 
-				if (tab_states[n] && ImGui::BeginTabItem(tab_names[n], &tab_states[n], flags))
+				if (tab_states[n] && ImGui::BeginTabItem(tab_names[n], /*&tab_states[n]*/ nullptr, flags))
 				{
-					if(!refocus_active_tab)
+					imgui::BeginChild("##tab_child", ImVec2(0.0f, 0.0f), false);
+					if (!refocus_active_tab)
 					{
 						active_tab = n;
 					}
 
-					switch(n)
+					switch (n)
 					{
 					case tab_state_fakesun:
 						fakesun_settings();
@@ -450,18 +492,18 @@ namespace ggui
 						break;
 
 					default:
-						ImGui::Text("Unhandled Tab");
+						imgui::Text("Unhandled Tab");
 					}
 
-					
-					ImGui::EndTabItem();
+					imgui::EndChild();
+					imgui::EndTabItem();
 				}
 			}
-				
-			ImGui::EndTabBar();
+
+			imgui::EndTabBar();
 		}
 
-		ImGui::End();
+		imgui::End();
 
 		return true;
 	}
