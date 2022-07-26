@@ -64,6 +64,7 @@ ___
 ### New features not found within the original cod4 radiant:
  + completely revamped user interface with docking, tabs, saved layouts and more (Dear ImGui)
 + [play](https://xoxor4d.github.io/tutorials/iw3xradiant-using-effects/) && [edit / create](https://xoxor4d.github.io/tutorials/iw3xradiant-effects-editor/) && [export effects as CreateFX](https://xoxor4d.github.io/tutorials/iw3xradiant-createfx/) files right from within radiant (__makes effectsEd completely obsolete__)
++ Nvidia PhysX (used for effects - with functionality to convert dynamic actors to misc_models)
 + [d3dbsp loading](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp/) and bsp/light compilation from within radiant
 + [automatically generate reflections](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp-reflections/) within radiant when compiling the maps bsp
 + [live link](https://xoxor4d.github.io/tutorials/iw3xradiant-livelink/) (sync. brushes (with collision), camera and worldspawn settings between cod4 and radiant)   
@@ -130,7 +131,8 @@ ___
 > - General &ensp; &ensp; &ensp; output directory path -> `path-to-cod4-root\bin\`
 > - Debugging &ensp; command -> `path-to-cod4-root\bin\IW3xRadiant.exe`
 > - Debugging &ensp; working directory -> `path-to-cod4-root\bin\`
-6. Build -> Build Solution or run with debugger
+> + Alternatively: Create a new environment variable called `COD4_ROOT` that points to your cod4 directory and re-generate the project files.  
+6. Build -> Build Solution or run with debugger  
 
 <br>
 
@@ -181,6 +183,7 @@ https://discord.gg/t5jRGbj
 - [zfedoran - ImGui Spinner](https://github.com/ocornut/imgui/issues/1901)
 - [patrickcjk - imgui-notify](https://github.com/patrickcjk/imgui-notify)
 - [maluoi - tga writer](https://gist.github.com/maluoi/ade07688e741ab188841223b8ffeed22)
+- [NVIDIA - PhysX](https://github.com/NVIDIAGameWorks/PhysX)
 - [Infinity Ward - OG. Radiant and Effects Framework](https://www.infinityward.com)
 - [id-Software - OG. Radiant](https://github.com/id-Software/Quake-III-Arena/tree/master/q3radiant)
 

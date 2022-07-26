@@ -4,7 +4,7 @@ physx  = {
 
 function physx.import()
 	--[[ filter "configurations:Debug" ]]
-	libdirs { path.join(physx.source, "bin") }
+	libdirs { path.join(physx.source, "lib") }
 	--[[ filter "configurations:Release"
 		libdirs { path.join(physx.source, "bin/release") } ]]
 
@@ -18,12 +18,12 @@ function physx.import()
 		filter {}
 
 	filter "configurations:Release"
-		links { "/release/PhysX_32" }
-		links { "/release/PhysXCooking_32" }
-		links { "/release/PhysXCommon_32" }
-		links { "/release/PhysXExtensions_static_32" }
-		links { "/release/PhysXFoundation_32" }
-		links { "/release/PhysXPvdSDK_static_32" }
+		links { "/profile/PhysX_32" }
+		links { "/profile/PhysXCooking_32" }
+		links { "/profile/PhysXCommon_32" }
+		links { "/profile/PhysXExtensions_static_32" }
+		links { "/profile/PhysXFoundation_32" }
+		links { "/profile/PhysXPvdSDK_static_32" }
 		filter {}
 	
 	physx.includes()
