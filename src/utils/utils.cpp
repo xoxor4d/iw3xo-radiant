@@ -5,6 +5,16 @@
 
 namespace utils
 {
+	void show_external_console([[maybe_unused]] bool state)
+	{
+#ifndef DEBUG
+		if (const auto con = GetConsoleWindow(); IsWindowVisible(con))
+		{
+			ShowWindow(con, state);
+		}
+#endif
+	}
+
 	void mtx4x4_mul(game::GfxMatrix* mtx_out, game::GfxMatrix* a, game::GfxMatrix* b)
 	{
 		mtx_out->m[0][0] = a->m[0][0] * b->m[0][0] + a->m[0][1] * b->m[1][0] + b->m[2][0] * a->m[0][2] + b->m[3][0] * a->m[0][3];

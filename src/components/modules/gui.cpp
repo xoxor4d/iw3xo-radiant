@@ -386,12 +386,8 @@ namespace components
 			// handle file dialogs
 			ggui::file_dialog_frame();
 
-			// hide external console if it is visible
-			if(const auto con = GetConsoleWindow(); 
-				IsWindowVisible(con))
-			{
-				ShowWindow(con, SW_HIDE);
-			}
+			// hide external console
+			utils::show_external_console(false);
 
 #if 0
 			if (game::s_world->reflectionProbes && game::s_world->reflectionProbes->reflectionImage
@@ -563,13 +559,7 @@ namespace components
 
 	void on_map_load()
 	{
-		//GET_GUI(ggui::console_dialog)->clear_log();
-
-		if (const auto con = GetConsoleWindow();
-			!IsWindowVisible(con))
-		{
-			ShowWindow(con, SW_SHOW);
-		}
+		utils::show_external_console(true);
 	}
 
 	__declspec(naked) void on_map_load_stub()

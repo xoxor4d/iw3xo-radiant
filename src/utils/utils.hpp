@@ -4,6 +4,64 @@
 
 namespace utils
 {
+	class benchmark
+	{
+	public:
+		benchmark() { start(); }
+		benchmark(const char* operation)
+		{
+			m_operation_str = operation;
+			start();
+		}
+
+		~benchmark()
+		{
+			now();
+		}
+
+		void now(const char* sub_operation_str = nullptr)
+		{
+#if defined(DEBUG) || defined(BENCHMARK)
+			const auto start = std::chrono::time_point_cast<std::chrono::microseconds>(m_start).time_since_epoch().count();
+			const auto end_time = std::chrono::high_resolution_clock::now();
+
+			const auto end = std::chrono::time_point_cast<std::chrono::microseconds>(end_time).time_since_epoch().count();
+			const auto ms = static_cast<float>((end - start)) * 0.001f;
+
+			const auto last_end = std::chrono::time_point_cast<std::chrono::microseconds>(m_last).time_since_epoch().count();
+			const auto ms_diff = static_cast<float>(end - last_end) * 0.001f;
+
+			const char* op_str = sub_operation_str ? sub_operation_str : m_operation_str ? m_operation_str : nullptr;
+			if (op_str)
+			{
+				game::printf_to_console(">> [ %.3f ms ]\t[ ~ %.3f ms ]\tfor operation [ %s ]\n", ms, ms_diff, op_str);
+			}
+			else
+			{
+				game::printf_to_console(">> [ %.3f ms ]\t[ ~ %.3f ms ]\tbenchmark end\n", ms, ms_diff);
+			}
+
+			m_last = end_time;
+#endif
+		}
+
+	private:
+
+		void start()
+		{
+#if defined(DEBUG) || defined(BENCHMARK)
+			m_start = std::chrono::high_resolution_clock::now();
+			m_last = m_start;
+#endif
+		}
+
+		const char* m_operation_str = nullptr;
+		std::chrono::time_point<std::chrono::high_resolution_clock> m_start;
+		std::chrono::time_point<std::chrono::high_resolution_clock> m_last;
+	};
+
+	void show_external_console(bool state);
+
 	void mtx4x4_mul(game::GfxMatrix* mtx_out, game::GfxMatrix* a, game::GfxMatrix* b);
 	void normalize_color3(float* src, float* dest);
 	char pack_float(const float from);

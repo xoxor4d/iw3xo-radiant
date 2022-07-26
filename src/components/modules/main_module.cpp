@@ -474,7 +474,6 @@ namespace components
 		utils::hook::nop(0x48977C, 5); // enter prefab
 		utils::hook::nop(0x489BA6, 5); // leave prefab
 
-
 		// * ---------------------------
 
 		/*command::register_command("rope"s, [](const std::vector<std::string>& args)

@@ -754,10 +754,7 @@ namespace components
 		const auto system = fx_system::FX_GetSystem(0);
 		const auto entity_gui = GET_GUI(ggui::entity_dialog);
 
-		if (const auto con = GetConsoleWindow(); !IsWindowVisible(con))
-		{
-			ShowWindow(con, SW_SHOW);
-		}
+		utils::show_external_console(true);
 
 		m_converted_misc_model_count = 0;
 
@@ -782,29 +779,52 @@ namespace components
 				if (elem_def->elemType == fx_system::FX_ELEM_TYPE_MODEL && elem_def->flags & fx_system::FX_ELEM_USE_MODEL_PHYSICS)
 				{
 					const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(elem->___u8.physObjId);
-					const auto pos = actor->getGlobalPose().p;
 
 					if (elem_def->visuals.instance.model)
 					{
-						if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+						const auto pos = actor->getGlobalPose().p;
+						const auto quat = actor->getGlobalPose().q;
+
+						float axis[3][3];
+						fx_system::UnitQuatToAxis(&quat.x, axis);
+
+						game::vec3_t angles = {};
+						game::AxisToAngles(axis, angles);
+
 						{
-							game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+							//utils::benchmark timer;
+
+							if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+							{
+								game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+							}
+
+							//timer.now("CreateEntityBrush");
+
+							// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+							g_block_radiant_modeldialog = true;
+							game::CreateEntityFromName("misc_model");
+							g_block_radiant_modeldialog = false;
+							//timer.now("CreateEntityFromName");
+
+							entity_gui->add_prop("model", elem_def->visuals.instance.model->name, &no_undo);
+							//timer.now("add_prop - model");
+
+							char str_buf[64] = {};
+							if (sprintf_s(str_buf, "%.3f %.3f %.3f", pos[0], pos[1], pos[2]))
+							{
+								//timer.now("sprintf_s - origin");
+								entity_gui->add_prop("origin", str_buf, &no_undo);
+							}
+
+							if (sprintf_s(str_buf, "%.3f %.3f %.3f", angles[0], angles[1], angles[2]))
+							{
+								entity_gui->add_prop("angles", str_buf, &no_undo);
+							}
 						}
+						
 
-						// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
-						g_block_radiant_modeldialog = true;
-						game::CreateEntityFromName("misc_model");
-						g_block_radiant_modeldialog = false;
-
-						entity_gui->add_prop("model", elem_def->visuals.instance.model->name, &no_undo);
-
-						char origin_str_buf[64] = {};
-						if (sprintf_s(origin_str_buf, "%.3f %.3f %.3f", pos[0], pos[1], pos[2]))
-						{
-							entity_gui->add_prop("origin", origin_str_buf, &no_undo);
-						}
-
-						game::printf_to_console("spawned model #%d at [ %.2f , %.2f , %.2f ]\n", m_converted_misc_model_count, pos[0], pos[1], pos[2]);
+						game::printf_to_console("spawned model #%d\n", m_converted_misc_model_count);
 						m_converted_misc_model_count++;
 
 						game::Select_Deselect(true);
@@ -819,11 +839,7 @@ namespace components
 
 		m_converted_misc_model_count = 0;
 
-		// hide external console if it is visible
-		if (const auto con = GetConsoleWindow(); IsWindowVisible(con))
-		{
-			ShowWindow(con, SW_HIDE);
-		}
+		utils::show_external_console(false);
 	}
 
 

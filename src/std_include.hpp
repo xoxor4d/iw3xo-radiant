@@ -15,6 +15,8 @@
 #define AssertS(str)	if(IsDebuggerPresent()) __debugbreak();	else {	\
 						game::Com_Error("%s\nLine %d :: %s\n%s ", str, __LINE__, __func__, __FILE__); }
 
+#define BENCHMARK // benchmark prints in release mode
+
 // Version number
 #include <version.hpp>
 
@@ -110,7 +112,6 @@
 #endif
 
 #include "game/structs.hpp"
-#include "utils/utils.hpp"
 #include "utils/memory.hpp"
 #include "utils/hooking.hpp"
 #include "utils/function.hpp"
@@ -119,6 +120,7 @@
 
 #include "common/afx.hpp"
 #include "game/functions.hpp"
+#include "utils/utils.hpp"
 #include "game/dvars.hpp"
 
 #include "fx_system/fx_dvars.hpp"
