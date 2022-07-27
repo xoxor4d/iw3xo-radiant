@@ -314,6 +314,7 @@ namespace components
 		}
 	}
 
+
 	void physx_impl::create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset, const float* quat)
 	{
 		// reference - Q3 - Terrain_GetTriangle
@@ -513,6 +514,7 @@ namespace components
 			m_static_terrain_count++;
 		}
 	}
+
 
 	bool exclude_brushes_from_static_collision(game::selbrush_def_t* b)
 	{
@@ -749,6 +751,7 @@ namespace components
 		phys->m_static_terrain_estimated_count = 0;
 	}
 
+
 	void physx_impl::convert_phys_to_misc_models()
 	{
 		const auto system = fx_system::FX_GetSystem(0);
@@ -792,28 +795,26 @@ namespace components
 						game::AxisToAngles(axis, angles);
 
 						{
-							//utils::benchmark timer;
-
 							if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
 							{
 								game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
 							}
 
-							//timer.now("CreateEntityBrush");
+							//utils::benchmark timer;
 
 							// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
 							g_block_radiant_modeldialog = true;
 							game::CreateEntityFromName("misc_model");
 							g_block_radiant_modeldialog = false;
-							//timer.now("CreateEntityFromName");
+
+							// CreateEntityFromName takes ~ 24 ms
+							//timer.now("CreateEntityBrush");
 
 							entity_gui->add_prop("model", elem_def->visuals.instance.model->name, &no_undo);
-							//timer.now("add_prop - model");
 
 							char str_buf[64] = {};
 							if (sprintf_s(str_buf, "%.3f %.3f %.3f", pos[0], pos[1], pos[2]))
 							{
-								//timer.now("sprintf_s - origin");
 								entity_gui->add_prop("origin", str_buf, &no_undo);
 							}
 
@@ -866,6 +867,7 @@ namespace components
 
 		const physx::PxQuat quat = actor->getGlobalPose().q;
 		const auto pos = actor->getGlobalPose().p;
+
 		out_pos[0] = pos.x;
 		out_pos[1] = pos.y;
 		out_pos[2] = pos.z;
@@ -885,8 +887,20 @@ namespace components
 		utils::vector::subtract(model->maxs, model->mins, half_bounds);
 		utils::vector::scale(half_bounds, 0.5f, half_bounds);
 
-		const auto box_geom = physx::PxBoxGeometry(half_bounds[0], half_bounds[1], half_bounds[2]);
-		physx::PxShape* shape = mPhysics->createShape(box_geom, *m_static_collision_material, true);
+		physx::PxShape* shape = nullptr;
+
+		switch(m_effect_shape.current_selection)
+		{
+		default:
+		case EFFECT_PHYSX_SHAPE::CUBE:
+			shape = mPhysics->createShape(physx::PxBoxGeometry(half_bounds[0], half_bounds[1], half_bounds[2]), *m_static_collision_material, true);
+			break;
+
+		case EFFECT_PHYSX_SHAPE::SPHERE:
+			shape = mPhysics->createShape(physx::PxSphereGeometry(model->radius), *m_static_collision_material, true);
+			break;
+		}
+
 		shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, true);
 
 		game::vec3_t origin_offset;

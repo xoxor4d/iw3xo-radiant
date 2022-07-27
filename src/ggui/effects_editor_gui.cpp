@@ -1661,19 +1661,55 @@ namespace ggui
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
 
-		bool phys_enabled = false;
-		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable Physics", elem, fx_system::FX_ELEM_USE_COLLISION, &phys_enabled));
+		bool legacy_physics_enabled = false;
+		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable Physics (General)", elem, fx_system::FX_ELEM_USE_COLLISION, &legacy_physics_enabled));
 
+		bool physx_enabled = false;
 		if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
 		{
-			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable model physics simulation", elem, fx_system::FX_ELEM_USE_MODEL_PHYSICS));
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable simulation (PhysX / ODE)", elem, fx_system::FX_ELEM_USE_MODEL_PHYSICS, &physx_enabled));
+			TT("This enables PhysX (in radiant) and the stock physics engine in cod4");
 		}
 
-		if (phys_enabled)
+		bool initial_padding = false;
+
+		if (physx_enabled)
 		{
+			/*ImGui::title_with_seperator("PhysX only settings", true, 0, 2.0f, 8.0f);
+			initial_padding = true;
+
+			const char* combo_physx_shapes[] =
+			{
+				"Cube",
+				"Sphere"
+			};
+
+			if (ImGui::BeginCombo("##combo_physx_shape", combo_physx_shapes[elem->physx_shape], ImGuiComboFlags_HeightLarge))
+			{
+				for (auto i = 0; i < IM_ARRAYSIZE(combo_physx_shapes); i++)
+				{
+					if (ImGui::Selectable(combo_physx_shapes[i], elem->physx_shape == i))
+					{
+						elem->physx_shape = i;
+					}
+
+					if (elem->physx_shape == i)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+
+				ImGui::EndCombo();
+			}*/
+		}
+
+		if (legacy_physics_enabled)
+		{
+			ImGui::title_with_seperator("Legacy physics settings unrelated to PhysX", initial_padding, 0, 2.0f, 8.0f);
+
 			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Bounce / Elasticity", &elem->elasticity, 0.1f, 0.0f, 1.0f, "%.2f"));
 
-			ImGui::title_with_seperator("Impacts", false, 0, 2.0f, 8.0f);
+			ImGui::title_with_seperator("Impacts", true, 0, 2.0f, 8.0f);
 			{
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Kill effect on impact", elem, fx_system::FX_ELEM_DIE_ON_TOUCH));
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Collide with item clip", elem, fx_system::FX_ED_FLAG_USE_ITEM_CLIP));
@@ -1777,9 +1813,7 @@ namespace ggui
 			}
 		}
 
-
-
-
+		
 		ImGui::EndChild();
 		on_modified(modified);
 	}

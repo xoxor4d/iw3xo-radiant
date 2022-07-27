@@ -49,6 +49,25 @@ namespace components
 
 		float m_visualization_cullingbox_size = 1000.0f;
 
+		struct EFFECT_PHYSX_SHAPE
+		{
+			enum ENUM : int
+			{
+				CUBE,
+				SPHERE,
+			};
+
+			const char* strings[2] =
+			{
+				"Cube",
+				"Sphere"
+			};
+
+			int current_selection = 0;
+		};
+
+		EFFECT_PHYSX_SHAPE m_effect_shape;
+
 		physx::PxMaterial* m_static_collision_material = nullptr;
 
 		uint32_t m_static_brush_estimated_count;
