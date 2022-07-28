@@ -55,18 +55,22 @@ namespace components
 			{
 				CUBE,
 				SPHERE,
+				CUSTOM
 			};
 
-			const char* strings[2] =
+			const char* strings[3] =
 			{
 				"Cube",
-				"Sphere"
+				"Sphere",
+				"Custom"
 			};
 
-			int current_selection = 0;
+			int index = 0;
+			float scalar = 1.0f;
+			physx::PxConvexMesh* custom_shape;
 		};
 
-		EFFECT_PHYSX_SHAPE m_effect_shape;
+		EFFECT_PHYSX_SHAPE m_effect_shape = {};
 
 		physx::PxMaterial* m_static_collision_material = nullptr;
 
@@ -98,6 +102,8 @@ namespace components
 		void frame();
 		physx::PxMaterial* create_material(game::PhysPreset* preset);
 
+
+		void create_shape_from_selection(game::selbrush_def_t* sb);
 
 		void create_static_brush(game::selbrush_def_t* sb, bool is_prefab = false, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
 		void create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);

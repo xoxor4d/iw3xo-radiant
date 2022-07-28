@@ -1401,7 +1401,7 @@ namespace components
 
 	void r_setup_pass_surflists(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
 	{
-		if(d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled)
+		if (d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled)
 		{
 			//state->depthRangeNear = 0.01337f;
 			state->viewport.x = 1;
@@ -2547,7 +2547,7 @@ namespace components
 				R_DrawLit(&cmdBuf, viewInfo);
 			}
 
-			if(viewInfo->decalInfo.viewInfo && viewInfo->decalInfo.drawSurfs)
+			if (viewInfo->decalInfo.viewInfo && viewInfo->decalInfo.drawSurfs)
 			{
 				R_DrawDecal(&cmdBuf, viewInfo);
 			}			
@@ -3609,7 +3609,13 @@ namespace components
 		utils::hook::nop(0x500F4C, 5); // < on shutdown
 
 		// silence assert 'localDrawSurf->fields.prepass == MTL_PREPASS_NONE'
-		utils::hook::nop(0x52EE39, 5); 
+		utils::hook::nop(0x52EE39, 5);
+
+		// silence assert 'drawSurf.fields.primaryLightIndex doesn't index info->viewInfo->shadowableLightCount'
+		utils::hook::nop(0x55A3A3, 5);
+
+		// silence assert  '((region == DRAW_SURF_FX_CAMERA_EMISSIVE) || (drawSurf == scene.drawSurfs[region]) || (drawSurf->fields.primarySortKey >= (drawSurf - 1)->fields.primarySortKey))'
+		utils::hook::nop(0x52EE95, 5);
 
 		// * ------
 

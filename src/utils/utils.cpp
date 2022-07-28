@@ -10,7 +10,7 @@ namespace utils
 #ifndef DEBUG
 		if (const auto con = GetConsoleWindow(); IsWindowVisible(con))
 		{
-			ShowWindow(con, state);
+			ShowWindow(con, state ? SW_SHOW : SW_HIDE);
 		}
 #endif
 	}

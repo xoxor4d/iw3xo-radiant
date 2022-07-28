@@ -99,45 +99,6 @@ namespace components
 				}
 			}
 
-			/*const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
-			for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
-			{
-				const auto& line = rb.getLines()[i];
-
-				game::GfxPointVertex vert[2];
-				vert[0].xyz[0] = line.pos0.x;
-				vert[0].xyz[1] = line.pos0.y;
-				vert[0].xyz[2] = line.pos0.z;
-				vert[0].color.packed = line.color0;
-
-				vert[1].xyz[0] = line.pos1.x;
-				vert[1].xyz[1] = line.pos1.y;
-				vert[1].xyz[2] = line.pos1.z;
-				vert[1].color.packed = line.color1;
-
-				renderer::R_AddLineCmd(1, 4, 3, vert);
-
-				if (mScene->getVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT) > 0.0f)
-				{
-					renderer::R_AddPointCmd(1, 12, 3, vert);
-				}
-			}*/
-
-			// physx seems to not use points at all
-			/*for (physx::PxU32 i = 0; i < rb.getNbPoints(); i++)
-			{
-				const auto& point = rb.getPoints()[i];
-
-				game::GfxPointVertex vert;
-				vert.xyz[0] = point.pos.x;
-				vert.xyz[1] = point.pos.y;
-				vert.xyz[2] = point.pos.z;
-				vert.color.packed = point.color;
-
-				renderer::R_AddLineCmd(1, 4, 3, &vert);
-			}*/
-
-
 			if (m_time_last_snapshot > time_now || time_now > m_time_last_update)
 			{
 				Assert();
@@ -166,36 +127,37 @@ namespace components
 
 		// keep drawing visualization if 'phys_force_frame_logic' is enabled
 		const bool force_update = GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic;
-		if ((force_update && !efx) || m_simulation_running)
+		if ((force_update && !efx) || m_simulation_running || (effects::effect_is_paused() && efx))
 		{
 			// update 
-			if ((force_update && !efx && !m_simulation_running))
+			if ((force_update && !efx && !m_simulation_running) 
+				|| force_update && efx && effects::effect_is_paused())
 			{
 				physx_impl::run_frame(1);
 			}
-		}
 
-		const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
-		for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
-		{
-			const auto& line = rb.getLines()[i];
-
-			game::GfxPointVertex vert[2];
-			vert[0].xyz[0] = line.pos0.x;
-			vert[0].xyz[1] = line.pos0.y;
-			vert[0].xyz[2] = line.pos0.z;
-			vert[0].color.packed = line.color0;
-
-			vert[1].xyz[0] = line.pos1.x;
-			vert[1].xyz[1] = line.pos1.y;
-			vert[1].xyz[2] = line.pos1.z;
-			vert[1].color.packed = line.color1;
-
-			renderer::R_AddLineCmd(1, 4, 3, vert);
-
-			if (mScene->getVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT) > 0.0f)
+			const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
+			for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
 			{
-				renderer::R_AddPointCmd(1, 12, 3, vert);
+				const auto& line = rb.getLines()[i];
+
+				game::GfxPointVertex vert[2];
+				vert[0].xyz[0] = line.pos0.x;
+				vert[0].xyz[1] = line.pos0.y;
+				vert[0].xyz[2] = line.pos0.z;
+				vert[0].color.packed = line.color0;
+
+				vert[1].xyz[0] = line.pos1.x;
+				vert[1].xyz[1] = line.pos1.y;
+				vert[1].xyz[2] = line.pos1.z;
+				vert[1].color.packed = line.color1;
+
+				renderer::R_AddLineCmd(1, 4, 3, vert);
+
+				if (mScene->getVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT) > 0.0f)
+				{
+					renderer::R_AddPointCmd(1, 12, 3, vert);
+				}
 			}
 		}
 	}
@@ -203,6 +165,63 @@ namespace components
 	physx::PxMaterial* physx_impl::create_material(game::PhysPreset* preset)
 	{
 		return mPhysics->createMaterial(preset->friction, preset->friction, preset->bounce);
+	}
+
+	// saves ptr to shape in 'm_effect_shape.custom_shape'
+	void physx_impl::create_shape_from_selection(game::selbrush_def_t* sb)
+	{
+		if (sb)
+		{
+			std::vector<physx::PxVec3> verts;
+			verts.reserve(50);
+
+			game::vec3_t brush_center;
+			utils::vector::add(sb->def->mins, sb->def->maxs, brush_center);
+			utils::vector::scale(brush_center, 0.5f, brush_center);
+
+			for (auto f = 0; f < sb->def->facecount; f++)
+			{
+				const auto face = &sb->def->brush_faces[f];
+				for (auto p = 0; face->w && p < face->w->numPoints; p++)
+				{
+					game::vec3_t tw_point = { face->w->points[p][0], face->w->points[p][1], face->w->points[p][2] };
+					utils::vector::subtract(tw_point, brush_center, tw_point);
+
+					const physx::PxVec3 t_point = { tw_point[0], tw_point[1], tw_point[2] };
+					bool contains = false;
+
+					for (auto x = 0; x < static_cast<int>(verts.size()); x++)
+					{
+						if (utils::vector::compare(&verts[x].x, &t_point[0]))
+						{
+							contains = true;
+							break;
+						}
+					}
+
+					if (!contains)
+					{
+						verts.push_back(t_point);
+					}
+				}
+			}
+
+
+			physx::PxConvexMeshDesc convexDesc;
+			convexDesc.points.count = verts.size();
+			convexDesc.points.stride = sizeof(physx::PxVec3);
+			convexDesc.points.data = verts.data();
+			convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+
+			physx::PxDefaultMemoryOutputStream buf;
+			physx::PxConvexMeshCookingResult::Enum result;
+
+			if (mCooking->cookConvexMesh(convexDesc, buf, &result))
+			{
+				physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+				m_effect_shape.custom_shape = mPhysics->createConvexMesh(input);
+			}
+		}
 	}
 
 	// no nullptr checks besides the selected brush itself
@@ -860,7 +879,6 @@ namespace components
 		actor->release();
 	}
 
-
 	void physx_impl::obj_get_interpolated_state(int id, float* out_pos, float* out_quat)
 	{
 		const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(id);
@@ -889,15 +907,28 @@ namespace components
 
 		physx::PxShape* shape = nullptr;
 
-		switch(m_effect_shape.current_selection)
+		if (m_effect_shape.index == EFFECT_PHYSX_SHAPE::CUSTOM && !m_effect_shape.custom_shape)
+		{
+			m_effect_shape.index = EFFECT_PHYSX_SHAPE::CUBE;
+			game::printf_to_console("[!] No custom shape defined! Create a custom shape from a selected brush first.");
+			imgui::Toast(ImGuiToastType_Warning, "PhysX custom shape", "No custom shape defined!\nCreate a custom shape from a selected brush first.");
+		}
+
+		switch(m_effect_shape.index)
 		{
 		default:
 		case EFFECT_PHYSX_SHAPE::CUBE:
-			shape = mPhysics->createShape(physx::PxBoxGeometry(half_bounds[0], half_bounds[1], half_bounds[2]), *m_static_collision_material, true);
+			shape = mPhysics->createShape(
+				physx::PxBoxGeometry(half_bounds[0] * m_effect_shape.scalar, half_bounds[1] * m_effect_shape.scalar, half_bounds[2] * m_effect_shape.scalar), 
+				*m_static_collision_material, true);
 			break;
 
 		case EFFECT_PHYSX_SHAPE::SPHERE:
-			shape = mPhysics->createShape(physx::PxSphereGeometry(model->radius), *m_static_collision_material, true);
+			shape = mPhysics->createShape(physx::PxSphereGeometry(model->radius * m_effect_shape.scalar), 
+				*m_static_collision_material, true);
+			break;
+		case EFFECT_PHYSX_SHAPE::CUSTOM:
+			shape = mPhysics->createShape(physx::PxConvexMeshGeometry(m_effect_shape.custom_shape), *m_static_collision_material, true);
 			break;
 		}
 

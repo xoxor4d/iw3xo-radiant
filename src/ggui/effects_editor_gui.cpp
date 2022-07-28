@@ -1671,41 +1671,31 @@ namespace ggui
 			TT("This enables PhysX (in radiant) and the stock physics engine in cod4");
 		}
 
-		bool initial_padding = false;
-
 		if (physx_enabled)
 		{
-			/*ImGui::title_with_seperator("PhysX only settings", true, 0, 2.0f, 8.0f);
-			initial_padding = true;
+			SPACING(0.0f, 8.0f);
 
-			const char* combo_physx_shapes[] =
+			int color_count = 0;
+			imgui::PushStyleColor(ImGuiCol_Button, ImVec4(0.44f, 0.69f, 0.0f, 1.0f)); color_count++;
+			imgui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.40f, 0.72f, 0.10f, 1.0f)); color_count++;
+			imgui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.73f, 0.10f, 1.0f)); color_count++;
+			imgui::PushStyleColor(ImGuiCol_Text, ImVec4(0.1f, 0.1f, 0.1f, 1.0f)); color_count++;
+			imgui::PushFontFromIndex(ggui::BOLD_18PX);
+
+			if (imgui::Button("Open PhysX Settings", ImVec2(imgui::GetWindowWidth() - 40.0f, imgui::GetFrameHeight())))
 			{
-				"Cube",
-				"Sphere"
-			};
+				const auto cs = GET_GUI(ggui::camera_settings_dialog);
+				cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
+				cs->focus_tab(camera_settings_dialog::tab_state_effects);
+			}
 
-			if (ImGui::BeginCombo("##combo_physx_shape", combo_physx_shapes[elem->physx_shape], ImGuiComboFlags_HeightLarge))
-			{
-				for (auto i = 0; i < IM_ARRAYSIZE(combo_physx_shapes); i++)
-				{
-					if (ImGui::Selectable(combo_physx_shapes[i], elem->physx_shape == i))
-					{
-						elem->physx_shape = i;
-					}
-
-					if (elem->physx_shape == i)
-					{
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-
-				ImGui::EndCombo();
-			}*/
+			imgui::PopFont();
+			imgui::PopStyleColor(color_count);
 		}
 
 		if (legacy_physics_enabled)
 		{
-			ImGui::title_with_seperator("Legacy physics settings unrelated to PhysX", initial_padding, 0, 2.0f, 8.0f);
+			ImGui::title_with_seperator("Legacy physics settings unrelated to PhysX", true, 0, 2.0f, 8.0f);
 
 			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Bounce / Elasticity", &elem->elasticity, 0.1f, 0.0f, 1.0f, "%.2f"));
 
