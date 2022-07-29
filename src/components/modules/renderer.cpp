@@ -1195,6 +1195,8 @@ namespace components
 		}
 	}
 
+	// 0x558D2E renders effect xmodels
+
 	void r_setup_pass_xmodel(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
 	{
 		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) || 
@@ -1405,6 +1407,71 @@ namespace components
 		{
 			//state->depthRangeNear = 0.01337f;
 			state->viewport.x = 1;
+		}
+
+		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
+			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
+		{
+			if (state->techType == game::TECHNIQUE_FAKELIGHT_NORMAL)
+			{
+				bool has_normal = false;
+				bool has_spec = false;
+
+				for (auto tex = 0; tex < state->material->textureCount; tex++)
+				{
+					if (state->material->textureTable[tex].u.image->semantic == 0x5 || state->material->textureTable[tex].u.image->semantic == 0x1) // or identitynormal
+					{
+						has_normal = true;
+					}
+
+					has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
+				}
+
+				if (has_spec && has_normal)
+				{
+					bool has_scroll = false;
+					if (state->material->techniqueSet && state->material->techniqueSet->techniques[5])
+					{
+						has_scroll = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "scroll");
+					}
+
+					if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_scroll_dtex" : "radiant_fakesun_dtex", 1); // fakesun_normal_dtex
+						tech)
+					{
+						state->technique = tech;
+
+						// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+										image && image->texture.data)
+						{
+							game::R_SetSampler(0, state, 1, (char)114, image);
+						}
+					}
+				}
+				else if (!has_spec && has_normal)
+				{
+					bool has_scroll = false;
+					if (state->material->techniqueSet && state->material->techniqueSet->techniques[5])
+					{
+						has_scroll = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "scroll");
+					}
+
+					if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_no_spec_scroll_dtex" : "radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
+									tech)
+					{
+						state->technique = tech;
+
+						// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+							image && image->texture.data)
+						{
+							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
+							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
+								(0x538D70)(0, state, 1, 114, image);
+						}
+					}
+				}
+			}
 		}
 		
 		r_setup_pass_general(source, state, passIndex);
@@ -2026,6 +2093,8 @@ namespace components
 		}
 		else
 		{
+			// a bit of R_RenderScene
+
 			const auto frontEndDataOut = game::get_frontenddata();
 			const auto viewInfo = &frontEndDataOut->viewInfo[0];
 
@@ -2037,13 +2106,13 @@ namespace components
 			viewInfo->sceneDef = game::scene->def;
 
 			memcpy(&viewInfo->viewParms, viewParms, sizeof(game::GfxViewParms));
+			viewInfo->viewParms.zNear = game::Dvar_FindVar("r_zNear")->current.value;
 
 			const auto window = game::dx->windows[ggui::CCAMERAWND];
 			const game::GfxViewport viewport = { 0, 0, window.width, window.height };
 
 			viewInfo->sceneViewport = viewport;
 			viewInfo->displayViewport = viewport;
-			
 
 			// needed for debug plumes (3D text in space)
 			game::rg->debugViewParms = viewParms;
@@ -2053,6 +2122,11 @@ namespace components
 
 			// R_AddAllSceneEntSurfacesCamera (Worker CMD) - add/draw effect xmodels 
 			utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523660)(viewInfo);
+
+			// R_SortDrawSurfs
+			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[1], game::scene->drawSurfCount[1]);
+			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[4], game::scene->drawSurfCount[4]);
+			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[10], game::scene->drawSurfCount[10]);
 
 			// *
 			// lit drawlist (effect xmodels)
@@ -2074,6 +2148,30 @@ namespace components
 
 			viewInfo->litInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_lit_drawSurfCount];
 			viewInfo->litInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_lit_drawSurfCount;
+
+
+
+			// R_SortDrawSurfs
+			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[6], game::scene->drawSurfCount[6]);
+
+			R_InitDrawSurfListInfo(&viewInfo->decalInfo);
+			viewInfo->decalInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL;
+			viewInfo->decalInfo.viewInfo = viewInfo;
+			viewInfo->decalInfo.viewOrigin[0] = viewParms->origin[0];
+			viewInfo->decalInfo.viewOrigin[1] = viewParms->origin[1];
+			viewInfo->decalInfo.viewOrigin[2] = viewParms->origin[2];
+			viewInfo->decalInfo.viewOrigin[3] = viewParms->origin[3];
+			viewInfo->decalInfo.cameraView = 1;
+			const int initial_decal_drawSurfCount = frontEndDataOut->drawSurfCount;
+
+			// R_MergeAndEmitDrawSurfLists
+			utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(3, 6);
+
+			viewInfo->decalInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_decal_drawSurfCount];
+			viewInfo->decalInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_decal_drawSurfCount;
+
+			// R_SortDrawSurfs
+			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[12], game::scene->drawSurfCount[12]);
 
 
 			// *

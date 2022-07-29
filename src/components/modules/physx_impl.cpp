@@ -841,6 +841,11 @@ namespace components
 							{
 								entity_gui->add_prop("angles", str_buf, &no_undo);
 							}
+
+							if (elem_def->visSamples && elem_def->visSamples->base.scale != 1.0f)
+							{
+								entity_gui->add_prop("modelscale", std::to_string(elem_def->visSamples->base.scale).c_str(), &no_undo);
+							}
 						}
 						
 
