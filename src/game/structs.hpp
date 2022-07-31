@@ -608,7 +608,9 @@ namespace game
 		char pad_0x0010[52];
 		void* modelInst;
 		prefab_s* prefab;
-		int version;
+		//int version;
+		uint16_t version0;
+		uint16_t version1;
 		char* mapLayer;
 		int someCount;
 		bool bModelFailed;
@@ -624,7 +626,8 @@ namespace game
 		int epairEdits;
 		char pad_0x0080[8];
 		int refCount;
-		char pad_0x008C[4];
+		bool custom_no_cull;
+		char pad_0x008C[3];
 	};
 	STATIC_ASSERT_OFFSET(entity_s, modelInst, 0x44);
 	STATIC_ASSERT_OFFSET(entity_s, eclass, 0x60);

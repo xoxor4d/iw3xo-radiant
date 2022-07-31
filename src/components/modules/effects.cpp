@@ -416,7 +416,8 @@ namespace components
 
 		fx_system::ed_repeat_tickcount = saved_tick;
 
-		if (effects::effect_is_playing())
+		const bool force_update = GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic;
+		if (effects::effect_is_playing() || (force_update && !effects::effect_is_paused()))
 		{
 			auto tick_inc = static_cast<int>( static_cast<double>(tick_cmp) * static_cast<double>(fx_system::ed_timescale) + 9.313225746154785e-10);
 			if(tick_inc <= 1)
@@ -498,6 +499,8 @@ namespace components
 
 	void camera_onpaint_intercept()
 	{
+		physx_impl::get()->tick_playback();
+
 		effects::fx_origin_frame();
 
 		effects::tick_playback();

@@ -80,13 +80,12 @@ namespace ggui
 	void camera_settings_dialog::effect_settings()
 	{
 		//const auto& style = imgui::GetStyle();
+		const auto phys = components::physx_impl::get();
 
 		const float label_left_offset = 74.0f;
 
 		float general_widget_width;
 		float label_size;
-
-
 
 		imgui::Indent(8.0f);
 		imgui::Spacing();
@@ -125,7 +124,7 @@ namespace ggui
 		imgui::DragFloat("Timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f);
 		imgui::DragFloat("Repeat Delay", &fx_system::ed_looppause, 0.01f, 0.05f, FLT_MAX, "%.2f");
 
-		imgui::BeginDisabled(!components::effects::effect_can_play());
+		//imgui::BeginDisabled(!components::effects::effect_can_play());
 		{
 			static int tick_rate = 50;
 			static int held_timeout = 0;
@@ -140,6 +139,7 @@ namespace ggui
 			if (imgui::Button("Advance Tick", ImVec2(general_widget_width, imgui::GetFrameHeight())))
 			{
 				fx_system::ed_playback_tick += tick_rate;
+				phys->m_phys_sim_tick += tick_rate;
 			}
 			else if (imgui::IsItemHovered())
 			{
@@ -148,6 +148,7 @@ namespace ggui
 					if (held_timeout > 50)
 					{
 						fx_system::ed_playback_tick += tick_rate;
+						phys->m_phys_sim_tick += tick_rate;
 					}
 					else
 					{
@@ -160,13 +161,14 @@ namespace ggui
 				}
 			}
 
-			imgui::EndDisabled();
+			//imgui::EndDisabled();
 		}
 
 		// -----------------
 		imgui::title_with_seperator("PhysX :: General", true, 0.0f, 2.0f, 8.0f);
 
-		const auto phys = components::physx_impl::get();
+		
+		const bool single_brush_selected = game::is_single_brush_selected(false);
 
 		SET_WIDGET_WIDTH_WITH_LABEL("");
 
@@ -210,6 +212,38 @@ namespace ggui
 			phys->convert_phys_to_misc_models();
 		} TT("converts all dynamic actors to misc_models");
 
+		imgui::BeginDisabled(!game::is_any_brush_selected());
+		{
+			if (imgui::Button("Convert selected prefabs to phys", ImVec2(GET_WIDGET_WIDTH(), imgui::GetFrameHeight())))
+			{
+				phys->clear_dynamic_prefabs();
+
+				FOR_ALL_SELECTED_BRUSHES(sb)
+				{
+					if (sb && sb->def)
+					{
+						phys->create_physx_object(sb);
+					}
+				}
+
+				//game::Select_Hide();
+
+			} TT("converts all selected brushes to physix actors");
+
+			imgui::EndDisabled();
+		}
+
+		if (imgui::Button("reset prefab phys", ImVec2(GET_WIDGET_WIDTH(), imgui::GetFrameHeight())))
+		{
+			phys->reset_dynamic_prefabs();
+		} TT("resets all prefab entites to their initial position/angles upon creation");
+
+		bool* run_sim = &components::physx_impl::get()->m_phys_sim_run;
+		imgui::Checkbox("run phys sim", run_sim);
+
+		bool* pause_sim = &components::physx_impl::get()->m_phys_sim_pause;
+		imgui::Checkbox("pause phys sim", pause_sim);
+
 		SPACING(0.0f, 4.0f);
 
 		imgui::SetNextItemWidth(GET_WIDGET_WIDTH());
@@ -238,8 +272,6 @@ namespace ggui
 		}
 		else
 		{
-			const bool single_brush_selected = game::is_single_brush_selected(false);
-
 			imgui::BeginDisabled(!single_brush_selected);
 			{
 				if (imgui::Button("Use selected brush as shape", ImVec2(GET_WIDGET_WIDTH(), imgui::GetFrameHeight())))
@@ -247,7 +279,7 @@ namespace ggui
 					const auto sb = game::g_selected_brushes();
 					if (sb && sb->def)
 					{
-						phys->create_shape_from_selection(sb);
+						phys->create_custom_shape_from_selection(sb);
 					}
 					
 				} TT("uses the currently selected brush as the collision shape");

@@ -1088,7 +1088,7 @@ namespace ggui
 			vec3 = temp_origin;
 		}
 
-		// avoid hashe collisions
+		// avoid hash collisions
 		ImGui::PushID(row);
 
 		addprop_helper_s helper = {};

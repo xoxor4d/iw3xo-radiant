@@ -388,6 +388,7 @@ namespace components
 
 			// hide external console
 			utils::show_external_console(false);
+			game::glob::is_loading_map = false;
 
 #if 0
 			if (game::s_world->reflectionProbes && game::s_world->reflectionProbes->reflectionImage
@@ -559,6 +560,7 @@ namespace components
 
 	void on_map_load()
 	{
+		game::glob::is_loading_map = true;
 		utils::show_external_console(true);
 	}
 

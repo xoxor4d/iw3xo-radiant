@@ -210,6 +210,70 @@ namespace components
 		}
 	}
 
+
+	// *
+	// do not cull entities with the custom no-cull flag (used phys prefabs)
+	bool cubic_culling_overwrite_check(game::selbrush_def_t* sb)
+	{
+		if (sb && sb->owner && sb->owner->firstActive)
+		{
+			return sb->owner->firstActive->custom_no_cull;
+		}
+
+		return false;
+	}
+
+	void __declspec(naked) cubic_culling_overwrite_stub1()
+	{
+		const static uint32_t func_addr = 0x4056D0;
+		const static uint32_t skip_addr = 0x407ADB;
+		const static uint32_t cull_addr = 0x407AF0;
+		__asm
+		{
+			pushad;
+			push    ebx;
+			call    cubic_culling_overwrite_check;
+			add		esp, 4;
+			test    al, al;
+			popad;
+
+			jne      SKIP;
+			call    func_addr;
+			test    al, al;
+			jne		CULL;
+
+		SKIP:
+			jmp		skip_addr;
+
+		CULL:
+			jmp		cull_addr;
+		}
+	}
+
+	void __declspec(naked) cubic_culling_overwrite_stub2()
+	{
+		const static uint32_t func_addr = 0x4056D0;
+		const static uint32_t skip_addr = 0x407BEC;
+		__asm
+		{
+			pushad;
+			push    ebx;
+			call    cubic_culling_overwrite_check;
+			add		esp, 4;
+			test    al, al;
+			popad;
+
+			jne     SKIP;
+			call    func_addr;
+			test    al, al;
+			setz    al;
+			test    al, al;
+
+		SKIP:
+			jmp		skip_addr;
+		}
+	}
+
 	// *
 	// *
 	
@@ -2059,7 +2123,12 @@ namespace components
 
 		if (effects::effect_can_play() || GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic)
 		{
-			components::physx_impl::get()->frame();
+			components::physx_impl::get()->fx_frame();
+		}
+
+		if (components::physx_impl::get()->m_phys_sim_run)
+		{
+			components::physx_impl::get()->phys_frame();
 		}
 
 		if (d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled)
@@ -3596,16 +3665,17 @@ namespace components
 		// set default value for r_vsync to false
 		utils::hook::set<BYTE>(0x51FB1A + 1, 0x0);
 
-		// silence "gfxCmdBufState.prim.vertDeclType == VERTDECL_PACKED" assert
-		utils::hook::nop(0x53AB4A, 5);
-
 		// enable/disable drawing of boxes around the origin on entities
 		utils::hook(0x478E33, render_origin_boxes_stub, HOOK_JUMP).install()->quick();
 
 		// enable/disable drawing of backface wireframe on patches
 		utils::hook::nop(0x441567, 16);
 			 utils::hook(0x441567, patch_backface_wireframe_stub).install()->quick();
-		
+
+		// do not cull entities with the custom no-cull flag (used phys prefabs)
+		utils::hook(0x407AD2, cubic_culling_overwrite_stub1, HOOK_JUMP).install()->quick();
+		utils::hook(0x407BE0, cubic_culling_overwrite_stub2, HOOK_JUMP).install()->quick();
+
 		// do not force spec and bump picmip
 		utils::hook::nop(0x420A73, 30);
 		utils::hook::nop(0x4208B0, 30);
@@ -3705,6 +3775,9 @@ namespace components
 		utils::hook(0x52A6F7, GetPrimaryLightForBoxCallback_stub, HOOK_JUMP).install()->quick();
 		utils::hook(0x52A6FF, R_GetLightingAtPoint_stub, HOOK_JUMP).install()->quick();
 		utils::hook::nop(0x500F4C, 5); // < on shutdown
+
+		// silence "gfxCmdBufState.prim.vertDeclType == VERTDECL_PACKED" assert
+		utils::hook::nop(0x53AB4A, 5);
 
 		// silence assert 'localDrawSurf->fields.prepass == MTL_PREPASS_NONE'
 		utils::hook::nop(0x52EE39, 5);

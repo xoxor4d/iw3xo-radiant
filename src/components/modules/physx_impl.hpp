@@ -36,16 +36,16 @@ namespace components
 		physx::PxScene* mScene = nullptr;
 		physx::PxPvd* mPvd = nullptr;
 
-		bool m_simulation_running;
-		bool m_effect_is_using_physics;
+		bool m_fx_sim_running = false;
+		bool m_effect_is_using_physics = false;
 
-		int m_time_last_snapshot;
-		int m_time_last_update;
+		uint32_t m_fx_time_last_snapshot = 0;
+		uint32_t m_fx_time_last_update = 0;
+		uint32_t m_phys_msec_step = 3;
 		float m_time_now_lerp_frac;
-		int m_phys_msec_step;
 
-		uint32_t m_active_actor_count;
-		uint32_t m_converted_misc_model_count;
+		uint32_t m_active_actor_count = 0;
+		uint32_t m_converted_misc_model_count = 0;
 
 		float m_visualization_cullingbox_size = 1000.0f;
 
@@ -72,20 +72,47 @@ namespace components
 
 		EFFECT_PHYSX_SHAPE m_effect_shape = {};
 
+
 		physx::PxMaterial* m_static_collision_material = nullptr;
 
-		uint32_t m_static_brush_estimated_count;
-		uint32_t m_static_brush_count;
+		uint32_t m_static_brush_estimated_count = 0;
+		uint32_t m_static_brush_count = 0;
 		std::vector<physx::PxRigidStatic*> m_static_brushes;
 
-		uint32_t m_static_terrain_estimated_count;
-		uint32_t m_static_terrain_count;
+		uint32_t m_static_terrain_estimated_count = 0;
+		uint32_t m_static_terrain_count = 0;
 		std::vector<physx::PxRigidStatic*> m_static_terrain;
+
+
+		std::vector<physx::PxRigidDynamic*> m_dynamic_prefabs;
+
+		bool m_phys_sim_run = false;
+		bool m_phys_sim_pause = false;
+		bool m_phys_sim_running = false;
+		uint32_t m_phys_sim_tick_old = 0;
+		uint32_t m_phys_sim_tick = 0;
+		uint32_t m_phys_time_last_snapshot = 0;
+		uint32_t m_phys_time_last_update = 0;
+		uint32_t m_phys_active_actor_count = 0;
 
 		struct userdata_s
 		{
-			physx::PxMaterial* material;
-			//fx_system::FxElem* fx_elem;
+			physx::PxMaterial* material = nullptr;
+			game::entity_s* entity = nullptr;
+			game::brush_t_with_custom_def* def = nullptr;
+			game::vec3_t initial_ent_origin = {};
+			game::vec3_t initial_ent_angles = {};
+			//game::vec3_t actual_ent_origin = {};
+
+			//physx::PxVec3 initial_pos = {};
+			//physx::PxQuat initial_quat = {};
+			physx::PxTransform initial_transform;
+			physx::PxTransform last_transform;
+
+			//physx::PxVec3 last_pos = {};
+			//physx::PxQuat last_quat = {};
+
+			game::vec3_t last_angles = {};
 		};
 
 	public:
@@ -98,12 +125,17 @@ namespace components
 		static physx_impl* p_this;
 		static physx_impl* get() { return p_this; }
 
+		void tick_playback();
+
 		void run_frame(float seconds);
-		void frame();
+
+		void phys_frame();
+		void fx_frame();
+
 		physx::PxMaterial* create_material(game::PhysPreset* preset);
 
-
-		void create_shape_from_selection(game::selbrush_def_t* sb);
+		physx::PxConvexMesh* create_convex_mesh_from_brush(game::selbrush_def_t* sb);
+		void create_custom_shape_from_selection(game::selbrush_def_t* sb);
 
 		void create_static_brush(game::selbrush_def_t* sb, bool is_prefab = false, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
 		void create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
@@ -114,6 +146,10 @@ namespace components
 		void obj_destroy(int id);
 		void obj_get_interpolated_state(int id, float* out_pos, float* out_quat);
 
+		void clear_dynamic_prefabs();
+		void reset_dynamic_prefabs();
+
+		void create_physx_object(game::selbrush_def_t* sb);
 		int create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity = nullptr, const float* angular_velocity = nullptr);
 		void update_static_collision_material();
 	};

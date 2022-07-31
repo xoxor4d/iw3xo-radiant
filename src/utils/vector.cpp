@@ -24,6 +24,35 @@ namespace utils
 			point[2] = mat[6] * tvec[0] + mat[7] * tvec[1] + mat[8] * tvec[2];
 		}
 
+		void rotate_point(const float* v, const float* q, float* out)
+		{
+			const float t2 =   q[3] * q[0];
+			const float t3 =   q[3] * q[1];
+			const float t4 =   q[3] * q[2];
+			const float t5 =  -q[0] * q[0];
+			const float t6 =   q[0] * q[1];
+			const float t7 =   q[0] * q[2];
+			const float t8 =  -q[1] * q[1];
+			const float t9 =   q[1] * q[2];
+			const float t10 = -q[2] * q[2];
+
+			out[0] = ((t8 + t10) * v[0] + (t6 - t4)  * v[1] + (t3 + t7) * v[2]) * 2.0f + v[0];
+			out[1] = ((t4 + t6)  * v[0] + (t5 + t10) * v[1] + (t9 - t2) * v[2]) * 2.0f + v[1];
+			out[2] = ((t7 - t3)  * v[0] + (t2 + t9)  * v[1] + (t5 + t8) * v[2]) * 2.0f + v[2];
+		}
+
+		void vec3_rotate_transpose(const float* in, const float* matrix, float* out)
+		{
+			if (in == out)
+			{
+				AssertS("in != out");
+			}
+
+			out[0] = matrix[0] * in[0] + matrix[3] * in[1] + matrix[6] * in[2];
+			out[1] = matrix[1] * in[0] + matrix[4] * in[1] + matrix[7] * in[2];
+			out[2] = matrix[2] * in[0] + matrix[5] * in[1] + matrix[8] * in[2];
+		}
+
 		void angle_vectors(const game::vec3_t angles, game::vec3_t forward, game::vec3_t right, game::vec3_t up)
 		{
 			float angle;
@@ -337,5 +366,22 @@ namespace utils
 			out[1] = in[1];
 			out[2] = in[2];
 		}
+
+#pragma warning( push )
+#pragma warning( disable : 6385 )
+#pragma warning( disable : 6386 )
+		void matrix_multiply(const float* in2, const float* in1, float* out)
+		{
+			out[0] = in1[0] * in2[0] + in1[1] * in2[3] + in1[2] * in2[6];
+			out[1] = in2[4] * in1[1] + in2[1] * in1[0] + in1[2] * in2[7];
+			out[2] = in2[5] * in1[1] + in2[2] * in1[0] + in1[2] * in2[8];
+			out[3] = in1[4] * in2[3] + in1[3] * in2[0] + in2[6] * in1[5];
+			out[4] = in1[4] * in2[4] + in1[3] * in2[1] + in1[5] * in2[7];
+			out[5] = in1[4] * in2[5] + in1[3] * in2[2] + in1[5] * in2[8];
+			out[6] = in1[7] * in2[3] + in1[6] * in2[0] + in2[6] * in1[8];
+			out[7] = in1[7] * in2[4] + in1[6] * in2[1] + in1[8] * in2[7];
+			out[8] = in1[7] * in2[5] + in1[6] * in2[2] + in1[8] * in2[8];
+		}
+#pragma warning( pop )
 	}
 }

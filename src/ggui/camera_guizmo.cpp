@@ -342,23 +342,24 @@ namespace ggui::camera_guizmo
 								// build a rotation matrix
 								ImGuizmo::RecomposeMatrixFromComponents(game::g_vRotateOrigin, delta_angles, mtx_scale, &rotate_axis[0][0]);
 
-								float rotate_axis_for_radiant[4][4] = {};
+								float rotate_axis_for_radiant[4][3] = {};
 
 								// bring it into the format radiant expects
 								rotate_axis_for_radiant[0][0] = rotate_axis[3][0];
 								rotate_axis_for_radiant[0][1] = rotate_axis[3][1];
 								rotate_axis_for_radiant[0][2] = rotate_axis[3][2];
-								rotate_axis_for_radiant[0][3] = rotate_axis[0][0];
 
-								rotate_axis_for_radiant[1][0] = rotate_axis[1][0];
-								rotate_axis_for_radiant[1][1] = rotate_axis[2][0];
-								rotate_axis_for_radiant[1][2] = rotate_axis[0][1];
-								rotate_axis_for_radiant[1][3] = rotate_axis[1][1];
+								rotate_axis_for_radiant[1][0] = rotate_axis[0][0]; // [1][0]
+								rotate_axis_for_radiant[1][1] = rotate_axis[1][0];
+								rotate_axis_for_radiant[1][2] = rotate_axis[2][0];
 
-								rotate_axis_for_radiant[2][0] = rotate_axis[2][1];
-								rotate_axis_for_radiant[2][1] = rotate_axis[0][2];
-								rotate_axis_for_radiant[2][2] = rotate_axis[1][2];
-								rotate_axis_for_radiant[2][3] = rotate_axis[2][2];
+								rotate_axis_for_radiant[2][0] = rotate_axis[0][1];
+								rotate_axis_for_radiant[2][1] = rotate_axis[1][1];
+								rotate_axis_for_radiant[2][2] = rotate_axis[2][1];
+
+								rotate_axis_for_radiant[3][0] = rotate_axis[0][2];
+								rotate_axis_for_radiant[3][1] = rotate_axis[1][2];
+								rotate_axis_for_radiant[3][2] = rotate_axis[2][2];
 
 								// apply rotation to all selected brushes
 								FOR_ALL_SELECTED_BRUSHES(sb)
@@ -366,7 +367,10 @@ namespace ggui::camera_guizmo
 									if (const auto brush = sb->def; brush)
 									{
 										// degree is handled like a boolean, 0.0 will not rotate fixed size brushes / entities
-										game::Select_ApplyMatrix(&rotate_axis_for_radiant[0][0], sb, false, 1.0f, false);
+										//game::Select_ApplyMatrix(&rotate_axis_for_radiant[0][0], sb, false, 1.0f, false);
+
+										game::Select_RotateFixedSize(sb->owner, sb->def, rotate_axis_for_radiant);
+
 										components::remote_net::cmd_send_brush_select_deselect(true);
 									}
 								}
