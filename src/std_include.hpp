@@ -15,6 +15,8 @@
 #define AssertS(str)	if(IsDebuggerPresent()) __debugbreak();	else {	\
 						game::Com_Error("%s\nLine %d :: %s\n%s ", str, __LINE__, __func__, __FILE__); }
 
+#define DEBUGBREAK()	if(IsDebuggerPresent()) __debugbreak();
+
 #define BENCHMARK // benchmark prints in release mode
 
 // Version number

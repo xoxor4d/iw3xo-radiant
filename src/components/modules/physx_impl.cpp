@@ -49,13 +49,10 @@ namespace components
 	// -> renderer::setup_viewinfo
 	void physx_impl::phys_frame()
 	{
-		if (game::glob::is_loading_map)
+		// its not save to access brush data while loading a map (obv.)
+		// do not re-run phys if fx is playing
+		if (game::glob::is_loading_map || m_fx_sim_running)
 		{
-			/*if (!m_dynamic_prefabs.empty())
-			{
-				clear_dynamic_prefabs();
-			}*/
-
 			return;
 		}
 
@@ -86,6 +83,12 @@ namespace components
 					--i;
 
 					m_phys_sim_running = true;
+
+					// stop any running fx
+					if (effects::effect_is_playing() || effects::effect_is_paused())
+					{
+						effects::stop_all();
+					}
 
 					physx_impl::run_frame(static_cast<float>(step) * 0.001f);
 					m_phys_time_last_update += step;
@@ -139,110 +142,40 @@ namespace components
 				}
 			}
 
+			// *
+			// update all dynamic prefabs
+
 			if (!m_dynamic_prefabs.empty())
 			{
 				for (const auto& p : m_dynamic_prefabs)
 				{
-					const auto user_data = static_cast<userdata_s*>(p->userData);
+					const auto user_data = static_cast<userdata_prefab_s*>(p->userData);
 					if (user_data && user_data->entity)
 					{
 						const auto pose = p->getGlobalPose();
 
-						const physx::PxU32 numShapes = p->getNbShapes();
-						const auto shapes = (physx::PxShape**)game::Z_Malloc(sizeof(physx::PxShape*) * numShapes);
-						p->getShapes(shapes, numShapes);
-
-						const auto local_pose = shapes[0]->getLocalPose();
-
-						/*for (physx::PxU32 i = 0; i < numShapes; i++)
-						{
-							physx::PxShape* shape = shapes[i];
-						}*/
-						game::Z_Free(shapes);
-
-						//float angle = 0.0f;
-						//physx::PxVec3 axis_test;
-						//pose.q.toRadiansAndUnitAxis(angle, axis_test);
-						
 						float axis[3][3];
-
-						//auto qq = local_pose.q * pose.q;
-						//fx_system::UnitQuatToAxis(&qq.x, axis);
-
 						fx_system::UnitQuatToAxis(&pose.q.x, axis);
 
 						game::vec3_t angles = {};
 						game::AxisToAngles(axis, angles);
 
-						if (pose.p != user_data->last_transform.p || pose.q != user_data->last_transform.q) /*!utils::vector::compare(angles, user_data->last_angles))*/
+						if (pose.p != user_data->last_transform.p || pose.q != user_data->last_transform.q)
 						{
-							//auto sb = game::g_selected_brushes(); // BAD
-
-							//game::vec3_t brush_center;
-							//utils::vector::add(sb->def->mins, sb->def->maxs, brush_center);
-							//utils::vector::scale(brush_center, 0.5f, brush_center);
-
-							////// rotation
-
-							//auto curr_quat = p->getGlobalPose().q;
-							//auto q_delta = curr_quat * user_data->last_quat.getConjugate();
-
-							//float rotate_axis[4][3];
-							//const auto x_axis = q_delta.getBasisVector0();
-							//const auto y_axis = q_delta.getBasisVector1();
-							//const auto z_axis = q_delta.getBasisVector2();
-
-							//rotate_axis[0][0] = pose.p.x; //brush_center[0];
-							//rotate_axis[0][1] = pose.p.y; //brush_center[1];
-							//rotate_axis[0][2] = pose.p.z; //brush_center[2];
-
-							//rotate_axis[1][0] = x_axis.x;
-							//rotate_axis[1][1] = x_axis.y;
-							//rotate_axis[1][2] = x_axis.z;
-
-							//rotate_axis[2][0] = y_axis.x;
-							//rotate_axis[2][1] = y_axis.y;
-							//rotate_axis[2][2] = y_axis.z;
-
-							//rotate_axis[3][0] = z_axis.x;
-							//rotate_axis[3][1] = z_axis.y;
-							//rotate_axis[3][2] = z_axis.z;
-
-							////
-							//game::Select_ApplyMatrix(&rotate_axis[0][0], sb, false, 1.0f, false);
-							////user_data->last_quat = curr_quat;
-
-							//user_data->entity->firstActive->version0++;
-
+							// calculate delta pos
 							game::vec3_t offset_pos;
-							//utils::vector::subtract(&pos.x, user_data->initial_origin, offset_pos);
-
-							//offset_pos[0] = user_data->initial_ent_origin[0]; /*user_data->initial_ent_origin[0] - local_pose.p.x */ /*+ pose.p.x*/;
-							//offset_pos[1] = user_data->initial_ent_origin[1]; /*user_data->initial_ent_origin[1] - local_pose.p.y */ /*+ pose.p.y*/;
-							//offset_pos[2] = user_data->initial_ent_origin[2]; /*user_data->initial_ent_origin[2] - local_pose.p.z */ /*+ pose.p.z*/;
-
-							////utils::vector::rotate_point(offset_pos, axis[0]);
-							//utils::vector::rotate_point(offset_pos, &pose.q.x, offset_pos);
-
-							//offset_pos[0] += pose.p.x;
-							//offset_pos[1] += pose.p.y;
-							//offset_pos[2] += pose.p.z;
-
-							//offset_pos[0] += (pose.p.x /*+ local_pose.p.x*/); //user_data->initial_ent_origin[0];
-							//offset_pos[1] += (pose.p.y /*+ local_pose.p.y*/); //user_data->initial_ent_origin[1];
-							//offset_pos[2] += (pose.p.z /*+ local_pose.p.z*/); //user_data->initial_ent_origin[2];
-
-	/*						auto tt = physx::PxTransform(physx::PxVec3(offset_pos[0], offset_pos[1], offset_pos[2])).rotate(local_pose.p);
-	*/
 							offset_pos[0] = pose.p.x - user_data->last_transform.p.x;
 							offset_pos[1] = pose.p.y - user_data->last_transform.p.y;
 							offset_pos[2] = pose.p.z - user_data->last_transform.p.z;
 
+							// calculate total pos
 							utils::vector::add(offset_pos, user_data->entity->firstActive->origin, offset_pos);
 
+
+							// update entity origin
+
 							char str_buf[64] = {};
-							if (sprintf_s(str_buf, "%.3f %.3f %.3f", 
-								offset_pos[0], offset_pos[1], offset_pos[2]))
+							if (sprintf_s(str_buf, "%.3f %.3f %.3f", offset_pos[0], offset_pos[1], offset_pos[2]))
 							{
 								game::SetKeyValue(user_data->entity->firstActive, "origin", str_buf);
 							}
@@ -251,9 +184,7 @@ namespace components
 
 
 
-
-
-
+							// calculate delta rotation (quat) = to * from.inverse()
 							auto q_delta = pose.q * user_data->last_transform.q.getConjugate();
 
 							float rotate_axis[4][3];
@@ -265,119 +196,27 @@ namespace components
 							rotate_axis[0][1] = pose.p.y;
 							rotate_axis[0][2] = pose.p.z;
 
-							rotate_axis[1][0] = x_axis.x; //axis[0][0];
-							rotate_axis[1][1] = x_axis.y; //axis[0][1];
-							rotate_axis[1][2] = x_axis.z; //axis[0][2];
+							rotate_axis[1][0] = x_axis.x;
+							rotate_axis[1][1] = x_axis.y;
+							rotate_axis[1][2] = x_axis.z;
 
-							rotate_axis[2][0] = y_axis.x; //axis[1][0];
-							rotate_axis[2][1] = y_axis.y; //axis[1][1];
-							rotate_axis[2][2] = y_axis.z; //axis[1][2];
+							rotate_axis[2][0] = y_axis.x;
+							rotate_axis[2][1] = y_axis.y;
+							rotate_axis[2][2] = y_axis.z;
 
-							rotate_axis[3][0] = z_axis.x; //axis[2][0];
-							rotate_axis[3][1] = z_axis.y; //axis[2][1];
-							rotate_axis[3][2] = z_axis.z; //axis[2][2];
+							rotate_axis[3][0] = z_axis.x;
+							rotate_axis[3][1] = z_axis.y;
+							rotate_axis[3][2] = z_axis.z;
 
+							// do the actual rotation
 							game::Select_RotateFixedSize(user_data->entity, user_data->def, rotate_axis);
 
-
-
-
-
-
-
-
-
-
-
-
-
+							// update last_transform
 							user_data->last_transform = pose;
-							//user_data->last_pos = pose.p;
-							//user_data->last_quat = pose.q;
-
-							game::vec3_t offset_angles;
-							offset_angles[0] = /*user_data->initial_ent_angles[0] +*/ angles[0];
-							offset_angles[1] = /*user_data->initial_ent_angles[1] +*/ angles[1];
-							offset_angles[2] = /*user_data->initial_ent_angles[2] +*/ angles[2];
-
-							/*if (sprintf_s(str_buf, "%.3f %.3f %.3f", offset_angles[0], offset_angles[1], offset_angles[2]))
-							{
-								game::SetKeyValue(user_data->entity->firstActive, "angles", str_buf);
-							}*/
-
-							/*utils::vector::copy(offset_pos, user_data->entity->firstActive->origin);
-							utils::vector::copy(angles, user_data->last_angles);
-							user_data->last_pos = pos;
-
-							user_data->entity->firstActive->version0++;*/
 						}
 					}
 				}
 			}
-
-			// modifying actual brushes
-#if 0
-			if (!m_dynamic_brushes.empty())
-			{
-				for (const auto& b : m_dynamic_brushes)
-				{
-					const auto user_data = static_cast<userdata_s*>(b->userData);
-					if (user_data && user_data->brush)
-					{
-						// works but brush will loose its uv's (will move through the texture)
-						game::vec3_t half_bounds;
-						utils::vector::subtract(user_data->brush->maxs, user_data->brush->mins, half_bounds);
-						utils::vector::scale(half_bounds, 0.5f, half_bounds);
-
-						game::vec3_t brush_center;
-						utils::vector::add(user_data->brush->mins, user_data->brush->maxs, brush_center);
-						utils::vector::scale(brush_center, 0.5f, brush_center);
-
-						// rotation
-
-						auto curr_quat = b->getGlobalPose().q;
-						auto q_delta = curr_quat * user_data->old_quat.getConjugate();
-
-						float rotate_axis[4][3];
-						const auto x_axis = q_delta.getBasisVector0();
-						const auto y_axis = q_delta.getBasisVector1();
-						const auto z_axis = q_delta.getBasisVector2();
-
-						rotate_axis[0][0] = brush_center[0];
-						rotate_axis[0][1] = brush_center[1];
-						rotate_axis[0][2] = brush_center[2];
-
-						rotate_axis[1][0] = x_axis.x;
-						rotate_axis[1][1] = x_axis.y;
-						rotate_axis[1][2] = x_axis.z;
-
-						rotate_axis[2][0] = y_axis.x;
-						rotate_axis[2][1] = y_axis.y;
-						rotate_axis[2][2] = y_axis.z;
-
-						rotate_axis[3][0] = z_axis.x;
-						rotate_axis[3][1] = z_axis.y;
-						rotate_axis[3][2] = z_axis.z;
-
-						auto sb = game::g_selected_brushes(); // BAD
-						game::Select_ApplyMatrix(&rotate_axis[0][0], sb, false, 1.0f, false);
-
-						user_data->old_quat = curr_quat;
-
-
-						// pos
-
-						game::vec3_t pos_delta;
-						const auto pos = b->getGlobalPose().p;
-						
-						utils::vector::subtract(&pos.x, user_data->old_origin, pos_delta);
-						game::Brush_Move(pos_delta, user_data->brush, false);
-
-						utils::vector::copy(&pos.x, user_data->old_origin, 3);
-					}
-				}
-			}
-#endif
 		}
 
 		if (m_phys_sim_run || (m_phys_sim_run && m_phys_sim_pause))
@@ -462,6 +301,13 @@ namespace components
 					--i;
 
 					m_fx_sim_running = true;
+
+					// clear any dynamic prefabs when playing fx
+					if (!m_dynamic_prefabs.empty())
+					{
+						reset_dynamic_prefabs();
+						clear_dynamic_prefabs();
+					}
 
 					physx_impl::run_frame(static_cast<float>(step) * 0.001f);
 					m_fx_time_last_update += step;
@@ -965,8 +811,7 @@ namespace components
 		return false;
 	}
 
-	// only call via components::process
-	void physx_impl::create_static_collision()
+	void physx_impl::clear_static_collision()
 	{
 		const auto phys = components::physx_impl::get();
 		phys->m_static_brush_estimated_count = 0;
@@ -979,17 +824,26 @@ namespace components
 			brush->release();
 		}
 		phys->m_static_brushes.clear();
-		phys->m_static_brushes.reserve(1000);
 
 		// #
 
-		for (const auto terrain : phys->m_static_terrain) 
+		for (const auto terrain : phys->m_static_terrain)
 		{
 			terrain->release();
 		}
 		phys->m_static_terrain.clear();
-		phys->m_static_terrain.reserve(100);
+	}
 
+	// only call via components::process
+	void physx_impl::create_static_collision()
+	{
+		const auto phys = components::physx_impl::get();
+		phys->clear_static_collision();
+
+		phys->m_static_brushes.reserve(1000);
+		phys->m_static_terrain.reserve(1000);
+
+		//phys->clear_dynamic_prefabs();
 
 		// #
 
@@ -1274,6 +1128,7 @@ namespace components
 		actor->release();
 	}
 
+
 	void physx_impl::obj_get_interpolated_state(int id, float* out_pos, float* out_quat)
 	{
 		const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(id);
@@ -1291,110 +1146,74 @@ namespace components
 		out_quat[3] = quat.w;
 	}
 
+
 	// clear m_dynamic_brushes
 	void physx_impl::clear_dynamic_prefabs()
 	{
 		for (const auto p : m_dynamic_prefabs)
 		{
+			if (p->userData)
+			{
+				const auto data = static_cast<userdata_prefab_s*>(p->userData);
+				delete(data);
+			}
+
 			p->release();
 		}
 		m_dynamic_prefabs.clear();
 	}
 
 
-	// clear m_dynamic_brushes
+	// reset all dynamic brushes (to values upon creation)
 	void physx_impl::reset_dynamic_prefabs()
 	{
 		ggui::entity_dialog::addprop_helper_s no_undo = {};
 
 		for (const auto& p : m_dynamic_prefabs)
 		{
-			const auto user_data = static_cast<userdata_s*>(p->userData);
+			const auto user_data = static_cast<userdata_prefab_s*>(p->userData);
 			if (user_data && user_data->entity && user_data->entity->firstActive)
 			{
-				/*p->setGlobalPose(physx::PxTransform(
-					physx::PxVec3(user_data->initial_origin[0], user_data->initial_origin[1], user_data->initial_origin[2]),
-					user_data->initial_quat));*/
+				// reset actor world-space position and rotation
+				p->setGlobalPose(user_data->initial_transform);
 
-				/*p->setGlobalPose(physx::PxTransform(
-					physx::PxVec3(user_data->initial_origin[0], user_data->initial_origin[1], user_data->initial_origin[2]),
-					user_data->initial_quat));*/
-
-				p->setGlobalPose(user_data->initial_transform); //physx::PxTransform(
-					//user_data->initial_pos,
-					//user_data->initial_quat));
-
+				// same for the last transform
 				user_data->last_transform = user_data->initial_transform;
 
+				// clear velocity
 				const auto null_vec = physx::PxVec3(0.0f);
 				p->setLinearVelocity(null_vec);
 				p->setAngularVelocity(null_vec);
 
-				//utils::vector::copy(user_data->initial_ent_angles, user_data->last_angles);
-				//user_data->last_pos = physx::PxVec3(user_data->initial_origin[0], user_data->initial_origin[1], user_data->initial_origin[2]);
-				//user_data->last_pos = physx::PxVec3(0.0f, 0.0f, 0.0f);
-
-				char str_buf[64] = {};
-				if (sprintf_s(str_buf, "%.3f %.3f %.3f", user_data->initial_ent_origin[0], user_data->initial_ent_origin[1], user_data->initial_ent_origin[2]))
+				// check
+		
+				if (user_data->entity->firstActive->firstBrush->owner && user_data->entity->firstActive->firstBrush->owner->eclass)
 				{
-					game::SetKeyValue(user_data->entity->firstActive, "origin", str_buf);
-				}
+					// reset prefab entity
 
-				if (sprintf_s(str_buf, "%.3f %.3f %.3f", user_data->initial_ent_angles[0], user_data->initial_ent_angles[1], user_data->initial_ent_angles[2]))
+					char str_buf[64] = {};
+					if (sprintf_s(str_buf, "%.3f %.3f %.3f", user_data->initial_ent_origin[0], user_data->initial_ent_origin[1], user_data->initial_ent_origin[2]))
+					{
+						game::SetKeyValue(user_data->entity->firstActive, "origin", str_buf);
+					}
+
+					if (sprintf_s(str_buf, "%.3f %.3f %.3f", user_data->initial_ent_angles[0], user_data->initial_ent_angles[1], user_data->initial_ent_angles[2]))
+					{
+						game::SetKeyValue(user_data->entity->firstActive, "angles", str_buf);
+					}
+
+					utils::vector::copy(user_data->initial_ent_origin, user_data->entity->firstActive->origin);
+					user_data->entity->firstActive->version0++;
+				}
+				else
 				{
-					game::SetKeyValue(user_data->entity->firstActive, "angles", str_buf);
+					clear_dynamic_prefabs();
+					return;
 				}
-
-				utils::vector::copy(user_data->initial_ent_origin, user_data->entity->firstActive->origin);
-				//user_data->entity->firstActive->version++;
-				user_data->entity->firstActive->version0++;
 			}
 		}
 	}
 
-#if 0
-	// creates a physics actor from a prefab
-	void physx_impl::create_physx_object(game::selbrush_def_t* sb)
-	{
-		if (const auto mesh = create_convex_mesh_from_brush(sb); mesh)
-		{
-			const auto shape = mPhysics->createShape(physx::PxConvexMeshGeometry(mesh), *m_static_collision_material, true);
-			shape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, true);
-
-			//game::vec3_t origin_offset;
-			//utils::vector::subtract(model->maxs, half_bounds, origin_offset);
-			//shape->setLocalPose(physx::PxTransform(origin_offset[0], origin_offset[1], origin_offset[2]));
-
-			game::vec3_t brush_center;
-			utils::vector::add(sb->def->mins, sb->def->maxs, brush_center);
-			utils::vector::scale(brush_center, 0.5f, brush_center);
-
-			const physx::PxTransform t
-			(
-				brush_center[0], brush_center[1], brush_center[2]
-			);
-
-			physx::PxRigidDynamic* actor = mPhysics->createRigidDynamic(t);
-			actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
-
-			userdata_s* data = new userdata_s();
-			data->brush = sb->def;
-			data->old_origin[0] = brush_center[0];
-			data->old_origin[1] = brush_center[1];
-			data->old_origin[2] = brush_center[2];
-			data->old_quat = actor->getGlobalPose().q;
-			actor->userData = data;
-
-			actor->attachShape(*shape);
-			shape->release();
-
-			physx::PxRigidBodyExt::updateMassAndInertia(*actor, 10.0f);
-			mScene->addActor(*actor);
-
-			m_dynamic_prefabs.push_back(actor);
-		}
-	}
-#endif
 
 	// creates a physics actor from a prefab
 	void physx_impl::create_physx_object(game::selbrush_def_t* sb)
@@ -1402,6 +1221,33 @@ namespace components
 		// prefab brushes and terrain
 		if (sb && sb->owner && sb->owner->prefab && sb->owner->firstActive && sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
 		{
+			std::vector<physx::PxVec3> hull_verts;
+			hull_verts.reserve(50);
+
+			std::vector<physx::PxVec3> local_bounds;
+			local_bounds.reserve(10);
+
+			game::vec3_t prefab_angles = {};
+			game::vec4_t prefab_quat = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+			// thats the origin of the placed prefab which might have an origin of 0 0 0
+			// even tho it's contents are not at 0 0 0 in the parent world
+			const auto prefab_origin = sb->owner->firstActive->origin;
+
+			// calculate the real center point of the brushes contained in the prefab
+			// in relation to the root world
+			game::vec3_t real_origin;
+			utils::vector::add(sb->def->mins, sb->def->maxs, real_origin);
+			utils::vector::scale(real_origin, 0.5f, real_origin);
+
+			// angles to quat - use identity if prefab has no angles kvp
+			if (GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(sb->owner->firstActive, prefab_angles, "angles"))
+			{
+				game::orientation_t orientation = {};
+				game::AnglesToAxis(prefab_angles, &orientation.axis[0][0]);
+				fx_system::AxisToQuat(orientation.axis, prefab_quat);
+			}
+
 			FOR_ALL_BRUSHES(prefab, sb->owner->prefab->active_brushlist, sb->owner->prefab->active_brushlist_next)
 			{
 				if (prefab && prefab->def)
@@ -1411,164 +1257,136 @@ namespace components
 						continue;
 					}
 
-					game::vec3_t prefab_angles = {};
-					game::vec4_t prefab_quat = { 0.0f, 0.0f, 0.0f, 1.0f };
-					const auto prefab_origin = sb->owner->firstActive->origin;
-
-					game::vec3_t real_origin;
-					utils::vector::add(sb->def->mins, sb->def->maxs, real_origin);
-					utils::vector::scale(real_origin, 0.5f, real_origin);
-
-
-					// angles to quat - use identity if prefab has no angles kvp
-					if (GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(sb->owner->firstActive, prefab_angles, "angles"))
-					{
-						game::orientation_t orientation = {};
-						game::AnglesToAxis(prefab_angles, &orientation.axis[0][0]);
-						fx_system::AxisToQuat(orientation.axis, prefab_quat);
-					}
-
-					// 
-					// create_static_brush
-
-					std::vector<physx::PxVec3> verts;
-					verts.reserve(50);
-
-					game::vec3_t brush_center;
-					utils::vector::add(prefab->def->mins, prefab->def->maxs, brush_center);
-					utils::vector::scale(brush_center, 0.5f, brush_center);
-
 					for (auto f = 0; f < prefab->def->facecount; f++)
 					{
 						const auto face = &prefab->def->brush_faces[f];
 						for (auto p = 0; face->w && p < face->w->numPoints; p++)
 						{
-							game::vec3_t tw_point = { face->w->points[p][0], face->w->points[p][1], face->w->points[p][2] };
-							utils::vector::subtract(tw_point, brush_center, tw_point);
-							//utils::vector::subtract(tw_point, prefab_origin, tw_point);
+							// calculate 'local-space' vertices by subtracting the bounding box center (world) from the brush points (world)
+							game::vec3_t hull_point = { face->w->points[p][0], face->w->points[p][1], face->w->points[p][2] };
 
-							const physx::PxVec3 t_point = { tw_point[0], tw_point[1], tw_point[2] };
-							//const physx::PxVec3 t_point = { face->w->points[p][0], face->w->points[p][1], face->w->points[p][2] };
-							bool contains = false;
+							// bbox_center (correct center but wrong hull) --- real_origin (actually creates outer hull but origin is wrong -> see 'local_bounds' usage)
+							utils::vector::subtract(hull_point, real_origin, hull_point); 
 
-							for (auto x = 0; x < static_cast<int>(verts.size()); x++)
+							bool contains_point = false;
+							for (const auto& v : hull_verts)
 							{
-								if (utils::vector::compare(&verts[x].x, &t_point[0]))
+								if (utils::vector::compare(&v.x, hull_point))
 								{
-									contains = true;
+									contains_point = true;
 									break;
 								}
 							}
 
-							if (!contains)
+							if (!contains_point)
 							{
-								verts.push_back(t_point);
+								hull_verts.emplace_back(physx::PxVec3(hull_point[0], hull_point[1], hull_point[2]));
 							}
 						}
 					}
 
-					physx::PxConvexMeshDesc convexDesc;
-					convexDesc.points.count = verts.size();
-					convexDesc.points.stride = sizeof(physx::PxVec3);
-					convexDesc.points.data = verts.data();
-					convexDesc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+					// save bounding box mid-point of the local brush
+					game::vec3_t bbox_center;
+					utils::vector::add(prefab->def->mins, prefab->def->maxs, bbox_center);
+					utils::vector::scale(bbox_center, 0.5f, bbox_center);
 
-					physx::PxDefaultMemoryOutputStream buf;
-					physx::PxConvexMeshCookingResult::Enum result;
+					local_bounds.emplace_back(physx::PxVec3(bbox_center[0], bbox_center[1], bbox_center[2]));
+				}
+			}
 
-					if (mCooking->cookConvexMesh(convexDesc, buf, &result))
+			if (hull_verts.size() > 2)
+			{
+				{
+					// get outer shell (bounds) of all local brush bounds
+					game::vec3_t mins, maxs;
+					utils::vector::set_vec3(mins, FLT_MAX);
+					utils::vector::set_vec3(maxs, -FLT_MAX);
+
+					for (const auto& local : local_bounds)
 					{
-						physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-						physx::PxConvexMesh* convexMesh = mPhysics->createConvexMesh(input);
+						for (auto v = 0; v < 3; v++)
+						{
+							// mins :: find the closest point on each axis
+							if (mins[v] > local[v])
+								mins[v] = local[v];
 
-						auto* actor = mPhysics->createRigidDynamic(physx::PxTransform(0.0f, 0.0f, 0.0f));
-						actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
-
-						userdata_s* data = new userdata_s();
-						data->entity = sb->owner;
-						data->def = sb->def;
-
-						utils::vector::copy(prefab_origin, data->initial_ent_origin);
-						utils::vector::copy(prefab_angles, data->initial_ent_angles);
-						//utils::vector::copy(real_origin, data->actual_ent_origin);
-
-						// do not save local quat?
-						//data->initial_quat = physx::PxQuat(prefab_quat[0], prefab_quat[1], prefab_quat[2], prefab_quat[3]);
-						//data->last_quat = data->initial_quat;
-
-						//utils::vector::copy(prefab_angles, data->last_angles);
-						//data->last_pos = physx::PxVec3(data->initial_origin[0], data->initial_origin[1], data->initial_origin[2]);
-						actor->userData = data;
-
-						physx::PxShape* shape = physx::PxRigidActorExt::createExclusiveShape(*actor, physx::PxConvexMeshGeometry(convexMesh), *m_static_collision_material);
-
-						//physx::PxTransform local;
-						//local.p = physx::PxVec3(0.0f, 0.0f, 0.0f);
-						//local.q = physx::PxQuat(0.0f, 0.0f, 0.0f, 1.0f);
-
-						//if (prefab_origin || prefab_quat)
-						//{
-						//	/*game::vec3_t half_offset;
-						//	utils::vector::subtract(prefab->def->maxs, prefab->def->mins, half_offset);
-						//	utils::vector::scale(half_offset, 0.5f, half_offset);
-
-						//	if (prefab_origin)
-						//	{
-						//		local.p = physx::PxVec3(-prefab_origin[0], -prefab_origin[1], -prefab_origin[2]);
-						//	}*/
-
-						//	if (prefab_origin)
-						//	{
-						//		local.p = physx::PxVec3(prefab_origin[0], prefab_origin[1], prefab_origin[2]);
-						//	}
-
-						//	if (prefab_quat)
-						//	{
-						//		//local.q = physx::PxQuat(prefab_quat[0], prefab_quat[1], prefab_quat[2], prefab_quat[3]);
-						//		//local.q = local.q.getConjugate();
-						//	}
-
-						//	//shape->setLocalPose(local);
-						//}
-
-						actor->attachShape(*shape);
-						shape->release();
-
-						physx::PxRigidBodyExt::updateMassAndInertia(*actor, 10.0f);
-						mScene->addActor(*actor);
-
-						
-
-						/*actor->setGlobalPose(physx::PxTransform(
-							prefab_origin[0], prefab_origin[1], prefab_origin[2],
-							data->initial_quat));*/
-
-						game::vec3_t world_pos;
-
-						utils::vector::copy(real_origin, world_pos);
-
-						actor->setGlobalPose(physx::PxTransform(
-							physx::PxVec3(world_pos[0], world_pos[1], world_pos[2]),
-							physx::PxQuat(prefab_quat[0], prefab_quat[1], prefab_quat[2], prefab_quat[3])));
-
-
-						const auto pose = actor->getGlobalPose();
-						//data->initial_pos = physx::PxVec3(pose.p.x, pose.p.y, pose.p.z);
-						//data->initial_quat = physx::PxQuat(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
-
-						data->initial_transform = physx::PxTransform(pose.p, pose.q);
-						data->last_transform = data->initial_transform;
-
-						//data->last_pos = pose.p;
-						//data->last_quat = pose.q;
-
-
-						m_dynamic_prefabs.push_back(actor);
-
-						// cull checks at 0x407AF4, 0x407BEC & 0x408000 result in flickering prefab entities
-						// skips culling function if custom_no_cull is set
-						data->entity->firstActive->custom_no_cull = true;
+							// maxs :: find the furthest point on each axis
+							if (maxs[v] < local[v])
+								maxs[v] = local[v];
+						}
 					}
+
+					game::vec3_t local_center, origin_offset;
+
+					// get mid-point
+					utils::vector::add(mins, maxs, local_center);
+					utils::vector::scale(local_center, 0.5f, local_center);
+
+					// offset the actual origin by the total local mid-point
+					utils::vector::subtract(real_origin, local_center, origin_offset);
+
+					// add offset to all hull vertices
+					const auto px_vec3 = physx::PxVec3(origin_offset[0], origin_offset[1], origin_offset[2]);
+					for (auto& hull : hull_verts)
+					{
+						hull += px_vec3;
+					}
+				}
+
+				// build a convex mesh
+				physx::PxConvexMeshDesc convex_desc;
+				convex_desc.points.count = hull_verts.size();
+				convex_desc.points.stride = sizeof(physx::PxVec3);
+				convex_desc.points.data = hull_verts.data();
+				convex_desc.flags = physx::PxConvexFlag::eCOMPUTE_CONVEX;
+
+				physx::PxDefaultMemoryOutputStream buf;
+				physx::PxConvexMeshCookingResult::Enum result;
+
+				if (mCooking->cookConvexMesh(convex_desc, buf, &result))
+				{
+					physx::PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
+					physx::PxConvexMesh* convexMesh = mPhysics->createConvexMesh(input);
+
+					auto* actor = mPhysics->createRigidDynamic(physx::PxTransform(0.0f, 0.0f, 0.0f));
+					actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
+
+					const auto data = new userdata_prefab_s();
+					actor->userData = data;
+
+					// save entity and brush data
+					data->entity = sb->owner;
+					data->def = sb->def;
+					utils::vector::copy(prefab_origin, data->initial_ent_origin);
+					utils::vector::copy(prefab_angles, data->initial_ent_angles);
+
+					physx::PxShape* shape = physx::PxRigidActorExt::createExclusiveShape(*actor, physx::PxConvexMeshGeometry(convexMesh), *m_static_collision_material);
+					actor->attachShape(*shape);
+					shape->release();
+
+					physx::PxRigidBodyExt::updateMassAndInertia(*actor, 10.0f);
+					mScene->addActor(*actor);
+
+					// set world space position and rotation of phys actor
+					/*actor->setGlobalPose(physx::PxTransform(
+						physx::PxVec3(real_origin[0], real_origin[1], real_origin[2]),
+						physx::PxQuat(prefab_quat[0], prefab_quat[1], prefab_quat[2], prefab_quat[3])));*/
+
+					actor->setGlobalPose(physx::PxTransform(
+						physx::PxVec3(real_origin[0], real_origin[1], real_origin[2]),
+						physx::PxQuat(prefab_quat[0], prefab_quat[1], prefab_quat[2], prefab_quat[3])));
+
+
+					// save initial pose
+					const auto pose = actor->getGlobalPose();
+					data->initial_transform = physx::PxTransform(pose.p, pose.q);
+					data->last_transform = data->initial_transform;
+
+					m_dynamic_prefabs.push_back(actor);
+
+					// cull checks at 0x407AF4, 0x407BEC & 0x408000 result in flickering prefab entities
+					// skips culling function if custom_no_cull is set
+					data->entity->firstActive->custom_no_cull = true;
 				}
 			}
 		}

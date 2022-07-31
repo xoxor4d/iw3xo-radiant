@@ -624,10 +624,10 @@ namespace game
 		epair_t *epairs;
 		int movedAmount;
 		int epairEdits;
-		char pad_0x0080[8];
+		bool custom_no_cull; // seems fine
+		char pad_0x0080[7];
 		int refCount;
-		bool custom_no_cull;
-		char pad_0x008C[3];
+		char pad_0x008C[4]; // not unused
 	};
 	STATIC_ASSERT_OFFSET(entity_s, modelInst, 0x44);
 	STATIC_ASSERT_OFFSET(entity_s, eclass, 0x60);

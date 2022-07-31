@@ -98,22 +98,20 @@ namespace components
 		struct userdata_s
 		{
 			physx::PxMaterial* material = nullptr;
+		};
+
+		struct userdata_prefab_s
+		{
+			physx::PxMaterial* material = nullptr;
 			game::entity_s* entity = nullptr;
 			game::brush_t_with_custom_def* def = nullptr;
 			game::vec3_t initial_ent_origin = {};
 			game::vec3_t initial_ent_angles = {};
-			//game::vec3_t actual_ent_origin = {};
-
-			//physx::PxVec3 initial_pos = {};
-			//physx::PxQuat initial_quat = {};
 			physx::PxTransform initial_transform;
 			physx::PxTransform last_transform;
-
-			//physx::PxVec3 last_pos = {};
-			//physx::PxQuat last_quat = {};
-
-			game::vec3_t last_angles = {};
 		};
+
+
 
 	public:
 		physx_impl();
@@ -139,6 +137,8 @@ namespace components
 
 		void create_static_brush(game::selbrush_def_t* sb, bool is_prefab = false, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
 		void create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
+
+		void clear_static_collision();
 		static void create_static_collision();
 
 		void convert_phys_to_misc_models();

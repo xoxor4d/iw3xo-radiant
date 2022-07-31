@@ -458,6 +458,7 @@ namespace game
 		if (!def->owner)
 		{
 			def->owner = owner->firstActive;
+			imgui::Toast(ImGuiToastType_Warning, "dynamic prefabs - Select_RotateFixedSize", "trying to fix brush with 'def->owner = owner->firstActive'");
 		}
 
 		float offset_axis[3][3];

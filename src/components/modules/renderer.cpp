@@ -2126,7 +2126,7 @@ namespace components
 			components::physx_impl::get()->fx_frame();
 		}
 
-		if (components::physx_impl::get()->m_phys_sim_run)
+		if (components::physx_impl::get()->m_phys_sim_run && !effects::effect_is_playing() && !effects::effect_is_paused())
 		{
 			components::physx_impl::get()->phys_frame();
 		}

@@ -97,7 +97,7 @@ namespace components
 		}
 		else
 		{
-			if(effect_name)
+			if (effect_name)
 			{
 				effect_to_load = effect_name;
 			}
@@ -291,6 +291,15 @@ namespace components
 	{
 		effects::set_initial_state();
 		effects::on_effect_stop();
+	}
+
+	void effects::stop_all()
+	{
+		effects::stop();
+		/*fx_system::FX_UnregisterAll();
+		effects::last_fx_name_ = "";
+		effects::reset_editor_effect();
+		fx_system::ed_is_editor_effect_valid = false;*/
 	}
 
 	void effects::edit()
