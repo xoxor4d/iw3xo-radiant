@@ -2121,12 +2121,15 @@ namespace components
 			return;
 		}
 
+		// TODO:
+		// * unify physics frame logic
+
 		if (effects::effect_can_play() || GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic)
 		{
 			components::physx_impl::get()->fx_frame();
 		}
 
-		if (components::physx_impl::get()->m_phys_sim_run && !effects::effect_is_playing() && !effects::effect_is_paused())
+		if (components::physx_impl::get()->m_phys_sim_run)
 		{
 			components::physx_impl::get()->phys_frame();
 		}

@@ -82,20 +82,21 @@ namespace ggui
 		//const auto& style = imgui::GetStyle();
 		const auto phys = components::physx_impl::get();
 
-		const float label_left_offset = 74.0f;
+		const float label_left_offset = 84.0f;
+		const auto separator_with_text_color = ImVec4(0.75f, 0.75f, 0.75f, 1.0f);
 
-		float general_widget_width;
+		static float general_widget_width = 160.0f;
 		float label_size;
 
 		imgui::Indent(8.0f);
 		imgui::Spacing();
 
 		// -----------------
-		imgui::title_with_seperator("General", false, 0, 2, 6.0f);
+		imgui::title_with_seperator("Effect Settings", false, 0, 2, 6.0f);
 
 		imgui::BeginDisabled(!components::effects::effect_can_play());
 		{
-			if (imgui::Button("Reload Effect"))
+			if (imgui::Button("Reload Effect", ImVec2(general_widget_width * 0.5f - 5.0f, 0.0f)))
 			{
 				if (components::effects_editor::is_editor_active())
 				{
@@ -112,7 +113,7 @@ namespace ggui
 		
 
 		imgui::SameLine();
-		if (imgui::Button("Toggle Show Tris"))
+		if (imgui::Button("Toggle Show Tris", ImVec2(general_widget_width * 0.5f - 5.0f, 0.0f)))
 		{
 			auto tris = game::Dvar_FindVar("r_showTris");
 			if (tris)
@@ -121,12 +122,19 @@ namespace ggui
 			}
 		}
 
-		imgui::DragFloat("Timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f);
 		imgui::DragFloat("Repeat Delay", &fx_system::ed_looppause, 0.01f, 0.05f, FLT_MAX, "%.2f");
+
+		SPACING(0.0f, 8.0f);
+
+		imgui::PushStyleColor(ImGuiCol_Separator, separator_with_text_color);
+		ImGui::title_inside_seperator("Effects & PhysX", false, ImGui::GetContentRegionAvail().x - 16.0f, 24.0f, 1.0f);
+		imgui::PopStyleColor();
+
+		imgui::DragFloat("Timescale", &fx_system::ed_timescale, 0.005f, 0.001f, 50.0f);
 
 		//imgui::BeginDisabled(!components::effects::effect_can_play());
 		{
-			static int tick_rate = 50;
+			static int tick_rate = 5;
 			static int held_timeout = 0;
 
 			imgui::DragInt("##tick_rate", &tick_rate, 1, 1, INT16_MAX);
@@ -145,7 +153,7 @@ namespace ggui
 			{
 				if (imgui::IsMouseDown(ImGuiMouseButton_Left))
 				{
-					if (held_timeout > 50)
+					if (held_timeout > 30) 
 					{
 						fx_system::ed_playback_tick += tick_rate;
 						phys->m_phys_sim_tick += tick_rate;
@@ -159,7 +167,7 @@ namespace ggui
 				{
 					held_timeout = 0;
 				}
-			}
+			} TT("hold left mouse to continuously increase ticks by x amount");
 
 			//imgui::EndDisabled();
 		}
@@ -167,7 +175,14 @@ namespace ggui
 		// -----------------
 		imgui::title_with_seperator("PhysX :: General", true, 0.0f, 2.0f, 8.0f);
 
-		
+		bool is_prefab_selected = false;
+
+		if (const auto sb = game::g_selected_brushes(); 
+			sb && sb->owner && sb->owner->prefab)
+		{
+			is_prefab_selected = true;
+		}
+
 		const bool single_brush_selected = game::is_single_brush_selected(false);
 
 		SET_WIDGET_WIDTH_WITH_LABEL("");
@@ -205,18 +220,70 @@ namespace ggui
 				});
 
 			process->create_process();
-		} TT("generate collision data for all non-selected brushes, terrain and curve patches, so that dynamic actors collide with the world");
+		} TT(	"generate collision data for all non-selected brushes,\n"
+				"terrain and curve patches, so that dynamic actors collide with the world");
 
-		if (imgui::Button("Convert to misc_models", ImVec2(GET_WIDGET_WIDTH(), imgui::GetFrameHeight())))
-		{
-			phys->convert_phys_to_misc_models();
-		} TT("converts all dynamic actors to misc_models");
+		
 
-		imgui::BeginDisabled(!game::is_any_brush_selected());
+
+		// ---------------------------
+
+		SPACING(0.0f, 8.0f);
+
+		imgui::PushStyleColor(ImGuiCol_Separator, separator_with_text_color);
+		ImGui::title_inside_seperator("Prefab PhysX", false, ImGui::GetContentRegionAvail().x - 16.0f, 24.0f, 1.0f);
+		imgui::PopStyleColor();
+
+
+		const auto icon_fa_size = ImVec2(36.0f, 32.0f);
+		imgui::BeginDisabled(phys->m_dynamic_prefabs.empty());
+		imgui::PushCompactButtonInvBg();
 		{
-			if (imgui::Button("Convert selected prefabs to phys", ImVec2(GET_WIDGET_WIDTH(), imgui::GetFrameHeight())))
+			bool& run_sim = components::physx_impl::get()->m_phys_sim_run;
+			imgui::PushStyleColor(ImGuiCol_Text, run_sim ? ImVec4(0.44f, 0.69f, 0.0f, 1.0f) : ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
 			{
-				phys->clear_dynamic_prefabs();
+				if (imgui::Button(ICON_FA_PLAY, icon_fa_size))
+				{
+
+					run_sim = run_sim ? false : true;
+				}
+
+				imgui::PopStyleColor();
+			} TT("run PhysX simulation for all PhysX prefab actors in the world");
+
+
+			imgui::SameLine();
+			bool& pause_sim = components::physx_impl::get()->m_phys_sim_pause;
+			imgui::PushStyleColor(ImGuiCol_Text, pause_sim ? ImVec4(0.28f, 0.5f, 0.75f, 1.0f) : ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
+			{
+				if (imgui::ButtonEx(ICON_FA_PAUSE, icon_fa_size))
+				{
+
+					pause_sim = pause_sim ? false : true;
+				}
+
+				imgui::PopStyleColor();
+			} TT("pause prefab PhysX simulation (useful to manually advance Ticks)");
+
+
+			imgui::SameLine();
+			if (imgui::Button(ICON_FA_UNDO_ALT, icon_fa_size))
+			{
+				phys->reset_dynamic_prefabs();
+			} TT("resets all prefab entites to their initial position/angles upon creation");
+
+			imgui::PopCompactButtonInvBg();
+			imgui::EndDisabled();
+		}
+
+		imgui::SameLine();
+
+		imgui::BeginGroup(); // tooltip
+		imgui::BeginDisabled(!(is_prefab_selected && !components::effects::effect_is_playing()));
+		{
+			if (imgui::Button("Convert Prefabs to PhysX actors", ImVec2(general_widget_width - 34.0f, icon_fa_size.y)))
+			{
+				phys->clear_dynamic_prefabs(false);
 
 				FOR_ALL_SELECTED_BRUSHES(sb)
 				{
@@ -226,25 +293,29 @@ namespace ggui
 					}
 				}
 
-				//game::Select_Hide();
-
-			} TT("converts all selected brushes to physix actors");
+			} 
 
 			imgui::EndDisabled();
+			imgui::EndGroup();
+			TT(	"convert all selected prefabs to PhysX actors\n"
+				"@ make sure to re-generate static collision to exclude the selected prefabs\n"
+				"@ only available if effects are stopped or paused");
 		}
+		
+		
 
-		if (imgui::Button("reset prefab phys", ImVec2(GET_WIDGET_WIDTH(), imgui::GetFrameHeight())))
+		// ---------------------------
+
+		SPACING(0.0f, 8.0f);
+
+		imgui::PushStyleColor(ImGuiCol_Separator, separator_with_text_color);
+		ImGui::title_inside_seperator("Effect PhysX", false, ImGui::GetContentRegionAvail().x - 16.0f, 24.0f, 1.0f);
+		imgui::PopStyleColor();
+
+		if (imgui::Button("Convert FX PhysX actors to misc_models", ImVec2(GET_WIDGET_WIDTH(), imgui::GetFrameHeight())))
 		{
-			phys->reset_dynamic_prefabs();
-		} TT("resets all prefab entites to their initial position/angles upon creation");
-
-		bool* run_sim = &components::physx_impl::get()->m_phys_sim_run;
-		imgui::Checkbox("run phys sim", run_sim);
-
-		bool* pause_sim = &components::physx_impl::get()->m_phys_sim_pause;
-		imgui::Checkbox("pause phys sim", pause_sim);
-
-		SPACING(0.0f, 4.0f);
+			phys->convert_phys_to_misc_models();
+		} TT("convert all dynamic FX PhysX actors to misc_models");
 
 		imgui::SetNextItemWidth(GET_WIDGET_WIDTH());
 		if (imgui::BeginCombo("##combo_physx_shape", phys->m_effect_shape.strings[phys->m_effect_shape.index], ImGuiComboFlags_HeightLarge))
@@ -263,12 +334,19 @@ namespace ggui
 			}
 
 			imgui::EndCombo();
-		}
+		} TT("sets the shape type for PhysX actors spawned via effects");
 
 		if (phys->m_effect_shape.index != components::physx_impl::EFFECT_PHYSX_SHAPE::CUSTOM)
 		{
 			SET_WIDGET_WIDTH_WITH_LABEL("Shape Scale   ");
-			imgui::DragFloat("Shape Scale", &phys->m_effect_shape.scalar, 0.05f, 0.05f, 100.0f, "%.2f"); 
+			if (imgui::DragFloat("Shape Scale", &phys->m_effect_shape.scalar, 0.05f, 0.05f, 100.0f, "%.2f"))
+			{
+				if (phys->m_effect_shape.scalar <= 0.0f)
+				{
+					phys->m_effect_shape.scalar = 0.05f;
+				}
+			}
+			TT("a general scalar for the shape used by PhysX actors spawned via effects");
 		}
 		else
 		{
@@ -282,7 +360,7 @@ namespace ggui
 						phys->create_custom_shape_from_selection(sb);
 					}
 					
-				} TT("uses the currently selected brush as the collision shape");
+				} TT("uses the currently selected brush as the collision shape\nfor PhysX actors spawned via effects");
 
 				imgui::EndDisabled();
 			}
@@ -307,7 +385,7 @@ namespace ggui
 		if (imgui::Button("Update", ImVec2(GET_WIDGET_WIDTH(), imgui::GetFrameHeight())))
 		{
 			components::physx_impl::get()->update_static_collision_material();
-		}
+		} TT("Update material properties - changes properties of all static collision and prefab actors");
 
 
 		// #
@@ -322,22 +400,24 @@ namespace ggui
 
 		SET_WIDGET_WIDTH_WITH_LABEL("Bounce Threshold");
 		auto bounce_threshold = phys->mScene->getBounceThresholdVelocity(); // 20
-		if (imgui::DragFloat("Bounce Threshold", &bounce_threshold, 0.025f, 0.0f, 1000.0f, "%.2f"))
+		if (imgui::DragFloat("Bounce Threshold", &bounce_threshold, 0.025f, 0.0f, 50000.0f, "%.2f"))
 		{
 			phys->mScene->setBounceThresholdVelocity(bounce_threshold);
 		}
 
+#if DEBUG
 		SET_WIDGET_WIDTH_WITH_LABEL("Friction Threshold");
 		auto friction_threshold = phys->mScene->getFrictionOffsetThreshold(); // 0.0399999991
 		imgui::DragFloat("Friction Threshold", &friction_threshold, 0.025f, 0.0f, 1000.0f, "%.2f");
-
+#endif
 
 		// #
 		imgui::title_with_seperator("PhysX :: Debug Visuals", true, 0.0f, 2.0f, 8.0f);
 
-		imgui::Checkbox("Keep physics code running", &phys_force_frame_logic);
+#if DEBUG
+		imgui::Checkbox("DEBUG: Keep physics code running", &phys_force_frame_logic);
 		TT("Enable to always run physics code even if no effect is playing (useful for debug visualization)");
-
+#endif
 		static bool physx_draw_debug = false;
 		if (imgui::Checkbox("Enable debug visuals", &physx_draw_debug))
 		{

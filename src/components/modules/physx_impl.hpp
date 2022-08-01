@@ -44,7 +44,7 @@ namespace components
 		uint32_t m_phys_msec_step = 3;
 		float m_time_now_lerp_frac;
 
-		uint32_t m_active_actor_count = 0;
+		uint32_t m_fx_active_actor_count = 0;
 		uint32_t m_converted_misc_model_count = 0;
 
 		float m_visualization_cullingbox_size = 1000.0f;
@@ -98,6 +98,7 @@ namespace components
 		struct userdata_s
 		{
 			physx::PxMaterial* material = nullptr;
+			std::string model_name;
 		};
 
 		struct userdata_prefab_s
@@ -146,7 +147,7 @@ namespace components
 		void obj_destroy(int id);
 		void obj_get_interpolated_state(int id, float* out_pos, float* out_quat);
 
-		void clear_dynamic_prefabs();
+		void clear_dynamic_prefabs(bool clear_state = true);
 		void reset_dynamic_prefabs();
 
 		void create_physx_object(game::selbrush_def_t* sb);

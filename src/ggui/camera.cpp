@@ -49,42 +49,48 @@ namespace ggui
 			ImGui::SetCursorPos(cursor_pos);
 		}
 
-		if (components::effects::effect_is_playing() || components::effects::effect_is_paused())
 		{
-			const auto cursor_pos = ImGui::GetCursorPos();
-			ImGui::SetCursorPosX(cursor_pos.x - CAM_DEBUG_TEXT_Y_OFFS);
+			const auto phys = components::physx_impl::get();
+			const bool is_prefab_simulation_active = (phys->m_phys_sim_run && phys->m_phys_active_actor_count);
 
-			ImGui::BeginGroup();
+			if (components::effects::effect_is_playing() || components::effects::effect_is_paused() || is_prefab_simulation_active)
 			{
-				const float offset = 16.0f;
-				float y_offset = offset;
+				const auto cursor_pos = ImGui::GetCursorPos();
+				ImGui::SetCursorPosX(cursor_pos.x - CAM_DEBUG_TEXT_Y_OFFS);
 
-				ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
-				ImGui::Text("FX Drawsurf Count: %d", components::renderer::effect_drawsurf_count_);
-
-				if (const auto p = components::physx_impl::get();
-					p->m_effect_is_using_physics)
+				ImGui::BeginGroup();
 				{
-					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
-					ImGui::Text("PhysX %d ms/frame", p->m_phys_msec_step);
+					const float offset = 16.0f;
+					float y_offset = offset;
 
 					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
-					ImGui::Text("PhysX bodies %d", p->m_active_actor_count);
+					ImGui::Text("FX Drawsurf Count: %d", components::renderer::effect_drawsurf_count_);
 
-					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
-					ImGui::Text("PhysX brushes %d", p->m_static_brush_count);
 
-					ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
-					ImGui::Text("PhysX terrain %d", p->m_static_terrain_count);
+					if (phys->m_effect_is_using_physics || is_prefab_simulation_active)
+					{
+						ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
+						ImGui::Text("PhysX %d ms/frame", phys->m_phys_msec_step);
+
+						ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
+						ImGui::Text("PhysX bodies %d", is_prefab_simulation_active ? phys->m_phys_active_actor_count : phys->m_fx_active_actor_count);
+
+						ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
+						ImGui::Text("PhysX brushes %d", phys->m_static_brush_count);
+
+						ImGui::SetCursorPosY(cursor_pos.y + y_offset); y_offset += offset;
+						ImGui::Text("PhysX terrain %d", phys->m_static_terrain_count);
+					}
+
+					ImGui::EndGroup();
 				}
 
-				ImGui::EndGroup();
-			}
-			
-			
 
-			ImGui::SetCursorPos(cursor_pos);
+
+				ImGui::SetCursorPos(cursor_pos);
+			}
 		}
+
 
 		if (hide_cam_toolbar)
 		{
@@ -455,7 +461,7 @@ namespace ggui
 							if (tb->image_togglebutton("fakesun_settings"
 								, hov_fx_settings
 								, hov_fx_settings
-								, "Open FX settings menu"
+								, "Open Effects / PhysX settings menu"
 								, &toolbar_button_background
 								, &toolbar_button_background_hovered
 								, &toolbar_button_background_active

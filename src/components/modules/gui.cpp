@@ -563,6 +563,7 @@ namespace components
 		game::glob::is_loading_map = true;
 		utils::show_external_console(true);
 
+		components::effects::stop();
 		components::physx_impl::get()->clear_dynamic_prefabs();
 		components::physx_impl::get()->clear_static_collision();
 	}

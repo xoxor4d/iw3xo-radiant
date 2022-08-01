@@ -750,6 +750,21 @@ namespace ImGui
 		}
 	}
 
+	void PushCompactButtonInvBg()
+	{
+		imgui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+		imgui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.39f, 0.39f, 0.39f, 0.23f));
+		imgui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.55f, 0.55f, 0.55f, 0.23f));
+
+		imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 5.0f));
+	}
+
+	void PopCompactButtonInvBg()
+	{
+		imgui::PopStyleColor(3);
+		imgui::PopStyleVar();
+	}
+
 	void PushStyleCompact()
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -1158,7 +1173,7 @@ namespace ImGui
 
 		const float text_spacing = 6.0f;
 
-		ImGui::PushFontFromIndex(ggui::REGULAR_12PX);
+		ImGui::PushFontFromIndex(ggui::REGULAR_14PX);
 		const auto text_size = ImGui::CalcTextSize(title_text, nullptr, true);
 
 		const float first_sep_width = (width * 0.1f);

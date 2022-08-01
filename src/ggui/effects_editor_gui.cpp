@@ -1677,8 +1677,8 @@ namespace ggui
 
 			int color_count = 0;
 			imgui::PushStyleColor(ImGuiCol_Button, ImVec4(0.44f, 0.69f, 0.0f, 1.0f)); color_count++;
-			imgui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.40f, 0.72f, 0.10f, 1.0f)); color_count++;
-			imgui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.5f, 0.73f, 0.10f, 1.0f)); color_count++;
+			imgui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.73f, 0.10f, 1.0f)); color_count++;
+			imgui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.55f, 0.75f, 0.15f, 1.0f)); color_count++;
 			imgui::PushStyleColor(ImGuiCol_Text, ImVec4(0.1f, 0.1f, 0.1f, 1.0f)); color_count++;
 			imgui::PushFontFromIndex(ggui::BOLD_18PX);
 

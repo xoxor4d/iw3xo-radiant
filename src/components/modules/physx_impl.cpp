@@ -102,7 +102,7 @@ namespace components
 					constexpr float REDUCE_MSEC_BEGIN_AT_COUNT = 64.0f; // object count needed to start increasing m_phys_msec_step # og: 32
 					constexpr float REDUCE_MSEC_RANGE_TO_MAX = 64.0f;   // range - how many objects are needed to hit g_phys_maxMsecStep # og: 18
 
-					const auto step_for_count = (static_cast<float>(m_active_actor_count) - REDUCE_MSEC_BEGIN_AT_COUNT) / REDUCE_MSEC_RANGE_TO_MAX;
+					const auto step_for_count = (static_cast<float>(m_fx_active_actor_count) - REDUCE_MSEC_BEGIN_AT_COUNT) / REDUCE_MSEC_RANGE_TO_MAX;
 					const auto s0 = step_for_count - 1.0f < 0.0f ? step_for_count : 1.0f;
 					const auto s1 = 0.0f - step_for_count < 0.0f ? s0 : 0.0f;
 
@@ -316,13 +316,13 @@ namespace components
 					// #
 					// dxPostProcessIslands(static_cast<PhysWorld>(worldIndex));
 
-					mScene->getActiveActors(m_active_actor_count);
+					mScene->getActiveActors(m_fx_active_actor_count);
 
 
 					constexpr float REDUCE_MSEC_BEGIN_AT_COUNT = 64.0f; // object count needed to start increasing m_phys_msec_step # og: 32
 					constexpr float REDUCE_MSEC_RANGE_TO_MAX = 64.0f;   // range - how many objects are needed to hit g_phys_maxMsecStep # og: 18
 
-					const auto step_for_count = (static_cast<float>(m_active_actor_count) - REDUCE_MSEC_BEGIN_AT_COUNT) / REDUCE_MSEC_RANGE_TO_MAX;
+					const auto step_for_count = (static_cast<float>(m_fx_active_actor_count) - REDUCE_MSEC_BEGIN_AT_COUNT) / REDUCE_MSEC_RANGE_TO_MAX;
 					const auto s0 = step_for_count - 1.0f < 0.0f ? step_for_count : 1.0f;
 					const auto s1 = 0.0f - step_for_count < 0.0f ? s0 : 0.0f;
 
@@ -1015,7 +1015,7 @@ namespace components
 
 	void physx_impl::convert_phys_to_misc_models()
 	{
-		if (m_active_actor_count && fx_system::ed_active_effect)
+		if (m_fx_active_actor_count && fx_system::ed_active_effect)
 		{
 			const auto system = fx_system::FX_GetSystem(0);
 			const auto entity_gui = GET_GUI(ggui::entity_dialog);
@@ -1034,8 +1034,8 @@ namespace components
 
 				while (elemHandle != UINT16_MAX)
 				{
-					const fx_system::FxElem* elem = fx_system::FX_ElemFromHandle(system, elemHandle);
-					const fx_system::FxElemDef* elem_def = &fx_system::ed_active_effect->def->elemDefs[static_cast<std::uint8_t>(elem->defIndex)];
+					fx_system::FxElem* elem = fx_system::FX_ElemFromHandle(system, elemHandle);
+					fx_system::FxElemDef* elem_def = &fx_system::ed_active_effect->def->elemDefs[static_cast<std::uint8_t>(elem->defIndex)];
 
 					if (elem_def->elemType <= fx_system::FX_ELEM_TYPE_LAST_SPRITE)
 					{
@@ -1046,8 +1046,11 @@ namespace components
 					{
 						const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(elem->___u8.physObjId);
 
-						if (elem_def->visuals.instance.model)
+						// model name saved within user data because I have no clue how to get the correct visual from visuals.array
+						if (actor->userData)
 						{
+							const auto user_data = static_cast<userdata_s*>(actor->userData);
+
 							const auto pos = actor->getGlobalPose().p;
 							const auto quat = actor->getGlobalPose().q;
 
@@ -1073,7 +1076,10 @@ namespace components
 								// CreateEntityFromName takes ~ 24 ms
 								//timer.now("CreateEntityBrush");
 
-								entity_gui->add_prop("model", elem_def->visuals.instance.model->name, &no_undo);
+								// use visuals.array if visual count != 1
+								//entity_gui->add_prop("model", elem_def->visuals.instance.model->name, &no_undo);
+
+								entity_gui->add_prop("model", user_data->model_name.c_str(), &no_undo);
 
 								char str_buf[64] = {};
 								if (sprintf_s(str_buf, "%.3f %.3f %.3f", pos[0], pos[1], pos[2]))
@@ -1086,9 +1092,32 @@ namespace components
 									entity_gui->add_prop("angles", str_buf, &no_undo);
 								}
 
-								if (elem_def->visSamples && elem_def->visSamples->base.scale != 1.0f)
+								// * this is not a per model scale
+								//if (elem_def->visSamples && elem_def->visSamples->base.scale != 1.0f)
+								//{
+									//entity_gui->add_prop("modelscale", std::to_string(elem_def->visSamples->base.scale).c_str(), &no_undo);
+								//}
+
+
+								// #
+								// get scale for the current model
+
+								fx_system::FxDrawState draw = {};
+								draw.effect = fx_system::ed_active_effect;
+								draw.msecDraw = system->msecDraw;
+								draw.elem = elem;
+								draw.elemDef = elem_def;
+
+								fx_system::FX_DrawElement_Setup_1_(&draw, elem->msecBegin, static_cast<std::uint8_t>(elem->sequence), elem->___u8.origin, nullptr);
+
+								const float rnd = fx_system::fx_randomTable[27 + draw.preVisState.randomSeed];
+								const float graph_b = rnd * draw.preVisState.refState[1].amplitude.scale + draw.preVisState.refState[1].base.scale;
+								const float graph_a = rnd * draw.preVisState.refState->amplitude.scale + draw.preVisState.refState->base.scale;
+								draw.visState.scale = draw.preVisState.sampleLerpInv * graph_a + graph_b * draw.preVisState.sampleLerp;
+
+								if (draw.visState.scale <= 0.0f)
 								{
-									entity_gui->add_prop("modelscale", std::to_string(elem_def->visSamples->base.scale).c_str(), &no_undo);
+									entity_gui->add_prop("modelscale", std::to_string(draw.visState.scale).c_str(), &no_undo);
 								}
 							}
 
@@ -1146,9 +1175,11 @@ namespace components
 		out_quat[3] = quat.w;
 	}
 
-
-	// clear m_dynamic_brushes
-	void physx_impl::clear_dynamic_prefabs()
+	/**
+	 * \brief clear dynamic prefab actors
+	 * \param clear_state reset run and pause states
+	 */
+	void physx_impl::clear_dynamic_prefabs(bool clear_state)
 	{
 		for (const auto p : m_dynamic_prefabs)
 		{
@@ -1160,7 +1191,15 @@ namespace components
 
 			p->release();
 		}
+
 		m_dynamic_prefabs.clear();
+
+		if (clear_state)
+		{
+			m_phys_sim_run = false;
+			m_phys_sim_pause = false;
+			m_phys_sim_running = false;
+		}
 	}
 
 
@@ -1444,6 +1483,7 @@ namespace components
 
 		userdata_s* data = new userdata_s();
 		data->material = material;
+		data->model_name = model->name;
 		actor->userData = data;
 
 		if (USE_CONTACT_CALLBACK)

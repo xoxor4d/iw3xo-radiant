@@ -50,6 +50,8 @@ namespace ImGui
 
 	ImGuiID FindNodeByID(ImGuiID id);
 	void	DockBuilderDockWindow_FirstUseOrSaved(const char* window_name, ImGuiID node_id);
+	void	PushCompactButtonInvBg();
+	void	PopCompactButtonInvBg();
 	void	PushStyleCompact();
 	void	PopStyleCompact();
 	bool	BeginTabItem_SmallGap(const char* label, bool* p_open = nullptr, ImGuiTabItemFlags flags = 0);
