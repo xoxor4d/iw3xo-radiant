@@ -1,7 +1,7 @@
 #include "std_include.hpp"
 
 constexpr bool USE_PVD = false; // PhysX Visual Debugger
-constexpr bool USE_CONTACT_CALLBACK = false; // can be used to implement effect spawing on impact
+constexpr bool USE_CONTACT_CALLBACK = false; // can be used to implement effect spawning on impact
 
 // fx_system impacts:
 // - 'play new effect on impact' only works when 'enable model physics simulation' is turned off
@@ -14,7 +14,11 @@ namespace components
 	constexpr int m_phys_min_msec_step = 3;	// 11
 	constexpr int m_phys_max_msec_step = 11;	// 67
 
-	// components::effects::camera_onpaint_intercept()
+	/**
+	 * @brief	PhysX tick logic (not related to effects)
+	 * @note	- called from 'components::effects::camera_onpaint_intercept()'
+	 *			- same logic as effects::tick_playback()
+	 */
 	void physx_impl::tick_playback()
 	{
 		const auto saved_tick = static_cast<int>(GetTickCount());
@@ -39,18 +43,54 @@ namespace components
 		}
 	}
 
+	/**
+	 * @brief	simulate and fetch results
+	 * @param	seconds amount to advance simulation by 
+	 */
 	void physx_impl::run_frame(float seconds)
 	{
 		mScene->simulate(seconds);
 		mScene->fetchResults(true);
 	}
 
-	// separate frame for physics only (not FX related - eg. brushes)
-	// -> renderer::setup_viewinfo
+	/**
+	 * @brief	draw debug data gathered by the last simulation
+	 */
+	void physx_impl::draw_debug_visualization()
+	{
+		const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
+		for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
+		{
+			const auto& line = rb.getLines()[i];
+
+			game::GfxPointVertex vert[2];
+			vert[0].xyz[0] = line.pos0.x;
+			vert[0].xyz[1] = line.pos0.y;
+			vert[0].xyz[2] = line.pos0.z;
+			vert[0].color.packed = line.color0;
+
+			vert[1].xyz[0] = line.pos1.x;
+			vert[1].xyz[1] = line.pos1.y;
+			vert[1].xyz[2] = line.pos1.z;
+			vert[1].color.packed = line.color1;
+
+			renderer::R_AddLineCmd(1, 4, 3, vert);
+
+			if (mScene->getVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT) > 0.0f)
+			{
+				renderer::R_AddPointCmd(1, 12, 3, vert);
+			}
+		}
+	}
+
+	/**
+	 * @brief	PhysX simulation frame for effect unrelated PhysX actors
+	 * @note	called from renderer::setup_viewinfo()
+	 */
 	void physx_impl::phys_frame()
 	{
 		// its not save to access brush data while loading a map (obv.)
-		// do not re-run phys if fx is playing
+		// do not re-run phys if fx frame is active
 		if (game::glob::is_loading_map || m_fx_sim_running)
 		{
 			return;
@@ -69,7 +109,7 @@ namespace components
 				{
 					if (!max_iter)
 					{
-						Assert();
+						AssertS("!max_iter");
 					}
 
 					const auto delta = (m_phys_sim_tick - m_phys_time_last_update) / static_cast<int>(max_iter);
@@ -93,22 +133,18 @@ namespace components
 					physx_impl::run_frame(static_cast<float>(step) * 0.001f);
 					m_phys_time_last_update += step;
 
-					// #
-					// dxPostProcessIslands(static_cast<PhysWorld>(worldIndex));
 
+					// part of 'dxPostProcessIslands'
 					mScene->getActiveActors(m_phys_active_actor_count);
 
-
 					constexpr float REDUCE_MSEC_BEGIN_AT_COUNT = 64.0f; // object count needed to start increasing m_phys_msec_step # og: 32
-					constexpr float REDUCE_MSEC_RANGE_TO_MAX = 64.0f;   // range - how many objects are needed to hit g_phys_maxMsecStep # og: 18
+					constexpr float REDUCE_MSEC_RANGE_TO_MAX = 64.0f;   // range - how many objects are needed to hit g_phys_maxMsecStep (begin + range) # og: 18
 
 					const auto step_for_count = (static_cast<float>(m_fx_active_actor_count) - REDUCE_MSEC_BEGIN_AT_COUNT) / REDUCE_MSEC_RANGE_TO_MAX;
 					const auto s0 = step_for_count - 1.0f < 0.0f ? step_for_count : 1.0f;
 					const auto s1 = 0.0f - step_for_count < 0.0f ? s0 : 0.0f;
 
 					m_phys_msec_step = m_phys_min_msec_step + static_cast<int>((static_cast<float>((m_phys_max_msec_step - m_phys_min_msec_step)) * s1));
-
-					// #
 
 					if (m_phys_time_last_update >= m_phys_sim_tick)
 					{
@@ -119,14 +155,14 @@ namespace components
 
 			if (m_phys_time_last_snapshot > m_phys_sim_tick || m_phys_sim_tick > m_phys_time_last_update)
 			{
-				Assert();
+				AssertS("m_phys_time_last_snapshot > m_phys_sim_tick || m_phys_sim_tick > m_phys_time_last_update");
 			}
 
 			if (m_phys_time_last_update <= m_phys_time_last_snapshot)
 			{
 				if (m_phys_time_last_update != m_phys_time_last_snapshot)
 				{
-					Assert();
+					AssertS("m_phys_time_last_update != m_phys_time_last_snapshot");
 				}
 
 				m_time_now_lerp_frac = 1.0f;
@@ -138,7 +174,7 @@ namespace components
 
 				if (delta < 0.0f || delta > 1.0f)
 				{
-					Assert();
+					AssertS("delta < 0.0f || delta > 1.0f");
 				}
 			}
 
@@ -153,13 +189,6 @@ namespace components
 					if (user_data && user_data->entity)
 					{
 						const auto pose = p->getGlobalPose();
-
-						float axis[3][3];
-						fx_system::UnitQuatToAxis(&pose.q.x, axis);
-
-						game::vec3_t angles = {};
-						game::AxisToAngles(axis, angles);
-
 						if (pose.p != user_data->last_transform.p || pose.q != user_data->last_transform.q)
 						{
 							// calculate delta pos
@@ -172,9 +201,9 @@ namespace components
 							utils::vector::add(offset_pos, user_data->entity->firstActive->origin, offset_pos);
 
 
-							// update entity origin
-
+							// update entity origin (before rotation!)
 							char str_buf[64] = {};
+
 							if (sprintf_s(str_buf, "%.3f %.3f %.3f", offset_pos[0], offset_pos[1], offset_pos[2]))
 							{
 								game::SetKeyValue(user_data->entity->firstActive, "origin", str_buf);
@@ -187,11 +216,11 @@ namespace components
 							// calculate delta rotation (quat) = to * from.inverse()
 							auto q_delta = pose.q * user_data->last_transform.q.getConjugate();
 
-							float rotate_axis[4][3];
 							const auto x_axis = q_delta.getBasisVector0();
 							const auto y_axis = q_delta.getBasisVector1();
 							const auto z_axis = q_delta.getBasisVector2();
 
+							float rotate_axis[4][3];
 							rotate_axis[0][0] = pose.p.x;
 							rotate_axis[0][1] = pose.p.y;
 							rotate_axis[0][2] = pose.p.z;
@@ -208,7 +237,7 @@ namespace components
 							rotate_axis[3][1] = z_axis.y;
 							rotate_axis[3][2] = z_axis.z;
 
-							// do the actual rotation
+							// do the actual rotation - handles rotation around an arbitrary point + offsets the origin accordingly
 							game::Select_RotateFixedSize(user_data->entity, user_data->def, rotate_axis);
 
 							// update last_transform
@@ -221,33 +250,14 @@ namespace components
 
 		if (m_phys_sim_run || (m_phys_sim_run && m_phys_sim_pause))
 		{
-			const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
-			for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
-			{
-				const auto& line = rb.getLines()[i];
-
-				game::GfxPointVertex vert[2];
-				vert[0].xyz[0] = line.pos0.x;
-				vert[0].xyz[1] = line.pos0.y;
-				vert[0].xyz[2] = line.pos0.z;
-				vert[0].color.packed = line.color0;
-
-				vert[1].xyz[0] = line.pos1.x;
-				vert[1].xyz[1] = line.pos1.y;
-				vert[1].xyz[2] = line.pos1.z;
-				vert[1].color.packed = line.color1;
-
-				renderer::R_AddLineCmd(1, 4, 3, vert);
-
-				if (mScene->getVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT) > 0.0f)
-				{
-					renderer::R_AddPointCmd(1, 12, 3, vert);
-				}
-			}
+			physx_impl::draw_debug_visualization();
 		}
 	}
 
-	// -> renderer::setup_viewinfo
+	/**
+	 * @brief	PhysX simulation frame for physic-enabled effect-objects
+	 * @note	called from renderer::setup_viewinfo()
+	 */
 	void physx_impl::fx_frame()
 	{
 		const auto fxs = fx_system::FX_GetSystem(0);
@@ -287,7 +297,7 @@ namespace components
 				{
 					if (!max_iter)
 					{
-						Assert();
+						AssertS("!max_iter");
 					}
 
 					const auto delta = (time_now - m_fx_time_last_update) / static_cast<int>(max_iter);
@@ -313,22 +323,17 @@ namespace components
 					m_fx_time_last_update += step;
 
 
-					// #
-					// dxPostProcessIslands(static_cast<PhysWorld>(worldIndex));
-
+					// part of 'dxPostProcessIslands'
 					mScene->getActiveActors(m_fx_active_actor_count);
 
-
 					constexpr float REDUCE_MSEC_BEGIN_AT_COUNT = 64.0f; // object count needed to start increasing m_phys_msec_step # og: 32
-					constexpr float REDUCE_MSEC_RANGE_TO_MAX = 64.0f;   // range - how many objects are needed to hit g_phys_maxMsecStep # og: 18
+					constexpr float REDUCE_MSEC_RANGE_TO_MAX = 64.0f;   // range - how many objects are needed to hit g_phys_maxMsecStep (begin + range) # og: 18
 
 					const auto step_for_count = (static_cast<float>(m_fx_active_actor_count) - REDUCE_MSEC_BEGIN_AT_COUNT) / REDUCE_MSEC_RANGE_TO_MAX;
 					const auto s0 = step_for_count - 1.0f < 0.0f ? step_for_count : 1.0f;
 					const auto s1 = 0.0f - step_for_count < 0.0f ? s0 : 0.0f;
 
 					m_phys_msec_step = m_phys_min_msec_step + static_cast<int>((static_cast<float>((m_phys_max_msec_step - m_phys_min_msec_step)) * s1));
-
-					// #
 
 					if (m_fx_time_last_update >= time_now)
 					{
@@ -339,14 +344,14 @@ namespace components
 
 			if (m_fx_time_last_snapshot > time_now || time_now > m_fx_time_last_update)
 			{
-				Assert();
+				AssertS("m_fx_time_last_snapshot > time_now || time_now > m_fx_time_last_update");
 			}
 
 			if (m_fx_time_last_update <= m_fx_time_last_snapshot)
 			{
 				if (m_fx_time_last_update != m_fx_time_last_snapshot)
 				{
-					Assert();
+					AssertS("m_fx_time_last_update != m_fx_time_last_snapshot");
 				}
 
 				m_time_now_lerp_frac = 1.0f;
@@ -358,49 +363,37 @@ namespace components
 
 				if (delta < 0.0f || delta > 1.0f)
 				{
-					Assert();
+					AssertS("delta < 0.0f || delta > 1.0f");
 				}
 			}
 		}
 
 		if (effects::effect_is_playing() || effects::effect_is_paused() || force_update)
 		{
-			const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
-			for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
-			{
-				const auto& line = rb.getLines()[i];
-
-				game::GfxPointVertex vert[2];
-				vert[0].xyz[0] = line.pos0.x;
-				vert[0].xyz[1] = line.pos0.y;
-				vert[0].xyz[2] = line.pos0.z;
-				vert[0].color.packed = line.color0;
-
-				vert[1].xyz[0] = line.pos1.x;
-				vert[1].xyz[1] = line.pos1.y;
-				vert[1].xyz[2] = line.pos1.z;
-				vert[1].color.packed = line.color1;
-
-				renderer::R_AddLineCmd(1, 4, 3, vert);
-
-				if (mScene->getVisualizationParameter(physx::PxVisualizationParameter::eCONTACT_POINT) > 0.0f)
-				{
-					renderer::R_AddPointCmd(1, 12, 3, vert);
-				}
-			}
+			physx_impl::draw_debug_visualization();
 		}
 	}
 
+	/**
+	 * @brief	create a new PhysX material using settings from a PhysPreset
+	 * @param	preset the PhysPreset to use
+	 * @return	pointer to the new PxMaterial
+	 */
 	physx::PxMaterial* physx_impl::create_material(game::PhysPreset* preset)
 	{
 		return mPhysics->createMaterial(preset->friction, preset->friction, preset->bounce);
 	}
 
+	/**
+	 * @brief	create a convex mesh from a selected brush (sb->def)
+	 * @param	sb brush used to create the convex mesh from
+	 * @return	pointer to the new PxConvexMesh
+	 */
 	physx::PxConvexMesh* physx_impl::create_convex_mesh_from_brush(game::selbrush_def_t* sb)
 	{
 		physx::PxConvexMesh* mesh = nullptr;
 
-		if (sb)
+		if (sb && sb->def)
 		{
 			std::vector<physx::PxVec3> verts;
 			verts.reserve(50);
@@ -456,17 +449,31 @@ namespace components
 		return mesh;
 	}
 
-	// saves ptr to shape in 'm_effect_shape.custom_shape'
+	/**
+	 * @brief	create a convex mesh from a selected brush (sb->def) which will be used \n
+	 *			as the collision shape by all physic-enabled effect-objects (newly spawned)
+	 * @param	sb brush used to create shape from
+	 * @note	saves pointer to shape in 'm_effect_shape.custom_shape'
+	 */
 	void physx_impl::create_custom_shape_from_selection(game::selbrush_def_t* sb)
 	{
-		m_effect_shape.custom_shape = create_convex_mesh_from_brush(sb);
+		if (sb && sb->def)
+		{
+			m_effect_shape.custom_shape = create_convex_mesh_from_brush(sb);
+		}
 	}
 
-	// no nullptr checks besides the selected brush itself
-	// does not exclude brushes
+	/**
+	 * @brief	create a static PhysX actor from a selected brush (used for static collision by the simulation)
+	 * @param	sb brush used to create the mesh from (sb->def)
+	 * @param	is_prefab if selection is a prefab
+	 * @param	position_offset	<prefab> local-space position offset
+	 * @param	quat <prefab> local-space rotation
+	 * @note	adds a pointer to the PhysX actor to 'm_static_brushes'
+	 */
 	void physx_impl::create_static_brush(game::selbrush_def_t* sb, bool is_prefab, const game::vec3_t position_offset, const float* quat)
 	{
-		if (sb)
+		if (sb && sb->def)
 		{
 			std::vector<physx::PxVec3> verts;
 			verts.reserve(50);
@@ -488,24 +495,23 @@ namespace components
 					}
 					
 					const physx::PxVec3 t_point = { tw_point[0], tw_point[1], tw_point[2] };
-					bool contains = false;
+					bool contains_point = false;
 
-					for (auto x = 0; x < static_cast<int>(verts.size()); x++)
+					for (const auto& v : verts)
 					{
-						if (utils::vector::compare(&verts[x].x, &t_point[0]))
+						if (utils::vector::compare(&v.x, &t_point.x))
 						{
-							contains = true;
+							contains_point = true;
 							break;
 						}
 					}
 
-					if (!contains)
+					if (!contains_point)
 					{
-						verts.push_back(t_point);
+						verts.emplace_back(t_point);
 					}
 				}
 			}
-
 
 			physx::PxConvexMeshDesc convexDesc;
 			convexDesc.points.count = verts.size();
@@ -571,6 +577,13 @@ namespace components
 		}
 	}
 
+	/**
+	 * @brief	create a static PhysX actor from a selected patch (used for static collision by the simulation)
+	 * @param	sb patch used to create the mesh from (sb->def->patch)
+	 * @param	position_offset	<prefab> local-space position offset
+	 * @param	quat <prefab> local-space rotation
+	 * @note	adds a pointer to the PhysX actor to 'm_static_terrain'
+	 */
 	void physx_impl::create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset, const float* quat)
 	{
 		// reference - Q3 - Terrain_GetTriangle
@@ -710,7 +723,6 @@ namespace components
 				}
 			}
 		}
-		
 
 		physx::PxTriangleMeshDesc meshDesc;
 		meshDesc.points.count = verts.size();
@@ -723,6 +735,7 @@ namespace components
 
 		physx::PxDefaultMemoryOutputStream buf;
 		physx::PxTriangleMeshCookingResult::Enum result;
+
 
 		if (phys->mCooking->cookTriangleMesh(meshDesc, buf, &result))
 		{
@@ -771,7 +784,12 @@ namespace components
 		}
 	}
 
-	bool exclude_brushes_from_static_collision(game::selbrush_def_t* b)
+	/**
+	 * @brief	check if the selection should be considered as static collision
+	 * @param	b the selection to be checked
+	 * @return	true if does not meet criteria
+	 */
+	bool physx_impl::exclude_brushes_from_static_collision(game::selbrush_def_t* b)
 	{
 		// skip sky
 		if (b->def->contents & game::BRUSHCONTENTS_SKY)
@@ -811,6 +829,10 @@ namespace components
 		return false;
 	}
 
+	/**
+	 * @brief	removes all static brushes and terrain actors from the scene\n
+	 *			'm_static_brushes' & 'm_static_terrain' + counts
+	 */
 	void physx_impl::clear_static_collision()
 	{
 		const auto phys = components::physx_impl::get();
@@ -834,7 +856,12 @@ namespace components
 		phys->m_static_terrain.clear();
 	}
 
-	// only call via components::process
+
+	/**
+	 * @brief	thread-able static function generating static collision from \n
+	 *			all non-selected brushes / patches / prefabs
+	 * @note	called via components::process
+	 */
 	void physx_impl::create_static_collision()
 	{
 		const auto phys = components::physx_impl::get();
@@ -884,7 +911,7 @@ namespace components
 						}
 
 						// brushes
-						if (exclude_brushes_from_static_collision(prefab))
+						if (phys->exclude_brushes_from_static_collision(prefab))
 						{
 							continue;
 						}
@@ -910,7 +937,7 @@ namespace components
 				}
 
 				// brushes
-				if (exclude_brushes_from_static_collision(sb))
+				if (phys->exclude_brushes_from_static_collision(sb))
 				{
 					continue;
 				}
@@ -950,7 +977,7 @@ namespace components
 								continue;
 							}
 						}
-						else if (exclude_brushes_from_static_collision(prefab))
+						else if (phys->exclude_brushes_from_static_collision(prefab))
 						{
 							continue;
 						}
@@ -996,7 +1023,7 @@ namespace components
 				else
 				{
 					// skip brushes that should not be part of the static collision
-					if (exclude_brushes_from_static_collision(sb))
+					if (phys->exclude_brushes_from_static_collision(sb))
 					{
 						continue;
 					}
@@ -1013,6 +1040,11 @@ namespace components
 		phys->m_static_terrain_estimated_count = 0;
 	}
 
+	/**
+	 * @brief	create misc_models from all physics-enabled effect-objects present in the world \n
+	 *			( at current position / rotation and scale when calling this function )
+	 * @note	shows external console until done - pretty slow because of 'CreateEntityFromName'
+	 */
 	void physx_impl::convert_phys_to_misc_models()
 	{
 		if (m_fx_active_actor_count && fx_system::ed_active_effect)
@@ -1045,8 +1077,6 @@ namespace components
 					if (elem_def->elemType == fx_system::FX_ELEM_TYPE_MODEL && elem_def->flags & fx_system::FX_ELEM_USE_MODEL_PHYSICS)
 					{
 						const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(elem->___u8.physObjId);
-
-						// model name saved within user data because I have no clue how to get the correct visual from visuals.array
 						if (actor->userData)
 						{
 							const auto user_data = static_cast<userdata_s*>(actor->userData);
@@ -1066,15 +1096,10 @@ namespace components
 									game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
 								}
 
-								//utils::benchmark timer;
-
 								// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
 								g_block_radiant_modeldialog = true;
-								game::CreateEntityFromName("misc_model");
+								game::CreateEntityFromName("misc_model"); // CreateEntityFromName takes ~ 24 ms
 								g_block_radiant_modeldialog = false;
-
-								// CreateEntityFromName takes ~ 24 ms
-								//timer.now("CreateEntityBrush");
 
 								// use visuals.array if visual count != 1
 								//entity_gui->add_prop("model", elem_def->visuals.instance.model->name, &no_undo);
@@ -1141,6 +1166,10 @@ namespace components
 		}
 	}
 
+	/**
+	 * @brief	release given actor and its material and free userData
+	 * @param	id	handle to a PxRigidDynamic actor
+	 */
 	void physx_impl::obj_destroy(int id)
 	{
 		const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(id);
@@ -1157,7 +1186,12 @@ namespace components
 		actor->release();
 	}
 
-
+	/**
+	 * @brief		get position and rotation data for a given actor
+	 * @param		id handle to a PxRigidDynamic actor
+	 * @param[out]	out_pos	 current actor position
+	 * @param[out]	out_quat current actor rotation
+	 */
 	void physx_impl::obj_get_interpolated_state(int id, float* out_pos, float* out_quat)
 	{
 		const auto actor = reinterpret_cast<physx::PxRigidDynamic*>(id);
@@ -1176,8 +1210,8 @@ namespace components
 	}
 
 	/**
-	 * \brief clear dynamic prefab actors
-	 * \param clear_state reset run and pause states
+	 * @brief	clear dynamic prefab actors within 'm_dynamic_prefabs' incl. their userData
+	 * @param	clear_state reset run and pause states
 	 */
 	void physx_impl::clear_dynamic_prefabs(bool clear_state)
 	{
@@ -1202,8 +1236,9 @@ namespace components
 		}
 	}
 
-
-	// reset all dynamic brushes (to values upon creation)
+	/**
+	 * @brief	reset all dynamic prefab actors to values upon creation (position & rotation)
+	 */
 	void physx_impl::reset_dynamic_prefabs()
 	{
 		ggui::entity_dialog::addprop_helper_s no_undo = {};
@@ -1255,7 +1290,13 @@ namespace components
 
 
 	// creates a physics actor from a prefab
-	void physx_impl::create_physx_object(game::selbrush_def_t* sb)
+
+	/**
+	 * @brief	turns selected prefab into a dynamic PhysX actor
+	 * @param	sb the selected prefab
+	 * @note	creates a convex hull around all brushes within the prefab 
+	 */
+	void physx_impl::create_dynamic_prefab(game::selbrush_def_t* sb)
 	{
 		// prefab brushes and terrain
 		if (sb && sb->owner && sb->owner->prefab && sb->owner->firstActive && sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
@@ -1406,11 +1447,6 @@ namespace components
 					physx::PxRigidBodyExt::updateMassAndInertia(*actor, 10.0f);
 					mScene->addActor(*actor);
 
-					// set world space position and rotation of phys actor
-					/*actor->setGlobalPose(physx::PxTransform(
-						physx::PxVec3(real_origin[0], real_origin[1], real_origin[2]),
-						physx::PxQuat(prefab_quat[0], prefab_quat[1], prefab_quat[2], prefab_quat[3])));*/
-
 					actor->setGlobalPose(physx::PxTransform(
 						physx::PxVec3(real_origin[0], real_origin[1], real_origin[2]),
 						physx::PxQuat(prefab_quat[0], prefab_quat[1], prefab_quat[2], prefab_quat[3])));
@@ -1424,13 +1460,22 @@ namespace components
 					m_dynamic_prefabs.push_back(actor);
 
 					// cull checks at 0x407AF4, 0x407BEC & 0x408000 result in flickering prefab entities
-					// skips culling function if custom_no_cull is set
+					// renderer::cubic_culling_overwrite_check() skips culling function if custom_no_cull is set
 					data->entity->firstActive->custom_no_cull = true;
 				}
 			}
 		}
 	}
 
+	/**
+	 * @brief					create a dynamic PhysX actor from a xmodel using its bounds 
+	 * @param model				the xmodel to use
+	 * @param world_pos			the current model position in world-space
+	 * @param quat				the current rotation
+	 * @param velocity			initial linear velocity
+	 * @param angular_velocity	initial angular velocity
+	 * @return					a handle to the actor (PxRigidDynamic)
+	 */
 	int physx_impl::create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity, const float* angular_velocity)
 	{
 		const auto material = create_material(model->physPreset);
@@ -1481,7 +1526,7 @@ namespace components
 		physx::PxRigidDynamic* actor = mPhysics->createRigidDynamic(t);
 		actor->setActorFlags(physx::PxActorFlag::eVISUALIZATION);
 
-		userdata_s* data = new userdata_s();
+		const auto data = new userdata_s();
 		data->material = material;
 		data->model_name = model->name;
 		actor->userData = data;
@@ -1521,6 +1566,9 @@ namespace components
 		return reinterpret_cast<int>(actor);
 	}
 
+	/**
+	 * @brief	updates the PhysX material used by static collision and dynamic prefabs
+	 */
 	void physx_impl::update_static_collision_material()
 	{
 		const auto gui = GET_GUI(ggui::camera_settings_dialog);
@@ -1530,7 +1578,10 @@ namespace components
 		m_static_collision_material->setRestitution(gui->phys_material[2]);
 	}
 
-	// active when 'USE_CONTACT_CALLBACK'
+	/**
+	 * @brief				callback that fires when two actor contact each other\n
+	 *						only active when 'USE_CONTACT_CALLBACK' is true
+	 */
 	void physx_impl::collision_feedback::onContact([[maybe_unused]] const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs)
 	{
 		for (physx::PxU32 i = 0; i < nbPairs; i++)
@@ -1552,11 +1603,13 @@ namespace components
 		}
 	}
 
-	// active when 'USE_CONTACT_CALLBACK'
-	// used to identify collisions between static collision and physic's enabled objects
+	/**
+	 * @brief	used to identify collisions between static collision and physic's enabled objects //n
+	 *			only active when 'USE_CONTACT_CALLBACK' is true
+	 */
 	physx::PxFilterFlags FilterShader(	[[maybe_unused]] physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
-										[[maybe_unused]] physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
-										physx::PxPairFlags& pairFlags, [[maybe_unused]] const void* constantBlock, [[maybe_unused]] physx::PxU32 constantBlockSize)
+	                                    [[maybe_unused]] physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+	                                    physx::PxPairFlags& pairFlags, [[maybe_unused]] const void* constantBlock, [[maybe_unused]] physx::PxU32 constantBlockSize)
 	{
 		//// let triggers through
 		//if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1))

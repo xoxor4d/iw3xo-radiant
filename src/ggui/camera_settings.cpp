@@ -289,7 +289,7 @@ namespace ggui
 				{
 					if (sb && sb->def)
 					{
-						phys->create_physx_object(sb);
+						phys->create_dynamic_prefab(sb);
 					}
 				}
 

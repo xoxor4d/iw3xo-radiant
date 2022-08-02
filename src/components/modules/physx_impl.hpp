@@ -2,12 +2,6 @@
 
 namespace components
 {
-	//class SampleSubmarine : physx::PxSimulationEventCallback
-	//{
-	//	// Implements PxSimulationEventCallback
-	//	virtual void onContact(const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs);
-	//};
-
 	class physx_impl : public component
 	{
 		class collision_feedback : public physx::PxSimulationEventCallback
@@ -113,7 +107,6 @@ namespace components
 		};
 
 
-
 	public:
 		physx_impl();
 		~physx_impl();
@@ -126,8 +119,15 @@ namespace components
 
 		void tick_playback();
 
+	private:
 		void run_frame(float seconds);
+		void draw_debug_visualization();
 
+		bool exclude_brushes_from_static_collision(game::selbrush_def_t* b);
+		void create_static_brush(game::selbrush_def_t* sb, bool is_prefab = false, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
+		void create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
+
+	public:
 		void phys_frame();
 		void fx_frame();
 
@@ -135,9 +135,6 @@ namespace components
 
 		physx::PxConvexMesh* create_convex_mesh_from_brush(game::selbrush_def_t* sb);
 		void create_custom_shape_from_selection(game::selbrush_def_t* sb);
-
-		void create_static_brush(game::selbrush_def_t* sb, bool is_prefab = false, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
-		void create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
 
 		void clear_static_collision();
 		static void create_static_collision();
@@ -150,8 +147,8 @@ namespace components
 		void clear_dynamic_prefabs(bool clear_state = true);
 		void reset_dynamic_prefabs();
 
-		void create_physx_object(game::selbrush_def_t* sb);
-		int create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity = nullptr, const float* angular_velocity = nullptr);
+		void create_dynamic_prefab(game::selbrush_def_t* sb);
+		int  create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity = nullptr, const float* angular_velocity = nullptr);
 		void update_static_collision_material();
 	};
 }
