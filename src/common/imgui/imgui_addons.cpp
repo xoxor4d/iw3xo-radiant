@@ -80,21 +80,29 @@ namespace ImGui
 	{
 		ImGuiContext& g = *GImGui;
 		ImGuiWindow* window = GetCurrentWindow();
+
 		if (window->SkipItems)
 			return false;
 
 		const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size + padding * 2);
 		ItemSize(bb);
+
 		if (!ItemAdd(bb, id))
 			return false;
 
 		bool hovered, held;
 		bool pressed = ButtonBehavior(bb, id, &hovered, &held);
 
+		if (held)
+		{
+			pressed = true;
+		}
+
 		// Render
 		const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
 		RenderNavHighlight(bb, id);
 		RenderFrame(bb.Min, bb.Max, col, true, ImClamp((float)ImMin(padding.x, padding.y), 0.0f, g.Style.FrameRounding));
+
 		if (bg_col.w > 0.0f)
 			window->DrawList->AddRectFilled(bb.Min + padding, bb.Max - padding, GetColorU32(bg_col));
 
