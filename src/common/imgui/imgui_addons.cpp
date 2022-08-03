@@ -93,10 +93,10 @@ namespace ImGui
 		bool hovered, held;
 		bool pressed = ButtonBehavior(bb, id, &hovered, &held);
 
-		if (held)
+		/*if (held)
 		{
 			pressed = true;
-		}
+		}*/
 
 		// Render
 		const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
