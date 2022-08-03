@@ -2029,6 +2029,8 @@ namespace ggui
 					vis.push_back({ elem->u.visuals[m].soundName, m });
 				}
 			}
+
+			// ## MARKS
 			/*else if (elem->elemType == fx_system::FX_ELEM_TYPE_DECAL)
 			{
 				if (elem->u.markVisuals[m].materials[0] && elem->u.markVisuals[m].materials[0]->info.name)
@@ -2076,6 +2078,34 @@ namespace ggui
 				}
 
 				ImGui::EndListBox();
+			}
+
+			if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
+			{
+				// model selection drop target
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
+					{
+						const auto m_selector = GET_GUI(ggui::modelselector_dialog);
+						if (const auto _efx = fx_system::get_editor_effect(); _efx)
+						{
+							auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+
+							if (const auto  model = game::R_RegisterModel(m_selector->m_preview_model_name.c_str());
+								model && _elem->visualCount < 32)
+							{
+								_elem->u.visuals[_elem->visualCount].model = model;
+								_elem->visualCount++;
+
+								GET_GUI(ggui::effects_editor_dialog)->on_modified(true);
+							}
+						}
+
+					}
+
+					ImGui::EndDragDropTarget();
+				}
 			}
 
 			ImGui::EndDisabled();

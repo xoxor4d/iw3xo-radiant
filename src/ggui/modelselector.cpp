@@ -23,8 +23,10 @@ namespace ggui
 			m_update_scroll_position = false;
 		}
 
-		// target => cxywnd::rtt_grid_window()
-		// target => ccamwnd::rtt_camera_window()
+		// target => grid_dialog::drag_drop_target()
+		// target => camera_dialog::drag_drop_target()
+		// target => entity_dialog::gui_entprop_add_value_text()
+		// target => effects_editor_dialog::tab_visuals()
 		if (ImGui::BeginDragDropSource())
 		{
 			ImGui::SetDragDropPayload("MODEL_SELECTOR_ITEM", nullptr, 0, ImGuiCond_Once);
