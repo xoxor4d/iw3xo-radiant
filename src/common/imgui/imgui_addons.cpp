@@ -1439,8 +1439,7 @@ namespace ImGui
 		style->ChildRounding = 2.0f;
 
 		// 04.10.21
-		//style->FrameRounding = 2.0f;
-		style->FrameRounding = 5.0f;
+		style->FrameRounding = 1.0f; // 5
 		
 		style->ScrollbarRounding = 2.0f;
 		style->GrabRounding = 2.0f;

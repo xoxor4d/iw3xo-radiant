@@ -543,6 +543,13 @@ namespace ggui
 				ImGui::InputText("##newfolder", new_folder_name, sizeof(new_folder_name));
 				ImGui::PopStyleColor();
 
+				static bool focus_input = false;
+				if (!focus_input)
+				{
+					focus_input = true;
+					ImGui::SetKeyboardFocusHere(-1);
+				}
+
 				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 16);
 
 				static float modal_button_group_width = 100.0f;
@@ -563,6 +570,8 @@ namespace ggui
 							this->m_update_files_and_folders = true;
 							ImGui::CloseCurrentPopup();
 						}
+
+						focus_input = false;
 					}
 
 					ImGui::SameLine();
@@ -571,6 +580,8 @@ namespace ggui
 						strcpy_s(new_folder_name, "");
 						strcpy_s(new_folder_error, "");
 						ImGui::CloseCurrentPopup();
+
+						focus_input = false;
 					}
 
 					ImGui::TextColored(ImColor(1.0f, 0.0f, 0.2f, 1.0f), new_folder_error);

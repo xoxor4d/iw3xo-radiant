@@ -179,15 +179,15 @@ namespace ggui
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 4.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
 		if (ImGui::BeginPopupModal(label, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			const char* str = "\n         Unsaved Effect!\n  This will lose changes.\n\nDo you want to continue?\n\n";
+			const char* str = "         Unsaved Effect!\n  This will lose changes.\n\nDo you want to continue?\n\n";
 			ImGui::SetCursorForCenteredText(str);
 			ImGui::TextUnformatted(str);
-			ImGui::Separator();
+			//ImGui::Separator();
 
-			if (ImGui::Button("OK", ImVec2(120, 0)))
+			if (ImGui::Button("OK", ImVec2(110, 0)))
 			{
 				ImGui::CloseCurrentPopup();
 				result = true;
@@ -196,7 +196,7 @@ namespace ggui
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
 
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			if (ImGui::Button("Cancel", ImVec2(110, 0)))
 			{
 				ImGui::CloseCurrentPopup();
 				result = false;
