@@ -1309,10 +1309,10 @@ namespace ggui
 				m_child_current = static_cast<int>(_toolbox_childs[CAT_ENTITY_PROPS].index);
 				m_update_scroll = true;
 			}
-		}
 
-		maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
-		ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+		}
 
 		// #
 
@@ -1732,7 +1732,6 @@ namespace ggui
 				maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
 				ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
 			}
-
 		} //ImGui::PopStyleVar();
 
 		// #
@@ -1750,20 +1749,31 @@ namespace ggui
 			return false;
 		}
 
-		// draw selected childs 
+		// change childs using TAB
+		if (!(ImGui::GetIO().KeyMods == ImGuiKeyModFlags_Ctrl) && ImGui::IsWindowHovered() && ImGui::IsKeyReleased(ImGuiKey_Tab))
+		{
+			m_child_current++;
+
+			if (m_child_current >= static_cast<int>(m_child_count))
+			{
+				m_child_current = 0;
+			}
+		}
+
+		// draw selected child
 		for (const auto& child : _toolbox_childs)
 		{
 			if (static_cast<int>(child.second.index) == m_child_current)
 			{
 				// switch to other child when user no longer has surface inspector / entity properties incorporated
-				if(	   (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer != 2 && child.first == CAT_SURF_INSP) 
+				if (   (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer != 2 && child.first == CAT_SURF_INSP) 
 					|| (dvars::gui_props_toolbox && !dvars::gui_props_toolbox->current.enabled && child.first == CAT_ENTITY_PROPS))
 				{
 					focus_child(toolbox_dialog::TB_CHILD::BRUSH);
 					break;
 				}
 
-				if(m_update_scroll)
+				if (m_update_scroll)
 				{
 					ImGui::SetScrollHereY();
 					m_update_scroll = false;
