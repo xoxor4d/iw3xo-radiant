@@ -1021,10 +1021,20 @@ namespace components
 		// toggle between bsp and radiant rendering 
 		command::register_command_with_hotkey("toggle_bsp_radiant"s, [this](auto)
 		{
-			const bool tstate = gameview::p_this->get_all_geo_state() || gameview::p_this->get_all_ents_state() || gameview::p_this->get_all_triggers_state() || gameview::p_this->get_all_others_state();
+			if (d3dbsp::Com_IsBspLoaded())
+			{
+				const bool tstate = gameview::p_this->get_all_geo_state() || gameview::p_this->get_all_ents_state() || gameview::p_this->get_all_triggers_state() || gameview::p_this->get_all_others_state();
 
-			dvars::set_bool(dvars::r_draw_bsp, !tstate);
-			command::execute("toggle_filter_all");
+				const bool gameview_was_enabled = dvars::radiant_gameview->current.enabled;
+
+				dvars::set_bool(dvars::r_draw_bsp, !tstate);
+				command::execute("toggle_filter_all");
+
+				if (gameview_was_enabled)
+				{
+					components::gameview::p_this->set_state(gameview_was_enabled);
+				}
+			}
 		});
 		
 		command::register_command_with_hotkey("bsp_compile"s, [this](auto)

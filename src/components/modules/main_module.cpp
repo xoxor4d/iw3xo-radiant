@@ -378,7 +378,7 @@ namespace components
 
 	void undo_general_start_print(const char* op)
 	{
-		game::printf_to_console("[UNDO] '%s' added to the undo stack. New stack size: %d", op, game::g_undoId);
+		game::printf_to_console("[UNDO] '%s' added to the undo stack. New stack size: %d\n", op, game::g_undoId);
 	}
 
 	void __declspec(naked) undo_general_start_stub()
@@ -403,7 +403,7 @@ namespace components
 
 	void undo_undo_print(const char* op)
 	{
-		game::printf_to_console("[UNDO] '%s' undone. New stack size: %d", op, game::g_undoSize - 1); // g_undoSize will be decremented right after the hook
+		game::printf_to_console("[UNDO] '%s' undone. New stack size: %d\n", op, game::g_undoSize - 1); // g_undoSize will be decremented right after the hook
 	}
 
 	void __declspec(naked) undo_undo_stub()
