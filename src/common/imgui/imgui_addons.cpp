@@ -1322,7 +1322,7 @@ namespace ImGui
 				PushStyleColor(ImGuiCol_FrameBgActive, GetColorU32(ImGuiCol_ButtonActive));
 
 				SetNextItemWidth(dragfloat_size);
-				ImGui::DragFloat("##amount", static_cast<float*>(p_step), 0.5f, 0.1f, 256.0f, "%.1f");
+				ImGui::DragFloat("##amount", static_cast<float*>(p_step), 0.01f, 0.01f, 512.0f, "%.2f");
 				TT("Inc/Dec Amount");
 
 				PopStyleColor(3);

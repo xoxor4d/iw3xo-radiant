@@ -262,7 +262,7 @@ namespace game
 	inline auto Brush_MakeFacePlanes = reinterpret_cast<void (*)(game::brush_t_with_custom_def* b)>(0x470A50); // calculate normal and dist from planepts
 	inline auto Brush_MakeSidedCone = reinterpret_cast<void (*)(int num_sides)>(0x47BC10);
 	inline auto Brush_MakeSided_Axis = reinterpret_cast<void (*)(int num_sides, bool snap)>(0x4735E0);
-	inline auto Brush_SetSampleSize = reinterpret_cast<void (*)(float sample_size)>(0x48F800);
+	inline auto Brush_SetSampleSize = reinterpret_cast<void (*)(int sample_size)>(0x48F800);
 	inline auto Brush_FitTexture = reinterpret_cast<void (*)(float x, float y, int bounds)>(0x4939E0);
 	inline auto Brush_RebuildBrush = reinterpret_cast<void (*)(game::brush_t_with_custom_def * b, float* mins, float* maxs)>(0x438760);
 	int CM_ForEachBrushPlaneIntersection(game::brush_t_with_custom_def* b /*esi*/, game::BrushPt_t* brush_pts);
