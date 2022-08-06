@@ -1060,8 +1060,7 @@ namespace components
 			if (elemHandle != UINT16_MAX)
 			{
 				game::Select_Deselect(true);
-				game::Undo_ClearRedo();
-				game::Undo_GeneralStart("create entity from physics");
+
 				ggui::entity_dialog::addprop_helper_s no_undo = {};
 
 				while (elemHandle != UINT16_MAX)
@@ -1091,10 +1090,46 @@ namespace components
 							game::AxisToAngles(axis, angles);
 
 							{
+								game::Undo_ClearRedo();
+								game::Undo_GeneralStart("create entity from physics");
+#if 0
+								// ------------------------------
+								// generate a new brush
+
+								game::vec3_t mins, maxs;
+								const float half_width = 16.0f;
+								utils::vector::set_vec3(mins, -half_width);
+								utils::vector::set_vec3(maxs, half_width);
+
+
+								// Brush_Alloc
+								const auto new_b = utils::hook::call<game::brush_t_with_custom_def* (__cdecl)(void*, void*)>(0x4751E0)(game::g_qeglobals->random_texture_stuff, 0);
+								game::Brush_Create(maxs, mins, new_b, 0);
+
+								if (!new_b)
+								{
+									return;
+								}
+
+								game::Brush_BuildWindings(new_b, 1);
+								++new_b->version;
+
+								game::Entity_LinkBrush(new_b, game::g_world_entity()->firstActive);
+								const auto b_linked = game::Brush_AddToList(new_b, game::g_world_entity());
+								if (b_linked->onext || b_linked->oprev)
+								{
+									__debugbreak();
+								}
+
+								game::Brush_AddToList2(b_linked);
+#endif
 								if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
 								{
-									game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+
+									game::CreateEntityBrush(cmainframe::activewnd->m_pXYWnd->m_nHeight / 2, cmainframe::activewnd->m_pXYWnd->m_nWidth / 2, cmainframe::activewnd->m_pXYWnd);
 								}
+								
+								game::Undo_EndBrushList_Selected();
 
 								// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
 								g_block_radiant_modeldialog = true;
@@ -1140,10 +1175,12 @@ namespace components
 								const float graph_a = rnd * draw.preVisState.refState->amplitude.scale + draw.preVisState.refState->base.scale;
 								draw.visState.scale = draw.preVisState.sampleLerpInv * graph_a + graph_b * draw.preVisState.sampleLerp;
 
-								if (draw.visState.scale <= 0.0f)
+								if (draw.visState.scale >= 0.0f)
 								{
 									entity_gui->add_prop("modelscale", std::to_string(draw.visState.scale).c_str(), &no_undo);
 								}
+
+								game::Undo_End(); // works #1
 							}
 
 
@@ -1156,8 +1193,6 @@ namespace components
 
 					elemHandle = elem->nextElemHandleInEffect;
 				}
-
-				game::Undo_End();
 			}
 
 			m_converted_misc_model_count = 0;

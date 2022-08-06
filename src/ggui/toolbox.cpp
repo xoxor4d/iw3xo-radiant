@@ -1497,6 +1497,7 @@ namespace ggui
 				{
 					const auto cs = GET_GUI(ggui::camera_settings_dialog);
 					cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
+					cs->focus_tab(camera_settings_dialog::tab_state_bsp);
 				}
 				ImGui::PopID();
 
@@ -1584,6 +1585,7 @@ namespace ggui
 			{
 				const auto cs = GET_GUI(ggui::camera_settings_dialog);
 				cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
+				cs->focus_tab(camera_settings_dialog::tab_state_fakesun);
 			}
 
 			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
@@ -1726,6 +1728,7 @@ namespace ggui
 				{
 					const auto cs = GET_GUI(ggui::camera_settings_dialog);
 					cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
+					cs->focus_tab(camera_settings_dialog::tab_state_effects);
 				}
 				ImGui::PopID();
 

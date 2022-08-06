@@ -54,13 +54,13 @@ namespace ggui
 			int styles = 0;
 
 			imgui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f); styles++;
-			const auto cursor = imgui::GetCursorPos();
+			/*const auto cursor = imgui::GetCursorPos();
 
 			imgui::InvisibleButton("##dummy_button", ImVec2(size, size));
 
 			const bool hovered = imgui::IsItemHovered();
 			imgui::SetItemAllowOverlap();
-			imgui::SetCursorPos(cursor);
+			imgui::SetCursorPos(cursor);*/
 
 			if (imgui::ImageButtonScaled(img->texture.data,
 				ImVec2(size, size),
@@ -71,6 +71,7 @@ namespace ggui
 			{
 				result = true;
 			}
+			const bool hovered = imgui::IsItemHovered();
 
 			if (enable_highlight && hovered)
 			{

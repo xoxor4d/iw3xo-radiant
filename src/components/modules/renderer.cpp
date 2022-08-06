@@ -2723,8 +2723,10 @@ namespace components
 			}			
 
 			// impl. RB_DrawSun? :p
-
-			R_DrawLights(&cmdBuf, viewInfo); // fx lights
+			if (dvars::r_draw_bsp->current.enabled)
+			{
+				R_DrawLights(&cmdBuf, viewInfo); // fx lights
+			}
 
 			if (viewInfo->emissiveInfo.viewInfo && viewInfo->emissiveInfo.drawSurfs)
 			{

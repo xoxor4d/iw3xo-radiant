@@ -91,7 +91,7 @@ namespace ImGui
 			return false;
 
 		bool hovered, held;
-		bool pressed = ButtonBehavior(bb, id, &hovered, &held);
+		bool pressed = ButtonBehavior(bb, id, &hovered, &held, ImGuiButtonFlags_PressedOnClick);
 
 		/*if (held)
 		{
