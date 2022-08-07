@@ -24,6 +24,14 @@
 #define FOR_ALL_SELECTED_BRUSHES(B) for (auto (B) = game::g_selected_brushes_next(); (DWORD*)(B) != game::currSelectedBrushes; (B) = (B)->next)
 #define FOR_ALL_ACTIVE_BRUSHES(B) for (auto (B) = game::g_active_brushes_next(); (DWORD*)(B) != game::active_brushes_ptr; (B) = (B)->next)
 
+// custom brush iter (eg. prefab brushes) - (is_single_brush :: a prefab with a single brush will reference itself)
+//#define FOR_ALL_BRUSHES(B, B_CURR, B_NEXT) \
+//	int is_single_brush = (DWORD*)(B_NEXT) == (DWORD*)(B_CURR); \
+//	for (auto (B) = (B_NEXT); (DWORD*)(B) != (DWORD*)(&B_CURR) || --is_single_brush == 0; (B) = (B)->next)
+
+#define FOR_ALL_BRUSHES(B, B_CURR, B_NEXT) \
+	for (auto (B) = (B_NEXT); (DWORD*)(B) != (DWORD*)(&B_CURR); (B) = (B)->next)
+
 #define mainframe_thiscall(return_val, addr)	\
 		utils::hook::call<return_val(__fastcall)(cmainframe*)>(addr)(cmainframe::activewnd)
 
@@ -61,6 +69,7 @@ namespace game
 		extern game::vec3_t debug_sundir_startpos;
 		extern float debug_sundir_length;
 
+		extern bool is_loading_map;
 
 		// update check
 		extern std::string gh_update_releases_json;
@@ -196,9 +205,6 @@ namespace game
 	inline auto Prefab_Leave = reinterpret_cast<void (*)()>(0x42BF80); // CMainFrame::OnPrefabLeave
 	inline auto Drag_MouseUp = reinterpret_cast<void (*)(unsigned int flags)>(0x4802A0);
 
-	inline void Selection_Copy() { mainframe_thiscall(void, 0x4286B0); } // CMainFrame::OnEditCopybrush
-	inline void Selection_Paste() { mainframe_thiscall(void, 0x4286D0); } // CMainFrame::OnEditPastebrush
-
 	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/);
 	void Checkkey_Model(entity_s* ent /*esi*/, const char* key);
 	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/);
@@ -206,9 +212,14 @@ namespace game
 	void selection_rotate_axis(int axis, int deg);
 	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/);
 	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis);
+	void Select_RotateFixedSize(game::entity_s* owner, brush_t_with_custom_def* def, float(*mid_point)[3]);
+
+	inline void Selection_Copy() { mainframe_thiscall(void, 0x4286B0); } // CMainFrame::OnEditCopybrush
+	inline void Selection_Paste() { mainframe_thiscall(void, 0x4286D0); } // CMainFrame::OnEditPastebrush
 	inline auto Select_Deselect = reinterpret_cast<void (*)(bool)>(0x48E800);
 	inline auto Select_Delete = reinterpret_cast<void (*)()>(0x48E760);
 	inline auto Select_Invert = reinterpret_cast<void (*)()>(0x493F10);
+	inline auto Select_Hide = reinterpret_cast<void (*)()>(0x493D50); // part of CMainFrame::OnHideSelected - hides all selected entities / brushes
 
 	void SetSpawnFlags(int flag);
 	void SetMaterial(const char* name /*edi*/, game::patchMesh_material* def /*esi*/);
@@ -251,8 +262,9 @@ namespace game
 	inline auto Brush_MakeFacePlanes = reinterpret_cast<void (*)(game::brush_t_with_custom_def* b)>(0x470A50); // calculate normal and dist from planepts
 	inline auto Brush_MakeSidedCone = reinterpret_cast<void (*)(int num_sides)>(0x47BC10);
 	inline auto Brush_MakeSided_Axis = reinterpret_cast<void (*)(int num_sides, bool snap)>(0x4735E0);
-	inline auto Brush_SetSampleSize = reinterpret_cast<void (*)(float sample_size)>(0x48F800);
+	inline auto Brush_SetSampleSize = reinterpret_cast<void (*)(int sample_size)>(0x48F800);
 	inline auto Brush_FitTexture = reinterpret_cast<void (*)(float x, float y, int bounds)>(0x4939E0);
+	inline auto Brush_RebuildBrush = reinterpret_cast<void (*)(game::brush_t_with_custom_def * b, float* mins, float* maxs)>(0x438760);
 	int CM_ForEachBrushPlaneIntersection(game::brush_t_with_custom_def* b /*esi*/, game::BrushPt_t* brush_pts);
 	
 	inline auto SetKeyValue = reinterpret_cast<void (*)(game::entity_s * ent, const char* key, const char* value)>(0x483690);
@@ -408,6 +420,7 @@ namespace game
 	inline auto R_RegisterModel = reinterpret_cast<game::XModel* (*)(const char* name)>(0x51D450);
 	inline auto R_RegisterLightDef = reinterpret_cast<game::GfxLightDef* (*)(const char* name)>(0x53D510);
 
+	PhysPreset* FX_RegisterPhysPreset(const char* name);
 	void DObjCreate(game::DObjModel_s* dobjModels /*edi*/, game::DObj_s* obj /*esi*/, size_t numModels, game::XAnimTree_s* tree, int entnum);
 
 	// *

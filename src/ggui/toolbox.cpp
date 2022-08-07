@@ -611,8 +611,8 @@ namespace ggui
 
 			if (treenode_begin("Curve", true, style_colors, style_vars))
 			{
-				static int curvepatch_width = 2;
-				static int curvepatch_height = 2;
+				static int curvepatch_width = 3;
+				static int curvepatch_height = 3;
 				//static float total_widget_start_offset = 0.0f;
 				
 
@@ -1174,6 +1174,11 @@ namespace ggui
 			register_child(CAT_SURF_INSP, std::bind(&toolbox_dialog::child_surface_inspector, this));
 			register_child(CAT_ENTITY_PROPS, std::bind(&toolbox_dialog::child_entity_properties, this));
 
+			if (dvars::gui_saved_state_toolbox_child)
+			{
+				m_child_current = dvars::gui_saved_state_toolbox_child->current.integer;
+			}
+
 			this->set_initiated();
 		}
 
@@ -1304,10 +1309,10 @@ namespace ggui
 				m_child_current = static_cast<int>(_toolbox_childs[CAT_ENTITY_PROPS].index);
 				m_update_scroll = true;
 			}
-		}
 
-		maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
-		ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+		}
 
 		// #
 
@@ -1492,6 +1497,7 @@ namespace ggui
 				{
 					const auto cs = GET_GUI(ggui::camera_settings_dialog);
 					cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
+					cs->focus_tab(camera_settings_dialog::tab_state_bsp);
 				}
 				ImGui::PopID();
 
@@ -1579,6 +1585,7 @@ namespace ggui
 			{
 				const auto cs = GET_GUI(ggui::camera_settings_dialog);
 				cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
+				cs->focus_tab(camera_settings_dialog::tab_state_fakesun);
 			}
 
 			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
@@ -1721,13 +1728,13 @@ namespace ggui
 				{
 					const auto cs = GET_GUI(ggui::camera_settings_dialog);
 					cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
+					cs->focus_tab(camera_settings_dialog::tab_state_effects);
 				}
 				ImGui::PopID();
 
 				maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
 				ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
 			}
-
 		} //ImGui::PopStyleVar();
 
 		// #
@@ -1745,27 +1752,44 @@ namespace ggui
 			return false;
 		}
 
-		// draw selected childs 
+		// change childs using TAB
+		if (!(ImGui::GetIO().KeyMods == ImGuiKeyModFlags_Ctrl) && ImGui::IsWindowHovered() && ImGui::IsKeyReleased(ImGuiKey_Tab))
+		{
+			m_child_current++;
+
+			if (m_child_current >= static_cast<int>(m_child_count))
+			{
+				m_child_current = 0;
+			}
+		}
+
+		// draw selected child
 		for (const auto& child : _toolbox_childs)
 		{
 			if (static_cast<int>(child.second.index) == m_child_current)
 			{
 				// switch to other child when user no longer has surface inspector / entity properties incorporated
-				if(	   (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer != 2 && child.first == CAT_SURF_INSP) 
+				if (   (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer != 2 && child.first == CAT_SURF_INSP) 
 					|| (dvars::gui_props_toolbox && !dvars::gui_props_toolbox->current.enabled && child.first == CAT_ENTITY_PROPS))
 				{
 					focus_child(toolbox_dialog::TB_CHILD::BRUSH);
 					break;
 				}
 
-				if(m_update_scroll)
+				if (m_update_scroll)
 				{
 					ImGui::SetScrollHereY();
 					m_update_scroll = false;
 				}
 
+				if(child.second.callback)
 				child.second.callback();
 			}
+		}
+
+		if (dvars::gui_saved_state_toolbox_child && dvars::gui_saved_state_toolbox_child->current.integer != m_child_current)
+		{
+			dvars::set_int(dvars::gui_saved_state_toolbox_child, m_child_current);
 		}
 
 		// end "##toolbox_child"

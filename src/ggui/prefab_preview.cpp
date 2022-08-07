@@ -54,12 +54,13 @@ namespace ggui
 			int styles = 0;
 
 			imgui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f); styles++;
-			const auto cursor = imgui::GetCursorPos();
+			/*const auto cursor = imgui::GetCursorPos();
 
 			imgui::InvisibleButton("##dummy_button", ImVec2(size, size));
+
 			const bool hovered = imgui::IsItemHovered();
 			imgui::SetItemAllowOverlap();
-			imgui::SetCursorPos(cursor);
+			imgui::SetCursorPos(cursor);*/
 
 			if (imgui::ImageButtonScaled(img->texture.data,
 				ImVec2(size, size),
@@ -70,6 +71,7 @@ namespace ggui
 			{
 				result = true;
 			}
+			const bool hovered = imgui::IsItemHovered();
 
 			if (enable_highlight && hovered)
 			{
@@ -91,18 +93,24 @@ namespace ggui
 		return result;
 	}
 	
-	void handle_drag_drop(const char* prefab_name, const char* prefab_path)
+	void prefab_preview_dialog::handle_drag_drop()
 	{
-		// target => grid_dialog::drag_drop_target()
-		// target => camera_dialog::drag_drop_target()
-		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+		if (!m_dragdrop_prefab_name.empty())
 		{
-			const bool is_root = !prefab_path || prefab_path[0] == '\0';
-			const char* full_path = utils::va(is_root ? "%s%s" : "%s\\%s", is_root ? "" : prefab_path, prefab_name);
+			// target => grid_dialog::drag_drop_target()
+			// target => camera_dialog::drag_drop_target()
+			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+			{
+				const char* prefab_name = m_dragdrop_prefab_name.c_str();
+				const char* prefab_path = m_dragdrop_prefab_path.c_str();
 
-			ImGui::SetDragDropPayload("PREFAB_BROWSER_ITEM", full_path, strlen(full_path), ImGuiCond_Once);
-			ImGui::Text("Prefab: %s", full_path);
-			ImGui::EndDragDropSource();
+				const bool is_root = !prefab_path || prefab_path[0] == '\0';
+				const char* full_path = utils::va(is_root ? "%s%s" : "%s\\%s", is_root ? "" : prefab_path, prefab_name);
+
+				ImGui::SetDragDropPayload("PREFAB_BROWSER_ITEM", full_path, strlen(full_path), ImGuiCond_Once);
+				ImGui::Text("Prefab: %s", full_path);
+				ImGui::EndDragDropSource();
+			}
 		}
 	}
 
@@ -322,25 +330,62 @@ namespace ggui
 						}
 					}
 
+					bool update_drag_drop = false;
+					const char* filename_str = filename.c_str();
+
 					if (thumbnail && thumbnail->texture.data)
 					{
-						prefab_preview_dialog::image_button(thumbnail, thumbnail_size, 1.0f, filename.c_str(), true);
-						handle_drag_drop(filename.c_str(), parent_path.string().c_str());
+						imgui::PushID(filename_str);
+						if (prefab_preview_dialog::image_button(thumbnail, thumbnail_size, 1.0f, filename_str, true))
+						{
+							const auto current_id = imgui::GetItemID();
+							if (!m_dragdrop_id || m_dragdrop_id != current_id)
+							{
+								m_dragdrop_id = current_id;
+								update_drag_drop = true;
+							}
+						}
+						imgui::PopID();
 					}
 					else
 					{
 						if (const auto	image = game::Image_RegisterHandle("cycle_xyz");
 										image && image->texture.data)
 						{
-							prefab_preview_dialog::image_button(image, thumbnail_size, 0.25f, filename.c_str(), false, 0, ImVec2(0.51f, 0.01f), ImVec2(0.99f, 0.99f));
-							handle_drag_drop(filename.c_str(), parent_path.string().c_str());
+							imgui::PushID(filename_str);
+							if (prefab_preview_dialog::image_button(image, thumbnail_size, 0.25f, filename_str, false, 0, ImVec2(0.51f, 0.01f), ImVec2(0.99f, 0.99f)))
+							{
+								const auto current_id = imgui::GetItemID();
+								if (!m_dragdrop_id || m_dragdrop_id != current_id)
+								{
+									m_dragdrop_id = current_id;
+									update_drag_drop = true;
+								}
+							}
+							imgui::PopID();
 						}
 						else
 						{
-							imgui::Button(filename.c_str(), ImVec2(thumbnail_size, thumbnail_size));
-							handle_drag_drop(filename.c_str(), parent_path.string().c_str());
+							if (imgui::Button(filename_str, ImVec2(thumbnail_size, thumbnail_size)))
+							{
+								const auto current_id = imgui::GetItemID();
+								if (!m_dragdrop_id || m_dragdrop_id != current_id)
+								{
+									m_dragdrop_id = current_id;
+									update_drag_drop = true;
+								}
+							}
 						}
 					}
+
+					if (update_drag_drop)
+					{
+						game::printf_to_console("updating drag drop");
+						m_dragdrop_prefab_name = filename;
+						m_dragdrop_prefab_path = parent_path.string();
+					}
+					
+					handle_drag_drop();
 				}
 
 				imgui::EndTable();

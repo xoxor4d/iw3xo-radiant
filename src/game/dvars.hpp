@@ -51,6 +51,7 @@ namespace dvars
 	extern game::dvar_s* gui_saved_state_prefab_browser;
 	extern game::dvar_s* gui_saved_state_surfinspector;
 	extern game::dvar_s* gui_saved_state_toolbox;
+	extern game::dvar_s* gui_saved_state_toolbox_child;
 
 	extern game::dvar_s* mainframe_show_console;
 	extern game::dvar_s* mainframe_show_zview;
@@ -79,6 +80,8 @@ namespace dvars
 	extern game::dvar_s* bsp_compile_light_traces;
 	extern game::dvar_s* bsp_compile_light_custom_cmd_enabled;
 	extern game::dvar_s* bsp_compile_light_custom_cmd;
+
+	extern game::dvar_s* physx_debug_visualization_box_size;
 
 	extern game::dvar_s* r_draw_bsp;
 	extern game::dvar_s* r_draw_bsp_overwrite_sunlight;

@@ -191,6 +191,9 @@ namespace ggui
 		static texedit_helper texhelp = {};
 		texhelp.scalar_direction = 0; // reset each frame
 
+		float tex_scalar_width = 1.0f;
+		float tex_scalar_height = 1.0f;
+
 		auto& g_patch_texdef = *reinterpret_cast<patch_texdef_t*>(0x23F15F8);
 		const int selected_faces_count = *reinterpret_cast<int*>(0x73C714);
 
@@ -264,12 +267,15 @@ namespace ggui
 					last_texture_name = mat_def->radMtl->name;
 					last_texture_width = mat_def->radMtl->width;
 					last_texture_height = mat_def->radMtl->height;
+
+					tex_scalar_width = 1.0f / static_cast<float>(mat_def->radMtl->width);
+					tex_scalar_height = 1.0f / static_cast<float>(mat_def->radMtl->height);
 				}
 
-				texhelp.size_horz = mat_def->mat_texDef->size[0];
-				texhelp.size_vert = mat_def->mat_texDef->size[1];
-				texhelp.shift_horz = mat_def->mat_texDef->shift[0];
-				texhelp.shift_vert = mat_def->mat_texDef->shift[1];
+				texhelp.size_horz = mat_def->mat_texDef->size[0] * tex_scalar_width;
+				texhelp.size_vert = mat_def->mat_texDef->size[1] * tex_scalar_height;
+				texhelp.shift_horz = mat_def->mat_texDef->shift[0] * tex_scalar_width;
+				texhelp.shift_vert = mat_def->mat_texDef->shift[1] * tex_scalar_height;
 				texhelp.rotation = mat_def->mat_texDef->rotate;
 			}
 		}
@@ -297,10 +303,16 @@ namespace ggui
 					last_texture_height = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].radMtl->height;
 				}
 
-				texhelp.size_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[0];
-				texhelp.size_vert = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[1];
-				texhelp.shift_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[0];
-				texhelp.shift_vert = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[1];
+				if (sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].radMtl)
+				{
+					tex_scalar_width = 1.0f / static_cast<float>(sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].radMtl->width);
+					tex_scalar_height = 1.0f / static_cast<float>(sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].radMtl->height);
+				}
+
+				texhelp.size_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[0] * tex_scalar_width;
+				texhelp.size_vert = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[1] * tex_scalar_height;
+				texhelp.shift_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[0] * tex_scalar_width;
+				texhelp.shift_vert = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[1] * tex_scalar_height;
 				texhelp.rotation = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->rotate;
 			}
 		}
@@ -326,7 +338,7 @@ namespace ggui
 					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 				game::texdef_sub_t texdef_edit = {};
-				texdef_edit.shift[0] = edit_amount;
+				texdef_edit.shift[0] = edit_amount / tex_scalar_width;
 
 				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SHIFT_HORZ, texhelp.scalar_direction);
 			}
@@ -346,7 +358,7 @@ namespace ggui
 					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 				game::texdef_sub_t texdef_edit = {};
-				texdef_edit.shift[1] = edit_amount;
+				texdef_edit.shift[1] = edit_amount / tex_scalar_height;
 
 				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SHIFT_VERT, texhelp.scalar_direction);
 			}
@@ -368,7 +380,7 @@ namespace ggui
 					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 				game::texdef_sub_t texdef_edit = {};
-				texdef_edit.size[0] = edit_amount;
+				texdef_edit.size[0] = edit_amount / tex_scalar_width;
 
 				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SIZE_HORZ, texhelp.scalar_direction);
 			}
@@ -388,7 +400,7 @@ namespace ggui
 					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 				game::texdef_sub_t texdef_edit = {};
-				texdef_edit.size[1] = edit_amount;
+				texdef_edit.size[1] = edit_amount / tex_scalar_height;
 
 				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SIZE_VERT, texhelp.scalar_direction);
 			}
@@ -427,7 +439,7 @@ namespace ggui
 					g_patch_texdef.sample_size = 4.0f;
 				}
 
-				game::Brush_SetSampleSize(g_patch_texdef.sample_size);
+				game::Brush_SetSampleSize(static_cast<int>(g_patch_texdef.sample_size));
 			}
 
 			SPACING(0.0f, 4.0f);

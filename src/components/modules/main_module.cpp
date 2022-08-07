@@ -39,6 +39,7 @@ bool get_html(const std::string& url, std::wstring& header, std::wstring& hmtl)
 DWORD WINAPI update_check(LPVOID)
 {
 	const std::string url = "https://api.github.com/repos/xoxor4d/iw3xo-radiant/releases";
+
 	std::wstring header, html;
 	get_html(url, header, html);
 
@@ -76,7 +77,7 @@ DWORD WINAPI update_check(LPVOID)
 				}
 			}
 
-			if (doc[0].HasMember("assets"))
+			if (doc[0].HasMember("assets") && !doc[0]["assets"].Empty())
 			{
 				rapidjson::Value& call_command = doc[0]["assets"][0];
 				const rapidjson::Value::ConstMemberIterator download_url_itr = call_command.FindMember("browser_download_url");
@@ -91,17 +92,6 @@ DWORD WINAPI update_check(LPVOID)
 				{
 					game::glob::gh_update_zip_name = release_name_itr->value.GetString();
 				}
-
-				// this fails if the latest release on github has no download attached to it
-				/*if (doc[0]["assets"][0].HasMember("browser_download_url"))
-				{
-					game::glob::gh_update_link = doc[0]["assets"][0]["browser_download_url"].GetString();
-				}*/
-
-				/*if (doc[0]["assets"][0].HasMember("name"))
-				{
-					game::glob::gh_update_zip_name = doc[0]["assets"][0]["name"].GetString();
-				}*/
 			}
 		}
 
@@ -378,7 +368,7 @@ namespace components
 
 	void undo_general_start_print(const char* op)
 	{
-		game::printf_to_console("[UNDO] '%s' added to the undo stack. New stack size: %d", op, game::g_undoId);
+		game::printf_to_console("[UNDO] '%s' added to the undo stack. New stack size: %d\n", op, game::g_undoId);
 	}
 
 	void __declspec(naked) undo_general_start_stub()
@@ -403,7 +393,7 @@ namespace components
 
 	void undo_undo_print(const char* op)
 	{
-		game::printf_to_console("[UNDO] '%s' undone. New stack size: %d", op, game::g_undoSize - 1); // g_undoSize will be decremented right after the hook
+		game::printf_to_console("[UNDO] '%s' undone. New stack size: %d\n", op, game::g_undoSize - 1); // g_undoSize will be decremented right after the hook
 	}
 
 	void __declspec(naked) undo_undo_stub()
@@ -473,7 +463,6 @@ namespace components
 		utils::hook::nop(0x45F2A6, 5); // undo undo
 		utils::hook::nop(0x48977C, 5); // enter prefab
 		utils::hook::nop(0x489BA6, 5); // leave prefab
-
 
 		// * ---------------------------
 

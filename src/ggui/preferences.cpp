@@ -475,12 +475,34 @@ namespace ggui
 
 				ImGui::InsertNotification(toast);
 			}
-
+			
 			ImGui::SameLine();
 			if (ImGui::Button("Print Error"))
 			{
 				game::printf_to_console("[ERR] This is an error message!");
 			}
+
+			//if (imgui::Button("Mesh Test"))
+			//{
+			//	struct GfxVertexBuffer
+			//	{
+			//		IDirect3DVertexBuffer9* vb;
+			//	};
+
+			//	if (game::is_single_brush_selected())
+			//	{
+			//		auto x = game::g_selected_brushes();
+			//		game::faceVis_s* vis = x->faces;
+
+			//		GfxVertexBuffer vb = {};
+			//		WORD first_index = 0;
+
+			//		//Editor_GetVertexBufferAndIndex
+			//		utils::hook::call<void(__cdecl)(int low16_firstIndex__high16_vbOffset, GfxVertexBuffer* vb, WORD* firstIndex)>(0x51CCE0)(vis->visArray->vertHandle, &vb, &first_index);
+
+			//		int yy = 0;
+			//	}
+			//}
 
 			ImGui::DragInt("Integer01", &dev_num_01, 0.1f);
 			ImGui::DragInt("Integer02", &dev_num_02, 0.1f);

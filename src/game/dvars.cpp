@@ -51,6 +51,7 @@ namespace dvars
 	game::dvar_s* gui_saved_state_prefab_browser = nullptr;
 	game::dvar_s* gui_saved_state_surfinspector = nullptr;
 	game::dvar_s* gui_saved_state_toolbox = nullptr;
+	game::dvar_s* gui_saved_state_toolbox_child = nullptr;
 
 	game::dvar_s* mainframe_show_console = nullptr;
 	game::dvar_s* mainframe_show_zview = nullptr;
@@ -79,6 +80,8 @@ namespace dvars
 	game::dvar_s* bsp_compile_light_traces = nullptr;
 	game::dvar_s* bsp_compile_light_custom_cmd_enabled = nullptr;
 	game::dvar_s* bsp_compile_light_custom_cmd = nullptr;
+
+	game::dvar_s* physx_debug_visualization_box_size = nullptr;
 
 	game::dvar_s* r_draw_bsp = nullptr;
 	game::dvar_s* r_draw_bsp_overwrite_sunlight = nullptr;
@@ -264,6 +267,7 @@ namespace dvars
 		components::reflectionprobes::register_dvars();
 		components::remote_net::register_dvars();
 		components::renderer::register_dvars();
+		components::physx_impl::register_dvars();
 
 		cmainframe::register_dvars();
 		cxywnd::register_dvars();

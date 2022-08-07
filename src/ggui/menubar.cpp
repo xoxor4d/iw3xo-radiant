@@ -564,6 +564,7 @@ namespace ggui
 					{
 						const auto cs = GET_GUI(ggui::camera_settings_dialog);
 						cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
+						cs->focus_tab(camera_settings_dialog::tab_state_fakesun);
 					}
 
 					SEPERATORV(0.0f);
@@ -580,6 +581,7 @@ namespace ggui
 					{
 						const auto cs = GET_GUI(ggui::camera_settings_dialog);
 						cs->handle_toggle_request(camera_settings_dialog::tab_state_fakesun);
+						cs->focus_tab(camera_settings_dialog::tab_state_fakesun);
 					}
 
 					SEPERATORV(0.0f);
@@ -917,6 +919,7 @@ namespace ggui
 				{
 					const auto cs = GET_GUI(ggui::camera_settings_dialog);
 					cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
+					cs->focus_tab(camera_settings_dialog::tab_state_effects);
 				}
 
 				if (ImGui::MenuItem("Edit Current Effect", 0, nullptr, components::effects::effect_can_play()))
@@ -1009,6 +1012,7 @@ namespace ggui
 				{
 					const auto cs = GET_GUI(ggui::camera_settings_dialog);
 					cs->handle_toggle_request(camera_settings_dialog::tab_state_bsp);
+					cs->focus_tab(camera_settings_dialog::tab_state_bsp);
 				}
 
 				ImGui::EndMenu(); // BSP
@@ -1940,39 +1944,86 @@ namespace ggui
 				}
 			}*/
 
-			if(components::process::pthis->is_active())
+			const auto process = components::process::get();
+
+			if(process->is_active())
 			{
 				const auto menubar_height = ImGui::GetItemRectSize().y;
 				const auto tb = GET_GUI(ggui::toolbar_dialog);
-
-				ImVec4 spinner_color = ImVec4(0.49f, 0.2f, 0.2f, 1.0f);
 
 				ImVec4 toolbar_button_background_active = ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector);
 				ImVec4 toolbar_button_background_hovered = toolbar_button_background_active + ImVec4(0.10f, 0.1f, 0.1f, 0.0f);
 				ImVec2 toolbar_button_size = ImVec2(menubar_height, menubar_height);
 
-				const char* proc_str = process_str.empty() ? "Spawning Process" : process_str.c_str();
-				const float proc_str_width = ImGui::CalcTextSize(proc_str).x;
-
-				// not using a group to calculate the widget size because it flickers upon text change (frame delay)
-
-				ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height - 32.0f);
-
-				static bool hov_active_proc;
-				if (tb->image_button_label(proc_str
-					, "fx_stop"
-					, true
-					, hov_active_proc
-					, "Kill active process."
-					, &toolbar_button_background_hovered
-					, &toolbar_button_background_active
-					, &toolbar_button_size))
+				switch(process->get_indicator_type())
 				{
-					components::process::pthis->kill_process();
-				}
+					case components::process::INDICATOR_TYPE_PROGRESS:
+						{
+							const float progress_width = 200.0f;
 
-				ImGui::SameLine(ImGui::GetWindowWidth() - 26.0f);
-				ImGui::Spinner("##proc_spinner", 6.0, 2.0f, ImGui::ColorConvertFloat4ToU32(spinner_color));
+							const char* proc_str = process->m_indicator_str.empty() ? "Spawning Process" : process->m_indicator_str.c_str();
+							const float proc_str_width = ImGui::CalcTextSize(proc_str).x;
+
+							// not using a group to calculate the widget size because it flickers upon text change (frame delay)
+
+							ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height - progress_width);
+
+							static bool hov_active_proc;
+							if (tb->image_button_label(proc_str
+								, "fx_stop"
+								, true
+								, hov_active_proc
+								, "Kill active process."
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								process->kill_process();
+							}
+
+							ImVec4 progress_color = ImVec4(0.49f, 0.2f, 0.2f, 1.0f);
+							ImVec4 progress_bg_color = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+
+							ImGui::SameLine(ImGui::GetWindowWidth() - progress_width + 8.0f);
+							ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 8.0f);
+							ImGui::BufferingBar("##buffer_bar", process->m_indicator_progress, ImVec2(progress_width, 6.0f),
+								ImGui::ColorConvertFloat4ToU32(progress_bg_color), 
+								ImGui::ColorConvertFloat4ToU32(progress_color));
+
+							break;
+						}
+
+					default:
+					case components::process::INDICATOR_TYPE_SPINNER:
+						{
+							ImVec4 spinner_color = ImVec4(0.49f, 0.2f, 0.2f, 1.0f);
+
+							const char* proc_str = process->m_indicator_str.empty() ? "Spawning Process" : process->m_indicator_str.c_str();
+							const float proc_str_width = ImGui::CalcTextSize(proc_str).x;
+
+							// not using a group to calculate the widget size because it flickers upon text change (frame delay)
+
+							ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height - 32.0f);
+
+							static bool hov_active_proc;
+							if (tb->image_button_label(proc_str
+								, "fx_stop"
+								, true
+								, hov_active_proc
+								, "Kill active process."
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								process->kill_process();
+							}
+
+							ImGui::SameLine(ImGui::GetWindowWidth() - 26.0f);
+							ImGui::Spinner("##proc_spinner", 6.0, 2.0f, ImGui::ColorConvertFloat4ToU32(spinner_color));
+
+							break;
+						}
+				}
 			}
 
 			ImGui::PopStyleVar(2); // ImGuiStyleVar_WindowPadding | ImGuiStyleVar_ItemSpacing

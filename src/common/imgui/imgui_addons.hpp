@@ -1,13 +1,18 @@
 #pragma once
 #include "imgui_internal.h"
 
+#pragma warning(push)
+#pragma warning(disable: 4172)
+#include "imgui_notify.hpp"
+#pragma warning(pop)
+
 // forward decl
 namespace fx_system
 {
-	enum   FX_ED_FLAG_ : int;
-	enum   FX_ELEM_ : int;
-	struct FxEditorElemDef;
-	struct FxFloatRange;
+	enum	FX_ED_FLAG_ : int;
+	enum	FX_ELEM_ : int;
+	struct	FxEditorElemDef;
+	struct	FxFloatRange;
 }
 
 // forward decl
@@ -18,12 +23,14 @@ namespace game
 
 namespace ImGui
 {
+	void	Toast(const ImGuiToastType_ type, const char* title, const char* content, int time = 2500);
 	int		popup_close_map();
 
 	bool	ImageButtonScaled(ImTextureID user_texture_id, const ImVec2& size, const float scale, const ImVec2& uv0 = ImVec2(0.0f, 0.0f), const ImVec2& uv1 = ImVec2(1.0f, 1.0f), int frame_padding = -1, const ImVec4& bg_col = ImVec4(0.0f, 0.0f, 0.0f, 0.0f), const ImVec4& tint_col = ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 	bool	TreeNodeEx(const char* label, bool* is_hovered, bool* is_pressed, ImGuiTreeNodeFlags flags);
 	bool	Spinner(const char* label, float radius, float thickness, const ImU32& color);
+	bool	BufferingBar(const char* label, float value, const ImVec2& size_arg, const ImU32& bg_col, const ImU32& fg_col);
 	
 	bool	IsVertScollbarVisible();
 	void	left_label_drag(const char* label, const float text_y_offset, const float sameline_offset = 80.0f);
@@ -43,6 +50,8 @@ namespace ImGui
 
 	ImGuiID FindNodeByID(ImGuiID id);
 	void	DockBuilderDockWindow_FirstUseOrSaved(const char* window_name, ImGuiID node_id);
+	void	PushCompactButtonInvBg();
+	void	PopCompactButtonInvBg();
 	void	PushStyleCompact();
 	void	PopStyleCompact();
 	bool	BeginTabItem_SmallGap(const char* label, bool* p_open = nullptr, ImGuiTabItemFlags flags = 0);

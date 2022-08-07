@@ -485,6 +485,27 @@ namespace components
 		}
 	}
 
+	void CMod_LoadCollisionVertsAndTris()
+	{
+		unsigned int vert_count;
+		const auto verts = d3dbsp::Com_GetBspLump(d3dbsp::LUMP_COLLISIONVERTS, sizeof(float[3]), &vert_count);
+
+		d3dbsp::cm.verts = reinterpret_cast<float(*)[3]>(game::Hunk_Alloc(sizeof(float[3]) * vert_count));
+		d3dbsp::cm.vertCount = static_cast<int>(vert_count);
+		memcpy(d3dbsp::cm.verts, verts, sizeof(float[3]) * vert_count);
+
+
+		// #
+		// CMod_LoadCollisionTriangles();
+
+		unsigned int tri_count;
+		const auto tris = d3dbsp::Com_GetBspLump(d3dbsp::LUMP_COLLISIONTRIS, sizeof(uint16_t), &tri_count);
+
+		d3dbsp::cm.triIndices = reinterpret_cast<uint16_t*>(game::Hunk_Alloc(sizeof(uint16_t) * tri_count));
+		d3dbsp::cm.triCount = static_cast<int>(tri_count) / 3;
+		memcpy(d3dbsp::cm.triIndices, tris, sizeof(uint16_t) * tri_count);
+	}
+
 	const char* Com_EntityString(unsigned int* num_entity_chars)
 	{
 		if (!d3dbsp::Com_IsBspLoaded())
@@ -603,6 +624,7 @@ namespace components
 			// CM_LoadMapFromBsp
 			d3dbsp::cm.name = Com_GetHunkStringCopy(bsppath);
 			CMod_LoadPlanes();
+			CMod_LoadCollisionVertsAndTris();
 			CMod_LoadEntityString();
 			d3dbsp::cm.isInUse = 1;
 
@@ -778,10 +800,14 @@ namespace components
 
 		// compileLight
 		args += (dvars::bsp_compile_light->current.enabled ? "1 "s : "0 "s);
-		
-		process::pthis->set_output(true);
-		process::pthis->set_arguments(args);
-		process::pthis->set_callback([bsp_path]
+
+		const auto process = components::process::get();
+
+		process->set_process_type(process::PROC_TYPE_BATCH);
+		process->set_indicator(process::INDICATOR_TYPE_SPINNER);
+		process->set_output(true);
+		process->set_arguments(args);
+		process->set_post_process_callback([bsp_path]
 		{
 			d3dbsp::radiant_load_bsp(bsp_path.c_str(), true);
 
@@ -791,7 +817,7 @@ namespace components
 			}
 		});
 
-		process::pthis->create_process();
+		process->create_process();
 	}
 
 	void d3dbsp::compile_current_map()
@@ -995,10 +1021,20 @@ namespace components
 		// toggle between bsp and radiant rendering 
 		command::register_command_with_hotkey("toggle_bsp_radiant"s, [this](auto)
 		{
-			const bool tstate = gameview::p_this->get_all_geo_state() || gameview::p_this->get_all_ents_state() || gameview::p_this->get_all_triggers_state() || gameview::p_this->get_all_others_state();
+			if (d3dbsp::Com_IsBspLoaded())
+			{
+				const bool tstate = gameview::p_this->get_all_geo_state() || gameview::p_this->get_all_ents_state() || gameview::p_this->get_all_triggers_state() || gameview::p_this->get_all_others_state();
 
-			dvars::set_bool(dvars::r_draw_bsp, !tstate);
-			command::execute("toggle_filter_all");
+				const bool gameview_was_enabled = dvars::radiant_gameview->current.enabled;
+
+				dvars::set_bool(dvars::r_draw_bsp, !tstate);
+				command::execute("toggle_filter_all");
+
+				if (gameview_was_enabled)
+				{
+					components::gameview::p_this->set_state(gameview_was_enabled);
+				}
+			}
 		});
 		
 		command::register_command_with_hotkey("bsp_compile"s, [this](auto)

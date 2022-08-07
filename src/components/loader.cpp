@@ -21,6 +21,8 @@ namespace components
 		loader::_register(new generate_previews());
 		loader::_register(new gui());
 		loader::_register(new main_module());
+		loader::_register(new patches());
+		loader::_register(new physx_impl());
 		loader::_register(new pmesh());
 		loader::_register(new process());
 		loader::_register(new reflectionprobes());

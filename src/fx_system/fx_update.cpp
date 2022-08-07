@@ -797,7 +797,7 @@ namespace fx_system
 			return FxUpdateResult::FX_UPDATE_KEEP;
 		}
 
-		// #PHYS
+		// #PHYS - not using any physics lib
 		if ((elemDef->flags & FX_ELEM_USE_COLLISION) != 0)
 		{
 			return FX_UpdateElementPosition_Colliding(update, system);
