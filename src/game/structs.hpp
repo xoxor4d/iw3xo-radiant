@@ -10,6 +10,46 @@ namespace game
 	typedef vec_t vec3_t[3];
 	typedef vec_t vec4_t[4];
 
+	enum BRUSHCONTENTS
+	{
+		BRUSHCONTENTS_SKY = 0x800,
+		BRUSHCONTENTS_PORTAL = 0x20000000,
+		BRUSHCONTENTS_LIGHTGRID = 0x28000004,
+		BRUSHCONTENTS_HINT = 0x30000000,
+		BRUSHCONTENTS_DETAIL = 0x8000000,
+		BRUSHCONTENTS_NONCOLLIDING = 0x8000004,
+		BRUSHCONTENTS_WEAPONCLIP = 0x8002080,
+
+		// 0x20000000 = portal
+		// 0x20000001 = indoor_outdoor
+		// 0x20000002 = clip_foliage
+		// 0x20000020 = clip_water
+		// 0x20000200 = clip_vehicle
+		// 0x200020c0 = clip_weap
+		// 0x20010000 = clip_player
+		// 0x20010000 = ladder
+		// 0x200100c0 = clip_missle
+		// 0x20020000 = clip_ai
+		// 0x20030000 = clip_snow
+		// 0x20030200 = clip
+		// 0x20031640 = clip_nosight
+		// 0x200326c0 = clip_metal
+		// 0x20033240 = clip_full
+		// 0x21000000 = mantle_on
+		// 0x28000004 = lightgrid_vol
+		// 0x30000000 = hint
+	};
+
+	enum BRUSHFLAG
+	{
+		BRUSHFLAG_FIXED_SIZE = 0x0, // script_origin, reflection_probe, fx_origin ...
+		BRUSHFLAG_SELECTED = 0x2,
+		BRUSHFLAG_HIDDEN = 0x4,
+		BRUSHFLAG_TOOL = 0x8, // global intermission, spawn points, lightgrid, tool textures
+		BRUSHFLAG_SOLID = 0x10, // generic solid brushes
+	};
+
+
 	enum PATCH_TYPE
 	{
 		PATCH_GENERIC =		0x0,	// generic curve patch
@@ -312,9 +352,9 @@ namespace game
 	{
 		ECLASS_RADIANT_NODE = 0x2,
 		ECLASS_LIGHT = 0x3,
-		ECLASS_UNK = 0x10,
+		ECLASS_PREFAB = 0x10,
 		ECLASS_MISC_MODEL = 0xA,
-		ECLASS_PREFAB = 0x12,
+		ECLASS_PREFAB_AND_NODE = 0x12,
 		ECLASS_NODE = 0x22,
 		ECLASS_TRIGGER_RADIUS = 0x42,
 		ECLASS_TRIGGER_DISC = 0x82,
@@ -473,8 +513,8 @@ namespace game
 		//int mat_unkown_value1;
 		//qtexture_s* mat_unkown;
 		//texdef_sub_t mat_unknown_texdef;
-		int unk01;
-		int unk02;
+		int contents; // BRUSH_CONTENTS_ weaponclip: & 0x8002080, noncolliding: & 0x8000004; detail: & 0x8000000
+		int toolflags; // only splitgeo
 		int unk03;
 		plane_t plane;
 		int unk04;
@@ -568,7 +608,9 @@ namespace game
 		char pad_0x0010[52];
 		void* modelInst;
 		prefab_s* prefab;
-		int version;
+		//int version;
+		uint16_t version0;
+		uint16_t version1;
 		char* mapLayer;
 		int someCount;
 		bool bModelFailed;
@@ -582,9 +624,10 @@ namespace game
 		epair_t *epairs;
 		int movedAmount;
 		int epairEdits;
-		char pad_0x0080[8];
+		bool custom_no_cull; // seems fine
+		char pad_0x0080[7];
 		int refCount;
-		char pad_0x008C[4];
+		char pad_0x008C[4]; // not unused
 	};
 	STATIC_ASSERT_OFFSET(entity_s, modelInst, 0x44);
 	STATIC_ASSERT_OFFSET(entity_s, eclass, 0x60);
@@ -662,7 +705,7 @@ namespace game
 		vec3_t normal;
 		rgba_4byte vert_color;
 		pmesh_texcoord savedTexCoord;
-		int unkown;
+		int turned_edge;
 	}; STATIC_ASSERT_SIZE(drawVert_t, 0x50); //STATIC_ASSERT_SIZE(drawVert_t, 0x4C);
 
 	struct patchMesh_material
@@ -671,14 +714,22 @@ namespace game
 		qtexture_s* radMtl;
 	};
 
+	struct curveVert_t
+	{
+		vec3_t xyz;
+		vec2_t st;
+		vec2_t unk;
+		vec3_t normal;
+		rgba_4byte vert_color;
+	};
+
 	struct curvePatchDef_t
 	{
 		int width;
 		int height;
-		int random_one;
-		float* point_array;
-		int unk;
-		float large_float_array[64];
+		float unkown1;
+		curveVert_t* verts;
+		float unkown2;
 	};
 
 	struct patchMesh_t
@@ -733,7 +784,7 @@ namespace game
 		vec3_t mins;
 		vec3_t maxs;
 		int xx1;
-		int xx2;
+		int contents;
 		int facecount;
 		//face_t* brush_faces;
 		face_t_new* brush_faces;

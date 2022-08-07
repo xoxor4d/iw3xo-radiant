@@ -210,6 +210,70 @@ namespace components
 		}
 	}
 
+
+	// *
+	// do not cull entities with the custom no-cull flag (used phys prefabs)
+	bool cubic_culling_overwrite_check(game::selbrush_def_t* sb)
+	{
+		if (sb && sb->owner && sb->owner->firstActive)
+		{
+			return sb->owner->firstActive->custom_no_cull;
+		}
+
+		return false;
+	}
+
+	void __declspec(naked) cubic_culling_overwrite_stub1()
+	{
+		const static uint32_t func_addr = 0x4056D0;
+		const static uint32_t skip_addr = 0x407ADB;
+		const static uint32_t cull_addr = 0x407AF0;
+		__asm
+		{
+			pushad;
+			push    ebx;
+			call    cubic_culling_overwrite_check;
+			add		esp, 4;
+			test    al, al;
+			popad;
+
+			jne      SKIP;
+			call    func_addr;
+			test    al, al;
+			jne		CULL;
+
+		SKIP:
+			jmp		skip_addr;
+
+		CULL:
+			jmp		cull_addr;
+		}
+	}
+
+	void __declspec(naked) cubic_culling_overwrite_stub2()
+	{
+		const static uint32_t func_addr = 0x4056D0;
+		const static uint32_t skip_addr = 0x407BEC;
+		__asm
+		{
+			pushad;
+			push    ebx;
+			call    cubic_culling_overwrite_check;
+			add		esp, 4;
+			test    al, al;
+			popad;
+
+			jne     SKIP;
+			call    func_addr;
+			test    al, al;
+			setz    al;
+			test    al, al;
+
+		SKIP:
+			jmp		skip_addr;
+		}
+	}
+
 	// *
 	// *
 	
@@ -1195,6 +1259,8 @@ namespace components
 		}
 	}
 
+	// 0x558D2E renders effect xmodels
+
 	void r_setup_pass_xmodel(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
 	{
 		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) || 
@@ -1401,10 +1467,75 @@ namespace components
 
 	void r_setup_pass_surflists(game::GfxCmdBufSourceState* source, game::GfxCmdBufState* state, int passIndex)
 	{
-		if(d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled)
+		if (d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled)
 		{
 			//state->depthRangeNear = 0.01337f;
 			state->viewport.x = 1;
+		}
+
+		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
+			(!renderer::is_rendering_layeredwnd() && dvars::r_fakesun_preview->current.enabled))
+		{
+			if (state->techType == game::TECHNIQUE_FAKELIGHT_NORMAL)
+			{
+				bool has_normal = false;
+				bool has_spec = false;
+
+				for (auto tex = 0; tex < state->material->textureCount; tex++)
+				{
+					if (state->material->textureTable[tex].u.image->semantic == 0x5 || state->material->textureTable[tex].u.image->semantic == 0x1) // or identitynormal
+					{
+						has_normal = true;
+					}
+
+					has_spec = state->material->textureTable[tex].u.image->semantic == 0x8 ? true : has_spec;
+				}
+
+				if (has_spec && has_normal)
+				{
+					bool has_scroll = false;
+					if (state->material->techniqueSet && state->material->techniqueSet->techniques[5])
+					{
+						has_scroll = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "scroll");
+					}
+
+					if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_scroll_dtex" : "radiant_fakesun_dtex", 1); // fakesun_normal_dtex
+						tech)
+					{
+						state->technique = tech;
+
+						// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+										image && image->texture.data)
+						{
+							game::R_SetSampler(0, state, 1, (char)114, image);
+						}
+					}
+				}
+				else if (!has_spec && has_normal)
+				{
+					bool has_scroll = false;
+					if (state->material->techniqueSet && state->material->techniqueSet->techniques[5])
+					{
+						has_scroll = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "scroll");
+					}
+
+					if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_no_spec_scroll_dtex" : "radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
+									tech)
+					{
+						state->technique = tech;
+
+						// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
+						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+							image && image->texture.data)
+						{
+							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
+							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
+								(0x538D70)(0, state, 1, 114, image);
+						}
+					}
+				}
+			}
 		}
 		
 		r_setup_pass_general(source, state, passIndex);
@@ -1990,8 +2121,52 @@ namespace components
 			return;
 		}
 
-		if(!d3dbsp::Com_IsBspLoaded())
+		// TODO:
+		// * unify physics frame logic
+
+		if (effects::effect_can_play() || GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic)
 		{
+			components::physx_impl::get()->fx_frame();
+		}
+
+		if (components::physx_impl::get()->m_phys_sim_run)
+		{
+			components::physx_impl::get()->phys_frame();
+		}
+
+		if (d3dbsp::Com_IsBspLoaded() && dvars::r_draw_bsp->current.enabled)
+		{
+			d3dbsp::add_entities_to_scene();
+
+
+			game::refdef_s refdef = {};
+			utils::vector::copy(viewParms->origin, refdef.vieworg);
+			utils::vector::copy(viewParms->axis[0], refdef.viewaxis[0]);
+			utils::vector::copy(viewParms->axis[1], refdef.viewaxis[1]);
+			utils::vector::copy(viewParms->axis[2], refdef.viewaxis[2]);
+
+			refdef.width = game::dx->windows[ggui::CCAMERAWND].width;
+			refdef.height = game::dx->windows[ggui::CCAMERAWND].height;
+
+			const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
+			refdef.tanHalfFovY = tanf(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
+			refdef.tanHalfFovX = refdef.tanHalfFovY * (static_cast<float>(cam->width) / static_cast<float>(cam->height));
+
+			refdef.zNear = game::Dvar_FindVar("r_zNear")->current.value;
+			refdef.time = static_cast<int>(timeGetTime());
+
+			refdef.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
+			refdef.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
+
+			memcpy(&refdef.primaryLights, &d3dbsp::scene_lights, sizeof(d3dbsp::scene_lights));
+
+			// CL_RenderScene
+			utils::hook::call<void(__cdecl)(game::refdef_s* _refdef)>(0x506030)(&refdef);
+		}
+		else
+		{
+			// a bit of R_RenderScene
+
 			const auto frontEndDataOut = game::get_frontenddata();
 			const auto viewInfo = &frontEndDataOut->viewInfo[0];
 
@@ -2003,13 +2178,13 @@ namespace components
 			viewInfo->sceneDef = game::scene->def;
 
 			memcpy(&viewInfo->viewParms, viewParms, sizeof(game::GfxViewParms));
+			viewInfo->viewParms.zNear = game::Dvar_FindVar("r_zNear")->current.value;
 
 			const auto window = game::dx->windows[ggui::CCAMERAWND];
 			const game::GfxViewport viewport = { 0, 0, window.width, window.height };
 
 			viewInfo->sceneViewport = viewport;
 			viewInfo->displayViewport = viewport;
-
 
 			// needed for debug plumes (3D text in space)
 			game::rg->debugViewParms = viewParms;
@@ -2019,6 +2194,11 @@ namespace components
 
 			// R_AddAllSceneEntSurfacesCamera (Worker CMD) - add/draw effect xmodels 
 			utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523660)(viewInfo);
+
+			// R_SortDrawSurfs
+			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[1], game::scene->drawSurfCount[1]);
+			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[4], game::scene->drawSurfCount[4]);
+			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[10], game::scene->drawSurfCount[10]);
 
 			// *
 			// lit drawlist (effect xmodels)
@@ -2040,6 +2220,30 @@ namespace components
 
 			viewInfo->litInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_lit_drawSurfCount];
 			viewInfo->litInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_lit_drawSurfCount;
+
+
+
+			// R_SortDrawSurfs
+			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[6], game::scene->drawSurfCount[6]);
+
+			R_InitDrawSurfListInfo(&viewInfo->decalInfo);
+			viewInfo->decalInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL;
+			viewInfo->decalInfo.viewInfo = viewInfo;
+			viewInfo->decalInfo.viewOrigin[0] = viewParms->origin[0];
+			viewInfo->decalInfo.viewOrigin[1] = viewParms->origin[1];
+			viewInfo->decalInfo.viewOrigin[2] = viewParms->origin[2];
+			viewInfo->decalInfo.viewOrigin[3] = viewParms->origin[3];
+			viewInfo->decalInfo.cameraView = 1;
+			const int initial_decal_drawSurfCount = frontEndDataOut->drawSurfCount;
+
+			// R_MergeAndEmitDrawSurfLists
+			utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(3, 6);
+
+			viewInfo->decalInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_decal_drawSurfCount];
+			viewInfo->decalInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_decal_drawSurfCount;
+
+			// R_SortDrawSurfs
+			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[12], game::scene->drawSurfCount[12]);
 
 
 			// *
@@ -2066,35 +2270,6 @@ namespace components
 			renderer::effect_drawsurf_count_ = frontEndDataOut->drawSurfCount;
 
 			viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
-		}
-		else
-		{
-			d3dbsp::add_entities_to_scene();
-
-			
-			game::refdef_s refdef = {};
-			utils::vector::copy(viewParms->origin, refdef.vieworg);
-			utils::vector::copy(viewParms->axis[0], refdef.viewaxis[0]);
-			utils::vector::copy(viewParms->axis[1], refdef.viewaxis[1]);
-			utils::vector::copy(viewParms->axis[2], refdef.viewaxis[2]);
-			
-			refdef.width = game::dx->windows[ggui::CCAMERAWND].width;
-			refdef.height = game::dx->windows[ggui::CCAMERAWND].height;
-
-			const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
-			refdef.tanHalfFovY = tanf(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
-			refdef.tanHalfFovX = refdef.tanHalfFovY * (static_cast<float>(cam->width) / static_cast<float>(cam->height));
-
-			refdef.zNear = game::Dvar_FindVar("r_zNear")->current.value;
-			refdef.time = static_cast<int>(timeGetTime());
-			
-			refdef.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
-			refdef.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
-
-			memcpy(&refdef.primaryLights, &d3dbsp::scene_lights, sizeof(d3dbsp::scene_lights));
-
-			// CL_RenderScene
-			utils::hook::call<void(__cdecl)(game::refdef_s* _refdef)>(0x506030)(&refdef);
 		}
 	}
 
@@ -2521,16 +2696,18 @@ namespace components
 			const auto backend = game::get_backenddata();
 			const auto dyn_shadow_type = viewInfo->dynamicShadowType;
 
-			if (dyn_shadow_type == game::SHADOW_MAP)
+			if (dvars::r_draw_bsp->current.enabled)
 			{
-				if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+				if (dyn_shadow_type == game::SHADOW_MAP)
 				{
-					game::RB_SunShadowMaps(backend, viewInfo);
+					if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+					{
+						game::RB_SunShadowMaps(backend, viewInfo);
+					}
+
+					game::RB_SpotShadowMaps(backend, viewInfo);
 				}
-
-				game::RB_SpotShadowMaps(backend, viewInfo);
 			}
-
 
 			//R_DepthPrepass(&cmdBuf, viewInfo);	// no need to do a depth prepass, only causes issues upon resizing
 													// needs depthbuffer resize logic
@@ -2540,14 +2717,16 @@ namespace components
 				R_DrawLit(&cmdBuf, viewInfo);
 			}
 
-			if(viewInfo->decalInfo.viewInfo && viewInfo->decalInfo.drawSurfs)
+			if (viewInfo->decalInfo.viewInfo && viewInfo->decalInfo.drawSurfs)
 			{
 				R_DrawDecal(&cmdBuf, viewInfo);
 			}			
 
 			// impl. RB_DrawSun? :p
-
-			R_DrawLights(&cmdBuf, viewInfo); // fx lights
+			if (dvars::r_draw_bsp->current.enabled)
+			{
+				R_DrawLights(&cmdBuf, viewInfo); // fx lights
+			}
 
 			if (viewInfo->emissiveInfo.viewInfo && viewInfo->emissiveInfo.drawSurfs)
 			{
@@ -2930,6 +3109,60 @@ namespace components
 		}
 	}
 
+	// *
+
+	struct GfxCmdDrawPoints
+	{
+		game::GfxCmdHeader header;
+		__int16 pointCount;
+		char width;
+		char dimensions;
+		game::GfxPointVertex point; // + 0x8 
+	};
+
+
+	void renderer::R_AddPointCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* points)
+	{
+		if (count <= 0)
+		{
+			Assert();
+		}
+
+		const game::GfxCmdArray* s_cmdList = reinterpret_cast<game::GfxCmdArray*>(*(DWORD*)0x73D4A0);
+		const auto merged_cmd = reinterpret_cast<GfxCmdDrawPoints*>(s_cmdList->lastCmd);
+
+		if (merged_cmd && merged_cmd->header.id == game::RC_DRAW_POINTS
+			&& count * sizeof(game::GfxPointVertex) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF
+			&& merged_cmd->width == width
+			&& merged_cmd->dimensions == dimension
+			&& count + merged_cmd->pointCount <= 0x7FFF)
+		{
+			// unsure about the name, lets call it R_AddMultipleRendercommands
+			void* cmds = utils::hook::call<void* (__cdecl)(int)>(0x4FB0D0)(count * sizeof(game::GfxPointVertex));
+
+			if (cmds)
+			{
+				memcpy(cmds, points, count * sizeof(game::GfxPointVertex));
+				merged_cmd->pointCount += count;
+			}
+		}
+		else
+		{
+			const size_t vert_mem_size = count * sizeof(game::GfxPointVertex);
+			const auto line = reinterpret_cast<GfxCmdDrawPoints*>(game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawPoints, point), game::RC_DRAW_POINTS));
+
+			if (line)
+			{
+				line->pointCount = count;
+				line->width = width;
+				line->dimensions = dimension;
+				memcpy(&line->point, points, vert_mem_size);
+			}
+		}
+	}
+
+	// *
+
 	void __declspec(naked) disable_line_depth_testing2()
 	{
 		// enable depth testing for connection lines
@@ -2969,7 +3202,7 @@ namespace components
 		}
 
 		const game::GfxCmdArray* s_cmdList = reinterpret_cast<game::GfxCmdArray*>(*(DWORD*)0x73D4A0);
-		GfxCmdDrawLines* merged_cmd = reinterpret_cast<GfxCmdDrawLines*>(s_cmdList->lastCmd);
+		const auto merged_cmd = reinterpret_cast<GfxCmdDrawLines*>(s_cmdList->lastCmd);
 
 		if (merged_cmd && merged_cmd->header.id == game::RC_DRAW_LINES
 			&& (count * sizeof(game::GfxPointVertex) * 2) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF 
@@ -2989,7 +3222,7 @@ namespace components
 		else
 		{
 			const size_t vert_mem_size = count * sizeof(game::GfxPointVertex) * 2;
-			GfxCmdDrawLines* line = reinterpret_cast<GfxCmdDrawLines*>( game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawLines, verts), game::RC_DRAW_LINES));
+			const auto line = reinterpret_cast<GfxCmdDrawLines*>( game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawLines, verts), game::RC_DRAW_LINES));
 
 			if (line)
 			{
@@ -3437,16 +3670,17 @@ namespace components
 		// set default value for r_vsync to false
 		utils::hook::set<BYTE>(0x51FB1A + 1, 0x0);
 
-		// silence "gfxCmdBufState.prim.vertDeclType == VERTDECL_PACKED" assert
-		utils::hook::nop(0x53AB4A, 5);
-
 		// enable/disable drawing of boxes around the origin on entities
 		utils::hook(0x478E33, render_origin_boxes_stub, HOOK_JUMP).install()->quick();
 
 		// enable/disable drawing of backface wireframe on patches
 		utils::hook::nop(0x441567, 16);
 			 utils::hook(0x441567, patch_backface_wireframe_stub).install()->quick();
-		
+
+		// do not cull entities with the custom no-cull flag (used phys prefabs)
+		utils::hook(0x407AD2, cubic_culling_overwrite_stub1, HOOK_JUMP).install()->quick();
+		utils::hook(0x407BE0, cubic_culling_overwrite_stub2, HOOK_JUMP).install()->quick();
+
 		// do not force spec and bump picmip
 		utils::hook::nop(0x420A73, 30);
 		utils::hook::nop(0x4208B0, 30);
@@ -3547,8 +3781,17 @@ namespace components
 		utils::hook(0x52A6FF, R_GetLightingAtPoint_stub, HOOK_JUMP).install()->quick();
 		utils::hook::nop(0x500F4C, 5); // < on shutdown
 
+		// silence "gfxCmdBufState.prim.vertDeclType == VERTDECL_PACKED" assert
+		utils::hook::nop(0x53AB4A, 5);
+
 		// silence assert 'localDrawSurf->fields.prepass == MTL_PREPASS_NONE'
-		utils::hook::nop(0x52EE39, 5); 
+		utils::hook::nop(0x52EE39, 5);
+
+		// silence assert 'drawSurf.fields.primaryLightIndex doesn't index info->viewInfo->shadowableLightCount'
+		utils::hook::nop(0x55A3A3, 5);
+
+		// silence assert  '((region == DRAW_SURF_FX_CAMERA_EMISSIVE) || (drawSurf == scene.drawSurfs[region]) || (drawSurf->fields.primarySortKey >= (drawSurf - 1)->fields.primarySortKey))'
+		utils::hook::nop(0x52EE95, 5);
 
 		// * ------
 

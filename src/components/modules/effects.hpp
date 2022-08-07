@@ -39,6 +39,7 @@ namespace components
 		static void repeat();
 		static void pause();
 		static void stop();
+		static void stop_all();
 		static void edit();
 
 

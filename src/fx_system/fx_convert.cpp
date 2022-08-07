@@ -1605,7 +1605,12 @@ namespace fx_system
 						if (!elemVisual->model->physPreset)
 						{
 							elemVisual->model->physPreset = game::FX_RegisterPhysPreset("default"); //game::FX_RegisterPhysPreset("default");
-							Warning(20, "ERROR: no physics preset specified for the FX model [%s]\n", elemVisual->model->name);
+							//Warning(20, "ERROR: no physics preset specified for the FX model [%s]\n", elemVisual->model->name);
+
+							ImGuiToast toast(ImGuiToastType_Warning, 6000);
+							toast.set_title("physics preset");
+							toast.set_content("no physics preset specified for the FX model [%s]\nUsing default values.", elemVisual->model->name);
+							ImGui::InsertNotification(toast);
 						}
 					}
 				}

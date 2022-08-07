@@ -81,6 +81,8 @@ namespace dvars
 	game::dvar_s* bsp_compile_light_custom_cmd_enabled = nullptr;
 	game::dvar_s* bsp_compile_light_custom_cmd = nullptr;
 
+	game::dvar_s* physx_debug_visualization_box_size = nullptr;
+
 	game::dvar_s* r_draw_bsp = nullptr;
 	game::dvar_s* r_draw_bsp_overwrite_sunlight = nullptr;
 	game::dvar_s* r_draw_bsp_overwrite_sundir = nullptr;
@@ -265,6 +267,7 @@ namespace dvars
 		components::reflectionprobes::register_dvars();
 		components::remote_net::register_dvars();
 		components::renderer::register_dvars();
+		components::physx_impl::register_dvars();
 
 		cmainframe::register_dvars();
 		cxywnd::register_dvars();

@@ -1088,7 +1088,7 @@ namespace ggui
 			vec3 = temp_origin;
 		}
 
-		// avoid hashe collisions
+		// avoid hash collisions
 		ImGui::PushID(row);
 
 		addprop_helper_s helper = {};
@@ -1103,9 +1103,9 @@ namespace ggui
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 4));
 
 		const float line_height = ImGui::GetFrameHeight();
-		const auto  button_size = ImVec2(line_height, line_height);
+		const auto  button_size = ImVec2(line_height - 10.0f, line_height);
 		const float widget_spacing = 4.0f;
-		const float widget_width = (ImGui::GetContentRegionAvail().x - (3.0f * button_size.x) - (2.0f * widget_spacing)) * 0.33333f;
+		const float widget_width = (ImGui::GetContentRegionAvail().x - (3.0f * button_size.x) - (2.0f * widget_spacing)) * 0.333333f;
 
 		const float window_width = ImGui::GetWindowWidth();
 		const bool  min_window_width_origin = window_width < 460.0f;
@@ -1113,10 +1113,12 @@ namespace ggui
 		// -------
 		// -- X --
 
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.55f, 0.17f, 0.17f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.55f, 0.17f, 0.17f, 1.0f));
 		ImGui::ButtonEx("X", button_size, ImGuiButtonFlags_MouseButtonMiddle);
 		ImGui::PopStyleColor(2);
+		ImGui::PopStyleVar();
 		ImGui::SameLine();
 
 		if (!min_window_width_origin)
@@ -1141,10 +1143,12 @@ namespace ggui
 			ImGui::SameLine(0, widget_spacing);
 		}
 
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.185f, 0.6f, 0.23f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.185f, 0.6f, 0.23f, 1.0f));
 		ImGui::ButtonEx("Y", button_size, ImGuiButtonFlags_MouseButtonMiddle);
 		ImGui::PopStyleColor(2);
+		ImGui::PopStyleVar();
 		ImGui::SameLine();
 
 		if (!min_window_width_origin)
@@ -1169,15 +1173,18 @@ namespace ggui
 			ImGui::SameLine(0, widget_spacing);
 		}
 
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.165f, 0.375f, 0.69f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.165f, 0.375f, 0.69f, 1.0f));
 		ImGui::ButtonEx("Z", button_size, ImGuiButtonFlags_MouseButtonMiddle);
 		ImGui::PopStyleColor(2);
+		ImGui::PopStyleVar();
 		ImGui::SameLine();
 
 		if (!min_window_width_origin)
 		{
-			ImGui::SetNextItemWidth(widget_width);
+			// fixes stutter
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 1.0f); // widget_width
 		}
 		else
 		{
@@ -1259,8 +1266,8 @@ namespace ggui
 			if (ImGui::BeginTable("##entprop_list", 3, flags, ImVec2(max_width, 0.0f)))
 			{
 				//ImGui::TableSetupScrollFreeze(0, 1);
-				ImGui::TableSetupColumn("Key", ImGuiTableColumnFlags_WidthStretch, 100.0f);
-				ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 100.0f); //, 64.0f);
+				ImGui::TableSetupColumn("Key", ImGuiTableColumnFlags_WidthStretch, 90.0f);
+				ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 110.0f); //, 64.0f);
 				ImGui::TableSetupColumn("##delete", ImGuiTableColumnFlags_WidthFixed, 32.0f);
 				//ImGui::TableHeadersRow();
 
@@ -1270,9 +1277,14 @@ namespace ggui
 				bool is_worldspawn = (m_sel_list_ent && !_stricmp(m_sel_list_ent->name, "worldspawn"));
 				const auto selbrush = game::g_selected_brushes();
 
-				if(selbrush && !selbrush->def)
+				// call 'UpdateEntitySel' once on startup to pre-select the worldspawn
+				static bool once_on_launch = false;
+
+				// do not call every frame (fps)
+				if (selbrush && selbrush->def || !once_on_launch)
 				{
 					cdeclcall(void, 0x4972F0); // UpdateEntitySel - updates edit_entity <- worldspawn
+					once_on_launch = true;
 				}
 
 				// only draw entprops if something is selected or if nothing is selected and sel_list_ent == the worldspawn

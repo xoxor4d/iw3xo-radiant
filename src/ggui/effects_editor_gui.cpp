@@ -179,15 +179,15 @@ namespace ggui
 		ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 		ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 4.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
 		if (ImGui::BeginPopupModal(label, nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			const char* str = "\n         Unsaved Effect!\n  This will lose changes.\n\nDo you want to continue?\n\n";
+			const char* str = "         Unsaved Effect!\n  This will lose changes.\n\nDo you want to continue?\n\n";
 			ImGui::SetCursorForCenteredText(str);
 			ImGui::TextUnformatted(str);
-			ImGui::Separator();
+			//ImGui::Separator();
 
-			if (ImGui::Button("OK", ImVec2(120, 0)))
+			if (ImGui::Button("OK", ImVec2(110, 0)))
 			{
 				ImGui::CloseCurrentPopup();
 				result = true;
@@ -196,7 +196,7 @@ namespace ggui
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
 
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			if (ImGui::Button("Cancel", ImVec2(110, 0)))
 			{
 				ImGui::CloseCurrentPopup();
 				result = false;
@@ -1661,19 +1661,45 @@ namespace ggui
 		ImGui::Indent(8.0f);
 		ImGui::Spacing();
 
-		bool phys_enabled = false;
-		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable Physics", elem, fx_system::FX_ELEM_USE_COLLISION, &phys_enabled));
+		bool legacy_physics_enabled = false;
+		MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable Physics (General)", elem, fx_system::FX_ELEM_USE_COLLISION, &legacy_physics_enabled));
 
+		bool physx_enabled = false;
 		if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
 		{
-			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable model physics simulation", elem, fx_system::FX_ELEM_USE_MODEL_PHYSICS));
+			MOD_CHECK(ImGui::Checkbox_FxElemFlag("Enable simulation (PhysX / ODE)", elem, fx_system::FX_ELEM_USE_MODEL_PHYSICS, &physx_enabled));
+			TT("This enables PhysX (in radiant) and the stock physics engine in cod4");
 		}
 
-		if (phys_enabled)
+		if (physx_enabled)
 		{
+			SPACING(0.0f, 8.0f);
+
+			int color_count = 0;
+			imgui::PushStyleColor(ImGuiCol_Button, ImVec4(0.44f, 0.69f, 0.0f, 1.0f)); color_count++;
+			imgui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.5f, 0.73f, 0.10f, 1.0f)); color_count++;
+			imgui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.55f, 0.75f, 0.15f, 1.0f)); color_count++;
+			imgui::PushStyleColor(ImGuiCol_Text, ImVec4(0.1f, 0.1f, 0.1f, 1.0f)); color_count++;
+			imgui::PushFontFromIndex(ggui::BOLD_18PX);
+
+			if (imgui::Button("Open PhysX Settings", ImVec2(imgui::GetWindowWidth() - 40.0f, imgui::GetFrameHeight())))
+			{
+				const auto cs = GET_GUI(ggui::camera_settings_dialog);
+				cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
+				cs->focus_tab(camera_settings_dialog::tab_state_effects);
+			}
+
+			imgui::PopFont();
+			imgui::PopStyleColor(color_count);
+		}
+
+		if (legacy_physics_enabled)
+		{
+			ImGui::title_with_seperator("Legacy physics settings unrelated to PhysX", true, 0, 2.0f, 8.0f);
+
 			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Bounce / Elasticity", &elem->elasticity, 0.1f, 0.0f, 1.0f, "%.2f"));
 
-			ImGui::title_with_seperator("Impacts", false, 0, 2.0f, 8.0f);
+			ImGui::title_with_seperator("Impacts", true, 0, 2.0f, 8.0f);
 			{
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Kill effect on impact", elem, fx_system::FX_ELEM_DIE_ON_TOUCH));
 				MOD_CHECK(ImGui::Checkbox_FxElemFlag("Collide with item clip", elem, fx_system::FX_ED_FLAG_USE_ITEM_CLIP));
@@ -1777,9 +1803,7 @@ namespace ggui
 			}
 		}
 
-
-
-
+		
 		ImGui::EndChild();
 		on_modified(modified);
 	}
@@ -2005,6 +2029,8 @@ namespace ggui
 					vis.push_back({ elem->u.visuals[m].soundName, m });
 				}
 			}
+
+			// ## MARKS
 			/*else if (elem->elemType == fx_system::FX_ELEM_TYPE_DECAL)
 			{
 				if (elem->u.markVisuals[m].materials[0] && elem->u.markVisuals[m].materials[0]->info.name)
@@ -2052,6 +2078,34 @@ namespace ggui
 				}
 
 				ImGui::EndListBox();
+			}
+
+			if (elem->elemType == fx_system::FX_ELEM_TYPE_MODEL)
+			{
+				// model selection drop target
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (ImGui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
+					{
+						const auto m_selector = GET_GUI(ggui::modelselector_dialog);
+						if (const auto _efx = fx_system::get_editor_effect(); _efx)
+						{
+							auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+
+							if (const auto  model = game::R_RegisterModel(m_selector->m_preview_model_name.c_str());
+								model && _elem->visualCount < 32)
+							{
+								_elem->u.visuals[_elem->visualCount].model = model;
+								_elem->visualCount++;
+
+								GET_GUI(ggui::effects_editor_dialog)->on_modified(true);
+							}
+						}
+
+					}
+
+					ImGui::EndDragDropTarget();
+				}
 			}
 
 			ImGui::EndDisabled();

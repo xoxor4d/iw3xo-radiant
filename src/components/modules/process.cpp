@@ -4,13 +4,26 @@ namespace components
 {
 	process* process::pthis = nullptr;
 
-	// https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po
-	DWORD WINAPI process::t_create_process(LPVOID)
+	void process::run_thread_callback()
 	{
-		if(pthis->m_arguments.empty())
+		const auto process = components::process::get();
+		if (process->m_thread_callback)
+		{
+			process->m_thread_callback();
+		}
+
+		process->m_thread_callback_finished = true;
+	}
+
+	// https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po
+	void process::create_batch_process()
+	{
+		const auto process = components::process::get();
+
+		if(process->m_arguments.empty())
 		{
 			game::printf_to_console("^1[PROCESS] Tried to spawn a process with no arguments!");
-			return true;
+			return; //true;
 		}		
 		
 		HANDLE hPipeRead, hPipeWrite;
@@ -23,7 +36,7 @@ namespace components
 		if (!CreatePipe(&hPipeRead, &hPipeWrite, &sa_attr, 0))
 		{
 			game::printf_to_console("^1[PROCESS] Failed to create a pipe!");
-			return true;
+			return; //true;
 		}
 
 		STARTUPINFOA si = { sizeof(STARTUPINFOA) };
@@ -35,7 +48,7 @@ namespace components
 
 		PROCESS_INFORMATION pi = { nullptr };
 
-		const auto result = CreateProcessA(nullptr, (char*)pthis->m_arguments.c_str(), nullptr, nullptr, TRUE, CREATE_NEW_CONSOLE, nullptr, nullptr, &si, &pi);
+		const auto result = CreateProcessA(nullptr, (char*)process->m_arguments.c_str(), nullptr, nullptr, TRUE, CREATE_NEW_CONSOLE, nullptr, nullptr, &si, &pi);
 		if (!result)
 		{
 			const auto err = GetLastError();
@@ -60,20 +73,20 @@ namespace components
 			}
 
 			game::printf_to_console("^1[PROCESS] Failed to spawn the process! %s", err_msg.c_str());
-			game::printf_to_console("|> arguments: %s", pthis->m_arguments.c_str());
+			game::printf_to_console("|> arguments: %s", process->m_arguments.c_str());
 			CloseHandle(hPipeWrite);
 			CloseHandle(hPipeRead);
-			return true;
+			return; //true;
 		}
 		
-		pthis->m_is_running = true;
+		process->m_is_running = true;
 		bool process_ended = false;
 
 		game::printf_to_console("^2[PROCESS] Starting process.");
 
 		const auto console = GET_GUI(ggui::console_dialog);
 
-		while (!process_ended && !pthis->m_kill_thread)
+		while (!process_ended && !process->m_kill_thread)
 		{
 			// Give some timeslice (50 ms), so we won't waste 100% CPU.
 			process_ended = WaitForSingleObject(pi.hProcess, 50) == WAIT_OBJECT_0;
@@ -102,7 +115,7 @@ namespace components
 
 				buf[bytes_read] = 0;
 
-				if(pthis->m_output_to_console)
+				if (process->m_output_to_console)
 				{
 					if (console)
 					{
@@ -110,15 +123,15 @@ namespace components
 						const size_t status_pos = buf_str.rfind("[CSTATUS]");
 						std::string status_str;
 
-						if(status_pos != std::string::npos)
+						if (status_pos != std::string::npos)
 						{
 							status_str = buf_str.substr(status_pos + 10);
 							status_str = status_str.substr(0, status_str.find_first_of('\r'));
 						}
 
-						if(!status_str.empty())
+						if (!status_str.empty())
 						{
-							GET_GUI(ggui::menubar_dialog)->set_process_status(status_str);
+							process->set_indicator_string(status_str);
 						}
 
 						console->addline_no_format(buf);
@@ -132,38 +145,66 @@ namespace components
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 
-		if(!pthis->m_disable_callback)
+		if (!process->m_disable_callback)
 		{
 			// execute callback on main thread
 			exec::on_gui_once([]
 			{
-				process::pthis->m_callback();
-				process::pthis->m_callback = nullptr;
+				process::get()->m_post_process_callback();
+				process::get()->m_post_process_callback = nullptr;
 			});
 		}
 
-		game::printf_to_console(pthis->m_kill_thread ? "^1[PROCESS] Process was killed" : "^2[PROCESS] Process ended successfully!");
+		game::printf_to_console(pthis->m_kill_thread ? "[PROCESS] Process was killed" : "^2[PROCESS] Process ended successfully!");
 
-		ImGuiToast toast(pthis->m_kill_thread ? ImGuiToastType_Warning : ImGuiToastType_Success, 2500);
-		toast.set_title(pthis->m_kill_thread ? "Process was killed" : "Process ended successfully");
-		//toast.set_content();
-		ImGui::InsertNotification(toast);
+		ImGui::Toast(
+			process->m_kill_thread ? ImGuiToastType_Info : ImGuiToastType_Success,
+			process->m_kill_thread ? "Process was killed" : "Process ended successfully", "");
 
-		process::pthis->reset();
-		GET_GUI(ggui::menubar_dialog)->set_process_status("");
+		process->reset();
+	}
 
-		return true;
+	void process::create_generic_process()
+	{
+		const auto process = components::process::get();
+		process->m_is_running = true;
+
+		std::thread t = std::thread(process->run_thread_callback);
+		
+		while (!process->m_thread_callback_finished)
+		{
+			process->m_progress_callback();
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
+
+		t.join();
+
+		ImGui::Toast(
+			pthis->m_kill_thread ? ImGuiToastType_Info : ImGuiToastType_Success,
+			pthis->m_kill_thread ? "Process was killed" : "Process ended successfully", "");
+
+		process->reset();
 	}
 
 	void process::create_process()
 	{
 		if (!this->is_active())
 		{
-			CreateThread(nullptr, 0, process::t_create_process, nullptr, 0, nullptr);
+			switch(m_proc_type)
+			{
+			case PROC_TYPE_BATCH:
+				std::thread(create_batch_process).detach();
+				break;
+
+			default:
+			case PROC_TYPE_GENERIC:
+				std::thread(create_generic_process).detach();
+				break;
+			}
 		}
 		else
 		{
-			game::printf_to_console("[ERR][PROCESS] Tried to spawn a process while one is already running!");
+			game::printf_to_console("[ERR][PROCESS] Tried to create a process while one is already running!");
 		}
 	}
 
@@ -171,11 +212,22 @@ namespace components
 	{
 		process::pthis = this;
 
+		this->m_proc_type = PROC_TYPE_BATCH;
+		this->m_indicator_type = INDICATOR_TYPE_SPINNER;
+		this->m_indicator_progress = 0.0f;
+
 		this->m_is_running = false;
 		this->m_kill_thread = false;
 		this->m_disable_callback = false;
-		this->m_callback = nullptr;
 		this->m_output_to_console = false;
+
+		this->m_thread_callback_finished = false;
+		this->m_thread_callback = nullptr;
+
+		this->m_post_process_callback_finished = false;
+		this->m_post_process_callback = nullptr;
+
+		this->m_progress_callback = nullptr;
 	}
 
 	process::~process()

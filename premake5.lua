@@ -313,10 +313,18 @@ workspace "iw3xo-radiant"
             "/Zm100 -Zm100" 
         }
 
+		if(os.getenv("COD4_ROOT")) then
+			print ("Setup paths using environment variable 'COD4_ROOT' :: '" .. os.getenv("COD4_ROOT") .. "'")
+			targetdir(os.getenv("COD4_ROOT") .. "/bin/")
+			debugdir (os.getenv("COD4_ROOT") .. "/bin/")
+			debugcommand (os.getenv("COD4_ROOT") .. "/bin/" .. "IW3xRadiant.exe")
+		end
+
         -- Specific configurations
 		flags { "UndefinedIdentifiers" }
 		warnings "Extra"
 
+		
 		-- Pre-build
 		prebuildcommands {
 			"pushd %{_MAIN_SCRIPT_DIR}",
@@ -324,7 +332,17 @@ workspace "iw3xo-radiant"
 			"popd",
 		}
 
-        dependencies.imports()
+		-- Post-build
+		postbuildcommands {
+			"echo Copy PhysX dll's for configuration \"$(Configuration)\" to \"$(TargetDir)\"",
+			"copy \"..\\deps\\physx\\bin\\$(Configuration)\\PhysX_32.dll\" /y \"$(TargetDir)PhysX_32.dll\"",
+			"copy \"..\\deps\\physx\\bin\\$(Configuration)\\PhysXCommon_32.dll\" /y \"$(TargetDir)PhysXCommon_32.dll\"",
+			"copy \"..\\deps\\physx\\bin\\$(Configuration)\\PhysXCooking_32.dll\" /y \"$(TargetDir)PhysXCooking_32.dll\"",
+			"copy \"..\\deps\\physx\\bin\\$(Configuration)\\PhysXFoundation_32.dll\" /y \"$(TargetDir)PhysXFoundation_32.dll\"",
+		}
+
+		dependencies.imports()
 
         group "Dependencies"
             dependencies.projects()
+

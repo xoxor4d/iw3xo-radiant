@@ -37,6 +37,8 @@ namespace components
 #include "modules/generate_previews.hpp"
 #include "modules/gui.hpp"
 #include "modules/main_module.hpp"
+#include "modules/patches.hpp"
+#include "modules/physx_impl.hpp"
 #include "modules/pmesh.hpp"
 #include "modules/process.hpp"
 #include "modules/reflectionprobes.hpp"

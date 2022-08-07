@@ -800,10 +800,14 @@ namespace components
 
 		// compileLight
 		args += (dvars::bsp_compile_light->current.enabled ? "1 "s : "0 "s);
-		
-		process::pthis->set_output(true);
-		process::pthis->set_arguments(args);
-		process::pthis->set_callback([bsp_path]
+
+		const auto process = components::process::get();
+
+		process->set_process_type(process::PROC_TYPE_BATCH);
+		process->set_indicator(process::INDICATOR_TYPE_SPINNER);
+		process->set_output(true);
+		process->set_arguments(args);
+		process->set_post_process_callback([bsp_path]
 		{
 			d3dbsp::radiant_load_bsp(bsp_path.c_str(), true);
 
@@ -813,7 +817,7 @@ namespace components
 			}
 		});
 
-		process::pthis->create_process();
+		process->create_process();
 	}
 
 	void d3dbsp::compile_current_map()
@@ -1017,10 +1021,20 @@ namespace components
 		// toggle between bsp and radiant rendering 
 		command::register_command_with_hotkey("toggle_bsp_radiant"s, [this](auto)
 		{
-			const bool tstate = gameview::p_this->get_all_geo_state() || gameview::p_this->get_all_ents_state() || gameview::p_this->get_all_triggers_state() || gameview::p_this->get_all_others_state();
+			if (d3dbsp::Com_IsBspLoaded())
+			{
+				const bool tstate = gameview::p_this->get_all_geo_state() || gameview::p_this->get_all_ents_state() || gameview::p_this->get_all_triggers_state() || gameview::p_this->get_all_others_state();
 
-			dvars::set_bool(dvars::r_draw_bsp, !tstate);
-			command::execute("toggle_filter_all");
+				const bool gameview_was_enabled = dvars::radiant_gameview->current.enabled;
+
+				dvars::set_bool(dvars::r_draw_bsp, !tstate);
+				command::execute("toggle_filter_all");
+
+				if (gameview_was_enabled)
+				{
+					components::gameview::p_this->set_state(gameview_was_enabled);
+				}
+			}
 		});
 		
 		command::register_command_with_hotkey("bsp_compile"s, [this](auto)

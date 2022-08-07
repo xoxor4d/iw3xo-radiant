@@ -49,6 +49,10 @@ jobs:
           path: |
             build/bin/${{matrix.configuration}}/iw3r.dll
             build/bin/${{matrix.configuration}}/iw3r.pdb
+            build/bin/${{matrix.configuration}}/PhysX_32.dll
+            build/bin/${{matrix.configuration}}/PhysXCommon_32.dll
+            build/bin/${{matrix.configuration}}/PhysXCooking_32.dll
+            build/bin/${{matrix.configuration}}/PhysXFoundation_32.dll
 
   webbook:
     needs: build

@@ -386,12 +386,9 @@ namespace components
 			// handle file dialogs
 			ggui::file_dialog_frame();
 
-			// hide external console if it is visible
-			if(const auto con = GetConsoleWindow(); 
-				IsWindowVisible(con))
-			{
-				ShowWindow(con, SW_HIDE);
-			}
+			// hide external console
+			utils::show_external_console(false);
+			game::glob::is_loading_map = false;
 
 #if 0
 			if (game::s_world->reflectionProbes && game::s_world->reflectionProbes->reflectionImage
@@ -460,7 +457,7 @@ namespace components
 				}
 			}
 			ImGui::End();*/
-
+			
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 10.0f));
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 5.0f);
 			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.1f, 0.1f, 0.1f, 0.1f));
@@ -563,13 +560,12 @@ namespace components
 
 	void on_map_load()
 	{
-		//GET_GUI(ggui::console_dialog)->clear_log();
+		game::glob::is_loading_map = true;
+		utils::show_external_console(true);
 
-		if (const auto con = GetConsoleWindow();
-			!IsWindowVisible(con))
-		{
-			ShowWindow(con, SW_SHOW);
-		}
+		components::effects::stop();
+		components::physx_impl::get()->clear_dynamic_prefabs();
+		components::physx_impl::get()->clear_static_collision();
 	}
 
 	__declspec(naked) void on_map_load_stub()

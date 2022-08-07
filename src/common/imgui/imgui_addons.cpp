@@ -3,6 +3,14 @@
 
 namespace ImGui
 {
+	void Toast(const ImGuiToastType_ type, const char* title, const char* content, int time)
+	{
+		ImGuiToast toast(type, time);
+		toast.set_title(title);
+		toast.set_content(content);
+		ImGui::InsertNotification(toast);
+	}
+
 	// 0: not open; 1: canceled; 2: ok
 	// popup name: close_map_popup
 	int popup_close_map()
@@ -72,21 +80,29 @@ namespace ImGui
 	{
 		ImGuiContext& g = *GImGui;
 		ImGuiWindow* window = GetCurrentWindow();
+
 		if (window->SkipItems)
 			return false;
 
 		const ImRect bb(window->DC.CursorPos, window->DC.CursorPos + size + padding * 2);
 		ItemSize(bb);
+
 		if (!ItemAdd(bb, id))
 			return false;
 
 		bool hovered, held;
-		bool pressed = ButtonBehavior(bb, id, &hovered, &held);
+		bool pressed = ButtonBehavior(bb, id, &hovered, &held, ImGuiButtonFlags_PressedOnClick);
+
+		/*if (held)
+		{
+			pressed = true;
+		}*/
 
 		// Render
 		const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
 		RenderNavHighlight(bb, id);
 		RenderFrame(bb.Min, bb.Max, col, true, ImClamp((float)ImMin(padding.x, padding.y), 0.0f, g.Style.FrameRounding));
+
 		if (bg_col.w > 0.0f)
 			window->DrawList->AddRectFilled(bb.Min + padding, bb.Max - padding, GetColorU32(bg_col));
 
@@ -361,6 +377,58 @@ namespace ImGui
 		}
 
 		window->DrawList->PathStroke(color, false, thickness);
+
+		return true;
+	}
+
+	bool BufferingBar(const char* label, float value, const ImVec2& size_arg, const ImU32& bg_col, const ImU32& fg_col)
+	{
+		ImGuiWindow* window = GetCurrentWindow();
+
+		if (window->SkipItems)
+		{
+			return false;
+		}
+
+		ImGuiContext& g = *GImGui;
+		const ImGuiStyle& style = g.Style;
+		const ImGuiID id = window->GetID(label);
+
+		ImVec2 pos = window->DC.CursorPos;
+		ImVec2 size = size_arg;
+		size.x -= style.FramePadding.x * 2;
+
+		const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
+		ItemSize(bb, style.FramePadding.y);
+
+		if (!ItemAdd(bb, id))
+		{
+			return false;
+		}
+
+		// Render
+		const float circleStart = size.x * 0.7f;
+		const float circleEnd = size.x;
+		const float circleWidth = circleEnd - circleStart;
+
+		window->DrawList->AddRectFilled(bb.Min, ImVec2(pos.x + circleStart, bb.Max.y), bg_col);
+		window->DrawList->AddRectFilled(bb.Min, ImVec2(pos.x + circleStart * value, bb.Max.y), fg_col);
+
+		const float t = static_cast<float>(g.Time);
+		const float r = size.y / 2.0f;
+		const float speed = 1.5f;
+
+		const float a = speed * 0.0f;
+		const float b = speed * 0.333f;
+		const float c = speed * 0.666f;
+
+		const float o1 = (circleWidth + r) * (t + a - speed * (int)((t + a) / speed)) / speed;
+		const float o2 = (circleWidth + r) * (t + b - speed * (int)((t + b) / speed)) / speed;
+		const float o3 = (circleWidth + r) * (t + c - speed * (int)((t + c) / speed)) / speed;
+
+		window->DrawList->AddCircleFilled(ImVec2(pos.x + circleEnd - o1, bb.Min.y + r), r, bg_col);
+		window->DrawList->AddCircleFilled(ImVec2(pos.x + circleEnd - o2, bb.Min.y + r), r, bg_col);
+		window->DrawList->AddCircleFilled(ImVec2(pos.x + circleEnd - o3, bb.Min.y + r), r, bg_col);
 
 		return true;
 	}
@@ -688,6 +756,21 @@ namespace ImGui
 				settings->DockOrder = -1;
 			}
 		}
+	}
+
+	void PushCompactButtonInvBg()
+	{
+		imgui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+		imgui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.39f, 0.39f, 0.39f, 0.23f));
+		imgui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.55f, 0.55f, 0.55f, 0.23f));
+
+		imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 5.0f));
+	}
+
+	void PopCompactButtonInvBg()
+	{
+		imgui::PopStyleColor(3);
+		imgui::PopStyleVar();
 	}
 
 	void PushStyleCompact()
@@ -1098,7 +1181,7 @@ namespace ImGui
 
 		const float text_spacing = 6.0f;
 
-		ImGui::PushFontFromIndex(ggui::REGULAR_12PX);
+		ImGui::PushFontFromIndex(ggui::REGULAR_14PX);
 		const auto text_size = ImGui::CalcTextSize(title_text, nullptr, true);
 
 		const float first_sep_width = (width * 0.1f);
@@ -1239,7 +1322,7 @@ namespace ImGui
 				PushStyleColor(ImGuiCol_FrameBgActive, GetColorU32(ImGuiCol_ButtonActive));
 
 				SetNextItemWidth(dragfloat_size);
-				ImGui::DragFloat("##amount", static_cast<float*>(p_step), 0.5f, 0.1f, 256.0f, "%.1f");
+				ImGui::DragFloat("##amount", static_cast<float*>(p_step), 0.01f, 0.01f, 512.0f, "%.2f");
 				TT("Inc/Dec Amount");
 
 				PopStyleColor(3);
@@ -1356,8 +1439,7 @@ namespace ImGui
 		style->ChildRounding = 2.0f;
 
 		// 04.10.21
-		//style->FrameRounding = 2.0f;
-		style->FrameRounding = 5.0f;
+		style->FrameRounding = 1.0f; // 5
 		
 		style->ScrollbarRounding = 2.0f;
 		style->GrabRounding = 2.0f;

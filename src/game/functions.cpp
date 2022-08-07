@@ -24,6 +24,8 @@ namespace game
 		game::vec3_t debug_sundir_startpos = {};
 		float debug_sundir_length = 500.0f;
 
+		bool is_loading_map = false;
+
 
 		// update check
 		std::string gh_update_releases_json;
@@ -449,6 +451,58 @@ namespace game
 			add		esp, 8;
 			popad;
 		}
+	}
+
+	void Select_RotateFixedSize(game::entity_s* owner, brush_t_with_custom_def* def, float(*mid_point)[3])
+	{
+		if (!def->owner)
+		{
+			def->owner = owner->firstActive;
+			imgui::Toast(ImGuiToastType_Warning, "dynamic prefabs - Select_RotateFixedSize", "trying to fix brush with 'def->owner = owner->firstActive'");
+		}
+
+		float offset_axis[3][3];
+		float axis[3][3];
+		float rot_trans[3];
+		float origin[3];
+		float move_delta[3];
+
+		entity_s* first_active = owner->firstActive;
+		move_delta[0] = first_active->origin[0] - (*mid_point)[0];
+		move_delta[1] = first_active->origin[1] - (*mid_point)[1];
+		move_delta[2] = first_active->origin[2] - (*mid_point)[2];
+
+		if (utils::vector::length_squared(move_delta) != 0.0f)
+		{
+			utils::vector::vec3_rotate_transpose(move_delta, &(*mid_point)[3], rot_trans);
+			utils::vector::subtract(rot_trans, move_delta, move_delta);
+			game::Brush_Move(move_delta, def, true);
+		}
+
+		const auto egui = GET_GUI(ggui::entity_dialog);
+		if (!egui->get_vec3_for_key_from_entity(first_active, origin, "angles"))
+		{
+			origin[0] = 0.0;
+			origin[1] = 0.0;
+			origin[2] = 0.0;
+		}
+
+		AnglesToAxis(origin, axis[0]);
+		utils::vector::matrix_multiply(&(*mid_point)[3], axis[0], offset_axis[0]);
+		AxisToAngles(offset_axis, origin); // offset_axis
+
+		SetKeyValue(first_active, "angles", utils::va("%g %g %g", origin[0], origin[1], origin[2]));
+
+		Brush_BuildWindings(def, true);
+
+		/*if (g_qeglobals.d_select_mode == sel_vertex || g_qeglobals.d_select_mode == sel_edge)
+		{
+			SetupVertexSelection();
+		}
+
+		MarkMapModified();*/
+
+		def->version++;
 	}
 
 	void SetSpawnFlags(int flag)

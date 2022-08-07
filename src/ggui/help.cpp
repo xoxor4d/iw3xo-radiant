@@ -25,6 +25,8 @@ namespace ggui
 				ImGui::TreePop();
 			}
 
+			SPACING(0.0f, 0.0f);
+
 			if (ImGui::TreeNodeEx("d3dbsp", ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				BULLET_LINK("Loading and Compiling", "https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp/");
@@ -32,11 +34,22 @@ namespace ggui
 				ImGui::TreePop();
 			}
 
+			SPACING(0.0f, 0.0f);
+
 			if (ImGui::TreeNodeEx("Effects", ImGuiTreeNodeFlags_DefaultOpen))
 			{
 				BULLET_LINK("Placement and general usage", "https://xoxor4d.github.io/tutorials/iw3xradiant-using-effects/");
 				BULLET_LINK("Editing Effects using the Editor", "https://xoxor4d.github.io/tutorials/iw3xradiant-effects-editor/");
 				BULLET_LINK("Generate CreateFX files", "https://xoxor4d.github.io/tutorials/iw3xradiant-createfx/");
+				ImGui::TreePop();
+			}
+
+			SPACING(0.0f, 0.0f);
+
+			if (ImGui::TreeNodeEx("Physics (Nvidia PhysX)", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				BULLET_LINK("Effects with enabled physics and debug data", "https://xoxor4d.github.io/tutorials/iw3xradiant-physx-effects/");
+				BULLET_LINK("Enable physics on prefabs", "https://xoxor4d.github.io/tutorials/iw3xradiant-physx-prefabs/");
 				ImGui::TreePop();
 			}
 
