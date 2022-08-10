@@ -99,6 +99,7 @@ namespace ggui
 		bool m_edit_entity_changed;
 		bool m_edit_entity_changed_should_scroll;
 		bool m_checkboxflags_states[12] = {};
+		bool m_update_worldspawn = true;
 
 		entity_dialog()
 		{

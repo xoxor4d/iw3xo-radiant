@@ -561,6 +561,7 @@ namespace components
 	void on_map_load()
 	{
 		game::glob::is_loading_map = true;
+		GET_GUI(ggui::entity_dialog)->m_update_worldspawn = true;
 		utils::show_external_console(true);
 
 		components::effects::stop();

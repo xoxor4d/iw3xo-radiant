@@ -1277,14 +1277,11 @@ namespace ggui
 				bool is_worldspawn = (m_sel_list_ent && !_stricmp(m_sel_list_ent->name, "worldspawn"));
 				const auto selbrush = game::g_selected_brushes();
 
-				// call 'UpdateEntitySel' once on startup to pre-select the worldspawn
-				static bool once_on_launch = false;
-
-				// do not call every frame (fps)
-				if (selbrush && selbrush->def || !once_on_launch)
+				// do not call every frame (fps) - call 'UpdateEntitySel' once on startup to pre-select the worldspawn
+				if (/*selbrush && selbrush->def || */ m_update_worldspawn)
 				{
 					cdeclcall(void, 0x4972F0); // UpdateEntitySel - updates edit_entity <- worldspawn
-					once_on_launch = true;
+					m_update_worldspawn = false;
 				}
 
 				// only draw entprops if something is selected or if nothing is selected and sel_list_ent == the worldspawn
