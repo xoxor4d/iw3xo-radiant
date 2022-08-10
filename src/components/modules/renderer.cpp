@@ -811,7 +811,7 @@ namespace components
 			}
 
 			// model previewer - fake sun shader
-			if(renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY)
+			if (renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY)
 			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
@@ -939,14 +939,14 @@ namespace components
 			}
 
 			// camera - fake sun shader - bsp
-			if(renderer::is_rendering_camerawnd())
+			if (renderer::is_rendering_camerawnd())
 			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
 					const auto arg_def = &state->pass->args[arg];
 					if (arg_def && arg_def->type == 5 && state->pass->pixelShader)
 					{
-						if(!is_d3dbsp)
+						if (!is_d3dbsp)
 						{
 							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_ENVMAP_PARMS)
 							{
@@ -973,22 +973,28 @@ namespace components
 
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTDIR)
 							{
-								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+								if (!utils::starts_with(state->technique->name, "l_spot_"s)) // constant is needed for spotlight preview
+								{
+									const auto cs = GET_GUI(ggui::camera_settings_dialog);
 
-								const game::vec4_t temp = { cs->material_specular[0], cs->material_specular[1], cs->material_specular[2], cs->material_specular[3] };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+									const game::vec4_t temp = { cs->material_specular[0], cs->material_specular[1], cs->material_specular[2], cs->material_specular[3] };
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								}
 							}
 
 							else if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_LIGHT_SPOTFACTORS)
 							{
-								const auto cs = GET_GUI(ggui::camera_settings_dialog);
+								if (!utils::starts_with(state->technique->name, "l_spot_"s)) // constant is needed for spotlight preview
+								{
+									const auto cs = GET_GUI(ggui::camera_settings_dialog);
 
-								const game::vec4_t temp = { cs->ambient[0], cs->ambient[1], cs->ambient[2], cs->ambient[3] };
-								game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+									const game::vec4_t temp = { cs->ambient[0], cs->ambient[1], cs->ambient[2], cs->ambient[3] };
+									game::dx->device->SetPixelShaderConstantF(arg_def->dest, temp, 1);
+								}
 							}
 						} // !is_d3dbsp
 
-						if(dvars::r_fakesun_fog_enabled->current.enabled)
+						if (dvars::r_fakesun_fog_enabled->current.enabled)
 						{
 							if (arg_def->u.codeConst.index == game::ShaderCodeConstants::CONST_SRC_CODE_FOG_COLOR)
 							{
