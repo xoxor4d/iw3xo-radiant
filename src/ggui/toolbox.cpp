@@ -1753,7 +1753,7 @@ namespace ggui
 		}
 
 		// change childs using TAB
-		if (!(ImGui::GetIO().KeyMods == ImGuiKeyModFlags_Ctrl) && ImGui::IsWindowHovered() && ImGui::IsKeyReleased(ImGuiKey_Tab))
+		if (!(ImGui::GetIO().KeyMods == ImGuiKeyModFlags_Ctrl) && ImGui::IsWindowHovered() && !ImGui::GetIO().WantTextInput && ImGui::IsKeyReleased(ImGuiKey_Tab))
 		{
 			m_child_current++;
 
