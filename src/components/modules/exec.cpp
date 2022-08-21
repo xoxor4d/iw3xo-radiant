@@ -2,29 +2,36 @@
 
 namespace components
 {
-	std::vector<std::function<void()>> exec::m_gui_recurring_callbacks;
-	std::vector<std::function<void()>> exec::m_gui_single_callbacks;
 
-	void exec::on_gui_recurring(const std::function<void()>& callback)
-	{
-		m_gui_recurring_callbacks.emplace_back(callback);
-	}
+	std::vector<exec::task_s> exec::m_gui_recurring_callbacks;
+	std::vector<exec::task_s> exec::m_gui_single_callbacks;
 
-	void exec::on_gui_once(const std::function<void()>& callback)
+	bool do_task(exec::task_s& task)
 	{
-		m_gui_single_callbacks.emplace_back(callback);
+		const auto now = std::chrono::high_resolution_clock::now();
+		const auto diff = now - task.last_exec;
+
+		if (diff < task.interval)
+		{
+			return false;
+		}
+
+		task.last_exec = now;
+		task.func();
+
+		return true;
 	}
 
 	void exec::on_gui_execute()
 	{
-		for (const auto& callback : m_gui_recurring_callbacks)
+		for (auto& callback : m_gui_recurring_callbacks)
 		{
-			callback();
+			do_task(callback);
 		}
 
-		for (const auto& callback : m_gui_single_callbacks)
+		for (auto& callback : m_gui_single_callbacks)
 		{
-			callback();
+			do_task(callback);
 		}
 
 		m_gui_single_callbacks.clear();

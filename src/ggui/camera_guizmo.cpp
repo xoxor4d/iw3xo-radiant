@@ -366,10 +366,16 @@ namespace ggui::camera_guizmo
 								{
 									if (const auto brush = sb->def; brush)
 									{
-										// degree is handled like a boolean, 0.0 will not rotate fixed size brushes / entities
-										//game::Select_ApplyMatrix(&rotate_axis_for_radiant[0][0], sb, false, 1.0f, false);
-
-										game::Select_RotateFixedSize(sb->owner, sb->def, rotate_axis_for_radiant);
+										// is prefab
+										if (sb && sb->owner && sb->owner->prefab && sb->owner->firstActive && sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
+										{
+											game::Select_RotateFixedSize(sb->owner, sb->def, rotate_axis_for_radiant);
+										}
+										else
+										{
+											// degree is handled like a boolean, 0.0 will not rotate fixed size brushes / entities
+											game::Select_ApplyMatrix(&rotate_axis_for_radiant[0][0], sb, false, 1.0f, false);
+										}
 
 										components::remote_net::cmd_send_brush_select_deselect(true);
 									}

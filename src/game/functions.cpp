@@ -482,9 +482,9 @@ namespace game
 		const auto egui = GET_GUI(ggui::entity_dialog);
 		if (!egui->get_vec3_for_key_from_entity(first_active, origin, "angles"))
 		{
-			origin[0] = 0.0;
-			origin[1] = 0.0;
-			origin[2] = 0.0;
+			origin[0] = 0.0f;
+			origin[1] = 0.0f;
+			origin[2] = 0.0f;
 		}
 
 		AnglesToAxis(origin, axis[0]);
