@@ -100,14 +100,17 @@ namespace ggui
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 7.0f));
-		ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+
+		ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.11f, 0.11f, 0.11f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.224f, 0.224f, 0.224f, 1.0f));
 	}
 
 	// starts with ggui::context_menu_style_begin
 	void context_menu_style_end()
 	{
 		ImGui::PopStyleVar(2);
-		ImGui::PopStyleColor(1);
+		ImGui::PopStyleColor(3);
 	}
 
 	// handles "window_hovered" for widgets drawn over rtt windows (needs to be called after every widget)

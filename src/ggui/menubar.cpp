@@ -55,8 +55,7 @@ namespace ggui
 		// *
 		// menu bar within dockspace
 
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(12, 6));
+		ggui::context_menu_style_begin();
 
 		if (ImGui::BeginMenuBar())
 		{
@@ -1018,7 +1017,6 @@ namespace ggui
 				ImGui::EndMenu(); // BSP
 			}
 
-
 			if (ImGui::BeginMenu("Selection"))
 			{
 				if (ImGui::MenuItem("Drag Edges", ggui::hotkey_dialog::get_hotkey_for_command("DragEdges").c_str())) {
@@ -1349,7 +1347,6 @@ namespace ggui
 				ImGui::EndMenu(); // Grid
 			}
 
-
 			if (ImGui::BeginMenu("Textures"))
 			{
 				if (ImGui::MenuItem("Show All", ggui::hotkey_dialog::get_hotkey_for_command("ShowAllTextures").c_str())) {
@@ -1519,7 +1516,6 @@ namespace ggui
 				ImGui::EndMenu(); // Textures
 			}
 
-
 			if (ImGui::BeginMenu("Tools"))
 			{
 				if (ImGui::MenuItem("Rope Generator")) {
@@ -1532,7 +1528,6 @@ namespace ggui
 
 				ImGui::EndMenu(); // Tools
 			}
-
 
 			if (ImGui::BeginMenu("Misc"))
 			{
@@ -1588,7 +1583,6 @@ namespace ggui
 				ImGui::EndMenu(); // Misc
 			}
 
-
 			if (ImGui::BeginMenu("Region"))
 			{
 				if (ImGui::MenuItem("Region Off")) {
@@ -1614,7 +1608,6 @@ namespace ggui
 				ImGui::EndMenu(); // Region
 			}
 
-
 			if (ImGui::BeginMenu("Brush"))
 			{
 				if (ImGui::MenuItem("Arbitrary Sided Cylinder")) {
@@ -1639,7 +1632,6 @@ namespace ggui
 
 				ImGui::EndMenu(); // Brush
 			}
-
 
 			if (ImGui::BeginMenu("Patch"))
 			{
@@ -1923,6 +1915,7 @@ namespace ggui
 
 			//	ImGui::EndMenu(); // Help
 			//}
+
 			ImGui::EndGroup(); // used to calculate total width below
 
 			/*if (dvars::gui_menubar_show_mouseorigin && dvars::gui_menubar_show_mouseorigin->current.enabled)
@@ -2026,9 +2019,10 @@ namespace ggui
 				}
 			}
 
-			ImGui::PopStyleVar(2); // ImGuiStyleVar_WindowPadding | ImGuiStyleVar_ItemSpacing
 			ImGui::EndMenuBar();
 		}
+
+		ggui::context_menu_style_end();
 	}
 
 	REGISTER_GUI(menubar_dialog);

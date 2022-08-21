@@ -681,10 +681,10 @@ namespace components
 
 		dvars::gui_border_color = dvars::register_vec4(
 			/* name		*/ "gui_border_color",
-			/* x		*/ 1.0f,
-			/* y		*/ 0.2f,
-			/* z		*/ 0.2f,
-			/* w		*/ 0.55f,
+			/* x		*/ 0.0f,
+			/* y		*/ 0.0f,
+			/* z		*/ 0.0f,
+			/* w		*/ 1.0f,
 			/* minVal	*/ 0.0f,
 			/* maxVal	*/ 1.0f,
 			/* flags	*/ game::dvar_flags::saved,

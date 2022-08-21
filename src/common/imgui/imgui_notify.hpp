@@ -221,7 +221,10 @@ namespace ImGui
 	/// </summary>
 	NOTIFY_INLINE VOID InsertNotification(const ImGuiToast& toast)
 	{
-		notifications.push_back(toast);
+		if (notifications.size() < 50)
+		{
+			notifications.push_back(toast);
+		}
 	}
 
 	/// <summary>

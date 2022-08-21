@@ -219,8 +219,6 @@ namespace ggui
 			{
 				grid_context_open = true;
 
-				ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
-
 				if (game::is_any_brush_selected())
 				{
 					if(dvars::gui_grid_context_show_select->current.enabled)
@@ -456,7 +454,6 @@ namespace ggui
 					}
 				}
 
-				ImGui::PopStyleColor();
 				ImGui::EndPopup();
 			}
 			else

@@ -1636,6 +1636,11 @@ namespace ggui
 
 				// #
 
+				int style_colors = 0;
+				ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.2f)); style_colors++;
+				ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(1.0f, 1.0f, 1.0f, 0.3f)); style_colors++;
+				ggui::context_menu_style_begin();
+
 				if (ImGui::BeginCombo("##kvp_combo", nullptr, ImGuiComboFlags_NoPreview | ImGuiComboFlags_PopupAlignLeft)) // The second parameter is the label previewed before opening the combo.
 				{
 					const auto edit_entity = game::g_edit_entity();
@@ -1653,7 +1658,7 @@ namespace ggui
 							if (!has_key_value_pair(edit_entity, templates[n].key))
 							{
 								vis_count++;
-								if (ImGui::Selectable(templates[n].key))
+								if (ImGui::Selectable(templates[n].key, false))
 								{
 									add_prop(templates[n].key, templates[n].val);
 								}
@@ -1668,6 +1673,9 @@ namespace ggui
 
 					ImGui::EndCombo();
 				}
+
+				ggui::context_menu_style_end();
+				imgui::PopStyleColor(style_colors);
 			}
 		}
 

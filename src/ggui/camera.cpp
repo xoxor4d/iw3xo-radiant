@@ -606,14 +606,14 @@ namespace ggui
 
 					for(auto i = 0; i < cam_trace[0].brush->def->facecount; i++)
 					{
-						if(utils::vector::compare(cam_trace[0].face_normal, cam_trace[0].brush->def->brush_faces[i].plane.normal))
+						if (utils::vector::compare(cam_trace[0].face_normal, cam_trace[0].brush->def->brush_faces[i].plane.normal))
 						{
 							hit_face = &cam_trace[0].brush->def->brush_faces[i];
 							break;
 						}
 					}
 
-					if(hit_face)
+					if (hit_face)
 					{
 						std::map<float, int, std::greater<>> face_dot_products;
 
@@ -670,7 +670,7 @@ namespace ggui
 							game::Undo_End();
 
 
-							if(	   selbrush->def->mins[0] == selbrush->def->maxs[0]
+							if (   selbrush->def->mins[0] == selbrush->def->maxs[0]
 								|| selbrush->def->mins[1] == selbrush->def->maxs[1]
 								|| selbrush->def->mins[2] == selbrush->def->maxs[2])
 							{
@@ -743,7 +743,7 @@ namespace ggui
 						cam_context_menu_open = true;
 						cam_context_menu_pending_open = false;
 
-						if(cam_trace[0].brush)
+						if (cam_trace[0].brush)
 						{
 							bool any_selected = false;
 
@@ -808,7 +808,7 @@ namespace ggui
 								}
 							}
 
-							ImGui::Separator();
+							SEPERATORV(0.0f);
 
 							if (ImGui::MenuItem("Select All"))
 							{
@@ -844,7 +844,7 @@ namespace ggui
 										if (const auto	val = GET_GUI(ggui::entity_dialog)->get_value_for_key_from_epairs(tb->def->owner->epairs, "classname");
 														val && val == "misc_prefab"s)
 										{
-											ImGui::Separator();
+											SEPERATORV(0.0f);
 											prefab_sep = true;
 
 											if (ImGui::MenuItem("Enter Prefab"))
@@ -869,7 +869,7 @@ namespace ggui
 										}
 										else if (game::g_prefab_stack_level)
 										{
-											ImGui::Separator();
+											SEPERATORV(0.0f);
 											prefab_sep = true;
 
 											if (ImGui::MenuItem("Leave Prefab"))
@@ -885,7 +885,7 @@ namespace ggui
 								{
 									if (!prefab_sep)
 									{
-										ImGui::Separator();
+										SEPERATORV(0.0f);
 										prefab_sep = true;
 									}
 
@@ -904,7 +904,7 @@ namespace ggui
 								{
 									if (!prefab_sep) 
 									{
-										ImGui::Separator();
+										SEPERATORV(0.0f);
 										prefab_sep = true;
 									}
 									
@@ -924,7 +924,7 @@ namespace ggui
 									{
 										if (selbrush->patch->def->type != game::PATCH_TERRAIN)
 										{
-											ImGui::Separator();
+											SEPERATORV(0.0f);
 
 											if (ImGui::Selectable("Subdivision ++", false, ImGuiSelectableFlags_DontClosePopups))
 											{
@@ -939,7 +939,7 @@ namespace ggui
 											}
 										}
 
-										ImGui::Separator();
+										SEPERATORV(0.0f);
 
 										if (ImGui::MenuItem("Texture - Fit"))
 										{
