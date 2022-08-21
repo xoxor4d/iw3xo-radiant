@@ -236,7 +236,7 @@ namespace ggui
 
 			imgui::SameLine(imgui::GetWindowWidth() - img_size_widget_width - 8.0f);
 			imgui::SetNextItemWidth(40.0f);
-			if(imgui::DragInt("##img_size", &dvars::gui_prefab_browser_img_size->current.integer, 1, 64, 256))
+			if (imgui::DragInt("##img_size", &dvars::gui_prefab_browser_img_size->current.integer, 1, 64, 256))
 			{
 				if(dvars::gui_prefab_browser_img_size->current.integer < 64)
 				{
@@ -247,7 +247,39 @@ namespace ggui
 					dvars::gui_prefab_browser_img_size->current.integer = 256;
 				}
 			} img_size_widget_width = imgui::GetItemRectSize().x;
-			
+
+
+			static float filter_widget_width = 1;
+
+			imgui::SameLine(imgui::GetWindowWidth() - img_size_widget_width - filter_widget_width - 12.0f);
+			const auto screenpos_prefilter = ImGui::GetCursorScreenPos();
+			this->m_filter.Draw("##prefab_filter", 180.0f);
+			filter_widget_width = imgui::GetItemRectSize().x;
+			const auto screenpos_postfilter = ImGui::GetCursorScreenPos();
+
+			if (!this->m_filter.IsActive())
+			{
+				ImGui::SetCursorScreenPos(ImVec2(screenpos_prefilter.x + 12.0f, screenpos_prefilter.y + 4.0f));
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
+				ImGui::TextUnformatted("Filter ..");
+				ImGui::PopStyleColor();
+				ImGui::SetCursorScreenPos(ImVec2(screenpos_postfilter.x, screenpos_postfilter.y));
+			}
+			else
+			{
+				imgui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+				imgui::SetItemAllowOverlap();
+				imgui::SameLine(imgui::GetWindowWidth() - img_size_widget_width - 34.0f);
+				imgui::SetCursorPosY(imgui::GetCursorPosY() + 2.0f);
+				if (ImGui::ButtonEx("x##clear_filter", ImVec2(20.0f, imgui::GetFrameHeightWithSpacing())))
+				{
+					this->m_filter.Clear();
+				}
+				imgui::SetCursorPosY(imgui::GetCursorPosY() - 2.0f);
+				imgui::PopStyleVar();
+			}
+
+
 			imgui::PopStyleVar(2);
 
 			SPACING(0.0f, 0.0f);
@@ -308,6 +340,11 @@ namespace ggui
 
 				for (const auto& [filename, parent_path] : m_curr_dir_files)
 				{
+					if (this->m_filter.IsActive() && !this->m_filter.PassFilter(filename.c_str()))
+					{
+						continue;
+					}
+
 					imgui::TableNextColumn();
 
 					const auto thumbnail_str_no_ext = get_thumbnail_string(parent_path, filename);

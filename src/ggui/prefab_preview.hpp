@@ -19,6 +19,8 @@ namespace ggui
 		std::string m_dragdrop_prefab_name;
 		std::string m_dragdrop_prefab_path;
 
+		ImGuiTextFilter	m_filter;
+
 	public:
 		prefab_preview_dialog() { set_gui_type(GUI_TYPE_DEF); }
 

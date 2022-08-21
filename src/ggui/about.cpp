@@ -11,7 +11,7 @@ namespace ggui
 #ifdef DEBUG
 		const float debug_build_offs = DEBUG ? 26.0f : 0.0f;
 #else
-		const float is_debug_build = false;
+		const float debug_build_offs = 0.0f;
 #endif
 		ImGui::SetNextWindowSize(game::glob::gh_update_avail ? ImVec2(480.0f, 920.0f + debug_build_offs) : ImVec2(400.0f, 670.0f + debug_build_offs));
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
