@@ -302,7 +302,7 @@ namespace ggui
 			// needs to be this way or ImGui throws an assert when minimizing radiant while having the preference window open
 			if (!imgui::BeginChild("##content", ImVec2(0, 0), true))
 			{
-				imgui::PopStyleColor();
+				imgui::PopStyleColor(3);
 				ImGui::EndChild();
 				ImGui::End();
 				return false;
