@@ -537,7 +537,7 @@ namespace ggui
 			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
 			{
 				const auto payload = imgui::GetDragDropPayload();
-				const std::string prefab_path = "prefabs/"s + std::string(static_cast<const char*>(payload->Data), payload->DataSize);
+				const std::string prefab_path = /*"prefabs/"s +*/ std::string(static_cast<const char*>(payload->Data), payload->DataSize);
 
 				const auto entity_gui = GET_GUI(ggui::entity_dialog);
 

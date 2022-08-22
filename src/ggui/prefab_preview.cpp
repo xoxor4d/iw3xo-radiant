@@ -28,7 +28,7 @@ namespace ggui
 		for (auto& it : std::filesystem::directory_iterator(m_current_directory))
 		{
 			const auto& full_path = it.path();
-			const auto rel_path = std::filesystem::relative(full_path, m_prefab_directory);
+			const auto rel_path = std::filesystem::relative(full_path, m_mapsource_directory);
 
 			if (it.is_directory())
 			{
@@ -136,17 +136,24 @@ namespace ggui
 			bool generate_previews_pending = false;
 
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
-			if (imgui::Button(ICON_FA_CAMERA, ImVec2(imgui::GetFrameHeight(), imgui::GetFrameHeight())))
-			{
-				generate_previews_pending = true;
 
-				if (needs_map_closing_popup)
+			imgui::BeginDisabled(m_current_directory == m_mapsource_directory);
+			{
+				if (imgui::Button(ICON_FA_CAMERA, ImVec2(imgui::GetFrameHeight(), imgui::GetFrameHeight())))
 				{
-					ImGui::OpenPopup("close_map_popup");
-				}
-				
-				
-			} TT("Generate prefab thumbnails for the current folder");
+					generate_previews_pending = true;
+
+					if (needs_map_closing_popup)
+					{
+						// ImGui::popup_close_map()
+						ImGui::OpenPopup("close_map_popup");
+					}
+
+				} TT("Generate prefab thumbnails for the current folder");
+
+				imgui::EndDisabled();
+			}
+
 			ImGui::PopStyleVar();
 
 			if((generate_previews_pending && !needs_map_closing_popup) || imgui::popup_close_map() == 2)
@@ -157,7 +164,7 @@ namespace ggui
 
 			imgui::SameLine();
 
-			imgui::BeginDisabled(m_current_directory == m_prefab_directory);
+			imgui::BeginDisabled(m_current_directory == m_mapsource_directory); //m_prefab_directory);
 			{
 				if (imgui::Button("<"))
 				{
@@ -183,15 +190,21 @@ namespace ggui
 			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 5.0f));
 			imgui::BeginGroup();
 			{
-				if (imgui::Button("prefabs"))
+				if (imgui::Button("map_source"))
 				{
-					m_current_directory = m_prefab_directory;
+					m_current_directory = m_mapsource_directory;
 					update_directory();
 				}
 
+				/*if (imgui::Button("prefabs"))
+				{
+					m_current_directory = m_prefab_directory;
+					update_directory();
+				}*/
+
 				std::vector<std::pair<std::string, std::filesystem::path>> paths_to_current_dir;
 
-				if (const auto rel_path = std::filesystem::relative(m_current_directory, m_prefab_directory);
+				if (const auto rel_path = std::filesystem::relative(m_current_directory, m_mapsource_directory);
 					!rel_path.empty() && rel_path != ".")
 				{
 					const auto splits = utils::explode(rel_path.string(), '\\');
@@ -208,7 +221,7 @@ namespace ggui
 						}
 						else
 						{
-							pp = m_prefab_directory / s;
+							pp = m_mapsource_directory / s;
 						}
 
 						paths_to_current_dir.emplace_back(std::make_pair(s, pp));
@@ -338,59 +351,44 @@ namespace ggui
 					}
 				}
 
-				for (const auto& [filename, parent_path] : m_curr_dir_files)
+				if (m_current_directory != m_mapsource_directory)
 				{
-					if (this->m_filter.IsActive() && !this->m_filter.PassFilter(filename.c_str()))
+					for (const auto& [filename, parent_path] : m_curr_dir_files)
 					{
-						continue;
-					}
-
-					imgui::TableNextColumn();
-
-					const auto thumbnail_str_no_ext = get_thumbnail_string(parent_path, filename);
-
-					game::GfxImage* thumbnail = nullptr;
-
-					if (thumbnail = game::Image_FindExisting(thumbnail_str_no_ext.c_str());
-						!thumbnail)
-					{
-						// category 3 can be reloaded but expects an iwi -> rewritten R_ReloadImages -> renderer::on_reload_images
-						if (thumbnail = game::Image_Alloc(thumbnail_str_no_ext.c_str(), 66, 2, 0);
-							thumbnail)
+						if (this->m_filter.IsActive() && !this->m_filter.PassFilter(filename.c_str()))
 						{
-							const auto jpg_string = "prefab_thumbs\\" + thumbnail_str_no_ext + ".jpg";
+							continue;
+						}
 
-							if (!game::R_LoadJpeg(thumbnail, jpg_string.c_str()))
+						imgui::TableNextColumn();
+
+						const auto thumbnail_str_no_ext = get_thumbnail_string(parent_path, filename);
+
+						game::GfxImage* thumbnail = nullptr;
+
+						if (thumbnail = game::Image_FindExisting(thumbnail_str_no_ext.c_str());
+							!thumbnail)
+						{
+							// category 3 can be reloaded but expects an iwi -> rewritten R_ReloadImages -> renderer::on_reload_images
+							if (thumbnail = game::Image_Alloc(thumbnail_str_no_ext.c_str(), 66, 2, 0);
+								thumbnail)
 							{
-								//game::printf_to_console("failed to load thumbnail '%s'", thumbnail_str.c_str());
+								const auto jpg_string = "prefab_thumbs\\" + thumbnail_str_no_ext + ".jpg";
+
+								if (!game::R_LoadJpeg(thumbnail, jpg_string.c_str()))
+								{
+									//game::printf_to_console("failed to load thumbnail '%s'", thumbnail_str.c_str());
+								}
 							}
 						}
-					}
 
-					bool update_drag_drop = false;
-					const char* filename_str = filename.c_str();
+						bool update_drag_drop = false;
+						const char* filename_str = filename.c_str();
 
-					if (thumbnail && thumbnail->texture.data)
-					{
-						imgui::PushID(filename_str);
-						if (prefab_preview_dialog::image_button(thumbnail, thumbnail_size, 1.0f, filename_str, true))
-						{
-							const auto current_id = imgui::GetItemID();
-							if (!m_dragdrop_id || m_dragdrop_id != current_id)
-							{
-								m_dragdrop_id = current_id;
-								update_drag_drop = true;
-							}
-						}
-						imgui::PopID();
-					}
-					else
-					{
-						if (const auto	image = game::Image_RegisterHandle("cycle_xyz");
-										image && image->texture.data)
+						if (thumbnail && thumbnail->texture.data)
 						{
 							imgui::PushID(filename_str);
-							if (prefab_preview_dialog::image_button(image, thumbnail_size, 0.25f, filename_str, false, 0, ImVec2(0.51f, 0.01f), ImVec2(0.99f, 0.99f)))
+							if (prefab_preview_dialog::image_button(thumbnail, thumbnail_size, 1.0f, filename_str, true))
 							{
 								const auto current_id = imgui::GetItemID();
 								if (!m_dragdrop_id || m_dragdrop_id != current_id)
@@ -403,26 +401,44 @@ namespace ggui
 						}
 						else
 						{
-							if (imgui::Button(filename_str, ImVec2(thumbnail_size, thumbnail_size)))
+							if (const auto	image = game::Image_RegisterHandle("cycle_xyz");
+								image && image->texture.data)
 							{
-								const auto current_id = imgui::GetItemID();
-								if (!m_dragdrop_id || m_dragdrop_id != current_id)
+								imgui::PushID(filename_str);
+								if (prefab_preview_dialog::image_button(image, thumbnail_size, 0.25f, filename_str, false, 0, ImVec2(0.51f, 0.01f), ImVec2(0.99f, 0.99f)))
 								{
-									m_dragdrop_id = current_id;
-									update_drag_drop = true;
+									const auto current_id = imgui::GetItemID();
+									if (!m_dragdrop_id || m_dragdrop_id != current_id)
+									{
+										m_dragdrop_id = current_id;
+										update_drag_drop = true;
+									}
+								}
+								imgui::PopID();
+							}
+							else
+							{
+								if (imgui::Button(filename_str, ImVec2(thumbnail_size, thumbnail_size)))
+								{
+									const auto current_id = imgui::GetItemID();
+									if (!m_dragdrop_id || m_dragdrop_id != current_id)
+									{
+										m_dragdrop_id = current_id;
+										update_drag_drop = true;
+									}
 								}
 							}
 						}
-					}
 
-					if (update_drag_drop)
-					{
-						game::printf_to_console("updating drag drop");
-						m_dragdrop_prefab_name = filename;
-						m_dragdrop_prefab_path = parent_path.string();
+						if (update_drag_drop)
+						{
+							game::printf_to_console("updating drag drop");
+							m_dragdrop_prefab_name = filename;
+							m_dragdrop_prefab_path = parent_path.string();
+						}
+
+						handle_drag_drop();
 					}
-					
-					handle_drag_drop();
 				}
 
 				imgui::EndTable();
@@ -440,8 +456,11 @@ namespace ggui
 	void prefab_preview_dialog::on_open()
 	{
 		const auto egui = GET_GUI(entity_dialog);
-		m_prefab_directory = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+		m_mapsource_directory = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
+
+		m_prefab_directory = m_mapsource_directory;
 		m_prefab_directory /= "prefabs";
+
 		m_current_directory = m_prefab_directory;
 
 		update_directory();

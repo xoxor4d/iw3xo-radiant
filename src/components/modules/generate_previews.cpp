@@ -7,7 +7,7 @@ namespace components
 		const auto egui = GET_GUI(ggui::entity_dialog);
 
 		std::filesystem::path m_prefab_directory = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "mapspath");
-							  m_prefab_directory /= "prefabs";
+							  //m_prefab_directory /= "prefabs";
 
 		// setup camera res
 		const int shot_rest = 256;
@@ -42,6 +42,8 @@ namespace components
 		{
 			const auto& full_path = it.path();
 			const auto rel_path = std::filesystem::relative(full_path, m_prefab_directory);
+
+			//game::printf_to_console("thumb > %s\n", full_path.string().c_str());
 
 			if (!it.is_directory() && full_path.extension() == ".map")
 			{
@@ -127,6 +129,10 @@ namespace components
 
 				//break;
 			}
+			/*else
+			{
+				game::printf_to_console("> skipped\n");
+			}*/
 		}
 
 		// #

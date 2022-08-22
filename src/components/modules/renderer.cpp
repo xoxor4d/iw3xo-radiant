@@ -2065,21 +2065,29 @@ namespace components
 			dvars::set_bool(dvars::r_reflectionprobe_generate, false);
 		}
 
-		static bool skip_frame = false;
-		const bool drawfps_state = dvars::gui_draw_fps->current.enabled;
+		static int skip_frame = 0;
+		static bool drawfps_state = false;
 
-		if(ggui::prefab_browser_generate_thumbnails)
+		if (ggui::prefab_browser_generate_thumbnails)
 		{
-			if(!skip_frame)
+			if (skip_frame < 10)
 			{
-				dvars::set_bool(dvars::gui_draw_fps, false);
-				skip_frame = true;
+				if (!skip_frame)
+				{
+					game::printf_to_console("[Prefab Preview] About to take thumbnails ...");
+					imgui::Toast(ImGuiToastType_Info, "Generating Prefab Previews", "This might take a while ...");
+
+					drawfps_state = dvars::gui_draw_fps->current.enabled;
+					dvars::set_bool(dvars::gui_draw_fps, false);
+				}
+				
+				skip_frame++;
 			}
 			else
 			{
 				generate_previews::generate_prefab_previews(ggui::prefab_browser_generate_thumbnails_folder);
 				ggui::prefab_browser_generate_thumbnails = false;
-				skip_frame = false;
+				skip_frame = 0;
 
 				dvars::set_bool(dvars::gui_draw_fps, drawfps_state);
 			}

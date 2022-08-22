@@ -10,6 +10,7 @@ namespace ggui
 	private:
 		std::filesystem::path m_current_directory;
 		std::filesystem::path m_prefab_directory;
+		std::filesystem::path m_mapsource_directory;
 
 		std::vector<std::string> m_curr_dir_folders;
 		std::map<std::string, std::filesystem::path> m_curr_dir_files;
