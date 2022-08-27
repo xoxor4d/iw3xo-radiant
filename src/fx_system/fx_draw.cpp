@@ -148,15 +148,18 @@ namespace fx_system
 				}
 
 #ifndef FXEDITOR
-				if (visuals.material->techniqueSet->techniques[0] && utils::string_equals(visuals.material->techniqueSet->techniques[0]->name, "particle_cloud_outdoor"))
+				if (!components::d3dbsp::Com_IsBspLoaded() || (components::d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled))
 				{
-					if (!g_warning_outdoor_material)
+					if (visuals.material->techniqueSet->techniques[0] && utils::string_equals(visuals.material->techniqueSet->techniques[0]->name, "particle_cloud_outdoor"))
 					{
-						game::printf_to_console("[RED][!] Not drawing material [%s] using the outdoor sampler!", visuals.material->info.name);
-						g_warning_outdoor_material = true;
-					}
+						if (!g_warning_outdoor_material)
+						{
+							game::printf_to_console("[ERR] No loaded/enabled BSP. Not drawing material [%s] which is using the outdoor sampler!", visuals.material->info.name);
+							g_warning_outdoor_material = true;
+						}
 
-					return;
+						return;
+					}
 				}
 #endif
 

@@ -25,7 +25,7 @@ namespace ggui
 				std::random_device	rd;
 				std::mt19937		gen(rd());
 
-				const std::uniform_real_distribution<float> distr(-100, 100);
+				std::uniform_real_distribution<float> distr(-100, 100);
 
 				for (auto pt = 0; pt < game::g_qeglobals->d_num_move_points; pt++)
 				{

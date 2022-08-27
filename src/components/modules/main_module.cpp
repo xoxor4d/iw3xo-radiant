@@ -427,17 +427,11 @@ namespace components
 		clayermatwnd::hooks();
 		ctexwnd::hooks();
 
+		// *
+		// *
+
 		// add iw3xradiant search path (imgui images)
 		utils::hook(0x4A29A7, fs_scan_base_directory_stub, HOOK_JUMP).install()->quick();
-
-		// do not load "_glow" fonts (qerfont_glow)
-		utils::hook::nop(0x552806, 5);
-
-		// nop com_math.cpp "det" line:1775 assert (MatrixInverse44)
-		utils::hook::nop(0x4A6BC9, 5);
-
-		// set max undos -> done via preference window
-		//utils::hook::set<int32_t>(0x739F6C, 512);
 
 		// set max undo memory
 		utils::hook::set<int32_t>(0x739F70, 0x01000000); // default 2mb, now 16mb
@@ -459,10 +453,6 @@ namespace components
 		// print undo undo and stack size
 		utils::hook(0x45F1C6, undo_undo_stub, HOOK_JUMP).install()->quick();
 
-		// kill Sys_Printf("Updating layers...\n")
-		utils::hook::nop(0x45F2A6, 5); // undo undo
-		utils::hook::nop(0x48977C, 5); // enter prefab
-		utils::hook::nop(0x489BA6, 5); // leave prefab
 
 		// * ---------------------------
 

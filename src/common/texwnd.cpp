@@ -425,7 +425,7 @@ void on_textures_show_all_command_intercept()
 void __declspec(naked) on_textures_show_all_command_stub()
 {
 	const static uint32_t sub_453E50 = 0x453E50;
-	const static uint32_t retn_pt = 0x42B445;
+	const static uint32_t retn_addr = 0x42B445;
 	__asm
 	{
 		pushad;
@@ -433,7 +433,26 @@ void __declspec(naked) on_textures_show_all_command_stub()
 		popad;
 		
 		call    sub_453E50; // overwritten
-		jmp     retn_pt; // jump back to "test al, al"
+		jmp     retn_addr; // jump back to "test al, al"
+	}
+}
+
+void set_default_texture()
+{
+	cdeclcall(void, 0x45B650); // Texture_ResetPosition
+}
+
+void __declspec(naked) set_default_texture_stub()
+{
+	const static uint32_t retn_addr = 0x420025;
+
+	__asm
+	{
+		pushad;
+		call	set_default_texture;
+		popad;
+
+		jmp		retn_addr;
 	}
 }
 
@@ -485,5 +504,8 @@ void ctexwnd::hooks()
 
 	// detour fails here .. so doing it manually -> make the show all textures hotkey (CMainFrame::OnTexturesShowall) open the imgui texture window
 	utils::hook(0x42B440, on_textures_show_all_command_stub, HOOK_JUMP).install()->quick();
-	
+
+	// set default selected texture to caulk
+	utils::hook::nop(0x41FC69, 6);
+	utils::hook(0x41FC69, set_default_texture_stub, HOOK_JUMP).install()->quick();
 }

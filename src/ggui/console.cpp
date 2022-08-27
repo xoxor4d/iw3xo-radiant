@@ -728,6 +728,11 @@ namespace ggui
 		// remove "\n" infront of "\nFile Handles:\n"
 		utils::hook::set<BYTE>(0x4A182D + 1, 0x7D);
 
+		// kill Sys_Printf("Updating layers...\n")
+		utils::hook::nop(0x45F2A6, 5); // undo undo
+		utils::hook::nop(0x48977C, 5); // enter prefab
+		utils::hook::nop(0x489BA6, 5); // leave prefab
+
 		// redirect console prints
 		utils::hook::nop(0x420A54, 10);
 		utils::hook::nop(0x40A9E0, 10);

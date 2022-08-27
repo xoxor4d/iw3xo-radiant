@@ -29,6 +29,14 @@ namespace components
 		// return nullptr on assert: mtlRaw->info.sortKey doesn't index 1 << MTL_SORT_PRIMARY_SORT_KEY_BITS %i not in [0, 64]
 		utils::hook(0x51B0E8, assert_mtlraw_sortkey_stub, HOOK_JUMP).install()->quick();
 
+		// do not load "_glow" fonts (qerfont_glow)
+		utils::hook::nop(0x552806, 5);
+
+		// nop com_math.cpp "det" line:1775 assert (MatrixInverse44)
+		utils::hook::nop(0x4A6BC9, 5);
+
+		// *
+		// *
 
 		// should no longer happen, hopefully
 		components::exec::on_gui_recurring([]

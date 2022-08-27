@@ -1261,6 +1261,28 @@ namespace components
 
 		if (pass->stableArgCount)
 		{
+			if (!d3dbsp::Com_IsBspLoaded() || (d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled))
+			{
+				if (effects::effect_is_playing())
+				{
+					int x = 0;
+				}
+
+				for (auto i = 0; i < pass->perPrimArgCount + pass->perObjArgCount + pass->stableArgCount; i++)
+				{
+					if (pass->args[i].u.codeConst.index == game::CONST_SRC_CODE_TRANSPOSE_WORLD_OUTDOOR_LOOKUP_MATRIX)
+					{
+						pass->args[i].u.nameHash = 0x0400003c;
+					}
+					//pass->args[1]
+					//if (pass->args[i].dest == 17)	// codeimage outdoor
+					//{
+					//	//return;
+					//	pass->args[i].dest = 1;		// codeimage black
+					//}
+				}
+			}
+
 			R_SetPassShaderStableArguments(&pass->args[pass->perPrimArgCount + pass->perObjArgCount].type, source, state, pass->stableArgCount);
 		}
 	}
@@ -1477,6 +1499,17 @@ namespace components
 		{
 			//state->depthRangeNear = 0.01337f;
 			state->viewport.x = 1;
+		}
+
+		if (effects::effect_is_playing())
+		{
+			if (!d3dbsp::Com_IsBspLoaded() || (d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled))
+			{
+				if (utils::string_contains(state->technique->name, "_outdoor"))
+				{
+					return;
+				}
+			}
 		}
 
 		if ((renderer::is_rendering_layeredwnd() && layermatwnd::rendermethod_preview == layermatwnd::FAKESUN_DAY) ||
@@ -1770,6 +1803,29 @@ namespace components
 		utils::hook::call<void(__cdecl)()>(0x4FDA10)();
 		
 		return true;
+	}
+
+	// check for nullptr (world_entity)
+	void __declspec(naked) sunlight_preview_arg_check()
+	{
+		const static uint32_t retn_addr = 0x4067D0;
+		const static uint32_t onzero_retn_addr = 0x4067E0;
+		__asm
+		{
+			mov[ebp - 0x20DC], ecx; // og
+
+			pushad;
+			test	edx, edx;			// world_entity
+			jz		ENT_IS_ZERO;
+
+			popad;
+			mov     esi, [edx + 8];		// og
+			jmp		retn_addr;
+
+		ENT_IS_ZERO:
+			popad;
+			jmp		onzero_retn_addr;
+		}
 	}
 
 	// camera post effects
@@ -3716,6 +3772,11 @@ namespace components
 		
 		// fix sun preview (selecting brushes keeps sunpreview active; sun no longer casts shadows -> FPS ++)
 		utils::hook(0x406706, sunpreview, HOOK_CALL).install()->quick();
+
+		// check for nullptr (world_entity) in a sunlight preview function.
+		utils::hook::nop(0x4067C7, 6);
+		utils::hook(0x4067C7, sunlight_preview_arg_check, HOOK_JUMP).install()->quick();
+
 
 		// disable world darkening when selecting light entities with light preview enabled
 		utils::hook::nop(0x407099, 5);

@@ -802,29 +802,6 @@ void __fastcall cmainframe::on_destroy(cmainframe* pThis)
 // | ----------------------------------------------------------
 // *
 
-// check for nullptr (world_entity)
-void __declspec(naked) sunlight_preview_arg_check()
-{
-	const static uint32_t retn_pt = 0x4067D0;
-	const static uint32_t onzero_retn_pt = 0x4067E0;
-	__asm
-	{
-		mov		[ebp - 20DCh], ecx; // og
-		
-		pushad;
-		test	edx, edx;			// world_entity
-		jz		ENT_IS_ZERO;
-
-		popad;
-		mov     esi, [edx + 8];		// og
-		jmp		retn_pt;
-
-		ENT_IS_ZERO:
-		popad;
-		jmp		onzero_retn_pt;
-	}
-}
-
 void set_mainwindow_placement(HWND hwnd, WINDOWPLACEMENT* place)
 {
 	// always show window
@@ -851,26 +828,6 @@ void __declspec(naked) set_windowplacement_stub()
 		jmp		retn_pt;
 	}
 }
-
-void set_default_texture()
-{
-	cdeclcall(void, 0x45B650); // Texture_ResetPosition
-}
-
-void __declspec(naked) set_default_texture_stub()
-{
-	const static uint32_t retn_pt = 0x420025;
-
-	__asm
-	{
-		pushad;
-		call	set_default_texture;
-		popad;
-
-		jmp		retn_pt;
-	}
-}
-
 
 void cmainframe::register_dvars()
 {
@@ -924,10 +881,6 @@ void cmainframe::hooks()
 	utils::hook::nop(0x4210ED, 59); // font stuff
 #endif
 
-	// set default selected texture to caulk
-	utils::hook::nop(0x41FC69, 6);
-	utils::hook(0x41FC69, set_default_texture_stub, HOOK_JUMP).install()->quick();
-
 	// hook SetWindowPlacement (Radiant::MainWindowPlace) in OnCreateClient to fix minimize issue
 	utils::hook::nop(0x4225CB, 8);
 		 utils::hook(0x4225CB, set_windowplacement_stub, HOOK_JUMP).install()->quick();
@@ -940,11 +893,6 @@ void cmainframe::hooks()
 	mainframe::__on_keyup	= reinterpret_cast<mainframe::on_cmainframe_keyup>  (utils::hook::detour(0x422270, cmainframe::on_keyup, HK_JUMP));
 			   __on_size	= reinterpret_cast<on_cmainframe_size>				(utils::hook::detour(0x423310, cmainframe::on_size, HK_JUMP));
 			   __on_destroy = reinterpret_cast<on_cmainframe_on_destroy>		(utils::hook::detour(0x421C60, cmainframe::on_destroy, HK_JUMP));
-
-	// check for nullptr (world_entity) in a sunlight preview function. Only required with the ^ hook, see note there.
-	utils::hook::nop(0x4067C7, 6);
-		 utils::hook(0x4067C7, sunlight_preview_arg_check, HOOK_JUMP).install()->quick();
-
 	
 	// *
 	// | ------------------------ Commands ----------------------------
