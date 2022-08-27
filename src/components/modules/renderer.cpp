@@ -2433,11 +2433,14 @@ namespace components
 		R_SetSceneViewport(source, &viewInfo->sceneViewport);
 		game::R_SetRenderTarget(source, state, game::R_RENDERTARGET_FRAME_BUFFER);
 
-		// developer
-		R_Set3D(source);
+		if (!dvars::r_reflectionprobe_generate->current.enabled)
+		{
+			// developer
+			R_Set3D(source);
 
-		//RB_DrawDebug(&gfxCmdBufSourceState.viewParms);
-		utils::hook::call<void(__cdecl)(game::GfxViewParms*)>(0x56D420)(&source->viewParms);
+			//RB_DrawDebug(&gfxCmdBufSourceState.viewParms);
+			utils::hook::call<void(__cdecl)(game::GfxViewParms*)>(0x56D420)(&source->viewParms);
+		}
 	}
 
 	void renderer::R_SetAndClearSceneTarget(bool clear)
