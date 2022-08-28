@@ -193,7 +193,7 @@ namespace ggui
 		{
 			const auto prefs = game::g_PrefsDlg();
 
-			ImGui::title_with_seperator("Gui");
+			ImGui::title_with_seperator("Gui", false);
 			if (ImGui::Checkbox("Use new grid context menu", &dvars::gui_use_new_context_menu->current.enabled))
 			{
 				game::g_PrefsDlg()->m_bRightClick = !dvars::gui_use_new_context_menu->current.enabled;
@@ -510,6 +510,8 @@ namespace ggui
 
 			ImGui::DragFloat3("Vec4 01", dev_vec_01, 25.0f);
 			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+			ImGui::ColorEdit4("Color 02", dev_color_02, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+			ImGui::ColorEdit4("Color 03", dev_color_03, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 		});
 	}
 

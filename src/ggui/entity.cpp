@@ -11,6 +11,7 @@ namespace ggui
 		{ "contrastgain", "0.3" },
 		{ "diffusefraction", "0.5" },
 		{ "radiosityscale", "1.4" },
+		{ "reflection_ignore_portals", "1" },
 		{ "suncolor", "1.0 0.9 0.8" },
 		{ "sundiffusecolor", "0.95 0.8 0.85" },
 		{ "sundirection", "-60.0 275.0 0.0" },
@@ -1003,11 +1004,30 @@ namespace ggui
 		addprop_helper_s helper = {};
 		helper.is_generic_slider = true;
 
+		bool dirty = false;
+		auto val = static_cast<float>(atof(epw.epair->value));
+
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 4));
+
+		const float line_height = ImGui::GetFrameHeight();
+		const auto  button_size = ImVec2(line_height - 2.0f, line_height);
+
+		const auto framebg = imgui::ColorConvertU32ToFloat4(imgui::GetColorU32(ImGuiCol_FrameBg));
+		if (imgui::pre_description_button(ICON_FA_EXCHANGE_ALT, button_size, ImVec4(0.55f, 0.55f, 0.55f, 1.0f), framebg + ImVec4(0.05f, 0.05f, 0.05f, 0.0f)))
+		{
+			val = 0.0f;
+			dirty = true;
+		}
+
 		// full with input text without label spacing
 		ImGui::SetNextItemWidth(-1);
 
-		auto val = static_cast<float>(atof(epw.epair->value));
 		if (drag_float_helper_undo(&helper, "##value_slider", &val, epw.v_speed, epw.v_min, epw.v_max, "%.2f"))
+		{
+			dirty = true;
+		}
+
+		if (dirty)
 		{
 			char val_str_buf[32] = {};
 			if (sprintf_s(val_str_buf, "%.2f", val))
@@ -1015,6 +1035,8 @@ namespace ggui
 				add_prop(epw.epair->key, val_str_buf, &helper);
 			}
 		}
+
+		imgui::PopStyleVar();
 	}
 
 	void entity_dialog::gui_entprop_add_value_color(const epair_wrapper& epw)
@@ -1103,7 +1125,7 @@ namespace ggui
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 4));
 
 		const float line_height = ImGui::GetFrameHeight();
-		const auto  button_size = ImVec2(line_height - 10.0f, line_height);
+		const auto  button_size = ImVec2(line_height - 2.0f, line_height);
 		const float widget_spacing = 4.0f;
 		const float widget_width = (ImGui::GetContentRegionAvail().x - (3.0f * button_size.x) - (2.0f * widget_spacing)) * 0.333333f;
 
@@ -1113,13 +1135,11 @@ namespace ggui
 		// -------
 		// -- X --
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.55f, 0.17f, 0.17f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.55f, 0.17f, 0.17f, 1.0f));
-		ImGui::ButtonEx("X", button_size, ImGuiButtonFlags_MouseButtonMiddle);
-		ImGui::PopStyleColor(2);
-		ImGui::PopStyleVar();
-		ImGui::SameLine();
+		if (imgui::pre_description_button("X", button_size, ImVec4(0.84f, 0.55f, 0.53f, 1.0f), ImVec4(0.21f, 0.16f, 0.16f, 1.0f)))
+		{
+			vec3[0] = 0.0f;
+			dirty = true;
+		}
 
 		if (!min_window_width_origin)
 		{
@@ -1143,13 +1163,13 @@ namespace ggui
 			ImGui::SameLine(0, widget_spacing);
 		}
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.185f, 0.6f, 0.23f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.185f, 0.6f, 0.23f, 1.0f));
-		ImGui::ButtonEx("Y", button_size, ImGuiButtonFlags_MouseButtonMiddle);
-		ImGui::PopStyleColor(2);
-		ImGui::PopStyleVar();
-		ImGui::SameLine();
+		if (imgui::pre_description_button("Y", button_size, ImVec4(0.73f, 0.78f, 0.5f, 1.0f), ImVec4(0.17f, 0.18f, 0.15f, 1.0f)))
+		{
+			{
+				vec3[1] = 0.0f;
+				dirty = true;
+			}
+		}
 
 		if (!min_window_width_origin)
 		{
@@ -1173,13 +1193,11 @@ namespace ggui
 			ImGui::SameLine(0, widget_spacing);
 		}
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.165f, 0.375f, 0.69f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.165f, 0.375f, 0.69f, 1.0f));
-		ImGui::ButtonEx("Z", button_size, ImGuiButtonFlags_MouseButtonMiddle);
-		ImGui::PopStyleColor(2);
-		ImGui::PopStyleVar();
-		ImGui::SameLine();
+		if (imgui::pre_description_button("Z", button_size, ImVec4(0.67f, 0.71f, 0.79f, 1.0f), ImVec4(0.18f, 0.21f, 0.23f, 1.0f)))
+		{
+			vec3[2] = 0.0f;
+			dirty = true;
+		}
 
 		if (!min_window_width_origin)
 		{
@@ -1266,8 +1284,8 @@ namespace ggui
 			if (ImGui::BeginTable("##entprop_list", 3, flags, ImVec2(max_width, 0.0f)))
 			{
 				//ImGui::TableSetupScrollFreeze(0, 1);
-				ImGui::TableSetupColumn("Key", ImGuiTableColumnFlags_WidthStretch, 90.0f);
-				ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 110.0f); //, 64.0f);
+				ImGui::TableSetupColumn("Key", ImGuiTableColumnFlags_WidthStretch, 80.0f);
+				ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 120.0f); //, 64.0f);
 				ImGui::TableSetupColumn("##delete", ImGuiTableColumnFlags_WidthFixed, 32.0f);
 				//ImGui::TableHeadersRow();
 
@@ -1589,10 +1607,25 @@ namespace ggui
 
 								else if (ep.type != EPAIR_VALUETYPE::ORIGIN && !is_classname)
 								{
+									const auto bg_color = imgui::ColorConvertU32ToFloat4(imgui::GetColorU32(ImGuiCol_Button));
+
+									ImGui::PushFontFromIndex(ggui::E_FONT::BOLD_18PX);
+									ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
+									imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+									//ImGui::PushStyleColor(ImGuiCol_Button, bg_color);
+									ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bg_color - ImVec4(0.1f, 0.1f, 0.1f, 0.0f));
+									ImGui::PushStyleColor(ImGuiCol_ButtonActive, bg_color + ImVec4(0.1f, 0.1f, 0.1f, 0.0f));
+									ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
+									ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_FrameBg));
+
 									if (ImGui::Button("x", ImVec2(28, ImGui::GetFrameHeight())))
 									{
 										del_prop(ep.epair->key);
 									}
+
+									ImGui::PopStyleColor(4);
+									ImGui::PopStyleVar(2);
+									ImGui::PopFont();
 								}
 							}
 

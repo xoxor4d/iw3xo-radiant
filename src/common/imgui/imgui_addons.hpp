@@ -23,6 +23,8 @@ namespace game
 
 namespace ImGui
 {
+	bool	pre_description_button(const char* label, const ImVec2& button_size, const ImVec4& text_color, const ImVec4& bg_color);
+
 	void	Toast(const ImGuiToastType_ type, const char* title, const char* content, int time = 2500);
 	int		popup_close_map();
 

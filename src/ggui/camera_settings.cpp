@@ -582,7 +582,7 @@ namespace ggui
 		
 		auto initial_window_pos = ggui::get_initial_window_pos();
 		
-		if(const auto	camerawnd = GET_GUI(ggui::camera_dialog);
+		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
 						camerawnd)
 		{
 			initial_window_pos = ImVec2(
@@ -599,25 +599,33 @@ namespace ggui
 		bool any_open = false;
 		for (int n = 0; n < IM_ARRAYSIZE(tab_states); n++)
 		{
-			if(tab_states[n])
+			if (tab_states[n])
 			{
 				any_open = true;
 				break;
 			}
 		}
 
-		if(!any_open)
+		if (!any_open)
 		{
 			return false;
 		}
 
+		imgui::PushStyleColor(ImGuiCol_WindowBg, imgui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));
+
 		if (!imgui::Begin("Cam Toolbar Settings##cam_settings_window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings /*| ImGuiWindowFlags_NoTitleBar*/))
 		{
+			imgui::PopStyleColor();
 			imgui::End();
 			return false;
 		}
 
+		imgui::PopStyleColor();
+
 		static ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_Reorderable | ImGuiTabBarFlags_AutoSelectNewTabs | ImGuiTabBarFlags_FittingPolicyResizeDown;
+
+		int pushed_styles = 0;
+		imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
 
 		if (imgui::BeginTabBar("##camera_window_tabbar", tab_bar_flags))
 		{
@@ -637,6 +645,8 @@ namespace ggui
 					{
 						active_tab = n;
 					}
+
+					imgui::PopStyleVar(); pushed_styles--;
 
 					switch (n)
 					{
@@ -664,6 +674,7 @@ namespace ggui
 			imgui::EndTabBar();
 		}
 
+		imgui::PopStyleVar(pushed_styles);
 		imgui::End();
 
 		return true;

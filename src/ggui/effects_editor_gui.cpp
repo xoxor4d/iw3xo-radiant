@@ -2804,11 +2804,16 @@ namespace ggui
 		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
+		imgui::PushStyleColor(ImGuiCol_WindowBg, imgui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));
+
 		if (!ImGui::Begin("Effect Properties##window", nullptr, ImGuiWindowFlags_NoCollapse))
 		{
+			imgui::PopStyleColor();
 			ImGui::End();
 			return false;
 		}
+
+		imgui::PopStyleColor();
 
 		const auto ed_effect = fx_system::get_editor_effect();
 		if (!ed_effect)
@@ -2819,47 +2824,76 @@ namespace ggui
 
 		if (ImGui::BeginTabBar("##effect_properties_tabs", ImGuiTabBarFlags_None | ImGuiTabBarFlags_FittingPolicyResizeDown))
 		{
+			int pushed_styles = 0;
+
+			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
 			if (ImGui::BeginTabItem_SmallGap("Generation"))
 			{
+				imgui::PopStyleVar(); pushed_styles--;
 				tab_generation(&ed_effect->elems[selected_editor_elemdef]);
 				ImGui::EndTabItem();
-			}
 
+			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
+
+
+			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
 			if (ImGui::BeginTabItem_SmallGap("Size"))
 			{
+				imgui::PopStyleVar(); pushed_styles--;
 				tab_size(&ed_effect->elems[selected_editor_elemdef]);
 				ImGui::EndTabItem();
-			}
 
+			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
+
+
+			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
 			if (ImGui::BeginTabItem_SmallGap("Velocity"))
 			{
+				imgui::PopStyleVar(); pushed_styles--;
 				tab_velocity(&ed_effect->elems[selected_editor_elemdef]);
 				ImGui::EndTabItem();
-			}
 
+			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
+
+
+			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
 			if (ImGui::BeginTabItem_SmallGap("Rotation"))
 			{
+				imgui::PopStyleVar(); pushed_styles--;
 				tab_rotation(&ed_effect->elems[selected_editor_elemdef]);
 				ImGui::EndTabItem();
-			}
 
+			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
+
+
+			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
 			if (ImGui::BeginTabItem_SmallGap("Physics"))
 			{
+				imgui::PopStyleVar(); pushed_styles--;
 				tab_physics(&ed_effect->elems[selected_editor_elemdef]);
 				ImGui::EndTabItem();
-			}
 
+			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
+
+
+			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
 			if (ImGui::BeginTabItem_SmallGap("Color"))
 			{
+				imgui::PopStyleVar(); pushed_styles--;
 				tab_color(&ed_effect->elems[selected_editor_elemdef]);
 				ImGui::EndTabItem();
-			}
 
+			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
+
+
+			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
 			if (ImGui::BeginTabItem_SmallGap("Visuals"))
 			{
+				imgui::PopStyleVar(); pushed_styles--;
 				tab_visuals(&ed_effect->elems[selected_editor_elemdef]);
 				ImGui::EndTabItem();
-			}
+
+			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
 
 			// moved emission to generation
 

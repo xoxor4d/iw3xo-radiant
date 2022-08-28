@@ -22,10 +22,11 @@ namespace ggui
 
 	enum E_FONT
 	{
-		BOLD_18PX = 0,
-		REGULAR_12PX = 1,
-		REGULAR_14PX = 2,
-		REGULAR_18PX = 3,
+		BOLD_18PX,
+		BOLD_17PX,
+		REGULAR_12PX,
+		REGULAR_14PX,
+		REGULAR_18PX,
 	};
 	
 	enum E_CALLTYPE

@@ -1261,28 +1261,6 @@ namespace components
 
 		if (pass->stableArgCount)
 		{
-			if (!d3dbsp::Com_IsBspLoaded() || (d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled))
-			{
-				if (effects::effect_is_playing())
-				{
-					int x = 0;
-				}
-
-				for (auto i = 0; i < pass->perPrimArgCount + pass->perObjArgCount + pass->stableArgCount; i++)
-				{
-					if (pass->args[i].u.codeConst.index == game::CONST_SRC_CODE_TRANSPOSE_WORLD_OUTDOOR_LOOKUP_MATRIX)
-					{
-						pass->args[i].u.nameHash = 0x0400003c;
-					}
-					//pass->args[1]
-					//if (pass->args[i].dest == 17)	// codeimage outdoor
-					//{
-					//	//return;
-					//	pass->args[i].dest = 1;		// codeimage black
-					//}
-				}
-			}
-
 			R_SetPassShaderStableArguments(&pass->args[pass->perPrimArgCount + pass->perObjArgCount].type, source, state, pass->stableArgCount);
 		}
 	}
@@ -1358,7 +1336,7 @@ namespace components
 			}
 		}
 
-		if(dvars::r_draw_model_shadowcaster && !dvars::r_draw_model_shadowcaster->current.enabled)
+		if (dvars::r_draw_model_shadowcaster && !dvars::r_draw_model_shadowcaster->current.enabled)
 		{
 			// replace shadow caster technique with a none visible one
 			if (utils::string_equals(state->material->info.name, "mc/mtl_tree_shadow_caster"))

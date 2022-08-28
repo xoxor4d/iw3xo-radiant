@@ -21,11 +21,14 @@ namespace ggui
 
 	void console_dialog::addline_no_format(const char* text)
 	{
+		auto timestamp = std::format("{:%T}", std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+		timestamp += ";;;";
+
 		// check for multiline prints (the current imgui clipper only works with widgets of the same height, so 1 line in this case)
 		const auto lines = utils::explode(text, '\n');
 		for (auto& line : lines)
 		{
-			m_items.push_back(_strdup(line.c_str()));
+			m_items.push_back(_strdup((timestamp + line).c_str()));
 
 			std::string t_line = line;
 
@@ -47,6 +50,9 @@ namespace ggui
 
 	void console_dialog::addline(const char* fmt, ...) IM_FMTARGS(2)
 	{
+		auto timestamp = std::format("{:%T}", std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+		timestamp += ";;;";
+
 		char buf[1024];
 		va_list args;
 
@@ -59,80 +65,245 @@ namespace ggui
 		const auto lines = utils::explode(buf, '\n');
 		for (auto& line : lines)
 		{
-			m_items.push_back(_strdup(line.c_str()));
+			m_items.push_back(_strdup((timestamp + line).c_str()));
 		}
+	}
+
+	static bool extract_position_from_string(const std::string& str, float* pos_out, int* pos_str_index, int* pos_str_len)
+	{
+		if (!pos_out)		AssertS("pos_out");
+		if (!pos_str_index) AssertS("pos_str_index");
+		if (!pos_str_len)	AssertS("pos_str_len");
+
+		std::vector<std::string> splits;
+		splits = utils::split(str, ' ');
+
+		int num_count = 0;
+		int last_index = 0;
+
+		std::vector<float> position;
+		std::string position_str;
+
+		for (auto s = 0u; s < splits.size(); s++)
+		{
+			if (splits[s].empty())
+			{
+				continue;
+			}
+
+			if (num_count && s - last_index != 1)
+			{
+				num_count = 0;
+				position.clear();
+				position_str.clear();
+			}
+
+			/*for (const auto& c : splits[s])
+			{
+				if (std::isdigit(c) || c == '.')
+			}*/
+
+			const auto check_float = [](char c) -> bool
+			{
+				return std::isdigit(c) || c == '.' || c == '-' || c == '\r' || c == '\n';
+			};
+
+			if (std::ranges::all_of(splits[s].begin(), splits[s].end(), check_float))
+			{
+				auto ff = utils::try_stof(splits[s], true);
+				position.push_back(ff);
+
+				if (!position_str.empty())
+				{
+					position_str += " ";
+				}
+
+				position_str += splits[s];
+
+				num_count++;
+				last_index = s;
+			}
+
+			if (num_count >= 3 && position.size() >= 3)
+			{
+				pos_out[0] = position[0];
+				pos_out[1] = position[1];
+				pos_out[2] = position[2];
+
+				/*for (auto i = 0; i < str.length(); i++)
+				{
+					if (str.substr(i, position_str.length()) == position_str)
+					{
+						*pos_str_index = i;
+						*pos_str_len = position_str.length();
+						return true;
+					}
+				}*/
+
+				const std::string::size_type p = str.find(position_str);
+				if (p != std::string::npos)
+				{
+					*pos_str_index = p;
+					*pos_str_len = position_str.length();
+					return true;
+				}
+
+				return false;
+			}
+		}
+
+		return false;
 	}
 
 	void console_dialog::draw_text_with_color(const char* text, int index)
 	{
-		ImVec4 color;
+		const std::string item_s = text;
 
-		bool has_color = false;
-		std::string item_s = text;
+		std::string timestamp;
+		std::string msg;
 
-		if (   utils::starts_with(item_s, "[ERR]", true)
-			|| utils::starts_with(item_s, "^1ERROR:", true)
-			|| utils::starts_with(item_s, "^1", true)
-			|| utils::starts_with(item_s, "ERROR:")
-			|| utils::starts_with(item_s, "Error:"))
+		const auto t_pos = item_s.find(";;;");
+		if (t_pos != std::string::npos)
 		{
-			color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
-			has_color = true;
-
-			utils::ltrim(item_s);
+			timestamp = item_s.substr(0, t_pos);
+			msg = item_s.substr(t_pos + 3);
 		}
-		else if (utils::starts_with(item_s, "^2", true))
+		else
 		{
-			color = ImVec4(0.13f, 0.4f, 0.79f, 1.0f);
-			has_color = true;
-
-			utils::ltrim(item_s);
-		}
-		else if (  utils::starts_with(item_s, "[WARN]", true)
-				|| utils::starts_with(item_s, "^3WARNING:", true)
-				|| utils::starts_with(item_s, "^3", true)
-				|| utils::starts_with(item_s, "WARNING:")
-				|| utils::starts_with(item_s, "Warning:"))
-		{
-			color = ImVec4(1.0f, 0.65f, 0.1f, 1.0f);
-			has_color = true;
-
-			utils::ltrim(item_s);
-		}
-		else if (utils::starts_with(item_s, "[!]"))
-		{
-			color = ImVec4(0.75f, 0.95f, 0.825f, 1.0f);
-			has_color = true;
+			msg = item_s;
 		}
 
-		if (has_color)
+#if 0	// detect position vec in string with goto button (TODO: dont check on each frame)
+		game::vec3_t position = {};
+		std::string msg_post_position;
+		int pos_str_index = 0;
+		int post_str_len = 0;
+		bool msg_has_position = false;
+
+		if (extract_position_from_string(msg, position, &pos_str_index, &post_str_len))
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, color);
+			if (pos_str_index + post_str_len < msg.length())
+			{
+				msg_post_position = msg.substr(pos_str_index + post_str_len);
+			}
+
+			msg = msg.substr(0, pos_str_index);
+			msg_has_position = true;
 		}
+#endif
 
-		//ImGui::TextUnformatted(item_s.c_str());
+		ImVec4 msg_color;
+		bool msg_has_color = false;
+		
 
-		constexpr auto BUFF_LEN = 256;
-		char input[BUFF_LEN];
-
+		if (   utils::starts_with(msg, "[ERR]", true)
+			|| utils::starts_with(msg, "^1ERROR:", true)
+			|| utils::starts_with(msg, "^1", true)
+			|| utils::starts_with(msg, "ERROR:")
+			|| utils::starts_with(msg, "Error:"))
 		{
-			const size_t len = strlen(item_s.c_str());
-			const size_t bl = (len < BUFF_LEN - 1 ? len : BUFF_LEN - 1);
-			((char*)memcpy(input, item_s.c_str(), bl))[bl] = 0;
+			msg_color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f);
+			msg_has_color = true;
+
+			utils::ltrim(msg);
+		}
+		else if (utils::starts_with(msg, "^2", true))
+		{
+			msg_color = ImVec4(0.13f, 0.4f, 0.79f, 1.0f);
+			msg_has_color = true;
+
+			utils::ltrim(msg);
+		}
+		else if (  utils::starts_with(msg, "[WARN]", true)
+				|| utils::starts_with(msg, "^3WARNING:", true)
+				|| utils::starts_with(msg, "^3", true)
+				|| utils::starts_with(msg, "WARNING:")
+				|| utils::starts_with(msg, "Warning:"))
+		{
+			msg_color = ImVec4(1.0f, 0.65f, 0.1f, 1.0f);
+			msg_has_color = true;
+
+			utils::ltrim(msg);
+		}
+		else if (utils::starts_with(msg, "[!]"))
+		{
+			msg_color = ImVec4(0.87f, 0.67f, 0.61f, 1.0f); //ImVec4(0.75f, 0.95f, 0.825f, 1.0f);
+			msg_has_color = true;
 		}
 
 		ImGui::PushID(index);
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector));
-		ImGui::PushItemWidth(ImGui::GetWindowSize().x);
-		ImGui::InputText("##read_only", input, 256, ImGuiInputTextFlags_ReadOnly);
-		ImGui::PopID();
-		ImGui::PopStyleColor();
-		ImGui::PopItemWidth();
 
-		if (has_color)
+		if (!timestamp.empty())
 		{
-			ImGui::PopStyleColor();
+			ImGui::PushFontFromIndex(ggui::E_FONT::BOLD_17PX);
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.36f, 0.5f, 0.58f, 1.0f)); // imgui::ToImVec4(GET_GUI(preferences_dialog)->dev_color_01));
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.16f, 0.2f, 0.21f, 1.0f)); // imgui::ToImVec4(GET_GUI(preferences_dialog)->dev_color_02));
+
+			ImGui::SetNextItemWidth(74.0f);
+			ImGui::InputText("##tt", &timestamp, ImGuiInputTextFlags_ReadOnly);
+
+			ImGui::PopStyleColor(2);
+			ImGui::PopFont();
+
+			imgui::SameLine();
 		}
+
+		ImGui::PushFontFromIndex(ggui::E_FONT::BOLD_17PX);
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector));
+		ImGui::PushStyleColor(ImGuiCol_Text, msg_has_color ? msg_color : ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+
+		ImGui::SetNextItemWidth(-1);
+		ImGui::InputText("##read_only", &msg, ImGuiInputTextFlags_ReadOnly);
+
+#if 0	// detect position vec in string with goto button (TODO: dont check on each frame)
+		if (!msg_has_position)
+		{
+			ImGui::SetNextItemWidth(-1);
+			ImGui::InputText("##read_only", &msg, ImGuiInputTextFlags_ReadOnly);
+		}
+		else
+		{
+			ImGui::SetNextItemWidth(imgui::CalcTextSize(msg.c_str()).x + 8.0f);
+			ImGui::InputText("##read_only", &msg, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_NoHorizontalScroll);
+
+			imgui::SameLine();
+
+			auto bg_color = imgui::ColorConvertU32ToFloat4(imgui::GetColorU32(ImGuiCol_Button));
+				 bg_color = bg_color - ImVec4(0.1f, 0.1f, 0.1f, 0.0f);
+
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.358f, 0.687f, 0.637f, 1.000f));
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.180f, 0.327f, 0.325f, 1.000f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.27f, 0.34f, 0.36f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.39f, 0.48f, 0.51f, 1.0f));
+			imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 0.0f));
+
+			const auto pos_str = utils::va("%.4f %.4f %.4f", position[0], position[1], position[2]);
+			if (ImGui::SmallButton(pos_str))
+			{
+				cmainframe::activewnd->m_pCamWnd->camera.origin[0] = position[0];
+				cmainframe::activewnd->m_pCamWnd->camera.origin[1] = position[1];
+				cmainframe::activewnd->m_pCamWnd->camera.origin[2] = position[2];
+
+				cdeclcall(void, 0x42A2D0); // cmainframe::OnCenter2DOnCamera
+			}
+
+			imgui::PopStyleVar(2);
+			imgui::PopStyleColor(4);
+
+			imgui::SameLine();
+			//ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 4.0f);
+
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2.0f, 0.0f));
+			ImGui::InputText("##read_only_post", &msg_post_position, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_NoHorizontalScroll);
+			imgui::PopStyleVar();
+		}
+#endif
+
+		ImGui::PopStyleColor(2);
+		ImGui::PopFont();
+
+		ImGui::PopID();
 	}
 
 	void console_dialog::exec_command(const char* command_line)
@@ -753,6 +924,21 @@ namespace ggui
 
 		// make console-view hotkey open the imgui variant :: CMainFrame::OnViewConsole
 		utils::hook::detour(0x423CB0, console_dialog::on_viewconsole_command, HK_JUMP);
+
+
+		components::command::register_command("console_add"s, [](std::vector<std::string> args)
+		{
+			if (args.size() > 1)
+			{
+				std::string msg;
+				for (auto a = 1u; a < args.size(); a++)
+				{
+					msg += args[a] + " ";
+				}
+
+				game::printf_to_console(msg.c_str());
+			}
+		});
 	}
 
 	console_dialog::~console_dialog()

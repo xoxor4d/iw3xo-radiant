@@ -3,6 +3,34 @@
 
 namespace ImGui
 {
+	bool pre_description_button(const char* label, const ImVec2& button_size, const ImVec4& text_color, const ImVec4& bg_color)
+	{
+		bool clicked = false;
+
+		ImGui::PushFontFromIndex(ggui::E_FONT::BOLD_18PX);
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
+		imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+		ImGui::PushStyleColor(ImGuiCol_Button, bg_color);
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bg_color);
+		ImGui::PushStyleColor(ImGuiCol_Text, text_color);
+		ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_FrameBg));
+
+		if (ImGui::ButtonEx(label, button_size, ImGuiButtonFlags_MouseButtonMiddle))
+		{
+			clicked = true;
+		}
+
+		ImGui::PopStyleColor(4);
+		ImGui::PopStyleVar(2);
+		ImGui::PopFont();
+
+		ImGui::SameLine();
+		// make button slightly overlap the next item (frame rounding)
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 1.0f);
+
+		return clicked;
+	}
+
 	void Toast(const ImGuiToastType_ type, const char* title, const char* content, int time)
 	{
 		ImGuiToast toast(type, time);
@@ -1411,7 +1439,7 @@ namespace ImGui
 		style->AntiAliasedFill = true;
 
 		// Main
-		style->DisplaySafeAreaPadding.y = 18.0f; // fix child menus going out of view
+		style->DisplaySafeAreaPadding.y = 18.0f;
 		style->WindowPadding.x = 5.0f;
 		style->WindowPadding.y = 5.0f;
 		style->PopupRounding = 2.0f;
@@ -1437,15 +1465,11 @@ namespace ImGui
 		// Rounding
 		style->WindowRounding = 2.0f;
 		style->ChildRounding = 2.0f;
-
-		// 04.10.21
-		style->FrameRounding = 1.0f; // 5
+		style->FrameRounding = 1.0f;
 		
 		style->ScrollbarRounding = 2.0f;
 		style->GrabRounding = 2.0f;
 
-		// 04.10.21
-		//style->TabRounding = 2.0f;	
 		style->TabRounding = 6.0f;
 		
 		// Alignment
@@ -1456,12 +1480,7 @@ namespace ImGui
 		colors[ImGuiCol_Text] = ImVec4(1.00f, 1.00f, 1.00f, 0.84f);
 		colors[ImGuiCol_TextDisabled] = ImVec4(0.50f, 0.50f, 0.50f, 0.64f);
 
-		// 04.10.21
-		//colors[ImGuiCol_WindowBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.82f);						
 		colors[ImGuiCol_WindowBg] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);
-
-		// 04.10.21
-		//colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);						
 		colors[ImGuiCol_ChildBg] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);	
 		
 		colors[ImGuiCol_PopupBg] = ImVec4(0.22f, 0.22f, 0.22f, 1.00f);
@@ -1471,9 +1490,6 @@ namespace ImGui
 		colors[ImGuiCol_FrameBgHovered] = ImVec4(0.00f, 0.00f, 0.00f, 0.44f);
 		colors[ImGuiCol_FrameBgActive] = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
 
-		// 04.10.21
-		//colors[ImGuiCol_TitleBg] = ImVec4(0.30f, 0.01f, 0.02f, 0.35f);						
-		//colors[ImGuiCol_TitleBgActive] = ImVec4(0.30f, 0.01f, 0.02f, 0.51f);
 		colors[ImGuiCol_TitleBg] = ImVec4(0.11f, 0.11f, 0.11f, 1.00f);
 		colors[ImGuiCol_TitleBgActive] = ImVec4(0.11f, 0.11f, 0.11f, 1.00f);
 		
@@ -1485,8 +1501,6 @@ namespace ImGui
 		colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.99f, 1.00f, 1.00f, 0.24f);
 		colors[ImGuiCol_CheckMark] = ImVec4(0.59f, 0.59f, 0.59f, 1.00f);
 
-		//colors[ImGuiCol_SliderGrab] = ImVec4(0.59f, 0.59f, 0.59f, 1.00f);
-		//colors[ImGuiCol_SliderGrabActive] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
 		colors[ImGuiCol_SliderGrab] = ImVec4(0.59f, 0.59f, 0.59f, 0.21f);
 		colors[ImGuiCol_SliderGrabActive] = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
 		
@@ -1497,8 +1511,6 @@ namespace ImGui
 		colors[ImGuiCol_HeaderHovered] = ImVec4(1.00f, 1.00f, 1.00f, 0.36f);
 		colors[ImGuiCol_HeaderActive] = ImVec4(1.00f, 1.00f, 1.00f, 0.36f);
 
-		// 04.10.21
-		//colors[ImGuiCol_Separator] = ImVec4(1.00f, 1.00f, 1.00f, 0.09f);						
 		colors[ImGuiCol_Separator] = ImVec4(0.11f, 0.11f, 0.11f, 1.00f);
 		
 		colors[ImGuiCol_SeparatorHovered] = ImVec4(1.00f, 1.00f, 1.00f, 0.09f);
@@ -1507,15 +1519,9 @@ namespace ImGui
 		colors[ImGuiCol_ResizeGripHovered] = ImVec4(1.00f, 1.00f, 1.00f, 0.39f);
 		colors[ImGuiCol_ResizeGripActive] = ImVec4(1.00f, 1.00f, 1.00f, 0.39f);
 
-		// 04.10.21
-		//colors[ImGuiCol_Tab] = ImVec4(1.00f, 1.00f, 1.00f, 0.16f);
-		//colors[ImGuiCol_TabHovered] = ImVec4(0.52f, 0.01f, 0.02f, 0.63f);
-		//colors[ImGuiCol_TabActive] = ImVec4(0.52f, 0.01f, 0.02f, 0.45f);
-		//colors[ImGuiCol_TabUnfocused] = ImVec4(0.42f, 0.00f, 0.02f, 0.00f);
-		//colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.52f, 0.01f, 0.02f, 0.45f);
 		colors[ImGuiCol_Tab] = ImVec4(0.17f, 0.17f, 0.17f, 0.00f);
-		colors[ImGuiCol_TabHovered] = ImVec4(0.49f, 0.20f, 0.20f, 1.00f);
-		colors[ImGuiCol_TabActive] = ImVec4(0.49f, 0.20f, 0.20f, 1.00f);
+		colors[ImGuiCol_TabHovered] = ImVec4(0.16f, 0.20f, 0.21f, 1.00f);
+		colors[ImGuiCol_TabActive] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);
 		colors[ImGuiCol_TabUnfocused] = ImVec4(0.17f, 0.17f, 0.17f, 0.00f);
 		colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.17f, 0.17f, 0.17f, 1.00f);
 		

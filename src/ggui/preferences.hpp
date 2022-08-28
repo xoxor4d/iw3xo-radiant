@@ -23,6 +23,8 @@ namespace ggui
 		int		dev_num_02;
 		float	dev_vec_01[4];
 		float	dev_color_01[4];
+		float	dev_color_02[4];
+		float	dev_color_03[4];
 
 		preferences_dialog()
 		{
@@ -37,6 +39,8 @@ namespace ggui
 			dev_num_02 = 1;
 			utils::vector::set_vec4(dev_vec_01, 1.0f);
 			utils::vector::set_vec4(dev_color_01, 1.0f);
+			utils::vector::set_vec4(dev_color_02, 1.0f);
+			utils::vector::set_vec4(dev_color_03, 1.0f);
 		}
 
 
@@ -67,7 +71,7 @@ namespace ggui
 		const std::string CAT_LIVELINK = "Live Link";
 		const std::string CAT_DEVELOPER = "Developer";
 
-		const float m_child_bg_col[4] = { 0.1f, 0.1f, 0.1f, 0.2f };
+		const float m_child_bg_col[4] = { 0.7f, 0.7f, 0.7f, 0.1f };
 		const float m_child_bg_highlight_col[4] = { 0.7f, 0.7f, 0.7f, 0.1f };
 
 		void  register_child(const std::string& _child_name, const std::function<void()>& _callback);

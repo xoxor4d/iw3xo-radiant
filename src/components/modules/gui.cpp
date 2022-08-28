@@ -19,6 +19,11 @@ namespace components
 		ImGuiIO& io = ImGui::GetIO();
 
 		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_bold_compressed_data, fonts::opensans_bold_compressed_size, 18.0f);
+		ImGui::MergeIconsWithLatestFont(12.0f, false);
+
+		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_bold_compressed_data, fonts::opensans_bold_compressed_size, 17.0f);
+		ImGui::MergeIconsWithLatestFont(12.0f, false);
+
 		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 12.0f);
 		io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 14.0f);
 
@@ -27,7 +32,7 @@ namespace components
 
 		io.FontDefault = io.Fonts->AddFontFromMemoryCompressedTTF(fonts::opensans_regular_compressed_data, fonts::opensans_regular_compressed_size, 18.0f, &font_cfg);
 
-		// Initialize notify
+		// font awesome
 		ImGui::MergeIconsWithLatestFont(18.0f, false);
 	}
 
