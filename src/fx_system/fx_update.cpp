@@ -693,7 +693,8 @@ namespace fx_system
 
 	void FX_UpdateSpotLight(FxCmd* cmd)
 	{
-		if (game::Dvar_FindVar("fx_enable")->current.enabled)
+		if (const auto& fx_enable = game::Dvar_FindVar("fx_enable"); 
+			fx_enable->current.enabled)
 		{
 			auto system = cmd->system;
 			if (!cmd->system || system->isArchiving)
@@ -717,7 +718,8 @@ namespace fx_system
 				FX_RunGarbageCollectionAndPrioritySort(system);
 			}
 
-			if (game::Dvar_FindVar("fx_draw")->current.enabled)
+			if (const auto& fx_draw = game::Dvar_FindVar("fx_draw");
+				fx_draw->current.enabled)
 			{
 				FX_DrawSpotLight(system);
 			}
@@ -1190,7 +1192,8 @@ namespace fx_system
 	// checked :: utils::hook::detour(0x488600, fx_system::FX_UpdateRemaining, HK_JUMP);
 	void FX_UpdateRemaining(FxCmd* cmd)
 	{
-		if (game::Dvar_FindVar("fx_enable")->current.enabled)
+		if (const auto& fx_enable = game::Dvar_FindVar("fx_enable");
+			fx_enable->current.enabled)
 		{
 			FX_Update(cmd->system, false);
 		}
@@ -1199,7 +1202,8 @@ namespace fx_system
 	// checked
 	void FX_EndUpdate(int localClientNum)
 	{
-		if(game::Dvar_FindVar("fx_enable")->current.enabled)
+		if (const auto& fx_enable = game::Dvar_FindVar("fx_enable");
+			fx_enable->current.enabled)
 		{
 			FxSystem* system = FX_GetSystem(localClientNum);
 			if (!system)
@@ -1222,7 +1226,10 @@ namespace fx_system
 			Assert();
 		}
 
-		if (game::Dvar_FindVar("fx_enable")->current.enabled && game::Dvar_FindVar("fx_draw")->current.enabled)
+		const auto& fx_enable = game::Dvar_FindVar("fx_enable");
+		const auto& fx_draw = game::Dvar_FindVar("fx_draw");
+
+		if (fx_enable && fx_enable->current.enabled && fx_draw && fx_draw->current.enabled)
 		{
 			FX_SortEffects(cmd->system); // todo: check!
 			FX_DrawNonSpriteElems(cmd->system);

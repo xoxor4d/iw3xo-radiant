@@ -125,7 +125,7 @@ namespace fx_system
 	{
 		//utils::hook::call<void(__cdecl)(FxDrawState*)>(0x48D2D0)(draw);
 
-		if (game::Dvar_FindVar("fx_drawClouds")->current.enabled)
+		//if (game::Dvar_FindVar("fx_drawClouds")->current.enabled)
 		{
 			FX_GetVelocityAtTime(draw->elemDef, draw->randomSeed, draw->msecLifeSpan, draw->msecElapsed, &draw->orient, draw->elem->baseVel, draw->velDirWorld);
 			Vec3Normalize(draw->velDirWorld);
@@ -788,7 +788,8 @@ namespace fx_system
 
 	bool FX_CullElementForDraw_Sprite(FxDrawState* draw)
 	{
-		if (!game::Dvar_FindVar("fx_cull_elem_draw")->current.enabled)
+		if (const auto& fx_cull_elem_draw = game::Dvar_FindVar("fx_cull_elem_draw"); 
+			!fx_cull_elem_draw->current.enabled)
 		{
 			return false;
 		}
@@ -811,7 +812,8 @@ namespace fx_system
 
 	bool FX_CullElementForDraw_Tail(FxDrawState* draw)
 	{
-		if (game::Dvar_FindVar("fx_cull_elem_draw")->current.enabled)
+		if (const auto& fx_cull_elem_draw = game::Dvar_FindVar("fx_cull_elem_draw");
+			fx_cull_elem_draw->current.enabled)
 		{
 			unsigned int frustumPlaneCount = FX_CullElementForDraw_FrustumPlaneCount(draw);
 
@@ -833,7 +835,8 @@ namespace fx_system
 
 	bool FX_CullElementForDraw_Cloud(FxDrawState* draw)
 	{
-		if (game::Dvar_FindVar("fx_cull_elem_draw")->current.enabled)
+		if (const auto& fx_cull_elem_draw = game::Dvar_FindVar("fx_cull_elem_draw");
+			fx_cull_elem_draw->current.enabled)
 		{
 			const unsigned int frustumPlaneCount = FX_CullElementForDraw_FrustumPlaneCount(draw);
 			if (FX_CullSphere(draw->camera, frustumPlaneCount, draw->posWorld, draw->visState.scale + (draw->visState.size[0] - draw->visState.size[1]) < 0.0f ? draw->visState.size[1] : draw->visState.size[0]))
@@ -847,7 +850,8 @@ namespace fx_system
 
 	bool FX_CullElementForDraw_Light(FxDrawState* draw)
 	{
-		if (game::Dvar_FindVar("fx_cull_elem_draw")->current.enabled)
+		if (const auto& fx_cull_elem_draw = game::Dvar_FindVar("fx_cull_elem_draw");
+			fx_cull_elem_draw->current.enabled)
 		{
 			const unsigned int frustumPlaneCount = FX_CullElementForDraw_FrustumPlaneCount(draw);
 			if (FX_CullSphere(draw->camera, frustumPlaneCount, draw->posWorld, draw->visState.size[0]))

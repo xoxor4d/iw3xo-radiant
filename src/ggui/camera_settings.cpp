@@ -115,8 +115,8 @@ namespace ggui
 		imgui::SameLine();
 		if (imgui::Button("Toggle Show Tris", ImVec2(general_widget_width * 0.5f - 5.0f, 0.0f)))
 		{
-			auto tris = game::Dvar_FindVar("r_showTris");
-			if (tris)
+			if (const auto& tris = game::Dvar_FindVar("r_showTris"); 
+				tris)
 			{
 				dvars::set_int(tris, tris->current.integer ? 0 : 1);
 			}

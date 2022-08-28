@@ -670,7 +670,8 @@ namespace fx_system
 			Assert();
 		}
 
-		if (game::Dvar_FindVar("fx_cull_elem_spawn")->current.enabled)
+		if (const auto& fx_cull_elem_spawn = game::Dvar_FindVar("fx_cull_elem_spawn"); 
+			fx_cull_elem_spawn->current.enabled)
 		{
 			if (FX_CullElemForSpawn(effectFrameWhenPlayed->origin, &system->cameraPrev, elemDef))
 			{
@@ -1028,7 +1029,8 @@ namespace fx_system
 			Assert();
 		}
 
-		if (game::Dvar_FindVar("fx_cull_effect_spawn")->current.enabled && FX_CullEffectForSpawn(remoteDef, &system->cameraPrev, origin))
+		if (const auto& fx_cull_effect_spawn = game::Dvar_FindVar("fx_cull_effect_spawn"); 
+			fx_cull_effect_spawn->current.enabled && FX_CullEffectForSpawn(remoteDef, &system->cameraPrev, origin))
 		{
 			return nullptr;
 		}

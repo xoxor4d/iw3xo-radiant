@@ -12,7 +12,8 @@ namespace fx_system
 
 	void R_ProcessCmd_UpdateFxNonDependent(FxCmd* cmd)
 	{
-		if (game::Dvar_FindVar("fx_enable")->current.enabled)
+		if (const auto& fx_enable = game::Dvar_FindVar("fx_enable"); 
+			fx_enable->current.enabled)
 		{
 			FX_Update(cmd->system, true);
 		}
