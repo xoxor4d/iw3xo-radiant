@@ -123,34 +123,37 @@ namespace components
 		// #NOT_IMPLEMENTED
 		// UNDO
 
-		effects::stop();
-
-		const auto editor_effect = fx_system::get_editor_effect();
-
-		fx_system::FxEditorElemDef* elem = &editor_effect->elems[index];
-
-		for (auto i = 0; i < 2; i++)
+		if (fx_system::ed_editor_effect.elemCount != 0)
 		{
-			for (auto x = 0; x < 2; x++)
+			effects::stop();
+
+			const auto editor_effect = fx_system::get_editor_effect();
+
+			fx_system::FxEditorElemDef* elem = &editor_effect->elems[index];
+
+			/*for (auto i = 0; i < 2; i++)
 			{
-				for (auto y = 0; y < 3; y++)
+				for (auto x = 0; x < 2; x++)
 				{
-					 fx_system::FxCurveIterator_FreeRef(elem->velShape[x][y][i]);
+					for (auto y = 0; y < 3; y++)
+					{
+						fx_system::FxCurveIterator_FreeRef(elem->velShape[x][y][i]);
+					}
+
+					fx_system::FxCurveIterator_FreeRef(elem->sizeShape[x][i]);
 				}
 
-				fx_system::FxCurveIterator_FreeRef(elem->sizeShape[x][i]);
-			}
+				fx_system::FxCurveIterator_FreeRef(elem->rotationShape[i]);
+				fx_system::FxCurveIterator_FreeRef(elem->scaleShape[i]);
+				fx_system::FxCurveIterator_FreeRef(elem->color[i]);
+				fx_system::FxCurveIterator_FreeRef(elem->alpha[i]);
+			}*/
 
-			fx_system::FxCurveIterator_FreeRef(elem->rotationShape[i]);
-			fx_system::FxCurveIterator_FreeRef(elem->scaleShape[i]);
-			fx_system::FxCurveIterator_FreeRef(elem->color[i]);
-			fx_system::FxCurveIterator_FreeRef(elem->alpha[i]);
+			memcpy(elem, &editor_effect->elems[index + 1], sizeof(fx_system::FxEditorElemDef) * (--editor_effect->elemCount - index));
+
+			//effects::play();
+			components::effects::apply_changes();
 		}
-
-		memcpy(elem, &editor_effect->elems[index + 1], sizeof(fx_system::FxEditorElemDef) * (--editor_effect->elemCount - index));
-
-		//effects::play();
-		components::effects::apply_changes();
 	}
 
 	bool effects_editor::save_as(bool overwrite_fx_origin)

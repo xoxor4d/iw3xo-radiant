@@ -1160,6 +1160,12 @@ namespace ggui
 				MOD_CHECK_GRAPH(ImGui::CurveEditor("height_graph", curve->keys, curve->keyCount,
 					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
 
+				if (new_count != curve->keyCount)
+				{
+					curve->keyCount = new_count;
+					modified = true;
+				}
+
 				if (ImGui::BeginPopupContextItem("height_graph##bg"))
 				{
 					if (ImGui::MenuItem("Graph 1", 0, !current_graph_height))
