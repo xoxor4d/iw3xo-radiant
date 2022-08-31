@@ -5,7 +5,7 @@
 
 namespace ImGui
 {
-	int CurveEditor(const char* label, float* values, int points_count, const ImVec2& grid_mins, const ImVec2& grid_maxs, const ImVec2& editor_size, ImU32 flags, int* new_count)
+	int CurveEditor(const char* label, fx_system::FxCurve*& curve, const ImVec2& grid_mins, const ImVec2& grid_maxs, const ImVec2& editor_size, ImU32 flags, bool* modified)
 	{
 		enum class StorageValues : ImGuiID
 		{
@@ -18,10 +18,8 @@ namespace ImGui
 			POINT_START_Y
 		};
 
-		if (new_count)
-		{
-			*new_count = points_count;
-		}
+		int new_count = curve->keyCount;
+		bool modified_internal = false;
 
 		int color_vars = 0;
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.21f, 0.21f, 0.21f, 1.0f)); color_vars++;
@@ -200,9 +198,12 @@ namespace ImGui
 		int changed_idx = -1;
 		bool first_point = true;
 
-		for (int point_idx = points_count - 2; point_idx >= 0; --point_idx)
+		float temp_points[32] = {};
+		memcpy(temp_points, curve->keys, sizeof(float[2]) * curve->keyCount);
+
+		for (int point_idx = curve->keyCount - 2; point_idx >= 0; --point_idx)
 		{
-			ImVec2* points = ((ImVec2*)values) + point_idx;
+			ImVec2* points = ((ImVec2*)temp_points) + point_idx;
 			ImVec2  p_prev = points[0];
 			ImVec2  p = points[1];
 			
@@ -303,6 +304,12 @@ namespace ImGui
 						p = ImClamp(v, ImVec2(grid_mins.x, grid_mins.y), ImVec2(grid_maxs.x, grid_maxs.y));
 					}
 
+					if (modified)
+					{
+						*modified = true;
+					}
+
+					modified_internal = true;
 					changed = true;
 				}
 				PopID();
@@ -321,7 +328,7 @@ namespace ImGui
 						p.x = p_prev.x + 0.001f;
 					}
 						
-					if (point_idx < points_count - 2 && p.x >= points[2].x)
+					if (point_idx < curve->keyCount - 2 && p.x >= points[2].x)
 					{
 						p.x = points[2].x - 0.001f;
 					}
@@ -355,14 +362,14 @@ namespace ImGui
 		InvisibleButton(utils::va("%s##bg", label), inner_bb.Max - inner_bb.Min);
 
 		// add new key on double click
-		if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0) && new_count)
+		if (ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0) && curve->keyCount < 32)
 		{
 			const ImVec2 mp = ImGui::GetMousePos();
 			const ImVec2 new_p = invTransform(mp);
 
-			ImVec2* points = (ImVec2*)values;
-			points[points_count] = new_p;
-			++* new_count;
+			ImVec2* points = (ImVec2*)temp_points;
+			points[curve->keyCount] = new_p;
+			++new_count;
 
 			auto compare = [](const void* a, const void* b) -> int
 			{
@@ -371,18 +378,18 @@ namespace ImGui
 				return fa < fb ? -1 : (fa > fb) ? 1 : 0;
 			};
 
-			qsort(values, points_count + 1, sizeof(ImVec2), compare);
+			qsort(temp_points, curve->keyCount + 1, sizeof(ImVec2), compare);
 			
 		}
 
 		// delete key on double click
-		if (hovered_idx > 0 && (hovered_idx + 1 != points_count) && ImGui::IsMouseDoubleClicked(0) && new_count && points_count > 2)
+		if (hovered_idx > 0 && (hovered_idx + 1 != curve->keyCount) && ImGui::IsMouseDoubleClicked(0) && new_count && curve->keyCount > 2)
 		{
 
-			ImVec2* points = (ImVec2*)values;
-			--* new_count;
+			ImVec2* points = (ImVec2*)temp_points;
+			-- new_count;
 
-			for (int j = hovered_idx; j < points_count - 1; ++j)
+			for (int j = hovered_idx; j < curve->keyCount - 1; ++j)
 			{
 				points[j] = points[j + 1];
 			}
@@ -391,6 +398,25 @@ namespace ImGui
 		ImGui::PopStyleVar(style_vars);
 		ImGui::PopStyleColor(color_vars);
 		EndChild();
+
+		if (new_count != curve->keyCount)
+		{
+			fx_system::FxCurveIterator_FreeRef(curve);
+			curve = fx_system::FxCurve_AllocAndCreateWithKeys(temp_points, 1, new_count);
+
+			if (modified)
+			{
+				*modified = true;
+			}
+
+			return 1;
+		}
+
+		if (modified_internal)
+		{
+			memcpy(curve->keys, temp_points, sizeof(float[2])* curve->keyCount);
+			return 1;
+		}
 
 		return changed_idx;
 	}

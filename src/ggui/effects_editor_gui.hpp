@@ -22,7 +22,6 @@ namespace ggui
 	class effects_editor_dialog final : public ggui::ggui_module
 	{
 		ImGradient gradient;
-		int selected_editor_elemdef = 0;
 
 		const char* s_elemTypeNames[11] =
 		{
@@ -168,6 +167,8 @@ namespace ggui
 		bool m_effect_was_modified;
 		bool m_pending_close;
 		bool m_pending_reload;
+		bool m_pending_elem_free;
+		int  m_selected_editor_elemdef;
 
 		effects_editor_dialog()
 		{
@@ -176,13 +177,15 @@ namespace ggui
 			m_effect_was_modified = false;
 			m_pending_close = false;
 			m_pending_reload = false;
+			m_pending_elem_free = false;
+			m_selected_editor_elemdef = -1;
 		}
 
 		// *
 		// public member functions
 
 		bool gui() override;
-
+		void on_open() override;
 
 		// *
 		// asm related

@@ -25,19 +25,24 @@ ImGradient::~ImGradient()
 
 ImGradient::markptr_t ImGradient::addMark(float position, ImColor const color)
 {
-    position = ImClamp(position, 0.0f, 1.0f);
+	if (m_marks.size() < 32)
+	{
+		position = ImClamp(position, 0.0f, 1.0f);
 
-    markptr_t newMark(new ImGradientMark);
-    
-    newMark->position = position;
-    newMark->color[0] = color.Value.x;
-    newMark->color[1] = color.Value.y;
-    newMark->color[2] = color.Value.z;
-    
-    m_marks.push_back(newMark);
-    
-    refreshCache();
-    return newMark;
+		markptr_t newMark(new ImGradientMark);
+
+		newMark->position = position;
+		newMark->color[0] = color.Value.x;
+		newMark->color[1] = color.Value.y;
+		newMark->color[2] = color.Value.z;
+
+		m_marks.push_back(newMark);
+
+		refreshCache();
+		return newMark;
+	}
+
+	return nullptr;
 }
 
 void ImGradient::removeMark(markptr_t mark)
@@ -159,7 +164,10 @@ ImGradient::markptr_t ImGradient::getDragging()
 
 void ImGradient::setSelected(markptr_t mark)
 {
-    m_selectedMark = mark;
+	if (mark)
+	{
+		m_selectedMark = mark;
+	}
 }
 
 void ImGradient::setDragging(markptr_t mark)

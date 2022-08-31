@@ -48,6 +48,7 @@ namespace ImGui
 	bool	Checkbox_FxElemFlag(const char* name, fx_system::FxEditorElemDef* elem, fx_system::FX_ELEM_ flag, bool* result = nullptr);
 	bool	DragFloat2_FxFloatRange(const char* name, fx_system::FxFloatRange* range, float speed, float min, float max, const char* format);
 
+	bool    TabItemEx_Hovered(ImGuiTabBar* tab_bar, const char* label, bool* p_open, ImGuiTabItemFlags flags, bool* is_hovered, ImGuiWindow* docked_window);
 	bool	MenuItemFlags(const char* label, bool selected, bool enabled, ImGuiSelectableFlags flags);
 
 	ImGuiID FindNodeByID(ImGuiID id);
@@ -56,7 +57,7 @@ namespace ImGui
 	void	PopCompactButtonInvBg();
 	void	PushStyleCompact();
 	void	PopStyleCompact();
-	bool	BeginTabItem_SmallGap(const char* label, bool* p_open = nullptr, ImGuiTabItemFlags flags = 0);
+	bool	BeginTabItem_SmallGap(const char* label, const char* tooltip = nullptr, bool* p_open = nullptr, ImGuiTabItemFlags flags = 0);
 	bool	IsItemHoveredDelay(float delay_in_seconds);
 	bool	IsResizing();
 	void	HandleKeyIO(HWND hwnd, UINT key, SHORT zDelta = 0, UINT nChar = 0);

@@ -813,11 +813,17 @@ namespace ImGui
 		ImGui::PopStyleVar(2);
 	}
 
-	bool BeginTabItem_SmallGap(const char* label, bool* p_open, ImGuiTabItemFlags flags)
+	bool BeginTabItem_SmallGap(const char* label, const char* tooltip, bool* p_open, ImGuiTabItemFlags flags)
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(1, 4));
 		const bool result = ImGui::BeginTabItem(label, p_open, flags);
 		ImGui::PopStyleVar();
+
+		if (tooltip)
+		{
+			TT(tooltip);
+		}
+
 		return result;
 	}
 	

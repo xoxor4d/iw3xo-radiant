@@ -1,5 +1,11 @@
 #pragma once
 #include "imgui_internal.h"
+//#include "fx_system/fx_structs.hpp"
+
+namespace fx_system
+{
+	struct FxCurve;
+}
 
 namespace ImGui
 {
@@ -20,7 +26,7 @@ namespace ImGui
 		bool pending_deletion;
 	};
 
-	int		CurveEditor(const char* label, float* values, int points_count, const ImVec2& grid_mins, const ImVec2& grid_maxs, const ImVec2& editor_size, ImU32 flags, int* new_count);
+	int		CurveEditor(const char* label, fx_system::FxCurve*& curve, const ImVec2& grid_mins, const ImVec2& grid_maxs, const ImVec2& editor_size, ImU32 flags, bool* modified = nullptr);
+	//int		CurveEditor(const char* label, float* values, int points_count, const ImVec2& grid_mins, const ImVec2& grid_maxs, const ImVec2& editor_size, ImU32 flags, int* new_count);
 	int		CurveEditorShapes(const char* label, float* values, traildef_shape_s* shapes, int shape_count, const ImVec2& grid_mins, const ImVec2& grid_maxs, const ImVec2& editor_size, ImU32 flags, int* hovered_point);
-
 }

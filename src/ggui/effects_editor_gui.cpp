@@ -12,6 +12,8 @@ namespace ggui
 
 	void effects_editor_dialog::elemdef_elem(fx_system::FxEditorElemDef* elemdef, int row, int* selected_index)
 	{
+		const auto ed_effect = fx_system::get_editor_effect();
+
 		static bool is_renaming = false;
 		static char rename_buf[48] = {};
 		static int remame_index = -1;
@@ -119,10 +121,13 @@ namespace ggui
 						ImGui::CloseCurrentPopup();
 					}
 
-					if (ImGui::MenuItem("Delete segment"))
+					if (ed_effect->elemCount >= 1)
 					{
-						components::effects_editor::editor_delete_segment(selected_editor_elemdef);
-						m_effect_was_modified = true;
+						if (ImGui::MenuItem("Delete segment"))
+						{
+							components::effects_editor::editor_delete_segment(m_selected_editor_elemdef);
+							m_effect_was_modified = true;
+						}
 					}
 
 					ImGui::EndPopup();
@@ -221,25 +226,28 @@ namespace ggui
 		const auto MIN_WINDOW_SIZE = ImVec2(360.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(580.0f, 400.0f);
 
-		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
-		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+		imgui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
+		imgui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+		imgui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-		if (!ImGui::Begin("FX ElemList##window", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar))
+		imgui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+		imgui::PushStyleColor(ImGuiCol_MenuBarBg, imgui::ToImVec4(dvars::gui_window_bg_color->current.vector));
+
+		if (!imgui::Begin("FX ElemList##window", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_MenuBar))
 		{
-			ImGui::PopStyleVar();
-			ImGui::End();
+			imgui::PopStyleVar();
+			imgui::PopStyleColor();
+			imgui::End();
 			return;
 		}
 
-		if (selected_editor_elemdef >= ed_effect->elemCount)
+		if (m_selected_editor_elemdef >= ed_effect->elemCount)
 		{
-			selected_editor_elemdef = ed_effect->elemCount - 1;
+			m_selected_editor_elemdef = ed_effect->elemCount - 1;
 		}
 
 		const ImVec4 toolbar_button_background_active = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector) + ImVec4(0.2f, 0.2f, 0.2f, 0.0f);
-		const ImVec4 toolbar_button_background_hovered = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector) + ImVec4(0.05f, 0.05f, 0.05f, 0.0f);
+		const ImVec4 toolbar_button_background_hovered = ImGui::ToImVec4(dvars::gui_window_bg_color->current.vector);
 		const ImVec2 toolbar_button_size = ImVec2(ImGui::GetFrameHeight() - 5.0f, ImGui::GetFrameHeight() - 5.0f);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 4.0f));
@@ -282,15 +290,18 @@ namespace ggui
 					m_effect_was_modified = true;
 				}
 
-				if (ImGui::MenuItem("Delete selected segment"))
+				if (ed_effect->elemCount >= 1)
 				{
-					components::effects_editor::editor_delete_segment(selected_editor_elemdef);
-					m_effect_was_modified = true;
+					if (ImGui::MenuItem("Delete selected segment"))
+					{
+						components::effects_editor::editor_delete_segment(m_selected_editor_elemdef);
+						m_effect_was_modified = true;
+					}
 				}
 
 				if (ImGui::MenuItem("Duplicate selected segment"))
 				{
-					components::effects_editor::editor_clone_segment(selected_editor_elemdef);
+					components::effects_editor::editor_clone_segment(m_selected_editor_elemdef);
 					m_effect_was_modified = true;
 				}
 
@@ -333,7 +344,7 @@ namespace ggui
 
 			ImGui::SameLine();
 			ImGui::PushID("##seg_delete");
-			ImGui::BeginDisabled(ed_effect->elemCount <= 1);
+			ImGui::BeginDisabled(ed_effect->elemCount < 1 || m_selected_editor_elemdef == -1);
 			{
 				static bool fx_seg_minus_hov = false;
 				if (toolbar_dialog::image_button_label(""
@@ -345,7 +356,7 @@ namespace ggui
 					, &toolbar_button_background_hovered
 					, &toolbar_button_size, 0.985f))
 				{
-					components::effects_editor::editor_delete_segment(selected_editor_elemdef);
+					components::effects_editor::editor_delete_segment(m_selected_editor_elemdef);
 					m_effect_was_modified = true;
 				}
 
@@ -364,7 +375,7 @@ namespace ggui
 				, &toolbar_button_background_hovered
 				, &toolbar_button_size, 0.985f))
 			{
-				components::effects_editor::editor_clone_segment(selected_editor_elemdef);
+				components::effects_editor::editor_clone_segment(m_selected_editor_elemdef);
 				m_effect_was_modified = true;
 			}
 
@@ -373,7 +384,7 @@ namespace ggui
 			const char* reload_fx_modal_str = "Unsaved Changes##fx_reload";
 
 			ImGui::PushID("##reload");
-			ImGui::BeginDisabled(ed_effect->elemCount <= 1);
+			//ImGui::BeginDisabled(ed_effect->elemCount <= 1);
 			{
 				static bool fx_reload_hov = false;
 				if (m_pending_reload || 
@@ -407,7 +418,7 @@ namespace ggui
 
 				// ----------
 
-				ImGui::EndDisabled();
+				//ImGui::EndDisabled();
 			}
 			ImGui::PopID();
 
@@ -450,7 +461,9 @@ namespace ggui
 
 			ImGui::EndMenuBar();
 		}
-		ImGui::PopStyleVar();
+
+		imgui::PopStyleColor();
+		imgui::PopStyleVar();
 
 		/*if (ImGui::Button("Add Segment"))
 			{
@@ -637,6 +650,8 @@ namespace ggui
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(9, 9));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(9, 9));
 
+		imgui::PushStyleColor(ImGuiCol_TableHeaderBg, ImVec4(0.232f, 0.232f, 0.232f, 1.000f));
+
 		if (ImGui::BeginTable("bind_table", 6,
 			ImGuiTableFlags_Resizable | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoBordersInBody /*| ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersOuterH*/))
 		{
@@ -656,7 +671,7 @@ namespace ggui
 				ImGui::PushID(row);
 				ImGui::TableNextRow();
 
-				elemdef_elem(&ed_effect->elems[row], row, &selected_editor_elemdef);
+				elemdef_elem(&ed_effect->elems[row], row, &m_selected_editor_elemdef);
 
 				// row
 				ImGui::PopID();
@@ -664,10 +679,11 @@ namespace ggui
 
 			ImGui::EndTable();
 		}
-		ImGui::PopStyleVar(4);
+		imgui::PopStyleVar(4);
+		imgui::PopStyleColor();
 
-		ImGui::PopStyleVar(); // WindowPadding
-		ImGui::End();
+		imgui::PopStyleVar(); // WindowPadding
+		imgui::End();
 	}
 
 	// ----
@@ -945,7 +961,7 @@ namespace ggui
 									if (const auto	_efx = fx_system::get_editor_effect();
 													_efx)
 									{
-										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->m_selected_editor_elemdef];
 
 										if (const auto  death_elem = fx_system::FX_Register(loc_filepath.c_str());
 														death_elem)
@@ -1032,7 +1048,7 @@ namespace ggui
 									if (const auto	_efx = fx_system::get_editor_effect();
 													_efx)
 									{
-										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->m_selected_editor_elemdef];
 
 										if (const auto  emit_elem = fx_system::FX_Register(loc_filepath.c_str());
 														emit_elem)
@@ -1097,17 +1113,10 @@ namespace ggui
 			static bool current_graph_width = false;
 			ImGui::title_with_seperator(utils::va("Width / Diameter - Graph %d", current_graph_width + 1), false, 0, 2.0f, 8.0f);
 			{
-				int new_count = 0;
-				const auto curve = elem->sizeShape[0][current_graph_width]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+				auto& curve = elem->sizeShape[0][current_graph_width]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
-				MOD_CHECK_GRAPH(ImGui::CurveEditor("width_graph", curve->keys, curve->keyCount,
-					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-				if (new_count != curve->keyCount)
-				{
-					curve->keyCount = new_count;
-					modified = true;
-				}
+				MOD_CHECK_GRAPH(ImGui::CurveEditor("width_graph", curve,
+						ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID)));
 
 				if (ImGui::BeginPopupContextItem("width_graph##bg"))
 				{
@@ -1154,17 +1163,10 @@ namespace ggui
 
 			ImGui::BeginDisabled(!enable_height_graph);
 			{
-				int new_count = 0;
-				const auto curve = elem->sizeShape[1][current_graph_height]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+				auto& curve = elem->sizeShape[1][current_graph_height]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
-				MOD_CHECK_GRAPH(ImGui::CurveEditor("height_graph", curve->keys, curve->keyCount,
-					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-				if (new_count != curve->keyCount)
-				{
-					curve->keyCount = new_count;
-					modified = true;
-				}
+				MOD_CHECK_GRAPH(ImGui::CurveEditor("height_graph", curve,
+					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID)));
 
 				if (ImGui::BeginPopupContextItem("height_graph##bg"))
 				{
@@ -1209,17 +1211,10 @@ namespace ggui
 			const bool is_scale_graph_aval = elem->elemType == fx_system::FX_ELEM_TYPE_CLOUD || elem->elemType == fx_system::FX_ELEM_TYPE_MODEL;
 			ImGui::BeginDisabled(!is_scale_graph_aval);
 			{
-				int new_count = 0;
-				const auto curve = elem->scaleShape[current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+				auto& curve = elem->scaleShape[current_graph_scale]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
-				MOD_CHECK_GRAPH(ImGui::CurveEditor("scale_graph", curve->keys, curve->keyCount,
-					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-				if (new_count != curve->keyCount)
-				{
-					curve->keyCount = new_count;
-					modified = true;
-				}
+				MOD_CHECK_GRAPH(ImGui::CurveEditor("scale_graph", curve,
+					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID)));
 
 				if (ImGui::BeginPopupContextItem("scale_graph##bg")) // BeginPopupContextWindow
 				{
@@ -1368,17 +1363,10 @@ namespace ggui
 
 			ImGui::title_with_seperator(utils::va("Velocity - %s", get_velocity_graph_str(3 * velocity_1_graph + velocity_1_vector)), true, 0, 2.0f, 8.0f);
 			{
-				int new_count = 0;
-				const auto curve = elem->velShape[0][velocity_1_vector][velocity_1_graph]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+				auto& curve = elem->velShape[0][velocity_1_vector][velocity_1_graph]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
-				MOD_CHECK_GRAPH(ImGui::CurveEditor("velocity_1_graph", curve->keys, curve->keyCount,
-					ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-				if (new_count != curve->keyCount)
-				{
-					curve->keyCount = new_count;
-					modified = true;
-				}
+				MOD_CHECK_GRAPH(ImGui::CurveEditor("velocity_1_graph", curve,
+					ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID)));
 
 				if (ImGui::BeginPopupContextItem("velocity_1_graph##bg"))
 				{
@@ -1470,17 +1458,10 @@ namespace ggui
 
 			ImGui::title_with_seperator(utils::va("Velocity 2 - %s", get_velocity_graph_str(3 * velocity_2_graph + velocity_2_vector)), true, 0, 2.0f, 8.0f);
 
-			int new_count = 0;
-			const auto curve = elem->velShape[1][velocity_2_vector][velocity_2_graph]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+			auto& curve = elem->velShape[1][velocity_2_vector][velocity_2_graph]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
-			MOD_CHECK_GRAPH(ImGui::CurveEditor("velocity_2_graph", curve->keys, curve->keyCount,
-				ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-			if (new_count != curve->keyCount)
-			{
-				curve->keyCount = new_count;
-				modified = true;
-			}
+			MOD_CHECK_GRAPH(ImGui::CurveEditor("velocity_2_graph", curve,
+				ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID)));
 
 			if (ImGui::BeginPopupContextItem("velocity_2_graph##bg"))
 			{
@@ -1598,17 +1579,10 @@ namespace ggui
 		{
 			MOD_CHECK(ImGui::DragFloat2_FxFloatRange("Initial Rotation", &elem->initialRotation, 0.1f, -360.0f, 360.0f, "%.2f"));
 
-			int new_count = 0;
-			const auto curve = elem->rotationShape[current_graph_rotation];
+			auto& curve = elem->rotationShape[current_graph_rotation];
 
-			MOD_CHECK_GRAPH(ImGui::CurveEditor("rotation_graph", curve->keys, curve->keyCount,
-				ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-			if (new_count != curve->keyCount)
-			{
-				curve->keyCount = new_count;
-				modified = true;
-			}
+			MOD_CHECK_GRAPH(ImGui::CurveEditor("rotation_graph", curve,
+				ImVec2(0.0f, -0.5f), ImVec2(1.0f, 0.5f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID)));
 
 			if (ImGui::BeginPopupContextItem("rotation_graph##bg"))
 			{
@@ -1759,7 +1733,7 @@ namespace ggui
 										if (const auto	_efx = fx_system::get_editor_effect();
 														_efx)
 										{
-											auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+											auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->m_selected_editor_elemdef];
 
 											if (const auto  impact_elem = fx_system::FX_Register(loc_filepath.c_str());
 															impact_elem)
@@ -1846,53 +1820,108 @@ namespace ggui
 				ImGui::Spacing();
 
 				{
-					std::uint32_t key = 0;
-					for (auto& mark : gradient.getMarks())
+					const auto num_marks = static_cast<int>(gradient.getMarks().size());
+
+					// clear graph and add new keys if keycount does not match num of marks
+					if (elem->color[color_graph_idx]->keyCount != num_marks)
 					{
-						const float* y_offset = &elem->color[color_graph_idx]->keys[key * 4];
-						const float* rgb = &elem->color[color_graph_idx]->keys[key * 4] + 1;
+						gradient.clear();
 
-						mark->position = *y_offset;
-
-						if (key == 0)
+						for (auto m = 0; m < elem->color[color_graph_idx]->keyCount; m++)
 						{
-							mark->position = 0.0f;
-						}
-						else if (key == gradient.getMarks().size() - 1)
-						{
-							mark->position = 1.0f;
-						}
+							const float y_offset = elem->color[color_graph_idx]->keys[m * 4];
+							const float* rgb = &elem->color[color_graph_idx]->keys[m * 4] + 1;
 
-						mark->color[0] = rgb[0];
-						mark->color[1] = rgb[1];
-						mark->color[2] = rgb[2];
-						mark->color[3] = rgb[3];
-						key++;
+							if (m >= 31)
+							{
+								// get color of last key if we have more then 32 keys
+								rgb = &elem->color[color_graph_idx]->keys[(elem->color[color_graph_idx]->keyCount - 1) + 1];
+
+								gradient.addMark(1.0f, ImColor(rgb[0], rgb[1], rgb[2], rgb[3]));
+								break;
+							}
+
+							gradient.addMark(y_offset, ImColor(rgb[0], rgb[1], rgb[2], rgb[3]));
+						}
+					}
+					// only edit existing marks otherwise
+					else
+					{
+						std::uint32_t key = 0;
+						for (const auto& mark : gradient.getMarks())
+						{
+							const float* y_offset = &elem->color[color_graph_idx]->keys[key * 4];
+							const float* rgb = &elem->color[color_graph_idx]->keys[key * 4] + 1;
+
+							mark->position = *y_offset;
+
+							if (key == 0)
+							{
+								mark->position = 0.0f;
+							}
+							else if (key == gradient.getMarks().size() - 1)
+							{
+								mark->position = 1.0f;
+							}
+
+							mark->color[0] = rgb[0];
+							mark->color[1] = rgb[1];
+							mark->color[2] = rgb[2];
+							mark->color[3] = rgb[3];
+							key++;
+						}
 					}
 				}
 
 				if (ImGui::GradientEditor("test_bar", &gradient))
 				{
-					int key_idx = 0;
-					for (auto& mark : gradient.getMarks())
+					const auto num_marks = static_cast<int>(gradient.getMarks().size());
+
+					if (elem->color[color_graph_idx]->keyCount == num_marks)
 					{
-						float* y_offset = &elem->color[color_graph_idx]->keys[key_idx * 4];
-						float* rgb = &elem->color[color_graph_idx]->keys[key_idx * 4] + 1;
+						int key_idx = 0;
+						for (const auto& mark : gradient.getMarks())
+						{
+							float* y_offset = &elem->color[color_graph_idx]->keys[key_idx * 4];
+							float* rgb = &elem->color[color_graph_idx]->keys[key_idx * 4] + 1;
 
-						*y_offset = mark->position;
-						rgb[0] = mark->color[0];
-						rgb[1] = mark->color[1];
-						rgb[2] = mark->color[2];
+							*y_offset = mark->position;
+							rgb[0] = mark->color[0];
+							rgb[1] = mark->color[1];
+							rgb[2] = mark->color[2];
 
-						key_idx++;
+							key_idx++;
+						}
+
+						//elem->color[color_graph_idx]->keyCount = key_idx;
 					}
-
-					if (elem->color[color_graph_idx]->keyCount != key_idx)
+					else
 					{
-						game::printf_to_console("graph keycount changed from [ %d ] to [ %d ]", elem->color[color_graph_idx]->keyCount, key_idx);
-					}
+						// 32 marks
+						float temp_points[128] = {};
 
-					elem->color[color_graph_idx]->keyCount = key_idx;
+						int key_idx = 0;
+						for (const auto& mark : gradient.getMarks())
+						{
+							if (key_idx >= 32)
+							{
+								break;
+							}
+
+							float* y_offset = &temp_points[key_idx * 4];
+							float* rgb = &temp_points[key_idx * 4] + 1;
+
+							*y_offset = mark->position;
+							rgb[0] = mark->color[0];
+							rgb[1] = mark->color[1];
+							rgb[2] = mark->color[2];
+
+							key_idx++;
+						}
+
+						fx_system::FxCurveIterator_FreeRef(elem->color[color_graph_idx]);
+						elem->color[color_graph_idx] = fx_system::FxCurve_AllocAndCreateWithKeys(temp_points, 3, key_idx);
+					}
 
 					modified = true;
 				}
@@ -1908,17 +1937,10 @@ namespace ggui
 		{
 			if (elem && elem->alpha[0] && elem->alpha[0]->keyCount && elem->alpha[1] && elem->alpha[1]->keyCount)
 			{
-				int new_count = 0;
-				const auto curve = elem->alpha[current_graph_alpha]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
+				auto& curve = elem->alpha[current_graph_alpha]; // velShape[VELOCITY_1/2][VECTOR_F/R_U][GRAPH_1/2]
 
-				MOD_CHECK_GRAPH(ImGui::CurveEditor("alpha_graph", curve->keys, curve->keyCount,
-					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &new_count));
-
-				if (new_count != curve->keyCount)
-				{
-					curve->keyCount = new_count;
-					modified = true;
-				}
+				MOD_CHECK_GRAPH(ImGui::CurveEditor("alpha_graph", curve,
+					ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID)));
 
 				if (ImGui::BeginPopupContextItem("alpha_graph##bg"))
 				{
@@ -2096,7 +2118,7 @@ namespace ggui
 						const auto m_selector = GET_GUI(ggui::modelselector_dialog);
 						if (const auto _efx = fx_system::get_editor_effect(); _efx)
 						{
-							auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+							auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->m_selected_editor_elemdef];
 
 							if (const auto  model = game::R_RegisterModel(m_selector->m_preview_model_name.c_str());
 								model && _elem->visualCount < 32)
@@ -2160,7 +2182,7 @@ namespace ggui
 									if (const auto	_efx = fx_system::get_editor_effect();
 													_efx)
 									{
-										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->m_selected_editor_elemdef];
 
 										if (const auto  material = game::Material_RegisterHandle(loc_filepath.c_str(), 0);
 														material && _elem->visualCount < 32)
@@ -2223,7 +2245,7 @@ namespace ggui
 									if (const auto	_efx = fx_system::get_editor_effect();
 													_efx)
 									{
-										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->m_selected_editor_elemdef];
 
 										if (const auto  model = game::R_RegisterModel(loc_filepath.c_str());
 														model && _elem->visualCount < 32)
@@ -2287,7 +2309,7 @@ namespace ggui
 									if (const auto	_efx = fx_system::get_editor_effect();
 													_efx)
 									{
-										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->selected_editor_elemdef];
+										auto* _elem = &_efx->elems[GET_GUI(ggui::effects_editor_dialog)->m_selected_editor_elemdef];
 
 										if (const auto  effect_def = fx_system::FX_Register(loc_filepath.c_str());
 														effect_def && _elem->visualCount < 32)
@@ -2468,7 +2490,6 @@ namespace ggui
 
 			MOD_CHECK_GRAPH(ImGui::CurveEditorShapes("traildef_shape", traildef_point_array, trail_shapes, trail_shapes_count,
 				ImVec2(-1.0f, -1.0f), ImVec2(1.0f, 1.0f), ImVec2(graph_width, graph_height), static_cast<int>(ImGui::CurveEditorFlags::SHOW_GRID), &hovered_point));
-
 
 			bool context_menu_open = ImGui::BeginPopupContextItem("traildef_shape##context");
 
@@ -2806,106 +2827,130 @@ namespace ggui
 		const auto MIN_WINDOW_SIZE = ImVec2(360.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(580.0f, 400.0f);
 
-		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
-		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+		imgui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
+		imgui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+		imgui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		imgui::PushStyleColor(ImGuiCol_WindowBg, imgui::ToImVec4(dvars::gui_menubar_bg_color->current.vector));
+		int pushed_styles = 0;
+		int pushed_colors = 0;
 
-		if (!ImGui::Begin("Effect Properties##window", nullptr, ImGuiWindowFlags_NoCollapse))
+		if (m_selected_editor_elemdef < -1)
 		{
-			imgui::PopStyleColor();
-			ImGui::End();
+			m_selected_editor_elemdef = -1;
+		}
+
+		const bool no_valid_elem = m_selected_editor_elemdef == -1;
+
+		if (!no_valid_elem)
+		{
+			//imgui::PushStyleColor(ImGuiCol_WindowBg, imgui::ToImVec4(dvars::gui_menubar_bg_color->current.vector)); pushed_colors++;
+		}
+
+		if (!imgui::Begin("Effect Properties##window", nullptr, ImGuiWindowFlags_NoCollapse))
+		{
+			//imgui::PopStyleColor(pushed_colors);
+			imgui::End();
 			return false;
 		}
 
-		imgui::PopStyleColor();
+		//imgui::PopStyleColor(pushed_colors); pushed_colors = 0;
 
 		const auto ed_effect = fx_system::get_editor_effect();
 		if (!ed_effect)
 		{
-			ImGui::End();
+			imgui::End();
 			return false;
 		}
 
+		if (m_selected_editor_elemdef == -1)
+		{
+			imgui::SetCursorPosY(imgui::GetContentRegionAvail().y * 0.5f);
+			imgui::PushFontFromIndex(BOLD_18PX);
+			imgui::SetCursorForCenteredText("No Elem Selected.");
+			imgui::TextUnformatted("No Elem Selected.");
+			imgui::PopFont();
+
+			imgui::End();
+			return true;
+		}
+
+		imgui::PushStyleColor(ImGuiCol_TabActive, imgui::ToImVec4(dvars::gui_menubar_bg_color->current.vector)); pushed_colors++;
+		imgui::PushStyleColor(ImGuiCol_TabUnfocusedActive, imgui::ToImVec4(dvars::gui_menubar_bg_color->current.vector)); pushed_colors++;
+
+		imgui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(17.0f, 5.0f)); pushed_styles++;
+
 		if (ImGui::BeginTabBar("##effect_properties_tabs", ImGuiTabBarFlags_None | ImGuiTabBarFlags_FittingPolicyResizeDown))
 		{
-			int pushed_styles = 0;
-
-			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
-			if (ImGui::BeginTabItem_SmallGap("Generation"))
+			if (ImGui::BeginTabItem_SmallGap(ICON_FA_DNA, "Generation"))
 			{
-				imgui::PopStyleVar(); pushed_styles--;
-				tab_generation(&ed_effect->elems[selected_editor_elemdef]);
+				imgui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 5.0f));
+				tab_generation(&ed_effect->elems[m_selected_editor_elemdef]);
+				imgui::PopStyleVar();
+
 				ImGui::EndTabItem();
-
-			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
-
-
-			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
-			if (ImGui::BeginTabItem_SmallGap("Size"))
+			}
+			
+			if (ImGui::BeginTabItem_SmallGap(ICON_FA_RULER, "Size"))
 			{
-				imgui::PopStyleVar(); pushed_styles--;
-				tab_size(&ed_effect->elems[selected_editor_elemdef]);
+				imgui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 5.0f));
+				tab_size(&ed_effect->elems[m_selected_editor_elemdef]);
+				imgui::PopStyleVar();
+
 				ImGui::EndTabItem();
+			}
 
-			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
-
-
-			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
-			if (ImGui::BeginTabItem_SmallGap("Velocity"))
+			if (ImGui::BeginTabItem_SmallGap(ICON_FA_WAVE_SQUARE, "Velocity"))
 			{
-				imgui::PopStyleVar(); pushed_styles--;
-				tab_velocity(&ed_effect->elems[selected_editor_elemdef]);
+				imgui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 5.0f));
+				tab_velocity(&ed_effect->elems[m_selected_editor_elemdef]);
+				imgui::PopStyleVar();
+
 				ImGui::EndTabItem();
+			} 
 
-			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
-
-
-			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
-			if (ImGui::BeginTabItem_SmallGap("Rotation"))
+			if (ImGui::BeginTabItem_SmallGap(ICON_FA_COMPASS, "Rotation"))
 			{
-				imgui::PopStyleVar(); pushed_styles--;
-				tab_rotation(&ed_effect->elems[selected_editor_elemdef]);
+				imgui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 5.0f));
+				tab_rotation(&ed_effect->elems[m_selected_editor_elemdef]);
+				imgui::PopStyleVar();
+
 				ImGui::EndTabItem();
+			}
 
-			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
-
-
-			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
-			if (ImGui::BeginTabItem_SmallGap("Physics"))
+			if (ImGui::BeginTabItem_SmallGap(ICON_FA_ATOM, "Physics"))
 			{
-				imgui::PopStyleVar(); pushed_styles--;
-				tab_physics(&ed_effect->elems[selected_editor_elemdef]);
+				imgui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 5.0f));
+				tab_physics(&ed_effect->elems[m_selected_editor_elemdef]);
+				imgui::PopStyleVar();
+
 				ImGui::EndTabItem();
+			}
 
-			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
-
-
-			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
-			if (ImGui::BeginTabItem_SmallGap("Color"))
+			if (ImGui::BeginTabItem_SmallGap(ICON_FA_PALETTE, "Color"))
 			{
-				imgui::PopStyleVar(); pushed_styles--;
-				tab_color(&ed_effect->elems[selected_editor_elemdef]);
+				imgui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 5.0f));
+				tab_color(&ed_effect->elems[m_selected_editor_elemdef]);
+				imgui::PopStyleVar();
+
 				ImGui::EndTabItem();
+			}
 
-			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
-
-
-			imgui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f)); pushed_styles++;
-			if (ImGui::BeginTabItem_SmallGap("Visuals"))
+			if (ImGui::BeginTabItem_SmallGap(ICON_FA_IMAGES, "Visuals"))
 			{
-				imgui::PopStyleVar(); pushed_styles--;
-				tab_visuals(&ed_effect->elems[selected_editor_elemdef]);
-				ImGui::EndTabItem();
+				imgui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 5.0f));
+				tab_visuals(&ed_effect->elems[m_selected_editor_elemdef]);
+				imgui::PopStyleVar();
 
-			} imgui::PopStyleVar(pushed_styles); pushed_styles = 0;
+				ImGui::EndTabItem();
+			}
 
 			// moved emission to generation
 
 			ImGui::EndTabBar();
 		}
 
+		imgui::PopStyleVar(pushed_styles);
+		imgui::PopStyleColor(pushed_colors);
 		ImGui::End();
 		return true;
 	}
@@ -2914,6 +2959,20 @@ namespace ggui
 	{
 		effect_elemdef_list();
 		return effects_editor_dialog::effect_property_window();
+	}
+
+	void effects_editor_dialog::on_open()
+	{
+		
+		if (const auto	ed_effect = fx_system::get_editor_effect(); 
+						ed_effect && ed_effect->elemCount)
+		{
+			m_selected_editor_elemdef = 0;
+		}
+		else
+		{
+			m_selected_editor_elemdef = -1;
+		}
 	}
 
 	REGISTER_GUI(effects_editor_dialog);

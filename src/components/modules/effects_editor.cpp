@@ -73,7 +73,7 @@ namespace components
 			// #NOT_IMPLEMENTED
 			// UNDO
 
-			effects::stop();
+			effects::stop(); 
 
 			const auto editor_effect = fx_system::get_editor_effect();
 
@@ -114,6 +114,13 @@ namespace components
 
 			//effects::play();
 			components::effects::apply_changes();
+
+			const auto gui = GET_GUI(ggui::effects_editor_dialog);
+
+			if (gui->m_selected_editor_elemdef == -1)
+			{
+				gui->m_selected_editor_elemdef = 0;
+			}
 		}
 	}
 
@@ -123,15 +130,19 @@ namespace components
 		// #NOT_IMPLEMENTED
 		// UNDO
 
-		if (fx_system::ed_editor_effect.elemCount != 0)
+		if (fx_system::ed_editor_effect.elemCount > 0)
 		{
+			const auto gui = GET_GUI(ggui::effects_editor_dialog);
+			gui->m_pending_elem_free = true;
+			gui->m_selected_editor_elemdef--;
+
 			effects::stop();
 
 			const auto editor_effect = fx_system::get_editor_effect();
 
 			fx_system::FxEditorElemDef* elem = &editor_effect->elems[index];
 
-			/*for (auto i = 0; i < 2; i++)
+			for (auto i = 0; i < 2; i++)
 			{
 				for (auto x = 0; x < 2; x++)
 				{
@@ -147,7 +158,7 @@ namespace components
 				fx_system::FxCurveIterator_FreeRef(elem->scaleShape[i]);
 				fx_system::FxCurveIterator_FreeRef(elem->color[i]);
 				fx_system::FxCurveIterator_FreeRef(elem->alpha[i]);
-			}*/
+			}
 
 			memcpy(elem, &editor_effect->elems[index + 1], sizeof(fx_system::FxEditorElemDef) * (--editor_effect->elemCount - index));
 
