@@ -136,19 +136,12 @@ namespace utils
 	bool starts_with(const std::string& haystack, const std::string& needle);
 	bool ends_with(std::string haystack, std::string needle);
 	std::vector<std::string> explode(const std::string& str, char delim);
-	void replace(std::string &string, std::string find, std::string replace);
-	void erase_substring(std::string &base, std::string replace);
+	void replace(std::string &string, const std::string& find, const std::string& replace);
+	bool erase_substring(std::string& base, const std::string& replace);
 
-	// do not use each frame
-	static bool string_contains(const std::string &s1, const std::string s2)
-	{
-		if (s1.find(s2) != std::string::npos) {
-			return true;
-			
-		}
 
-		return false;
-	}
+	bool string_contains(const std::string& s1, const std::string s2);
+	bool string_contains(std::string& s1, const std::string s2, bool erase);
 
 	static bool string_equals(const char* s1, const char* s2)
 	{

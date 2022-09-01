@@ -1483,9 +1483,14 @@ namespace components
 		{
 			if (!d3dbsp::Com_IsBspLoaded() || (d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled))
 			{
-				if (utils::string_contains(state->technique->name, "_outdoor"))
+				std::string tech_name = state->technique->name;
+				if (utils::erase_substring(tech_name, "_outdoor"))
 				{
-					return;
+					if (const auto	tech = Material_RegisterTechnique(tech_name.c_str(), 1);
+						tech)
+					{
+						state->technique = tech;
+					}
 				}
 			}
 		}

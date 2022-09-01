@@ -148,7 +148,8 @@ namespace fx_system
 				}
 
 #ifndef FXEDITOR
-				if (!components::d3dbsp::Com_IsBspLoaded() || (components::d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled))
+				// fixed outdoor sampler issue by replacing '_outdoor' tech with the non outdoor one in renderer::r_setup_pass_surflists
+				/*if (!components::d3dbsp::Com_IsBspLoaded() || (components::d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled))
 				{
 					if (visuals.material->techniqueSet->techniques[0] && utils::string_equals(visuals.material->techniqueSet->techniques[0]->name, "particle_cloud_outdoor"))
 					{
@@ -160,7 +161,7 @@ namespace fx_system
 
 						return;
 					}
-				}
+				}*/
 #endif
 
 #ifdef FXEDITOR // #ENV_DEPENDENT

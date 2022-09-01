@@ -212,7 +212,7 @@ namespace utils
 		return result;
 	}
 
-	void replace(std::string &string, std::string find, std::string replace)
+	void replace(std::string &string, const std::string& find, const std::string& replace)
 	{
 		size_t nPos = 0;
 
@@ -245,13 +245,44 @@ namespace utils
 		return (strstr(haystack.data(), needle.data()) == (haystack.data() + haystack.size() - needle.size()));
 	}
 
-	void erase_substring(std::string &base, std::string replace)
+	bool erase_substring(std::string &base, const std::string& replace)
 	{
-		auto it = base.find(replace.c_str());
-		if (it != std::string::npos)
+		if (const auto it = base.find(replace); 
+			it != std::string::npos)
 		{
 			base.erase(it, replace.size());
+			return true;
 		}
+
+		return false;
+	}
+
+	bool string_contains(const std::string& s1, const std::string s2)
+	{
+		const auto it = s1.find(s2);
+		if (it != std::string::npos)
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	// do not use each frame
+	bool string_contains(std::string& s1, const std::string s2, bool erase)
+	{
+		const auto it = s1.find(s2);
+		if (it != std::string::npos)
+		{
+			if (erase)
+			{
+				s1.erase(it, s2.size());
+			}
+			
+			return true;
+		}
+
+		return false;
 	}
 
 	int is_space(int c)
