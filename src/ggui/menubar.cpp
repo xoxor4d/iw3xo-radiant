@@ -1459,7 +1459,7 @@ namespace ggui
 							{
 								game::texWndGlob_usageFilter = i;
 								game::g_nUpdateBits |= W_TEXTURE;
-								g_texwnd->nPos = 0; // scroll to top
+								g_texwnd->nPos[0].nPos_current = 0; // scroll to top
 							}
 						}
 						else if (game::filter_usage_array[i].index == -1)
@@ -1482,7 +1482,7 @@ namespace ggui
 							{
 								game::texWndGlob_localeFilter = i;
 								game::g_nUpdateBits |= W_TEXTURE;
-								g_texwnd->nPos = 0; // scroll to top
+								g_texwnd->nPos[0].nPos_current = 0; // scroll to top
 							}
 						}
 						else if (game::filter_locale_array[i].index == -1)
@@ -1505,7 +1505,7 @@ namespace ggui
 							{
 								game::texWndGlob_surfaceTypeFilter = i;
 								game::g_nUpdateBits |= W_TEXTURE;
-								g_texwnd->nPos = 0; // scroll to top
+								g_texwnd->nPos[0].nPos_current = 0; // scroll to top
 							}
 						}
 					}

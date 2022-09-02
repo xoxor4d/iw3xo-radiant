@@ -205,6 +205,8 @@ namespace game
 	inline auto Prefab_Leave = reinterpret_cast<void (*)()>(0x42BF80); // CMainFrame::OnPrefabLeave
 	inline auto Drag_MouseUp = reinterpret_cast<void (*)(unsigned int flags)>(0x4802A0);
 
+	void Texwnd_SelectMaterial(int x, int y /*ecx*/);
+
 	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/);
 	void Checkkey_Model(entity_s* ent /*esi*/, const char* key);
 	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/);

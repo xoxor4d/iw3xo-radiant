@@ -334,6 +334,20 @@ namespace game
 		return (DWORD*)game::g_selected_brushes_next() != game::currSelectedBrushes;
 	}
 
+	void Texwnd_SelectMaterial(int x, int y /*ecx*/)
+	{
+		const static uint32_t func_addr = 0x45C520;
+		__asm
+		{
+			pushad;
+			mov		ecx, y;
+			push	x;
+			call	func_addr;
+			add		esp, 4;
+			popad;
+		}
+	}
+
 	void DeleteKey(game::epair_t*& epair /*eax*/, const char* key /*ebx*/)
 	{
 		const static uint32_t func_addr = 0x483720;

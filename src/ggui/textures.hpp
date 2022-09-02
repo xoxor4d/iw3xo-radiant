@@ -42,12 +42,15 @@ namespace ggui
 			m_selected_favourite_str = str;
 		}
 
+		int m_add_to_favourites_index = 0;
+		bool m_open_new_favourite_popup = false;
 
 	private:
 		ImGuiTextFilter	imgui_filter;
 		int				imgui_filter_last_len = 0;
 
-		void toolbar_new();
-		void toolbar(const ImVec2& screenpos);
+		void popup_new_favourite_list();
+		void toolbar();
+		void context_menu();
 	};
 }

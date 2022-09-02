@@ -14,6 +14,14 @@ struct __declspec(align(4)) MaterialIter_t
 	float texwndscale_1p;
 };
 
+struct nPos_s
+{
+	int nPos_current;
+	int nPos_max;
+	int nPos_layered_current;
+	int nPos_layered_max;
+};
+
 struct texwnd_s
 {
 	int textureOffset; //0x0000 
@@ -34,11 +42,10 @@ struct texwnd_s
 	int m_nHeight; //0x10028 
 	int lastButtonDown; //0x1002C 
 	CPoint m_ptDown; //0x10030 
-	bool m_mbuttondown_state; //0x10038 
+	bool m_was_mouse_dragged; //0x10038 
 	bool unk_bool; //0x10039 
 	char z_pad_0x1003A[0x2]; //0x1003A
-	int nPos; //0x1003C 
-	int nPosMax; // (nPos + height < nPos to scroll)
+	nPos_s nPos[3]; // (nPos + height < nPos to scroll) 1: tex, 2: lmap, 3: smoothing
 };
 
 extern texwnd_s* g_texwnd;
@@ -63,6 +70,7 @@ public:
 	static void				apply_favourite(int list);
 	static void				load_favourites();
 
+	static void				select_texture(CPoint point);
 	static void				on_mousebutton_down(UINT nFlags);
 	static void				on_mousebutton_up(UINT nFlags);
 	static void				on_mousemove(UINT nFlags);

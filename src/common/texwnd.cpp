@@ -143,6 +143,12 @@ void ctexwnd::write_favourite_list(int list_id)
 
 void ctexwnd::apply_favourite(int list)
 {
+	if (list >= static_cast<int>(texwnd_vector_of_favourites.size()))
+	{
+		game::printf_to_console("[ERR] ctexwnd::apply_favourite - invalid list");
+		return;
+	}
+
 	const auto texwndglob_textures = reinterpret_cast<game::qtexture_s*>(*(DWORD*)0x25E79A8);
 
 	// hide all
@@ -183,7 +189,7 @@ void ctexwnd::load_favourites()
 	gui->set_favourite_str("");
 	texwnd_vector_of_favourites.clear();
 
-	g_texwnd->nPos = 0; // scroll to top
+	g_texwnd->nPos[0].nPos_current = 0; // scroll to top
 	cdeclcall(void, 0x45B850); // Texture_ShowInuse
 
 	dvars::fs_homepath = game::Dvar_FindVar("fs_homepath");
@@ -247,6 +253,12 @@ void ctexwnd::load_favourites()
 			}
 		}
 	}
+}
+
+void ctexwnd::select_texture(CPoint point)
+{
+	//const auto point = GET_GUI(ggui::texture_dialog)->rtt_get_cursor_pos_cpoint();
+	game::Texwnd_SelectMaterial(point.x, g_texwnd->nPos[game::g_qeglobals->current_edit_layer].nPos_current + point.y);
 }
 
 void ctexwnd::on_mousebutton_down(UINT nFlags)
@@ -508,4 +520,7 @@ void ctexwnd::hooks()
 	// set default selected texture to caulk
 	utils::hook::nop(0x41FC69, 6);
 	utils::hook(0x41FC69, set_default_texture_stub, HOOK_JUMP).install()->quick();
+
+	// disable og context menu
+	utils::hook::nop(0x45CA54, 5);
 }

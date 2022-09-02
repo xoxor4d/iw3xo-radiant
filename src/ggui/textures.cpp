@@ -2,7 +2,7 @@
 
 namespace ggui
 {
-	void texture_dialog::toolbar_new()
+	void texture_dialog::toolbar()
 	{
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(4.0f, 10.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.0f, 4.0f));
@@ -28,7 +28,7 @@ namespace ggui
 			const int curr_len = static_cast<int>(strlen(imgui_filter.InputBuf));
 			if (imgui_filter_last_len != curr_len)
 			{
-				g_texwnd->nPos = 0; // scroll to top
+				g_texwnd->nPos[0].nPos_current = 0; // scroll to top
 			}
 
 			g_texwnd->searchbar_filter = true;
@@ -73,7 +73,7 @@ namespace ggui
 					{
 						game::texWndGlob_usageFilter = i;
 						game::g_nUpdateBits |= W_TEXTURE;
-						g_texwnd->nPos = 0; // scroll to top
+						g_texwnd->nPos[0].nPos_current = 0; // scroll to top
 
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
@@ -114,7 +114,7 @@ namespace ggui
 					{
 						game::texWndGlob_surfaceTypeFilter = i;
 						game::g_nUpdateBits |= W_TEXTURE;
-						g_texwnd->nPos = 0; // scroll to top
+						g_texwnd->nPos[0].nPos_current = 0; // scroll to top
 
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
@@ -180,7 +180,7 @@ namespace ggui
 			{
 				set_favourite_index(0);
 				set_favourite_str("none");
-				g_texwnd->nPos = 0; // scroll to top
+				g_texwnd->nPos[0].nPos_current = 0; // scroll to top
 
 				// Texture_ShowInuse
 				cdeclcall(void, 0x45B850);
@@ -199,7 +199,7 @@ namespace ggui
 					set_favourite_index(fav_idx);
 					set_favourite_str(vec[0]);
 
-					g_texwnd->nPos = 0; // scroll to top
+					g_texwnd->nPos[0].nPos_current = 0; // scroll to top
 
 					ctexwnd::apply_favourite(get_favourite_index() - 1);
 				}
@@ -214,15 +214,22 @@ namespace ggui
 			}
 
 			ImGui::EndCombo();
-		} TT("Custom favourite lists. Add new lists by using the '+' button");
+		}
+		TT(	"Custom favourite lists. Add new lists by using the '+' button\n"
+			"Use the right-click context menu to assign textures.");
 
 		ImGui::SameLine(0.0f, searchbar_spacing);
 
 		if (ImGui::Button("+"))
 		{
-			ImGui::OpenPopup("new_mat_favourite_list");
-		} TT("Create a new favourite list");
+			//ImGui::OpenPopup("new_mat_favourite_list");
+			m_open_new_favourite_popup = true;
 
+		}
+		TT(	"Create a new favourite list\n"
+			"Use the right-click context menu to assign textures.");
+
+#if 0
 		if(!texwnd_vector_of_favourites.empty())
 		{
 			ImGui::SameLine(0.0f, searchbar_spacing);
@@ -235,12 +242,11 @@ namespace ggui
 			}
 
 			ImGui::SameLine(0.0f, searchbar_spacing);
-			static int add_to_favs_idx = 0;
 
 			if (ImGui::Button("Add to:"))
 			{
-				ctexwnd::add_selected_to_favourite_list(add_to_favs_idx);
-				ctexwnd::write_favourite_list(add_to_favs_idx);
+				ctexwnd::add_selected_to_favourite_list(m_add_to_favourites_index);
+				ctexwnd::write_favourite_list(m_add_to_favourites_index);
 			} TT("Adds selected texture to selected favourite list");
 
 			ImGui::SameLine(0.0f, searchbar_spacing);
@@ -249,8 +255,8 @@ namespace ggui
 			{
 				if (ImGui::Button("Del from:"))
 				{
-					ctexwnd::remove_selected_from_favourite_list(add_to_favs_idx);
-					ctexwnd::write_favourite_list(add_to_favs_idx);
+					ctexwnd::remove_selected_from_favourite_list(m_add_to_favourites_index);
+					ctexwnd::write_favourite_list(m_add_to_favourites_index);
 
 					if (get_favourite_index())
 					{
@@ -269,13 +275,13 @@ namespace ggui
 				int fav_idx = 0;
 				for (const auto& vec : texwnd_vector_of_favourites)
 				{
-					if (ImGui::Selectable(vec[0].c_str(), add_to_favs_idx == fav_idx))
+					if (ImGui::Selectable(vec[0].c_str(), m_add_to_favourites_index == fav_idx))
 					{
-						add_to_favs_idx = fav_idx;
+						m_add_to_favourites_index = fav_idx;
 						m_add_selected_to_list_str = vec[0];
 					}
 
-					if (add_to_favs_idx == fav_idx)
+					if (m_add_to_favourites_index == fav_idx)
 					{
 						ImGui::SetItemDefaultFocus();
 					}
@@ -286,9 +292,133 @@ namespace ggui
 				ImGui::EndCombo();
 			} TT("The favourite list to add textures to using the button to the left");
 		}
+#endif
+
+		ImGui::PopStyleVar(2);
+	}
+
+	
+
+	// right click context menu
+	void texture_dialog::context_menu()
+	{
+		ggui::context_menu_style_begin();
+
+		const int  CONTEXT_DELAY = 20;
+		static int context_menu_delay = 0;
+		if (g_texwnd->m_was_mouse_dragged)
+		{
+			context_menu_delay = 0;
+		}
+		else if (context_menu_delay < CONTEXT_DELAY)
+		{
+			context_menu_delay++;
+		}
+
+		if (context_menu_delay >= CONTEXT_DELAY && ImGui::BeginPopupContextItem("context_menu##textures"))
+		{
+			// select texture with 
+			if (imgui::IsMouseReleased(ImGuiMouseButton_Right))
+			{
+				ctexwnd::select_texture(GET_GUI(ggui::texture_dialog)->rtt_get_cursor_pos_cpoint());
+			}
+
+			if (const auto	mat_name = ctexwnd::get_name_for_selection();
+							mat_name)
+			{
+				imgui::PushFontFromIndex(BOLD_17PX);
+				imgui::TextUnformatted(mat_name);
+				imgui::PopFont();
+				imgui::Separator();
+
+				if (!texwnd_vector_of_favourites.empty())
+				{
+					if (imgui::BeginMenu("Add to favourites"))
+					{
+						int count = 0;
+						int fav_idx = 0;
+
+						for (const auto& vec : texwnd_vector_of_favourites)
+						{
+							if (fav_idx != get_favourite_index() - 1)
+							{
+								if (ImGui::MenuItem(vec[0].c_str()))
+								{
+									ctexwnd::add_selected_to_favourite_list(fav_idx);
+									ctexwnd::write_favourite_list(fav_idx);
+								}
+
+								count++;
+							}
+
+							fav_idx++;
+						}
+
+						if (!count)
+						{
+							imgui::TextUnformatted("none");
+						}
+
+						imgui::EndMenu();
+					}
 
 
-		// ---
+					if (imgui::BeginMenu("Delete from favourites"))
+					{
+						int count = 0;
+
+						for (auto l = 0; l < static_cast<int>(texwnd_vector_of_favourites.size()); l++)
+						{
+							for (const auto& str : texwnd_vector_of_favourites[l])
+							{
+								if (utils::string_equals(mat_name, str.c_str()))
+								{
+									if (ImGui::MenuItem(texwnd_vector_of_favourites[l][0].c_str()))
+									{
+										ctexwnd::remove_selected_from_favourite_list(l);
+										ctexwnd::write_favourite_list(l);
+
+										if (l == get_favourite_index() - 1)
+										{
+											ctexwnd::apply_favourite(get_favourite_index() - 1);
+										}
+									}
+
+									count++;
+								}
+							}
+						}
+
+						if (!count)
+						{
+							imgui::TextUnformatted("none");
+						}
+
+						imgui::EndMenu();
+					}
+				}
+
+				imgui::Separator();
+
+				if (ImGui::MenuItem("Create new favourite list"))
+				{
+					m_open_new_favourite_popup = true;
+				}
+			}
+			
+			ImGui::EndPopup();
+		}
+
+		ggui::context_menu_style_end();
+	}
+
+	void texture_dialog::popup_new_favourite_list()
+	{
+		if (m_open_new_favourite_popup)
+		{
+			ImGui::OpenPopup("new_mat_favourite_list");
+			m_open_new_favourite_popup = false;
+		}
 
 		// # new fav list creation popup
 
@@ -298,6 +428,13 @@ namespace ggui
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 5.0f));
 		if (ImGui::BeginPopup("new_mat_favourite_list", ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoMove))
 		{
+			std::string old_fav_list_name;
+
+			if (int i = get_favourite_index(); i && i - 1 < static_cast<int>(texwnd_vector_of_favourites.size()))
+			{
+				old_fav_list_name = texwnd_vector_of_favourites[i - 1][0];
+			}
+
 			const ImGuiStyle& style = ImGui::GetStyle();
 
 			static float label_width = 120.0f;
@@ -315,7 +452,7 @@ namespace ggui
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetColorU32(ImGuiCol_Button));
 
 			bool pressed_enter = false;
-			if(ImGui::InputText("##newfolder", new_list_name, sizeof(new_list_name), ImGuiInputTextFlags_EnterReturnsTrue))
+			if (ImGui::InputText("##newfolder", new_list_name, sizeof(new_list_name), ImGuiInputTextFlags_EnterReturnsTrue))
 			{
 				pressed_enter = true;
 			}
@@ -335,13 +472,13 @@ namespace ggui
 					}
 					else
 					{
-						if (dvars::fs_homepath = game::Dvar_FindVar("fs_homepath"); 
+						if (dvars::fs_homepath = game::Dvar_FindVar("fs_homepath");
 							dvars::fs_homepath)
 						{
 							std::ifstream file;
 
 							std::string dir_path = dvars::fs_homepath->current.string;
-										dir_path += R"(\IW3xRadiant\texture_favourites\)";
+							dir_path += R"(\IW3xRadiant\texture_favourites\)";
 
 							std::filesystem::create_directories(dir_path);
 
@@ -353,7 +490,7 @@ namespace ggui
 
 								ofile.open(file_path);
 
-								if(ofile.is_open())
+								if (ofile.is_open())
 								{
 									ofile << "// texture favourites generated by iw3xo-radiant" << std::endl;
 									ofile << new_list_name << std::endl;
@@ -363,18 +500,21 @@ namespace ggui
 
 								ctexwnd::load_favourites();
 
-								int list_id = 0;
-								for(const auto& list : texwnd_vector_of_favourites)
+								if (!old_fav_list_name.empty())
 								{
-									if(list[0] == new_list_name)
+									int list_id = 0;
+									for (const auto& list : texwnd_vector_of_favourites)
 									{
-										set_favourite_index(list_id + 1); // none = 0
-										set_favourite_str(new_list_name);
-										ctexwnd::apply_favourite(list_id);
-										break;
-									}
+										if (list[0] == old_fav_list_name)
+										{
+											set_favourite_index(list_id + 1);
+											set_favourite_str(old_fav_list_name);
+											ctexwnd::apply_favourite(list_id);
+											break;
+										}
 
-									list_id++;
+										list_id++;
+									}
 								}
 							}
 						}
@@ -399,266 +539,6 @@ namespace ggui
 			ImGui::EndPopup();
 		}
 		ImGui::PopStyleVar();
-
-		ImGui::PopStyleVar(2);
-
-	}
-
-	void texture_dialog::toolbar(const ImVec2& screenpos)
-	{
-		// right side alignment
-		const float RIGHT_OFFSET = 14.0f;
-		static float toolbar_line1_width = 580.0f; // used as first frame estimate
-		//ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line1_width + RIGHT_OFFSET));
-
-		const auto line_one_start = ImVec2(
-			screenpos.x + this->rtt_get_size().x - (toolbar_line1_width + RIGHT_OFFSET),
-			screenpos.y);
-
-		ImGui::SetCursorScreenPos(line_one_start);
-
-		// offset toolbar vertically
-		ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 8.0f);
-
-		static bool texture_toolbar_hidden = false;
-
-		// group all so we can get the actual toolbar width for the next frame
-
-		
-
-		ImGui::BeginGroup();
-		{
-			
-
-			if (texture_toolbar_hidden)
-			{
-				ImGui::PushStyleCompact();
-
-				if (ImGui::Button("<##show_toolbar"))
-				{
-					texture_toolbar_hidden = false;
-				} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-
-				ImGui::PopStyleCompact();
-			}
-			else
-			{
-				ImGui::PushStyleCompact();
-				ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.65f)));
-				if (ImGui::Button("All"))
-				{
-					// Texture_ShowAll
-					cdeclcall(void, 0x45B730);
-				} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state()); TT("Show all textures");
-
-				ImGui::SameLine();
-				if (ImGui::Button("Use"))
-				{
-					// Texture_ShowInuse
-					cdeclcall(void, 0x45B850);
-				} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state()); TT("Show all textures in use");
-
-				ImGui::PopStyleColor();
-				ImGui::PopStyleCompact();
-
-				ImGui::SameLine();
-				ImGui::PushStyleCompact();
-				ImGui::SetNextItemWidth(140.0f);
-
-				const char* combo_usage_preview_str = "Usage: all";
-				if (game::texWndGlob_usageFilter)
-				{
-					combo_usage_preview_str = game::filter_usage_array[game::texWndGlob_usageFilter].name;
-				}
-
-				if (ImGui::BeginCombo("##combo_usage", combo_usage_preview_str, ImGuiComboFlags_HeightLarge))
-				{
-					for (std::uint8_t i = 0; i < static_cast<std::uint8_t>(game::texWndGlob_usageCount); i++)
-					{
-						if (const char* name = game::filter_usage_array[i].name;
-							name)
-						{
-							if (ImGui::Selectable(name, game::texWndGlob_usageFilter == i))
-							{
-								game::texWndGlob_usageFilter = i;
-								game::g_nUpdateBits |= W_TEXTURE;
-								g_texwnd->nPos = 0; // scroll to top
-
-							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-
-							// set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-							if (game::texWndGlob_usageFilter == i)
-							{
-								ImGui::SetItemDefaultFocus();
-							}
-						}
-						else if (game::filter_usage_array[i].index == -1)
-						{
-							SEPERATORV(0.0f);
-						}
-					}
-
-					ImGui::EndCombo();
-				} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-
-				ImGui::PopStyleCompact();
-
-				// ---------
-
-				ImGui::SameLine();
-				ImGui::PushStyleCompact();
-				ImGui::SetNextItemWidth(140.0f);
-
-				const char* combo_surface_preview_str = "Surface: all";
-				if (game::texWndGlob_surfaceTypeFilter)
-				{
-					combo_surface_preview_str = game::filter_surfacetype_array[game::texWndGlob_surfaceTypeFilter].name;
-				}
-
-				if (ImGui::BeginCombo("##combo_surface", combo_surface_preview_str, ImGuiComboFlags_HeightLarge))
-				{
-					for (std::uint8_t i = 0; i < 29; i++) // hardcoded value
-					{
-						if (const char* name = game::filter_surfacetype_array[i].name;
-							name)
-						{
-							if (ImGui::Selectable(name, game::texWndGlob_surfaceTypeFilter == i))
-							{
-								game::texWndGlob_surfaceTypeFilter = i;
-								game::g_nUpdateBits |= W_TEXTURE;
-								g_texwnd->nPos = 0; // scroll to top
-
-							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-
-							// set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-							if (game::texWndGlob_surfaceTypeFilter == i)
-							{
-								ImGui::SetItemDefaultFocus();
-							}
-						}
-						else if (game::filter_surfacetype_array[i].index == -1)
-						{
-							SEPERATORV(0.0f);
-						}
-					}
-
-					ImGui::EndCombo();
-				} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-
-				ImGui::PopStyleCompact();
-
-				// ---------
-
-				ImGui::SameLine();
-				ImGui::PushStyleCompact();
-				ImGui::SetNextItemWidth(80.0f);
-				const auto prefs = game::g_PrefsDlg();
-
-				const std::string combo_zoom_preview = std::to_string(prefs->m_nTextureWindowScale) + "%";
-				if (ImGui::BeginCombo("##combo_zoom", combo_zoom_preview.c_str(), ImGuiComboFlags_HeightLarge))
-				{
-					if (ImGui::Selectable("10%", prefs->m_nTextureWindowScale == 10)) {
-						mainframe_thiscall(void, 0x42AFE0); // CMainFrame::OnTexturesTexturewindowscale10
-					}
-
-					if (ImGui::Selectable("25%", prefs->m_nTextureWindowScale == 25)) {
-						mainframe_thiscall(void, 0x42B040); // CMainFrame::OnTexturesTexturewindowscale25
-					}
-
-					if (ImGui::Selectable("50%", prefs->m_nTextureWindowScale == 50)) {
-						mainframe_thiscall(void, 0x42B060); // CMainFrame::OnTexturesTexturewindowscale50
-					}
-
-					if (ImGui::Selectable("100%", prefs->m_nTextureWindowScale == 100)) {
-						mainframe_thiscall(void, 0x42B000); // CMainFrame::OnTexturesTexturewindowscale100
-					}
-
-					if (ImGui::Selectable("200%", prefs->m_nTextureWindowScale == 200)) {
-						mainframe_thiscall(void, 0x42B020); // CMainFrame::OnTexturesTexturewindowscale200
-					}
-
-					ImGui::EndCombo();
-				} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-
-				ImGui::SameLine();
-				if (!texture_toolbar_hidden)
-				{
-					if (ImGui::Button(">##hide_toolbar"))
-					{
-						texture_toolbar_hidden = true;
-					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-				}
-				ImGui::PopStyleCompact();
-			}
-
-			ImGui::EndGroup();
-		}
-
-		toolbar_line1_width = ImGui::GetItemRectSize().x; // save width for the next frame
-		const float line1_height = ImGui::GetItemRectSize().y;
-
-		// *
-		// line 2
-
-		static float toolbar_line2_width = 220.0f; // used as first frame estimate
-		//ImGui::SameLine(ImGui::GetWindowWidth() - (toolbar_line2_width + RIGHT_OFFSET));
-
-		const auto line_two_start = ImVec2(
-			screenpos.x + this->rtt_get_size().x - (toolbar_line2_width + RIGHT_OFFSET),
-			screenpos.y + line1_height + 12.0f);
-
-		ImGui::SetCursorScreenPos(line_two_start);
-
-		// offset toolbar vertically
-		//ImGui::SetCursorPosY(ImGui::GetCursorPos().y + 28.0f);
-
-		ImGui::BeginGroup();
-		{
-			ImGui::PushStyleCompact();
-
-			if (!texture_toolbar_hidden)
-			{
-				if (dvars::gui_texwnd_draw_scrollpercent && dvars::gui_texwnd_draw_scrollpercent->current.enabled)
-				{
-					const int scroll_percent = (int)((float)(g_texwnd->nPos) / (float)(g_texwnd->nPosMax - g_texwnd->m_nHeight) * 100);
-					if (scroll_percent == 100 || g_texwnd->nPos < g_texwnd->nPosMax - g_texwnd->m_nHeight)
-					{
-						ImGui::Text("%d/100%%", scroll_percent);
-						ImGui::SameLine();
-					}
-				}
-
-				const auto pre_filter_pos = ImGui::GetCursorScreenPos();
-				imgui_filter.Draw("##texture_filter", 230.0f);
-
-				if (!imgui_filter.IsActive())
-				{
-					ImGui::SetCursorScreenPos(ImVec2(pre_filter_pos.x + 12.0f, pre_filter_pos.y + 2.0f));
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
-					ImGui::TextUnformatted("Search ..");
-					ImGui::PopStyleColor();
-
-					g_texwnd->searchbar_filter = false;
-					imgui_filter_last_len = 0;
-				}
-				else
-				{
-					const int curr_len = strlen(imgui_filter.InputBuf);
-					if (imgui_filter_last_len != curr_len)
-					{
-						g_texwnd->nPos = 0; // scroll to top
-					}
-
-					g_texwnd->searchbar_filter = true;
-					imgui_filter_last_len = curr_len;
-				}
-			}
-
-			ImGui::EndGroup();
-		} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-
-		toolbar_line2_width = ImGui::GetItemRectSize().x; // save width for the next frame
-		ImGui::PopStyleCompact();
 	}
 
 	bool texture_dialog::gui()
@@ -735,7 +615,7 @@ namespace ggui
 
 				{
 					ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 6.0f, ImGui::GetCursorPosY() + 6.0f));
-					toolbar_new();
+					texture_dialog::toolbar();
 				}
 
 				ImGui::SetCursorPosY(pre_toolbar_cursor_y + toolbar_height);
@@ -776,8 +656,10 @@ namespace ggui
 
 				this->rtt_set_cursor_pos(ImVec2(io.MousePos.x - cursor_screen_pos.x, io.MousePos.y - cursor_screen_pos.y));
 
-				// overlay toolbar
-				//toolbar(screenpos);
+				// right click context menu
+				texture_dialog::context_menu();
+
+				texture_dialog::popup_new_favourite_list();
 
 				// reset cursorpos and fix tabbar triangle
 				ImGui::SetCursorScreenPos(pre_child_pos);
@@ -805,14 +687,14 @@ namespace ggui
 				const ImRect bb = ImRect(ImMax(outer_rect.Min.x, outer_rect.Max.x - border_size - scrollbar_size), inner_rect.Min.y, outer_rect.Max.x, inner_rect.Max.y);
 				const ImDrawFlags rounding_corners = ImDrawFlags_RoundCornersTopRight | ImDrawFlags_RoundCornersBottomRight;
 
-				ImS64 scroll = g_texwnd->nPos;
+				ImS64 scroll = g_texwnd->nPos[0].nPos_current;
 				const float size_avail = window->InnerRect.Max[ImGuiAxis_Y] - window->InnerRect.Min[ImGuiAxis_Y];
-				const float size_contents = (float)g_texwnd->nPosMax + 110.0f;
+				const float size_contents = (float)g_texwnd->nPos[0].nPos_max + 110.0f;
 
 				ImGui::ScrollbarEx(bb, id, ImGuiAxis_Y, &scroll, static_cast<ImS64>(size_avail), static_cast<ImS64>(size_contents), rounding_corners);
 				//ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
-				g_texwnd->nPos = static_cast<int>(scroll);
+				g_texwnd->nPos[0].nPos_current = static_cast<int>(scroll);
 			}
 		}
 

@@ -164,7 +164,7 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 		}
 
 		// if mouse is inside imgui texture window
-		if(GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
+		if (GET_GUI(ggui::texture_dialog)->rtt_is_hovered())
 		{
 			ctexwnd::on_mousebutton_up(nFlags);
 
@@ -242,7 +242,9 @@ void __fastcall czwnd::on_rbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			ctexwnd::on_mousebutton_down(nFlags);
 
 			// fake left click to unfocus inputtext widgets
-			ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
+			//ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONDOWN);
+
+			ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONDOWN);
 			return;
 		}
 		
@@ -324,7 +326,9 @@ void __fastcall czwnd::on_rbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 			ctexwnd::on_mousebutton_up(nFlags);
 
 			// fake left click to unfocus inputtext widgets
-			ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
+			//ImGui::HandleKeyIO(pThis->GetWindow(), WM_LBUTTONUP);
+
+			ImGui::HandleKeyIO(pThis->GetWindow(), WM_RBUTTONUP);
 			return;
 		}
 		
