@@ -1,4 +1,5 @@
 #include "std_include.hpp"
+//#include "characterkinematic/PxControllerManager.h"
 
 constexpr bool USE_PVD = false; // PhysX Visual Debugger
 constexpr bool USE_CONTACT_CALLBACK = false; // can be used to implement effect spawning on impact
@@ -131,6 +132,12 @@ namespace components
 					}
 
 					physx_impl::run_frame(static_cast<float>(step) * 0.001f);
+
+					/*if (m_character_controller_enabled)
+					{
+						mCCTCamera->update(static_cast<float>(step) * 0.001f);
+					}*/
+
 					m_phys_time_last_update += step;
 
 
@@ -1742,6 +1749,55 @@ namespace components
 		}
 
 		m_static_collision_material = mPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+
+
+		m_manager = PxCreateControllerManager(*mScene);
+
+		ControlledActorDesc desc;
+		desc.mType = PxControllerShapeType::eBOX;
+		desc.mPosition = PxExtendedVec3(0.0, 0.0, 0.0);
+		desc.mSlopeLimit = 0.7f;
+		desc.mContactOffset = 0.05f;
+		desc.mStepOffset = 18.0f;
+		desc.mInvisibleWallHeight = 0.0f;
+		desc.mMaxJumpHeight = 39.0f;
+		desc.mRadius = 15.0f;
+		desc.mHeight = 69.0f;
+		desc.mCrouchHeight = 48.0f;
+		desc.mContactOffset = 0.1f;
+		
+		//desc.mReportCallback = this;
+		//desc.mBehaviorCallback = this;
+
+		m_actor = new(ControlledActor)();
+		m_actor->init(desc, m_manager);
+
+		mCCTCamera = new(SampleCCTCameraController)();
+		mCCTCamera->setControlled(&m_actor, 0, 1);
+		//	mCCTCamera->setFilterData();
+		//mCCTCamera->setFilterCallback(this);
+		mCCTCamera->setGravity(-800.0f);
+
+		//setCameraController(mCCTCamera);
+
+		mCCTCamera->setView(0, 0);
+
+
+		/*physx::PxCapsuleControllerDesc desc;
+		desc.height = 76.0f;
+		desc.climbingMode = physx::PxCapsuleClimbingMode::eEASY;
+		desc.radius = 32.0f;
+		desc.stepOffset = 18.0f;
+		desc.maxJumpHeight = 39.0f;
+		desc.slopeLimit = 0.7f;
+
+		physx::PxController* c = m_manager->createController(desc);*/
+
+
+		command::register_command("camtest"s, [this](const std::vector<std::string>&)
+		{
+			this->m_character_controller_enabled = !this->m_character_controller_enabled;
+		});
 	}
 
 	physx_impl::~physx_impl()

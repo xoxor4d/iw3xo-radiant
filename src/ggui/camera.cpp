@@ -1259,6 +1259,7 @@ namespace ggui
 
 				ImGui::Image(this->rtt_get_texture(), camera_size);
 				this->rtt_set_hovered_state(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
+				this->m_rtt_focused = imgui::IsWindowFocused();
 
 				static bool accepted_dragdrop = false;
 
@@ -1266,30 +1267,34 @@ namespace ggui
 				// needed because there is no mousebutton "up" event in that case ^
 				// gridwindow is fine for whatever reason
 
-				CURSORINFO ci = { sizeof(CURSORINFO) };
-				if (GetCursorInfo(&ci))
+				if (!components::physx_impl::get()->m_character_controller_enabled)
 				{
-					if(ci.cbSize == 0)
+					CURSORINFO ci = { sizeof(CURSORINFO) };
+					if (GetCursorInfo(&ci))
 					{
-						if(cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate != 14) // CTRL + SHIFT + RMB
+						if (ci.cbSize == 0)
 						{
-							if (cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate != 10) // CTRL + RMB
+							if (cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate != 14) // CTRL + SHIFT + RMB
 							{
-								if (cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate != 2
-									&& !cmainframe::activewnd->m_pCamWnd->cursor_visible)
+								if (cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate != 10) // CTRL + RMB
 								{
-									int sw_cur;
-									do
+									if (cmainframe::activewnd->m_pCamWnd->m_nCambuttonstate != 2
+										&& !cmainframe::activewnd->m_pCamWnd->cursor_visible)
 									{
-										sw_cur = ShowCursor(1);
-									} while (sw_cur < 0);
+										int sw_cur;
+										do
+										{
+											sw_cur = ShowCursor(1);
+										} while (sw_cur < 0);
 
-									cmainframe::activewnd->m_pCamWnd->cursor_visible = true;
+										cmainframe::activewnd->m_pCamWnd->cursor_visible = true;
+									}
 								}
 							}
 						}
 					}
 				}
+
 
 				// --------------------
 

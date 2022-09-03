@@ -53,6 +53,19 @@ void cmainframe::routine_processing()
 	{
 		const auto delta = static_cast<float>(oldtime);
 		this->m_pCamWnd->mouse_control(delta); // this is used for the q3 camera mode (0)
+
+		//game::printf_to_console("delta %.4f\n", delta);
+
+		//const auto physx = components::physx_impl::get();
+		//if (physx->m_character_controller_enabled)
+		//{
+		//	physx->mCCTCamera->update(delta);
+		//}
+		//else
+		//{
+		//	// all resets here
+		//	physx->m_cctrl_skip_first_mouse_frame = false;
+		//}
 	}
 
 	if (game::g_nUpdateBits)
@@ -455,7 +468,7 @@ LRESULT __fastcall cmainframe::windowproc(cmainframe* pThis, [[maybe_unused]] vo
 	{
 #ifdef DEBUG_KEYS
 		game::printf_to_console("mainframe wndproc: %s %s", Msg == WM_CHAR ? "WM_CHAR" : Msg == WM_KEYDOWN ? "KEYDOWN" : "KEYUP",
-			ggui::hotkeys::cmdbinds_ascii_to_keystr(wParam).c_str());
+			ggui::hotkey_dialog::cmdbinds_ascii_to_keystr(wParam).c_str());
 #endif
 
 		if (ggui::is_ggui_initialized())
@@ -605,7 +618,7 @@ void on_keydown_intercept(cmainframe* pThis, UINT nChar, UINT nRepCnt, UINT nFla
 void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void* edx, UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 #ifdef DEBUG_KEYS
-	game::printf_to_console("mainframe keydown: %s", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
+	game::printf_to_console("mainframe keydown: %s", ggui::hotkey_dialog::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
 	// there is one "bad" keydown on the first frame ..'O'
@@ -640,7 +653,11 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 		if (const auto	camerawnd = GET_GUI(ggui::camera_dialog);
 						camerawnd->rtt_is_hovered())
 		{
-			on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
+			if (!components::physx_impl::get()->m_character_controller_enabled)
+			{
+				on_keydown_intercept(pThis, nChar, nRepCnt, nFlags);
+			}
+
 			return;
 		}
 
@@ -669,7 +686,7 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 void __stdcall cmainframe::on_keyup(cmainframe* pThis, UINT nChar)
 {
 #ifdef DEBUG_KEYS
-	game::printf_to_console("mainframe keyup: %s", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
+	game::printf_to_console("mainframe keyup: %s", ggui::hotkey_dialog::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
 	if (ggui::is_ggui_initialized())

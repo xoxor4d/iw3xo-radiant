@@ -30,6 +30,12 @@ namespace components
 		physx::PxScene* mScene = nullptr;
 		physx::PxPvd* mPvd = nullptr;
 
+		physx::PxControllerManager* m_manager = nullptr;
+		ControlledActor* m_actor = nullptr;
+		SampleCCTCameraController* mCCTCamera;
+		bool m_character_controller_enabled = false;
+		bool m_cctrl_skip_first_mouse_frame = false;
+
 		bool m_fx_sim_running = false;
 		bool m_effect_is_using_physics = false;
 

@@ -7,8 +7,16 @@ namespace components
 	class renderer : public component
 	{
 	public:
+		float	m_cam_msec = 0.0f;
+		double	m_cam_time = 0.0;
+
+	public:
 		renderer();
 		~renderer();
+
+		static renderer* p_this;
+		static renderer* get() { return p_this; }
+
 		const char*		get_name() override { return "renderer"; };
 		static void		register_dvars();
 

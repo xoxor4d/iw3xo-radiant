@@ -10,8 +10,9 @@ function physx.import()
 
 	filter "configurations:Debug"
 		links { "/debug/PhysX_32" }
-		links { "/debug/PhysXCooking_32" }
+		links { "/debug/PhysXCharacterKinematic_static_32" }
 		links { "/debug/PhysXCommon_32" }
+		links { "/debug/PhysXCooking_32" }
 		links { "/debug/PhysXExtensions_static_32" }
 		links { "/debug/PhysXFoundation_32" }
 		links { "/debug/PhysXPvdSDK_static_32" }
@@ -19,8 +20,9 @@ function physx.import()
 
 	filter "configurations:Release"
 		links { "/profile/PhysX_32" }
-		links { "/profile/PhysXCooking_32" }
+		links { "/profile/PhysXCharacterKinematic_static_32" }
 		links { "/profile/PhysXCommon_32" }
+		links { "/profile/PhysXCooking_32" }
 		links { "/profile/PhysXExtensions_static_32" }
 		links { "/profile/PhysXFoundation_32" }
 		links { "/profile/PhysXPvdSDK_static_32" }
@@ -32,6 +34,7 @@ end
 function physx.includes()
 	includedirs {
 		path.join(physx.source, "include"),
+		path.join(physx.source, "include/characterkinematic"),
 		path.join(physx.source, "include/foundation"),
 		path.join(physx.source, "include/common"),
 		path.join(physx.source, "include/extensions"),

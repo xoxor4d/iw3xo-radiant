@@ -229,20 +229,20 @@ void __fastcall ccamwnd::on_mouse_move(ccamwnd* pThis, [[maybe_unused]] void* ed
 void __stdcall ccamwnd::on_keydown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 #ifdef DEBUG_KEYS
-	game::printf_to_console("cam keydown: %s -> mainframe", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
+	game::printf_to_console("cam keydown: %s -> mainframe", ggui::hotkey_dialog::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
-	// original function :: CMainFrame::OnKeyDown
+	// original (hooked) function -> cmainframe::on_keydown()
 	__on_keydown_cam(nChar, nRepCnt, nFlags);
 }
 
 void __stdcall ccamwnd::on_keyup(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 #ifdef DEBUG_KEYS
-	game::printf_to_console("cam keyup: %s -> mainframe", ggui::hotkeys::cmdbinds_ascii_to_keystr(nChar).c_str());
+	game::printf_to_console("cam keyup: %s -> mainframe", ggui::hotkey_dialog::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
-	// original function :: CMainFrame::OnKeyUp
+	// original (hooked) function -> cmainframe::on_keyup()
 	__on_keyup_cam(nChar, nRepCnt, nFlags);
 }
 
