@@ -53,19 +53,6 @@ void cmainframe::routine_processing()
 	{
 		const auto delta = static_cast<float>(oldtime);
 		this->m_pCamWnd->mouse_control(delta); // this is used for the q3 camera mode (0)
-
-		//game::printf_to_console("delta %.4f\n", delta);
-
-		//const auto physx = components::physx_impl::get();
-		//if (physx->m_character_controller_enabled)
-		//{
-		//	physx->mCCTCamera->update(delta);
-		//}
-		//else
-		//{
-		//	// all resets here
-		//	physx->m_cctrl_skip_first_mouse_frame = false;
-		//}
 	}
 
 	if (game::g_nUpdateBits)

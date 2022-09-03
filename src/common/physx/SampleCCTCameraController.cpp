@@ -173,6 +173,8 @@ void SampleCCTCameraController::input_frame()
 			CPoint point;
 			GetCursorPos(&point);
 
+			//game::printf_to_console("x %d -- y %d", point.x, point.y);
+
 			// use anglespeed
 			cam->camera.angles[1] = cam->camera.angles[1] - static_cast<float>(prefs->m_nAngleSpeed) / 500.0f * static_cast<float>(point.x - cam->m_ptCursor.x);
 			cam->camera.angles[0] = cam->camera.angles[0] - static_cast<float>(prefs->m_nAngleSpeed) / 500.0f * static_cast<float>(point.y - cam->m_ptCursor.y);
@@ -200,6 +202,8 @@ void SampleCCTCameraController::input_frame()
 		SetCursorPos((int)cursor_pos.x, (int)cursor_pos.y);
 		cam->m_ptCursor.x = (int)cursor_pos.x;
 		cam->m_ptCursor.y = (int)cursor_pos.y;
+
+		//game::printf_to_console("x %d -- y %d", cam->m_ptCursor.x, cam->m_ptCursor.y);
 
 		skip_first_mouse_frame = true;
 		SampleCCTCameraController::handle_inputs();
