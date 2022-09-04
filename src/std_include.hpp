@@ -109,10 +109,8 @@
 
 // fix xor define conflicting with inline asm
 #include <PxPhysicsAPI.h>
-#include "extensions/PxExtensionsAPI.h"
-#include "common/physx/SampleCCTJump.hpp"
-#include "common/physx/SampleCCTActor.hpp"
-#include "common/physx/SampleCCTCameraController.hpp"
+#include "common/physx/cct_controller.hpp"
+#include "common/physx/cct_camera.hpp"
 #ifdef xor
 	#undef xor
 #endif

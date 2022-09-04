@@ -241,6 +241,10 @@ namespace ggui
 			ImGui::title_with_seperator("Mouse");
 			ImGui::SliderInt("Camera speed", &prefs->m_nMoveSpeed, 10, 5000);
 			ImGui::SliderInt("Camera angle speed", &prefs->m_nAngleSpeed, 1, 1000);
+			if (imgui::SliderFloat("Camera angle speed (physx movement)", &dvars::physx_camera_sensitivity->current.value, 10.0f, 1000.0f, "%.0f"))
+			{
+				ImClamp(dvars::physx_camera_sensitivity->current.value, 10.0f, 1000.0f);
+			}
 
 
 			// -----------------

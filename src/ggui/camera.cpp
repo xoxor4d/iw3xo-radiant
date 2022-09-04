@@ -473,6 +473,28 @@ namespace ggui
 
 							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 							ImGui::PopID();
+
+							const auto px = components::physx_impl::get();
+
+							static bool hov_movement;
+							if (tb->image_togglebutton("camera_movement"
+								, hov_movement
+								, px->m_character_controller_enabled
+								, "Toggle physx movement"
+								, &toolbar_button_background
+								, &toolbar_button_background_hovered
+								, &toolbar_button_background_active
+								, &toolbar_button_size))
+							{
+								px->m_character_controller_enabled = !px->m_character_controller_enabled;
+
+								if (px->m_character_controller_enabled)
+								{
+									this->rtt_set_focus_state(true);
+									this->rtt_set_hovered_state(true);
+									px->m_cct_camera->enable_cct(true);
+								}
+							}
 						}
 
 						ImGui::PopStyleVar();
@@ -1218,12 +1240,6 @@ namespace ggui
 		//ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::GetColorU32(ImGuiCol_TabUnfocusedActive)); p_colors++;
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ToImVec4(dvars::gui_rtt_padding_color->current.vector)); p_colors++;
 
-		if(this->rtt_is_focus_pending())
-		{
-			ImGui::SetNextWindowFocus();
-			this->rtt_set_focus_state(false);
-		}
-
 		ImGui::Begin("Camera Window##rtt", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 		if(this->rtt_get_texture())
 		{
@@ -1240,6 +1256,12 @@ namespace ggui
 
 			const float frame_height = tabbar_visible ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
 			this->rtt_set_size(ImGui::GetWindowSize() - ImVec2(0.0f, frame_height) - window_padding_both);
+
+			if (this->rtt_is_focus_pending())
+			{
+				ImGui::SetNextWindowFocus();
+				this->rtt_set_focus_state(false);
+			}
 
 			// hack to disable left mouse window movement
 			ImGui::BeginChild("scene_child", ImVec2(camera_size.x, camera_size.y + frame_height) + window_padding_both, false, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);

@@ -1,7 +1,7 @@
 #include "std_include.hpp"
 //#include "characterkinematic/PxControllerManager.h"
 
-constexpr bool USE_PVD = false; // PhysX Visual Debugger
+constexpr bool USE_PVD = true; // PhysX Visual Debugger
 constexpr bool USE_CONTACT_CALLBACK = false; // can be used to implement effect spawning on impact
 
 // fx_system impacts:
@@ -59,6 +59,11 @@ namespace components
 	 */
 	void physx_impl::draw_debug_visualization()
 	{
+		//if (m_character_controller_enabled)
+		{
+			renderer::R_AddLineCmd(1, 4, 3, m_dbgline_ground_trace);
+		}
+
 		const physx::PxRenderBuffer& rb = mScene->getRenderBuffer();
 		for (physx::PxU32 i = 0; i < rb.getNbLines(); i++)
 		{
@@ -1682,6 +1687,14 @@ namespace components
 			/* maxs		*/ FLT_MAX,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "size of culling box in which to draw debug visualizations. 0 disables the culling box");
+
+		dvars::physx_camera_sensitivity = dvars::register_float(
+			/* name		*/ "physx_camera_sensitivity",
+			/* default	*/ 80.0f,
+			/* mins		*/ 0.0f,
+			/* maxs		*/ FLT_MAX,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "camera sensitivity when using physx movement mode");
 	}
 
 	physx_impl::physx_impl()
@@ -1751,48 +1764,38 @@ namespace components
 		m_static_collision_material = mPhysics->createMaterial(0.5f, 0.5f, 0.6f);
 
 
+		// *
+		// character controller
+
 		m_manager = PxCreateControllerManager(*mScene);
 
-		ControlledActorDesc desc;
-		desc.mType = PxControllerShapeType::eBOX;
-		desc.mPosition = PxExtendedVec3(0.0, 0.0, 0.0);
-		desc.mSlopeLimit = 0.7f;
-		desc.mContactOffset = 0.05f;
-		desc.mStepOffset = 18.0f;
-		desc.mInvisibleWallHeight = 0.0f;
-		desc.mMaxJumpHeight = 39.0f;
-		desc.mRadius = 15.0f;
-		desc.mHeight = 69.0f;
-		desc.mCrouchHeight = 48.0f;
-		desc.mContactOffset = 0.1f;
-		
-		//desc.mReportCallback = this;
-		//desc.mBehaviorCallback = this;
+		const bool is_capsule = false;
 
-		m_actor = new(ControlledActor)();
-		m_actor->init(desc, m_manager);
+		physx_cct_controller_desc desc;
+		desc.m_type = is_capsule ? PxControllerShapeType::eCAPSULE : PxControllerShapeType::eBOX;
+		desc.m_position = PxExtendedVec3(0.0, 0.0, 100.0);
+		desc.m_slope_limit = 0.7f;
+		desc.m_contact_offset = 0.05f;
+		desc.m_step_offset = 18.0f;
+		desc.m_invisible_wall_height = 0.0f;
+		desc.m_max_jump_height = 39.0f;
+		desc.m_radius = 15.0f;
+		desc.m_height = 69.0f * (is_capsule ? 0.5f : 1.0f);
+		desc.m_crouch_height = 48.0f * (is_capsule ? 0.5f : 1.0f);
+		desc.m_behavior_callback = nullptr;
 
-		mCCTCamera = new(SampleCCTCameraController)();
-		mCCTCamera->setControlled(&m_actor, 0, 1);
-		//	mCCTCamera->setFilterData();
+		m_cct_controller = new (physx_cct_controller)();
+		m_cct_controller->init(desc, m_manager);
+
+		m_cct_camera = new (physx_cct_camera)();
+		m_cct_camera->set_controlled(m_cct_controller);
+		m_cct_camera->set_gravity(-800.0f);
+
+		//mScene->setCCDMaxPasses(2);
+		//mScene->setFlag(PxSceneFlag::eDISABLE_CCD_RESWEEP, true);
+
+		//mCCTCamera->setFilterData();
 		//mCCTCamera->setFilterCallback(this);
-		mCCTCamera->setGravity(-800.0f);
-
-		//setCameraController(mCCTCamera);
-
-		mCCTCamera->setView(0, 0);
-
-
-		/*physx::PxCapsuleControllerDesc desc;
-		desc.height = 76.0f;
-		desc.climbingMode = physx::PxCapsuleClimbingMode::eEASY;
-		desc.radius = 32.0f;
-		desc.stepOffset = 18.0f;
-		desc.maxJumpHeight = 39.0f;
-		desc.slopeLimit = 0.7f;
-
-		physx::PxController* c = m_manager->createController(desc);*/
-
 
 		command::register_command("camtest"s, [this](const std::vector<std::string>&)
 		{

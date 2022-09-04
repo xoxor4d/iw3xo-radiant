@@ -31,10 +31,12 @@ namespace components
 		physx::PxPvd* mPvd = nullptr;
 
 		physx::PxControllerManager* m_manager = nullptr;
-		ControlledActor* m_actor = nullptr;
-		SampleCCTCameraController* mCCTCamera;
+		physx_cct_controller* m_cct_controller = nullptr;
+		physx_cct_camera* m_cct_camera;
 		bool m_character_controller_enabled = false;
 		bool m_cctrl_skip_first_mouse_frame = false;
+
+		game::GfxPointVertex m_dbgline_ground_trace[2] = {};
 
 		bool m_fx_sim_running = false;
 		bool m_effect_is_using_physics = false;

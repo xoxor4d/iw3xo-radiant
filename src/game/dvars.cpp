@@ -82,6 +82,7 @@ namespace dvars
 	game::dvar_s* bsp_compile_light_custom_cmd = nullptr;
 
 	game::dvar_s* physx_debug_visualization_box_size = nullptr;
+	game::dvar_s* physx_camera_sensitivity = nullptr;
 
 	game::dvar_s* r_draw_bsp = nullptr;
 	game::dvar_s* r_draw_bsp_overwrite_sunlight = nullptr;

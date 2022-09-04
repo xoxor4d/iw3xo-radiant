@@ -32,7 +32,6 @@
 #ifndef SAMPLE_CCT_ACTOR_H
 #define SAMPLE_CCT_ACTOR_H
 
-#include "SampleCCTJump.hpp"
 #include "characterkinematic/PxExtended.h"
 #include "characterkinematic/PxController.h"
 
@@ -48,68 +47,74 @@ namespace physx
 
 using namespace physx;
 
-	struct ControlledActorDesc
+	struct physx_cct_controller_desc
 	{
-										ControlledActorDesc();
+										physx_cct_controller_desc();
 
-		PxControllerShapeType::Enum		mType;
-		PxExtendedVec3					mPosition;
-		float							mSlopeLimit;
-		float							mContactOffset;
-		float							mStepOffset;
-		float							mInvisibleWallHeight;
-		float							mMaxJumpHeight;
-		float							mRadius;
-		float							mHeight;
-		float							mCrouchHeight;
-		float							mProxyDensity;
-		float							mProxyScale;
-		float							mVolumeGrowth;
-		PxUserControllerHitReport*		mReportCallback;
-		PxControllerBehaviorCallback*	mBehaviorCallback;
+		PxControllerShapeType::Enum		m_type;
+		PxExtendedVec3					m_position;
+		float							m_slope_limit;
+		float							m_contact_offset;
+		float							m_step_offset;
+		float							m_invisible_wall_height;
+		float							m_max_jump_height;
+		float							m_radius;
+		float							m_height;
+		float							m_crouch_height;
+		float							m_proxy_density;
+		float							m_proxy_scale;
+		float							m_volume_growth;
+		PxUserControllerHitReport*		m_report_callback;
+		PxControllerBehaviorCallback*	m_behavior_callback;
 	};
 
-	class ControlledActor
+	class physx_cct_controller
 	{
+		class collision_feedback : public PxControllerBehaviorCallback
+		{
 		public:
-													ControlledActor();
-		virtual										~ControlledActor();
+			collision_feedback() = default;
+			// Implements PxControllerBehaviorCallback
+			virtual PxControllerBehaviorFlags getBehaviorFlags(const PxShape& shape, const PxActor& actor);
+			virtual PxControllerBehaviorFlags getBehaviorFlags(const PxController& controller);
+			virtual PxControllerBehaviorFlags getBehaviorFlags(const PxObstacle& obstacle);
+		};
 
-						PxController*				init(const ControlledActorDesc& desc, PxControllerManager* manager);
-						PxExtendedVec3				getFootPosition()	const;
+
+		public:
+													physx_cct_controller();
+		virtual										~physx_cct_controller();
+
+						PxController*				init(const physx_cct_controller_desc& desc, PxControllerManager* manager);
+						PxExtendedVec3				get_foot_position()	const;
 						void						reset();
 						void						teleport(const PxVec3& pos);
 						void						sync();
-						void						tryStandup();
-						void						resizeController(PxReal height);
-						void						resizeStanding()			{ resizeController(mStandingSize);	}
-						void						resizeCrouching()			{ resizeController(mCrouchingSize);	}
-						void						jump(float force)			{ mJump.startJump(force);			}
-						void						addForceAtLocalPos(PxRigidBody& body, const PxVec3& force, const PxVec3& pos, PxForceMode::Enum mode, bool wakeup = true);
-		PX_FORCE_INLINE	PxController*				getController()				{ return mController;				}
+						void						try_standup();
+						void						resize_controller(PxReal height);
+						void						resize_standing()			{ resize_controller(m_standing_size);	}
+						void						resize_crouching()			{ resize_controller(m_crouching_size);	}
+		PX_FORCE_INLINE	PxController*				get_controller()			{ return m_controller; }
 
-						const Jump&                 getJump() const { return mJump; }
 
 		protected:
-						PxControllerShapeType::Enum	mType;
-						Jump						mJump;
+						PxControllerShapeType::Enum	m_type;
 
-						PxExtendedVec3				mInitialPosition;
-						PxVec3						mDelta;
-						bool						mTransferMomentum;
+						PxExtendedVec3				m_initial_position;
+						PxVec3						m_delta;
+						bool						m_transfer_momentum;
 
-						PxController*				mController;
-						PxReal						mStandingSize;
-						PxReal						mCrouchingSize;
-						PxReal						mControllerRadius;
-						bool						mDoStandup;
-						bool						mIsCrouching;
-		friend class SampleCCTCameraController;
+						PxController*				m_controller;
+						PxReal						m_standing_size;
+						PxReal						m_crouching_size;
+						PxReal						m_controller_radius;
+						bool						m_do_standup;
+						bool						m_is_crouching;
+
+						friend class physx_cct_camera;
 
 	private:
-		ControlledActor& operator=(const ControlledActor&);
+		physx_cct_controller& operator=(const physx_cct_controller&);
 	};
-
-	void defaultCCTInteraction(const PxControllerShapeHit& hit);
 
 #endif

@@ -2189,17 +2189,11 @@ namespace components
 		const auto physx = components::physx_impl::get();
 		if (physx->m_character_controller_enabled)
 		{
-			physx->mCCTCamera->update(renderer->m_cam_msec);
+			physx->m_cct_camera->update(renderer->m_cam_msec);
 		}
 		else
 		{
-			// all resets here
-			physx->m_cctrl_skip_first_mouse_frame = false;
-			cmainframe::activewnd->m_pCamWnd->cursor_visible = false;
-
-			int  sw_cur;
-			do { sw_cur = ShowCursor(1); } while (sw_cur < 0);
-
+			physx_cct_camera::reset_enter_controller_parms();
 		}
 
 		if (effects::effect_can_play() || GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic)
