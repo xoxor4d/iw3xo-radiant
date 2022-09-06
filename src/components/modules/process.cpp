@@ -179,6 +179,9 @@ namespace components
 
 		t.join();
 
+		process->m_post_process_callback();
+		process->m_post_process_callback = nullptr;
+
 		ImGui::Toast(
 			pthis->m_kill_thread ? ImGuiToastType_Info : ImGuiToastType_Success,
 			pthis->m_kill_thread ? "Process was killed" : "Process ended successfully", "");

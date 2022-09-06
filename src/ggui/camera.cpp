@@ -480,20 +480,54 @@ namespace ggui
 							if (tb->image_togglebutton("camera_movement"
 								, hov_movement
 								, px->m_character_controller_enabled
-								, "Toggle physx movement"
+								, "Toggle PhysX movement"
 								, &toolbar_button_background
 								, &toolbar_button_background_hovered
 								, &toolbar_button_background_active
 								, &toolbar_button_size))
 							{
-								px->m_character_controller_enabled = !px->m_character_controller_enabled;
 
-								if (px->m_character_controller_enabled)
-								{
-									this->rtt_set_focus_state(true);
-									this->rtt_set_hovered_state(true);
-									px->m_cct_camera->enable_cct(true);
-								}
+								// *
+								// generate static collision and activate movement
+
+								const auto process = components::process::get();
+
+								process->set_indicator(components::process::INDICATOR_TYPE_PROGRESS);
+								process->set_indicator_string("Building Static Collision");
+								process->set_process_type(components::process::PROC_TYPE_GENERIC);
+
+								process->set_thread_callback([]
+									{
+										components::physx_impl::create_static_collision();
+									});
+
+								process->set_progress_callback([]
+									{
+										const auto current = static_cast<float>(components::physx_impl::get()->m_static_brush_count + components::physx_impl::get()->m_static_terrain_count);
+										const auto total = static_cast<float>(components::physx_impl::get()->m_static_brush_estimated_count + components::physx_impl::get()->m_static_terrain_estimated_count);
+										components::process::get()->m_indicator_progress = current / total;
+									});
+
+								// activate movement on process end
+								process->set_post_process_callback([this]
+									{
+										const auto px = components::physx_impl::get();
+										px->m_character_controller_enabled = !px->m_character_controller_enabled;
+
+										if (px->m_character_controller_enabled)
+										{
+											this->rtt_set_focus_state(true);
+											this->rtt_set_hovered_state(true);
+
+											const auto cam_pos = cmainframe::activewnd->m_pCamWnd->camera.origin;
+											//const auto px_cam_pos = PxExtendedVec3(cam_pos[0], cam_pos[1], cam_pos[2]);
+
+											px->m_cct_controller->get_controller()->setPosition({ cam_pos[0], cam_pos[1], cam_pos[2] });
+											px->m_cct_camera->enable_cct(true);
+										}
+									});
+
+								process->create_process();
 							}
 						}
 

@@ -10,6 +10,21 @@ constexpr bool USE_CONTACT_CALLBACK = false; // can be used to implement effect 
 
 namespace components
 {
+	PxControllerBehaviorFlags physx_impl::behavior_feedback::getBehaviorFlags([[maybe_unused]] const PxController& controller)
+	{
+		return PxControllerBehaviorFlag::eCCT_SLIDE;
+	}
+
+	PxControllerBehaviorFlags physx_impl::behavior_feedback::getBehaviorFlags([[maybe_unused]] const PxObstacle& obstacle)
+	{
+		return PxControllerBehaviorFlag::eCCT_SLIDE;
+	}
+
+	PxControllerBehaviorFlags physx_impl::behavior_feedback::getBehaviorFlags([[maybe_unused]] const PxShape& shape, [[maybe_unused]] const PxActor& actor)
+	{
+		return PxControllerBehaviorFlag::eCCT_SLIDE;
+	}
+
 	physx_impl* physx_impl::p_this = nullptr;
 
 	constexpr int m_phys_min_msec_step = 3;	// 11
@@ -876,6 +891,8 @@ namespace components
 	 */
 	void physx_impl::create_static_collision()
 	{
+		game::printf_to_console("[PhysX] Building Static Collision ...");
+
 		const auto phys = components::physx_impl::get();
 		phys->clear_static_collision();
 
@@ -1763,13 +1780,14 @@ namespace components
 
 		m_static_collision_material = mPhysics->createMaterial(0.5f, 0.5f, 0.6f);
 
-
 		// *
 		// character controller
 
 		m_manager = PxCreateControllerManager(*mScene);
 
 		const bool is_capsule = false;
+
+		m_cct_material = mPhysics->createMaterial(0.5f, 0.5f, 0.5f); // not related to movement
 
 		physx_cct_controller_desc desc;
 		desc.m_type = is_capsule ? PxControllerShapeType::eCAPSULE : PxControllerShapeType::eBOX;
@@ -1782,7 +1800,7 @@ namespace components
 		desc.m_radius = 15.0f;
 		desc.m_height = 69.0f * (is_capsule ? 0.5f : 1.0f);
 		desc.m_crouch_height = 48.0f * (is_capsule ? 0.5f : 1.0f);
-		desc.m_behavior_callback = nullptr;
+		desc.m_behavior_callback = new behavior_feedback(); // kinda useless
 
 		m_cct_controller = new (physx_cct_controller)();
 		m_cct_controller->init(desc, m_manager);
@@ -1791,15 +1809,14 @@ namespace components
 		m_cct_camera->set_controlled(m_cct_controller);
 		m_cct_camera->set_gravity(-800.0f);
 
-		//mScene->setCCDMaxPasses(2);
-		//mScene->setFlag(PxSceneFlag::eDISABLE_CCD_RESWEEP, true);
-
-		//mCCTCamera->setFilterData();
-		//mCCTCamera->setFilterCallback(this);
-
 		command::register_command("camtest"s, [this](const std::vector<std::string>&)
 		{
 			this->m_character_controller_enabled = !this->m_character_controller_enabled;
+		});
+
+		command::register_command("camreset"s, [this](const std::vector<std::string>&)
+		{
+			this->m_cct_controller->reset();
 		});
 	}
 

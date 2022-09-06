@@ -48,6 +48,8 @@ physx_cct_camera::physx_cct_camera() :
 	m_fly					(false),
 	m_jumping_timer			(0),
 	direction_up			(0.0f),
+	m_abs_force				(PxVec3(0.0f, 0.0f, 0.0f)),
+	m_surface_normal		(PxVec3(0.0f, 0.0f, 0.0f)),
 	m_running_speed			(285.0f),
 	m_walking_speed			(190.0f),
 	m_gravity				(-800.0f)
@@ -205,49 +207,79 @@ void physx_cct_camera::ground_trace()
 {
 	//PxRaycastHit hitInfo;
 
-	PxVec3 from (toVec3(m_ccts->get_foot_position()));
+	const PxVec3 center (toVec3(m_ccts->get_foot_position()));
 	//PxVec3 to	(from.x, from.y, from.z - (m_ccts->m_standing_size * 2.0f));
 
 	const auto px = components::physx_impl::get();
 
 	PxRaycastBuffer hit;
-	if (px->mScene->raycast(
-		from, 
-		PxVec3(0.0f, 0.0f, -1.0f), 
-		m_ccts->m_standing_size * 2.0f, 
-		hit,
-		PxHitFlag::ePOSITION | PxHitFlag::eNORMAL))
+
+	const float rad = m_ccts->m_controller_radius;
+
+	const PxVec3 from[4] =
 	{
-		px->m_dbgline_ground_trace[0].xyz[0] = from.x;
-		px->m_dbgline_ground_trace[0].xyz[1] = from.y;
-		px->m_dbgline_ground_trace[0].xyz[2] = from.z;
-		px->m_dbgline_ground_trace[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_BLUE);
+		{ center.x - rad, center.y + rad, center.z },
+		{ center.x + rad, center.y + rad, center.z },
+		{ center.x + rad, center.y - rad, center.z },
+		{ center.x - rad, center.y - rad, center.z }
+	};
 
-		px->m_dbgline_ground_trace[1].xyz[0] = hit.block.position.x;
-		px->m_dbgline_ground_trace[1].xyz[1] = hit.block.position.y;
-		px->m_dbgline_ground_trace[1].xyz[2] = hit.block.position.z;
-		px->m_dbgline_ground_trace[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_BLUE);
+	bool hit_slope = false;
+	bool hit_something = false;
 
-		if (hit.block.normal.z < 0.7f && hit.block.normal.z > 0.0f)
+	for (auto edge = 0; edge < 4; edge++)
+	{
+		if (px->mScene->raycast(
+			from[edge],
+			PxVec3(0.0f, 0.0f, -1.0f),
+			4.0f, //m_ccts->m_standing_size,
+			hit,
+			PxHitFlag::ePOSITION | PxHitFlag::eNORMAL))
 		{
-			m_ground_type = GROUND_TYPE_SLOPE;
-			px->m_dbgline_ground_trace[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
-		}
-		else
-		{
-			m_ground_type = GROUND_TYPE_GROUND;
+			hit_something = true;
+
+			if (hit.block.normal.z < 0.7f && hit.block.normal.z > 0.0f)
+			{
+				m_surface_normal = hit.block.normal;
+				m_ground_type = GROUND_TYPE_SLOPE;
+
+				px->m_dbgline_ground_trace[0].xyz[0] = from[edge].x;
+				px->m_dbgline_ground_trace[0].xyz[1] = from[edge].y;
+				px->m_dbgline_ground_trace[0].xyz[2] = from[edge].z;
+
+				px->m_dbgline_ground_trace[1].xyz[0] = hit.block.position.x;
+				px->m_dbgline_ground_trace[1].xyz[1] = hit.block.position.y;
+				px->m_dbgline_ground_trace[1].xyz[2] = hit.block.position.z;
+
+				px->m_dbgline_ground_trace[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
+				px->m_dbgline_ground_trace[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
+
+				hit_slope = true;
+
+				break;
+			}
 		}
 	}
-	else
+
+	if (hit_something && !hit_slope)
 	{
-		px->m_dbgline_ground_trace[0].xyz[0] = from.x;
-		px->m_dbgline_ground_trace[0].xyz[1] = from.y;
-		px->m_dbgline_ground_trace[0].xyz[2] = from.z;
+		m_ground_type = GROUND_TYPE_GROUND;
+	}
+	else if (!hit_something)
+	{
+		m_ground_type = GROUND_TYPE_NONE;
+	}
+
+	if (m_ground_type != GROUND_TYPE_SLOPE)
+	{
+		px->m_dbgline_ground_trace[0].xyz[0] = center.x;
+		px->m_dbgline_ground_trace[0].xyz[1] = center.y;
+		px->m_dbgline_ground_trace[0].xyz[2] = center.z;
 		px->m_dbgline_ground_trace[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREY);
 
-		px->m_dbgline_ground_trace[1].xyz[0] = from.x;
-		px->m_dbgline_ground_trace[1].xyz[1] = from.y;
-		px->m_dbgline_ground_trace[1].xyz[2] = from.z + m_ccts->m_standing_size * 2.0f;
+		px->m_dbgline_ground_trace[1].xyz[0] = center.x;
+		px->m_dbgline_ground_trace[1].xyz[1] = center.y;
+		px->m_dbgline_ground_trace[1].xyz[2] = center.z - m_ccts->m_standing_size;
 		px->m_dbgline_ground_trace[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREY);
 	}
 }
@@ -262,6 +294,48 @@ void physx_cct_camera::reset_enter_controller_parms()
 
 	int  sw_cur;
 	do { sw_cur = ShowCursor(1); } while (sw_cur < 0);
+}
+
+void physx_cct_camera::do_slopes(PxReal dtime)
+{
+	const auto cct_gravity = 190.0f;
+	const auto slope_limit = 0.7f;
+	const auto cct_slope_slide_slowdown_factor = 0.99f;
+
+	if (m_ground_type == GROUND_TYPE_SLOPE)
+	{
+		game::vec3_t normal = { m_surface_normal.x, m_surface_normal.y, m_surface_normal.z };
+		//game::printf_to_console("nrml %.1f, %.1f, %.1f\n", normal[0], normal[1], normal[2]);
+
+		game::vec3_t ang = {};
+		game::vectoangles(normal, ang);
+		//game::printf_to_console("angl %.1f, %.1f, %.1f\n", ang[0], ang[1], ang[2]);
+
+		game::vec3_t fwd = {};
+		game::vec3_t rt = {};
+		game::vec3_t up = {};
+		utils::vector::angle_vectors(ang, fwd, rt, up); 
+
+		// gravity draws him down the slope
+		m_abs_force.x = fwd[0] * cct_gravity * slope_limit;
+		m_abs_force.y = fwd[1] * cct_gravity * slope_limit;
+		m_abs_force.z = 0.0f;
+
+		//game::printf_to_console("do slope %.1f, %.1f\n", m_abs_force.x, m_abs_force.y);
+	}
+	else
+	{
+		// not of much use with current (infinite) friction
+		// reset absolute forces slowly (don't stop right after the slope ends)
+		m_abs_force.x -= (m_abs_force.x * cct_slope_slide_slowdown_factor * dtime);
+		m_abs_force.y -= (m_abs_force.y * cct_slope_slide_slowdown_factor * dtime);
+		m_abs_force.z = 0;
+
+		/*if (m_abs_force.x > 0.0f || m_abs_force.y > 0.0f)
+		{
+			game::printf_to_console("do slope slowdown %.3f, %.3f\n", m_abs_force.x, m_abs_force.y);
+		}*/
+	}
 }
 
 void physx_cct_camera::update(PxReal dtime)
@@ -280,7 +354,8 @@ void physx_cct_camera::update(PxReal dtime)
 	// update CCT
 	if (m_cct_enabled)
 	{
-		ground_trace();
+		physx_cct_camera::ground_trace();
+		physx_cct_camera::do_slopes(dtime);
 
 		const PxControllerFilters filters (m_filter_data, m_filter_callback, m_cct_filter_callback);
 
@@ -306,7 +381,6 @@ void physx_cct_camera::update(PxReal dtime)
 		
 
 		const PxU32 flags = m_ccts->m_controller->move(disp, 0.0f, dtime, filters, m_obstacle_context);
-
 
 		if (flags & PxControllerCollisionFlag::eCOLLISION_DOWN && m_ground_type != GROUND_TYPE_SLOPE)
 		{
@@ -337,6 +411,12 @@ void physx_cct_camera::update(PxReal dtime)
 				m_ground_type = GROUND_TYPE_NONE;
 			}
 		}
+
+
+		m_abs_force *= dtime;
+		m_ccts->m_controller->move(m_abs_force, 0.0f, dtime, filters, m_obstacle_context);
+
+
 
 		// update camera
 		if (const auto cct = m_ccts->m_controller; cct)

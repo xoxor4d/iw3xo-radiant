@@ -70,6 +70,7 @@ class physx_cct_camera
 						void	key_inputs();
 						void	mouse_input();
 						void	ground_trace();
+						void	do_slopes(PxReal dtime);
 
 						physx_cct_camera& operator=(const physx_cct_camera&);
 						PxObstacleContext*			m_obstacle_context;		// User-defined additional obstacles
@@ -87,6 +88,8 @@ class physx_cct_camera
 						bool						m_fly;
 						int							m_jumping_timer;
 						PxReal						direction_up;
+						PxVec3						m_abs_force;
+						PxVec3						m_surface_normal;
 
 						PxReal						m_running_speed;
 						PxReal						m_walking_speed;

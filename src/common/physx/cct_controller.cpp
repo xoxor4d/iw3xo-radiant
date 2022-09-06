@@ -35,21 +35,6 @@
 
 using namespace physx;
 
-PxControllerBehaviorFlags physx_cct_controller::collision_feedback::getBehaviorFlags(const PxShape& shape, const PxActor& actor)
-{
-	return PxControllerBehaviorFlag::eCCT_SLIDE;
-}
-
-PxControllerBehaviorFlags physx_cct_controller::collision_feedback::getBehaviorFlags(const PxController&)
-{
-	return PxControllerBehaviorFlags(0);
-}
-
-PxControllerBehaviorFlags physx_cct_controller::collision_feedback::getBehaviorFlags(const PxObstacle&)
-{
-	return PxControllerBehaviorFlag::eCCT_SLIDE;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 
 physx_cct_controller_desc::physx_cct_controller_desc() :
@@ -154,14 +139,14 @@ PxController* physx_cct_controller::init(const physx_cct_controller_desc& desc, 
 
 	c_desc->density				= desc.m_proxy_density;
 	c_desc->scaleCoeff			= 1.0f; //desc.m_proxy_scale;
-	c_desc->material			= components::physx_impl::get()->m_static_collision_material;
+	c_desc->material			= components::physx_impl::get()->m_cct_material;
 	c_desc->position			= desc.m_position;
 	c_desc->slopeLimit			= desc.m_slope_limit;
 	c_desc->contactOffset		= desc.m_contact_offset;
 	c_desc->stepOffset			= desc.m_step_offset;
 	c_desc->invisibleWallHeight	= desc.m_invisible_wall_height;
 	c_desc->maxJumpHeight		= desc.m_max_jump_height;
-	c_desc->nonWalkableMode		= PxControllerNonWalkableMode::ePREVENT_CLIMBING_AND_FORCE_SLIDING;
+	c_desc->nonWalkableMode		= PxControllerNonWalkableMode::ePREVENT_CLIMBING;
 	c_desc->reportCallback		= desc.m_report_callback;
 	c_desc->behaviorCallback	= desc.m_behavior_callback;
 	c_desc->volumeGrowth		= 1.0f; //desc.m_volume_growth;

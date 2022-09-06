@@ -70,17 +70,6 @@ using namespace physx;
 
 	class physx_cct_controller
 	{
-		class collision_feedback : public PxControllerBehaviorCallback
-		{
-		public:
-			collision_feedback() = default;
-			// Implements PxControllerBehaviorCallback
-			virtual PxControllerBehaviorFlags getBehaviorFlags(const PxShape& shape, const PxActor& actor);
-			virtual PxControllerBehaviorFlags getBehaviorFlags(const PxController& controller);
-			virtual PxControllerBehaviorFlags getBehaviorFlags(const PxObstacle& obstacle);
-		};
-
-
 		public:
 													physx_cct_controller();
 		virtual										~physx_cct_controller();

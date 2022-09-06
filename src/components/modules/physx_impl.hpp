@@ -4,6 +4,16 @@ namespace components
 {
 	class physx_impl : public component
 	{
+		class behavior_feedback : public PxControllerBehaviorCallback
+		{
+		public:
+			behavior_feedback() = default;
+			// Implements PxControllerBehaviorCallback
+			virtual PxControllerBehaviorFlags getBehaviorFlags(const PxShape& shape, const PxActor& actor) override;
+			virtual PxControllerBehaviorFlags getBehaviorFlags(const PxController& controller) override;
+			virtual PxControllerBehaviorFlags getBehaviorFlags(const PxObstacle& obstacle) override;
+		};
+
 		class collision_feedback : public physx::PxSimulationEventCallback
 		{
 		public:
@@ -35,6 +45,8 @@ namespace components
 		physx_cct_camera* m_cct_camera;
 		bool m_character_controller_enabled = false;
 		bool m_cctrl_skip_first_mouse_frame = false;
+
+		physx::PxMaterial* m_cct_material = nullptr;
 
 		game::GfxPointVertex m_dbgline_ground_trace[2] = {};
 
