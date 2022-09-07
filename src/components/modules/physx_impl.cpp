@@ -1794,7 +1794,7 @@ namespace components
 		desc.m_position = PxExtendedVec3(0.0, 0.0, 100.0);
 		desc.m_slope_limit = 0.7f;
 		desc.m_contact_offset = 0.05f;
-		desc.m_step_offset = 18.0f;
+		desc.m_step_offset = 0.0f;
 		desc.m_invisible_wall_height = 0.0f;
 		desc.m_max_jump_height = 39.0f;
 		desc.m_radius = 15.0f;
@@ -1807,7 +1807,7 @@ namespace components
 
 		m_cct_camera = new (physx_cct_camera)();
 		m_cct_camera->set_controlled(m_cct_controller);
-		m_cct_camera->set_gravity(-800.0f);
+		//m_cct_camera->set_gravity(-800.0f);
 
 		command::register_command("camtest"s, [this](const std::vector<std::string>&)
 		{

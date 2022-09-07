@@ -2189,7 +2189,7 @@ namespace components
 		const auto physx = components::physx_impl::get();
 		if (physx->m_character_controller_enabled)
 		{
-			physx->m_cct_camera->update(0.008f /*renderer->m_cam_msec*/);
+			physx->m_cct_camera->update(renderer->m_cam_msec);
 		}
 		else
 		{

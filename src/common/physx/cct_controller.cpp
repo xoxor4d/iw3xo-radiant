@@ -117,11 +117,11 @@ PxController* physx_cct_controller::init(const physx_cct_controller_desc& desc, 
 	{
 		height *= 0.5f;
 		//height += radius;
-		height -= radius;
+		//height -= radius;
 
 		crouch_height *= 0.5f;
 		//crouch_height += radius;
-		crouch_height -= radius;
+		//crouch_height -= radius;
 
 		box_desc.halfHeight			= height;
 		box_desc.halfSideExtent		= radius;

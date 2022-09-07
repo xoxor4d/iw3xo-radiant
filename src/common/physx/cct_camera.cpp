@@ -29,6 +29,7 @@
 
 #include "std_include.hpp"
 
+
 constexpr auto JUMP_TIMEOUT = 40;
 
 physx_cct_camera::physx_cct_camera() :
@@ -52,7 +53,28 @@ physx_cct_camera::physx_cct_camera() :
 	m_surface_normal		(PxVec3(0.0f, 0.0f, 0.0f)),
 	m_running_speed			(285.0f),
 	m_walking_speed			(190.0f),
-	m_gravity				(-800.0f)
+
+	gravity					(800.0f),
+	friction				(5.5f),
+	moveSpeed				(190.0f),
+	runAcceleration			(9.0f),
+	runDeacceleration		(9.0f),
+	airAcceleration			(1.0f),
+	airDecceleration		(1.0f),
+	airControl				(0.3f),
+	sideStrafeAcceleration	(9.0f),
+	sideStrafeSpeed			(0.8f),
+	jumpSpeed				(250.0f),
+	moveDirectionNorm		(PxVec3(0.0f, 0.0f, 0.0f)),
+	playerVelocity			(PxVec3(0.0f, 0.0f, 0.0f)),
+	playerMaxVelocity		(0.0f),
+	playerFriction			(0.0f),
+	playerSpeed				(0.0f),
+	wishJump				(false),
+	isGrounded				(false),
+	_cmd					({ 0.0f, 0.0f, 0.0f })
+	//pm						(),
+	//pml						()
 {
 	
 }
@@ -62,6 +84,80 @@ void physx_cct_camera::set_controlled(physx_cct_controller* controlled)
 	m_ccts = controlled;
 }
 
+void physx_cct_camera::key_inputs()
+{
+	const auto& io = imgui::GetIO();
+
+	// free mouse
+	if (imgui::IsKeyDown(ImGuiKey_Escape))
+	{
+		components::physx_impl::get()->m_character_controller_enabled = false;
+		enable_cct(false);
+		physx_cct_camera::reset_enter_controller_parms();
+	}
+
+	if (m_cct_enabled)
+	{
+		if (GetKeyState(0x57) < 0) // W
+		{
+			_cmd.forwardMove = 1.0f;
+		}
+		else if (GetKeyState(0x53) < 0) // S
+		{
+			_cmd.forwardMove = -1.0f;
+		}
+		else
+		{
+			_cmd.forwardMove = 0.0f;
+		}
+
+		if (GetKeyState(0x41) < 0) // A
+		{
+			_cmd.rightMove = -1.0f;
+		}
+		else if (GetKeyState(0x44) < 0) // D
+		{
+			_cmd.rightMove = 1.0f;
+		}
+		else
+		{
+			_cmd.rightMove = 0.0f;
+		}
+
+
+		mKeyShiftDown = io.KeyMods == (ImGuiKeyModFlags_Shift);
+
+
+
+		if (GetKeyState(VK_SPACE) < 0 && !wishJump)
+		{
+			wishJump = true;
+		}
+		else
+		{
+			wishJump = false;
+		}
+
+
+		const auto ctrl = get_controller();
+		static bool was_down = false;
+
+		if (io.KeyMods == (ImGuiKeyModFlags_Ctrl))
+		{
+			//game::printf_to_console("crouch\n");
+			ctrl->resize_crouching();
+			was_down = true;
+		}
+		else if (was_down)
+		{
+			//game::printf_to_console("un-crouch\n");
+			ctrl->m_do_standup = true;
+			was_down = false;
+		}
+	}
+}
+
+#if 0
 void physx_cct_camera::key_inputs()
 {
 	const auto& io = imgui::GetIO();
@@ -141,6 +237,7 @@ void physx_cct_camera::key_inputs()
 		}
 	}
 }
+#endif
 
 void physx_cct_camera::mouse_input()
 {
@@ -203,6 +300,7 @@ void physx_cct_camera::mouse_input()
 	}
 }
 
+#if 0
 void physx_cct_camera::ground_trace()
 {
 	//PxRaycastHit hitInfo;
@@ -283,6 +381,7 @@ void physx_cct_camera::ground_trace()
 		px->m_dbgline_ground_trace[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREY);
 	}
 }
+#endif
 
 void physx_cct_camera::reset_enter_controller_parms()
 {
@@ -296,6 +395,7 @@ void physx_cct_camera::reset_enter_controller_parms()
 	do { sw_cur = ShowCursor(1); } while (sw_cur < 0);
 }
 
+#if 0
 void physx_cct_camera::do_slopes(PxReal dtime)
 {
 	const auto cct_gravity = 190.0f;
@@ -337,7 +437,284 @@ void physx_cct_camera::do_slopes(PxReal dtime)
 		}*/
 	}
 }
+#endif
 
+void physx_cct_camera::AirMove(PxReal dtime)
+{
+	float accel;
+
+	const auto cam = cmainframe::activewnd->m_pCamWnd->camera;
+
+	game::vec3_t dir = {};
+	game::vec3_t wishdir = {};
+
+	dir[0] = cam.forward[0] * _cmd.forwardMove + cam.right[0] * _cmd.rightMove;
+	dir[1] = cam.forward[1] * _cmd.forwardMove + cam.right[1] * _cmd.rightMove;
+	dir[2] = 0.0f;
+
+	float wishspeed = utils::vector::normalize2(dir, wishdir) * moveSpeed;
+	moveDirectionNorm = PxVec3(wishdir[0], wishdir[1], wishdir[2]);
+
+
+	// CPM: Aircontrol
+	float wishspeed2 = wishspeed;
+	if (playerVelocity.dot(moveDirectionNorm) < 0)
+		accel = airDecceleration;
+	else
+		accel = airAcceleration;
+
+	// If the player is ONLY strafing left or right
+	if (_cmd.forwardMove == 0.0f && _cmd.rightMove != 0.0f)
+	{
+		if (wishspeed > sideStrafeSpeed)
+			wishspeed = sideStrafeSpeed;
+
+		accel = sideStrafeAcceleration;
+	}
+
+	Accelerate(moveDirectionNorm, wishspeed, accel, dtime);
+
+	if (airControl > 0)
+		AirControl(moveDirectionNorm, wishspeed2, dtime);
+
+	// !CPM: Aircontrol
+
+	// Apply gravity
+	playerVelocity.z -= gravity * dtime;
+}
+
+void physx_cct_camera::AirControl(PxVec3 wishdir, float wishspeed, PxReal dtime)
+{
+	float zspeed;
+	float speed;
+	float dot;
+	float k;
+
+	// Can't control movement if not moving forward or backward
+	if (abs(_cmd.forwardMove) < 0.001f || abs(wishspeed) < 0.001f)
+		return;
+
+	zspeed = playerVelocity.z;
+	playerVelocity.z = 0.0f;
+
+	/* Next two lines are equivalent to idTech's VectorNormalize() */
+	speed = playerVelocity.magnitude();
+	playerVelocity.normalize();
+
+	dot = playerVelocity.dot(wishdir);
+	k = 32;
+	k *= airControl * dot * dot * dtime;
+
+	// Change direction while slowing down
+	if (dot > 0)
+	{
+		playerVelocity.x = playerVelocity.x * speed + wishdir.x * k;
+		playerVelocity.y = playerVelocity.y * speed + wishdir.y * k;
+		playerVelocity.z = playerVelocity.z * speed + wishdir.z * k;
+
+		playerVelocity.normalize();
+		moveDirectionNorm = playerVelocity;
+	}
+
+	playerVelocity.x *= speed;
+	playerVelocity.y *= speed;
+	playerVelocity.z = zspeed; // Note this line
+}
+
+bool physx_cct_camera::is_sprinting()
+{
+	if (mKeyShiftDown && isGrounded)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool physx_cct_camera::jump_check()
+{
+	const auto physx = components::physx_impl::get();
+
+	if (wishJump && isGrounded && !physx->m_cct_controller->m_is_crouching)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void physx_cct_camera::walk_move(PxReal dtime)
+{
+	if (is_sprinting())
+	{
+		//_cmd.rightMove *= 0.667f; // player_sprintStrafeSpeedScale
+	}
+
+	if (jump_check())
+	{
+
+	}
+
+	// Do not apply friction if the player is queueing up the next jump
+	if (!wishJump)
+		ApplyFriction(1.0f, dtime);
+	else
+		ApplyFriction(0.0f, dtime);
+
+
+	
+
+	const auto cam = cmainframe::activewnd->m_pCamWnd->camera;
+
+	game::vec3_t dir = {};
+	game::vec3_t wishdir = {};
+
+	dir[0] = cam.forward[0] * _cmd.forwardMove + cam.right[0] * _cmd.rightMove;
+	dir[1] = cam.forward[1] * _cmd.forwardMove + cam.right[1] * _cmd.rightMove;
+	dir[2] = 0.0f;
+
+	const float wishspeed = utils::vector::normalize2(dir, wishdir) * moveSpeed;
+	moveDirectionNorm = PxVec3(wishdir[0], wishdir[1], wishdir[2]);
+
+	//float wishspeed = wishdir.magnitude();
+	//wishspeed *= moveSpeed;
+
+	Accelerate(moveDirectionNorm, wishspeed, runAcceleration, dtime);
+
+	// Reset the gravity velocity
+	playerVelocity.z = -gravity * dtime;
+
+	if (wishJump)
+	{
+		playerVelocity.z = jumpSpeed;
+		wishJump = false;
+	}
+}
+
+void physx_cct_camera::ApplyFriction(float t, PxReal dtime)
+{
+	PxVec3 vec = playerVelocity; // Equivalent to: VectorCopy();
+	float speed;
+	float newspeed;
+	float control;
+	float drop;
+
+	vec.z = 0.0f;
+	speed = vec.magnitude();
+	drop = 0.0f;
+
+	/* Only if the player is on the ground then apply friction */
+	if (isGrounded)
+	{
+		control = speed < runDeacceleration ? runDeacceleration : speed;
+		drop = control * friction * dtime * t;
+	}
+
+	newspeed = speed - drop;
+	playerFriction = newspeed;
+
+	if (newspeed < 0)
+		newspeed = 0;
+
+	if (speed > 0)
+		newspeed /= speed;
+
+	playerVelocity.x *= newspeed;
+	playerVelocity.y *= newspeed;
+}
+
+void physx_cct_camera::Accelerate(PxVec3 wishdir, float wishspeed, float accel, PxReal dtime)
+{
+	float addspeed;
+	float accelspeed;
+	float currentspeed;
+
+	currentspeed = playerVelocity.dot(wishdir);
+	addspeed = wishspeed - currentspeed;
+
+	if (addspeed <= 0)
+		return;
+
+	accelspeed = accel * dtime * wishspeed;
+	if (accelspeed > addspeed)
+		accelspeed = addspeed;
+
+	playerVelocity.x += accelspeed * wishdir.x;
+	playerVelocity.y += accelspeed * wishdir.y;
+}
+
+void physx_cct_camera::update(PxReal dtime)
+{
+	const auto camera = cmainframe::activewnd->m_pCamWnd;
+	const auto physx = components::physx_impl::get();
+
+	if (!m_ccts)
+	{
+		return;
+	}
+
+	physx_cct_camera::mouse_input();
+	physx_cct_camera::key_inputs();
+
+	//QueueJump();
+
+	if (isGrounded)
+		walk_move(dtime);
+
+	else if (!isGrounded)
+		AirMove(dtime);
+
+
+	// Move the controller
+	const PxControllerFilters filters(m_filter_data, m_filter_callback, m_cct_filter_callback);
+	const PxU32 flags = m_ccts->m_controller->move(playerVelocity * dtime, 0.0f, 0.008f, filters, m_obstacle_context);
+
+	if (flags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+	{
+		isGrounded = true;
+	}
+	else
+	{
+		isGrounded = false;
+	}
+
+	if (flags & PxControllerCollisionFlag::eCOLLISION_UP)
+	{
+		playerVelocity.z = 0.0f;
+	}
+
+	/* Calculate max velocity */
+	PxVec3 udp = playerVelocity;
+	udp.z = 0.0f;
+
+	if (udp.magnitude() > playerMaxVelocity)
+		playerMaxVelocity = udp.magnitude();
+
+	// calc speed
+	playerSpeed = sqrtf(playerVelocity.x * playerVelocity.x + playerVelocity.y * playerVelocity.y);
+
+
+	// update camera
+	if (const auto cct = m_ccts->m_controller; cct)
+	{
+		PxExtendedVec3 cam_target;
+		cam_target = cct->getFootPosition();
+
+		//const PxVec3 delta = cct->getPosition() - cct->getFootPosition();
+		//const PxVec3 physicsPos = cct->getActor()->getGlobalPose().p - delta;
+		//cam_target = PxExtendedVec3 (physicsPos.x, physicsPos.y, physicsPos.z);
+
+		const PxVec3 target = toVec3(cam_target);
+
+		camera->camera.origin[0] = target.x;
+		camera->camera.origin[1] = target.y;
+		camera->camera.origin[2] = target.z + (physx->m_cct_controller->m_is_crouching ? 40.0f : 60.0f);
+
+		physx->m_cct_controller->sync();
+	}
+}
+
+#if 0
 void physx_cct_camera::update(PxReal dtime)
 {
 	const auto camera = cmainframe::activewnd->m_pCamWnd;
@@ -438,4 +815,5 @@ void physx_cct_camera::update(PxReal dtime)
 		}
 	}
 }
+#endif
 

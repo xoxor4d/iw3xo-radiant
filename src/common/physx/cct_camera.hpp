@@ -38,6 +38,67 @@ class	physx_cct_controller;
 class physx_cct_camera
 {
 	public:
+		struct Cmd
+		{
+			float forwardMove;
+			float rightMove;
+			float upMove;
+		};
+
+		/*struct usercmd_s
+		{
+			int		serverTime;
+			char	forwardmove;
+			char	rightmove;
+		};
+
+		struct playerstate_s
+		{
+			int		pm_flags;
+			PxVec3	velocity;
+		};
+
+		struct pmove_t
+		{
+			playerstate_s	ps;
+			usercmd_s		cmd;
+			int				numtouch;
+			float			mins[3];
+			float			maxs[3];
+			float			xyspeed;
+			int				proneChange;
+			float			maxSprintTimeMultiplier;
+			int				viewChangeTime;
+			float			viewChange;
+		};
+
+		struct trace_t
+		{
+			float	fraction;
+			float	normal[3];
+			int		surfaceFlags;
+			int		contents;
+			bool	allsolid;
+			bool	startsolid;
+			bool	walkable;
+		};
+
+		struct pml_t
+		{
+			PxVec3	forward;
+			PxVec3	right;
+			PxVec3	up;
+			float	frametime;
+			int		msec;
+			int		walking;
+			int		groundPlane;
+			int		almostGroundPlane;
+			trace_t groundTrace;
+			float	impactSpeed;
+			float	previous_origin[3];
+			float	previous_velocity[3];
+		};*/
+
 		physx_cct_camera();
 
 		void			set_controlled(physx_cct_controller* controlled);
@@ -57,7 +118,7 @@ class physx_cct_camera
 		};
 
 		PX_FORCE_INLINE physx_cct_controller*		get_controller()						{ return m_ccts; }
-		PX_FORCE_INLINE void						set_gravity(PxReal g)					{ m_gravity = g; }
+		PX_FORCE_INLINE void						set_gravity(PxReal g)					{ gravity = g; }
 		PX_FORCE_INLINE void						enable_cct(bool bState)					{ m_cct_enabled = bState; }
 		PX_FORCE_INLINE bool						get_cct_state()							{ return m_cct_enabled; }
 
@@ -72,6 +133,15 @@ class physx_cct_camera
 						void	ground_trace();
 						void	do_slopes(PxReal dtime);
 
+						void	AirMove(PxReal dtime);
+						void	AirControl(PxVec3 wishdir, float wishspeed, PxReal dtime);
+						void	walk_move(PxReal dtime);
+						void	ApplyFriction(float t, PxReal dtime);
+						void	Accelerate(PxVec3 wishdir, float wishspeed, float accel, PxReal dtime);
+
+						bool is_sprinting();
+						bool jump_check();
+
 						physx_cct_camera& operator=(const physx_cct_camera&);
 						PxObstacleContext*			m_obstacle_context;		// User-defined additional obstacles
 						const PxFilterData*			m_filter_data;			// User-defined filter data for 'move' function
@@ -80,6 +150,7 @@ class physx_cct_camera
 
 						physx_cct_controller*		m_ccts;
 
+public:
 						bool						mFwd, mBwd, mLeft, mRight, mKeyShiftDown;
 						bool						m_cct_enabled;
 
@@ -93,5 +164,35 @@ class physx_cct_camera
 
 						PxReal						m_running_speed;
 						PxReal						m_walking_speed;
-						PxReal						m_gravity;
+
+						PxReal						gravity;
+						PxReal						friction;
+						PxReal						moveSpeed;
+						PxReal						runAcceleration;
+						PxReal						runDeacceleration;
+						PxReal						airAcceleration;
+						PxReal						airDecceleration;
+						PxReal						airControl;
+						PxReal						sideStrafeAcceleration;
+						PxReal						sideStrafeSpeed;
+						PxReal						jumpSpeed;
+
+						PxVec3						moveDirectionNorm;
+						PxVec3						playerVelocity;
+
+						// debug
+						PxReal						playerMaxVelocity;
+						PxReal						playerFriction;
+						PxReal						playerSpeed;
+
+						bool						wishJump;
+						bool						isGrounded;
+						Cmd							_cmd;
+
+						//pmove_t					pm;
+						//pml_t						pml;
+
+						bool						walking;
+						bool						almostGroundPlane;
+						float						jumpOriginZ;
 };

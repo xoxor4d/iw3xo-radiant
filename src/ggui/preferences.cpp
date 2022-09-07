@@ -508,6 +508,36 @@ namespace ggui
 			//	}
 			//}
 
+			// -----------------
+			ImGui::title_with_seperator("Movement Vars");
+
+			const auto cct = components::physx_impl::get()->m_cct_camera;
+
+			ImGui::DragFloat("Gravity", &cct->gravity, 0.1f, -2000.0f, 2000.0f, "%.1f");
+			ImGui::DragFloat("Friction", &cct->friction, 0.01f, 0.0f, 100.0f, "%.1f");
+			ImGui::DragFloat("MoveSpeed", &cct->moveSpeed, 0.01f, 0.0f, 1000.0f, "%.1f");
+			ImGui::DragFloat("RunAcceleration", &cct->runAcceleration, 0.01f, 0.0f, 1000.0f, "%.1f");
+			ImGui::DragFloat("RunDeacceleration", &cct->runDeacceleration, 0.01f, 0.0f, 1000.0f, "%.1f");
+			ImGui::DragFloat("AirAcceleration", &cct->airAcceleration, 0.01f, 0.0f, 1000.0f, "%.1f");
+			ImGui::DragFloat("AirDecceleration", &cct->airDecceleration, 0.01f, 0.0f, 1000.0f, "%.1f");
+			ImGui::DragFloat("AirControl", &cct->airControl, 0.01f, 0.0f, 1000.0f, "%.1f");
+			ImGui::DragFloat("SideStrafeAcceleration", &cct->sideStrafeAcceleration, 0.01f, 0.0f, 1000.0f, "%.1f");
+			ImGui::DragFloat("SideStrafeSpeed", &cct->sideStrafeSpeed, 0.01f, 0.0f, 1000.0f, "%.1f");
+			ImGui::DragFloat("JumpSpeed", &cct->jumpSpeed, 0.01f, 0.0f, 1000.0f, "%.1f");
+
+			ImGui::Separator();
+			imgui::Spacing();
+
+			imgui::PushFontFromIndex(BOLD_18PX);
+			ImGui::Text("Velocity: %.2f, %.2f, %.2f", cct->playerVelocity[0], cct->playerVelocity[1], cct->playerVelocity[2]);
+			ImGui::Text("Speed: %.2f", cct->playerSpeed);
+
+			imgui::PopFont();
+
+
+			// -----------------
+			ImGui::title_with_seperator("Free vars");
+
 			ImGui::DragInt("Integer01", &dev_num_01, 0.1f);
 			ImGui::DragInt("Integer02", &dev_num_02, 0.1f);
 			ImGui::Checkbox("Bool01", &dev_bool_01);
