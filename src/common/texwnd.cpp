@@ -200,16 +200,16 @@ void ctexwnd::load_favourites()
 		std::string filepath = dvars::fs_homepath->current.string;
 					filepath += R"(\IW3xRadiant\texture_favourites\)";
 
-		if(std::filesystem::exists(filepath))
+		if (std::filesystem::exists(filepath))
 		{
 			game::printf_to_console("[TEX] Loading texture favourites .. \n");
 
 			for (auto& entry : std::filesystem::directory_iterator(filepath))
 			{
-				if(entry.path().extension() == ".txt")
+				if (entry.path().extension() == ".txt")
 				{
 					file.open(entry.path());
-					if(file.is_open())
+					if (file.is_open())
 					{
 						std::vector<std::string> curr_vec;
 						curr_vec.reserve(30);
@@ -227,7 +227,7 @@ void ctexwnd::load_favourites()
 							}
 
 							// skip first line
-							if(!line_num)
+							if (!line_num)
 							{
 								line_num++;
 								continue;
@@ -242,7 +242,7 @@ void ctexwnd::load_favourites()
 							line_num++;
 						}
 
-						if(line_num)
+						if (line_num)
 						{
 							texwnd_vector_of_favourites.emplace_back(curr_vec);
 						}
@@ -255,12 +255,19 @@ void ctexwnd::load_favourites()
 	}
 }
 
+/**
+ * @brief			selects a texture in the texture window based on mouse coordinates
+ * @param point		local coordinates
+ */
 void ctexwnd::select_texture(CPoint point)
 {
-	//const auto point = GET_GUI(ggui::texture_dialog)->rtt_get_cursor_pos_cpoint();
 	game::Texwnd_SelectMaterial(point.x, g_texwnd->nPos[game::g_qeglobals->current_edit_layer].nPos_current + point.y);
 }
 
+/**
+ * @brief			calls og internal OnButtonDown function
+ * @param nFlags	
+ */
 void ctexwnd::on_mousebutton_down(UINT nFlags)
 {
 	auto point = GET_GUI(ggui::texture_dialog)->rtt_get_cursor_pos_cpoint();
@@ -523,4 +530,8 @@ void ctexwnd::hooks()
 
 	// disable og context menu
 	utils::hook::nop(0x45CA54, 5);
+
+	// replace $default material with caulk
+	const char* replace_with_caulk = "caulk";
+	utils::hook::set<DWORD*>(0x45D154 + 1, (DWORD*)replace_with_caulk);
 }

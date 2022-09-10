@@ -497,11 +497,14 @@ void __fastcall czwnd::on_mouse_move([[maybe_unused]] czwnd* pThis, [[maybe_unus
 		{
 			const auto ccam = cmainframe::activewnd->m_pCamWnd;
 
-			ccamwnd::mouse_moved(
-				ccam, 
-				nFlags, 
-				camerawnd->rtt_get_cursor_pos_cpoint().x, 
-				ccam->camera.height - camerawnd->rtt_get_cursor_pos_cpoint().y - 1);
+			if (!components::physx_impl::get()->m_character_controller_enabled)
+			{
+				ccamwnd::mouse_moved(
+					ccam,
+					nFlags,
+					camerawnd->rtt_get_cursor_pos_cpoint().x,
+					ccam->camera.height - camerawnd->rtt_get_cursor_pos_cpoint().y - 1);
+			}
 
 			return;
 		}

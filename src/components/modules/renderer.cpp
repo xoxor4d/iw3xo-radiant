@@ -66,6 +66,8 @@
 
 namespace components
 {
+	renderer* renderer::p_this = nullptr;
+
 	enum EDITOR_SURF_TYPE
 	{
 		ED_SURF_MODEL = 0x1,
@@ -2174,8 +2176,25 @@ namespace components
 			return;
 		}
 
+		const auto renderer = renderer::get();
+
+		const double t = clock() / 1000.0;
+		renderer->m_cam_msec = static_cast<float>(t - renderer->m_cam_time);
+		renderer->m_cam_time = t;
+
+
 		// TODO:
 		// * unify physics frame logic
+
+		const auto physx = components::physx_impl::get();
+		if (physx->m_character_controller_enabled)
+		{
+			physx->m_cct_camera->update(renderer->m_cam_msec);
+		}
+		else
+		{
+			//physx_cct_camera::reset_enter_controller_parms();
+		}
 
 		if (effects::effect_can_play() || GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic)
 		{
@@ -3626,6 +3645,8 @@ namespace components
 
 	renderer::renderer()
 	{
+		renderer::p_this = this;
+
 		// realoc tess.indices[32704] (materialCommands_t) and increase its size to iw3's (1048576)
 		// -> xmodels with more then 32704 indices no longer crash radiant (was writing out of bounds)
 

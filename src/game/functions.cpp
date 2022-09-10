@@ -1201,6 +1201,19 @@ namespace game
 			popad;
 		}
 	}
+
+	void vectoangles(float* vec /*esi*/, float* angles /*edi*/)
+	{
+		const static uint32_t func_addr = 0x4A5020;
+		__asm
+		{
+			pushad;
+			mov		edi, angles;
+			mov		esi, vec;
+			call	func_addr;
+			popad;
+		}
+	}
 	
 	
 	// *

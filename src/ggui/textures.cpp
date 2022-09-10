@@ -136,9 +136,11 @@ namespace ggui
 
 		// ---------
 
+		const auto prefs = game::g_PrefsDlg();
+
+#if 0
 		ImGui::SameLine(0.0f, searchbar_spacing);
 		ImGui::SetNextItemWidth(80.0f);
-		const auto prefs = game::g_PrefsDlg();
 
 		const std::string combo_zoom_preview = std::to_string(prefs->m_nTextureWindowScale) + "%";
 		if (ImGui::BeginCombo("##combo_zoom", combo_zoom_preview.c_str(), ImGuiComboFlags_HeightLarge))
@@ -165,6 +167,45 @@ namespace ggui
 
 			ImGui::EndCombo();
 		} TT("Texture display scale");
+#endif
+
+		ImGui::SameLine(0.0f, searchbar_spacing);
+
+		static bool on_drag_hold_img_size = false;
+		static float on_drag_img_size_pos = 0.0f;
+
+		ImGui::SetNextItemWidth(50.0f);
+		if (imgui::DragInt("##img_size", &game::g_PrefsDlg()->m_nTextureWindowScale, 0.5f, 5, 200, "%d %%"))
+		{
+			if (!on_drag_hold_img_size)
+			{
+				//game::printf_to_console("org npos: %d", g_texwnd->nPos[0].nPos_current);
+				on_drag_img_size_pos = static_cast<float>(g_texwnd->nPos[0].nPos_current) / static_cast<float>(g_texwnd->nPos[0].nPos_max);
+				on_drag_hold_img_size = true;
+			}
+
+			g_texwnd->nPos[0].nPos_current = static_cast<int>((on_drag_img_size_pos * static_cast<float>(g_texwnd->nPos[0].nPos_max)));
+			//game::printf_to_console("new npos: %d ---- current max: %d", g_texwnd->nPos[0].nPos_current, g_texwnd->nPos[0].nPos_max);
+
+			if (prefs->m_nTextureWindowScale < 5)
+			{
+				game::g_PrefsDlg()->m_nTextureWindowScale = 5;
+			}
+			else if (prefs->m_nTextureWindowScale > 200)
+			{
+				game::g_PrefsDlg()->m_nTextureWindowScale = 200;
+			}
+		}
+		else if (!imgui::IsMouseDragging(ImGuiMouseButton_Left) && on_drag_hold_img_size)
+		{
+#if DEBUG
+			game::printf_to_console("saving prefs");
+#endif
+
+			game::CPrefsDlg_SavePrefs();
+			on_drag_hold_img_size = false;
+
+		} TT("Texture display scale.\nHold and drag or double click to change.");
 
 		ImGui::SameLine(0.0f, searchbar_spacing);
 		ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
@@ -398,13 +439,18 @@ namespace ggui
 					}
 				}
 
-				imgui::Separator();
-
 				if (ImGui::MenuItem("Create new favourite list"))
 				{
 					m_open_new_favourite_popup = true;
 				}
-			}
+
+				imgui::Separator();
+
+				if (ImGui::MenuItem("Select all of type", ggui::hotkey_dialog::get_hotkey_for_command("SelectAllOfType").c_str())) 
+				{
+					cdeclcall(void, 0x42B470); // CMainFrame::OnSelectAllOfType
+				}
+			} // mat_name
 			
 			ImGui::EndPopup();
 		}

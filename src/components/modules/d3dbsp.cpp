@@ -802,18 +802,18 @@ namespace components
 		args += (dvars::bsp_compile_light->current.enabled ? "1 "s : "0 "s);
 
 		const auto process = components::process::get();
-
 		process->set_process_type(process::PROC_TYPE_BATCH);
 		process->set_indicator(process::INDICATOR_TYPE_SPINNER);
 		process->set_output(true);
 		process->set_arguments(args);
 		process->set_post_process_callback([bsp_path]
 		{
-			d3dbsp::radiant_load_bsp(bsp_path.c_str(), true);
-
-			if(dvars::bsp_gen_reflections_on_compile->current.enabled)
+			if (d3dbsp::radiant_load_bsp(bsp_path.c_str(), true))
 			{
-				dvars::set_bool(dvars::r_reflectionprobe_generate, true);
+				if (dvars::bsp_gen_reflections_on_compile->current.enabled)
+				{
+					dvars::set_bool(dvars::r_reflectionprobe_generate, true);
+				}
 			}
 		});
 

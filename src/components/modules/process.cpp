@@ -158,9 +158,11 @@ namespace components
 		game::printf_to_console(pthis->m_kill_thread ? "[PROCESS] Process was killed" : "^2[PROCESS] Process ended successfully!");
 
 		ImGui::Toast(
-			process->m_kill_thread ? ImGuiToastType_Info : ImGuiToastType_Success,
-			process->m_kill_thread ? "Process was killed" : "Process ended successfully", "");
+			pthis->m_kill_thread ? ImGuiToastType_Info : ImGuiToastType_Success,
+			pthis->m_kill_thread ? "Process was killed" :
+			pthis->m_success_toast_str.empty() ? "Process ended successfully" : pthis->m_success_toast_str.c_str(), "");
 
+		pthis->m_success_toast_str.clear();
 		process->reset();
 	}
 
@@ -179,10 +181,18 @@ namespace components
 
 		t.join();
 
+		if (process->m_post_process_callback)
+		{
+			process->m_post_process_callback();
+			process->m_post_process_callback = nullptr;
+		}
+
 		ImGui::Toast(
 			pthis->m_kill_thread ? ImGuiToastType_Info : ImGuiToastType_Success,
-			pthis->m_kill_thread ? "Process was killed" : "Process ended successfully", "");
+			pthis->m_kill_thread ? "Process was killed" : 
+			pthis->m_success_toast_str.empty() ? "Process ended successfully" : pthis->m_success_toast_str.c_str(), "");
 
+		pthis->m_success_toast_str.clear();
 		process->reset();
 	}
 

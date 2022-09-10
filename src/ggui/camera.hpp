@@ -6,6 +6,7 @@ namespace ggui
 	{
 	public:
 		bool m_toolbar_state = false;
+		bool m_rtt_focused = false;
 
 		camera_dialog()
 		{

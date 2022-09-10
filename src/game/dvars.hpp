@@ -82,6 +82,7 @@ namespace dvars
 	extern game::dvar_s* bsp_compile_light_custom_cmd;
 
 	extern game::dvar_s* physx_debug_visualization_box_size;
+	extern game::dvar_s* physx_camera_sensitivity;
 
 	extern game::dvar_s* r_draw_bsp;
 	extern game::dvar_s* r_draw_bsp_overwrite_sunlight;

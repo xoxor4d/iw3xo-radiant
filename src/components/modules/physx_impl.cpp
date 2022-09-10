@@ -1,6 +1,7 @@
 #include "std_include.hpp"
+//#include "characterkinematic/PxControllerManager.h"
 
-constexpr bool USE_PVD = false; // PhysX Visual Debugger
+constexpr bool USE_PVD = true; // PhysX Visual Debugger
 constexpr bool USE_CONTACT_CALLBACK = false; // can be used to implement effect spawning on impact
 
 // fx_system impacts:
@@ -9,6 +10,28 @@ constexpr bool USE_CONTACT_CALLBACK = false; // can be used to implement effect 
 
 namespace components
 {
+	PxControllerBehaviorFlags physx_impl::behavior_feedback::getBehaviorFlags([[maybe_unused]] const PxController& controller)
+	{
+		return PxControllerBehaviorFlag::eCCT_SLIDE;
+	}
+
+	PxControllerBehaviorFlags physx_impl::behavior_feedback::getBehaviorFlags([[maybe_unused]] const PxObstacle& obstacle)
+	{
+		return PxControllerBehaviorFlag::eCCT_SLIDE;
+	}
+
+	PxControllerBehaviorFlags physx_impl::behavior_feedback::getBehaviorFlags([[maybe_unused]] const PxShape& shape, [[maybe_unused]] const PxActor& actor)
+	{
+		return PxControllerBehaviorFlag::eCCT_SLIDE;
+	}
+
+#if 0
+	void physx_impl::cct_hit_feedback::onShapeHit(const PxControllerShapeHit& hit)
+	{
+
+	}
+#endif
+
 	physx_impl* physx_impl::p_this = nullptr;
 
 	constexpr int m_phys_min_msec_step = 3;	// 11
@@ -49,6 +72,12 @@ namespace components
 	 */
 	void physx_impl::run_frame(float seconds)
 	{
+		const auto proc = process::get()->is_active();
+		if (proc)
+		{
+			return;
+		}
+
 		mScene->simulate(seconds);
 		mScene->fetchResults(true);
 	}
@@ -81,6 +110,19 @@ namespace components
 				renderer::R_AddPointCmd(1, 12, 3, vert);
 			}
 		}
+
+#if DEBUG
+		if (!m_cct_camera->m_groundtrace.normal.isZero())
+		{
+			game::GfxPointVertex vert = {};
+			vert.xyz[0] = m_cct_camera->m_groundtrace.position.x;
+			vert.xyz[1] = m_cct_camera->m_groundtrace.position.y;
+			vert.xyz[2] = m_cct_camera->m_groundtrace.position.z;
+			vert.color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
+
+			renderer::R_AddPointCmd(1, 12, 3, &vert);
+		}
+#endif
 	}
 
 	/**
@@ -267,6 +309,11 @@ namespace components
 		m_effect_is_using_physics = false;
 
 		const bool force_update = GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic;
+
+		if (process::get()->is_active())
+		{
+			return;
+		}
 
 		if ((efx && fxs) || (fxs && force_update))
 		{
@@ -864,6 +911,8 @@ namespace components
 	 */
 	void physx_impl::create_static_collision()
 	{
+		game::printf_to_console("[PhysX] Building Static Collision ...");
+
 		const auto phys = components::physx_impl::get();
 		phys->clear_static_collision();
 
@@ -1666,6 +1715,56 @@ namespace components
 		return physx::PxFilterFlag::eDEFAULT;
 	}
 
+	void physx_impl::spawn_character()
+	{
+		// *
+		// generate static collision and activate movement
+
+		const auto process = components::process::get();
+
+		process->set_indicator(components::process::INDICATOR_TYPE_PROGRESS);
+		process->set_indicator_string("Building Static Collision");
+		process->set_process_type(components::process::PROC_TYPE_GENERIC);
+		process->set_success_toast_string(ICON_FA_RUNNING);
+
+		process->set_thread_callback([]
+			{
+				components::physx_impl::create_static_collision();
+			});
+
+		process->set_progress_callback([]
+			{
+				const auto current = static_cast<float>(components::physx_impl::get()->m_static_brush_count + components::physx_impl::get()->m_static_terrain_count);
+				const auto total = static_cast<float>(components::physx_impl::get()->m_static_brush_estimated_count + components::physx_impl::get()->m_static_terrain_estimated_count);
+				components::process::get()->m_indicator_progress = current / total;
+			});
+
+		// activate movement on process end
+		process->set_post_process_callback([]
+			{
+				const auto camera = GET_GUI(ggui::camera_dialog);
+				const auto px = components::physx_impl::get();
+				px->m_character_controller_enabled = !px->m_character_controller_enabled;
+
+				if (px->m_character_controller_enabled)
+				{
+					camera->rtt_set_focus_state(true);
+					camera->rtt_set_hovered_state(true);
+
+					const auto cam_pos = cmainframe::activewnd->m_pCamWnd->camera.origin;
+					px->m_cct_controller->get_controller()->setPosition({ cam_pos[0], cam_pos[1], cam_pos[2] - 24.5 }); // 24.5 ??
+
+					px->m_cct_camera->m_player_velocity.x = 0.0f;
+					px->m_cct_camera->m_player_velocity.y = 0.0f;
+					px->m_cct_camera->m_player_velocity.z = 0.0f;
+
+					px->m_cct_camera->enable_cct(true);
+				}
+			});
+
+		process->create_process();
+	}
+
 	void physx_impl::register_dvars()
 	{
 		dvars::physx_debug_visualization_box_size = dvars::register_float(
@@ -1675,6 +1774,14 @@ namespace components
 			/* maxs		*/ FLT_MAX,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "size of culling box in which to draw debug visualizations. 0 disables the culling box");
+
+		dvars::physx_camera_sensitivity = dvars::register_float(
+			/* name		*/ "physx_camera_sensitivity",
+			/* default	*/ 80.0f,
+			/* mins		*/ 0.0f,
+			/* maxs		*/ FLT_MAX,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "camera sensitivity when using physx movement mode");
 	}
 
 	physx_impl::physx_impl()
@@ -1742,6 +1849,55 @@ namespace components
 		}
 
 		m_static_collision_material = mPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+
+		// *
+		// character controller
+
+		m_manager = PxCreateControllerManager(*mScene);
+		//m_manager->setDebugRenderingFlags(PxControllerDebugRenderFlag::eALL);
+		//m_manager->setPreventVerticalSlidingAgainstCeiling(true);
+
+		const bool is_capsule = false;
+
+		m_cct_material = mPhysics->createMaterial(0.5f, 0.5f, 0.5f); // not related to movement
+
+		physx_cct_controller_desc desc;
+		desc.m_type = is_capsule ? PxControllerShapeType::eCAPSULE : PxControllerShapeType::eBOX;
+		desc.m_position = PxExtendedVec3(0.0, 0.0, 0.0);
+		desc.m_slope_limit = 0.7f;
+		desc.m_contact_offset = 1.0f;
+		desc.m_step_offset = 0.0f; // we set this dynamically when we trace a step nearby
+		desc.m_invisible_wall_height = 0.0f;
+		desc.m_max_jump_height = 64.0f;
+		desc.m_radius = 15.0f;
+		desc.m_height = 69.0f * (is_capsule ? 0.5f : 1.0f);
+		desc.m_crouch_height = 48.0f * (is_capsule ? 0.5f : 1.0f);
+		//desc.m_behavior_callback = new behavior_feedback(); // kinda useless
+
+		m_cct_controller = new (physx_cct_controller)();
+		m_cct_controller->init(desc, m_manager);
+
+		m_cct_camera = new (physx_cct_camera)();
+		m_cct_camera->set_controlled(m_cct_controller);
+
+
+		command::register_command_with_hotkey("physx_movement"s, [this](auto)
+		{
+			physx_impl::spawn_character();
+		});
+
+#if DEBUG
+		command::register_command("camtest"s, [this](const std::vector<std::string>&)
+		{
+			this->m_character_controller_enabled = !this->m_character_controller_enabled;
+		});
+#endif
+
+		/*
+		command::register_command("camreset"s, [this](const std::vector<std::string>&)
+		{
+			this->m_cct_controller->reset();
+		});*/
 	}
 
 	physx_impl::~physx_impl()
