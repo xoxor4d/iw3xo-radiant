@@ -14,6 +14,22 @@ namespace components
 			virtual PxControllerBehaviorFlags getBehaviorFlags(const PxObstacle& obstacle) override;
 		};
 
+#if 0
+		class cct_hit_feedback : public PxUserControllerHitReport
+		{
+		public:
+
+			// Called when current controller hits a shape.
+			virtual void onShapeHit(const PxControllerShapeHit& hit) override;
+
+			// Called when current controller hits another controller.
+			virtual void onControllerHit(const PxControllersHit& hit) override {};
+
+			// Called when current controller hits a user-defined obstacle
+			virtual void onObstacleHit(const PxControllerObstacleHit& hit) override {};
+		};
+#endif
+
 		class collision_feedback : public physx::PxSimulationEventCallback
 		{
 		public:

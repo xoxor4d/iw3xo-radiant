@@ -520,9 +520,12 @@ namespace ggui
 											this->rtt_set_hovered_state(true);
 
 											const auto cam_pos = cmainframe::activewnd->m_pCamWnd->camera.origin;
-											//const auto px_cam_pos = PxExtendedVec3(cam_pos[0], cam_pos[1], cam_pos[2]);
+											px->m_cct_controller->get_controller()->setPosition({ cam_pos[0], cam_pos[1], cam_pos[2] - 24.5 }); // 24.5 ??
 
-											px->m_cct_controller->get_controller()->setPosition({ cam_pos[0], cam_pos[1], cam_pos[2] });
+											px->m_cct_camera->m_player_velocity.x = 0.0f;
+											px->m_cct_camera->m_player_velocity.y = 0.0f;
+											px->m_cct_camera->m_player_velocity.z = 0.0f;
+
 											px->m_cct_camera->enable_cct(true);
 										}
 									});

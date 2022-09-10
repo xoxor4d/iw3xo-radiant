@@ -512,26 +512,23 @@ namespace ggui
 			ImGui::title_with_seperator("Movement Vars");
 
 			const auto cct = components::physx_impl::get()->m_cct_camera;
+			const auto cam = cmainframe::activewnd->m_pCamWnd->camera;
 
-			ImGui::DragFloat("Gravity", &cct->gravity, 0.1f, -2000.0f, 2000.0f, "%.1f");
-			ImGui::DragFloat("Friction", &cct->friction, 0.01f, 0.0f, 100.0f, "%.1f");
-			ImGui::DragFloat("MoveSpeed", &cct->moveSpeed, 0.01f, 0.0f, 1000.0f, "%.1f");
-			ImGui::DragFloat("RunAcceleration", &cct->runAcceleration, 0.01f, 0.0f, 1000.0f, "%.1f");
-			ImGui::DragFloat("RunDeacceleration", &cct->runDeacceleration, 0.01f, 0.0f, 1000.0f, "%.1f");
-			ImGui::DragFloat("AirAcceleration", &cct->airAcceleration, 0.01f, 0.0f, 1000.0f, "%.1f");
-			ImGui::DragFloat("AirDecceleration", &cct->airDecceleration, 0.01f, 0.0f, 1000.0f, "%.1f");
-			ImGui::DragFloat("AirControl", &cct->airControl, 0.01f, 0.0f, 1000.0f, "%.1f");
-			ImGui::DragFloat("SideStrafeAcceleration", &cct->sideStrafeAcceleration, 0.01f, 0.0f, 1000.0f, "%.1f");
-			ImGui::DragFloat("SideStrafeSpeed", &cct->sideStrafeSpeed, 0.01f, 0.0f, 1000.0f, "%.1f");
-			ImGui::DragFloat("JumpSpeed", &cct->jumpSpeed, 0.01f, 0.0f, 1000.0f, "%.1f");
+			ImGui::DragFloat("Gravity", &cct->m_gravity, 0.1f, -2000.0f, 2000.0f, "%.1f");
+			ImGui::DragFloat("Friction", &cct->m_friction, 0.01f, 0.0f, 100.0f, "%.1f");
+			ImGui::DragFloat("JumpSpeed", &cct->m_jump_velocity, 0.01f, 0.0f, 1000.0f, "%.1f");
 
 			ImGui::Separator();
 			imgui::Spacing();
 
 			imgui::PushFontFromIndex(BOLD_18PX);
-			ImGui::Text("Velocity: %.2f, %.2f, %.2f", cct->playerVelocity[0], cct->playerVelocity[1], cct->playerVelocity[2]);
-			ImGui::Text("Speed: %.2f", cct->playerSpeed);
+			ImGui::Text("Velocity: %.2f, %.2f, %.2f", cct->m_player_velocity[0], cct->m_player_velocity[1], cct->m_player_velocity[2]);
 
+			const PxVec3 origin (toVec3(cct->get_controller()->get_foot_position()));
+			ImGui::Text("Origin: %.2f, %.2f, %.5f", origin.x, origin.y, origin.z);
+			ImGui::Text("Speed: %.2f", cct->m_player_speed);
+			imgui::Text("Cam Forward: %.2f, %.2f, %.2f", cam.forward[0], cam.forward[1], cam.forward[2]);
+			imgui::Text("Msec: %.5f", components::renderer::get()->m_cam_msec * 1000.0f);
 			imgui::PopFont();
 
 

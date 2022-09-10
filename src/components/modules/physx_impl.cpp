@@ -25,6 +25,13 @@ namespace components
 		return PxControllerBehaviorFlag::eCCT_SLIDE;
 	}
 
+#if 0
+	void physx_impl::cct_hit_feedback::onShapeHit(const PxControllerShapeHit& hit)
+	{
+
+	}
+#endif
+
 	physx_impl* physx_impl::p_this = nullptr;
 
 	constexpr int m_phys_min_msec_step = 3;	// 11
@@ -294,6 +301,11 @@ namespace components
 		m_effect_is_using_physics = false;
 
 		const bool force_update = GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic;
+
+		if (process::get()->is_active())
+		{
+			return;
+		}
 
 		if ((efx && fxs) || (fxs && force_update))
 		{
@@ -1784,6 +1796,8 @@ namespace components
 		// character controller
 
 		m_manager = PxCreateControllerManager(*mScene);
+		//m_manager->setDebugRenderingFlags(PxControllerDebugRenderFlag::eALL);
+		//m_manager->setPreventVerticalSlidingAgainstCeiling(true);
 
 		const bool is_capsule = false;
 
@@ -1791,23 +1805,22 @@ namespace components
 
 		physx_cct_controller_desc desc;
 		desc.m_type = is_capsule ? PxControllerShapeType::eCAPSULE : PxControllerShapeType::eBOX;
-		desc.m_position = PxExtendedVec3(0.0, 0.0, 100.0);
+		desc.m_position = PxExtendedVec3(0.0, 0.0, 0.0);
 		desc.m_slope_limit = 0.7f;
-		desc.m_contact_offset = 0.05f;
+		desc.m_contact_offset = 1.0f;
 		desc.m_step_offset = 0.0f;
 		desc.m_invisible_wall_height = 0.0f;
-		desc.m_max_jump_height = 39.0f;
+		desc.m_max_jump_height = 64.0f;
 		desc.m_radius = 15.0f;
 		desc.m_height = 69.0f * (is_capsule ? 0.5f : 1.0f);
 		desc.m_crouch_height = 48.0f * (is_capsule ? 0.5f : 1.0f);
-		desc.m_behavior_callback = new behavior_feedback(); // kinda useless
+		//desc.m_behavior_callback = new behavior_feedback(); // kinda useless
 
 		m_cct_controller = new (physx_cct_controller)();
 		m_cct_controller->init(desc, m_manager);
 
 		m_cct_camera = new (physx_cct_camera)();
 		m_cct_camera->set_controlled(m_cct_controller);
-		//m_cct_camera->set_gravity(-800.0f);
 
 		command::register_command("camtest"s, [this](const std::vector<std::string>&)
 		{

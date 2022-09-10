@@ -151,7 +151,6 @@ PxController* physx_cct_controller::init(const physx_cct_controller_desc& desc, 
 	c_desc->behaviorCallback	= desc.m_behavior_callback;
 	c_desc->volumeGrowth		= 1.0f; //desc.m_volume_growth;
 	c_desc->upDirection			= PxVec3(0, 0, 1.0f);
-	
 
 	m_type						= desc.m_type;
 	m_initial_position			= desc.m_position;

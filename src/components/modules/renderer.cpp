@@ -2193,7 +2193,7 @@ namespace components
 		}
 		else
 		{
-			physx_cct_camera::reset_enter_controller_parms();
+			//physx_cct_camera::reset_enter_controller_parms();
 		}
 
 		if (effects::effect_can_play() || GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic)

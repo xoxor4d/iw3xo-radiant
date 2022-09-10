@@ -1,103 +1,30 @@
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions
-// are met:
-//  * Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//  * Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the distribution.
-//  * Neither the name of NVIDIA CORPORATION nor the names of its
-//    contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ''AS IS'' AND ANY
-// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
-// OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-// Copyright (c) 2008-2021 NVIDIA Corporation. All rights reserved.
-// Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
-// Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
-
 #pragma once
-
-//#include "characterkinematic/PxController.h"
-//#include "characterkinematic/PxControllerObstacles.h"
-
 class	ccamwnd;
 class	physx_cct_controller;
 
 class physx_cct_camera
 {
 	public:
-		struct Cmd
+		struct cmd_s
 		{
 			float forwardMove;
 			float rightMove;
 			float upMove;
 		};
 
-		/*struct usercmd_s
-		{
-			int		serverTime;
-			char	forwardmove;
-			char	rightmove;
-		};
-
-		struct playerstate_s
-		{
-			int		pm_flags;
-			PxVec3	velocity;
-		};
-
-		struct pmove_t
-		{
-			playerstate_s	ps;
-			usercmd_s		cmd;
-			int				numtouch;
-			float			mins[3];
-			float			maxs[3];
-			float			xyspeed;
-			int				proneChange;
-			float			maxSprintTimeMultiplier;
-			int				viewChangeTime;
-			float			viewChange;
-		};
-
 		struct trace_t
 		{
-			float	fraction;
-			float	normal[3];
-			int		surfaceFlags;
-			int		contents;
-			bool	allsolid;
-			bool	startsolid;
-			bool	walkable;
+			float			fraction;
+			PxVec3			endpos;
+			PxLocationHit	hit = {};
+			bool			allsolid;
 		};
 
-		struct pml_t
+		enum TRACE_DIR_
 		{
-			PxVec3	forward;
-			PxVec3	right;
-			PxVec3	up;
-			float	frametime;
-			int		msec;
-			int		walking;
-			int		groundPlane;
-			int		almostGroundPlane;
-			trace_t groundTrace;
-			float	impactSpeed;
-			float	previous_origin[3];
-			float	previous_velocity[3];
-		};*/
+			TRACE_DIR_UP,
+			TRACE_DIR_DOWN
+		};
 
 		physx_cct_camera();
 
@@ -105,10 +32,6 @@ class physx_cct_camera
 		static void		reset_enter_controller_parms();
 
 		virtual	void	update(PxReal dtime);
-		virtual	PxReal	get_camera_speed()
-		{ 
-			return mKeyShiftDown ? m_running_speed : m_walking_speed; 
-		}
 
 		enum GROUND_TYPE_
 		{
@@ -118,81 +41,60 @@ class physx_cct_camera
 		};
 
 		PX_FORCE_INLINE physx_cct_controller*		get_controller()						{ return m_ccts; }
-		PX_FORCE_INLINE void						set_gravity(PxReal g)					{ gravity = g; }
 		PX_FORCE_INLINE void						enable_cct(bool bState)					{ m_cct_enabled = bState; }
 		PX_FORCE_INLINE bool						get_cct_state()							{ return m_cct_enabled; }
 
-		PX_FORCE_INLINE void						setObstacleContext(PxObstacleContext* context)		{ m_obstacle_context = context;	}
-		PX_FORCE_INLINE void						setFilterData(const PxFilterData* filterData)		{ m_filter_data = filterData; }
-		PX_FORCE_INLINE void						setFilterCallback(PxQueryFilterCallback* cb)		{ m_filter_callback = cb; }
-		PX_FORCE_INLINE void						setCCTFilterCallback(PxControllerFilterCallback* cb){ m_cct_filter_callback = cb; }
-
-	private:
+		private:
 						void	key_inputs();
 						void	mouse_input();
+
+						void	trace_box(trace_t& trace, const PxVec3& from, const PxVec3& to);
+						void	trace_box(trace_t& trace, const PxVec3& from, const PxReal& dist, TRACE_DIR_ dir);
 						void	ground_trace();
-						void	do_slopes(PxReal dtime);
 
-						void	AirMove(PxReal dtime);
-						void	AirControl(PxVec3 wishdir, float wishspeed, PxReal dtime);
-						void	walk_move(PxReal dtime);
-						void	ApplyFriction(float t, PxReal dtime);
-						void	Accelerate(PxVec3 wishdir, float wishspeed, float accel, PxReal dtime);
+						bool	is_sprinting();
+						bool	jump_check();
 
-						bool is_sprinting();
-						bool jump_check();
+						void	clip_velocity(const PxVec3& normal, const PxVec3& in, PxVec3& out);
+						void	project_velocity(const PxVec3& normal, float* v_in, float* v_out);
 
-						physx_cct_camera& operator=(const physx_cct_camera&);
+						void	accelerate(const PxVec3& wishdir, float wishspeed, float accel);
+						void	pm_friction();
+						void	air_move();
+						void	walk_move();
+
+						bool	slide_move(bool gravity);
+						void	stepslide_move(bool gravity);
+
 						PxObstacleContext*			m_obstacle_context;		// User-defined additional obstacles
 						const PxFilterData*			m_filter_data;			// User-defined filter data for 'move' function
 						PxQueryFilterCallback*		m_filter_callback;		// User-defined filter data for 'move' function
 						PxControllerFilterCallback*	m_cct_filter_callback;	// User-defined filter data for 'move' function
 
+		public:
 						physx_cct_controller*		m_ccts;
-
-public:
-						bool						mFwd, mBwd, mLeft, mRight, mKeyShiftDown;
 						bool						m_cct_enabled;
 
+						float						m_msec;
+						bool						m_wants_sprint;
+						bool						m_wants_jump;
+						bool						m_is_jumping; // pm_flags PMF_JUMPING
+						float						m_jump_origin_z;
+						int							m_jump_timer;
+						bool						m_jump_held;
+						bool						m_is_flying;
 						GROUND_TYPE_				m_ground_type;
-						bool						m_jumping;
-						bool						m_fly;
-						int							m_jumping_timer;
-						PxReal						direction_up;
-						PxVec3						m_abs_force;
-						PxVec3						m_surface_normal;
+						bool						m_on_ground;
+						bool						m_almost_ground_plane;
+						bool						m_walking;
 
-						PxReal						m_running_speed;
-						PxReal						m_walking_speed;
+						PxReal						m_gravity;
+						PxReal						m_friction;
+						PxReal						m_jump_velocity;
 
-						PxReal						gravity;
-						PxReal						friction;
-						PxReal						moveSpeed;
-						PxReal						runAcceleration;
-						PxReal						runDeacceleration;
-						PxReal						airAcceleration;
-						PxReal						airDecceleration;
-						PxReal						airControl;
-						PxReal						sideStrafeAcceleration;
-						PxReal						sideStrafeSpeed;
-						PxReal						jumpSpeed;
+						PxVec3						m_player_velocity;
+						PxReal						m_player_speed;
+						cmd_s						m_cmd;
 
-						PxVec3						moveDirectionNorm;
-						PxVec3						playerVelocity;
-
-						// debug
-						PxReal						playerMaxVelocity;
-						PxReal						playerFriction;
-						PxReal						playerSpeed;
-
-						bool						wishJump;
-						bool						isGrounded;
-						Cmd							_cmd;
-
-						//pmove_t					pm;
-						//pml_t						pml;
-
-						bool						walking;
-						bool						almostGroundPlane;
-						float						jumpOriginZ;
+						PxLocationHit				m_groundtrace;
 };
