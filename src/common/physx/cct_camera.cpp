@@ -16,10 +16,10 @@ physx_cct_camera::physx_cct_camera() :
 	m_jump_origin_z			(0.0f),
 	m_jump_timer			(0),
 	m_jump_held				(false),
-	m_is_flying			(false),
+	m_is_flying				(false),
 	m_ground_type			(GROUND_TYPE_NONE),
 	m_on_ground				(false),
-	m_almost_ground_plane	(false),
+	m_bounce	(false),
 	m_walking				(false),
 
 	m_gravity				(800.0f),
@@ -202,6 +202,8 @@ void physx_cct_camera::mouse_input()
 				enable_cct(true);
 			}
 		}
+
+		game::AngleVectors(cam->camera.angles, cam->camera.forward, cam->camera.right, cam->camera.up);
 	}
 
 	// cancel movement on right mouse button -> smooth transition into radiant cam
@@ -859,48 +861,62 @@ void physx_cct_camera::ground_trace()
 				stepsize_hit,
 				PxHitFlag::ePOSITION | PxHitFlag::eNORMAL))
 			{
-				//if (hit.block.normal.z < 0.7f)
-				{
-					m_ccts->get_controller()->setStepOffset(18.0f);
+				m_ccts->get_controller()->setStepOffset(18.0f);
+				//game::printf_to_console("enable stepoffset from dir %d\n", 2 * edge + step);
 
-					//game::printf_to_console("enable stepoffset from dir %d\n", 2 * edge + step);
-					enable_step = true;
+				enable_step = true;
+				break;
+			}
+		}
+
+
+		// test for slopes (similar to stepoffset but less dist)
+		for (auto step = 0; step < 2; step++)
+		{
+			if (hit_slope)
+			{
+				break;
+			}
+
+			if (px->mScene->raycast(
+				PxVec3(from[edge].x, from[edge].y, from[edge].z + 1.0f),
+				stepoffset_dirs[2 * edge + step],
+				1.0f,
+				hit,
+				PxHitFlag::ePOSITION | PxHitFlag::eNORMAL))
+			{
+				hit_something = true;
+				m_groundtrace.normal = hit.block.normal;
+				m_groundtrace.distance = hit.block.distance;
+				m_groundtrace.position = hit.block.position;
+
+				if (hit.block.normal.z < 0.7f && hit.block.normal.z > 0.0f)
+				{
+					m_ground_type = GROUND_TYPE_SLOPE;
+					m_walking = false;
+					m_on_ground = false; // true needed for clip_velocity in air_move
+					m_is_jumping = false;
+					
+					hit_slope = true;
 					break;
 				}
 			}
 		}
 
-		if (px->mScene->raycast(
-			from[edge],
-			PxVec3(0.0f, 0.0f, -1.0f),
-			0.33f, //m_ccts->m_standing_size,
-			hit,
-			PxHitFlag::ePOSITION | PxHitFlag::eNORMAL))
+		if (!hit_slope)
 		{
-			hit_something = true;
-			m_groundtrace.normal		= hit.block.normal;
-			m_groundtrace.distance	= hit.block.distance;
-			m_groundtrace.position	= hit.block.position;
-
-			if (hit.block.normal.z < 0.7f && hit.block.normal.z > 0.0f)
+			// test ground
+			if (px->mScene->raycast(
+				from[edge],
+				PxVec3(0.0f, 0.0f, -1.0f),
+				1.0f,
+				hit,
+				PxHitFlag::ePOSITION | PxHitFlag::eNORMAL))
 			{
-				m_ground_type = GROUND_TYPE_SLOPE;
-				m_walking = false;
-
-				px->m_dbgline_ground_trace[0].xyz[0] = from[edge].x;
-				px->m_dbgline_ground_trace[0].xyz[1] = from[edge].y;
-				px->m_dbgline_ground_trace[0].xyz[2] = from[edge].z;
-
-				px->m_dbgline_ground_trace[1].xyz[0] = hit.block.position.x;
-				px->m_dbgline_ground_trace[1].xyz[1] = hit.block.position.y;
-				px->m_dbgline_ground_trace[1].xyz[2] = hit.block.position.z;
-
-				px->m_dbgline_ground_trace[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
-				px->m_dbgline_ground_trace[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
-
-				hit_slope = true;
-
-				break;
+				hit_something = true;
+				m_groundtrace.normal = hit.block.normal;
+				m_groundtrace.distance = hit.block.distance;
+				m_groundtrace.position = hit.block.position;
 			}
 		}
 	}
@@ -908,39 +924,30 @@ void physx_cct_camera::ground_trace()
 	if (hit_something && !hit_slope)
 	{
 		m_ground_type = GROUND_TYPE_GROUND;
+		m_on_ground = true;
+		m_walking = true;
+		m_bounce = true;
 	}
 	else if (!hit_something)
 	{
 		// PM_GroundTraceMissed
 		// re-trace with - 64 Z and set almostGroundPlane if hit
 
-		m_almost_ground_plane = false;
+		//m_almost_ground_plane = false;
 		m_on_ground = false;
 		m_walking = false;
 
 		// ..
 		m_ground_type = GROUND_TYPE_NONE;
+		m_groundtrace.normal = PxVec3(0.0f, 0.0f, 0.0f);
 	}
 
-	if (hit_something)
+	/*if (hit_something)
 	{
 		m_almost_ground_plane = true;
 		m_on_ground = true;
 		m_walking = true;
-	}
-
-	if (m_ground_type != GROUND_TYPE_SLOPE)
-	{
-		px->m_dbgline_ground_trace[0].xyz[0] = center.x;
-		px->m_dbgline_ground_trace[0].xyz[1] = center.y;
-		px->m_dbgline_ground_trace[0].xyz[2] = center.z;
-		px->m_dbgline_ground_trace[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREY);
-
-		px->m_dbgline_ground_trace[1].xyz[0] = center.x;
-		px->m_dbgline_ground_trace[1].xyz[1] = center.y;
-		px->m_dbgline_ground_trace[1].xyz[2] = center.z - m_ccts->m_standing_size;
-		px->m_dbgline_ground_trace[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREY);
-	}
+	}*/
 }
 
 bool physx_cct_camera::is_sprinting()
@@ -1015,25 +1022,27 @@ void physx_cct_camera::accelerate(const PxVec3& wishdir, float wishspeed, float 
 {
 	const float addspeed = wishspeed - m_player_velocity.dot(wishdir);
 
-	if (addspeed <= 0)
-	{
-		return;
-	}
+	//game::printf_to_console("accel - whishdir %.2f %.2f %.2f\n", wishdir.x, wishdir.y, wishdir.z);
+	//game::printf_to_console("accel - wishspeed %.2f\n", wishspeed);
 
-	// stopspeed
-	if (wishspeed < 100.0f)
+	if (addspeed > 0.0f)
 	{
-		wishspeed = 100.0f;
-	}
+		// stopspeed
+		if (wishspeed < 100.0f)
+		{
+			wishspeed = 100.0f;
+		}
 
-	float accelspeed = accel * m_msec * wishspeed;
-	if (accelspeed > addspeed)
-	{
-		accelspeed = addspeed;
-	}
+		float accelspeed = accel * m_msec * wishspeed;
+		if (accelspeed > addspeed)
+		{
+			accelspeed = addspeed;
+		}
 
-	m_player_velocity.x += accelspeed * wishdir.x;
-	m_player_velocity.y += accelspeed * wishdir.y;
+		m_player_velocity.x += accelspeed * wishdir.x;
+		m_player_velocity.y += accelspeed * wishdir.y;
+		m_player_velocity.z += accelspeed * wishdir.z;
+	}
 }
 
 void physx_cct_camera::pm_friction()
@@ -1055,21 +1064,28 @@ void physx_cct_camera::pm_friction()
 		return;
 	}
 
-	float calc_friction;
+	float drop = 0.0f;
 
-	// stopspeed->current.value
-	if (100.0f <= speed)
+	//if (m_walking)
 	{
-		calc_friction = vel;
-	}
-	else
-	{
-		calc_friction = 100.0f;
+		float calc_friction;
+
+		// stopspeed->current.value
+		if (100.0f <= speed)
+		{
+			calc_friction = vel;
+		}
+		else
+		{
+			calc_friction = 100.0f;
+		}
+
+		// (slowdown on land here ...)
+
+		drop = m_friction * calc_friction * m_msec;
 	}
 
-	// (slowdown on land here ...)
-
-	float newspeed = speed - (m_friction * calc_friction * m_msec);
+	float newspeed = speed - drop;
 
 	if (newspeed < 0)
 	{
@@ -1088,7 +1104,7 @@ void physx_cct_camera::pm_friction()
 
 void physx_cct_camera::air_move()
 {
-	//pm_friction(1.0f, dtime);
+	//pm_friction();
 
 	const float forwardmove = (m_cmd.forwardMove * 127.0f);
 	const float rightmove = (m_cmd.rightMove * 127.0f);
@@ -1121,9 +1137,15 @@ void physx_cct_camera::air_move()
 
 	const auto cam = cmainframe::activewnd->m_pCamWnd->camera;
 
+	PxVec3 v_fwd (cam.forward[0], cam.forward[1], 0.0f);
+	PxVec3 v_rt  (cam.right[0], cam.right[1], 0.0f);
+
+	v_fwd.normalize();
+	v_rt.normalize();
+
 	game::vec3_t dir = {};
-	dir[0] = cam.forward[0] * forwardmove + cam.right[0] * rightmove;
-	dir[1] = cam.forward[1] * forwardmove + cam.right[1] * rightmove;
+	dir[0] = v_fwd.x * forwardmove + v_rt.x * rightmove;
+	dir[1] = v_fwd.y * forwardmove + v_rt.y * rightmove;
 	dir[2] = 0.0f;
 
 	game::vec3_t wishdir = {};
@@ -1131,9 +1153,23 @@ void physx_cct_camera::air_move()
 
 	accelerate(PxVec3(wishdir[0], wishdir[1], wishdir[2]), wishspeed, 1.0f);
 
-	if (m_on_ground)
+	//if (m_on_ground) // hack
+	if (!m_is_jumping && m_groundtrace.normal.z < 0.7f && m_groundtrace.normal.z > 0.0f)
 	{
-		clip_velocity(m_groundtrace.normal, m_player_velocity, m_player_velocity);
+		if (!m_bounce)
+		{
+			m_bounce = true;
+			float new_vel[3] = { m_player_velocity.x, m_player_velocity.y, m_player_velocity.z };
+			project_velocity(m_groundtrace.normal, new_vel, new_vel);
+
+			m_player_velocity.x = new_vel[0];
+			m_player_velocity.y = new_vel[1];
+			m_player_velocity.z = new_vel[2];
+		}
+		else
+		{
+			clip_velocity(m_groundtrace.normal, m_player_velocity, m_player_velocity);
+		}
 	}
 
 	// PM_StepSlideMove(pm, pml, 1);
@@ -1160,7 +1196,7 @@ void physx_cct_camera::walk_move()
 		m_wants_jump = false;
 
 		m_on_ground = false;
-		m_almost_ground_plane = false;
+		m_bounce = false;
 		m_walking = false;
 		m_is_jumping = true; // PMF_JUMPING
 
@@ -1222,9 +1258,15 @@ void physx_cct_camera::walk_move()
 
 		const auto cam = cmainframe::activewnd->m_pCamWnd->camera;
 
+		PxVec3 v_fwd (cam.forward[0], cam.forward[1], 0.0f);
+		PxVec3 v_rt  (cam.right[0], cam.right[1], 0.0f);
+
+		v_fwd.normalize();
+		v_rt.normalize();
+
 		game::vec3_t dir = {};
-		dir[0] = cam.forward[0] * forwardmove + cam.right[0] * rightmove;
-		dir[1] = cam.forward[1] * forwardmove + cam.right[1] * rightmove;
+		dir[0] = v_fwd.x * forwardmove + v_rt.x * rightmove;
+		dir[1] = v_fwd.y * forwardmove + v_rt.y * rightmove;
 		dir[2] = 0.0f;
 
 		game::vec3_t wishdir = {};
@@ -1269,9 +1311,13 @@ void snap_vector(PxVec3& v)
 	}*/
 
 	// actual rounding
-	v.x = static_cast<float>( static_cast<int>(v.x + 0.5f) );
-	v.y = static_cast<float>( static_cast<int>(v.y + 0.5f) );
-	v.z = static_cast<float>( static_cast<int>(v.z + 0.5f) );
+	//v.x = static_cast<float>( static_cast<int>(v.x + 0.5f) );
+	//v.y = static_cast<float>( static_cast<int>(v.y + 0.5f) );
+	//v.z = static_cast<float>( static_cast<int>(v.z + 0.5f) );
+
+	v.x = static_cast<float>(static_cast<int>(v.x));
+	v.y = static_cast<float>(static_cast<int>(v.y));
+	v.z = static_cast<float>(static_cast<int>(v.z));
 
 	/*if (do_print)
 	{
@@ -1313,14 +1359,14 @@ void physx_cct_camera::update(PxReal dtime)
 	const PxControllerFilters filters(m_filter_data, m_filter_callback, m_cct_filter_callback);
 	const PxU32 flags = m_ccts->m_controller->move(m_player_velocity * dtime, 0.0f, dtime, filters, m_obstacle_context);
 
-	if (flags & PxControllerCollisionFlag::eCOLLISION_DOWN)
+	if (flags & PxControllerCollisionFlag::eCOLLISION_DOWN && m_ground_type != GROUND_TYPE_SLOPE)
 	{
 		m_on_ground = true;
 		m_is_jumping = false;
-		m_almost_ground_plane = true;
+		m_bounce = false;
 		m_jump_origin_z = 0.0f;
 	}
-	else if (m_player_velocity.z != 0.0f || m_is_jumping)
+	else if ((m_player_velocity.z != 0.0f || m_is_jumping) && m_ground_type != GROUND_TYPE_SLOPE)
 	{
 		m_on_ground = false;
 	}
@@ -1336,14 +1382,7 @@ void physx_cct_camera::update(PxReal dtime)
 	// update camera
 	if (const auto cct = m_ccts->m_controller; cct)
 	{
-		PxExtendedVec3 cam_target;
-		cam_target = cct->getFootPosition();
-
-		//const PxVec3 delta = cct->getPosition() - cct->getFootPosition();
-		//const PxVec3 physicsPos = cct->getActor()->getGlobalPose().p - delta;
-		//cam_target = PxExtendedVec3 (physicsPos.x, physicsPos.y, physicsPos.z);
-
-		const PxVec3 target = toVec3(cam_target);
+		const PxVec3 target = toVec3(cct->getFootPosition());
 
 		camera->camera.origin[0] = target.x;
 		camera->camera.origin[1] = target.y;
@@ -1352,6 +1391,6 @@ void physx_cct_camera::update(PxReal dtime)
 		physx->m_cct_controller->sync();
 	}
 
-	// magic (not really)
-	snap_vector(m_player_velocity);
+	// feels odd
+	// snap_vector(m_player_velocity);
 }

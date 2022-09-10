@@ -85,7 +85,7 @@ class physx_cct_camera
 						bool						m_is_flying;
 						GROUND_TYPE_				m_ground_type;
 						bool						m_on_ground;
-						bool						m_almost_ground_plane;
+						bool						m_bounce;
 						bool						m_walking;
 
 						PxReal						m_gravity;

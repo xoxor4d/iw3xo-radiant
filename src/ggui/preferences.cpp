@@ -526,9 +526,19 @@ namespace ggui
 
 			const PxVec3 origin (toVec3(cct->get_controller()->get_foot_position()));
 			ImGui::Text("Origin: %.2f, %.2f, %.5f", origin.x, origin.y, origin.z);
-			ImGui::Text("Speed: %.2f", cct->m_player_speed);
 			imgui::Text("Cam Forward: %.2f, %.2f, %.2f", cam.forward[0], cam.forward[1], cam.forward[2]);
-			imgui::Text("Msec: %.5f", components::renderer::get()->m_cam_msec * 1000.0f);
+			ImGui::Text("Speed: %.2f", cct->m_player_speed);
+			imgui::Text("Msec: %.0f", components::renderer::get()->m_cam_msec * 1000.0f);
+
+			imgui::Spacing();
+
+			imgui::Text("walking: %s", cct->m_walking ? "true" : "false");
+			imgui::Text("on_ground: %s", cct->m_on_ground ? "true" : "false");
+			imgui::Text("is_jumping: %s", cct->m_is_jumping ? "true" : "false");
+			imgui::Text("bounce: %s", cct->m_bounce ? "true" : "false");
+			imgui::Text("ground_type: %s", cct->m_ground_type == 0 ? "NONE" : cct->m_ground_type == 1 ? "GROUND" : "SLOPE");
+			imgui::Text("ground normal: %.2f, %.2f, %.2f", cct->m_groundtrace.normal.x, cct->m_groundtrace.normal.y, cct->m_groundtrace.normal.z);
+
 			imgui::PopFont();
 
 

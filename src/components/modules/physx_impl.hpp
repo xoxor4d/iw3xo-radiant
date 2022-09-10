@@ -64,8 +64,6 @@ namespace components
 
 		physx::PxMaterial* m_cct_material = nullptr;
 
-		game::GfxPointVertex m_dbgline_ground_trace[2] = {};
-
 		bool m_fx_sim_running = false;
 		bool m_effect_is_using_physics = false;
 
@@ -112,7 +110,6 @@ namespace components
 		uint32_t m_static_terrain_estimated_count = 0;
 		uint32_t m_static_terrain_count = 0;
 		std::vector<physx::PxRigidStatic*> m_static_terrain;
-
 
 		std::vector<physx::PxRigidDynamic*> m_dynamic_prefabs;
 
@@ -186,5 +183,7 @@ namespace components
 		void create_dynamic_prefab(game::selbrush_def_t* sb);
 		int  create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity = nullptr, const float* angular_velocity = nullptr);
 		void update_static_collision_material();
+
+		static void spawn_character();
 	};
 }

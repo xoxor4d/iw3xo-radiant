@@ -206,6 +206,7 @@ namespace ggui
 			process->set_indicator(components::process::INDICATOR_TYPE_PROGRESS);
 			process->set_indicator_string("Building Static Collision");
 			process->set_process_type(components::process::PROC_TYPE_GENERIC);
+			process->set_success_toast_string("Successfully built static collision");
 
 			process->set_thread_callback([]
 				{

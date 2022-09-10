@@ -1344,6 +1344,10 @@ namespace ggui
 					mainframe_thiscall(void, 0x428380); // CMainFrame::OnSnaptogrid
 				}
 
+				if (imgui::MenuItem("Snap To Grid - Guizmo", "", dvars::guizmo_snapping->current.enabled)) {
+					dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
+				}
+
 				ImGui::EndMenu(); // Grid
 			}
 

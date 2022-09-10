@@ -85,8 +85,6 @@ namespace ggui
 					ImGui::EndGroup();
 				}
 
-
-
 				ImGui::SetCursorPos(cursor_pos);
 			}
 		}
@@ -136,35 +134,35 @@ namespace ggui
 						dvars::set_bool(dvars::guizmo_enable, !dvars::guizmo_enable->current.enabled);
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
-					if (dvars::guizmo_enable->current.enabled)
-					{
-						static bool hov_guizmo_grid_snapping;
-						if (tb->image_togglebutton("guizmo_grid_snapping"
-							, hov_guizmo_grid_snapping
-							, dvars::guizmo_snapping->current.enabled
-							, "Guizmo: Enable grid-snapping"
-							, &toolbar_button_background
-							, &toolbar_button_background_hovered
-							, &toolbar_button_background_active
-							, &toolbar_button_size))
-						{
-							dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
-						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+					//if (dvars::guizmo_enable->current.enabled)
+					//{
+					//	static bool hov_guizmo_grid_snapping;
+					//	if (tb->image_togglebutton("guizmo_grid_snapping"
+					//		, hov_guizmo_grid_snapping
+					//		, dvars::guizmo_snapping->current.enabled
+					//		, "Guizmo: Enable grid-snapping"
+					//		, &toolbar_button_background
+					//		, &toolbar_button_background_hovered
+					//		, &toolbar_button_background_active
+					//		, &toolbar_button_size))
+					//	{
+					//		dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
+					//	} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
-						/*static bool hov_guizmo_brush_mode;
-						if (tb->image_togglebutton("guizmo_brush_mode"
-							, hov_guizmo_brush_mode
-							, dvars::guizmo_brush_mode->current.enabled
-							, "Guizmo: Enable brush mode"
-							, &toolbar_button_background
-							, &toolbar_button_background_hovered
-							, &toolbar_button_background_active
-							, &toolbar_button_size))
-						{
-							dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
-						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());*/
-					}
+					//	/*static bool hov_guizmo_brush_mode;
+					//	if (tb->image_togglebutton("guizmo_brush_mode"
+					//		, hov_guizmo_brush_mode
+					//		, dvars::guizmo_brush_mode->current.enabled
+					//		, "Guizmo: Enable brush mode"
+					//		, &toolbar_button_background
+					//		, &toolbar_button_background_hovered
+					//		, &toolbar_button_background_active
+					//		, &toolbar_button_size))
+					//	{
+					//		dvars::set_bool(dvars::guizmo_brush_mode, !dvars::guizmo_brush_mode->current.enabled);
+					//	} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());*/
+					//}
 
 					ImGui::PopStyleVar();
 				}
@@ -185,6 +183,20 @@ namespace ggui
 					{
 						mainframe_thiscall(LRESULT, 0x428F90); // CMainFrame::OnViewCubicclipping
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+
+					const auto px = components::physx_impl::get();
+					static bool hov_movement;
+					if (tb->image_togglebutton("physx_movement"
+						, hov_movement
+						, px->m_character_controller_enabled
+						, std::string("Toggle PhysX movement " + ggui::hotkey_dialog::get_hotkey_for_command("physx_movement") + "\nDouble Jump to fly").c_str()
+						, &toolbar_button_background
+						, &toolbar_button_background_hovered
+						, &toolbar_button_background_active
+						, &toolbar_button_size))
+					{
+						components::physx_impl::spawn_character();
+					}
 
 					static bool hov_gameview;
 					if (tb->image_togglebutton("gameview"
@@ -367,86 +379,89 @@ namespace ggui
 						const bool can_fx_play = components::effects::effect_can_play();
 						ImGui::BeginGroup();
 						{
-							ImGui::BeginDisabled(!can_fx_play || components::effects::effect_is_repeating());
+							//if (can_fx_play)
 							{
-								static bool hov_fx_play;
-								if (tb->image_togglebutton("fx_play"
-									, hov_fx_play
-									, can_fx_play && !components::effects::effect_is_repeating()
-									, std::string("Play Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_play")).c_str()
-									, &toolbar_button_background
-									, &toolbar_button_background_hovered
-									, &toolbar_button_background_active
-									, &toolbar_button_size))
+								ImGui::BeginDisabled(!can_fx_play || components::effects::effect_is_repeating());
 								{
-									components::effects::play();
+									static bool hov_fx_play;
+									if (tb->image_togglebutton("fx_play"
+										, hov_fx_play
+										, can_fx_play && !components::effects::effect_is_repeating()
+										, std::string("Play Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_play")).c_str()
+										, &toolbar_button_background
+										, &toolbar_button_background_hovered
+										, &toolbar_button_background_active
+										, &toolbar_button_size))
+									{
+										components::effects::play();
 
-								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+									} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
-								ImGui::EndDisabled();
-							}
+									ImGui::EndDisabled();
+								}
 
-							ImGui::BeginDisabled(!can_fx_play);
-							{
-								static bool hov_fx_repeat;
-								if (tb->image_togglebutton("fx_repeat"
-									, hov_fx_repeat
-									, components::effects::effect_is_repeating()
-									, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_repeat")).c_str()
-									, &toolbar_button_background
-									, &toolbar_button_background_hovered
-									, &toolbar_button_background_active
-									, &toolbar_button_size))
+								ImGui::BeginDisabled(!can_fx_play);
 								{
-									components::effects::repeat();
+									static bool hov_fx_repeat;
+									if (tb->image_togglebutton("fx_repeat"
+										, hov_fx_repeat
+										, components::effects::effect_is_repeating()
+										, std::string("Re-trigger Effect every X seconds for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_repeat")).c_str()
+										, &toolbar_button_background
+										, &toolbar_button_background_hovered
+										, &toolbar_button_background_active
+										, &toolbar_button_size))
+									{
+										components::effects::repeat();
 
-								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
-
-
-								static bool hov_fx_pause;
-								if (tb->image_togglebutton("fx_pause"
-									, hov_fx_pause
-									, can_fx_play
-									, std::string("Pause Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str()
-									, &toolbar_button_background
-									, &toolbar_button_background_hovered
-									, &toolbar_button_background_active
-									, &toolbar_button_size))
-								{
-									components::effects::pause();
-
-								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+									} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
 
-								static bool hov_fx_stop;
-								if (tb->image_togglebutton("fx_stop"
-									, hov_fx_stop
-									, can_fx_play
-									, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_stop")).c_str()
-									, &toolbar_button_background
-									, &toolbar_button_background_hovered
-									, &toolbar_button_background_active
-									, &toolbar_button_size))
-								{
-									components::effects::stop();
+									static bool hov_fx_pause;
+									if (tb->image_togglebutton("fx_pause"
+										, hov_fx_pause
+										, can_fx_play
+										, std::string("Pause Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_pause")).c_str()
+										, &toolbar_button_background
+										, &toolbar_button_background_hovered
+										, &toolbar_button_background_active
+										, &toolbar_button_size))
+									{
+										components::effects::pause();
 
-								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+									} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
-								static bool hov_fx_edit;
-								if (tb->image_togglebutton("fx_edit"
-									, hov_fx_edit
-									, hov_fx_edit
-									, "Edit Effect for last selected fx_origin"
-									, &toolbar_button_background
-									, &toolbar_button_background_hovered
-									, &toolbar_button_background_active
-									, &toolbar_button_size))
-								{
-									components::effects::edit();
 
-								} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+									static bool hov_fx_stop;
+									if (tb->image_togglebutton("fx_stop"
+										, hov_fx_stop
+										, can_fx_play
+										, std::string("Stop Effect for last selected fx_origin " + ggui::hotkey_dialog::get_hotkey_for_command("fx_stop")).c_str()
+										, &toolbar_button_background
+										, &toolbar_button_background_hovered
+										, &toolbar_button_background_active
+										, &toolbar_button_size))
+									{
+										components::effects::stop();
 
-								ImGui::EndDisabled();
+									} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+
+									static bool hov_fx_edit;
+									if (tb->image_togglebutton("fx_edit"
+										, hov_fx_edit
+										, hov_fx_edit
+										, "Edit Effect for last selected fx_origin"
+										, &toolbar_button_background
+										, &toolbar_button_background_hovered
+										, &toolbar_button_background_active
+										, &toolbar_button_size))
+									{
+										components::effects::edit();
+
+									} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+
+									ImGui::EndDisabled();
+								}
 							}
 
 							ImGui::EndGroup();
@@ -473,65 +488,6 @@ namespace ggui
 
 							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 							ImGui::PopID();
-
-							const auto px = components::physx_impl::get();
-
-							static bool hov_movement;
-							if (tb->image_togglebutton("camera_movement"
-								, hov_movement
-								, px->m_character_controller_enabled
-								, "Toggle PhysX movement"
-								, &toolbar_button_background
-								, &toolbar_button_background_hovered
-								, &toolbar_button_background_active
-								, &toolbar_button_size))
-							{
-
-								// *
-								// generate static collision and activate movement
-
-								const auto process = components::process::get();
-
-								process->set_indicator(components::process::INDICATOR_TYPE_PROGRESS);
-								process->set_indicator_string("Building Static Collision");
-								process->set_process_type(components::process::PROC_TYPE_GENERIC);
-
-								process->set_thread_callback([]
-									{
-										components::physx_impl::create_static_collision();
-									});
-
-								process->set_progress_callback([]
-									{
-										const auto current = static_cast<float>(components::physx_impl::get()->m_static_brush_count + components::physx_impl::get()->m_static_terrain_count);
-										const auto total = static_cast<float>(components::physx_impl::get()->m_static_brush_estimated_count + components::physx_impl::get()->m_static_terrain_estimated_count);
-										components::process::get()->m_indicator_progress = current / total;
-									});
-
-								// activate movement on process end
-								process->set_post_process_callback([this]
-									{
-										const auto px = components::physx_impl::get();
-										px->m_character_controller_enabled = !px->m_character_controller_enabled;
-
-										if (px->m_character_controller_enabled)
-										{
-											this->rtt_set_focus_state(true);
-											this->rtt_set_hovered_state(true);
-
-											const auto cam_pos = cmainframe::activewnd->m_pCamWnd->camera.origin;
-											px->m_cct_controller->get_controller()->setPosition({ cam_pos[0], cam_pos[1], cam_pos[2] - 24.5 }); // 24.5 ??
-
-											px->m_cct_camera->m_player_velocity.x = 0.0f;
-											px->m_cct_camera->m_player_velocity.y = 0.0f;
-											px->m_cct_camera->m_player_velocity.z = 0.0f;
-
-											px->m_cct_camera->enable_cct(true);
-										}
-									});
-
-								process->create_process();
-							}
 						}
 
 						ImGui::PopStyleVar();

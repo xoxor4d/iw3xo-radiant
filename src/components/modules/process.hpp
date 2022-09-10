@@ -48,6 +48,8 @@ namespace components
 		std::string m_indicator_str;
 		float m_indicator_progress;
 
+		std::string m_success_toast_str;
+
 		static void run_thread_callback();
 
 		void reset(bool clear_callback = false)
@@ -58,6 +60,7 @@ namespace components
 			m_indicator_type = INDICATOR_TYPE_SPINNER;
 			m_indicator_progress = 0.0f;
 			m_indicator_str = "";
+			m_success_toast_str = "";
 
 			if (clear_callback)
 			{
@@ -110,6 +113,15 @@ namespace components
 		void set_indicator_string(const std::string& str)
 		{
 			this->m_indicator_str = str;
+		}
+
+		/**
+		 * @brief		string to use in the imgui toast when process successfully finished
+		 * @param str	the string
+		 */
+		void set_success_toast_string(const std::string& str)
+		{
+			this->m_success_toast_str = str;
 		}
 
 		// batch: enable/disable console output

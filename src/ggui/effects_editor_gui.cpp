@@ -2958,6 +2958,35 @@ namespace ggui
 	bool effects_editor_dialog::gui()
 	{
 		effect_elemdef_list();
+
+		// *
+		// handle closing modal when elemdef list is not active
+
+		const char* close_editor_modal_str = "Unsaved Changes##editor_close";
+		if (m_pending_close)
+		{
+			m_pending_close = false;
+			if (m_effect_was_modified)
+			{
+				ImGui::OpenPopup(close_editor_modal_str);
+			}
+			else
+			{
+				m_effect_was_modified = false;
+
+				components::effects::edit();
+				components::command::execute("fx_reload");
+			}
+		}
+
+		if (modal_unsaved_changes(close_editor_modal_str)) // true if clicked OK ^
+		{
+			m_effect_was_modified = false;
+
+			components::effects::edit();
+			components::command::execute("fx_reload");
+		}
+
 		return effects_editor_dialog::effect_property_window();
 	}
 
