@@ -5,7 +5,17 @@ namespace ggui
 	// right hand side toolbar
 	void camera_dialog::toolbar()
 	{
-		const bool hide_cam_toolbar = dvars::gui_toolbox_integrate_cam_toolbar && dvars::gui_toolbox_integrate_cam_toolbar->current.enabled;
+		bool hide_cam_toolbar = false;
+
+		if (dvars::gui_toolbox_integrate_cam_toolbar && dvars::gui_toolbox_integrate_cam_toolbar->current.enabled)
+		{
+			const auto toolbox = GET_GUI(ggui::toolbox_dialog);
+
+			if (toolbox->is_active() && !toolbox->is_inactive_tab())
+			{
+				hide_cam_toolbar = true;
+			}
+		}
 
 		const auto CAM_DEBUG_TEXT_Y_OFFS = hide_cam_toolbar ? 140.0f : 180.0f;
 		const auto prefs = game::g_PrefsDlg();
@@ -167,7 +177,7 @@ namespace ggui
 					ImGui::PopStyleVar();
 				}
 
-				SPACING(0.0f, 0.0f);
+				//SPACING(0.0f, 0.0f);
 
 				ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 0.0f));
 				{

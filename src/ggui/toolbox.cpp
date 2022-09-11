@@ -1346,7 +1346,7 @@ namespace ggui
 
 			// #
 			
-			if (dvars::guizmo_enable->current.enabled)
+			/*if (dvars::guizmo_enable->current.enabled)
 			{
 				mins = ImGui::GetCursorScreenPos();
 
@@ -1365,7 +1365,7 @@ namespace ggui
 
 				maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
 				ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
-			}
+			}*/
 
 			// #
 
@@ -1382,6 +1382,27 @@ namespace ggui
 				, &toolbar_button_size))
 			{
 				mainframe_thiscall(LRESULT, 0x428F90); // CMainFrame::OnViewCubicclipping
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+
+			// #
+
+			mins = ImGui::GetCursorScreenPos();
+
+			const auto px = components::physx_impl::get();
+			static bool hov_movement;
+			if (tb->image_togglebutton("physx_movement"
+				, hov_movement
+				, px->m_character_controller_enabled
+				, std::string("Toggle PhysX movement " + ggui::hotkey_dialog::get_hotkey_for_command("physx_movement") + "\nDouble Jump to fly").c_str()
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &toolbar_button_background_active
+				, &toolbar_button_size))
+			{
+				components::physx_impl::spawn_character();
 			}
 
 			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
