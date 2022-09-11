@@ -117,6 +117,15 @@ namespace ggui::camera_guizmo
 		{
 			const auto camerawnd = GET_GUI(ggui::camera_dialog);
 
+			if (camerawnd->rtt_is_hovered())
+			{
+				const auto& io = imgui::GetIO();
+				if (io.KeyMods == (ImGuiKeyModFlags_Ctrl) || GetKeyState(VK_MENU) < 0)
+				{
+					return;
+				}
+			}
+
 			// do not activate guizmo till initial left click is released
 			// fixes unwanted transforms on multi selection via shift (if mouse is over guizmo)
 			static bool guizmo_needs_activation = true;
@@ -126,7 +135,7 @@ namespace ggui::camera_guizmo
 
 			if (const auto b = game::g_selected_brushes()->def; b)
 			{
-				if(overwrite_activation)
+				if (overwrite_activation)
 				{
 					guizmo_needs_activation = false;
 					overwrite_activation = false;
@@ -445,9 +454,9 @@ namespace ggui::camera_guizmo
 							}
 						}
 					} // no manipulation
-					else if(added_undo)
+					else if (added_undo)
 					{
-						if(ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+						if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
 						{
 							game::Undo_EndBrushList_Selected();
 							game::Undo_End();
