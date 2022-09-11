@@ -838,6 +838,8 @@ namespace components
 	 */
 	bool physx_impl::exclude_brushes_from_static_collision(game::selbrush_def_t* b)
 	{
+		bool is_brushmodel = false;
+
 		// skip sky
 		if (b->def->contents & game::BRUSHCONTENTS_SKY)
 		{
@@ -857,7 +859,13 @@ namespace components
 
 			if (class_type & game::ECLASS_RADIANT_NODE)
 			{
-				return true;
+				// allow brushmodels
+				if (b->owner->firstActive->eclass->name != "script_brushmodel"s)
+				{
+					return true;
+				}
+
+				is_brushmodel = true;
 			}
 		}
 
@@ -868,7 +876,7 @@ namespace components
 		}
 
 		// skip all tooling (spawns, lightgrid ...) but include (some) clip
-		if ((b->brushflags & game::BRUSHFLAG_TOOL) && !(b->def->contents & 0x10000 || b->def->contents & 0x20000 || b->def->contents & 0x30000))
+		if ((!is_brushmodel && b->brushflags & game::BRUSHFLAG_TOOL) && !(b->def->contents & 0x10000 || b->def->contents & 0x20000 || b->def->contents & 0x30000))
 		{
 			return true;
 		}
