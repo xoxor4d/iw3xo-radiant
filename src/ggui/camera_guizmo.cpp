@@ -120,7 +120,9 @@ namespace ggui::camera_guizmo
 			if (camerawnd->rtt_is_hovered())
 			{
 				const auto& io = imgui::GetIO();
-				if (io.KeyMods == (ImGuiKeyModFlags_Ctrl) || GetKeyState(VK_MENU) < 0)
+				if (   (io.KeyMods & ImGuiKeyModFlags_Ctrl)
+					|| (io.KeyMods & ImGuiKeyModFlags_Shift) 
+					|| GetKeyState(VK_MENU) < 0)
 				{
 					return;
 				}
