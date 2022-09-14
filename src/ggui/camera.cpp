@@ -925,17 +925,17 @@ namespace ggui
 									}
 								}
 
-								if (game::is_any_brush_selected())
-								{
-									if (!prefab_sep) 
-									{
-										SEPERATORV(0.0f);
-										prefab_sep = true;
-									}
-									
-									convert_selection_to_prefab_imgui_menu();
-									//export_selection_as_prefab_menu();
-								}
+								//if (game::is_any_brush_selected())
+								//{
+								//	if (!prefab_sep) 
+								//	{
+								//		SEPERATORV(0.0f);
+								//		prefab_sep = true;
+								//	}
+								//	
+								//	//convert_selection_to_prefab_imgui_menu();
+								//	//export_selection_as_prefab_menu();
+								//}
 							}
 							
 							// subdivision and texture operations
@@ -977,31 +977,23 @@ namespace ggui
 											//Patch_Lightmap_Texturing
 											utils::hook::call<void(__cdecl)()>(0x448110)();
 										}
-
 									}
 								}
 							}
 						} // no brush hit
-						else if(game::g_prefab_stack_level) // within prefab
+						else if (game::g_prefab_stack_level) // within prefab
 						{
 							if (ImGui::MenuItem("Leave Prefab"))
 							{
 								game::Prefab_Leave();
 							}
-
-							if (game::is_any_brush_selected())
-							{
-								convert_selection_to_prefab_imgui_menu();
-							}
-
-							/*if (game::is_any_brush_selected())
-							{
-								export_selection_as_prefab_menu();
-								ImGui::Separator();
-							}*/
 						}
-						else if(game::is_any_brush_selected())
+
+						if (game::is_any_brush_selected())
 						{
+							ggui::context::xyzcam_general_selection();
+
+							SEPERATORV(0.0f);
 							convert_selection_to_prefab_imgui_menu();
 						}
 

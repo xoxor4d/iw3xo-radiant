@@ -143,6 +143,7 @@
 #include "fx_system/fx_load.hpp"
 #include "fx_system/fx_save.hpp"
 
+#include "ggui/shared/context.hpp"
 #include "ggui/_ggui.hpp"
 #include "ggui/_template_dialog.hpp"
 #include "ggui/about.hpp"

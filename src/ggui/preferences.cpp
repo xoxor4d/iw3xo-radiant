@@ -271,11 +271,11 @@ namespace ggui
 		static float height = 0.0f;
 		height = pref_child_lambda(CAT_TEXTURES, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
 		{
-			ImGui::title_with_seperator("General", false);
+			/*ImGui::title_with_seperator("General", false);
 			ImGui::Checkbox("Draw scrollbar", &dvars::gui_texwnd_draw_scrollbar->current.enabled);
-			ImGui::Checkbox("Show scroll position in percent", &dvars::gui_texwnd_draw_scrollpercent->current.enabled);
+			ImGui::Checkbox("Show scroll position in percent", &dvars::gui_texwnd_draw_scrollpercent->current.enabled);*/
 
-			ImGui::title_with_seperator("Quality");
+			ImGui::title_with_seperator("Quality", false);
 
 			// actual picmip vars the renderer is using (used to check if quality was changed)
 			const auto& r_picmip_renderer_val = *reinterpret_cast<int*>(0x14E6CF8);

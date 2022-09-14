@@ -2771,16 +2771,22 @@ namespace components
 			const auto backend = game::get_backenddata();
 			const auto dyn_shadow_type = viewInfo->dynamicShadowType;
 
-			if (dvars::r_draw_bsp->current.enabled)
-			{
-				if (dyn_shadow_type == game::SHADOW_MAP)
-				{
-					if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
-					{
-						game::RB_SunShadowMaps(backend, viewInfo);
-					}
+			const auto r_fullbright = game::Dvar_FindVar("r_fullbright");
+			const auto r_debugshader = game::Dvar_FindVar("r_debugshader");
 
-					game::RB_SpotShadowMaps(backend, viewInfo);
+			if (!(r_fullbright && r_fullbright->current.enabled) && !(r_debugshader && r_debugshader->current.enabled))
+			{
+				if (dvars::r_draw_bsp->current.enabled)
+				{
+					if (dyn_shadow_type == game::SHADOW_MAP)
+					{
+						if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+						{
+							game::RB_SunShadowMaps(backend, viewInfo);
+						}
+
+						game::RB_SpotShadowMaps(backend, viewInfo);
+					}
 				}
 			}
 
