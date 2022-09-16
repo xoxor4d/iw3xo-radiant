@@ -1315,14 +1315,18 @@ void snap_vector(PxVec3& v)
 	//v.y = static_cast<float>( static_cast<int>(v.y + 0.5f) );
 	//v.z = static_cast<float>( static_cast<int>(v.z + 0.5f) );
 
-	v.x = static_cast<float>(static_cast<int>(v.x));
+	/*v.x = static_cast<float>(static_cast<int>(v.x));
 	v.y = static_cast<float>(static_cast<int>(v.y));
-	v.z = static_cast<float>(static_cast<int>(v.z));
+	v.z = static_cast<float>(static_cast<int>(v.z));*/
 
 	/*if (do_print)
 	{
 		game::printf_to_console("snapvec after: %.4f\n-------\n", v.z);
 	}*/
+
+	v.x = rint(v.x);
+	v.y = rint(v.y);
+	v.z = rint(v.z);
 }
 
 void physx_cct_camera::update(PxReal dtime)
@@ -1391,6 +1395,5 @@ void physx_cct_camera::update(PxReal dtime)
 		physx->m_cct_controller->sync();
 	}
 
-	// feels odd
-	// snap_vector(m_player_velocity);
+	snap_vector(m_player_velocity);
 }
