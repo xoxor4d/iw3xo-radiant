@@ -315,11 +315,13 @@ namespace components
 		}
 	}
 
-	void renderer::copy_scene_to_texture(ggui::e_gfxwindow wnd, IDirect3DTexture9*& dest, bool no_release)
+	void renderer::copy_scene_to_texture(GFXWND_ GFXWND, IDirect3DTexture9*& dest, bool no_release)
 	{
+		const auto gfx_window = components::renderer::get_window(GFXWND);
+
 		// get the backbuffer surface
 		IDirect3DSurface9* surf_backbuffer = nullptr;
-		game::dx->windows[wnd].swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &surf_backbuffer);
+		gfx_window->swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &surf_backbuffer);
 
 		// write surface to file (test)
 		//D3DXSaveSurfaceToFileA("surface_to_file.png", D3DXIFF_PNG, surf_backbuffer, NULL, NULL);
@@ -332,7 +334,7 @@ namespace components
 
 			if(!no_release)
 			{
-				if (desc.Width != static_cast<unsigned int>(game::dx->windows[wnd].width) || desc.Height != static_cast<unsigned int>(game::dx->windows[wnd].height))
+				if (desc.Width != static_cast<unsigned int>(gfx_window->width) || desc.Height != static_cast<unsigned int>(gfx_window->height))
 				{
 					dest->Release();
 					dest = nullptr;
@@ -343,7 +345,7 @@ namespace components
 		// create or re-create ^ the texture surface
 		if (!dest)
 		{
-			D3DXCreateTexture(game::dx->device, game::dx->windows[wnd].width, game::dx->windows[wnd].height, D3DX_DEFAULT, D3DUSAGE_RENDERTARGET, D3DFMT_R8G8B8, D3DPOOL_DEFAULT, &dest);
+			D3DXCreateTexture(game::dx->device, gfx_window->width, gfx_window->height, D3DX_DEFAULT, D3DUSAGE_RENDERTARGET, D3DFMT_R8G8B8, D3DPOOL_DEFAULT, &dest);
 		}
 
 		// "bind" texture to surface
@@ -1843,7 +1845,7 @@ namespace components
 		if(renderer::postfx::is_any_active())
 		{
 			// get scene without postfx -> used for colorMapPostSunSampler
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
+			renderer::copy_scene_to_texture(renderer::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 		}
 
 		// register_material
@@ -1856,7 +1858,7 @@ namespace components
 			utils::hook::call<void(__cdecl)(game::Material* _material)>(0x531450)(game::rgp->pixelCostColorCodeMaterial);
 
 			// get scene with postfx -> render with imgui
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
+			renderer::copy_scene_to_texture(renderer::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 		}
 	}
 
@@ -1864,7 +1866,7 @@ namespace components
 	// called before rendering the command queue
 	void pre_scene_command_rendering()
 	{
-		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		if (game::dx->targetWindowIndex == renderer::CCAMERAWND)
 		{
 			// clear framebuffer (color)
 			renderer::R_SetAndClearSceneTarget(true);
@@ -1876,7 +1878,7 @@ namespace components
 	// called after rendering the command queue
 	void post_scene_command_rendering()
 	{
-		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		if (game::dx->targetWindowIndex == renderer::CCAMERAWND)
 		{
 			// render emissive surfs (effects)
 			renderer::RB_Draw3D();
@@ -1979,7 +1981,7 @@ namespace components
 		game::GfxRenderCommandExecState execState = {};
 		execState.cmd = cmds;
 
-		bool log = g_log_rendercommands && game::dx->targetWindowIndex == ggui::CCAMERAWND;
+		bool log = g_log_rendercommands && game::dx->targetWindowIndex == renderer::CCAMERAWND;
 		std::ofstream log_file;
 		std::uint32_t log_last_id = 0;
 		std::uint32_t log_last_id_count = 1;
@@ -2171,7 +2173,7 @@ namespace components
 
 	void setup_viewinfo(game::GfxViewParms* viewParms)
 	{
-		if (game::dx->targetWindowIndex != ggui::CCAMERAWND)
+		if (game::dx->targetWindowIndex != renderer::CCAMERAWND)
 		{
 			return;
 		}
@@ -2217,8 +2219,8 @@ namespace components
 			utils::vector::copy(viewParms->axis[1], refdef.viewaxis[1]);
 			utils::vector::copy(viewParms->axis[2], refdef.viewaxis[2]);
 
-			refdef.width = game::dx->windows[ggui::CCAMERAWND].width;
-			refdef.height = game::dx->windows[ggui::CCAMERAWND].height;
+			refdef.width = components::renderer::get_window(components::renderer::CCAMERAWND)->width;
+			refdef.height = components::renderer::get_window(components::renderer::CCAMERAWND)->height;
 
 			const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
 			refdef.tanHalfFovY = tanf(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
@@ -2227,8 +2229,8 @@ namespace components
 			refdef.zNear = game::Dvar_FindVar("r_zNear")->current.value;
 			refdef.time = static_cast<int>(timeGetTime());
 
-			refdef.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
-			refdef.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
+			refdef.scissorViewport.width = components::renderer::get_window(components::renderer::CCAMERAWND)->width;
+			refdef.scissorViewport.height = components::renderer::get_window(components::renderer::CCAMERAWND)->height;
 
 			memcpy(&refdef.primaryLights, &d3dbsp::scene_lights, sizeof(d3dbsp::scene_lights));
 
@@ -2252,8 +2254,8 @@ namespace components
 			memcpy(&viewInfo->viewParms, viewParms, sizeof(game::GfxViewParms));
 			viewInfo->viewParms.zNear = game::Dvar_FindVar("r_zNear")->current.value;
 
-			const auto window = game::dx->windows[ggui::CCAMERAWND];
-			const game::GfxViewport viewport = { 0, 0, window.width, window.height };
+			const auto gfx_window = components::renderer::get_window(components::renderer::CCAMERAWND);
+			const game::GfxViewport viewport = { 0, 0, gfx_window->width, gfx_window->height };
 
 			viewInfo->sceneViewport = viewport;
 			viewInfo->displayViewport = viewport;
@@ -2763,7 +2765,7 @@ namespace components
 			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];
 
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			renderer::copy_scene_to_texture(renderer::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
 			game::gfxCmdBufSourceState->input.codeImages[10] = resolved_post_sun->image;
 
 			// ------
@@ -3744,6 +3746,60 @@ namespace components
 		utils::hook::set<DWORD>(0x5330DE + 1, TESS_INDICES_AMOUNT);
 		utils::hook::set<DWORD>(0x533484 + 2, TESS_INDICES_AMOUNT);
 		utils::hook::set<DWORD>(0x534F1B + 2, TESS_INDICES_AMOUNT);
+
+		// ------------------------------------------------------------------------------------------------
+
+		// realoc dx.windows[5] to add more d3d windows
+
+		// base address (hwnd)
+		uintptr_t dxwnd_base_patches[] =
+		{
+			// FC 82 36 01
+			0x4FFB88 + 2, 0x500692 + 2, 0x5012B3 + 1, 0x501414 + 2,
+			0x501441 + 2, 0x5015F6 + 1, 0x501AE6 + 1,
+
+		}; relocate_struct_ref(dxwnd_base_patches, renderer::windows, ARRAYSIZE(dxwnd_base_patches), 0x0);
+
+
+		// + 0x4 address (swapchain)
+		uintptr_t dxwnd_swapchain_patches[] =
+		{
+			// 00 83 36 01
+			0x4FFB57 + 2, 0x500625 + 2, 0x500EA1 + 1, 0x5012F7 + 2,
+			0x501740 + 2, 0x501748 + 2, 0x52BBE0 + 2, 0x52CA63 + 1,
+			0x53578E + 2,
+
+		}; relocate_struct_ref(dxwnd_swapchain_patches, renderer::windows, ARRAYSIZE(dxwnd_swapchain_patches), 0x4);
+
+
+		// + 0x8 address (width)
+		uintptr_t dxwnd_width_patches[] =
+		{
+			// 04 83 36 01
+			0x4FFB99 + 2, 0x5013D4 + 2, 0x50160A + 1, 0x5017C6 + 1,
+			0x501B2A + 2, 0x50648E + 2, 0x50653B + 2, 0x52BBA1 + 2,
+
+		}; relocate_struct_ref(dxwnd_width_patches, renderer::windows, ARRAYSIZE(dxwnd_width_patches), 0x8);
+
+
+		// + 0xC address (height)
+		uintptr_t dxwnd_height_patches[] =
+		{
+			// 08 83 36 01
+			0x4FFBAB + 2, 0x5013DA + 2, 0x5015FB + 2, 0x501B33 + 2,
+			0x506488 + 2, 0x506522 + 2, 0x52BBA7 + 2,
+
+		}; relocate_struct_ref(dxwnd_height_patches, renderer::windows, ARRAYSIZE(dxwnd_height_patches), 0xC);
+
+
+		// patch dx.windowCount checks (inc. to GFX_TARGETWINDOW_COUNT)
+		utils::hook::set<BYTE>(0x4FFB29 + 2, GFX_TARGETWINDOW_COUNT);
+		utils::hook::set<BYTE>(0x50057F + 2, GFX_TARGETWINDOW_COUNT);
+		utils::hook::set<BYTE>(0x5005F0 + 6, GFX_TARGETWINDOW_COUNT);
+		utils::hook::set<BYTE>(0x5005F9 + 1, GFX_TARGETWINDOW_COUNT);
+
+
+		// ------------------------------------------------------------------------------------------------
 
 		// rewrite, working fine but no need (only debug)
 		// utils::hook::detour(0x4FE750, RB_DrawEditorSkinnedCached, HK_JUMP);

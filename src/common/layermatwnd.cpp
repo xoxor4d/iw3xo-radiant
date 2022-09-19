@@ -198,8 +198,9 @@ void clayermatwnd::on_paint()
 		gui->m_anim_model_yaw -= 360.0f;
 	}
 
-	layercam.width = game::dx->windows[ggui::LAYERED].width;
-	layercam.height = game::dx->windows[ggui::LAYERED].height;
+	layercam.width = components::renderer::get_window(components::renderer::LAYERED)->width;
+	layercam.height = components::renderer::get_window(components::renderer::LAYERED)->height;
+
 
 	// custom rendermethods always use fakelight_normal
 	auto render_method_model = layermatwnd::rendermethod_preview;
@@ -254,7 +255,8 @@ void clayermatwnd::on_paint()
 					temp_angles[1] = gui->m_anim_model_yaw - gui->m_camera_angles[1];
 					temp_angles[2] = gui->m_camera_angles[2];
 
-					setup_scene_modelselector(origin, axis, 0, 0, game::dx->windows[game::dx->targetWindowIndex].width, game::dx->windows[game::dx->targetWindowIndex].height);
+					const auto gfx_window = components::renderer::get_window(static_cast<components::renderer::GFXWND_>(game::dx->targetWindowIndex));
+					setup_scene_modelselector(origin, axis, 0, 0, gfx_window->width, gfx_window->height);
 
 #if 0
 					float dir_out[3] = {};
@@ -393,7 +395,7 @@ void clayermatwnd::on_paint()
 				game::R_EndFrame();
 				game::R_IssueRenderCommands(-1);
 				//game::R_SortMaterials(); // not needed because only a single model
-				components::renderer::copy_scene_to_texture(ggui::LAYERED, gui->rtt_get_texture());
+				components::renderer::copy_scene_to_texture(components::renderer::LAYERED, gui->rtt_get_texture());
 			}
 		}
 	}

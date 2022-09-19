@@ -1144,7 +1144,7 @@ namespace game
 			if (game::dx->windowCount > 0)
 			{
 				int wnd_count = 0;
-				for (auto i = game::dx->windows; i->hwnd != hwnd; ++i)
+				for (auto i = components::renderer::windows; i->hwnd != hwnd; ++i)
 				{
 					if (++wnd_count >= game::dx->windowCount)
 					{
@@ -1162,8 +1162,12 @@ namespace game
 
 				R_SetD3DPresentParameters(&d3dpp, &wnd, game::dx->windowCount);
 
-				auto swapchain = &game::dx->windows[wnd_count].swapChain;
+				const auto gfx_window = components::renderer::get_window(static_cast<components::renderer::GFXWND_>(wnd_count));
+
+				//auto swapchain = &game::dx->windows[wnd_count].swapChain;
+				auto swapchain = &gfx_window->swapChain;
 				auto old_swapchain = *swapchain;
+
 				if (*swapchain == nullptr)
 				{
 					ASSERT_MSG(1, "var");
@@ -1183,8 +1187,8 @@ namespace game
 					ASSERT_MSG(0, "CreateAdditionalSwapChain failed ...");
 				}
 
-				game::dx->windows[wnd_count].width = display_width;
-				game::dx->windows[wnd_count].height = display_height;
+				gfx_window->width = display_width;
+				gfx_window->height = display_height;
 			}
 		}
 	}

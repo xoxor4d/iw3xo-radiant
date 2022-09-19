@@ -288,14 +288,14 @@ namespace components
 		 // | -------------------- Camera Window ------------------------
 		 // *
 
-		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		if (game::dx->targetWindowIndex == renderer::CCAMERAWND)
 		{
 			// copy scene to texture
 			// done in renderer::camera_postfx() if post effects are active
 
 			if (!renderer::postfx::is_any_active())
 			{
-				renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
+				renderer::copy_scene_to_texture(renderer::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 			}
 		}
 
@@ -304,9 +304,9 @@ namespace components
 		// | -------------------- Grid Window ------------------------
 		// *
 		
-		if (game::dx->targetWindowIndex == ggui::CXYWND)
+		if (game::dx->targetWindowIndex == renderer::CXYWND)
 		{
-			renderer::copy_scene_to_texture(ggui::CXYWND, GET_GUI(ggui::grid_dialog)->rtt_get_texture());
+			renderer::copy_scene_to_texture(renderer::CXYWND, GET_GUI(ggui::grid_dialog)->rtt_get_texture());
 		}
 
 		
@@ -314,9 +314,9 @@ namespace components
 		// | -------------------- Texture Window ------------------------
 		// *
 
-		if(game::dx->targetWindowIndex == ggui::CTEXWND)
+		if(game::dx->targetWindowIndex == renderer::CTEXWND)
 		{
-			renderer::copy_scene_to_texture(ggui::CTEXWND, GET_GUI(ggui::texture_dialog)->rtt_get_texture());
+			renderer::copy_scene_to_texture(renderer::CTEXWND, GET_GUI(ggui::texture_dialog)->rtt_get_texture());
 		}
 
 
@@ -324,7 +324,7 @@ namespace components
 		// | ------------- Layered Materials Window (Model Preview) -----------------
 		// *
 		
-		if (game::dx->targetWindowIndex == ggui::LAYERED)
+		if (game::dx->targetWindowIndex == renderer::LAYERED)
 		{
 			// so empty
 		}
@@ -334,7 +334,7 @@ namespace components
 		// | --------------------- Z Window (Dear ImGui Canvas) ------------------------
 		// *
 		
-		if (game::dx->targetWindowIndex == ggui::CZWND)
+		if (game::dx->targetWindowIndex == renderer::CZWND)
 		{
 			if (!ggui::m_ggui_initialized)
 			{

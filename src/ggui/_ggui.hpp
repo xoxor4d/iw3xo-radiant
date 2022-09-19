@@ -96,14 +96,14 @@ namespace ggui
 	// | -------------------- Structs ------------------------
 	// *
 
-    enum e_gfxwindow
+   /* enum e_gfxwindow
 	{
 		CCAMERAWND = 0,
 		CXYWND = 1,
     	CZWND = 2,
     	CTEXWND = 3,
     	LAYERED = 4,
-	};
+	};*/
 
 #define GUI_CHECK_RTT	ASSERT_MSG(GUI_TYPE == GUI_TYPE_RTT, "GUI Class not of type RTT")
 
