@@ -174,6 +174,7 @@
 
 #include "common/mainframe.hpp"
 #include "common/camwnd.hpp"
+#include "common/fxwnd.hpp"
 #include "common/layermatwnd.hpp"
 #include "common/radiantapp.hpp"
 #include "common/zwnd.hpp"

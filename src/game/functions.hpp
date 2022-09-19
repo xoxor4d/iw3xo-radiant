@@ -306,6 +306,7 @@ namespace game
 	inline auto R_SetupRendertarget = reinterpret_cast<bool (*)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670);
 	inline auto R_SetRenderTarget = reinterpret_cast<bool (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0);
 	inline auto R_SetupRendertarget_CheckDevice = reinterpret_cast<bool (*)(HWND)>(0x501A70);
+	inline auto R_InitRendererForWindow = reinterpret_cast<void (*)(HWND)>(0x5011D0);
 	inline auto R_CheckTargetWindow = reinterpret_cast<bool (*)(HWND)>(0x500660);
 	inline auto R_AddDebugBox = reinterpret_cast<void (*)(game::DebugGlobals * debugGlobalsEntry, const float* mins, const float* maxs, const float* color)>(0x528710);
 	inline auto R_CmdBufSet3D = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*)>(0x53CFB0);
@@ -328,6 +329,7 @@ namespace game
 	inline auto RB_SpotShadowMaps = reinterpret_cast<void (*)(game::GfxBackEndData * backend, const game::GfxViewInfo * viewinfo)>(0x56E100);
 
 	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/);
+	void R_AddCmdSetViewportValues(int x, int y, int width, int height);
 	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
 
 	inline auto MatrixForViewer = reinterpret_cast<void (*)(float(*mtx)[4], const float* origin, const float* axis)>(0x4A7A70);

@@ -44,6 +44,7 @@ namespace components
 			CZWND = 2,
 			CTEXWND = 3,
 			LAYERED = 4,
+			CFXWND = 5,
 		};
 
 		static void	copy_scene_to_texture(GFXWND_ GFXWND, IDirect3DTexture9*& dest, bool no_release = false);

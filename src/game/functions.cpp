@@ -1099,6 +1099,31 @@ namespace game
 		}
 	}
 
+	void R_AddCmdSetViewportValues(int x, int y, int width, int height)
+	{
+		if (width <= 0) {
+			game::Com_Error("R_AddCmdSetViewportValues :: width");
+		}
+
+		if (height <= 0) {
+			game::Com_Error("R_AddCmdSetViewportValues :: height");
+		}
+
+		// RC_SET_VIEWPORT
+		if (auto cmd = reinterpret_cast<game::GfxCmdSetViewport*>(game::R_GetCommandBuffer(20, 7));
+			cmd)
+		{
+			cmd->viewport.height = height;
+			cmd->viewport.x = x;
+			cmd->viewport.y = y;
+			cmd->viewport.width = width;
+		}
+		else
+		{
+			game::Com_Error("R_AddCmdSetViewportValues :: cmd");
+		}
+	}
+
 	void R_SetD3DPresentParameters(_D3DPRESENT_PARAMETERS_* d3dpp, game::GfxWindowParms* wnd, [[maybe_unused]] int window_count)
 	{
 		ASSERT_MSG(d3dpp, "invalid D3DPRESENT_PARAMETERS d3dpp");

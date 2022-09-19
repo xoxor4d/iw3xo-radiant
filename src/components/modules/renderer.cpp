@@ -3345,27 +3345,27 @@ namespace components
 	}
 
 	// called from QE_LoadProject
-	void renderer_init_internal()
-	{
-		g_invalid_material = game::Material_RegisterHandle("invalid_material", 0);
-	}
+	//void renderer_init_internal()
+	//{
+	//	g_invalid_material = game::Material_RegisterHandle("invalid_material", 0);
+	//}
 
-	void __declspec(naked) r_begin_registration_internal_stub()
-	{
-		const static uint32_t func_addr = 0x5011D0; // overwritten call
-		const static uint32_t retn_addr = 0x4166D4;
-		__asm
-		{
-			call	func_addr;
-			add		esp, 4;
+	//void __declspec(naked) r_begin_registration_internal_stub()
+	//{
+	//	const static uint32_t func_addr = 0x5011D0; // overwritten call
+	//	const static uint32_t retn_addr = 0x4166D4;
+	//	__asm
+	//	{
+	//		call	func_addr;
+	//		add		esp, 4;
 
-			pushad;
-			call	renderer_init_internal;
-			popad;
+	//		pushad;
+	//		call	renderer_init_internal;
+	//		popad;
 
-			jmp		retn_addr;
-		}
-	}
+	//		jmp		retn_addr;
+	//	}
+	//}
 
 
 	// *
@@ -3538,6 +3538,30 @@ namespace components
 
 		SKIP:
 			mov		eax, 0;
+			jmp		retn_addr;
+		}
+	}
+
+	void begin_registration_internal_additional()
+	{
+		g_invalid_material = game::Material_RegisterHandle("invalid_material", 0);
+
+		new cfxwnd();
+		game::R_InitRendererForWindow(renderer::get_window(renderer::CFXWND)->hwnd);
+	}
+
+	void __declspec(naked) begin_registration_internal_stub()
+	{
+		const static uint32_t retn_addr = 0x4166D6;
+		__asm
+		{
+			add     esp, 4; // overwritten
+
+			pushad;
+			call	begin_registration_internal_additional;
+			popad;
+
+			push    7; // overwritten
 			jmp		retn_addr;
 		}
 	}
@@ -3799,6 +3823,10 @@ namespace components
 		utils::hook::set<BYTE>(0x5005F9 + 1, GFX_TARGETWINDOW_COUNT);
 
 
+		// stub to register new gfxwindows
+		utils::hook(0x4166D1, begin_registration_internal_stub, HOOK_JUMP).install()->quick();
+
+
 		// ------------------------------------------------------------------------------------------------
 
 		// rewrite, working fine but no need (only debug)
@@ -3904,7 +3932,7 @@ namespace components
 		utils::hook(0x5011B8, post_render_init, HOOK_CALL).install()->quick();
 
 		// stub within R_BeginRegistrationInternal (on call to init layermatwnd)
-		utils::hook(0x4166CC, r_begin_registration_internal_stub, HOOK_JUMP).install()->quick();
+		//utils::hook(0x4166CC, r_begin_registration_internal_stub, HOOK_JUMP).install()->quick();
 
 		// hk 'R_SortMaterials' call after 'R_IssueRenderCommands' in 'CCamWnd::OnPaint'
 		utils::hook(0x40306B, on_cam_paint_post_rendercommands_stub, HOOK_JUMP).install()->quick();
