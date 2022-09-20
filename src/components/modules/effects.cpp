@@ -512,7 +512,7 @@ namespace components
 
 		effects::fx_origin_frame();
 
-		effects::tick_playback();
+		/*effects::tick_playback();
 		effects::tick_repeat();
 
 		fx_system::FX_SetNextUpdateTime(0, fx_system::ed_playback_tick);
@@ -533,7 +533,7 @@ namespace components
 		FX_FillUpdateCmd(0, &cmd);
 		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_NON_DEPENDENT, &cmd);
 		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_SPOT_LIGHT, &cmd);
-		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_REMAINING, &cmd);
+		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_REMAINING, &cmd);*/
 	}
 
 	__declspec (naked) void camera_onpaint_stub()

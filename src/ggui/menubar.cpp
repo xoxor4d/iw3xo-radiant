@@ -305,6 +305,10 @@ namespace ggui
 						GET_GUI(ggui::entity_dialog)->toggle();
 					}
 
+					if (ImGui::MenuItem("Effects Browser")) {
+						GET_GUI(ggui::effects_browser)->toggle();
+					}
+
 					if (ImGui::MenuItem("Surface Inspector", ggui::hotkey_dialog::get_hotkey_for_command("SurfaceInspector").c_str()))
 					{
 						if (dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)

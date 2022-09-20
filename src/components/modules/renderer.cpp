@@ -1878,13 +1878,17 @@ namespace components
 	// called after rendering the command queue
 	void post_scene_command_rendering()
 	{
-		if (game::dx->targetWindowIndex == renderer::CCAMERAWND)
+		if (/*game::dx->targetWindowIndex == renderer::CCAMERAWND
+			|| */game::dx->targetWindowIndex == renderer::CFXWND)
 		{
 			// render emissive surfs (effects)
 			renderer::RB_Draw3D();
 
-			// post effects logic (filmtweaks)
-			camera_postfx();
+			if (game::dx->targetWindowIndex == renderer::CCAMERAWND)
+			{
+				// post effects logic (filmtweaks)
+				camera_postfx();
+			}
 		}
 	}
 
@@ -2157,7 +2161,7 @@ namespace components
 	// part of R_RenderScene
 	// setup viewInfo and drawlists so that RB_Draw3D::RB_StandardDrawCommands actually renders something (unused in radiant and would normally render the bsp and effects)
 
-	void R_InitDrawSurfListInfo(game::GfxDrawSurfListInfo* list)
+	void renderer::R_InitDrawSurfListInfo(game::GfxDrawSurfListInfo* list)
 	{
 		list->drawSurfs = nullptr;
 		list->drawSurfCount = 0;
@@ -2277,7 +2281,7 @@ namespace components
 			// *
 			// lit drawlist (effect xmodels)
 
-			R_InitDrawSurfListInfo(&viewInfo->litInfo);
+			renderer::R_InitDrawSurfListInfo(&viewInfo->litInfo);
 
 			viewInfo->litInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL;
 			viewInfo->litInfo.viewInfo = viewInfo;
@@ -2300,7 +2304,7 @@ namespace components
 			// R_SortDrawSurfs
 			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[6], game::scene->drawSurfCount[6]);
 
-			R_InitDrawSurfListInfo(&viewInfo->decalInfo);
+			renderer::R_InitDrawSurfListInfo(&viewInfo->decalInfo);
 			viewInfo->decalInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL;
 			viewInfo->decalInfo.viewInfo = viewInfo;
 			viewInfo->decalInfo.viewOrigin[0] = viewParms->origin[0];
@@ -2324,7 +2328,7 @@ namespace components
 			// emissive drawlist (effects)
 
 			const auto emissiveList = &viewInfo->emissiveInfo;
-			R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
+			renderer::R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
 
 			viewInfo->emissiveInfo.baseTechType = game::TECHNIQUE_EMISSIVE;
 			viewInfo->emissiveInfo.viewInfo = viewInfo;
@@ -2765,7 +2769,7 @@ namespace components
 			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];
 
-			renderer::copy_scene_to_texture(renderer::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			renderer::copy_scene_to_texture(game::dx->targetWindowIndex == renderer::CFXWND ? renderer::CFXWND : renderer::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
 			game::gfxCmdBufSourceState->input.codeImages[10] = resolved_post_sun->image;
 
 			// ------
@@ -2824,12 +2828,12 @@ namespace components
 	{
 		const auto backend = game::get_backenddata();
 
-		if(backend->viewInfo->displayViewport.width == 0)
+		if (backend->viewInfo->displayViewport.width == 0)
 		{
 			return;
 		}
 
-		if(backend->viewInfoCount)
+		if (backend->viewInfoCount)
 		{
 			RB_StandardDrawCommands(&backend->viewInfo[0]);
 		}

@@ -152,6 +152,7 @@
 #include "ggui/camera_settings.hpp"
 #include "ggui/colors.hpp"
 #include "ggui/console.hpp"
+#include "ggui/effects_browser.hpp"
 #include "ggui/effects_editor_gui.hpp"
 #include "ggui/entity.hpp"
 #include "ggui/filter.hpp"

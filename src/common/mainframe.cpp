@@ -185,7 +185,7 @@ void on_createclient()
 
 		ShowWindow(cmainframe::activewnd->m_wndStatusBar.m_hWnd, SW_HIDE);
 
-		ShowWindow(components::renderer::get_window(components::renderer::CFXWND)->hwnd, SW_SHOW);
+		//ShowWindow(components::renderer::get_window(components::renderer::CFXWND)->hwnd, SW_SHOW);
 	}
 }
 

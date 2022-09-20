@@ -272,7 +272,7 @@ namespace components
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
 	void gui::render_loop()
 	{
-		if(dvars::r_reflectionprobe_generate->current.enabled)
+		if (dvars::r_reflectionprobe_generate->current.enabled)
 		{
 			return;
 		}
@@ -314,7 +314,7 @@ namespace components
 		// | -------------------- Texture Window ------------------------
 		// *
 
-		if(game::dx->targetWindowIndex == renderer::CTEXWND)
+		if (game::dx->targetWindowIndex == renderer::CTEXWND)
 		{
 			renderer::copy_scene_to_texture(renderer::CTEXWND, GET_GUI(ggui::texture_dialog)->rtt_get_texture());
 		}
@@ -327,6 +327,15 @@ namespace components
 		if (game::dx->targetWindowIndex == renderer::LAYERED)
 		{
 			// so empty
+		}
+
+		// *
+		// | ------------- Fx Window (Effects Browser) -----------------
+		// *
+
+		if (game::dx->targetWindowIndex == renderer::CFXWND)
+		{
+			renderer::copy_scene_to_texture(renderer::CFXWND, GET_GUI(ggui::effects_browser)->rtt_get_texture());
 		}
 
 		
@@ -373,7 +382,7 @@ namespace components
 			GET_GUI(ggui::grid_dialog)->grid_gui();
 			GET_GUI(ggui::camera_dialog)->camera_gui();
 
-			if(ggui::m_demo_menu_state)
+			if (ggui::m_demo_menu_state)
 			{
 				// demo menu
 				ImGui::ShowDemoWindow(&ggui::m_demo_menu_state);
@@ -382,7 +391,7 @@ namespace components
 			// draw/handle gui classes
 			for (const auto& module : ggui::loader::get_modules())
 			{
-				if(module)
+				if (module)
 				{
 					module->frame();
 				}

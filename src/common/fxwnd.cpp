@@ -1,6 +1,74 @@
 #include "std_include.hpp"
 
-//cfxwnd* cfxwnd::p_this = nullptr;
+void cfxwnd::tick_playback()
+{
+	const auto saved_tick = static_cast<int>(GetTickCount());
+	auto tick_cmp = static_cast<int>(GetTickCount()) - m_tickcount_repeat;
+
+	if (tick_cmp > 200)
+	{
+		tick_cmp = 200;
+	}
+
+	m_tickcount_repeat = saved_tick;
+
+	const bool force_update = GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic;
+	//if (effects::effect_is_playing() || (force_update && !effects::effect_is_paused()))
+	{
+		auto tick_inc = static_cast<int>(static_cast<double>(tick_cmp) * 1.0 /*timescale*/ + 9.313225746154785e-10);
+		if (tick_inc <= 1)
+		{
+			tick_inc = 1;
+		}
+
+		m_tickcount_playback += tick_inc;
+	}
+}
+
+void cfxwnd::setup_fx()
+{
+	cfxwnd::tick_playback();
+	fx_system::FX_SetNextUpdateTime(0, m_tickcount_playback);
+
+	// FX_SetupCamera_Radiant
+	const auto system = fx_system::FX_GetSystem(0);
+
+	float axis[3][3] = {};
+	axis[0][0] = m_vpn[0];
+	axis[0][1] = m_vpn[1];
+	axis[0][2] = m_vpn[2];
+	axis[1][0] = -m_vright[0];
+	axis[1][1] = -m_vright[1];
+	axis[1][2] = -m_vright[2];
+	axis[2][0] = m_vup[0];
+	axis[2][1] = m_vup[1];
+	axis[2][2] = m_vup[2];
+
+	const float halfTanY = tanf(60.0f * 0.01745329238474369f * 0.5f) * 0.75f;
+	const float halfTanX = halfTanY * (static_cast<float>(m_width) / static_cast<float>(m_height));
+
+	FX_SetupCamera(&system->camera, m_origin, axis, halfTanX, halfTanY, 0.0f);
+
+	// ----
+
+
+	if (fx_system::ed_active_effect)
+	{
+		//if (!effects::effect_is_repeating())
+		{
+			if (fx_system::FX_GetEffectStatus(fx_system::ed_active_effect))
+			{
+				components::effects::on_effect_stop();
+			}
+		}
+	}
+
+	fx_system::FxCmd cmd = {};
+	FX_FillUpdateCmd(0, &cmd);
+	Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_NON_DEPENDENT, &cmd);
+	Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_SPOT_LIGHT, &cmd);
+	Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_REMAINING, &cmd);
+}
 
 // rewrite of R_SetSceneParms (not of much use anymore)
 void set_scene_params(const float* origin, float* axis, game::GfxMatrix* projection, int x, int y, int width, int height, bool clear)
@@ -49,11 +117,121 @@ void set_scene_params(const float* origin, float* axis, game::GfxMatrix* project
 	game::R_SetupRenderCmd(&game::scene->def, view_parms);
 	game::R_AddCmdSetViewportValues(x, y, width, height);
 
-	if(clear)
+	if (clear)
 	{
 		float white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 		game::R_Clear(6, white, 1.0f, 0);
 	}
+
+	// TODO: add viewinfo setup (see renderer::setup_viewinfo)
+
+
+	// BIG FAT MEMORY LEAK
+
+	// !!!! camera_onpaint_intercept
+
+	// a bit of R_RenderScene
+
+	const auto frontEndDataOut = game::get_frontenddata();
+	const auto viewInfo = &frontEndDataOut->viewInfo[0];
+
+	frontEndDataOut->viewInfoIndex = 0;
+	frontEndDataOut->viewInfoCount = 1;
+
+	memcpy(&viewInfo->input, game::gfxCmdBufInput, sizeof(viewInfo->input));
+	viewInfo->input.data = frontEndDataOut;
+	viewInfo->sceneDef = game::scene->def;
+
+	memcpy(&viewInfo->viewParms, view_parms, sizeof(game::GfxViewParms));
+	viewInfo->viewParms.zNear = game::Dvar_FindVar("r_zNear")->current.value;
+
+	const auto gfx_window = components::renderer::get_window(components::renderer::CFXWND);
+	const game::GfxViewport viewport = { 0, 0, gfx_window->width, gfx_window->height };
+
+	viewInfo->sceneViewport = viewport;
+	viewInfo->displayViewport = viewport;
+
+	// needed for debug plumes (3D text in space)
+	game::rg->debugViewParms = view_parms;
+
+	// R_DrawAllSceneEnt - add/draw effect xmodels 
+	utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523E50)(viewInfo);
+
+	// R_AddAllSceneEntSurfacesCamera (Worker CMD) - add/draw effect xmodels 
+	utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523660)(viewInfo);
+
+	// R_SortDrawSurfs
+	utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[1], game::scene->drawSurfCount[1]);
+	utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[4], game::scene->drawSurfCount[4]);
+	utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[10], game::scene->drawSurfCount[10]);
+
+	// *
+	// lit drawlist (effect xmodels)
+
+	components::renderer::R_InitDrawSurfListInfo(&viewInfo->litInfo);
+
+	viewInfo->litInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL;
+	viewInfo->litInfo.viewInfo = viewInfo;
+	viewInfo->litInfo.viewOrigin[0] = view_parms->origin[0];
+	viewInfo->litInfo.viewOrigin[1] = view_parms->origin[1];
+	viewInfo->litInfo.viewOrigin[2] = view_parms->origin[2];
+	viewInfo->litInfo.viewOrigin[3] = view_parms->origin[3];
+	viewInfo->litInfo.cameraView = 1;
+
+	const int initial_lit_drawSurfCount = frontEndDataOut->drawSurfCount;
+
+	// R_MergeAndEmitDrawSurfLists
+	utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(0, 3);
+
+	viewInfo->litInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_lit_drawSurfCount];
+	viewInfo->litInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_lit_drawSurfCount;
+
+
+
+	// R_SortDrawSurfs
+	utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[6], game::scene->drawSurfCount[6]);
+
+	components::renderer::R_InitDrawSurfListInfo(&viewInfo->decalInfo);
+	viewInfo->decalInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL;
+	viewInfo->decalInfo.viewInfo = viewInfo;
+	viewInfo->decalInfo.viewOrigin[0] = view_parms->origin[0];
+	viewInfo->decalInfo.viewOrigin[1] = view_parms->origin[1];
+	viewInfo->decalInfo.viewOrigin[2] = view_parms->origin[2];
+	viewInfo->decalInfo.viewOrigin[3] = view_parms->origin[3];
+	viewInfo->decalInfo.cameraView = 1;
+	const int initial_decal_drawSurfCount = frontEndDataOut->drawSurfCount;
+
+	// R_MergeAndEmitDrawSurfLists
+	utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(3, 6);
+
+	viewInfo->decalInfo.drawSurfs = &frontEndDataOut->drawSurfs[initial_decal_drawSurfCount];
+	viewInfo->decalInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_decal_drawSurfCount;
+
+	// R_SortDrawSurfs
+	utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[12], game::scene->drawSurfCount[12]);
+
+
+	// *
+	// emissive drawlist (effects)
+
+	const auto emissiveList = &viewInfo->emissiveInfo;
+	components::renderer::R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
+
+	viewInfo->emissiveInfo.baseTechType = game::TECHNIQUE_EMISSIVE;
+	viewInfo->emissiveInfo.viewInfo = viewInfo;
+	viewInfo->emissiveInfo.viewOrigin[0] = view_parms->origin[0];
+	viewInfo->emissiveInfo.viewOrigin[1] = view_parms->origin[1];
+	viewInfo->emissiveInfo.viewOrigin[2] = view_parms->origin[2];
+	viewInfo->emissiveInfo.viewOrigin[3] = view_parms->origin[3];
+	viewInfo->emissiveInfo.cameraView = 1;
+
+	const int initial_emissive_drawSurfCount = frontEndDataOut->drawSurfCount;
+
+	// R_MergeAndEmitDrawSurfLists
+	utils::hook::call<void(__cdecl)(int, int)>(0x549F50)(9, 6);
+
+	emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_emissive_drawSurfCount];
+	viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
 }
 
 void setup_scene(float* origin, float* axis, int x, int y, int width, int height)
@@ -133,14 +311,19 @@ void cfxwnd::on_paint()
 	}
 
 	// *
-	// 
+	//
+
+	const auto gui = GET_GUI(ggui::effects_browser);
 	
 	build_matrix();
-	
+
+	fxwnd->m_width = components::renderer::get_window(components::renderer::CFXWND)->width;
+	fxwnd->m_height = components::renderer::get_window(components::renderer::CFXWND)->height;
+
 	if (fxwnd->m_width != 0 && fxwnd->m_height != 0)
 	{
 		{
-			//if (gui->is_active() && !gui->is_inactive_tab() && !gui->m_preview_model_name.empty())
+			if (gui->is_active() && !gui->is_inactive_tab())
 			{
 				//gui->m_bad_model = false;
 
@@ -161,6 +344,8 @@ void cfxwnd::on_paint()
 					game::R_BeginFrame();
 					game::R_Clear(7, dvars::gui_window_bg_color->current.vector, 1.0f, false);
 
+					cfxwnd::get()->setup_fx();
+
 					// setup scene
 					float axis[9];
 					axis[0] = fxwnd->m_vpn[0];
@@ -174,8 +359,8 @@ void cfxwnd::on_paint()
 					axis[8] = fxwnd->m_vup[2];
 
 					float origin[3];
-					origin[0] = 0.0f; //m_selector->camera_offset[0]; //cmainframe::activewnd->m_pCamWnd->camera.origin[0];
-					origin[1] = 15.0f; //m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[1];
+					origin[0] = gui->m_camera_distance; //m_selector->camera_offset[0]; //cmainframe::activewnd->m_pCamWnd->camera.origin[0];
+					origin[1] = 0.0f; //m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[1];
 					origin[2] = 0.0f;
 
 					float temp_angles[3];
@@ -187,18 +372,6 @@ void cfxwnd::on_paint()
 					setup_scene(origin, axis, 0, 0, gfx_window->width, gfx_window->height);
 
 #if 0
-					float dir_out[3] = {};
-					
-					// AngleVectors(float* angles, float* vpn, float* right, float* up)
-					utils::hook::call<void(__cdecl)(float* angles, float* vpn, float* right, float* up)>(0x4ABD70)(ggui::preferences::modelpreview_sun_dir, dir_out, nullptr, nullptr);
-
-					components::renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_POSITION, dir_out[0], dir_out[1], dir_out[2], 1.0f);
-					components::renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_DIFFUSE, ggui::preferences::modelpreview_sun_diffuse[0], ggui::preferences::modelpreview_sun_diffuse[1], ggui::preferences::modelpreview_sun_diffuse[2], 1.0f);
-					components::renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_SUN_SPECULAR, ggui::preferences::modelpreview_sun_specular[0], ggui::preferences::modelpreview_sun_specular[1], ggui::preferences::modelpreview_sun_specular[2], ggui::preferences::modelpreview_sun_specular[3]);
-					components::renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_LIGHT_SPOTDIR, ggui::preferences::modelpreview_material_specular[0], ggui::preferences::modelpreview_material_specular[1], ggui::preferences::modelpreview_material_specular[2], ggui::preferences::modelpreview_material_specular[3]);
-					components::renderer::R_AddCmdSetCustomShaderConstant(game::CONST_SRC_CODE_LIGHT_SPOTFACTORS, ggui::preferences::modelpreview_ambient[0], ggui::preferences::modelpreview_ambient[1], ggui::preferences::modelpreview_ambient[2], ggui::preferences::modelpreview_ambient[3]);
-#endif
-					
 					// setup model orientation
 					game::orientation_t model_orientation = {};
 					game::AnglesToAxis(temp_angles, &model_orientation.axis[0][0]);
@@ -219,7 +392,7 @@ void cfxwnd::on_paint()
 					model_origin[1] = 10.0f;
 
 					// calculate model origin including "zoom"
-					utils::vector::ma(model_origin, model->radius * 1.75f + 40.0f, direction, model_orientation.origin);
+					utils::vector::ma(model_origin, model->radius * 1.75f + gui->m_camera_distance, direction, model_orientation.origin);
 					model_orientation.origin[2] = -(model->maxs[2] - dist);
 					
 					// transform by identity matrix (not needed)
@@ -315,10 +488,11 @@ void cfxwnd::on_paint()
 								fxwnd->m_xmodel_inst, 0, layermatwnd::FAKELIGHT_NORMAL, nullptr, 2);
 						}
 					}
+#endif
 				}
 
 				// sorts surfaces and adds RC_DRAW_EDITOR_SKINNEDCACHED rendercmd
-				utils::hook::call<void(__cdecl)()>(0x4FDA10)();
+				//utils::hook::call<void(__cdecl)()>(0x4FDA10)();
 
 				game::R_EndFrame();
 				game::R_IssueRenderCommands(-1);
@@ -426,7 +600,7 @@ void cfxwnd::create_content_window()
 		0, // WS_EX_COMPOSITED
 		"FxWindowContent",
 		nullptr,
-		WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE | WS_CHILD | WS_POPUP | WS_VISIBLE, // WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_CHILD | WS_POPUP; // WS_VISIBLE
+		WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE | WS_CHILD /*| WS_POPUP | WS_VISIBLE*/, // WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_CHILD | WS_POPUP; // WS_VISIBLE
 		0, 0, rect.right - rect.left,rect.bottom - rect.top,
 		fxwnd->m_frame_hwnd,
 		nullptr, nullptr, nullptr);

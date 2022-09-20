@@ -27,6 +27,10 @@ public:
 	game::XModel*	m_xmodel_ptr_test = nullptr;
 	int				m_xmodel_inst = 0;
 
+	int				m_tickcount_playback = 0;
+	int				m_tickcount_repeat = 0;
+	void			tick_playback();
+	void			setup_fx();
 
 	static void		create_fxwnd();
 	static void		create_content_window();

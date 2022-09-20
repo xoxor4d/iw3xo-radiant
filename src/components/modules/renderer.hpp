@@ -27,6 +27,8 @@ namespace components
 		static void		R_ConvertColorToBytes(float* from, game::GfxColor* gfx_col);
 		static void		R_AddCmdDrawTextAtPosition(const char* text, game::Font_s* font, float* origin, float* pixel_step_x, float* pixel_step_y, float* color);
 
+		static void		R_InitDrawSurfListInfo(game::GfxDrawSurfListInfo* list);
+
 		static void		R_AddPointCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts);
 		static void		R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts);
 
