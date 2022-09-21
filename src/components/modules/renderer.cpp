@@ -1878,17 +1878,17 @@ namespace components
 	// called after rendering the command queue
 	void post_scene_command_rendering()
 	{
-		if (/*game::dx->targetWindowIndex == renderer::CCAMERAWND
-			|| */game::dx->targetWindowIndex == renderer::CFXWND)
+		if (game::dx->targetWindowIndex == renderer::CCAMERAWND
+			|| game::dx->targetWindowIndex == renderer::CFXWND)
 		{
 			// render emissive surfs (effects)
 			renderer::RB_Draw3D();
+		}
 
-			if (game::dx->targetWindowIndex == renderer::CCAMERAWND)
-			{
-				// post effects logic (filmtweaks)
-				camera_postfx();
-			}
+		if (game::dx->targetWindowIndex == renderer::CCAMERAWND)
+		{
+			// post effects logic (filmtweaks)
+			camera_postfx();
 		}
 	}
 
@@ -2762,9 +2762,11 @@ namespace components
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
 
-		if (game::dx->device && (effects::effect_is_playing() 
+		if (game::dx->device && 
+			(game::dx->targetWindowIndex == renderer::CCAMERAWND && (effects::effect_is_playing()
 				|| (fx_system::ed_is_paused && !effects::effect_is_playing())
-				|| (dvars::r_draw_bsp && dvars::r_draw_bsp->current.enabled)))
+				|| (dvars::r_draw_bsp && dvars::r_draw_bsp->current.enabled))
+				|| game::dx->targetWindowIndex == renderer::CFXWND))
 		{
 			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];

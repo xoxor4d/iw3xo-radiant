@@ -10,6 +10,7 @@ namespace components
 
 		const char* get_name() override { return "effects"; };
 
+		static fx_system::FxEffect* Editor_SpawnEffect(int localClientNum, fx_system::FxEffectDef* remoteDef, int msecBegin, const float* origin, const float(*axis)[3], int markEntnum);
 		static bool load_effect(const char* effect_name);
 
 		static void editor_on_effect_play_repeat();

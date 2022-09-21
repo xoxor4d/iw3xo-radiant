@@ -5,8 +5,8 @@
 
 namespace fx_system
 {
-	FxSystem fx_systemPool = {};
-	FxSystemBuffers fx_systemBufferPool = {};
+	FxSystem fx_systemPool[2] = {};
+	FxSystemBuffers fx_systemBufferPool[2] = {};
 
 	bool ed_is_paused = false;
 	bool ed_is_paused_old = false;
@@ -42,7 +42,7 @@ namespace fx_system
 #ifdef FXEDITOR
 		return &game::fx_systemPool;
 #else
-		return &fx_systemPool;
+		return &fx_systemPool[localClientNum];
 #endif
 	}
 
@@ -51,7 +51,7 @@ namespace fx_system
 #ifdef FXEDITOR
 		return &game::fx_systemBufferPool;
 #else
-		return &fx_systemBufferPool;
+		return &fx_systemBufferPool[localClientNum];
 #endif
 	}
 

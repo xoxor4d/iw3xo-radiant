@@ -24,13 +24,21 @@ public:
 	game::vec3_t	m_vpn = {};
 	game::vec3_t	m_vright = {};
 
+	fx_system::FxEditorEffectDef m_raw_effect = {};
+	fx_system::FxEffect* m_active_effect = nullptr;
+	bool			m_effect_is_playing = false;
+
 	game::XModel*	m_xmodel_ptr_test = nullptr;
 	int				m_xmodel_inst = 0;
 
 	int				m_tickcount_playback = 0;
 	int				m_tickcount_repeat = 0;
+
+	void			stop_effect();
+	bool			load_effect(const char* effect_name);
+	void			setup_and_spawn_fx();
 	void			tick_playback();
-	void			setup_fx();
+	void			update_fx();
 
 	static void		create_fxwnd();
 	static void		create_content_window();

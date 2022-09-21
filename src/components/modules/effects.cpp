@@ -26,7 +26,7 @@ namespace components
 		{  1.0f,  0.0f,  0.0f }
 	};
 
-	fx_system::FxEffect* Editor_SpawnEffect(int localClientNum, fx_system::FxEffectDef* remoteDef, int msecBegin, const float* origin, const float(*axis)[3], int markEntnum)
+	fx_system::FxEffect* effects::Editor_SpawnEffect(int localClientNum, fx_system::FxEffectDef* remoteDef, int msecBegin, const float* origin, const float(*axis)[3], int markEntnum)
 	{
 
 		if (!game::Dvar_FindVar("fx_enable")->current.enabled)
@@ -44,9 +44,9 @@ namespace components
 		return FX_SpawnEffect(system, remoteDef, msecBegin, origin, axis, fx_system::FX_SPAWN_DOBJ_HANDLES, fx_system::FX_SPAWN_BONE_INDEX, 255, 0xFFFFu, markEntnum);
 	}
 
-	void Editor_SetupAndSpawnEffect([[maybe_unused]] unsigned int rand, int playback_tick)
+	void Editor_SetupAndSpawnEffect(fx_system::FxEditorEffectDef* editor_def, [[maybe_unused]] unsigned int rnd, int playback_tick)
 	{
-		fx_system::FxEffectDef* def = fx_system::FX_Convert(&fx_system::ed_editor_effect, fx_system::FX_AllocMem);
+		fx_system::FxEffectDef* def = fx_system::FX_Convert(editor_def, fx_system::FX_AllocMem);
 
 		if(!def)
 		{
@@ -56,7 +56,7 @@ namespace components
 
 		fx_system::ed_playback_tick_old = playback_tick;
 		fx_system::ed_onspawn_tick = playback_tick;
-		fx_system::ed_onspawn_rand = rand;
+		fx_system::ed_onspawn_rand = rnd;
 
 		// quickly switch axis
 		//const int AX = 0;
@@ -79,7 +79,7 @@ namespace components
 
 		utils::vector::angle_vectors(editor_angles_from_fx_origin, spawn_axis_rotated[2], spawn_axis_rotated[1], spawn_axis_rotated[0]);
 
-		const auto effect = Editor_SpawnEffect(0, def, playback_tick, editor_origin_from_fx_origin, spawn_axis_rotated, fx_system::FX_SPAWN_MARK_ENTNUM);
+		const auto effect = effects::Editor_SpawnEffect(fx_system::FX_SYSTEM_CAMERA, def, playback_tick, editor_origin_from_fx_origin, spawn_axis_rotated, fx_system::FX_SPAWN_MARK_ENTNUM);
 		fx_system::ed_active_effect = effect;
 	}
 
@@ -156,7 +156,7 @@ namespace components
 
 		if (!fx_system::ed_active_effect)
 		{
-			Editor_SetupAndSpawnEffect(rand(), fx_system::ed_playback_tick);
+			Editor_SetupAndSpawnEffect(&fx_system::ed_editor_effect, rand(), fx_system::ed_playback_tick);
 			if (!fx_system::ed_active_effect)
 			{
 				fx_system::ed_is_playing = false;
@@ -171,7 +171,7 @@ namespace components
 			game::Com_Error("no active editor effect to trigger!");
 		}
 
-		fx_system::FX_RetriggerEffect(0, fx_system::ed_active_effect, msecBegin);
+		fx_system::FX_RetriggerEffect(fx_system::FX_SYSTEM_CAMERA, fx_system::ed_active_effect, msecBegin);
 	}
 
 	void effects::play_retrigger()
@@ -180,7 +180,7 @@ namespace components
 		{
 			if (effects::effect_is_playing())
 			{
-				fx_system::FX_RetriggerEffect(0, fx_system::ed_active_effect, fx_system::ed_playback_tick);
+				fx_system::FX_RetriggerEffect(fx_system::FX_SYSTEM_CAMERA, fx_system::ed_active_effect, fx_system::ed_playback_tick);
 			}
 			else
 			{
@@ -191,7 +191,7 @@ namespace components
 
 				if (!fx_system::ed_active_effect)
 				{
-					Editor_SetupAndSpawnEffect(rand(), fx_system::ed_playback_tick);
+					Editor_SetupAndSpawnEffect(&fx_system::ed_editor_effect, rand(), fx_system::ed_playback_tick);
 					if (!fx_system::ed_active_effect)
 					{
 						fx_system::ed_is_playing = false;
@@ -205,7 +205,7 @@ namespace components
 	{
 		if (fx_system::ed_is_editor_effect_valid)
 		{
-			Editor_SetupAndSpawnEffect(fx_system::ed_onspawn_rand, fx_system::ed_onspawn_tick);
+			Editor_SetupAndSpawnEffect(&fx_system::ed_editor_effect, fx_system::ed_onspawn_rand, fx_system::ed_onspawn_tick);
 
 			if (effects::effect_is_playing())
 			{
@@ -472,7 +472,7 @@ namespace components
 			fx_system::ed_is_repeating = false;
 			fx_system::ed_is_paused = false;
 
-			const auto system = fx_system::FX_GetSystem(0);
+			const auto system = fx_system::FX_GetSystem(fx_system::FX_SYSTEM_CAMERA);
 
 			if (fx_system::ed_active_effect)
 			{
@@ -503,7 +503,8 @@ namespace components
 	{
 		on_effect_stop();
 		reset_editor_effect();
-		fx_system::FX_InitSystem(0);
+		fx_system::FX_InitSystem(fx_system::FX_SYSTEM_CAMERA);
+		fx_system::FX_InitSystem(fx_system::FX_SYSTEM_BROWSER);
 	}
 
 	void camera_onpaint_intercept()
@@ -512,10 +513,10 @@ namespace components
 
 		effects::fx_origin_frame();
 
-		/*effects::tick_playback();
+		effects::tick_playback();
 		effects::tick_repeat();
 
-		fx_system::FX_SetNextUpdateTime(0, fx_system::ed_playback_tick);
+		fx_system::FX_SetNextUpdateTime(fx_system::FX_SYSTEM_CAMERA, fx_system::ed_playback_tick);
 		fx_system::FX_SetupCamera_Radiant();
 
 		if(fx_system::ed_active_effect)
@@ -530,10 +531,10 @@ namespace components
 		}
 
 		fx_system::FxCmd cmd = {};
-		FX_FillUpdateCmd(0, &cmd);
+		FX_FillUpdateCmd(fx_system::FX_SYSTEM_CAMERA, &cmd);
 		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_NON_DEPENDENT, &cmd);
 		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_SPOT_LIGHT, &cmd);
-		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_REMAINING, &cmd);*/
+		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_REMAINING, &cmd);
 	}
 
 	__declspec (naked) void camera_onpaint_stub()

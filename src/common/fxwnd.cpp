@@ -1,5 +1,83 @@
 #include "std_include.hpp"
 
+
+void cfxwnd::stop_effect()
+{
+	m_effect_is_playing = false;
+	if (m_active_effect)
+	{
+		const auto system = fx_system::FX_GetSystem(fx_system::FX_SYSTEM_BROWSER);
+
+		{
+			const auto stat = fx_system::FX_GetEffectStatus(m_active_effect);
+			fx_system::FX_DelRefToEffect(system, m_active_effect);
+
+			if (!stat)
+			{
+				fx_system::FX_KillEffect(system, m_active_effect);
+			}
+
+			m_active_effect = nullptr;
+		}
+	}
+}
+
+bool cfxwnd::load_effect(const char* effect_name)
+{
+	if (effect_name && *effect_name)
+	{
+		std::string fxname = effect_name;
+		utils::replace(fxname, ".efx", "");
+
+		//cfxwnd::stop();
+		fx_system::FX_UnregisterAll();
+
+		if (fx_system::FX_LoadEditorEffect(fxname.c_str(), &m_raw_effect))
+		{
+			//fx_system::ed_is_editor_effect_valid = true;
+			game::printf_to_console("[FX-BROWSER] loaded editor effect [%s]\n", effect_name);
+
+			return true;
+		}
+
+		//fx_system::ed_is_editor_effect_valid = false;
+		game::printf_to_console("[FX-BROWSER] failed to load editor effect [%s]\n", effect_name);
+
+		m_raw_effect.name[0] = 0;
+		m_raw_effect.elemCount = 0;
+	}
+	
+	return false;
+}
+
+float cfx_spawn_axis[3][3] =
+{
+	{  0.0f,  0.0f,  1.0f },
+	{  0.0f, -1.0f,  0.0f },
+	{  1.0f,  0.0f,  0.0f }
+};
+
+void cfxwnd::setup_and_spawn_fx()
+{
+	if (strlen(m_raw_effect.name))
+	{
+		fx_system::FxEffectDef* def = fx_system::FX_Convert(&m_raw_effect, fx_system::FX_AllocMem);
+
+		if (!def)
+		{
+			// can happen if all elemdefs are disabled
+			return;
+		}
+
+		utils::vector::angle_vectors(m_angles, cfx_spawn_axis[2], cfx_spawn_axis[1], cfx_spawn_axis[0]);
+
+		const auto effect = components::effects::Editor_SpawnEffect(fx_system::FX_SYSTEM_BROWSER, def, m_tickcount_playback, m_origin, cfx_spawn_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
+		m_active_effect = effect;
+	}
+}
+
+
+
 void cfxwnd::tick_playback()
 {
 	const auto saved_tick = static_cast<int>(GetTickCount());
@@ -12,7 +90,7 @@ void cfxwnd::tick_playback()
 
 	m_tickcount_repeat = saved_tick;
 
-	const bool force_update = GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic;
+	//const bool force_update = GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic;
 	//if (effects::effect_is_playing() || (force_update && !effects::effect_is_paused()))
 	{
 		auto tick_inc = static_cast<int>(static_cast<double>(tick_cmp) * 1.0 /*timescale*/ + 9.313225746154785e-10);
@@ -25,13 +103,13 @@ void cfxwnd::tick_playback()
 	}
 }
 
-void cfxwnd::setup_fx()
+void cfxwnd::update_fx()
 {
 	cfxwnd::tick_playback();
-	fx_system::FX_SetNextUpdateTime(0, m_tickcount_playback);
+	fx_system::FX_SetNextUpdateTime(fx_system::FX_SYSTEM_BROWSER, m_tickcount_playback);
 
 	// FX_SetupCamera_Radiant
-	const auto system = fx_system::FX_GetSystem(0);
+	const auto system = fx_system::FX_GetSystem(fx_system::FX_SYSTEM_BROWSER);
 
 	float axis[3][3] = {};
 	axis[0][0] = m_vpn[0];
@@ -51,23 +129,39 @@ void cfxwnd::setup_fx()
 
 	// ----
 
-
-	if (fx_system::ed_active_effect)
+	if (m_active_effect && !m_effect_is_playing)
 	{
-		//if (!effects::effect_is_repeating())
+		m_effect_is_playing = true;
+		m_tickcount_repeat = GetTickCount();
+
+		fx_system::FX_RetriggerEffect(fx_system::FX_SYSTEM_BROWSER, m_active_effect, m_tickcount_playback);
+	}
+
+	if (!m_active_effect)
+	{
+		cfxwnd::setup_and_spawn_fx();
+		if (!m_active_effect)
 		{
-			if (fx_system::FX_GetEffectStatus(fx_system::ed_active_effect))
-			{
-				components::effects::on_effect_stop();
-			}
+			m_effect_is_playing = false;
 		}
 	}
 
-	fx_system::FxCmd cmd = {};
-	FX_FillUpdateCmd(0, &cmd);
-	Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_NON_DEPENDENT, &cmd);
-	Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_SPOT_LIGHT, &cmd);
-	Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_REMAINING, &cmd);
+	if (m_active_effect)
+	{
+		//if (!effects::effect_is_repeating())
+		{
+			if (fx_system::FX_GetEffectStatus(m_active_effect))
+			{
+				cfxwnd::stop_effect();
+			}
+		}
+
+		fx_system::FxCmd cmd = {};
+		FX_FillUpdateCmd(fx_system::FX_SYSTEM_BROWSER, &cmd);
+		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_NON_DEPENDENT, &cmd);
+		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_SPOT_LIGHT, &cmd);
+		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_REMAINING, &cmd);
+	}
 }
 
 // rewrite of R_SetSceneParms (not of much use anymore)
@@ -344,7 +438,7 @@ void cfxwnd::on_paint()
 					game::R_BeginFrame();
 					game::R_Clear(7, dvars::gui_window_bg_color->current.vector, 1.0f, false);
 
-					cfxwnd::get()->setup_fx();
+					cfxwnd::get()->update_fx();
 
 					// setup scene
 					float axis[9];
