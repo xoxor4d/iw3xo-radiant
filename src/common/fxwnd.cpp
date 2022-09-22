@@ -590,8 +590,12 @@ void cfxwnd::on_paint()
 
 				game::R_EndFrame();
 				game::R_IssueRenderCommands(-1);
+				game::R_SortMaterials(); // !!! clear scene and buffers or camera will preview flickering effect browser effects
 
-				//game::R_SortMaterials(); // not needed because only a single model
+				// big fat mem leak was caused by renderer::copy_scene_to_texture in RB_StandardDrawCommands
+
+
+
 				//components::renderer::copy_scene_to_texture(components::renderer::CFXWND, gui->rtt_get_texture());
 			}
 		}

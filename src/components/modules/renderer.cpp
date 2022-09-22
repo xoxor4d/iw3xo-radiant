@@ -2771,7 +2771,7 @@ namespace components
 			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];
 
-			renderer::copy_scene_to_texture(game::dx->targetWindowIndex == renderer::CFXWND ? renderer::CFXWND : renderer::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			renderer::copy_scene_to_texture(/*game::dx->targetWindowIndex == renderer::CFXWND ? renderer::CFXWND : */renderer::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
 			game::gfxCmdBufSourceState->input.codeImages[10] = resolved_post_sun->image;
 
 			// ------
