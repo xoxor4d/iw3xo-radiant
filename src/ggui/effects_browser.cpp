@@ -2,47 +2,102 @@
 
 namespace ggui
 {
-	void effects_browser::effect_listbox_elem(int index)
+	enum FX_ELEM_RESULT_
 	{
-		//const auto m_selector = ggui::get_rtt_modelselector();
+		FX_ELEM_RESULT_NONE,
+		FX_ELEM_RESULT_SELECTED,
+		FX_ELEM_RESULT_DRAGGED
+	};
 
-		const bool is_selected = (this->m_effect_selection == index);
-		if (ImGui::Selectable(this->m_effect_filelist[index], is_selected))
+	int effects_browser::image_button(const game::GfxImage* img, const float img_size, const char* label, const char* img_ico_awesomefont, ImVec2 uv0, ImVec2 uv1)
+	{
+		int result = FX_ELEM_RESULT_NONE;
+
+		imgui::PushStyleColor(ImGuiCol_Header, imgui::ToImVec4(dvars::gui_window_child_bg_color->current.vector));
+		imgui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.552f, 0.552f, 0.552f, 0.227f));
+		imgui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.553f, 0.553f, 0.553f, 0.482f));
+
+		int styles = 0;
+
+		imgui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f); styles++;
+
+		if (img)
 		{
-			this->m_effect_selection_old = m_effect_selection;
-			this->m_effect_selection = index;
-
-			cfxwnd::get()->stop_effect();
-			cfxwnd::get()->load_effect(this->m_effect_filelist[index]);
-
-			//this->m_preview_model_name = this->m_effect_filelist[index];
-		} TT("Drag me to the grid or camera window");
-
-		if (is_selected) 
+			imgui::Image(img->texture.data, ImVec2(img_size, img_size), uv0, uv1);
+		}
+		else
 		{
-			ImGui::SetItemDefaultFocus();
+			imgui::TextUnformatted(img_ico_awesomefont);
 		}
 
-		/*if (is_selected && m_update_scroll_position)
+		imgui::PopStyleVar(styles);
+
+		imgui::SameLine();
+
+		if (imgui::Selectable(utils::va(label), false, ImGuiSelectableFlags_SpanAvailWidth | ImGuiSelectableFlags_SetNavIdOnHover | ImGuiSelectableFlags_DrawHoveredWhenHeld))
 		{
-			ImGui::SetScrollHereY();
-			m_update_scroll_position = false;
-		}*/
+			result = FX_ELEM_RESULT_SELECTED;
+		}
 
-		// target => grid_dialog::drag_drop_target()
-		// target => camera_dialog::drag_drop_target()
-		// target => entity_dialog::gui_entprop_add_value_text()
-		// target => effects_editor_dialog::tab_visuals()
-		/*if (ImGui::BeginDragDropSource())
+		// hack to detect dragging
+		if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
 		{
-			ImGui::SetDragDropPayload("MODEL_SELECTOR_ITEM", nullptr, 0, ImGuiCond_Once);
-
-			this->m_effect_selection = index;
-			this->m_preview_model_name = this->m_effect_filelist[index];
-
-			ImGui::Text("Model: %s", this->m_effect_filelist[index]);
 			ImGui::EndDragDropSource();
-		}*/
+			result = FX_ELEM_RESULT_DRAGGED;
+		}
+
+		imgui::PopStyleColor(3);
+
+		return result;
+	}
+
+	void effects_browser::handle_drag_drop()
+	{
+		if (!m_dragdrop_fx_name.empty())
+		{
+			// target => grid_dialog::drag_drop_target()
+			// target => camera_dialog::drag_drop_target()
+			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
+			{
+				const char* prefab_name = m_dragdrop_fx_name.c_str();
+				const char* prefab_path = m_dragdrop_fx_path.c_str();
+
+				const bool is_root = !prefab_path || prefab_path[0] == '\0';
+				const char* full_path = utils::va(is_root ? "%s%s" : "%s\\%s", is_root ? "" : prefab_path, prefab_name);
+
+				ImGui::SetDragDropPayload("EFFECT_BROWSER_ITEM", full_path, strlen(full_path), ImGuiCond_Once);
+				ImGui::Text("Effect: %s", full_path);
+				ImGui::EndDragDropSource();
+			}
+		}
+	}
+
+	void effects_browser::update_directory()
+	{
+		m_curr_dir_folders.clear();
+		m_curr_dir_files.clear();
+
+		for (auto& it : std::filesystem::directory_iterator(m_current_directory))
+		{
+			const auto& full_path = it.path();
+			const auto rel_path = std::filesystem::relative(full_path, m_fx_directory);
+
+			if (it.is_directory())
+			{
+				m_curr_dir_folders.emplace_back(rel_path.filename().string());
+			}
+			else
+			{
+				if (full_path.extension() == ".efx")
+				{
+					std::string file_str = rel_path.filename().string();
+					utils::erase_substring(file_str, ".efx");
+
+					m_curr_dir_files.emplace(
+						std::make_pair(file_str, rel_path.has_parent_path() ? rel_path.parent_path() : ""));
+				}
+			}
+		}
 	}
 
 	bool effects_browser::gui()
@@ -68,58 +123,135 @@ namespace ggui
 
 		ImGui::BeginGroup();
 		{
-			// filter widget
-			const auto screenpos_prefilter = ImGui::GetCursorScreenPos();
-			this->m_filter.Draw("##xmodel_filter", listbox_width - 32.0f);
-			const auto screenpos_postfilter = ImGui::GetCursorScreenPos();
-
-			ImGui::SameLine(listbox_width - 27.0f);
-			if (ImGui::ButtonEx("x##clear_filter"))
+			imgui::BeginDisabled(m_current_directory == m_fx_directory);
 			{
-				this->m_filter.Clear();
-			}
-
-			if (!this->m_filter.IsActive())
-			{
-				ImGui::SetCursorScreenPos(ImVec2(screenpos_prefilter.x + 12.0f, screenpos_prefilter.y + 4.0f));
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
-				ImGui::TextUnformatted("Filter ..");
-				ImGui::PopStyleColor();
-				ImGui::SetCursorScreenPos(ImVec2(screenpos_postfilter.x, screenpos_postfilter.y));
-			}
-
-			// xmodel listbox
-			if (ImGui::BeginListBox("##effect_list", ImVec2(listbox_width, split_horizontal ? ImGui::GetContentRegionAvail().y : ImGui::GetContentRegionAvail().y * 0.5f)))
-			{
-				if (this->m_filter.IsActive())
+				if (imgui::Button("<"))
 				{
-					for (int i = 0; i < this->m_effect_filecount; i++)
-					{
-						if (!this->m_filter.PassFilter(this->m_effect_filelist[i]))
-						{
-							continue;
-						}
+					m_current_directory = m_current_directory.parent_path();
+					update_directory();
+				}
 
-						effect_listbox_elem(i);
-					}
+				imgui::EndDisabled();
+			}
+
+			imgui::SameLine();
+
+			imgui::BeginGroup();
+			{
+				// filter widget
+				const auto screenpos_prefilter = ImGui::GetCursorScreenPos();
+				this->m_filter.Draw("##xmodel_filter", listbox_width - 70.0f);
+
+				ImGui::SameLine(listbox_width - 64.0f);
+				if (ImGui::ButtonEx("x##clear_filter"))
+				{
+					this->m_filter.Clear();
+				}
+
+				if (!this->m_filter.IsActive())
+				{
+					ImGui::SetCursorScreenPos(ImVec2(screenpos_prefilter.x + 12.0f, screenpos_prefilter.y + 4.0f));
+					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
+					ImGui::TextUnformatted("Filter ..");
+					ImGui::PopStyleColor();
+				}
+
+				imgui::EndGroup();
+			}
+
+			ImGui::BeginChild("##effect_list", ImVec2(listbox_width, split_horizontal ? ImGui::GetContentRegionAvail().y : ImGui::GetContentRegionAvail().y * 0.5f), true);
+			{
+				if (const auto rel_path = std::filesystem::relative(m_current_directory, m_fx_directory);
+					!rel_path.empty() && rel_path != ".")
+				{
+					imgui::TextUnformatted((" > \\" + rel_path.string()).c_str());
 				}
 				else
 				{
-					ImGuiListClipper clipper;
-					clipper.Begin(this->m_effect_filecount);
-
-					while (clipper.Step())
-					{
-						for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-						{
-							effect_listbox_elem(i);
-						}
-					}
-					clipper.End();
+					imgui::TextUnformatted(" > \\");
 				}
 
-				ImGui::EndListBox();
-			}
+				game::GfxImage* folder_ico;
+				if (folder_ico = game::Image_RegisterHandle("folder"); !folder_ico)
+				{
+					folder_ico = game::Image_RegisterHandle("invalid_texture");
+				}
+
+				int folder_num = 0;
+				for (const auto& folder : m_curr_dir_folders)
+				{
+					bool updated = false;
+
+					imgui::PushID(folder_num);
+					imgui::PushFontFromIndex(E_FONT::BOLD_18PX);
+
+
+					if (effects_browser::image_button(folder_ico, 18.0f, folder.c_str()))
+					{
+						m_current_directory /= folder;
+						update_directory();
+						updated = true;
+					}
+
+					imgui::PopFont();
+					imgui::PopID();
+					folder_num++;
+
+					if (updated)
+					{
+						break;
+					}
+				}
+
+				for (const auto& [filename, parent_path] : m_curr_dir_files)
+				{
+					if (this->m_filter.IsActive() && !this->m_filter.PassFilter(filename.c_str()))
+					{
+						continue;
+					}
+
+					//imgui::TableNextColumn();
+
+
+					bool update_drag_drop = false;
+					const char* filename_str = filename.c_str();
+
+					
+					imgui::PushID(filename_str);
+					if (const auto ret = effects_browser::image_button(nullptr, 18.0f, filename_str); 
+						ret != FX_ELEM_RESULT_NONE)
+					{
+						if (ret == FX_ELEM_RESULT_SELECTED)
+						{
+							this->m_effect_selection_old = m_effect_selection;
+							this->m_effect_selection = parent_path.string() + "\\" + filename;
+
+							cfxwnd::get()->stop_effect();
+							cfxwnd::get()->load_effect(this->m_effect_selection.c_str());
+						}
+
+						const auto current_id = imgui::GetItemID();
+						if (!m_dragdrop_id || m_dragdrop_id != current_id)
+						{
+							m_dragdrop_id = current_id;
+							update_drag_drop = true;
+						}
+					}
+					imgui::PopID();
+
+					if (update_drag_drop)
+					{
+						game::printf_to_console("updating drag drop");
+						m_dragdrop_fx_name = filename;
+						m_dragdrop_fx_path = parent_path.string();
+					}
+
+					handle_drag_drop();
+				}
+			} ImGui::EndChild();
+
+			//imgui::SetCursorScreenPos(ImVec2(imgui::GetCursorScreenPos().x, cursor_y));
+
 		}
 		ImGui::EndGroup();
 
@@ -127,6 +259,10 @@ namespace ggui
 		{
 			ImGui::SameLine();
 		}
+
+
+		
+
 
 		ImGui::BeginChild("##pref_child", ImVec2(0, 0), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 		{
@@ -158,11 +294,12 @@ namespace ggui
 
 	void effects_browser::on_open()
 	{
-		//if (!this->is_initiated())
-		{
-			this->m_effect_filelist = game::FS_ListFilteredFilesWrapper("fx", nullptr, &this->m_effect_filecount);
-			//this->set_initiated();
-		}
+		const auto egui = GET_GUI(entity_dialog);
+		m_fx_directory = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+		m_fx_directory /= "raw\\fx";
+
+		m_current_directory = m_fx_directory;
+		update_directory();
 	}
 
 	void effects_browser::on_close()

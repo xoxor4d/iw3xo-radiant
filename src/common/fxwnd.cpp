@@ -4,6 +4,9 @@
 void cfxwnd::stop_effect()
 {
 	m_effect_is_playing = false;
+	m_raw_effect.name[0] = 0;
+	m_raw_effect.elemCount = 0;
+
 	if (m_active_effect)
 	{
 		const auto system = fx_system::FX_GetSystem(fx_system::FX_SYSTEM_BROWSER);

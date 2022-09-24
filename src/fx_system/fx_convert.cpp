@@ -10,8 +10,13 @@
 											game::Com_PrintError(unused, fmt, __VA_ARGS__); \
 											game::allow_warnings = false; }
 #else
-#define Warning(unused, fmt, ...)	if(IsDebuggerPresent()) __debugbreak(); \
-											game::printf_to_console(fmt, __VA_ARGS__);
+#define Warning(unused, fmt, ...)		\
+	if(IsDebuggerPresent()) {			\
+		__debugbreak();					\
+		cfxwnd::get()->stop_effect();	\
+		components::effects::stop();	\
+		}								\
+		game::printf_to_console(fmt, __VA_ARGS__);
 #endif
 
 #define SLODWORD(x)  (*((int*)&(x)))

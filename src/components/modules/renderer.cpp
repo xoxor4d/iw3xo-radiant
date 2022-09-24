@@ -1483,7 +1483,7 @@ namespace components
 			state->viewport.x = 1;
 		}
 
-		if (effects::effect_is_playing())
+		if (effects::effect_is_playing() || cfxwnd::get()->m_effect_is_playing)
 		{
 			if (!d3dbsp::Com_IsBspLoaded() || (d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled))
 			{
