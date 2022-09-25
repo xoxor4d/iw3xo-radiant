@@ -66,6 +66,7 @@ namespace components
 		static bool is_rendering_zwnd()			{ return game::dx->targetWindowIndex == CZWND; }
 		static bool is_rendering_texturewnd()	{ return game::dx->targetWindowIndex == CTEXWND; }
 		static bool is_rendering_layeredwnd()	{ return game::dx->targetWindowIndex == LAYERED; }
+		static bool is_rendering_effectswnd()	{ return game::dx->targetWindowIndex == CFXWND; }
 
 		class postfx
 		{

@@ -3,6 +3,7 @@
 
 void cfxwnd::stop_effect()
 {
+	m_effect_initial_trigger = false;
 	m_effect_is_playing = false;
 	m_raw_effect.name[0] = 0;
 	m_raw_effect.elemCount = 0;
@@ -22,6 +23,14 @@ void cfxwnd::stop_effect()
 
 			m_active_effect = nullptr;
 		}
+	}
+}
+
+void cfxwnd::retrigger_effect(int msecBegin)
+{
+	if (m_active_effect)
+	{
+		fx_system::FX_RetriggerEffect(fx_system::FX_SYSTEM_BROWSER, m_active_effect, msecBegin);
 	}
 }
 
@@ -74,7 +83,8 @@ void cfxwnd::setup_and_spawn_fx()
 
 		utils::vector::angle_vectors(m_angles, cfx_spawn_axis[2], cfx_spawn_axis[1], cfx_spawn_axis[0]);
 
-		const auto effect = components::effects::Editor_SpawnEffect(fx_system::FX_SYSTEM_BROWSER, def, m_tickcount_playback, m_origin, cfx_spawn_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
+		m_effect_is_playing = true;
+		const auto effect = components::effects::Editor_SpawnEffect(fx_system::FX_SYSTEM_BROWSER, def, m_tickcount_playback, game::vec3_origin, cfx_spawn_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
 		m_active_effect = effect;
 	}
 }
@@ -132,8 +142,9 @@ void cfxwnd::update_fx()
 
 	// ----
 
-	if (m_active_effect && !m_effect_is_playing)
+	if (m_active_effect && !m_effect_initial_trigger)
 	{
+		m_effect_initial_trigger = true;
 		m_effect_is_playing = true;
 		m_tickcount_repeat = GetTickCount();
 
@@ -159,11 +170,113 @@ void cfxwnd::update_fx()
 			}
 		}
 
+		// retrigger active effect after completion
+		if ((m_active_effect->status & fx_system::FX_STATUS_HAS_PENDING_LOOP_ELEMS) == 0)
+		{
+			if (m_active_effect->firstSortedElemHandle == UINT16_MAX)
+			{
+				const auto system = fx_system::FX_GetSystem(fx_system::FX_SYSTEM_BROWSER);
+
+				if (!system->activeElemCount)
+				{
+					//game::printf_to_console("retrigger, status %d\n", m_active_effect->status);
+					fx_system::FX_RetriggerEffect(fx_system::FX_SYSTEM_BROWSER, m_active_effect, m_tickcount_playback);
+				}
+			}
+		}
+
 		fx_system::FxCmd cmd = {};
 		FX_FillUpdateCmd(fx_system::FX_SYSTEM_BROWSER, &cmd);
 		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_NON_DEPENDENT, &cmd);
 		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_SPOT_LIGHT, &cmd);
 		Sys_DoWorkerCmd(fx_system::WRKCMD_UPDATE_FX_REMAINING, &cmd);
+	}
+}
+
+struct fx_grid_line
+{
+	game::GfxPointVertex pts[2];
+};
+
+struct fx_pt
+{
+	float xyz[3];
+};
+
+std::vector<fx_pt> fx_grid_pts(512);
+std::vector<fx_grid_line> fx_grid(512);
+
+void cfxwnd::draw_grid()
+{
+	fx_grid.clear();
+	fx_grid_pts.clear();
+
+	game::vec4_t grid_color = { 0.25f, 0.25f, 0.25f, 1.0f };
+	const auto grid_sections = /*sections:*/ 17 /**/ - 1;
+	const auto grid_scale = 64.0f;
+
+	for (int j = 0; j <= grid_sections; ++j)
+	{
+		for (int i = 0; i <= grid_sections; ++i)
+		{
+			fx_grid_pts.emplace_back(fx_pt
+			{
+				static_cast<float>(i) * grid_scale - grid_scale * static_cast<float>(grid_sections) * 0.5f,
+				static_cast<float>(j) * grid_scale - grid_scale * static_cast<float>(grid_sections) * 0.5f,
+				0.0f
+			});
+		}
+	}
+
+	game::GfxColor col = {};
+	game::Byte4PackPixelColor(grid_color, &col);
+
+	fx_grid_line line = {};
+	line.pts[0].color = col;
+	line.pts[1].color = col;
+
+	for (int j = 0; j < grid_sections; ++j)
+	{
+		for (int i = 0; i < grid_sections; ++i)
+		{
+			const int row1 = j * (grid_sections + 1);
+			const int row2 = (j + 1) * (grid_sections + 1);
+
+			utils::vector::copy(fx_grid_pts[row1 + i].xyz, line.pts[0].xyz);
+			utils::vector::copy(fx_grid_pts[row1 + i + 1].xyz, line.pts[1].xyz);
+			fx_grid.emplace_back(line);
+
+			utils::vector::copy(fx_grid_pts[row1 + i + 1].xyz, line.pts[0].xyz);
+			utils::vector::copy(fx_grid_pts[row2 + i + 1].xyz, line.pts[1].xyz);
+			fx_grid.emplace_back(line);
+
+			utils::vector::copy(fx_grid_pts[row2 + i + 1].xyz, line.pts[0].xyz);
+			utils::vector::copy(fx_grid_pts[row2 + i].xyz, line.pts[1].xyz);
+			fx_grid.emplace_back(line);
+
+			utils::vector::copy(fx_grid_pts[row2 + i].xyz, line.pts[0].xyz);
+			utils::vector::copy(fx_grid_pts[row1 + i].xyz, line.pts[1].xyz);
+			fx_grid.emplace_back(line);
+		}
+	}
+
+	components::renderer::R_AddLineCmd(static_cast<std::uint16_t>(fx_grid.size()), 3, 3, fx_grid[0].pts);
+
+	game::vec3_t pxs_x = { 0.5f, 0.0f, 0.0f };
+	game::vec3_t pxs_y = { 0.0f, -0.5f, 0.0f };
+	game::vec4_t txt_col = { 0.35f, 0.35f, 0.35f, 1.0f };
+
+	
+	if (const auto font = game::R_RegisterFont("fonts/smalldevfont", 1); font)
+	{
+		for (auto s = 0u; s < fx_grid.size(); s++)
+		{
+			if (!(s % 16))
+			{
+				const char* txt = utils::va("%.1f %.1f", fx_grid[s].pts[0].xyz[0], fx_grid[s].pts[0].xyz[1]);
+				components::renderer::R_AddCmdDrawTextAtPosition(txt, font /*game::g_qeglobals->d_font_list*/, fx_grid[s].pts[0].xyz, pxs_x, pxs_y, txt_col);
+			}
+		}
 	}
 }
 
@@ -220,12 +333,7 @@ void set_scene_params(const float* origin, float* axis, game::GfxMatrix* project
 		game::R_Clear(6, white, 1.0f, 0);
 	}
 
-	// TODO: add viewinfo setup (see renderer::setup_viewinfo)
 
-
-	// BIG FAT MEMORY LEAK
-
-	// !!!! camera_onpaint_intercept
 
 	// a bit of R_RenderScene
 
@@ -440,7 +548,7 @@ void cfxwnd::on_paint()
 					// begin a new frame, clear the scene
 					game::R_BeginFrame();
 					game::R_Clear(7, dvars::gui_window_bg_color->current.vector, 1.0f, false);
-
+					
 					cfxwnd::get()->update_fx();
 
 					// setup scene
@@ -456,9 +564,9 @@ void cfxwnd::on_paint()
 					axis[8] = fxwnd->m_vup[2];
 
 					float origin[3];
-					origin[0] = gui->m_camera_distance; //m_selector->camera_offset[0]; //cmainframe::activewnd->m_pCamWnd->camera.origin[0];
-					origin[1] = 0.0f; //m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[1];
-					origin[2] = 0.0f;
+					origin[0] = fxwnd->m_origin[0];//gui->m_camera_distance; //m_selector->camera_offset[0]; //cmainframe::activewnd->m_pCamWnd->camera.origin[0];
+					origin[1] = fxwnd->m_origin[1]; //m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[1];
+					origin[2] = fxwnd->m_origin[2];
 
 					float temp_angles[3];
 					temp_angles[0] = 0.0f;
@@ -468,6 +576,7 @@ void cfxwnd::on_paint()
 					const auto gfx_window = components::renderer::get_window(static_cast<components::renderer::GFXWND_>(game::dx->targetWindowIndex));
 					setup_scene(origin, axis, 0, 0, gfx_window->width, gfx_window->height);
 
+					cfxwnd::get()->draw_grid();
 #if 0
 					// setup model orientation
 					game::orientation_t model_orientation = {};

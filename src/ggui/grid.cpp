@@ -492,42 +492,11 @@ namespace ggui
 				//cdeclcall(void, 0x425BE0);
 			};
 
+			// #
+
 			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
 			{
 				spawn_entity("misc_prefab", "model");
-
-				//const auto payload = imgui::GetDragDropPayload();
-				//const std::string prefab_path = /*"prefabs/"s +*/ std::string(static_cast<const char*>(payload->Data), payload->DataSize);
-
-				//const auto entity_gui = GET_GUI(ggui::entity_dialog);
-
-				//// reset manual left mouse capture
-				//ggui::dragdrop_reset_leftmouse_capture();
-
-				//ggui::entity_dialog::addprop_helper_s no_undo = {};
-
-				//game::Select_Deselect(true);
-				//game::Undo_ClearRedo();
-				//game::Undo_GeneralStart("create entity");
-
-				//if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
-				//{
-				//	game::CreateEntityBrush(
-				//		static_cast<int>(this->rtt_get_size().y) - this->rtt_get_cursor_pos_cpoint().y,
-				//		this->rtt_get_cursor_pos_cpoint().x,
-				//		cmainframe::activewnd->m_pXYWnd);
-				//}
-
-				//// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
-				//g_block_radiant_modeldialog = true;
-				//game::CreateEntityFromName("misc_prefab");
-				//g_block_radiant_modeldialog = false;
-
-				//entity_gui->add_prop("model", prefab_path.c_str(), &no_undo);
-				//game::Undo_End();
-
-				//// CMainFrame::OnDropSelected
-				////cdeclcall(void, 0x425BE0);
 			}
 
 			// #

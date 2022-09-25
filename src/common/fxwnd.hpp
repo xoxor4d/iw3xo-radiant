@@ -15,8 +15,8 @@ public:
 	HWND			m_frame_hwnd = nullptr;
 	int				m_width = 0;
 	int				m_height = 0;
-	game::vec3_t	m_origin = {};
-	game::vec3_t	m_angles = {};
+	game::vec3_t	m_origin = { -200.0f, -330.0f, 190.0f };
+	game::vec3_t	m_angles = { -25.0f, 60.0f, 0.0f };
 	game::vec3_t	m_forward = {};
 	game::vec3_t	m_right = {};
 	game::vec3_t	m_up = {};
@@ -27,6 +27,7 @@ public:
 	fx_system::FxEditorEffectDef m_raw_effect = {};
 	fx_system::FxEffect* m_active_effect = nullptr;
 	bool			m_effect_is_playing = false;
+	bool			m_effect_initial_trigger = false;
 
 	game::XModel*	m_xmodel_ptr_test = nullptr;
 	int				m_xmodel_inst = 0;
@@ -35,10 +36,12 @@ public:
 	int				m_tickcount_repeat = 0;
 
 	void			stop_effect();
+	void			retrigger_effect(int msecBegin);
 	bool			load_effect(const char* effect_name);
 	void			setup_and_spawn_fx();
 	void			tick_playback();
 	void			update_fx();
+	void			draw_grid();
 
 	static void		create_fxwnd();
 	static void		create_content_window();

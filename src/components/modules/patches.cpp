@@ -2,6 +2,29 @@
 
 namespace components
 {
+	void on_assert()
+	{
+		effects::stop_all();
+		cfxwnd::get()->stop_effect();
+	}
+
+	void __declspec(naked) on_assert_stub()
+	{
+		const static uint32_t retn_addr = 0x49CEAB;
+		__asm
+		{
+			pushad;
+			call	on_assert;
+			popad;
+
+			push    ecx; // og
+			mov     ecx, [ebp + 0x14]; // og
+			push    esi; // og
+			jmp		retn_addr;
+		}
+	}
+
+
 	void assert_mtlraw_sortkey(int sort_key, int sort_max)
 	{
 		game::printf_to_console("mtlRaw->info.sortKey doesn't index 1 << MTL_SORT_PRIMARY_SORT_KEY_BITS - %i not in [0, %i]", sort_key, sort_max);
@@ -26,6 +49,8 @@ namespace components
 
 	patches::patches()
 	{
+		utils::hook(0x49CEA6, on_assert_stub, HOOK_JUMP).install()->quick();
+
 		// return nullptr on assert: mtlRaw->info.sortKey doesn't index 1 << MTL_SORT_PRIMARY_SORT_KEY_BITS %i not in [0, 64]
 		utils::hook(0x51B0E8, assert_mtlraw_sortkey_stub, HOOK_JUMP).install()->quick();
 

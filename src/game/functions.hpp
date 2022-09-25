@@ -425,6 +425,7 @@ namespace game
 	inline auto Material_RegisterHandle = reinterpret_cast<game::Material* (*)(const char* name, int)>(0x511BE0);
 	inline auto R_RegisterModel = reinterpret_cast<game::XModel* (*)(const char* name)>(0x51D450);
 	inline auto R_RegisterLightDef = reinterpret_cast<game::GfxLightDef* (*)(const char* name)>(0x53D510);
+	inline auto R_RegisterFont = reinterpret_cast<game::Font_s* (*)(const char* name, int one)>(0x511ED0);
 
 	PhysPreset* FX_RegisterPhysPreset(const char* name);
 	void DObjCreate(game::DObjModel_s* dobjModels /*edi*/, game::DObj_s* obj /*esi*/, size_t numModels, game::XAnimTree_s* tree, int entnum);
