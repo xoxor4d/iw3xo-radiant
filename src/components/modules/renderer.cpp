@@ -1483,7 +1483,7 @@ namespace components
 			state->viewport.x = 1;
 		}
 
-		const auto effect_browser = GET_GUI(ggui::effects_browser);
+		//const auto effect_browser = GET_GUI(ggui::effects_browser);
 		
 		if (effects::effect_is_playing() && (!d3dbsp::Com_IsBspLoaded() || (d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled)) 
 			|| renderer::is_rendering_effectswnd()) /*(effect_browser->is_active() && !effect_browser->is_inactive_tab() || cfxwnd::get()->m_effect_is_playing))*/

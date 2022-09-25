@@ -26,14 +26,12 @@ public:
 
 	fx_system::FxEditorEffectDef m_raw_effect = {};
 	fx_system::FxEffect* m_active_effect = nullptr;
+
 	bool			m_effect_is_playing = false;
 	bool			m_effect_initial_trigger = false;
-
-	game::XModel*	m_xmodel_ptr_test = nullptr;
-	int				m_xmodel_inst = 0;
-
+	bool			m_grid_generated = false;
 	int				m_tickcount_playback = 0;
-	int				m_tickcount_repeat = 0;
+	int				m_saved_tick_old = 0;
 
 	void			stop_effect();
 	void			retrigger_effect(int msecBegin);

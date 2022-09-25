@@ -1,6 +1,5 @@
 #include "std_include.hpp"
 
-
 void cfxwnd::stop_effect()
 {
 	m_effect_initial_trigger = false;
@@ -81,8 +80,6 @@ void cfxwnd::setup_and_spawn_fx()
 			return;
 		}
 
-		utils::vector::angle_vectors(m_angles, cfx_spawn_axis[2], cfx_spawn_axis[1], cfx_spawn_axis[0]);
-
 		m_effect_is_playing = true;
 		const auto effect = components::effects::Editor_SpawnEffect(fx_system::FX_SYSTEM_BROWSER, def, m_tickcount_playback, game::vec3_origin, cfx_spawn_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
 		m_active_effect = effect;
@@ -90,21 +87,18 @@ void cfxwnd::setup_and_spawn_fx()
 }
 
 
-
 void cfxwnd::tick_playback()
 {
 	const auto saved_tick = static_cast<int>(GetTickCount());
-	auto tick_cmp = static_cast<int>(GetTickCount()) - m_tickcount_repeat;
+	auto tick_cmp = static_cast<int>(GetTickCount()) - m_saved_tick_old;
 
 	if (tick_cmp > 200)
 	{
 		tick_cmp = 200;
 	}
 
-	m_tickcount_repeat = saved_tick;
+	m_saved_tick_old = saved_tick;
 
-	//const bool force_update = GET_GUI(ggui::camera_settings_dialog)->phys_force_frame_logic;
-	//if (effects::effect_is_playing() || (force_update && !effects::effect_is_paused()))
 	{
 		auto tick_inc = static_cast<int>(static_cast<double>(tick_cmp) * 1.0 /*timescale*/ + 9.313225746154785e-10);
 		if (tick_inc <= 1)
@@ -116,13 +110,15 @@ void cfxwnd::tick_playback()
 	}
 }
 
+/**
+ * @brief	general fx logic
+ */
 void cfxwnd::update_fx()
 {
+	const auto system = fx_system::FX_GetSystem(fx_system::FX_SYSTEM_BROWSER);
+
 	cfxwnd::tick_playback();
 	fx_system::FX_SetNextUpdateTime(fx_system::FX_SYSTEM_BROWSER, m_tickcount_playback);
-
-	// FX_SetupCamera_Radiant
-	const auto system = fx_system::FX_GetSystem(fx_system::FX_SYSTEM_BROWSER);
 
 	float axis[3][3] = {};
 	axis[0][0] = m_vpn[0];
@@ -146,7 +142,7 @@ void cfxwnd::update_fx()
 	{
 		m_effect_initial_trigger = true;
 		m_effect_is_playing = true;
-		m_tickcount_repeat = GetTickCount();
+		m_saved_tick_old = GetTickCount();
 
 		fx_system::FX_RetriggerEffect(fx_system::FX_SYSTEM_BROWSER, m_active_effect, m_tickcount_playback);
 	}
@@ -204,9 +200,9 @@ struct fx_pt
 };
 
 std::vector<fx_pt> fx_grid_pts(512);
-std::vector<fx_grid_line> fx_grid(512);
+std::vector<fx_grid_line> fx_grid(1024);
 
-void cfxwnd::draw_grid()
+void create_grid()
 {
 	fx_grid.clear();
 	fx_grid_pts.clear();
@@ -220,11 +216,11 @@ void cfxwnd::draw_grid()
 		for (int i = 0; i <= grid_sections; ++i)
 		{
 			fx_grid_pts.emplace_back(fx_pt
-			{
-				static_cast<float>(i) * grid_scale - grid_scale * static_cast<float>(grid_sections) * 0.5f,
-				static_cast<float>(j) * grid_scale - grid_scale * static_cast<float>(grid_sections) * 0.5f,
-				0.0f
-			});
+				{
+					static_cast<float>(i) * grid_scale - grid_scale * static_cast<float>(grid_sections) * 0.5f,
+					static_cast<float>(j) * grid_scale - grid_scale * static_cast<float>(grid_sections) * 0.5f,
+					0.0f
+				});
 		}
 	}
 
@@ -259,6 +255,18 @@ void cfxwnd::draw_grid()
 			fx_grid.emplace_back(line);
 		}
 	}
+}
+
+/**
+ * @brief	draw a grid and position as text
+ */
+void cfxwnd::draw_grid()
+{
+	if (!m_grid_generated)
+	{
+		create_grid();
+		m_grid_generated = true;
+	}
 
 	components::renderer::R_AddLineCmd(static_cast<std::uint16_t>(fx_grid.size()), 3, 3, fx_grid[0].pts);
 
@@ -266,7 +274,6 @@ void cfxwnd::draw_grid()
 	game::vec3_t pxs_y = { 0.0f, -0.5f, 0.0f };
 	game::vec4_t txt_col = { 0.35f, 0.35f, 0.35f, 1.0f };
 
-	
 	if (const auto font = game::R_RegisterFont("fonts/smalldevfont", 1); font)
 	{
 		for (auto s = 0u; s < fx_grid.size(); s++)
@@ -280,7 +287,9 @@ void cfxwnd::draw_grid()
 	}
 }
 
-// rewrite of R_SetSceneParms (not of much use anymore)
+/**
+ * @brief	scene parameters and drawlists (R_RenderScene)
+ */
 void set_scene_params(const float* origin, float* axis, game::GfxMatrix* projection, int x, int y, int width, int height, bool clear)
 {
 	game::GfxViewParms* view_parms = game::R_SetupViewParms();
@@ -329,8 +338,8 @@ void set_scene_params(const float* origin, float* axis, game::GfxMatrix* project
 
 	if (clear)
 	{
-		float white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-		game::R_Clear(6, white, 1.0f, 0);
+		const float white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		game::R_Clear(6, white, 1.0f, false);
 	}
 
 
@@ -439,6 +448,9 @@ void set_scene_params(const float* origin, float* axis, game::GfxMatrix* project
 	viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
 }
 
+/**
+ * @brief	setup matrices and general scene
+ */
 void setup_scene(float* origin, float* axis, int x, int y, int width, int height)
 {
 	const float fov_y = tan(60.0f * 0.01745329238474369f * 0.5f) * 0.75f;
@@ -450,29 +462,14 @@ void setup_scene(float* origin, float* axis, int x, int y, int width, int height
 	set_scene_params(origin, axis, &projection, x, y, width, height, false);
 }
 
-void calc_raydir(int x, int y, float* dir)
-{
-	const auto fxwnd = cfxwnd::get();
-
-	const float tan_half_y = tan(60.0f * 0.01745329238474369f * 0.5f);
-	const float tan_half_x = (tan_half_y * 0.75f + tan_half_y * 0.75f) / static_cast<float>(fxwnd->m_height);
-
-	const float xa = tan_half_x * (static_cast<float>(y) - (static_cast<float>(fxwnd->m_height) / 2.0f));
-	const float xb = tan_half_x * (static_cast<float>(x) - (static_cast<float>(fxwnd->m_width) / 2.0f));
-
-	dir[0] = fxwnd->m_vup[0] * xa + fxwnd->m_vright[0] * xb + fxwnd->m_vpn[0];
-	dir[1] = fxwnd->m_vup[1] * xa + fxwnd->m_vright[1] * xb + fxwnd->m_vpn[1];
-	dir[2] = fxwnd->m_vup[2] * xa + fxwnd->m_vright[2] * xb + fxwnd->m_vpn[2];
-
-	utils::vector::normalize(dir);
-}
-
-void build_matrix()
+/**
+ * @brief	build camera matrix
+ */
+void camera_vectors()
 {
 	const auto fxwnd = cfxwnd::get();
 
 	float angles[3];
-
 	angles[0] = fxwnd->m_angles[0];
 	angles[1] = fxwnd->m_angles[1];
 	angles[2] = fxwnd->m_angles[2];
@@ -493,16 +490,18 @@ void build_matrix()
 	fxwnd->m_right[2] = 0.0f;
 }
 
-// *
-// ggui::modelselector::menu()
-// drag drop target => cxywnd::rtt_grid_window()
-// drag drop target => ccamwnd::rtt_camera_window()
-
-// rendering happens in 0x533880
-// model inst rendering in 0x53AA30
-
+/**
+ * @brief	effect window rendering
+ */
 void cfxwnd::on_paint()
 {
+	const auto gui = GET_GUI(ggui::effects_browser);
+
+	if (!gui->is_active() || gui->is_inactive_tab())
+	{
+		return;
+	}
+
 	const auto fxwnd = cfxwnd::get();
 	const auto& hwnd = components::renderer::get_window(components::renderer::CFXWND)->hwnd;
 
@@ -518,237 +517,86 @@ void cfxwnd::on_paint()
 	// *
 	//
 
-	const auto gui = GET_GUI(ggui::effects_browser);
-	
-	build_matrix();
+	camera_vectors();
 
 	fxwnd->m_width = components::renderer::get_window(components::renderer::CFXWND)->width;
 	fxwnd->m_height = components::renderer::get_window(components::renderer::CFXWND)->height;
 
 	if (fxwnd->m_width != 0 && fxwnd->m_height != 0)
 	{
+		if (gui->is_active() && !gui->is_inactive_tab())
 		{
-			if (gui->is_active() && !gui->is_inactive_tab())
-			{
-				//gui->m_bad_model = false;
+			// begin a new frame, clear the scene
+			game::R_BeginFrame();
+			game::R_Clear(7, dvars::gui_window_bg_color->current.vector, 1.0f, false);
+			
+			cfxwnd::get()->update_fx();
 
-				// get model handle
-				if(auto model = game::R_RegisterModel("fx");
-						model)
-				{
-					// use the fx model for invalid or vertex heavy models
-					if (  !model->surfs 
-						|| model->bad
-						|| model->surfs->vertCount > 15000)
-					{
-						model = game::R_RegisterModel("fx");
-						//gui->m_bad_model = true;
-					}
+			// setup scene
+			float axis[9];
+			axis[0] = fxwnd->m_vpn[0];
+			axis[1] = fxwnd->m_vpn[1];
+			axis[2] = fxwnd->m_vpn[2];
+			axis[3] = -fxwnd->m_vright[0];
+			axis[4] = -fxwnd->m_vright[1];
+			axis[5] = -fxwnd->m_vright[2];
+			axis[6] = fxwnd->m_vup[0];
+			axis[7] = fxwnd->m_vup[1];
+			axis[8] = fxwnd->m_vup[2];
 
-					// begin a new frame, clear the scene
-					game::R_BeginFrame();
-					game::R_Clear(7, dvars::gui_window_bg_color->current.vector, 1.0f, false);
-					
-					cfxwnd::get()->update_fx();
+			float origin[3];
+			origin[0] = fxwnd->m_origin[0];//gui->m_camera_distance; //m_selector->camera_offset[0]; //cmainframe::activewnd->m_pCamWnd->camera.origin[0];
+			origin[1] = fxwnd->m_origin[1]; //m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[1];
+			origin[2] = fxwnd->m_origin[2];
 
-					// setup scene
-					float axis[9];
-					axis[0] = fxwnd->m_vpn[0];
-					axis[1] = fxwnd->m_vpn[1];
-					axis[2] = fxwnd->m_vpn[2];
-					axis[3] = -fxwnd->m_vright[0];
-					axis[4] = -fxwnd->m_vright[1];
-					axis[5] = -fxwnd->m_vright[2];
-					axis[6] = fxwnd->m_vup[0];
-					axis[7] = fxwnd->m_vup[1];
-					axis[8] = fxwnd->m_vup[2];
+			float temp_angles[3];
+			temp_angles[0] = 0.0f;
+			temp_angles[1] = -70.0f;
+			temp_angles[2] = 40.0f;
 
-					float origin[3];
-					origin[0] = fxwnd->m_origin[0];//gui->m_camera_distance; //m_selector->camera_offset[0]; //cmainframe::activewnd->m_pCamWnd->camera.origin[0];
-					origin[1] = fxwnd->m_origin[1]; //m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[1];
-					origin[2] = fxwnd->m_origin[2];
+			const auto gfx_window = components::renderer::get_window(static_cast<components::renderer::GFXWND_>(game::dx->targetWindowIndex));
+			setup_scene(origin, axis, 0, 0, gfx_window->width, gfx_window->height);
 
-					float temp_angles[3];
-					temp_angles[0] = 0.0f;
-					temp_angles[1] = -70.0f;
-					temp_angles[2] = 40.0f;
+			cfxwnd::get()->draw_grid();
 
-					const auto gfx_window = components::renderer::get_window(static_cast<components::renderer::GFXWND_>(game::dx->targetWindowIndex));
-					setup_scene(origin, axis, 0, 0, gfx_window->width, gfx_window->height);
-
-					cfxwnd::get()->draw_grid();
-#if 0
-					// setup model orientation
-					game::orientation_t model_orientation = {};
-					game::AnglesToAxis(temp_angles, &model_orientation.axis[0][0]);
-
-					
-					// center model (old way of doing it)
-					const float dist = (fabsf(model->maxs[2]) + fabsf(model->mins[2])) * 0.5f;
-					// model_orientation.origin[0] = model->radius * 1.75f;
-					// model_orientation.origin[1] = 0.0f;
-					// model_orientation.origin[2] = -(model->maxs[2] - dist);
-
-					// get direction vector from center point into the scene
-					game::vec3_t direction;
-					calc_raydir(static_cast<int>(gfx_window->width * 0.5f), static_cast<int>(gfx_window->height * 0.5f), direction);
-
-					game::vec3_t model_origin;
-					utils::vector::copy(origin, model_origin);
-					model_origin[1] = 10.0f;
-
-					// calculate model origin including "zoom"
-					utils::vector::ma(model_origin, model->radius * 1.75f + gui->m_camera_distance, direction, model_orientation.origin);
-					model_orientation.origin[2] = -(model->maxs[2] - dist);
-					
-					// transform by identity matrix (not needed)
-					// game::orientation_t model_orientation = {};
-					// game::OrientationConcatenate(&temp_orientation, &editor_instmodel_mtx, &model_orientation);
-
-					
-					// *
-					// draw axis model
-					{
-						const float axis_scale = 0.05f;
-						const float axis_dist  = 25.0f;
-						
-						game::orientation_t axis_orientation = {};
-						game::AnglesToAxis(temp_angles, &axis_orientation.axis[0][0]);
-
-						// get direction vector from bottom right point into the scene
-						calc_raydir(static_cast<int>(gfx_window->width) - 35, 25, direction);
-
-						// push the model into the scene so it does not clip with the camera
-						utils::vector::ma(origin, axis_dist, direction, axis_orientation.origin);
-
-						//if (!gui->m_axis_model_initiated)
-						//{
-						//	// get model handle
-						//	if (const auto	axis_model = game::R_RegisterModel("axis");
-						//					axis_model)
-						//	{
-						//		// AddModelToModelInstBuff - add the model to the instance "buffer"
-						//		if (const int model_inst_num = utils::hook::call<int(__cdecl)(game::XModel * _model, float* _axis, float _scale)>(0x4FDBE0)(axis_model, &axis_orientation.origin[0], axis_scale);
-						//					  model_inst_num)
-						//		{
-						//			gui->m_axis_model_inst_handle = model_inst_num;
-						//		}
-
-						//		gui->m_axis_model_initiated = true;
-						//	}
-						//}
-						//else
-						//{
-						//	// ModelInstUpdate
-						//	utils::hook::call<void(__cdecl)(int _inst, float* _axis, float scale)>(0x4FDD80)
-						//		(gui->m_axis_model_inst_handle, &axis_orientation.origin[0], axis_scale);
-
-						//	// SkinModelInst - add model surfs to the skinnedCached buffer
-						//	utils::hook::call<int(__cdecl)(int inst_handle, int checkhandle, int techflags, game::GfxColor* color, int drawflags)>(0x4FE2E0)(
-						//		gui->m_axis_model_inst_handle, 0, layermatwnd::rendermethod_axis, nullptr, 2);
-						//}
-					}
-
-					
-					// *
-					// draw preview model
-					{
-						// is the last model still the selected one? -> update the model instance
-						if (fxwnd->m_xmodel_ptr_test && fxwnd->m_xmodel_ptr_test == model)
-						{
-							// ModelInstUpdate
-							utils::hook::call<void(__cdecl)(int _inst, float* _axis, float scale)>(0x4FDD80)
-								(fxwnd->m_xmodel_inst, &model_orientation.origin[0], 1.0f);
-						}
-						// new model selected
-						else
-						{
-							// reset camera zoom and angles
-							/*gui->m_camera_angles[0] = 0.0f;
-							gui->m_camera_angles[1] = 0.0f;
-							gui->m_camera_angles[2] = 0.0f;
-							gui->m_camera_distance = 0.0f;
-							gui->m_camera_offset[0] = 0.0f;
-							gui->m_camera_offset[1] = 0.0f;
-							gui->m_camera_offset[2] = 0.0f;*/
-							
-							// RemoveModelInstFromBuf - clear old model instance
-							if (fxwnd->m_xmodel_ptr_test && fxwnd->m_xmodel_inst)
-							{
-								utils::hook::call<void(__cdecl)(int)>(0x4FDCE0)(fxwnd->m_xmodel_inst);
-							}
-
-							// AddModelToModelInstBuff - add the model to the instance "buffer"
-							if (const int model_inst_num = utils::hook::call<int(__cdecl)(game::XModel * _model, float* _axis, float _scale)>(0x4FDBE0)(model, &model_orientation.origin[0], 1.0f);
-								model_inst_num)
-							{
-								fxwnd->m_xmodel_ptr_test = model;
-								fxwnd->m_xmodel_inst = model_inst_num;
-							}
-						}
-
-						if (fxwnd->m_xmodel_ptr_test)
-						{
-							// SkinModelInst - add model surfs to the skinnedCached buffer
-							utils::hook::call<int(__cdecl)(int inst_handle, int checkhandle, int techflags, game::GfxColor* color, int drawflags)>(0x4FE2E0)(
-								fxwnd->m_xmodel_inst, 0, layermatwnd::FAKELIGHT_NORMAL, nullptr, 2);
-						}
-					}
-#endif
-				}
-
-				// sorts surfaces and adds RC_DRAW_EDITOR_SKINNEDCACHED rendercmd
-				//utils::hook::call<void(__cdecl)()>(0x4FDA10)();
-
-				game::R_EndFrame();
-				game::R_IssueRenderCommands(-1);
-				game::R_SortMaterials(); // !!! clear scene and buffers or camera will preview flickering effect browser effects
-
-				// big fat mem leak was caused by renderer::copy_scene_to_texture in RB_StandardDrawCommands
-
-
-
-				//components::renderer::copy_scene_to_texture(components::renderer::CFXWND, gui->rtt_get_texture());
-			}
+			game::R_EndFrame();
+			game::R_IssueRenderCommands(-1);
+			game::R_SortMaterials(); // !!! clear scene and buffers or camera will preview flickering effect browser effects
 		}
 	}
 
 	game::R_CheckTargetWindow(hwnd);
-	
-	// hunk related
-	int& random_dword01 = *reinterpret_cast<int*>(0x25D5B88);
-	int& random_dword02 = *reinterpret_cast<int*>(0x242293C);
-	int& random_dword03 = *reinterpret_cast<int*>(0x2422940);
-	
-	if(!random_dword01) {
+
+	int&		hunk_low_temp = *reinterpret_cast<int*>(0x2422940);
+	const int&	hunk_low_permanent = *reinterpret_cast<int*>(0x242293C);
+	const int&	s_hunkData = *reinterpret_cast<int*>(0x25D5B88);
+
+	if (!s_hunkData)
+	{
 		game::Com_Error("cfxwnd::on_paint() :: s_hunkData");
 	}
 
-	random_dword03 = random_dword02;
+	hunk_low_temp = hunk_low_permanent;
 
-	// nice meme iw
 	EndPaint(hwnd, &Paint);
 }
 
 
-// window proc for the complete window
+/**
+ * @brief	window proc for the complete window
+ */
 LRESULT __stdcall cfxwnd::windowproc_frame(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	if (Msg <= WM_NOTIFY)
 	{
-		if (Msg == WM_SIZE)
+		/*if (Msg == WM_SIZE)
 		{
-			int x, y, cx, cy;
-
-			utils::hook::call<void(__cdecl)(int*, int*, int*, int*)>(0x417B40)(&x, &y, &cx, &cy);
-			SetWindowPos(layermatwnd_struct->m_content_hwnd, 0, x, y, cx, cy, SWP_NOZORDER);
-			
 			return DefWindowProcA(hWnd, 5u, wParam, lParam);
-		}
+		}*/
 
 		if (Msg == WM_CLOSE)
 		{
-			ShowWindow(layermatwnd_struct->m_frame_hwnd, SW_HIDE);
+			ShowWindow(cfxwnd::get()->m_frame_hwnd, SW_HIDE);
 			return 0;
 		}
 
@@ -762,14 +610,16 @@ LRESULT __stdcall cfxwnd::windowproc_frame(HWND hWnd, UINT Msg, WPARAM wParam, L
 	
 	if(wParam == VK_ESCAPE)
 	{
-		ShowWindow(layermatwnd_struct->m_frame_hwnd, SW_HIDE);
+		ShowWindow(cfxwnd::get()->m_frame_hwnd, SW_HIDE);
 		return 0;
 	}
 
 	return 0;
 }
 
-// window proc for content area
+/**
+ * @brief	window proc for content area
+ */
 LRESULT __stdcall cfxwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	if (Msg <= WM_VSCROLL)
@@ -797,7 +647,9 @@ LRESULT __stdcall cfxwnd::windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM 
 	return 0;
 }
 
-// create the "content" area
+/**
+ * @brief	create the "content" area
+ */
 void cfxwnd::create_content_window()
 {
 	const auto fxwnd = cfxwnd::get();
@@ -821,7 +673,9 @@ void cfxwnd::create_content_window()
 	}
 }
 
-// register window classes (frame + content)
+/**
+ * @brief	register window classes (frame + content)
+ */
 void cfxwnd::precreate_window()
 {
 	WNDCLASSEXA wc;
@@ -845,6 +699,9 @@ void cfxwnd::precreate_window()
 	RegisterClassExA(&wc);
 }
 
+/**
+ * @brief	create frame and content window
+ */
 void cfxwnd::create_fxwnd()
 {
 	cfxwnd::precreate_window();

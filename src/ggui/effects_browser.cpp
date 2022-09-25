@@ -377,7 +377,7 @@ namespace ggui
 		{
 			imgui::Text("m_effect_is_playing %s", cfxwnd::get()->m_effect_is_playing ? "true" : "false");
 			imgui::Text("m_tickcount_playback %d", cfxwnd::get()->m_tickcount_playback);
-			imgui::Text("m_tickcount_repeat %d", cfxwnd::get()->m_tickcount_repeat);
+			imgui::Text("m_tickcount_repeat %d", cfxwnd::get()->m_saved_tick_old);
 
 			imgui::EndGroup();
 		}

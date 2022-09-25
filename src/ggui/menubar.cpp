@@ -925,6 +925,11 @@ namespace ggui
 					cs->focus_tab(camera_settings_dialog::tab_state_effects);
 				}
 
+				if (ImGui::MenuItem("Effects Browser")) 
+				{
+					GET_GUI(ggui::effects_browser)->toggle();
+				}
+
 				if (ImGui::MenuItem("Edit Current Effect", 0, nullptr, components::effects::effect_can_play()))
 				{
 					components::effects::edit();

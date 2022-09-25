@@ -546,6 +546,7 @@ namespace components
 		HANDLE_SAVED_STATE_INT(ggui::console_dialog, dvars::gui_saved_state_console, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::filter_dialog, dvars::gui_saved_state_filter, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::effects_browser, dvars::gui_saved_state_effects_browser, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::prefab_preview_dialog, dvars::gui_saved_state_prefab_browser, ggui::m_init_saved_states);
@@ -839,6 +840,14 @@ namespace components
 
 		dvars::gui_saved_state_entity = dvars::register_int(
 			/* name		*/ "gui_saved_state_entity",
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved closed/opened/active state of window");
+
+		dvars::gui_saved_state_effects_browser = dvars::register_int(
+			/* name		*/ "gui_saved_state_effects_browser",
 			/* default	*/ 0,
 			/* mins		*/ 0,
 			/* maxs		*/ 2,
