@@ -375,9 +375,16 @@ namespace ggui
 
 		imgui::BeginGroup();
 		{
-			imgui::Text("m_effect_is_playing %s", cfxwnd::get()->m_effect_is_playing ? "true" : "false");
-			imgui::Text("m_tickcount_playback %d", cfxwnd::get()->m_tickcount_playback);
-			imgui::Text("m_tickcount_repeat %d", cfxwnd::get()->m_saved_tick_old);
+			if (cfxwnd::get()->m_effect_is_using_physx)
+			{
+				imgui::Text("spawn origin adjusted to [0, 0, 80] because effect is using physics");
+				imgui::Text("actors %d", components::physx_impl::get()->m_phys_active_actor_fx_browser_count);
+				imgui::Text("tick msec %d", components::physx_impl::get()->m_phys_fx_browser_msec_step);
+			}
+
+			//imgui::Text("m_effect_is_playing %s", cfxwnd::get()->m_effect_is_playing ? "true" : "false");
+			//imgui::Text("m_tickcount_playback %d", cfxwnd::get()->m_tickcount_playback);
+			//imgui::Text("m_tickcount_repeat %d", cfxwnd::get()->m_saved_tick_old);
 
 			imgui::EndGroup();
 		}

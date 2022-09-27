@@ -2764,11 +2764,9 @@ namespace components
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
 
-		if (game::dx->device && 
-			(game::dx->targetWindowIndex == renderer::CCAMERAWND && (effects::effect_is_playing()
-				|| (fx_system::ed_is_paused && !effects::effect_is_playing())
-				|| (dvars::r_draw_bsp && dvars::r_draw_bsp->current.enabled))
-				|| game::dx->targetWindowIndex == renderer::CFXWND))
+		if (game::dx->device && (renderer::is_rendering_camerawnd() && 
+			(effects::effect_is_playing() || fx_system::ed_is_paused && !effects::effect_is_playing() || dvars::r_draw_bsp && dvars::r_draw_bsp->current.enabled)
+				|| renderer::is_rendering_effectswnd()))
 		{
 			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];

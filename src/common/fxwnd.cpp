@@ -2,7 +2,7 @@
 
 void cfxwnd::stop_effect()
 {
-	m_effect_initial_trigger = false;
+	m_effect_is_using_physx = false;
 	m_effect_is_playing = false;
 	m_raw_effect.name[0] = 0;
 	m_raw_effect.elemCount = 0;
@@ -40,7 +40,7 @@ bool cfxwnd::load_effect(const char* effect_name)
 		std::string fxname = effect_name;
 		utils::replace(fxname, ".efx", "");
 
-		//cfxwnd::stop();
+		cfxwnd::stop_effect();
 		fx_system::FX_UnregisterAll();
 
 		if (fx_system::FX_LoadEditorEffect(fxname.c_str(), &m_raw_effect))
@@ -72,6 +72,8 @@ void cfxwnd::setup_and_spawn_fx()
 {
 	if (strlen(m_raw_effect.name))
 	{
+		m_effect_is_using_physx = false;
+
 		fx_system::FxEffectDef* def = fx_system::FX_Convert(&m_raw_effect, fx_system::FX_AllocMem);
 
 		if (!def)
@@ -80,8 +82,21 @@ void cfxwnd::setup_and_spawn_fx()
 			return;
 		}
 
+		game::vec3_t spawn_origin = {};
+
+		for (int elemDefIndex = 0; elemDefIndex != def->elemDefCountLooping; ++elemDefIndex)
+		{
+			if (def->elemDefs[elemDefIndex].elemType == fx_system::FX_ELEM_TYPE_MODEL && (def->elemDefs[elemDefIndex].flags & fx_system::FX_ELEM_USE_MODEL_PHYSICS) != 0)
+			{
+				spawn_origin[2] = 80.0f;
+				m_effect_is_using_physx = true;
+				break;
+			}
+		}
+
 		m_effect_is_playing = true;
-		const auto effect = components::effects::Editor_SpawnEffect(fx_system::FX_SYSTEM_BROWSER, def, m_tickcount_playback, game::vec3_origin, cfx_spawn_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
+
+		const auto effect = components::effects::Editor_SpawnEffect(fx_system::FX_SYSTEM_BROWSER, def, m_tickcount_playback, spawn_origin, cfx_spawn_axis, fx_system::FX_SPAWN_MARK_ENTNUM);
 		m_active_effect = effect;
 	}
 }
@@ -118,6 +133,12 @@ void cfxwnd::update_fx()
 	const auto system = fx_system::FX_GetSystem(fx_system::FX_SYSTEM_BROWSER);
 
 	cfxwnd::tick_playback();
+
+	if (m_effect_is_using_physx)
+	{
+		components::physx_impl::get()->fx_browser_frame(m_tickcount_playback);
+	}
+
 	fx_system::FX_SetNextUpdateTime(fx_system::FX_SYSTEM_BROWSER, m_tickcount_playback);
 
 	float axis[3][3] = {};
@@ -137,15 +158,6 @@ void cfxwnd::update_fx()
 	FX_SetupCamera(&system->camera, m_origin, axis, halfTanX, halfTanY, 0.0f);
 
 	// ----
-
-	if (m_active_effect && !m_effect_initial_trigger)
-	{
-		m_effect_initial_trigger = true;
-		m_effect_is_playing = true;
-		m_saved_tick_old = GetTickCount();
-
-		fx_system::FX_RetriggerEffect(fx_system::FX_SYSTEM_BROWSER, m_active_effect, m_tickcount_playback);
-	}
 
 	if (!m_active_effect)
 	{
@@ -171,12 +183,10 @@ void cfxwnd::update_fx()
 		{
 			if (m_active_effect->firstSortedElemHandle == UINT16_MAX)
 			{
-				const auto system = fx_system::FX_GetSystem(fx_system::FX_SYSTEM_BROWSER);
-
-				if (!system->activeElemCount)
+				if (!system->activeElemCount && !system->activeSpotLightElemCount)
 				{
 					//game::printf_to_console("retrigger, status %d\n", m_active_effect->status);
-					fx_system::FX_RetriggerEffect(fx_system::FX_SYSTEM_BROWSER, m_active_effect, m_tickcount_playback);
+					cfxwnd::retrigger_effect(m_tickcount_playback);
 				}
 			}
 		}
@@ -199,17 +209,17 @@ struct fx_pt
 	float xyz[3];
 };
 
-std::vector<fx_pt> fx_grid_pts(512);
-std::vector<fx_grid_line> fx_grid(1024);
+std::vector<fx_pt> fx_grid_pts;
+std::vector<fx_grid_line> fx_grid;
 
 void create_grid()
 {
 	fx_grid.clear();
 	fx_grid_pts.clear();
 
-	game::vec4_t grid_color = { 0.25f, 0.25f, 0.25f, 1.0f };
-	const auto grid_sections = /*sections:*/ 17 /**/ - 1;
-	const auto grid_scale = 64.0f;
+	//game::vec4_t grid_color = { 0.25f, 0.25f, 0.25f, 1.0f };
+	const auto grid_sections = /*sections:*/ dvars::fx_browser_grid_sections->current.integer /**/ - 1; // 17
+	const auto grid_scale = static_cast<float>(dvars::fx_browser_grid_scale->current.integer); //64.0f;
 
 	for (int j = 0; j <= grid_sections; ++j)
 	{
@@ -219,13 +229,13 @@ void create_grid()
 				{
 					static_cast<float>(i) * grid_scale - grid_scale * static_cast<float>(grid_sections) * 0.5f,
 					static_cast<float>(j) * grid_scale - grid_scale * static_cast<float>(grid_sections) * 0.5f,
-					0.0f
+					-1.0f
 				});
 		}
 	}
 
 	game::GfxColor col = {};
-	game::Byte4PackPixelColor(grid_color, &col);
+	game::Byte4PackPixelColor(dvars::fx_browser_grid_color->current.vector, &col);
 
 	fx_grid_line line = {};
 	line.pts[0].color = col;
@@ -268,11 +278,17 @@ void cfxwnd::draw_grid()
 		m_grid_generated = true;
 	}
 
-	components::renderer::R_AddLineCmd(static_cast<std::uint16_t>(fx_grid.size()), 3, 3, fx_grid[0].pts);
+	for (auto p = 0u; p < fx_grid.size(); p += 200)
+	{
+		const uint16_t count = fx_grid.size() - p < 200 ? static_cast<uint16_t>(fx_grid.size() - p) : 200;
+		components::renderer::R_AddLineCmd(count, static_cast<char>(dvars::fx_browser_grid_line_width->current.integer), 3, fx_grid[p].pts);
+	}
 
-	game::vec3_t pxs_x = { 0.5f, 0.0f, 0.0f };
-	game::vec3_t pxs_y = { 0.0f, -0.5f, 0.0f };
-	game::vec4_t txt_col = { 0.35f, 0.35f, 0.35f, 1.0f };
+	//components::renderer::R_AddLineCmd(static_cast<std::uint16_t>(fx_grid.size()), 3, 3, fx_grid[0].pts);
+
+	game::vec3_t pxs_x = { dvars::fx_browser_grid_font_scale->current.value, 0.0f, 0.0f };
+	game::vec3_t pxs_y = { 0.0f, -dvars::fx_browser_grid_font_scale->current.value, 0.0f };
+	//game::vec4_t txt_col = { 0.35f, 0.35f, 0.35f, 1.0f };
 
 	if (const auto font = game::R_RegisterFont("fonts/smalldevfont", 1); font)
 	{
@@ -281,7 +297,7 @@ void cfxwnd::draw_grid()
 			if (!(s % 16))
 			{
 				const char* txt = utils::va("%.1f %.1f", fx_grid[s].pts[0].xyz[0], fx_grid[s].pts[0].xyz[1]);
-				components::renderer::R_AddCmdDrawTextAtPosition(txt, font /*game::g_qeglobals->d_font_list*/, fx_grid[s].pts[0].xyz, pxs_x, pxs_y, txt_col);
+				components::renderer::R_AddCmdDrawTextAtPosition(txt, font /*game::g_qeglobals->d_font_list*/, fx_grid[s].pts[0].xyz, pxs_x, pxs_y, dvars::fx_browser_grid_font_color->current.vector);
 			}
 		}
 	}
@@ -713,6 +729,66 @@ void cfxwnd::create_fxwnd()
 	fxwnd->m_height = 400;
 
 	cfxwnd::create_content_window();
+}
+
+// *
+// *
+
+void cfxwnd::register_dvars()
+{
+	dvars::fx_browser_grid_sections = dvars::register_int(
+		/* name		*/ "fx_browser_grid_sections",
+		/* val		*/ 17,
+		/* minVal	*/ 8,
+		/* maxVal	*/ 64,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "fx browser grid : total grid sections");
+
+	dvars::fx_browser_grid_scale = dvars::register_int(
+		/* name		*/ "fx_browser_grid_scale",
+		/* val		*/ 64,
+		/* minVal	*/ 16,
+		/* maxVal	*/ 1024,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "fx browser grid : grid scale (section squared)");
+
+	dvars::fx_browser_grid_color = dvars::register_vec4(
+		/* name		*/ "fx_browser_grid_color",
+		/* x		*/ 0.1f,
+		/* y		*/ 0.1f,
+		/* z		*/ 0.1f,
+		/* w		*/ 1.0f,
+		/* minVal	*/ 0.0f,
+		/* maxVal	*/ 1.0f,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "fx browser grid : color");
+
+	dvars::fx_browser_grid_line_width = dvars::register_int(
+		/* name		*/ "fx_browser_grid_line_width",
+		/* val		*/ 1,
+		/* minVal	*/ 1,
+		/* maxVal	*/ 8,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "fx browser grid : grid line width");
+
+	dvars::fx_browser_grid_font_scale = dvars::register_float(
+		/* name		*/ "fx_browser_grid_font_scale",
+		/* default	*/ 0.5f,
+		/* mins		*/ 0.1f,
+		/* maxs		*/ 4.0f,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "fx browser grid : font scale");
+
+	dvars::fx_browser_grid_font_color = dvars::register_vec4(
+		/* name		*/ "fx_browser_grid_font_color",
+		/* x		*/ 0.35f,
+		/* y		*/ 0.35f,
+		/* z		*/ 0.35f,
+		/* w		*/ 1.0f,
+		/* minVal	*/ 0.0f,
+		/* maxVal	*/ 1.0f,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "fx browser grid : font color");
 }
 
 // *

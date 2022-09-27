@@ -28,7 +28,7 @@ public:
 	fx_system::FxEffect* m_active_effect = nullptr;
 
 	bool			m_effect_is_playing = false;
-	bool			m_effect_initial_trigger = false;
+	bool			m_effect_is_using_physx = false;
 	bool			m_grid_generated = false;
 	int				m_tickcount_playback = 0;
 	int				m_saved_tick_old = 0;
@@ -45,6 +45,8 @@ public:
 	static void		create_content_window();
 	static void		precreate_window();
 	static void		on_paint();
+
+	static void		register_dvars();
 
 	static LRESULT __stdcall windowproc_frame(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT __stdcall windowproc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);

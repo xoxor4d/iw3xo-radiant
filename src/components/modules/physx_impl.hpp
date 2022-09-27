@@ -54,6 +54,7 @@ namespace components
 		physx::PxPhysics* mPhysics = nullptr;
 		physx::PxCooking* mCooking = nullptr;
 		physx::PxScene* mScene = nullptr;
+		physx::PxScene* mSceneEffectBrowser = nullptr;
 		physx::PxPvd* mPvd = nullptr;
 
 		physx::PxControllerManager* m_manager = nullptr;
@@ -122,6 +123,10 @@ namespace components
 		uint32_t m_phys_time_last_update = 0;
 		uint32_t m_phys_active_actor_count = 0;
 
+		uint32_t m_phys_fx_browser_msec_step = 0;
+		uint32_t m_phys_time_last_update_fx_browser = 0;
+		uint32_t m_phys_active_actor_fx_browser_count = 0;
+
 		struct userdata_s
 		{
 			physx::PxMaterial* material = nullptr;
@@ -161,6 +166,7 @@ namespace components
 		void create_static_terrain(game::selbrush_def_t* sb, const game::vec3_t position_offset = nullptr, const float* quat = nullptr);
 
 	public:
+		void fx_browser_frame(int tick);
 		void phys_frame();
 		void fx_frame();
 
@@ -181,7 +187,7 @@ namespace components
 		void reset_dynamic_prefabs();
 
 		void create_dynamic_prefab(game::selbrush_def_t* sb);
-		int  create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity = nullptr, const float* angular_velocity = nullptr);
+		int  create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity = nullptr, const float* angular_velocity = nullptr, fx_system::FX_SYSTEM_ scene = fx_system::FX_SYSTEM_CAMERA);
 		void update_static_collision_material();
 
 		static void spawn_character();

@@ -1,11 +1,5 @@
 #include "std_include.hpp"
 
-namespace ggui::preferences
-{
-	
-
-}
-
 namespace ggui
 {
 	void preferences_dialog::register_child(const std::string& _child_name, const std::function<void()>& _callback)
@@ -265,6 +259,51 @@ namespace ggui
 
 		});
 	}
+
+	void preferences_dialog::child_effects_browser()
+	{
+		static float height = 0.0f;
+		height = pref_child_lambda(CAT_EFFECTS_BROWSER, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
+		{
+			game::dvar_s* dvar = nullptr;
+			
+			ImGui::title_with_seperator("Grid", false);
+			
+			dvar = dvars::fx_browser_grid_sections;
+			if (imgui::DragInt("Grid Sections", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
+			{
+				ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
+			}
+
+			dvar = dvars::fx_browser_grid_scale;
+			if (imgui::DragInt("Grid Scale", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
+			{
+				ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
+			}
+
+			ImGui::ColorEdit4("Grid Color", dvars::fx_browser_grid_color->current.vector, ImGuiColorEditFlags_Float);
+
+			dvar = dvars::fx_browser_grid_line_width;
+			if (imgui::DragInt("Line Width", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
+			{
+				ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
+			}
+
+			dvar = dvars::fx_browser_grid_font_scale;
+			if (imgui::DragFloat("Font Scale", &dvar->current.value, 0.01f, dvar->domain.value.min, dvar->domain.value.max))
+			{
+				ImClamp(dvar->current.value, dvar->domain.value.min, dvar->domain.value.max);
+			}
+
+			ImGui::ColorEdit4("Font Color", dvars::fx_browser_grid_font_color->current.vector, ImGuiColorEditFlags_Float);
+
+			if (imgui::Button("Regenerate Grid"))
+			{
+				cfxwnd::get()->m_grid_generated = false;
+			}
+		});
+	}
+
 
 	void preferences_dialog::child_textures()
 	{
@@ -564,6 +603,7 @@ namespace ggui
 			register_child(CAT_GUI, std::bind(&preferences_dialog::child_gui, this));
 			register_child(CAT_GRID, std::bind(&preferences_dialog::child_grid, this));
 			register_child(CAT_CAMERA, std::bind(&preferences_dialog::child_camera, this));
+			register_child(CAT_EFFECTS_BROWSER, std::bind(&preferences_dialog::child_effects_browser, this));
 			register_child(CAT_TEXTURES, std::bind(&preferences_dialog::child_textures, this));
 			register_child(CAT_RENDERER, std::bind(&preferences_dialog::child_renderer_bsp, this));
 			register_child(CAT_LIVELINK, std::bind(&preferences_dialog::child_livelink, this));

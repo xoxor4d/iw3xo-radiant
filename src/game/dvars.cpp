@@ -107,6 +107,13 @@ namespace dvars
 	game::dvar_s* r_reflectionprobe_generate = nullptr;
 	game::dvar_s* r_reflectionprobe_export_tga = nullptr;
 
+	game::dvar_s* fx_browser_grid_sections = nullptr;
+	game::dvar_s* fx_browser_grid_scale = nullptr;
+	game::dvar_s* fx_browser_grid_color = nullptr;
+	game::dvar_s* fx_browser_grid_line_width = nullptr;
+	game::dvar_s* fx_browser_grid_font_scale = nullptr;
+	game::dvar_s* fx_browser_grid_font_color = nullptr;
+
 	game::dvar_s* guizmo_enable = nullptr;
 	game::dvar_s* guizmo_snapping = nullptr;
 	//game::dvar_s* guizmo_brush_mode = nullptr;
@@ -275,6 +282,7 @@ namespace dvars
 		cxywnd::register_dvars();
 		ccamwnd::register_dvars();
 		ctexwnd::register_dvars();
+		cfxwnd::register_dvars();
 
 		ggui::entity_dialog::register_dvars();
 		ggui::preferences_dialog::register_dvars();

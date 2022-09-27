@@ -208,6 +208,13 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 				{
 					SendMessageA(hwnd, WM_PAINT, 0, 0);
 				}
+
+				if (const auto hwnd = components::renderer::get_window(components::renderer::CFXWND)->hwnd;
+					hwnd != nullptr)
+				{
+					SendMessageA(hwnd, WM_PAINT, 0, 0);
+				}
+
 				timer_camera += maxfps_camera;
 			}
 
@@ -228,13 +235,6 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 				timer_modelselector = current_frame;
 
 				if (const auto hwnd = layermatwnd_struct->m_content_hwnd;
-					hwnd != nullptr)
-				{
-					SendMessageA(hwnd, WM_PAINT, 0, 0);
-				}
-
-
-				if (const auto hwnd = components::renderer::get_window(components::renderer::CFXWND)->hwnd;
 					hwnd != nullptr)
 				{
 					SendMessageA(hwnd, WM_PAINT, 0, 0);

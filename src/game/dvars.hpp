@@ -107,6 +107,13 @@ namespace dvars
 	extern game::dvar_s* r_reflectionprobe_generate;
 	extern game::dvar_s* r_reflectionprobe_export_tga;
 
+	extern game::dvar_s* fx_browser_grid_sections;
+	extern game::dvar_s* fx_browser_grid_scale;
+	extern game::dvar_s* fx_browser_grid_color;
+	extern game::dvar_s* fx_browser_grid_line_width;
+	extern game::dvar_s* fx_browser_grid_font_scale;
+	extern game::dvar_s* fx_browser_grid_font_color;
+
 	extern game::dvar_s* guizmo_enable;
 	extern game::dvar_s* guizmo_snapping;
 	//extern game::dvar_s* guizmo_brush_mode;
