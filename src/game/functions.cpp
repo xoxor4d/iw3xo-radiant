@@ -1099,6 +1099,31 @@ namespace game
 		}
 	}
 
+	void R_AddCmdSetViewportValues(int x, int y, int width, int height)
+	{
+		if (width <= 0) {
+			game::Com_Error("R_AddCmdSetViewportValues :: width");
+		}
+
+		if (height <= 0) {
+			game::Com_Error("R_AddCmdSetViewportValues :: height");
+		}
+
+		// RC_SET_VIEWPORT
+		if (auto cmd = reinterpret_cast<game::GfxCmdSetViewport*>(game::R_GetCommandBuffer(20, 7));
+			cmd)
+		{
+			cmd->viewport.height = height;
+			cmd->viewport.x = x;
+			cmd->viewport.y = y;
+			cmd->viewport.width = width;
+		}
+		else
+		{
+			game::Com_Error("R_AddCmdSetViewportValues :: cmd");
+		}
+	}
+
 	void R_SetD3DPresentParameters(_D3DPRESENT_PARAMETERS_* d3dpp, game::GfxWindowParms* wnd, [[maybe_unused]] int window_count)
 	{
 		ASSERT_MSG(d3dpp, "invalid D3DPRESENT_PARAMETERS d3dpp");
@@ -1144,7 +1169,7 @@ namespace game
 			if (game::dx->windowCount > 0)
 			{
 				int wnd_count = 0;
-				for (auto i = game::dx->windows; i->hwnd != hwnd; ++i)
+				for (auto i = components::renderer::windows; i->hwnd != hwnd; ++i)
 				{
 					if (++wnd_count >= game::dx->windowCount)
 					{
@@ -1162,8 +1187,12 @@ namespace game
 
 				R_SetD3DPresentParameters(&d3dpp, &wnd, game::dx->windowCount);
 
-				auto swapchain = &game::dx->windows[wnd_count].swapChain;
+				const auto gfx_window = components::renderer::get_window(static_cast<components::renderer::GFXWND_>(wnd_count));
+
+				//auto swapchain = &game::dx->windows[wnd_count].swapChain;
+				auto swapchain = &gfx_window->swapChain;
 				auto old_swapchain = *swapchain;
+
 				if (*swapchain == nullptr)
 				{
 					ASSERT_MSG(1, "var");
@@ -1183,8 +1212,8 @@ namespace game
 					ASSERT_MSG(0, "CreateAdditionalSwapChain failed ...");
 				}
 
-				game::dx->windows[wnd_count].width = display_width;
-				game::dx->windows[wnd_count].height = display_height;
+				gfx_window->width = display_width;
+				gfx_window->height = display_height;
 			}
 		}
 	}

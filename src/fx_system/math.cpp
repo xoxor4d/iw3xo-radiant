@@ -58,7 +58,7 @@ namespace fx_system
 	{
 		if (!Vec3IsNormalized(src))
 		{
-			Assert();
+			//Assert();
 		}
 
 		float srcSq[3];

@@ -5,8 +5,8 @@
 
 namespace fx_system
 {
-	FxSystem fx_systemPool = {};
-	FxSystemBuffers fx_systemBufferPool = {};
+	FxSystem fx_systemPool[2] = {};
+	FxSystemBuffers fx_systemBufferPool[2] = {};
 
 	bool ed_is_paused = false;
 	bool ed_is_paused_old = false;
@@ -42,7 +42,7 @@ namespace fx_system
 #ifdef FXEDITOR
 		return &game::fx_systemPool;
 #else
-		return &fx_systemPool;
+		return &fx_systemPool[localClientNum];
 #endif
 	}
 
@@ -51,7 +51,7 @@ namespace fx_system
 #ifdef FXEDITOR
 		return &game::fx_systemBufferPool;
 #else
-		return &fx_systemBufferPool;
+		return &fx_systemBufferPool[localClientNum];
 #endif
 	}
 
@@ -616,7 +616,7 @@ namespace fx_system
 		out[3] = in[3];
 	}
 
-	bool FX_SpawnModelPhysics(FxElemDef* elem, FxEffect* effect, int random_seed, FxElem* remote_elem)
+	bool FX_SpawnModelPhysics(FxSystem* system, FxElemDef* elem, FxEffect* effect, int random_seed, FxElem* remote_elem)
 	{
 		game::orientation_t orientation = {};
 		FX_GetOrientation(elem, &effect->frameAtSpawn, &effect->frameNow, random_seed, &orientation);
@@ -653,7 +653,13 @@ namespace fx_system
 			ImGui::Toast(ImGuiToastType_Info, "physGeoms", "physGeoms detected for current effect. Please notify the developer! Thanks :>", 4000);
 		}
 
-		remote_elem->___u8.physObjId = components::physx_impl::get()->create_physx_object(visuals.model, world_pos, quat, velocity, vel);
+		FX_SYSTEM_ scene = FX_SYSTEM_CAMERA;
+		if (system == fx_system::FX_GetSystem(FX_SYSTEM_BROWSER))
+		{
+			scene = FX_SYSTEM_BROWSER;
+		}
+
+		remote_elem->___u8.physObjId = components::physx_impl::get()->create_physx_object(visuals.model, world_pos, quat, velocity, vel, scene);
 		return remote_elem->___u8.physObjId != 0;
 	}
 
@@ -759,7 +765,7 @@ namespace fx_system
 						remoteElem->u.lightingHandle = 0;
 
 						// #PHYS
-						if ((elemDef->flags & FX_ELEM_USE_MODEL_PHYSICS) != 0 && !FX_SpawnModelPhysics(elemDef, effect, randomSeed, remoteElem))
+						if ((elemDef->flags & FX_ELEM_USE_MODEL_PHYSICS) != 0 && !FX_SpawnModelPhysics(system, elemDef, effect, randomSeed, remoteElem))
 						//if ((elemDef->flags & FX_ELEM_USE_MODEL_PHYSICS) != 0)
 						{
 							// remove physics flag (does not alter the fx project file)
@@ -782,6 +788,11 @@ namespace fx_system
 		if (system->activeSpotLightEffectCount <= 0)
 		{
 			Assert();
+		}
+
+		if (system->activeSpotLightElemCount)
+		{
+			return;
 		}
 		
 		++system->activeSpotLightElemCount;

@@ -3,8 +3,14 @@
 
 namespace fx_system
 {
-	extern FxSystem		fx_systemPool;
-	extern FxSystemBuffers	fx_systemBufferPool;
+	enum FX_SYSTEM_
+	{
+		FX_SYSTEM_CAMERA = 0,
+		FX_SYSTEM_BROWSER = 1,
+	};
+
+	extern FxSystem		fx_systemPool[2];
+	extern FxSystemBuffers	fx_systemBufferPool[2];
 
 	extern bool ed_is_paused;
 	extern bool ed_is_paused_old;

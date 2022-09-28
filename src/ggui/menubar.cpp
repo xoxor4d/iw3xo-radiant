@@ -305,6 +305,10 @@ namespace ggui
 						GET_GUI(ggui::entity_dialog)->toggle();
 					}
 
+					if (ImGui::MenuItem("Effects Browser")) {
+						GET_GUI(ggui::effects_browser)->toggle();
+					}
+
 					if (ImGui::MenuItem("Surface Inspector", ggui::hotkey_dialog::get_hotkey_for_command("SurfaceInspector").c_str()))
 					{
 						if (dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
@@ -919,6 +923,11 @@ namespace ggui
 					const auto cs = GET_GUI(ggui::camera_settings_dialog);
 					cs->handle_toggle_request(camera_settings_dialog::tab_state_effects);
 					cs->focus_tab(camera_settings_dialog::tab_state_effects);
+				}
+
+				if (ImGui::MenuItem("Effects Browser")) 
+				{
+					GET_GUI(ggui::effects_browser)->toggle();
 				}
 
 				if (ImGui::MenuItem("Edit Current Effect", 0, nullptr, components::effects::effect_can_play()))

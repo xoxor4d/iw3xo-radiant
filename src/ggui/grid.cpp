@@ -454,8 +454,9 @@ namespace ggui
 			}
 
 			// -------------------------------
+			// -------------------------------
 
-			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
+			const auto spawn_entity = [this](const char* entity_class, const char* kv) -> void
 			{
 				const auto payload = imgui::GetDragDropPayload();
 				const std::string prefab_path = /*"prefabs/"s +*/ std::string(static_cast<const char*>(payload->Data), payload->DataSize);
@@ -481,15 +482,31 @@ namespace ggui
 
 				// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
 				g_block_radiant_modeldialog = true;
-				game::CreateEntityFromName("misc_prefab");
+				game::CreateEntityFromName(entity_class);
 				g_block_radiant_modeldialog = false;
 
-				entity_gui->add_prop("model", prefab_path.c_str(), &no_undo);
+				entity_gui->add_prop(kv, prefab_path.c_str(), &no_undo);
 				game::Undo_End();
 
 				// CMainFrame::OnDropSelected
 				//cdeclcall(void, 0x425BE0);
+			};
+
+			// #
+
+			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
+			{
+				spawn_entity("misc_prefab", "model");
 			}
+
+			// #
+
+			if (imgui::AcceptDragDropPayload("EFFECT_BROWSER_ITEM"))
+			{
+				spawn_entity("fx_origin", "fx");
+			}
+
+			ImGui::EndDragDropTarget();
 		}
 	}
 

@@ -46,6 +46,7 @@ namespace dvars
 	extern game::dvar_s* gui_saved_state_console;
 	extern game::dvar_s* gui_saved_state_filter;
 	extern game::dvar_s* gui_saved_state_entity;
+	extern game::dvar_s* gui_saved_state_effects_browser;
 	extern game::dvar_s* gui_saved_state_textures;
 	extern game::dvar_s* gui_saved_state_modelselector;
 	extern game::dvar_s* gui_saved_state_prefab_browser;
@@ -105,6 +106,14 @@ namespace dvars
 
 	extern game::dvar_s* r_reflectionprobe_generate;
 	extern game::dvar_s* r_reflectionprobe_export_tga;
+
+	extern game::dvar_s* fx_browser_grid_sections;
+	extern game::dvar_s* fx_browser_grid_scale;
+	extern game::dvar_s* fx_browser_grid_color;
+	extern game::dvar_s* fx_browser_grid_line_width;
+	extern game::dvar_s* fx_browser_grid_font_scale;
+	extern game::dvar_s* fx_browser_grid_font_color;
+	extern game::dvar_s* fx_browser_use_camera_for_distortion;
 
 	extern game::dvar_s* guizmo_enable;
 	extern game::dvar_s* guizmo_snapping;

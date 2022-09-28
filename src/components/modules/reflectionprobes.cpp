@@ -55,7 +55,7 @@ namespace components
 		D3DLOCKED_RECT locked_rect = {};
 		const tagRECT source_rect{ x, y, width + x, height + y };
 
-		if (!SUCCEEDED(game::dx->windows[ggui::CCAMERAWND].swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &back_buffer)))
+		if (!SUCCEEDED(components::renderer::get_window(components::renderer::CCAMERAWND)->swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &back_buffer)))
 		{
 			AssertS("ERROR: cannot take screenshot: couldn't get back buffer surface\n");
 			back_buffer->Release();

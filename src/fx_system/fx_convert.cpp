@@ -10,8 +10,11 @@
 											game::Com_PrintError(unused, fmt, __VA_ARGS__); \
 											game::allow_warnings = false; }
 #else
-#define Warning(unused, fmt, ...)	if(IsDebuggerPresent()) __debugbreak(); \
-											game::printf_to_console(fmt, __VA_ARGS__);
+#define Warning(unused, fmt, ...)	\
+	cfxwnd::get()->stop_effect();	\
+	components::effects::stop();	\
+	game::printf_to_console(fmt, __VA_ARGS__);
+	//if(IsDebuggerPresent())	__debugbreak();
 #endif
 
 #define SLODWORD(x)  (*((int*)&(x)))
@@ -44,7 +47,7 @@ namespace fx_system
 			if ((static_cast<std::uint8_t>(mtlInfoRef.textureAtlasRowCount - 1) & static_cast<std::uint8_t>(mtlInfoRef.textureAtlasRowCount)) != 0 || 
 				(static_cast<std::uint8_t>(mtlInfoRef.textureAtlasColumnCount - 1) & static_cast<std::uint8_t>(mtlInfoRef.textureAtlasColumnCount)) != 0)
 			{
-				Warning(21, "effect '%s' segment '%s':\nmaterial %s is a %i x %i atlas, which is not a power of 2 on both axes\n", 
+				Warning(21, "[ERR] effect '%s' segment '%s':\n[ERR] material %s is a %i x %i atlas, which is not a power of 2 on both axes\n", 
 					editorEffect->name, 
 					edElemDef->name, 
 					mtlInfoRef.name, 
@@ -64,7 +67,7 @@ namespace fx_system
 				Material_GetInfo(edElemDef->u.visuals[visualIndex].material, &mtlInfo);
 				if (mtlInfo.textureAtlasRowCount != mtlInfoRef.textureAtlasRowCount || mtlInfo.textureAtlasColumnCount != mtlInfoRef.textureAtlasColumnCount)
 				{
-					Warning(21, "effect '%s' segment '%s':\nmaterial %s is a %i x %i atlas, but material %s is a %i x %i atlas\n(You are probably using 2 atlas materials with unequal rows/columns)\n", 
+					Warning(21, "[ERR] effect '%s' segment '%s':\n[ERR] material %s is a %i x %i atlas, but material %s is a %i x %i atlas\n[ERR] (You are probably using 2 atlas materials with unequal rows/columns)\n", 
 						editorEffect->name, 
 						edElemDef->name, 
 						mtlInfoRef.name, 
@@ -82,7 +85,7 @@ namespace fx_system
 			
 		}
 	
-		Warning(21, "effect '%s' segment '%s':\nmaterial %s is a %i x %i atlas, which exceeds 256 max frames per atlas\n", 
+		Warning(21, "[ERR] effect '%s' segment '%s':\n[ERR] material %s is a %i x %i atlas, which exceeds 256 max frames per atlas\n", 
 			editorEffect->name, 
 			edElemDef->name, 
 			mtlInfoRef.name, 
@@ -99,7 +102,7 @@ namespace fx_system
 			return true;
 		}
 
-		Warning(21, "effect '%s' segment '%s'\nVelocity is 'relative to offset', but generation offset is 'none'\n", editorEffect->name, edElemDef->name);
+		Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] Velocity is 'relative to offset', but generation offset is 'none'\n", editorEffect->name, edElemDef->name);
 		return false;
 	}
 
@@ -109,7 +112,7 @@ namespace fx_system
 		{
 			if (edElemDef->lightingFrac != 0.0f)
 			{
-				Warning(21, "effect '%s' segment '%s'\nDecals cannot have a non-zero lighting fraction.\n", editorEffect->name, edElemDef->name);
+				Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] Decals cannot have a non-zero lighting fraction.\n", editorEffect->name, edElemDef->name);
 				return false;
 			}
 		}
@@ -117,13 +120,13 @@ namespace fx_system
 		{
 			if (edElemDef->lightingFrac < 0.0f)
 			{
-				Warning(21, "effect '%s' segment '%s'\nNegative lighting fraction.\n", editorEffect->name, edElemDef->name);
+				Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] Negative lighting fraction.\n", editorEffect->name, edElemDef->name);
 				return false;
 			}
 
 			if (edElemDef->lightingFrac > 1.0f)
 			{
-				Warning(21, "effect '%s' segment '%s'\nLighting fraction larger than 1.0.\n", editorEffect->name, edElemDef->name);
+				Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] Lighting fraction larger than 1.0.\n", editorEffect->name, edElemDef->name);
 				return false;
 			}
 		}
@@ -135,7 +138,7 @@ namespace fx_system
 	{
 		if ((edElemDef->elemType == FX_ELEM_TYPE_DECAL || edElemDef->elemType == FX_ELEM_TYPE_RUNNER) && !edElemDef->visualCount)
 		{
-			Warning(21, "effect '%s' segment '%s'\nThis type of segment must have at least one visual specified.\n", editorEffect->name, edElemDef->name);
+			Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] This type of segment must have at least one visual specified.\n", editorEffect->name, edElemDef->name);
 			return false;
 		}
 
@@ -143,33 +146,33 @@ namespace fx_system
 		{
 			if (!edElemDef->trailDef.indCount || !edElemDef->trailDef.vertCount)
 			{
-				Warning(21, "effect '%s' segment '%s'\nTrail cross-section cannot be empty.\n", editorEffect->name, edElemDef->name);
+				Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] Trail cross-section cannot be empty.\n", editorEffect->name, edElemDef->name);
 				return false;
 			}
 			for (int indIter = 0; indIter != edElemDef->trailDef.indCount; ++indIter)
 			{
 				if (edElemDef->trailDef.inds[indIter] >= edElemDef->trailDef.vertCount)
 				{
-					Warning(21, "effect '%s' segment '%s'\nIndex references out of range vertex '%i'.\n", editorEffect->name, edElemDef->name, edElemDef->trailDef.inds[indIter]);
+					Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] Index references out of range vertex '%i'.\n", editorEffect->name, edElemDef->name, edElemDef->trailDef.inds[indIter]);
 					return false;
 				}
 			}
 
 			if (edElemDef->trailRepeatDist <= 0)
 			{
-				Warning(21, "effect '%s' segment '%s'\nTrail repeat dist <= 0.\n", editorEffect->name, edElemDef->name);
+				Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] Trail repeat dist <= 0.\n", editorEffect->name, edElemDef->name);
 				return false;
 			}
 
 			if (edElemDef->trailSplitDist <= 0)
 			{
-				Warning(21, "effect '%s' segment '%s'\nTrail split dist <= 0.\n", editorEffect->name, edElemDef->name);
+				Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] Trail split dist <= 0.\n", editorEffect->name, edElemDef->name);
 				return false;
 			}
 
 			if (static_cast<int>( static_cast<float>(edElemDef->trailRepeatDist) * 1000.0f ) <= 0)
 			{
-				Warning(21, "effect '%s' segment '%s'\nTrail texture repeat dist too close to, or below 0.\n", editorEffect->name, edElemDef->name);
+				Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] Trail texture repeat dist too close to, or below 0.\n", editorEffect->name, edElemDef->name);
 				return false;
 			}
 		}
@@ -192,7 +195,7 @@ namespace fx_system
 			return true;
 		}
 
-		Warning(21, "effect '%s' segment '%s'\nElasticity %.3f to %.3f can go outside the range 0 to 1.\n", editorEffect->name, edElemDef->name, elasticityMin, elasticityMax);
+		Warning(21, "[ERR] effect '%s' segment '%s'\n[ERR] Elasticity %.3f to %.3f can go outside the range 0 to 1.\n", editorEffect->name, edElemDef->name, elasticityMin, elasticityMax);
 		return false;
 	}
 
