@@ -2791,18 +2791,21 @@ namespace components
 			const auto r_fullbright = game::Dvar_FindVar("r_fullbright");
 			const auto r_debugshader = game::Dvar_FindVar("r_debugshader");
 
-			if (!(r_fullbright && r_fullbright->current.enabled) && !(r_debugshader && r_debugshader->current.enabled))
+			if (!renderer::is_rendering_effectswnd())
 			{
-				if (dvars::r_draw_bsp->current.enabled)
+				if (!(r_fullbright && r_fullbright->current.enabled) && !(r_debugshader && r_debugshader->current.enabled))
 				{
-					if (dyn_shadow_type == game::SHADOW_MAP)
+					if (dvars::r_draw_bsp->current.enabled)
 					{
-						if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+						if (dyn_shadow_type == game::SHADOW_MAP)
 						{
-							game::RB_SunShadowMaps(backend, viewInfo);
-						}
+							if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+							{
+								game::RB_SunShadowMaps(backend, viewInfo);
+							}
 
-						game::RB_SpotShadowMaps(backend, viewInfo);
+							game::RB_SpotShadowMaps(backend, viewInfo);
+						}
 					}
 				}
 			}

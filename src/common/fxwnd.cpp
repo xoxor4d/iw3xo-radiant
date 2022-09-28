@@ -157,10 +157,13 @@ void cfxwnd::update_fx()
 	axis[2][1] = m_vup[1];
 	axis[2][2] = m_vup[2];
 
-	const float halfTanY = tanf(60.0f * 0.01745329238474369f * 0.5f) * 0.75f;
-	const float halfTanX = halfTanY * (static_cast<float>(m_width) / static_cast<float>(m_height));
+	//const float halfTanY = tanf(60.0f * 0.01745329238474369f * 0.5f) * 0.75f;
+	//const float halfTanX = halfTanY * (static_cast<float>(m_width) / static_cast<float>(m_height));
 
-	FX_SetupCamera(&system->camera, m_origin, axis, halfTanX, halfTanY, 0.0f);
+	const auto fov_y = static_cast<float>(tan(60.0 * 0.01745329238474369 * 0.5) * 0.75);
+	const auto fov_x = static_cast<float>(static_cast<double>(fov_y) * (static_cast<double>(cfxwnd::get()->m_width) / static_cast<double>(cfxwnd::get()->m_height)));
+
+	FX_SetupCamera(&system->camera, m_origin, axis, fov_x, fov_y, 0.0f);
 
 	// ----
 
@@ -506,8 +509,8 @@ void set_scene_params(const float* origin, float* axis, game::GfxMatrix* project
  */
 void setup_scene(float* origin, float* axis, int x, int y, int width, int height)
 {
-	const float fov_y = tan(60.0f * 0.01745329238474369f * 0.5f) * 0.75f;
-	const float fov_x = fov_y * (static_cast<float>(cfxwnd::get()->m_width) / static_cast<float>(cfxwnd::get()->m_height));
+	const float fov_y = static_cast<float>(tan(60.0 * 0.01745329238474369 * 0.5) * 0.75);
+	const float fov_x = static_cast<float>(static_cast<double>(fov_y) * (static_cast<double>(cfxwnd::get()->m_width) / static_cast<double>(cfxwnd::get()->m_height)));
 	
 	game::GfxMatrix projection = {};
 	
@@ -530,7 +533,7 @@ void camera_vectors()
 
 	game::AngleVectors(angles, fxwnd->m_vpn, fxwnd->m_vright, fxwnd->m_vup);
 
-	const float xa = fxwnd->m_angles[1] * sin(1.0f);
+	const float xa = fxwnd->m_angles[1] * 0.01745329238474369f;
 	const float xb = cos(xa);
 	const float xc = sin(xa);
 
