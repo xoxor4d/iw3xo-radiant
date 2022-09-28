@@ -996,16 +996,35 @@ namespace game
 
 	struct GfxViewInfo;
 
+	struct GfxDrawSurfFields
+	{
+		unsigned __int64 objectId : 16;
+		unsigned __int64 reflectionProbeIndex : 8;
+		unsigned __int64 customIndex : 5;
+		unsigned __int64 materialSortedIndex : 11;
+		unsigned __int64 prepass : 2;
+		unsigned __int64 primaryLightIndex : 8;
+		unsigned __int64 surfType : 4;
+		unsigned __int64 primarySortKey : 6;
+		unsigned __int64 unused : 4;
+	};
+
+	union GfxDrawSurf
+	{
+		GfxDrawSurfFields fields;
+		unsigned __int64 packed;
+	};
+
 	struct GfxDrawSurfListInfo
 	{
-		void *drawSurfs; // GfxDrawSurf
+		game::GfxDrawSurf* drawSurfs; //void *drawSurfs; // GfxDrawSurf
 		unsigned int drawSurfCount;
 		MaterialTechniqueType baseTechType;
 		GfxViewInfo *viewInfo;
 		float viewOrigin[4];
 		GfxLight *light;
 		int cameraView;
-	};
+	}; STATIC_ASSERT_OFFSET(GfxDrawSurfListInfo, drawSurfCount, 4);
 
 	//struct __declspec(align(16)) ShadowCookie
 	//{
@@ -1526,24 +1545,7 @@ namespace game
 		int numFixedSize;
 	};
 
-	struct GfxDrawSurfFields
-	{
-		unsigned __int64 objectId : 16;
-		unsigned __int64 reflectionProbeIndex : 8;
-		unsigned __int64 customIndex : 5;
-		unsigned __int64 materialSortedIndex : 11;
-		unsigned __int64 prepass : 2;
-		unsigned __int64 primaryLightIndex : 8;
-		unsigned __int64 surfType : 4;
-		unsigned __int64 primarySortKey : 6;
-		unsigned __int64 unused : 4;
-	};
-
-	union GfxDrawSurf
-	{
-		GfxDrawSurfFields fields;
-		unsigned __int64 packed;
-	};
+	
 
 	// #ENV_DEPENDENT
 	struct MaterialInfo

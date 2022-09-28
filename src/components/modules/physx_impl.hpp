@@ -71,7 +71,6 @@ namespace components
 		uint32_t m_fx_time_last_snapshot = 0;
 		uint32_t m_fx_time_last_update = 0;
 		uint32_t m_phys_msec_step = 3;
-		float m_time_now_lerp_frac;
 
 		uint32_t m_fx_active_actor_count = 0;
 		uint32_t m_converted_misc_model_count = 0;

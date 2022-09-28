@@ -93,7 +93,51 @@ namespace components
 			return;
 		}
 
-		auto step = (tick - m_phys_time_last_update_fx_browser);
+
+		const auto time_now = static_cast<uint32_t>(tick);
+		if (m_phys_time_last_update_fx_browser < time_now)
+		{
+			auto max_iter = 2u;
+			for (auto i = 2u; ; max_iter = i)
+			{
+				if (!max_iter)
+				{
+					AssertS("!max_iter");
+				}
+
+				const auto delta = (time_now - m_phys_time_last_update_fx_browser) / static_cast<int>(max_iter);
+				auto step = m_phys_fx_browser_msec_step;
+
+				if (step < delta)
+				{
+					step = delta;
+				}
+
+				--i;
+
+				mSceneEffectBrowser->simulate(static_cast<float>(step) * 0.001f);
+				m_phys_time_last_update_fx_browser += step;
+
+				mSceneEffectBrowser->fetchResults(true);
+				mSceneEffectBrowser->getActiveActors(m_phys_active_actor_fx_browser_count);
+
+				constexpr float REDUCE_MSEC_BEGIN_AT_COUNT = 64.0f; // object count needed to start increasing m_phys_msec_step # og: 32
+				constexpr float REDUCE_MSEC_RANGE_TO_MAX = 64.0f;   // range - how many objects are needed to hit g_phys_maxMsecStep (begin + range) # og: 18
+
+				const auto step_for_count = (static_cast<float>(m_phys_active_actor_fx_browser_count) - REDUCE_MSEC_BEGIN_AT_COUNT) / REDUCE_MSEC_RANGE_TO_MAX;
+				const auto s0 = step_for_count - 1.0f < 0.0f ? step_for_count : 1.0f;
+				const auto s1 = 0.0f - step_for_count < 0.0f ? s0 : 0.0f;
+
+				m_phys_fx_browser_msec_step = m_phys_min_msec_step + static_cast<int>((static_cast<float>((m_phys_max_msec_step - m_phys_min_msec_step)) * s1));
+
+				if (m_phys_time_last_update_fx_browser >= time_now)
+				{
+					break;
+				}
+			}
+		}
+
+		/*auto step = (tick - m_phys_time_last_update_fx_browser);
 
 		step = step < 3 ? 3 : step > 11 ? 11 : step;
 
@@ -103,7 +147,7 @@ namespace components
 		m_phys_time_last_update_fx_browser += step;
 
 		mSceneEffectBrowser->fetchResults(true);
-		mSceneEffectBrowser->getActiveActors(m_phys_active_actor_fx_browser_count);
+		mSceneEffectBrowser->getActiveActors(m_phys_active_actor_fx_browser_count);*/
 	}
 
 	/**
@@ -230,13 +274,10 @@ namespace components
 				{
 					AssertS("m_phys_time_last_update != m_phys_time_last_snapshot");
 				}
-
-				m_time_now_lerp_frac = 1.0f;
 			}
 			else
 			{
 				const auto delta = static_cast<float>((m_phys_sim_tick - m_phys_time_last_snapshot)) / static_cast<float>((m_phys_time_last_update - m_phys_time_last_snapshot));
-				m_time_now_lerp_frac = delta;
 
 				if (delta < 0.0f || delta > 1.0f)
 				{
@@ -424,13 +465,10 @@ namespace components
 				{
 					AssertS("m_fx_time_last_update != m_fx_time_last_snapshot");
 				}
-
-				m_time_now_lerp_frac = 1.0f;
 			}
 			else
 			{
 				const auto delta = static_cast<float>((time_now - m_fx_time_last_snapshot)) / static_cast<float>((m_fx_time_last_update - m_fx_time_last_snapshot));
-				m_time_now_lerp_frac = delta;
 
 				if (delta < 0.0f || delta > 1.0f)
 				{

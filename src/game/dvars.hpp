@@ -113,6 +113,7 @@ namespace dvars
 	extern game::dvar_s* fx_browser_grid_line_width;
 	extern game::dvar_s* fx_browser_grid_font_scale;
 	extern game::dvar_s* fx_browser_grid_font_color;
+	extern game::dvar_s* fx_browser_use_camera_for_distortion;
 
 	extern game::dvar_s* guizmo_enable;
 	extern game::dvar_s* guizmo_snapping;

@@ -357,7 +357,7 @@ namespace components
 
 		// release the backbuffer surface or we'll leak memory
 		surf_backbuffer->Release();
-
+		surf_texture->Release();
 		// write texture to file (test)
 		//D3DXSaveTextureToFileA("texture_to_file.png", D3DXIFF_PNG, dest, NULL);
 	}
@@ -2768,10 +2768,19 @@ namespace components
 			(effects::effect_is_playing() || fx_system::ed_is_paused && !effects::effect_is_playing() || dvars::r_draw_bsp && dvars::r_draw_bsp->current.enabled)
 				|| renderer::is_rendering_effectswnd()))
 		{
+			// setup resolvedPostSun sampler (effect distortion)
 			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];
 
-			renderer::copy_scene_to_texture(/*game::dx->targetWindowIndex == renderer::CFXWND ? renderer::CFXWND : */renderer::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			if (dvars::fx_browser_use_camera_for_distortion && dvars::fx_browser_use_camera_for_distortion->current.enabled)
+			{
+				renderer::copy_scene_to_texture(renderer::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			}
+			else
+			{
+				renderer::copy_scene_to_texture(renderer::is_rendering_effectswnd() ? renderer::CFXWND : renderer::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			}
+			
 			game::gfxCmdBufSourceState->input.codeImages[10] = resolved_post_sun->image;
 
 			// ------
@@ -3964,6 +3973,7 @@ namespace components
 
 		// silence assert 'localDrawSurf->fields.prepass == MTL_PREPASS_NONE'
 		utils::hook::nop(0x52EE39, 5);
+		utils::hook::nop(0x52F2FA, 5);
 
 		// silence assert 'drawSurf.fields.primaryLightIndex doesn't index info->viewInfo->shadowableLightCount'
 		utils::hook::nop(0x55A3A3, 5);

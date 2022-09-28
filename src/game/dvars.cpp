@@ -113,6 +113,7 @@ namespace dvars
 	game::dvar_s* fx_browser_grid_line_width = nullptr;
 	game::dvar_s* fx_browser_grid_font_scale = nullptr;
 	game::dvar_s* fx_browser_grid_font_color = nullptr;
+	game::dvar_s* fx_browser_use_camera_for_distortion = nullptr;
 
 	game::dvar_s* guizmo_enable = nullptr;
 	game::dvar_s* guizmo_snapping = nullptr;

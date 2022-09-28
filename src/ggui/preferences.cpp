@@ -266,8 +266,7 @@ namespace ggui
 		height = pref_child_lambda(CAT_EFFECTS_BROWSER, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
 		{
 			game::dvar_s* dvar = nullptr;
-			
-			ImGui::title_with_seperator("Grid", false);
+			imgui::title_with_seperator("Grid", false);
 			
 			dvar = dvars::fx_browser_grid_sections;
 			if (imgui::DragInt("Grid Sections", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
@@ -281,7 +280,7 @@ namespace ggui
 				ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
 			}
 
-			ImGui::ColorEdit4("Grid Color", dvars::fx_browser_grid_color->current.vector, ImGuiColorEditFlags_Float);
+			imgui::ColorEdit4("Grid Color", dvars::fx_browser_grid_color->current.vector, ImGuiColorEditFlags_Float);
 
 			dvar = dvars::fx_browser_grid_line_width;
 			if (imgui::DragInt("Line Width", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
@@ -295,12 +294,18 @@ namespace ggui
 				ImClamp(dvar->current.value, dvar->domain.value.min, dvar->domain.value.max);
 			}
 
-			ImGui::ColorEdit4("Font Color", dvars::fx_browser_grid_font_color->current.vector, ImGuiColorEditFlags_Float);
+			imgui::ColorEdit4("Font Color", dvars::fx_browser_grid_font_color->current.vector, ImGuiColorEditFlags_Float);
 
 			if (imgui::Button("Regenerate Grid"))
 			{
 				cfxwnd::get()->m_grid_generated = false;
 			}
+
+			imgui::title_with_seperator("Rendering");
+
+			dvar = dvars::fx_browser_use_camera_for_distortion;
+			imgui::Checkbox("Use Camera Image for Distortion", &dvar->current.enabled);
+			TT(dvar->description);
 		});
 	}
 

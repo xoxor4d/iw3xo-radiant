@@ -230,12 +230,18 @@ namespace ggui
 								this->m_effect_selection_old = m_effect_selection;
 
 								cfxwnd::get()->stop_effect();
-								cfxwnd::get()->load_effect(this->m_effect_selection.c_str());
+
+								// load effect on the next frame
+								components::exec::on_gui_once([]
+								{
+										cfxwnd::get()->load_effect(GET_GUI(ggui::effects_browser)->m_effect_selection.c_str());
+								});
+
+								//cfxwnd::get()->load_effect(this->m_effect_selection.c_str());
 							}
 							else
 							{
 								// restart effect
-
 								cfxwnd::get()->retrigger_effect(cfxwnd::get()->m_tickcount_playback);
 							}
 						}
@@ -380,6 +386,11 @@ namespace ggui
 				imgui::Text("spawn origin adjusted to [0, 0, 80] because effect is using physics");
 				imgui::Text("actors %d", components::physx_impl::get()->m_phys_active_actor_fx_browser_count);
 				imgui::Text("tick msec %d", components::physx_impl::get()->m_phys_fx_browser_msec_step);
+			}
+
+			if (!m_effect_selection.empty())
+			{
+				imgui::Text("loaded effect: %s", m_effect_selection.c_str());
 			}
 
 			//imgui::Text("m_effect_is_playing %s", cfxwnd::get()->m_effect_is_playing ? "true" : "false");

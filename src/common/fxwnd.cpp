@@ -4,8 +4,11 @@ void cfxwnd::stop_effect()
 {
 	m_effect_is_using_physx = false;
 	m_effect_is_playing = false;
-	m_raw_effect.name[0] = 0;
-	m_raw_effect.elemCount = 0;
+
+	memset(&m_raw_effect, 0, sizeof(fx_system::FxEditorEffectDef));
+
+	//m_raw_effect.name[0] = 0;
+	//m_raw_effect.elemCount = 0;
 
 	if (m_active_effect)
 	{
@@ -54,8 +57,10 @@ bool cfxwnd::load_effect(const char* effect_name)
 		//fx_system::ed_is_editor_effect_valid = false;
 		game::printf_to_console("[FX-BROWSER] failed to load editor effect [%s]\n", effect_name);
 
-		m_raw_effect.name[0] = 0;
-		m_raw_effect.elemCount = 0;
+		//m_raw_effect.name[0] = 0;
+		//m_raw_effect.elemCount = 0;
+
+		memset(&m_raw_effect, 0, sizeof(fx_system::FxEditorEffectDef));
 	}
 	
 	return false;
@@ -84,7 +89,7 @@ void cfxwnd::setup_and_spawn_fx()
 
 		game::vec3_t spawn_origin = {};
 
-		for (int elemDefIndex = 0; elemDefIndex != def->elemDefCountLooping; ++elemDefIndex)
+		for (int elemDefIndex = 0; elemDefIndex != def->elemDefCountLooping + def->elemDefCountOneShot + def->elemDefCountEmission; ++elemDefIndex)
 		{
 			if (def->elemDefs[elemDefIndex].elemType == fx_system::FX_ELEM_TYPE_MODEL && (def->elemDefs[elemDefIndex].flags & fx_system::FX_ELEM_USE_MODEL_PHYSICS) != 0)
 			{
@@ -175,6 +180,7 @@ void cfxwnd::update_fx()
 			if (fx_system::FX_GetEffectStatus(m_active_effect))
 			{
 				cfxwnd::stop_effect();
+				return;
 			}
 		}
 
@@ -312,7 +318,7 @@ void set_scene_params(const float* origin, float* axis, game::GfxMatrix* project
 	memset(view_parms, 0, sizeof(game::GfxViewParms));
 
 	game::scene->def.time = timeGetTime();
-	game::scene->def.floatTime = (float)game::scene->def.time * 0.001000000047497451f;
+	game::scene->def.floatTime = static_cast<float>(game::scene->def.time) * 0.001000000047497451f;
 	
 	game::scene->def.viewOffset[0] = 0.0f;
 	game::scene->def.viewOffset[1] = 0.0f;
@@ -462,6 +468,37 @@ void set_scene_params(const float* origin, float* axis, game::GfxMatrix* project
 
 	emissiveList->drawSurfs = &frontEndDataOut->drawSurfs[initial_emissive_drawSurfCount];
 	viewInfo->emissiveInfo.drawSurfCount = frontEndDataOut->drawSurfCount - initial_emissive_drawSurfCount;
+
+	/*if (!viewInfo->needsFloatZ)
+	{
+
+		if (viewInfo->emissiveInfo.drawSurfCount)
+		{
+			bool needs_floatz = true;
+			auto surf = 0;
+			while (true)
+			{
+				const auto material = game::rgp->sortedMaterials[(viewInfo->emissiveInfo.drawSurfs[surf].packed >> 29) & 0xFFF];
+				game::MaterialTechnique* technique = (game::MaterialTechnique*)*((DWORD*)&material->techniqueSet->techniques[0]->passArray[0].vertexShader + viewInfo->emissiveInfo.baseTechType);
+
+				if (technique)
+				{
+					if ((technique->flags & 0x20) != 0)
+					{
+						break;
+					}
+				}
+
+				if (++surf == viewInfo->emissiveInfo.drawSurfCount)
+				{
+					needs_floatz = false;
+					break;
+				}
+			}
+
+			viewInfo->needsFloatZ = needs_floatz;
+		}
+	}*/
 }
 
 /**
@@ -564,11 +601,6 @@ void cfxwnd::on_paint()
 			origin[0] = fxwnd->m_origin[0];//gui->m_camera_distance; //m_selector->camera_offset[0]; //cmainframe::activewnd->m_pCamWnd->camera.origin[0];
 			origin[1] = fxwnd->m_origin[1]; //m_selector->camera_offset[1]; //cmainframe::activewnd->m_pCamWnd->camera.origin[1];
 			origin[2] = fxwnd->m_origin[2];
-
-			float temp_angles[3];
-			temp_angles[0] = 0.0f;
-			temp_angles[1] = -70.0f;
-			temp_angles[2] = 40.0f;
 
 			const auto gfx_window = components::renderer::get_window(static_cast<components::renderer::GFXWND_>(game::dx->targetWindowIndex));
 			setup_scene(origin, axis, 0, 0, gfx_window->width, gfx_window->height);
@@ -789,6 +821,12 @@ void cfxwnd::register_dvars()
 		/* maxVal	*/ 1.0f,
 		/* flags	*/ game::dvar_flags::saved,
 		/* desc		*/ "fx browser grid : font color");
+
+	dvars::fx_browser_use_camera_for_distortion = dvars::register_bool(
+		/* name		*/ "fx_browser_use_camera_for_distortion",
+		/* default	*/ false,
+		/* flags	*/ game::dvar_flags::saved,
+		/* desc		*/ "fx browser : use radiants camera image for distortion effects; uses the fx browser image otherwise (hard to see)");
 }
 
 // *
