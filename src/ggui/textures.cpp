@@ -42,6 +42,7 @@ namespace ggui
 		{
 			// Texture_ShowAll
 			cdeclcall(void, 0x45B730);
+			set_favourite_index(0);
 		} TT("Show all textures");
 
 		ImGui::SameLine(0.0f, searchbar_spacing);
@@ -49,6 +50,7 @@ namespace ggui
 		{
 			// Texture_ShowInuse
 			cdeclcall(void, 0x45B850);
+			set_favourite_index(0);
 		} TT("Show all textures in use");
 
 		ImGui::PopStyleColor();
