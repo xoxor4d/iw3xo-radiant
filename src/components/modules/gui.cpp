@@ -925,10 +925,6 @@ namespace components
 		ggui::surface_dialog::hooks();
 		ggui::vertex_edit_dialog::hooks();
 
-		GET_GUI(ggui::prefab_preview_dialog)->init();
-		GET_GUI(ggui::toolbox_dialog)->init();
-		GET_GUI(ggui::modelselector_dialog)->init();
-
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{
 			ggui::m_demo_menu_state = !ggui::m_demo_menu_state;

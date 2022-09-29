@@ -24,6 +24,9 @@ namespace ggui
 		return true;
 	}
 
+	void template_dialog::on_init()
+	{ }
+
 	void template_dialog::on_open()
 	{ }
 

@@ -407,6 +407,20 @@ namespace ggui
 		return true;
 	}
 
+	void effects_browser::on_init()
+	{
+		components::command::register_command_with_hotkey("fx_browser"s, [this](auto)
+		{
+			if (this->is_inactive_tab() && this->is_active())
+			{
+				this->set_bring_to_front(true);
+				return;
+			}
+
+			this->toggle();
+		});
+	}
+
 	void effects_browser::on_open()
 	{
 		const auto egui = GET_GUI(entity_dialog);

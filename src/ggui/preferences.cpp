@@ -292,7 +292,7 @@ namespace ggui
 			dvar = dvars::fx_browser_grid_font_scale;
 			if (imgui::DragFloat("Font Scale", &dvar->current.value, 0.01f, dvar->domain.value.min, dvar->domain.value.max))
 			{
-				dvar->current.integer = ImClamp(dvar->current.value, dvar->domain.value.min, dvar->domain.value.max);
+				dvar->current.value = ImClamp(dvar->current.value, dvar->domain.value.min, dvar->domain.value.max);
 			}
 
 			imgui::ColorEdit4("Font Color", dvars::fx_browser_grid_font_color->current.vector, ImGuiColorEditFlags_Float);
@@ -603,21 +603,6 @@ namespace ggui
 
 	bool preferences_dialog::gui()
 	{
-		if (!this->is_initiated())
-		{
-			register_child(CAT_GENERAL, std::bind(&preferences_dialog::child_general, this));
-			register_child(CAT_GUI, std::bind(&preferences_dialog::child_gui, this));
-			register_child(CAT_GRID, std::bind(&preferences_dialog::child_grid, this));
-			register_child(CAT_CAMERA, std::bind(&preferences_dialog::child_camera, this));
-			register_child(CAT_EFFECTS_BROWSER, std::bind(&preferences_dialog::child_effects_browser, this));
-			register_child(CAT_TEXTURES, std::bind(&preferences_dialog::child_textures, this));
-			register_child(CAT_RENDERER, std::bind(&preferences_dialog::child_renderer_bsp, this));
-			register_child(CAT_LIVELINK, std::bind(&preferences_dialog::child_livelink, this));
-			register_child(CAT_DEVELOPER, std::bind(&preferences_dialog::child_developer, this));
-
-			this->set_initiated();
-		}
-
 		const auto MIN_WINDOW_SIZE = ImVec2(800.0f, 400.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(800.0f, 600.0f);
 		ggui::set_next_window_initial_pos_and_constraints(MIN_WINDOW_SIZE, INITIAL_WINDOW_SIZE);
@@ -755,6 +740,21 @@ namespace ggui
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "Enable: merge 'hide/show bsp/radiant' buttons to toggle between bsp and radiant with a single click.\nDisable: split buttons");
 	}
+
+	void preferences_dialog::on_init()
+	{
+		register_child(CAT_GENERAL, std::bind(&preferences_dialog::child_general, this));
+		register_child(CAT_GUI, std::bind(&preferences_dialog::child_gui, this));
+		register_child(CAT_GRID, std::bind(&preferences_dialog::child_grid, this));
+		register_child(CAT_CAMERA, std::bind(&preferences_dialog::child_camera, this));
+		register_child(CAT_EFFECTS_BROWSER, std::bind(&preferences_dialog::child_effects_browser, this));
+		register_child(CAT_TEXTURES, std::bind(&preferences_dialog::child_textures, this));
+		register_child(CAT_RENDERER, std::bind(&preferences_dialog::child_renderer_bsp, this));
+		register_child(CAT_LIVELINK, std::bind(&preferences_dialog::child_livelink, this));
+		register_child(CAT_DEVELOPER, std::bind(&preferences_dialog::child_developer, this));
+
+	}
+
 
 	REGISTER_GUI(preferences_dialog);
 }

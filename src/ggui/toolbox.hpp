@@ -49,10 +49,7 @@ namespace ggui
 		// *
 		// public member functions
 		bool gui() override;
-
-		// *
-		// init
-		void	init();
+		void on_init() override;
 
 		static bool treenode_begin(const char* name, bool default_open, int& style_colors, int& style_vars);
 		static void treenode_end(int style_colors, int style_vars, float end_spacing = 8.0f);

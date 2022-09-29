@@ -122,6 +122,7 @@ namespace ggui
 			bool _one_time_init;
 			bool _inactive_tab;
 			bool _bring_tab_to_front;
+			bool _gui_init;
 			float _position[2];
 			float _size[2];
 		};
@@ -133,6 +134,7 @@ namespace ggui
 			bool _one_time_init;
 			bool _inactive_tab;
 			bool _bring_tab_to_front;
+			bool _gui_init;
 
 			ImVec2 _scene_pos_imgui;
 			ImVec2 _scene_size_imgui;
@@ -159,6 +161,7 @@ namespace ggui
 		ggui_module() = default;
 		virtual ~ggui_module() = default;
 		virtual bool gui() { return false; }
+		virtual void on_init() {}
 		virtual void on_open() {}
 		virtual void on_close() {}
 
@@ -170,6 +173,12 @@ namespace ggui
 		// called each frame :: components::gui::render_loop()
 		void frame()
 		{
+			if (!this->is_gui_initiated())
+			{
+				on_init();
+				this->set_gui_initiated();
+			}
+
 			if (is_active())
 			{
 				if (ggui::m_ggui_second_frame && this->is_bring_to_front_pending())
@@ -178,7 +187,7 @@ namespace ggui
 					ImGui::SetNextWindowFocus();
 				}
 
-				if(!was_active())
+				if (!was_active())
 				{
 					on_open();
 				} 
@@ -309,6 +318,29 @@ namespace ggui
 			{
 			case GUI_TYPE_DEF: vars.def._one_time_init = reset ? false : true; break;
 			case GUI_TYPE_RTT: vars.rtt._one_time_init = reset ? false : true; break;
+			}
+		}
+
+		// *
+		// internal on-init bool
+		[[nodiscard]] bool is_gui_initiated() const
+		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: return vars.def._gui_init;
+			case GUI_TYPE_RTT: return vars.rtt._gui_init;
+			}
+
+			return false;
+		}
+
+		// 
+		void set_gui_initiated(bool reset = false)
+		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: vars.def._gui_init = reset ? false : true; break;
+			case GUI_TYPE_RTT: vars.rtt._gui_init = reset ? false : true; break;
 			}
 		}
 

@@ -637,7 +637,11 @@ namespace ggui
 
 						if (ImGui::Selectable(radiant_keybind_array[n], is_selected))
 						{
-							bind.modifier_key = radiant_keybind_array[n];
+							if (!utils::starts_with(radiant_keybind_array[n], "##"))
+							{
+								bind.modifier_key = radiant_keybind_array[n];
+							}
+							
 							if (is_selected)
 							{
 								ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)

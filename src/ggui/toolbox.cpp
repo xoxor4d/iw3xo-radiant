@@ -1167,21 +1167,6 @@ namespace ggui
 
 	bool toolbox_dialog::gui()
 	{
-		if (!this->is_initiated())
-		{
-			register_child(CAT_BRUSH, std::bind(&toolbox_dialog::child_brush, this));
-			register_child(CAT_PATCH, std::bind(&toolbox_dialog::child_patch, this));
-			register_child(CAT_SURF_INSP, std::bind(&toolbox_dialog::child_surface_inspector, this));
-			register_child(CAT_ENTITY_PROPS, std::bind(&toolbox_dialog::child_entity_properties, this));
-
-			if (dvars::gui_saved_state_toolbox_child)
-			{
-				m_child_current = dvars::gui_saved_state_toolbox_child->current.integer;
-			}
-
-			this->set_initiated();
-		}
-
 		const auto indent_offset = 8.0f;
 
 		const auto MIN_WINDOW_SIZE = ImVec2(334.0f, 400.0f); 
@@ -1825,8 +1810,20 @@ namespace ggui
 		return true;
 	}
 
-	void toolbox_dialog::init()
+	void toolbox_dialog::on_init()
 	{
+		register_child(CAT_BRUSH, std::bind(&toolbox_dialog::child_brush, this));
+		register_child(CAT_PATCH, std::bind(&toolbox_dialog::child_patch, this));
+		register_child(CAT_SURF_INSP, std::bind(&toolbox_dialog::child_surface_inspector, this));
+		register_child(CAT_ENTITY_PROPS, std::bind(&toolbox_dialog::child_entity_properties, this));
+
+		if (dvars::gui_saved_state_toolbox_child)
+		{
+			m_child_current = dvars::gui_saved_state_toolbox_child->current.integer;
+		}
+
+		// #
+
 		components::command::register_command_with_hotkey("toggle_toolbox"s, [this](auto)
 		{
 			const auto gui = GET_GUI(ggui::toolbox_dialog);
@@ -1840,6 +1837,7 @@ namespace ggui
 			gui->toggle();
 		});
 	}
+
 
 
 	REGISTER_GUI(toolbox_dialog);

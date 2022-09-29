@@ -44,17 +44,10 @@ namespace ggui
 		// public member functions
 
 		bool gui() override;
+		void on_init() override;
 		void on_open() override;
 		void on_close() override;
 
-		// *
-		// asm related
-
-
-		// *
-		// init
-
-		void init();
 
 	private:
 		void xmodel_listbox_elem(int index);

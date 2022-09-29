@@ -48,6 +48,7 @@ namespace ggui
 		// public member functions
 
 		bool gui() override;
+		void on_init() override;
 
 		// *
 		// asm related

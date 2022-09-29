@@ -413,7 +413,7 @@ namespace ggui
 						ImGui::SameLine();
 						if (ImGui::Button("Refresh List"))
 						{
-							this->set_initiated(true);
+							this->m_xmodel_filelist = game::FS_ListFilteredFilesWrapper("xmodel", nullptr, &this->m_xmodel_filecount);
 							this->m_xmodel_selection = -1;
 						}
 
@@ -570,20 +570,10 @@ namespace ggui
 		return true;
 	}
 
-	void modelselector_dialog::on_open()
+	void modelselector_dialog::on_init()
 	{
-		if (!this->is_initiated())
-		{
-			this->m_xmodel_filelist = game::FS_ListFilteredFilesWrapper("xmodel", nullptr, &this->m_xmodel_filecount);
-			this->set_initiated();
-		}
-	}
+		this->m_xmodel_filelist = game::FS_ListFilteredFilesWrapper("xmodel", nullptr, &this->m_xmodel_filecount);
 
-	void modelselector_dialog::on_close()
-	{ }
-
-	void modelselector_dialog::init()
-	{
 		components::command::register_command_with_hotkey("xo_modelselector"s, [this](auto)
 		{
 			if (this->is_inactive_tab() && this->is_active())
@@ -595,6 +585,12 @@ namespace ggui
 			this->toggle();
 		});
 	}
+
+	void modelselector_dialog::on_open()
+	{ }
+
+	void modelselector_dialog::on_close()
+	{ }
 
 	REGISTER_GUI(modelselector_dialog);
 }

@@ -1367,18 +1367,16 @@ namespace ggui
 		return false;
 	}
 
-	void camera_dialog::on_open()
+	void camera_dialog::on_init()
 	{
-		if(!this->is_initiated())
+		if (dvars::gui_camera_toolbar_defaultopen && dvars::gui_camera_toolbar_defaultopen->current.enabled)
 		{
-			if (dvars::gui_camera_toolbar_defaultopen && dvars::gui_camera_toolbar_defaultopen->current.enabled)
-			{
-				m_toolbar_state = true;
-			}
-
-			this->set_initiated();
+			m_toolbar_state = true;
 		}
 	}
+
+	void camera_dialog::on_open()
+	{ }
 
 	void camera_dialog::on_close()
 	{ }

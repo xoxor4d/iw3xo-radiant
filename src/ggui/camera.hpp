@@ -25,6 +25,7 @@ namespace ggui
 		void camera_gui();
 
 		bool gui() override;
+		void on_init() override;
 		void on_open() override;
 		void on_close() override;
 
