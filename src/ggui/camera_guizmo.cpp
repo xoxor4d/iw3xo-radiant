@@ -116,6 +116,7 @@ namespace ggui::camera_guizmo
 		if (dvars::guizmo_enable->current.enabled)
 		{
 			const auto camerawnd = GET_GUI(ggui::camera_dialog);
+			guizmo_visible = false;
 
 			if (camerawnd->rtt_is_hovered())
 			{
@@ -132,8 +133,6 @@ namespace ggui::camera_guizmo
 			// fixes unwanted transforms on multi selection via shift (if mouse is over guizmo)
 			static bool guizmo_needs_activation = true;
 			static bool guizmo_capture_active = false;
-
-			guizmo_visible = false;
 
 			if (const auto b = game::g_selected_brushes()->def; b)
 			{
