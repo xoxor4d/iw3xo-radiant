@@ -162,6 +162,7 @@ namespace ggui
 
 			if (ImGui::SliderInt("Undo levels", &prefs->m_nUndoLevels, 16, 512))
 			{
+				prefs->m_nUndoLevels = ImClamp(prefs->m_nUndoLevels, 16, 512);
 				game::g_undoMaxSize = prefs->m_nUndoLevels;
 			}
 
@@ -237,7 +238,7 @@ namespace ggui
 			ImGui::SliderInt("Camera angle speed", &prefs->m_nAngleSpeed, 1, 1000);
 			if (imgui::SliderFloat("Camera angle speed (physx movement)", &dvars::physx_camera_sensitivity->current.value, 10.0f, 1000.0f, "%.0f"))
 			{
-				ImClamp(dvars::physx_camera_sensitivity->current.value, 10.0f, 1000.0f);
+				dvars::physx_camera_sensitivity->current.value = ImClamp(dvars::physx_camera_sensitivity->current.value, 10.0f, 1000.0f);
 			}
 
 
@@ -271,13 +272,13 @@ namespace ggui
 			dvar = dvars::fx_browser_grid_sections;
 			if (imgui::DragInt("Grid Sections", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
 			{
-				ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
+				dvar->current.integer = ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
 			}
 
 			dvar = dvars::fx_browser_grid_scale;
 			if (imgui::DragInt("Grid Scale", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
 			{
-				ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
+				dvar->current.integer = ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
 			}
 
 			imgui::ColorEdit4("Grid Color", dvars::fx_browser_grid_color->current.vector, ImGuiColorEditFlags_Float);
@@ -285,13 +286,13 @@ namespace ggui
 			dvar = dvars::fx_browser_grid_line_width;
 			if (imgui::DragInt("Line Width", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
 			{
-				ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
+				dvar->current.integer = ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
 			}
 
 			dvar = dvars::fx_browser_grid_font_scale;
 			if (imgui::DragFloat("Font Scale", &dvar->current.value, 0.01f, dvar->domain.value.min, dvar->domain.value.max))
 			{
-				ImClamp(dvar->current.value, dvar->domain.value.min, dvar->domain.value.max);
+				dvar->current.integer = ImClamp(dvar->current.value, dvar->domain.value.min, dvar->domain.value.max);
 			}
 
 			imgui::ColorEdit4("Font Color", dvars::fx_browser_grid_font_color->current.vector, ImGuiColorEditFlags_Float);
