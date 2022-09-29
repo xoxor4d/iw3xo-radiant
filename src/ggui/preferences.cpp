@@ -104,6 +104,7 @@ namespace ggui
 
 			ImGui::Checkbox("Integrate camera toolbar into toolbox", &dvars::gui_toolbox_integrate_cam_toolbar->current.enabled); TT(dvars::gui_toolbox_integrate_cam_toolbar->description);
 			ImGui::Checkbox("Integrate entity-properties into toolbox", &dvars::gui_props_toolbox->current.enabled); TT(dvars::gui_props_toolbox->description);
+			ImGui::Checkbox("Integrate filter window into toolbox", &dvars::gui_toolbox_integrate_filter->current.enabled); TT(dvars::gui_toolbox_integrate_filter->description);
 
 			const char* incorp_surf_inspector_strings[4] = { "None", "Entity Properties", "Toolbox" };
 			if (ImGui::SliderInt("Integrate surface-inspector into", &dvars::gui_props_surfinspector->current.integer, 0, 2, incorp_surf_inspector_strings[dvars::gui_props_surfinspector->current.integer]))

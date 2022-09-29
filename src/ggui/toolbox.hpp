@@ -21,6 +21,7 @@ namespace ggui
 		const std::string CAT_PATCH = "patch";
 		const std::string CAT_SURF_INSP = "surface_inspector";
 		const std::string CAT_ENTITY_PROPS = "entity_properties";
+		const std::string CAT_FILTER = "Filter";
 
 	public:
 		enum class TB_CHILD : int
@@ -29,6 +30,7 @@ namespace ggui
 			PATCH,
 			SURFACE_INSP,
 			ENTITY_PROPS,
+			FILTER
 		};
 
 		toolbox_dialog()
@@ -56,6 +58,8 @@ namespace ggui
 		static void center_horz_begin(const float group_width, float indent = 4.0f);
 		static void center_horz_end(float& group_width);
 
+		static void hooks();
+
 	private:
 		void  register_child(const std::string& _child_name, const std::function<void()>& _callback);
 
@@ -63,5 +67,6 @@ namespace ggui
 		void child_patch();
 		void child_surface_inspector();
 		void child_entity_properties();
+		void child_filter();
 	};
 }

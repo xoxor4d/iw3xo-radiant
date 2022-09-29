@@ -1165,6 +1165,45 @@ namespace ggui
 		ImGui::PopID();
 	}
 
+	void toolbox_dialog::child_filter()
+	{
+		int style_colors = 0;
+		int style_vars = 0;
+
+		ImGui::PushID("filter");
+		setup_child();
+		{
+			const auto gui = GET_GUI(ggui::filter_dialog);
+
+			if (treenode_begin("Geometry Filters", true, style_colors, style_vars))
+			{
+				gui->geometry_filters(ImGui::GetContentRegionAvail().x - 12.0f);
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+			if (treenode_begin("Entity Filters", true, style_colors, style_vars))
+			{
+				gui->entity_filters(ImGui::GetContentRegionAvail().x - 12.0f);
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+			if (treenode_begin("Trigger Filters", true, style_colors, style_vars))
+			{
+				gui->trigger_filters(ImGui::GetContentRegionAvail().x - 12.0f);
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+			if (treenode_begin("Other Filters", true, style_colors, style_vars))
+			{
+				gui->other_filters(ImGui::GetContentRegionAvail().x - 12.0f);
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+			SPACING(0.0f, 4.0f);
+		}
+		ImGui::PopID();
+	}
+
 	bool toolbox_dialog::gui()
 	{
 		const auto indent_offset = 8.0f;
@@ -1292,6 +1331,30 @@ namespace ggui
 				, &toolbar_button_size))
 			{
 				m_child_current = static_cast<int>(_toolbox_childs[CAT_ENTITY_PROPS].index);
+				m_update_scroll = true;
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+		}
+
+		// #
+
+		mins = ImGui::GetCursorScreenPos();
+
+		if (dvars::gui_toolbox_integrate_filter && dvars::gui_toolbox_integrate_filter->current.enabled)
+		{
+			static bool hov_filter;
+			if (tb->image_togglebutton("filter"
+				, hov_filter
+				, m_child_current == static_cast<int>(_toolbox_childs[CAT_FILTER].index)
+				, "Filter"
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &toolbar_button_background_active
+				, &toolbar_button_size))
+			{
+				m_child_current = static_cast<int>(_toolbox_childs[CAT_FILTER].index);
 				m_update_scroll = true;
 			}
 
@@ -1776,7 +1839,8 @@ namespace ggui
 			{
 				// switch to other child when user no longer has surface inspector / entity properties incorporated
 				if (   (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer != 2 && child.first == CAT_SURF_INSP) 
-					|| (dvars::gui_props_toolbox && !dvars::gui_props_toolbox->current.enabled && child.first == CAT_ENTITY_PROPS))
+					|| (dvars::gui_props_toolbox && !dvars::gui_props_toolbox->current.enabled && child.first == CAT_ENTITY_PROPS)
+					|| (dvars::gui_toolbox_integrate_filter && !dvars::gui_toolbox_integrate_filter->current.enabled && child.first == CAT_FILTER))
 				{
 					focus_child(toolbox_dialog::TB_CHILD::BRUSH);
 					break;
@@ -1816,6 +1880,7 @@ namespace ggui
 		register_child(CAT_PATCH, std::bind(&toolbox_dialog::child_patch, this));
 		register_child(CAT_SURF_INSP, std::bind(&toolbox_dialog::child_surface_inspector, this));
 		register_child(CAT_ENTITY_PROPS, std::bind(&toolbox_dialog::child_entity_properties, this));
+		register_child(CAT_FILTER, std::bind(&toolbox_dialog::child_filter, this));
 
 		if (dvars::gui_saved_state_toolbox_child)
 		{
@@ -1838,6 +1903,21 @@ namespace ggui
 		});
 	}
 
+
+	void toolbox_dialog::hooks()
+	{
+		dvars::gui_props_toolbox = dvars::register_bool(
+			/* name		*/ "gui_props_toolbox",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "integrate entity window into toolbox");
+
+		dvars::gui_toolbox_integrate_filter = dvars::register_bool(
+			/* name		*/ "gui_toolbox_integrate_filter",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "integrate filter window into toolbox");
+	}
 
 
 	REGISTER_GUI(toolbox_dialog);

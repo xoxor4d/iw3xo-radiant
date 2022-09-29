@@ -44,7 +44,12 @@ namespace ggui
 		// public member functions
 
 		bool gui() override;
+		void on_init() override;
 		bool toggle_by_name(const char* name, E_FILTERS filter_type, bool on_off);
+		void geometry_filters(float button_width);
+		void entity_filters(float button_width);
+		void trigger_filters(float button_width);
+		void other_filters(float button_width);
 		void build_radiant_filterlists();
 
 		// *

@@ -1883,12 +1883,6 @@ namespace ggui
 			/* default	*/ false,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "property editor - default state for treenode spawnflags");
-
-		dvars::gui_props_toolbox = dvars::register_bool(
-			/* name		*/ "gui_props_toolbox",
-			/* default	*/ true,
-			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "incorporate entity window into toolbox");
 	}
 
 	void entity_dialog::hooks()
