@@ -1187,7 +1187,7 @@ namespace ggui
 				ImGui::SameLine(0, 14.0f);
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
 
-				if (ImGui::DragFloat("##width_scale", &elem->sizeScale[1], 0.5f, 0.0f, 4000.0f, "%.1f"))
+				if (ImGui::DragFloat("##height_scale", &elem->sizeScale[1], 0.5f, 0.0f, 4000.0f, "%.1f"))
 				{
 					elem->sizeScale[1] = elem->sizeScale[1] < 0.0f ? 0.0f : elem->sizeScale[1];
 					modified = true;
@@ -1235,7 +1235,7 @@ namespace ggui
 				ImGui::SameLine(0, 14.0f);
 				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - style.FramePadding.x);
 
-				if (ImGui::DragFloat("##width_scale", &elem->scaleScale, 0.5f, 0.0f, 4000.0f, "%.1f"))
+				if (ImGui::DragFloat("##scale_scale", &elem->scaleScale, 0.5f, 0.0f, 4000.0f, "%.1f"))
 				{
 					elem->scaleScale = elem->scaleScale < 0.0f ? 0.0f : elem->scaleScale;
 					modified = true;
