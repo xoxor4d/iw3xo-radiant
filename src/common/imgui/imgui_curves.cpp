@@ -198,7 +198,7 @@ namespace ImGui
 		int changed_idx = -1;
 		bool first_point = true;
 
-		float temp_points[32] = {};
+		float temp_points[256] = {};
 		memcpy(temp_points, curve->keys, sizeof(float[2]) * curve->keyCount);
 
 		for (int point_idx = curve->keyCount - 2; point_idx >= 0; --point_idx)

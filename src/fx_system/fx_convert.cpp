@@ -233,7 +233,7 @@ namespace fx_system
 
 		if (timeEval < time0 || time1 < timeEval)
 		{
-			Assert();
+			Warning(0, "timeEval < time0 || time1 < timeEval");
 		}
 
 		if (!samples0 || !samples1 || !result)

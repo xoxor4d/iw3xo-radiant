@@ -2,6 +2,24 @@
 
 namespace components
 {
+	void __declspec(naked) fix_subdivision_loop_bug_stub()
+	{
+		const static uint32_t retn_addr = 0x44CEC9;
+		const static uint32_t retn_addr_break_loop = 0x44CEE7;
+		__asm
+		{
+			add		[esi + 0x14], ebx			 // og
+			cmp     dword ptr[esi + 0x14], 1024; // check arbitrary large number only caused by the loop bug
+			jl		OG_RETURN;
+			mov		[esi + 0x14], 1;
+			jmp		retn_addr_break_loop;
+
+		OG_RETURN:
+			cmp     dword ptr[esi + 0x14], 1;	// og
+			jmp		retn_addr;
+		}
+	}
+
 	void on_assert()
 	{
 		effects::stop_all();
@@ -49,6 +67,7 @@ namespace components
 
 	patches::patches()
 	{
+		utils::hook(0x44CEC2, fix_subdivision_loop_bug_stub, HOOK_JUMP).install()->quick();
 		utils::hook(0x49CEA6, on_assert_stub, HOOK_JUMP).install()->quick();
 
 		// return nullptr on assert: mtlRaw->info.sortKey doesn't index 1 << MTL_SORT_PRIMARY_SORT_KEY_BITS %i not in [0, 64]
