@@ -11,8 +11,8 @@ namespace components
 			add		[esi + 0x14], ebx			 // og
 			cmp     dword ptr[esi + 0x14], 1024; // check arbitrary large number only caused by the loop bug
 			jl		OG_RETURN;
-			mov		[esi + 0x14], 1;
-			jmp		retn_addr_break_loop;
+			mov		[esi + 0x14], 1;			 // force patch->subDivType to 1
+			jmp		retn_addr_break_loop;		 // break subdivide loop
 
 		OG_RETURN:
 			cmp     dword ptr[esi + 0x14], 1;	// og

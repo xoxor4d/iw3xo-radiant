@@ -610,8 +610,15 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 	game::printf_to_console("mainframe keydown: %s", ggui::hotkey_dialog::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
+	// fixes KP_ENTER getting stuck when mouse was outside the application
+	// by setting the default focus to the camera window
+	if (GetFocus() == pThis->GetWindow())
+	{
+		SetFocus(pThis->m_pCamWnd->GetWindow());
+	}
+
 	// there is one "bad" keydown on the first frame ..'O'
-	if(nChar == 79 && !nRepCnt && !nFlags)
+	if (nChar == 79 && !nRepCnt && !nFlags)
 	{
 		return;
 	}
