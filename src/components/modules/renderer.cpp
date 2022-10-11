@@ -3208,6 +3208,8 @@ namespace components
 				}
 			}
 		}
+
+		mesh_painter::on_frame();
 	}
 
 	// *

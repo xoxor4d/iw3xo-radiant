@@ -24,6 +24,11 @@ namespace utils
 		#define VectorSet(v, x, y, z)	((v)[0]=(x), (v)[1]=(y), (v)[2]=(z))
 		#define Vector4Copy(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
 
+		float	rad_to_deg(const float radians);
+		float	deg_to_rad(const float degrees);
+		void	to_euler_angles(const vec4_t* matrix, vec3_t out);
+		void	to_euler_angles_deg(const vec4_t* matrix, vec3_t out);
+
 		float	cos_of_sum_of_arc_cos(float cos0, float cos1);
 		void	rotate_point(float* point, const float *mat);
 		void	rotate_point(const float* v, const float* q, float* out);
