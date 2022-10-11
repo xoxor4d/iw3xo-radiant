@@ -338,6 +338,8 @@ namespace game
 
 	inline auto CopyAxis = reinterpret_cast<void (*)(float* src, float* dest)>(0x4A8860);
 	inline auto AnglesToAxis = reinterpret_cast<void (*)(float* angles, float* axis)>(0x4ABEB0);
+	inline auto AnglesToQuat = reinterpret_cast<void (*)(const float* angles, float* quat)>(0x4AC050);
+
 	void AxisToAngles(const float(*axis)[3], float* angles);
 	void vectoangles(float* vec /*esi*/, float* angles /*edi*/);
 	inline auto AngleVectors = reinterpret_cast<void (*)(float* _angles, float* _vpn, float* _right, float* _up)>(0x4ABD70);

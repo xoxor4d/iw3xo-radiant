@@ -20,7 +20,7 @@ namespace components
 
 	void command::execute(std::string cmd_name)
 	{
-		if (command::cmd.find(cmd_name) != command::cmd.end())
+		if (command::cmd.contains(cmd_name))
 		{
 			std::vector<std::string> null;
 			command::cmd[cmd_name](null);
@@ -33,7 +33,7 @@ namespace components
 	
     void command::execute_command(std::vector<std::string> args)
     {
-    	if (command::cmd.find(args[0]) != command::cmd.end())
+    	if (command::cmd.contains(args[0]))
     	{
             command::cmd[args[0]](args);
     	}
@@ -55,7 +55,7 @@ namespace components
     		std::string input;
     		std::getline(std::cin, input);
 
-    		if(input != "")
+    		if(!input.empty())
     		{
 				std::vector<std::string> args;
     			
@@ -79,16 +79,8 @@ namespace components
 
 
 	command::command()
-	{
-	}
+	{ }
 
 	command::~command()
-	{ 
-        /* for (auto command : command::Functions)
-		{
-			delete command;
-		}
-
-		command::Functions.clear(); */
-    }
+	{ }
 }
