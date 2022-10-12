@@ -54,6 +54,7 @@ namespace utils
 		void	subtract(const vec3_t veca, const vec3_t vecb, vec3_t out);
 		void	add(const vec3_t veca, const vec3_t vecb, vec3_t out);
 		void	copy(const float* in, float* out, const int size = 3);
+		void	multiply(const vec3_t veca, const vec3_t vecb, vec3_t out);
 		void	scale(const vec3_t in, float scale, vec3_t out);
 		void	ma(const vec3_t veca, float scale, const vec3_t vecb, vec3_t out);
 		void	inverse(vec3_t v);

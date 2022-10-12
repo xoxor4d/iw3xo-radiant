@@ -343,6 +343,8 @@ namespace game
 	void AxisToAngles(const float(*axis)[3], float* angles);
 	void vectoangles(float* vec /*esi*/, float* angles /*edi*/);
 	inline auto AngleVectors = reinterpret_cast<void (*)(float* _angles, float* _vpn, float* _right, float* _up)>(0x4ABD70);
+	inline auto PerpendicularVector = reinterpret_cast<void (*)(float* src, float* dst)>(0x4A5340);
+
 	inline auto OrientationConcatenate = reinterpret_cast<void (*)(const game::orientation_t * orFirst, const game::orientation_t * orSecond, game::orientation_t * out)>(0x4BA7D0);
 
 

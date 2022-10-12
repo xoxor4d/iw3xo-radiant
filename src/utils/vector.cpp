@@ -384,6 +384,13 @@ namespace utils
 			}
 		}
 
+		void multiply(const vec3_t veca, const vec3_t vecb, vec3_t out)
+		{
+			out[0] = veca[0] * vecb[0];
+			out[1] = veca[1] * vecb[1];
+			out[2] = veca[2] * vecb[2];
+		}
+
 		void scale(const vec3_t in, float scale, vec3_t out)
 		{
 			out[0] = in[0] * scale;

@@ -2,7 +2,7 @@
 
 namespace ggui
 {
-	bool template_dialog::gui()
+	bool mesh_painter_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(200.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 400.0f);
@@ -11,7 +11,9 @@ namespace ggui
 		imgui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		if (!imgui::Begin("Template##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
+		const auto painter = components::mesh_painter::get();
+
+		if (!imgui::Begin("Mesh Painter##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
 			imgui::End();
 			return false;
@@ -20,25 +22,25 @@ namespace ggui
 		// #
 
 		SPACING(0.0f, 2.0f);
-		imgui::Indent(8.0f);
 
-		if (imgui::Button("Button"))
+		if (imgui::Button("Toggle Painter"))
 		{
-			// logic
+			painter->toggle();
 		}
 
 		imgui::End();
+		
 		return true;
 	}
 
-	void template_dialog::on_init()
+	void mesh_painter_dialog::on_init()
 	{ }
 
-	void template_dialog::on_open()
+	void mesh_painter_dialog::on_open()
 	{ }
 
-	void template_dialog::on_close()
+	void mesh_painter_dialog::on_close()
 	{ }
 
-	REGISTER_GUI(template_dialog);
+	REGISTER_GUI(mesh_painter_dialog);
 }

@@ -305,6 +305,10 @@ namespace ggui
 						GET_GUI(ggui::entity_dialog)->toggle();
 					}
 
+					if (ImGui::MenuItem("Mesh Painter"/*, ggui::hotkey_dialog::get_hotkey_for_command("ViewEntityInfo").c_str()*/)) {
+						GET_GUI(ggui::mesh_painter_dialog)->toggle();
+					}
+
 					if (ImGui::MenuItem("Effects Browser")) {
 						GET_GUI(ggui::effects_browser)->toggle();
 					}
