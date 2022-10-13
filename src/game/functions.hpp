@@ -274,7 +274,13 @@ namespace game
 	inline auto CreateEntity = reinterpret_cast<void (*)()>(0x497300);
 	game::eclass_t* Eclass_ForName(const char* name /*ecx*/, int has_brushes);
 	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y);
-	inline auto CreateEntityFromName = reinterpret_cast<void (*)(const char* name)>(0x465CC0); // does not add an undo
+
+
+	inline bool CreateEntityFromName_DisableUndo = false;
+	// encupsule in game::CreateEntityFromName_DisableUndo true/false to disable AddBrushList/EndBrushList
+	inline auto CreateEntityFromName = reinterpret_cast<void (*)(const char* name)>(0x465CC0);
+
+
 	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* cxywnd);
 	game::entity_s* Entity_Create(eclass_t* eclass /*eax*/);
 
@@ -344,8 +350,9 @@ namespace game
 	void vectoangles(float* vec /*esi*/, float* angles /*edi*/);
 	inline auto AngleVectors = reinterpret_cast<void (*)(float* _angles, float* _vpn, float* _right, float* _up)>(0x4ABD70);
 	inline auto PerpendicularVector = reinterpret_cast<void (*)(float* src, float* dst)>(0x4A5340);
-
 	inline auto OrientationConcatenate = reinterpret_cast<void (*)(const game::orientation_t * orFirst, const game::orientation_t * orSecond, game::orientation_t * out)>(0x4BA7D0);
+
+	inline auto AlignEntityToFace = reinterpret_cast<void (*)(game::entity_s_def * ent, float* normal)>(0x485AD0);
 
 
 	// no error but doesnt reload everything

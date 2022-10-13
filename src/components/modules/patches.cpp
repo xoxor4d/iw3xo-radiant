@@ -2,6 +2,50 @@
 
 namespace components
 {
+	void cefn_undo_addbrushlist()
+	{
+		if (!game::CreateEntityFromName_DisableUndo)
+		{
+			game::Undo_AddBrushList_Selected();
+		}
+	}
+
+	void cefn_undo_endbrushlist()
+	{
+		if (!game::CreateEntityFromName_DisableUndo)
+		{
+			game::Undo_EndBrushList_Selected();
+		}
+	}
+
+	// on Undo_AddBrushList
+	void __declspec(naked) create_entity_from_name_stub01()
+	{
+		const static uint32_t retn_addr = 0x465D43;
+		__asm
+		{
+			pushad;
+			call	cefn_undo_addbrushlist;
+			popad;
+			jmp		retn_addr;
+		}
+	}
+
+	// on Undo_EndBrushList
+	void __declspec(naked) create_entity_from_name_stub02()
+	{
+		const static uint32_t retn_addr = 0x46627A;
+		__asm
+		{
+			pushad;
+			call	cefn_undo_endbrushlist;
+			popad;
+			jmp		retn_addr;
+		}
+	}
+
+	// #
+
 	void __declspec(naked) fix_subdivision_loop_bug_stub()
 	{
 		const static uint32_t retn_addr = 0x44CEC9;
@@ -19,6 +63,8 @@ namespace components
 			jmp		retn_addr;
 		}
 	}
+
+	// #
 
 	void on_assert()
 	{
@@ -67,7 +113,14 @@ namespace components
 
 	patches::patches()
 	{
+		// add ability to disable undo_add/endbrushlist in 'CreateEntityFromName' by using helper bool 'CreateEntityFromName_DisableUndo'
+		utils::hook(0x465D3E, create_entity_from_name_stub01, HOOK_JUMP).install()->quick();
+		utils::hook(0x466275, create_entity_from_name_stub02, HOOK_JUMP).install()->quick();
+
+		// fix infinite loop that can occur when trying to subdivide 2 curve patches at the same time
 		utils::hook(0x44CEC2, fix_subdivision_loop_bug_stub, HOOK_JUMP).install()->quick();
+
+		// stop effects on asserts
 		utils::hook(0x49CEA6, on_assert_stub, HOOK_JUMP).install()->quick();
 
 		// return nullptr on assert: mtlRaw->info.sortKey doesn't index 1 << MTL_SORT_PRIMARY_SORT_KEY_BITS %i not in [0, 64]

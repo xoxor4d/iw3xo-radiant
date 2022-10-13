@@ -71,12 +71,15 @@ void __fastcall czwnd::on_lbutton_down(czwnd* pThis, [[maybe_unused]] void* edx,
 			SetFocus(ccam->GetWindow());
 			SetCapture(ccam->GetWindow());
 
-			if(!ggui::camera_guizmo::guizmo_visible || !ImGuizmo::IsOver())
+			if (!components::mesh_painter::block_lbutton_logic())
 			{
-				CamWnd__DropModelsToPlane(ccam, ccam->m_ptLastCursor.x, ccam->camera.height - ccam->m_ptLastCursor.y - 1, nFlags);
+				if (!ggui::camera_guizmo::guizmo_visible || !ImGuizmo::IsOver())
+				{
+					CamWnd__DropModelsToPlane(ccam, ccam->m_ptLastCursor.x, ccam->camera.height - ccam->m_ptLastCursor.y - 1, nFlags);
+				}
 			}
 
-			if(camerawnd->rtt_is_capturing_lmb())
+			if (camerawnd->rtt_is_capturing_lmb())
 			{
 				ImGui::HandleKeyIO(ccam->GetWindow(), WM_LBUTTONDOWN);
 				//camerawnd->capture_left_mousebutton = false;
@@ -148,7 +151,11 @@ void __fastcall czwnd::on_lbutton_up(czwnd* pThis, [[maybe_unused]] void* edx, U
 		{
 			const auto camerawnd = GET_GUI(ggui::camera_dialog);
 
-			ccamwnd::mouse_up(cmainframe::activewnd->m_pCamWnd, nFlags);
+			if (!components::mesh_painter::block_lbutton_logic())
+			{
+				ccamwnd::mouse_up(cmainframe::activewnd->m_pCamWnd, nFlags);
+			}
+
 			if ((nFlags & (MK_MBUTTON | MK_RBUTTON | MK_LBUTTON)) == 0)
 			{
 				ReleaseCapture();

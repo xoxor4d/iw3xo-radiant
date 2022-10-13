@@ -1336,6 +1336,13 @@ namespace ggui
 				// drag-drop target (modelpreview)
 				camera_dialog::drag_drop_target(accepted_dragdrop);
 
+				// mesh painting
+				components::mesh_painter::get()->paint_frame();
+
+
+				// #
+
+
 				// pop ItemSpacing
 				ImGui::PopStyleVar(); p_styles--;
 

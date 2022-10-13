@@ -28,6 +28,18 @@ namespace ggui
 			painter->toggle();
 		}
 
+		if (imgui::Button("Rand. Point") || imgui::IsKeyReleased(ImGuiKey_2))
+		{
+			float x, y, z;
+			painter->random_point_on_circle(x, y, z);
+
+			painter->random_point.xyz[0] = x;
+			painter->random_point.xyz[1] = y;
+			painter->random_point.xyz[2] = z;
+
+			painter->random_point.color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
+		}
+
 		imgui::End();
 		
 		return true;

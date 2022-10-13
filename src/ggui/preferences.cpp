@@ -559,9 +559,9 @@ namespace ggui
 
 			const auto painter = components::mesh_painter::get();
 
-			if (ImGui::DragFloat("Radius", &painter->m_circle_radius, 0.1f, 32.0f, 4096.0f, "%.1f"))
+			if (ImGui::DragFloat("Radius", &painter->m_circle_radius, 0.1f, 10.0f, 4096.0f, "%.1f"))
 			{
-				painter->m_circle_radius = ImClamp(painter->m_circle_radius, 32.0f, 4096.0f);
+				painter->m_circle_radius = ImClamp(painter->m_circle_radius, 10.0f, 4096.0f);
 			}
 
 			ImGui::DragFloat3("Origin", painter->m_circle_origin, 0.1f, -FLT_MAX, FLT_MAX, "%.1f");

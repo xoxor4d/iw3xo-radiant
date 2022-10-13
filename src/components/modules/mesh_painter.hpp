@@ -23,6 +23,11 @@ namespace components
 		};
 
 		bool	m_active = false;
+		bool	m_stick_to_first_surface = false;
+
+		bool	m_drag_down = false;
+		bool	m_drag_step = false;
+		float	m_drag_threshold = 10.0f;
 
 		std::vector<line_s>  m_circle_verts;
 		std::vector<angle_s> m_circle_verts_angles;
@@ -33,6 +38,13 @@ namespace components
 
 		game::vec3_t	m_circle_origin = {};
 		game::vec3_t	m_circle_normal = {};
+
+		game::vec3_t	m_circle_vright = { 0.0f, 1.0f, 0.0f };
+		game::vec3_t	m_circle_vup = { 0.0f, 0.0f, 1.0f };
+
+		game::GfxPointVertex random_point = {};
+		line_s random_point_trace_to_face = {};
+		line_s random_point_trace_to_upper = {};
 
 		// #
 
@@ -53,9 +65,13 @@ namespace components
 		}
 
 		void		set_circle_color(const float r, const float g, const float b, const float a);
+		void		random_point_on_circle(float& x, float& y, float& z);
 		void		draw_circle();
 
-		static void circle_get_coord_for_angle(float* coord, const float* center, const float radius, const float angle, const float* right_vec, const float* up_vec);
+		void		circle_get_coord_for_angle(float* coord, const float angle);
+
+		void paint_frame();
 		static void on_frame();
+		static bool block_lbutton_logic();
 	};
 }
