@@ -162,6 +162,7 @@
 #include "ggui/layers.hpp"
 #include "ggui/l2d_file_dialog.hpp"
 #include "ggui/menubar.hpp"
+#include "ggui/mesh_painter_gui.hpp"
 #include "ggui/modelselector.hpp"
 #include "ggui/patch.hpp"
 #include "ggui/prefab_preview.hpp"

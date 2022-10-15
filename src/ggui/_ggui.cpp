@@ -211,6 +211,10 @@ namespace ggui
 			{
 				switch (handler)
 				{
+					case CUSTOM:
+						// do nothing because user is using a custom callback
+						break;
+
 					case MAP_LOAD:
 					{
 						if (!file->was_canceled() && !path_out.empty())

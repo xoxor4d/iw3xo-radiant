@@ -41,7 +41,7 @@ namespace ggui
 
 	bool modelselector_dialog::gui()
 	{
-		const auto io = ImGui::GetIO();
+		const auto& io = ImGui::GetIO();
 
 		const auto MIN_WINDOW_SIZE = ImVec2(500.0f, 400.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(550.0f, 600.0f);

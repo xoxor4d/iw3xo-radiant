@@ -3163,7 +3163,7 @@ namespace components
 		}
 	}
 
-	void debug_sundirection()
+	void draw_additional_debug()
 	{
 		if(game::glob::debug_sundir)
 		{
@@ -3208,6 +3208,8 @@ namespace components
 				}
 			}
 		}
+
+		mesh_painter::on_frame();
 	}
 
 	// *
@@ -3275,7 +3277,7 @@ namespace components
 
 			pushad;
 			call	draw_target_connection_lines_func;
-			call	debug_sundirection;
+			call	draw_additional_debug;
 			popad;
 
 			jmp		retn_addr;

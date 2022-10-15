@@ -10,6 +10,45 @@ namespace utils
 {
 	namespace vector // https://github.com/id-Software/Quake-III-Arena/blob/master/code/game/q_math.c
 	{
+		float rad_to_deg(const float radians)
+		{
+			return radians * (180.0f / M_PI);
+		}
+
+		float deg_to_rad(const float degrees)
+		{
+			return degrees * M_PI / 180.0f;
+		}
+
+		void to_euler_angles(const vec4_t* matrix, vec3_t out)
+		{
+			const float a = asinf(-matrix[0][2]);
+			const float ca = cos(a);
+
+			if (fabsf(ca) > 0.005f)
+			{
+				out[0] = atan2f(matrix[1][2] / ca, matrix[2][2] / ca);
+				out[1] = a;
+				out[2] = atan2f(matrix[0][1] / ca, matrix[0][0] / ca);
+			}
+			else
+			{
+				out[0] = atan2f(-matrix[2][1] / ca, matrix[1][1] / ca);
+				out[1] = a;
+				out[2] = 0.0f;
+			}
+		}
+
+		void to_euler_angles_deg(const vec4_t* matrix, vec3_t out)
+		{
+			vec3_t euler_rad;
+			to_euler_angles(matrix, euler_rad);
+
+			out[0] = rad_to_deg(euler_rad[0]);
+			out[1] = rad_to_deg(euler_rad[1]);
+			out[2] = rad_to_deg(euler_rad[2]);
+		}
+
 		float cos_of_sum_of_arc_cos(float cos0, float cos1)
 		{
 			return (cos0 * cos1) - sqrt((1.0f - cos0 * cos0) * (1.0f - cos1 * cos1));
@@ -343,6 +382,13 @@ namespace utils
 			{
 				out[i] = in[i];
 			}
+		}
+
+		void multiply(const vec3_t veca, const vec3_t vecb, vec3_t out)
+		{
+			out[0] = veca[0] * vecb[0];
+			out[1] = veca[1] * vecb[1];
+			out[2] = veca[2] * vecb[2];
 		}
 
 		void scale(const vec3_t in, float scale, vec3_t out)

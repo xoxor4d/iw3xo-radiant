@@ -4,23 +4,30 @@ namespace ggui
 {
 	bool template_dialog::gui()
 	{
-		ImGui::SetNextWindowSize(ImVec2(400.0f, 390.0f));
+		const auto MIN_WINDOW_SIZE = ImVec2(200.0f, 200.0f);
+		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 400.0f);
+
+		imgui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
+		imgui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
 		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-
-		if (ImGui::Begin("Template##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking))
+		if (!imgui::Begin("Template##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
-			SPACING(0.0f, 2.0f);
-			ImGui::Indent(8.0f);
-
-			ImGui::Text("Test");
-			ImGui::End();
-		}
-		else
-		{
+			imgui::End();
 			return false;
 		}
 
+		// #
+
+		SPACING(0.0f, 2.0f);
+		imgui::Indent(8.0f);
+
+		if (imgui::Button("Button"))
+		{
+			// logic
+		}
+
+		imgui::End();
 		return true;
 	}
 
