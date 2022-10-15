@@ -26,8 +26,65 @@ namespace components
 		bool	m_stick_to_first_surface = false;
 
 		bool	m_drag_down = false;
-		bool	m_drag_step = false;
 		float	m_drag_threshold = 10.0f;
+		int		m_paint_loop_count = 1;
+
+		// #
+
+		struct list_object
+		{
+			void init_defaults()
+			{
+				size_range[0] = 0.8f;
+				size_range[1] = 1.2f;
+
+				max_align_to_ground_angle[0] = 90.0f;
+				max_align_to_ground_angle[1] = 90.0f;
+
+				z_offset = 0.0f;
+				paint_weight = 1.0f;
+
+				random_size = true;
+				random_rotation = true;
+				align_to_ground = true;
+			}
+
+			list_object(const std::string& name_)
+			{
+				name = name_;
+				init_defaults();
+			}
+
+			std::string name;
+
+			game::vec2_t size_range;
+			game::vec2_t max_align_to_ground_angle;
+			float z_offset;
+			float paint_weight;
+
+			bool random_size;
+			bool random_rotation;
+			bool align_to_ground;
+		};
+
+		std::vector<list_object>  m_objects;
+
+		// returns true if object is already part of the list
+		bool list_object_exists(std::string new_object_name)
+		{
+			for (const auto& obj : m_objects)
+			{
+				if (obj.name == new_object_name)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+
+		// #
 
 		std::vector<line_s>  m_circle_verts;
 		std::vector<angle_s> m_circle_verts_angles;
@@ -69,6 +126,8 @@ namespace components
 		void		draw_circle();
 
 		void		circle_get_coord_for_angle(float* coord, const float angle);
+
+		const list_object* get_random_weighted_object(const float rand);
 
 		void paint_frame();
 		static void on_frame();

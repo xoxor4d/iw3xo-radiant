@@ -305,7 +305,7 @@ namespace ggui
 						GET_GUI(ggui::entity_dialog)->toggle();
 					}
 
-					if (ImGui::MenuItem("Mesh Painter"/*, ggui::hotkey_dialog::get_hotkey_for_command("ViewEntityInfo").c_str()*/)) {
+					if (ImGui::MenuItem("Mesh Painter")) {
 						GET_GUI(ggui::mesh_painter_dialog)->toggle();
 					}
 
@@ -1541,6 +1541,10 @@ namespace ggui
 
 				if (ImGui::MenuItem("Noise Generator")) {
 					GET_GUI(ggui::vertex_edit_dialog)->toggle();
+				}
+
+				if (ImGui::MenuItem("Mesh Painter")) {
+					GET_GUI(ggui::mesh_painter_dialog)->toggle();
 				}
 
 				ImGui::EndMenu(); // Tools

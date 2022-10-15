@@ -52,6 +52,7 @@ namespace ggui
 		FX_EDITOR_MATERIAL = 12,
 		FX_EDITOR_MODEL = 13,
 		D3DBSP_LOAD = 20,
+		CUSTOM = 100,
 	};
 	
 	//#define mainframe_thiscall(return_val, addr)	\

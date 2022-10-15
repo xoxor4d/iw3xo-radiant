@@ -132,9 +132,10 @@ namespace components
 			{
 				renderer::R_AddLineCmd(static_cast<std::uint16_t>(m_circle_line_count), 4, 3, m_circle_verts[0].vert);
 
-				renderer::R_AddPointCmd(1, 8, 3, &random_point);
+				// visualize object tracing
+				/*renderer::R_AddPointCmd(1, 8, 3, &random_point);
 				renderer::R_AddLineCmd(1, 2, 3, random_point_trace_to_face.vert);
-				renderer::R_AddLineCmd(1, 2, 3, random_point_trace_to_upper.vert);
+				renderer::R_AddLineCmd(1, 2, 3, random_point_trace_to_upper.vert);*/
 			}
 		}
 	}
@@ -165,7 +166,56 @@ namespace components
 			return false;
 		}
 
+		// do not paint when something is being dragged/dropped
+		if (const auto data = imgui::GetDragDropPayload(); data)
+		{
+			return false;
+		}
+
 		return true;
+	}
+
+	/**
+	 * @brief		choose a random object based on weights
+	 * @param rand	a random value between 0 and 1
+	 * @return		a pointer to the object
+	 */
+	const mesh_painter::list_object* mesh_painter::get_random_weighted_object(const float rand)
+	{
+		if (!m_objects.empty())
+		{
+			float total_weight = 0.0f;
+
+			for (const auto& obj : m_objects)
+			{
+				if (obj.paint_weight == 0.0f)
+				{
+					continue;
+				}
+
+				total_weight += obj.paint_weight;
+			}
+
+			float start_value = 0;
+
+			//foreach(GameObject t in options)
+			for (const auto& obj : m_objects)
+			{
+				if (obj.paint_weight == 0.0f)
+				{
+					continue;
+				}
+
+				const float range = obj.paint_weight / total_weight;
+				if (rand > start_value && rand <= start_value + range)
+				{
+					return &obj;
+				}
+				start_value += range;
+			}
+		}
+
+		return nullptr;
 	}
 
 	/**
@@ -179,10 +229,13 @@ namespace components
 			return;
 		}
 
+		bool started_dragging = false;
+
 		// drag start
 		if (!m_drag_down && imgui::IsMouseDown(ImGuiMouseButton_Left))
 		{
 			m_drag_down = true;
+			started_dragging = true;
 
 			game::Select_Deselect(true);
 			game::Undo_ClearRedo();
@@ -190,160 +243,223 @@ namespace components
 			//game::Undo_AddBrushList_Selected();
 		}
 
-		// on drag
-		if (imgui::IsMouseDragging(ImGuiMouseButton_Left, m_drag_threshold))
+		const auto drag_delta = imgui::GetMouseDragDelta(ImGuiMouseButton_Left);
+
+		// on drag start or future dragging
+		// drag delta needs to be greater then 'm_drag_threshold'
+		if (started_dragging || fabs(drag_delta.x) >= m_drag_threshold || fabs(drag_delta.y) >= m_drag_threshold /*imgui::IsMouseDragPastThreshold(ImGuiMouseButton_Left, m_drag_threshold)*/)
 		{
-			game::trace_t cam_trace = {};
+			// reset drag delta so that the next move needs to reach the threshold again
+			imgui::ResetMouseDragDelta(ImGuiMouseButton_Left);
 
-			float x, y, z;
-			mesh_painter::random_point_on_circle(x, y, z);
-
-			random_point.xyz[0] = x;
-			random_point.xyz[1] = y;
-			random_point.xyz[2] = z;
-			random_point.color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
-
-			// TODO - only do trace 2 if trace 1 was valid - doh
-
-			bool trace_one_valid = false;
-			bool trace_two_valid = false;
-
-
-			// TODO
-
-			// generate a random number within a certain range
-			std::random_device	rd;
-			std::mt19937		gen(rd());
-			std::uniform_real_distribution<float> rd_scale(0.5f, 1.5f);
-			std::uniform_real_distribution<float> rd_angle(0.0f, 360.0f);
-			const float rnd_scale = rd_scale(gen);
-			const float rnd_angle = rd_angle(gen);
-
-			const float face_trace_dist = 60.0f;
-			const float upward_trace_dist = 30.0f;
-
-			// #
-			// check if point is valid (towards the initial face)
-
+			for (auto p = 0; p < m_paint_loop_count; p++)
 			{
-				game::vec3_t inv_face_normal = {};
-				utils::vector::scale(m_circle_normal, -1.0f, inv_face_normal);
+				game::trace_t cam_trace = {};
 
-				game::Test_Ray(random_point.xyz, inv_face_normal, 0x200, &cam_trace, 1);
+				float x, y, z;
+				mesh_painter::random_point_on_circle(x, y, z);
 
-				// from random point
-				utils::vector::copy(random_point.xyz, random_point_trace_to_face.vert[0].xyz);
-				random_point_trace_to_face.vert[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
+				random_point.xyz[0] = x;
+				random_point.xyz[1] = y;
+				random_point.xyz[2] = z;
+				random_point.color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
 
-				// point towards face
-				const float max_dist = cam_trace.dist > face_trace_dist ? face_trace_dist : cam_trace.dist;
-				utils::vector::scale(inv_face_normal, max_dist, random_point_trace_to_face.vert[1].xyz);
-				utils::vector::add(random_point.xyz, random_point_trace_to_face.vert[1].xyz, random_point_trace_to_face.vert[1].xyz);
-				random_point_trace_to_face.vert[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
+				// TODO - only do trace 2 if trace 1 was valid - doh
 
-				// valid if distance is smaller then X
-				if (cam_trace.dist < face_trace_dist)
+				bool trace_one_valid = false;
+				bool trace_two_valid = false;
+
+
+				// TODO
+
+
+
+				const float face_trace_dist = 60.0f;
+				const float upward_trace_dist = 30.0f;
+
+				// #
+				// check if point is valid (towards the initial face)
+
 				{
-					random_point.color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
-					random_point_trace_to_face.vert[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
-					random_point_trace_to_face.vert[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
+					game::vec3_t inv_face_normal = {};
+					utils::vector::scale(m_circle_normal, -1.0f, inv_face_normal);
 
-					trace_one_valid = true;
-				}
-			}
+					game::Test_Ray(random_point.xyz, inv_face_normal, 0x200, &cam_trace, 1);
 
-			// #
-			// check if we can trace to +Z above random point without hitting anything
+					// from random point
+					utils::vector::copy(random_point.xyz, random_point_trace_to_face.vert[0].xyz);
+					random_point_trace_to_face.vert[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
 
-			game::vec3_t model_spawn_point = {};
+					// point towards face
+					const float max_dist = cam_trace.dist > face_trace_dist ? face_trace_dist : cam_trace.dist;
+					utils::vector::scale(inv_face_normal, max_dist, random_point_trace_to_face.vert[1].xyz);
+					utils::vector::add(random_point.xyz, random_point_trace_to_face.vert[1].xyz, random_point_trace_to_face.vert[1].xyz);
+					random_point_trace_to_face.vert[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
 
-			{
-				game::Test_Ray(random_point.xyz, game::vec3_t(0.0f, 0.0f, 1.0f), 0x200, &cam_trace, 1);
-
-				auto& p_upper = random_point_trace_to_upper;
-
-				// from random point
-				utils::vector::copy(random_point.xyz, p_upper.vert[0].xyz);
-				p_upper.vert[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
-
-				// upwards trace point
-				const float max_dist = cam_trace.dist > upward_trace_dist ? upward_trace_dist : cam_trace.dist;
-				utils::vector::scale(game::vec3_t(0.0f, 0.0f, 1.0f), max_dist, p_upper.vert[1].xyz);
-				utils::vector::add(random_point.xyz, p_upper.vert[1].xyz, p_upper.vert[1].xyz);
-				p_upper.vert[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
-
-				// valid if distance was greater then X (nothing in the way)
-				if (cam_trace.dist > upward_trace_dist)
-				{
-					p_upper.vert[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
-					p_upper.vert[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
-
-					utils::vector::add(random_point.xyz, game::vec3_t(0.0f, 0.0f, upward_trace_dist), p_upper.vert[1].xyz);
-
-					trace_two_valid = true;
-
-					utils::vector::copy(p_upper.vert[1].xyz, model_spawn_point);
-				}
-			}
-
-			if (trace_one_valid && trace_two_valid)
-			{
-				const auto entity_gui = GET_GUI(ggui::entity_dialog);
-
-				// reset manual left mouse capture
-				ggui::dragdrop_reset_leftmouse_capture();
-				ggui::entity_dialog::addprop_helper_s no_undo = {};
-
-				game::Select_Deselect(true);
-
-
-				game::Test_Ray(model_spawn_point, game::vec3_t(0.0f, 0.0f, -1.0f), 0x200, &cam_trace, 1);
-
-				if ((cam_trace.brush || cam_trace.face) 
-					&& cam_trace.dist <= face_trace_dist + upward_trace_dist * 2.0f
-					&& utils::vector::length_squared(cam_trace.face_normal) > 0.0f)
-				{
-					game::vec3_t spawn_org = {};
-
-					// calculate hit origin
-					utils::vector::scale(game::vec3_t(0.0f, 0.0f, -1.0f), cam_trace.dist, spawn_org);
-					utils::vector::add(spawn_org, model_spawn_point, spawn_org);
-
-
-					if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+					// valid if distance is smaller then X
+					if (cam_trace.dist < face_trace_dist)
 					{
-						game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+						random_point.color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
+						random_point_trace_to_face.vert[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
+						random_point_trace_to_face.vert[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
+
+						trace_one_valid = true;
 					}
-
-					// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
-					// + do not add brush to undo lists
-					g_block_radiant_modeldialog = true;
-					game::CreateEntityFromName_DisableUndo = true;
-					game::CreateEntityFromName("misc_model");
-					game::CreateEntityFromName_DisableUndo = false;
-					g_block_radiant_modeldialog = false;
-
-					entity_gui->add_prop("model", "com_flower_pot01", &no_undo);
-					entity_gui->add_prop("modelscale", utils::va("%.2f", rnd_scale), &no_undo);
-
-					char prop_str_buf[64] = {};
-					if (sprintf_s(prop_str_buf, "%.3f %.3f %.3f", spawn_org[0], spawn_org[1], spawn_org[2]))
-					{
-						entity_gui->add_prop("origin", prop_str_buf, &no_undo);
-					}
-
-					entity_gui->add_prop("angles", utils::va("0 %.2f 0", rnd_angle), &no_undo);
-
-					game::AlignEntityToFace(game::g_edit_entity(), cam_trace.face_normal);
 				}
 
-				// only drop if trace hit something
-				//{
-				//	// CMainFrame::OnDropSelected
-				//	cdeclcall(void, 0x425BE0);
-				//}
+				// #
+				// check if we can trace to +Z above random point without hitting anything
 
-				game::Select_Deselect(true);
+				game::vec3_t model_spawn_point = {};
+
+				{
+					game::Test_Ray(random_point.xyz, game::vec3_t(0.0f, 0.0f, 1.0f), 0x200, &cam_trace, 1);
+
+					auto& p_upper = random_point_trace_to_upper;
+
+					// from random point
+					utils::vector::copy(random_point.xyz, p_upper.vert[0].xyz);
+					p_upper.vert[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
+
+					// upwards trace point
+					const float max_dist = cam_trace.dist > upward_trace_dist ? upward_trace_dist : cam_trace.dist;
+					utils::vector::scale(game::vec3_t(0.0f, 0.0f, 1.0f), max_dist, p_upper.vert[1].xyz);
+					utils::vector::add(random_point.xyz, p_upper.vert[1].xyz, p_upper.vert[1].xyz);
+					p_upper.vert[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
+
+					// valid if distance was greater then X (nothing in the way)
+					if (cam_trace.dist > upward_trace_dist)
+					{
+						p_upper.vert[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
+						p_upper.vert[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
+
+						utils::vector::add(random_point.xyz, game::vec3_t(0.0f, 0.0f, upward_trace_dist), p_upper.vert[1].xyz);
+
+						trace_two_valid = true;
+
+						utils::vector::copy(p_upper.vert[1].xyz, model_spawn_point);
+					}
+				}
+
+				if (trace_one_valid && trace_two_valid)
+				{
+					// #
+					// chose random model and settings
+
+					std::random_device	rd;
+					std::mt19937		gen(rd());
+					std::uniform_real_distribution<float> rd_object(0.0f, 1.0f);
+
+					if (const auto random_model = mesh_painter::get_random_weighted_object(rd_object(gen));
+						random_model)
+					{
+						const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
+						// reset manual left mouse capture
+						ggui::dragdrop_reset_leftmouse_capture();
+						ggui::entity_dialog::addprop_helper_s no_undo = {};
+
+						game::Select_Deselect(true);
+
+
+						game::Test_Ray(model_spawn_point, game::vec3_t(0.0f, 0.0f, -1.0f), 0x200, &cam_trace, 1);
+
+						if ((cam_trace.brush || cam_trace.face)
+							&& cam_trace.dist <= face_trace_dist + upward_trace_dist * 2.0f
+							&& utils::vector::length_squared(cam_trace.face_normal) > 0.0f)
+						{
+							game::vec3_t spawn_org = {};
+
+							// calculate hit origin
+							utils::vector::scale(game::vec3_t(0.0f, 0.0f, -1.0f), cam_trace.dist, spawn_org);
+							utils::vector::add(spawn_org, model_spawn_point, spawn_org);
+
+
+							if ((DWORD*)game::g_selected_brushes_next() == game::currSelectedBrushes)
+							{
+								game::CreateEntityBrush(0, 0, cmainframe::activewnd->m_pXYWnd);
+							}
+
+							// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
+							// + do not add brush to undo lists
+							g_block_radiant_modeldialog = true;
+							game::CreateEntityFromName_DisableUndo = true;
+							game::CreateEntityFromName("misc_model"); // takes ~ 15ms
+							game::CreateEntityFromName_DisableUndo = false;
+							g_block_radiant_modeldialog = false;
+
+							entity_gui->add_prop("model", random_model->name.c_str(), &no_undo);
+
+							if (random_model->random_size)
+							{
+								std::uniform_real_distribution<float> rd_scale(random_model->size_range[0], random_model->size_range[1]);
+								entity_gui->add_prop("modelscale", utils::va("%.2f", rd_scale(gen)), &no_undo);
+							}
+
+							// z_offset
+
+							if (random_model->z_offset != 0.0f)
+							{
+								game::vec3_t offset_along_dir = {};
+								utils::vector::scale(cam_trace.face_normal, random_model->z_offset, offset_along_dir);
+
+								utils::vector::add(spawn_org, offset_along_dir, spawn_org);
+							}
+
+							char prop_str_buf[64] = {};
+							if (sprintf_s(prop_str_buf, "%.3f %.3f %.3f", spawn_org[0], spawn_org[1], spawn_org[2]))
+							{
+								entity_gui->add_prop("origin", prop_str_buf, &no_undo);
+							}
+							
+
+							if (random_model->random_rotation)
+							{
+								std::uniform_real_distribution<float> rd_angle(0.0f, 360.0f);
+								entity_gui->add_prop("angles", utils::va("0 %.2f 0", rd_angle(gen)), &no_undo);
+							}
+
+							if (random_model->align_to_ground)
+							{
+								game::AlignEntityToFace(game::g_edit_entity(), cam_trace.face_normal);
+
+								// TODO! - very wrong (because 355 == -5 but 355 is greater 90 so X will be clamped to 90)
+								// => work with vectors
+
+								/*game::vec3_t ground_angles = {};
+								if (entity_gui->get_vec3_for_key_from_entity(reinterpret_cast<game::entity_s*>(game::g_edit_entity()), ground_angles, "angles"))
+								{
+									bool was_clamped = false;
+
+									if (fabs(ground_angles[0]) > random_model->max_align_to_ground_angle[0])
+									{
+										was_clamped = true;
+
+										ground_angles[0] = ground_angles[0] < 0.0f
+											? -random_model->max_align_to_ground_angle[0]
+											:  random_model->max_align_to_ground_angle[0];
+									}
+
+									if (fabs(ground_angles[2]) > random_model->max_align_to_ground_angle[1])
+									{
+										was_clamped = true;
+
+										ground_angles[2] = ground_angles[2] < 0.0f
+											? -random_model->max_align_to_ground_angle[1]
+											:  random_model->max_align_to_ground_angle[1];
+									}
+
+									if (was_clamped)
+									{
+										entity_gui->add_prop("angles", utils::va("%.3f %.3f %.3f", ground_angles[0], ground_angles[1], ground_angles[2]), &no_undo);
+									}
+								}*/
+							}
+						}
+
+						game::Select_Deselect(true);
+					}
+				}
 			}
 		}
 
