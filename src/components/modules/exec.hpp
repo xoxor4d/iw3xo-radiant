@@ -15,6 +15,7 @@ namespace components
 			std::function<void()> func;
 			std::chrono::milliseconds interval = {};
 			std::chrono::high_resolution_clock::time_point last_exec = {};
+			bool was_executed = false;
 		};
 
 		static void on_gui_recurring(const std::function<void()>& callback, const std::chrono::milliseconds delay = 0ms)

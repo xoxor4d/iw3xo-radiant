@@ -424,6 +424,24 @@ namespace game
 		}
 	}
 
+	void Select_ApplyMatrix_SelectedBrushes(bool snap /*ebx*/, float* rotate_axis, float degree, int unk)
+	{
+		const static uint32_t func_addr = 0x48FD10;
+		__asm
+		{
+			pushad;
+
+			push	unk;
+			push	degree;
+			push	rotate_axis;
+			mov     bl, snap;
+			call	func_addr;
+			add		esp, 12;
+
+			popad;
+		}
+	}
+
 	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/)
 	{
 		const static uint32_t func_addr = 0x47CDE0;
@@ -463,6 +481,19 @@ namespace game
 
 			call	func_addr;
 			add		esp, 8;
+			popad;
+		}
+	}
+
+	// turn on g_PrefsDlg->m_bNoClamp before calling to calc. midpoint without snapping
+	void Select_GetMid(float* midpoint /*esi*/)
+	{
+		const static uint32_t func_addr = 0x48FC70;
+		__asm
+		{
+			pushad;
+			mov		esi, midpoint;
+			call	func_addr;
 			popad;
 		}
 	}
@@ -661,6 +692,21 @@ namespace game
 					}
 				}
 			}
+		}
+	}
+
+	void Select_GetBounds(float* mins, float* maxs)
+	{
+		mins[0] = 131072.0f;
+		mins[1] = 131072.0f;
+		mins[2] = 131072.0f;
+		maxs[0] = -131072.0f;
+		maxs[1] = -131072.0f;
+		maxs[2] = -131072.0f;
+
+		FOR_ALL_SELECTED_BRUSHES(sb)
+		{
+			utils::vector::clamp_vec3(sb->def->mins, sb->def->maxs, mins, maxs);
 		}
 	}
 

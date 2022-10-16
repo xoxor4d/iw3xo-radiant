@@ -212,12 +212,42 @@ namespace game
 	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/);
 
 	void selection_rotate_axis(int axis, int deg);
+	void Select_ApplyMatrix_SelectedBrushes(bool snap /*ebx*/, float* rotate_axis, float degree, int unk);
 	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/);
 	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis);
+	void Select_GetMid(float* midpoint /*esi*/);
 	void Select_RotateFixedSize(game::entity_s* owner, brush_t_with_custom_def* def, float(*mid_point)[3]);
 
 	inline void Selection_Copy() { mainframe_thiscall(void, 0x4286B0); } // CMainFrame::OnEditCopybrush
 	inline void Selection_Paste() { mainframe_thiscall(void, 0x4286D0); } // CMainFrame::OnEditPastebrush
+
+	inline void clipboard_clear(cxywnd* gridwnd)
+	{
+
+		// unknown_libname_310 @ 0x593B2D
+		DWORD* g_Clipboard = reinterpret_cast<DWORD*>(0x25EB210);
+
+		// actually a thiscall but we can call it using fastcall if we pass a second unused argument ;)
+		utils::hook::call<void(__fastcall)(DWORD* pthis, void* unused, unsigned int a2, int a3)>(0x593B2D)(g_Clipboard, nullptr, 0, 0);
+
+		const auto clipformat = RegisterClipboardFormatA("RadiantClippings");
+
+		if (clipformat)
+		{
+			if (OpenClipboard(gridwnd->GetWindow()))
+			{
+				EmptyClipboard();
+
+				if (void* handle = GlobalAlloc(0x2042u, 0); handle)
+				{
+					SetClipboardData(clipformat, handle);
+					CloseClipboard();
+				}
+			}
+		}
+	}
+
+
 	inline auto Select_Deselect = reinterpret_cast<void (*)(bool)>(0x48E800);
 	inline auto Select_Delete = reinterpret_cast<void (*)()>(0x48E760);
 	inline auto Select_Invert = reinterpret_cast<void (*)()>(0x493F10);
@@ -236,6 +266,7 @@ namespace game
 	inline auto Patch_NaturalizeSelected = reinterpret_cast<void (*)(bool unk, bool cap, float x, float y)>(0x447FD0);
 	inline auto Patch_SetTexturing = reinterpret_cast<void (*)(float x, float y, int mode)>(0x446B60);
 	void Patch_CalcBounds(game::patchMesh_t* p, game::vec3_t& vMin, game::vec3_t& vMax);
+	void Select_GetBounds(float* mins, float* maxs);
 	void Patch_Adjust(game::patchMesh_t* p, bool insert, bool column, bool flag);
 	game::patchMesh_t* Patch_Duplicate(game::patchMesh_t* p /*edi*/);
 	game::selbrush_def_t* Patch_Cap(patchMesh_t* pm /*ecx*/, int bByColumn, int bFirst);
