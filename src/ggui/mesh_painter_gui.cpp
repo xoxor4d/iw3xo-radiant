@@ -50,48 +50,141 @@ namespace ggui
 		imgui::TextUnformatted("Listbox supports Drag & Drop (from Model Browser)");
 		imgui::PopFont();
 
-		const float listbox_height = 140.0f;
-		if (imgui::BeginListBox("##object_listbox", ImVec2(0, listbox_height)))
+
+
+
+		const float listbox_height = 180.0f;
+
+		imgui::PushStyleColor(ImGuiCol_TableHeaderBg, ImVec4(0.232f, 0.232f, 0.232f, 1.000f));
+		imgui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10, 0));
+		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4, 6));
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(9, 9));
+
+		if (ImGui::BeginTable("object_table", 2,
+			ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoBordersInBody | ImGuiTableFlags_NoSavedSettings /*| ImGuiTableFlags_RowBg*/,
+			ImVec2(-46.0f, listbox_height)))
 		{
-			if (m_object_list_selected_index >= painter->m_objects.size())
-			{
-				m_object_list_selected_index = 0;
-			}
+			//ImGui::TableSetupScrollFreeze(0, 1);
+			ImGui::TableSetupColumn("##enabled_disabled", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 28.0f);
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_NoClip, 200.0f);
+			//ImGui::TableHeadersRow();
 
-			for (std::uint32_t n = 0; n < painter->m_objects.size(); n++)
+			bool is_selected = false;
+			for (std::uint32_t row = 0; row < painter->m_objects.size(); row++)
 			{
-				const bool is_selected = (m_object_list_selected_index == n);
-				if (imgui::Selectable(painter->m_objects[n].name.c_str(), is_selected))
+				// unique widget id's for each row (we get collisions otherwise)
+				ImGui::PushID(row);
+				ImGui::TableNextRow();
+
+				for (auto column = 0; column < 2; column++)
 				{
-					m_object_list_selected_index = n;
+					ImGui::PushID(column);
+					ImGui::TableNextColumn();
 
-					// select model in modelselector if its open
-					const auto m_selector = GET_GUI(ggui::modelselector_dialog);
-
-					if (m_selector->is_active() && !m_selector->is_inactive_tab())
+					switch (column)
 					{
-						for (auto i = 0; i < m_selector->m_xmodel_filecount; i++)
+					case 0: // Enable/Disable
+						ImGui::Indent(6.0f);
+						ImGui::Checkbox("##enabled_flag", &painter->m_objects[row].enabled);
+						ImGui::Indent(-6.0f);
+						break;
+
+					case 1: // Name
+
+						is_selected = (m_object_list_selected_index == row);
+						if (imgui::Selectable(painter->m_objects[row].name.c_str(), is_selected))
 						{
-							if (m_selector->m_xmodel_filelist[i] == painter->m_objects[n].name)
+							m_object_list_selected_index = row;
+
+							// select model in modelselector if its open
+							const auto m_selector = GET_GUI(ggui::modelselector_dialog);
+
+							if (m_selector->is_active() && !m_selector->is_inactive_tab())
 							{
-								m_selector->m_xmodel_selection = i;
-								m_selector->m_preview_model_name = m_selector->m_xmodel_filelist[i];
-								break;
+								for (auto i = 0; i < m_selector->m_xmodel_filecount; i++)
+								{
+									if (m_selector->m_xmodel_filelist[i] == painter->m_objects[row].name)
+									{
+										m_selector->m_xmodel_selection = i;
+										m_selector->m_preview_model_name = m_selector->m_xmodel_filelist[i];
+										break;
+									}
+								}
+
 							}
+						} // enabled
+
+						// initial focus
+						if (is_selected)
+						{
+							imgui::SetItemDefaultFocus();
 						}
-						
+
+						break;
+
+					default:
+						__debugbreak();
 					}
+
+					// column
+					ImGui::PopID();
 				}
 
-				// initial focus
-				if (is_selected)
-				{
-					imgui::SetItemDefaultFocus();
-				}
+				// row
+				ImGui::PopID();
 			}
 
-			imgui::EndListBox();
+			ImGui::EndTable();
 		}
+
+		imgui::PopStyleVar(3);
+		imgui::PopStyleColor(2);
+
+
+		//if (imgui::BeginListBox("##object_listbox", ImVec2(0, listbox_height)))
+		//{
+		//	if (m_object_list_selected_index >= painter->m_objects.size())
+		//	{
+		//		m_object_list_selected_index = 0;
+		//	}
+
+		//	for (std::uint32_t n = 0; n < painter->m_objects.size(); n++)
+		//	{
+		//		const bool is_selected = (m_object_list_selected_index == n);
+		//		if (imgui::Selectable(painter->m_objects[n].name.c_str(), is_selected))
+		//		{
+		//			m_object_list_selected_index = n;
+
+		//			// select model in modelselector if its open
+		//			const auto m_selector = GET_GUI(ggui::modelselector_dialog);
+
+		//			if (m_selector->is_active() && !m_selector->is_inactive_tab())
+		//			{
+		//				for (auto i = 0; i < m_selector->m_xmodel_filecount; i++)
+		//				{
+		//					if (m_selector->m_xmodel_filelist[i] == painter->m_objects[n].name)
+		//					{
+		//						m_selector->m_xmodel_selection = i;
+		//						m_selector->m_preview_model_name = m_selector->m_xmodel_filelist[i];
+		//						break;
+		//					}
+		//				}
+		//				
+		//			}
+		//		} // enabled
+
+		//		// initial focus
+		//		if (is_selected)
+		//		{
+		//			imgui::SetItemDefaultFocus();
+		//		}
+		//	}
+
+		//	imgui::EndListBox();
+		//}
+
 
 		// #
 		// model selection drop target
@@ -192,7 +285,33 @@ namespace ggui
 			imgui::EndDisabled();
 		}
 
+		imgui::SetCursorPos(ImVec2(post_listbox_cursor.x, post_listbox_cursor.y + (imgui::GetFrameHeight() + 4.0f) * 2.5f));
+
+		if (imgui::Button("S##filepromt", ImVec2(28, imgui::GetFrameHeight())))
+		{
+			painter->write_list();
+		} TT("Save current list");
+
+		imgui::SetCursorPos(ImVec2(post_listbox_cursor.x, post_listbox_cursor.y + (imgui::GetFrameHeight() + 4.0f) * 3.5f));
+
+		if (imgui::Button("L##filepromt", ImVec2(28, imgui::GetFrameHeight())))
+		{
+			painter->load_list();
+		} TT("Load a list from disk");
+
 		imgui::SetCursorPosY(post_listbox_cursor.y + listbox_height + 8.0f);
+
+
+		if (painter->m_objects.empty())
+		{
+			const char* str = "Drop Model Browser elements here\n  or add them using the file dialog.";
+
+			imgui::SetCursorPosY(post_listbox_cursor.y + listbox_height * 0.4f);
+			imgui::SetCursorPosX(imgui::GetWindowContentRegionWidth() * 0.5f - imgui::CalcTextSize(str).x * 0.5f - 16.0f);
+			imgui::TextUnformatted(str);
+			imgui::SetCursorPosY(post_listbox_cursor.y + listbox_height + 8.0f);
+		}
+
 
 		SPACING(0.0f, 4.0f);
 

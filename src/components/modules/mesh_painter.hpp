@@ -47,6 +47,7 @@ namespace components
 				random_size = true;
 				random_rotation = true;
 				align_to_ground = true;
+				enabled = true;
 			}
 
 			list_object(const std::string& name_)
@@ -65,6 +66,7 @@ namespace components
 			bool random_size;
 			bool random_rotation;
 			bool align_to_ground;
+			bool enabled;
 		};
 
 		std::vector<list_object>  m_objects;
@@ -120,6 +122,9 @@ namespace components
 
 			m_active = !m_active;
 		}
+
+		void		write_list();
+		void		load_list();
 
 		void		set_circle_color(const float r, const float g, const float b, const float a);
 		void		random_point_on_circle(float& x, float& y, float& z);
