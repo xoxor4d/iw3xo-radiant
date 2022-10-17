@@ -162,7 +162,7 @@ namespace ggui
 		ggui_module() = default;
 		virtual ~ggui_module() = default;
 		virtual bool gui() { return false; }
-		virtual void on_init() {}
+		virtual void on_init() {} // called from gui::render_loop() after imgui init
 		virtual void on_open() {}
 		virtual void on_close() {}
 
@@ -174,12 +174,6 @@ namespace ggui
 		// called each frame :: components::gui::render_loop()
 		void frame()
 		{
-			if (!this->is_gui_initiated())
-			{
-				on_init();
-				this->set_gui_initiated();
-			}
-
 			if (is_active())
 			{
 				if (ggui::m_ggui_second_frame && this->is_bring_to_front_pending())

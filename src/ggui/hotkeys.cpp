@@ -813,7 +813,8 @@ namespace ggui
 	void hotkey_dialog::hooks()
 	{
 		// replace hardcoded hotkeys with our own (ini)
-		utils::hook(0x420A4F, hotkey_dialog::load_commandmap, HOOK_CALL).install()->quick();
+		// load_commandmap now called from gui::render_loop() after all gui's are initiated
+		utils::hook::nop(0x420A4F, 5); //utils::hook(0x420A4F, hotkey_dialog::load_commandmap, HOOK_CALL).install()->quick();
 
 		// load/skip the original commandmap (depends if iw3r_hotkeys.ini exists or not)
 		utils::hook(0x4210BF, hotkey_dialog::load_default_commandmap, HOOK_CALL).install()->quick();

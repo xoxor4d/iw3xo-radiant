@@ -349,6 +349,19 @@ namespace components
 			{
 				imgui_init_czwnd();
 
+				// optional init function for each module
+				for (const auto& module : ggui::loader::get_modules())
+				{
+					if (module && !module->is_gui_initiated())
+					{
+						module->on_init();
+						module->set_gui_initiated();
+					}
+				}
+
+				// load command map after gui init because gui's might add hotkeys
+				ggui::hotkey_dialog::load_commandmap();
+
 				// allow 1 frame to pass
 				return;
 			}

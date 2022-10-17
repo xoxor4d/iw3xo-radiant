@@ -115,13 +115,13 @@ namespace components
 									auto& obj = painter->m_objects.back();
 
 									obj.enabled = atoi(args[1].c_str());
-									obj.paint_weight = atof(args[2].c_str());
+									obj.paint_weight = static_cast<float>(atof(args[2].c_str()));
 									obj.random_rotation = atoi(args[3].c_str());
 									obj.align_to_ground = atoi(args[4].c_str());
-									obj.z_offset = atof(args[5].c_str());
+									obj.z_offset = static_cast<float>(atof(args[5].c_str()));
 									obj.random_size = atoi(args[6].c_str());
-									obj.size_range[0] = atof(args[7].c_str());
-									obj.size_range[1] = atof(args[8].c_str());
+									obj.size_range[0] = static_cast<float>(atof(args[7].c_str()));
+									obj.size_range[1] = static_cast<float>(atof(args[8].c_str()));
 								}
 							}
 						}
