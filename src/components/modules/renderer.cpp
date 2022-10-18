@@ -1296,44 +1296,64 @@ namespace components
 				if (has_spec && has_normal)
 				{
 					bool has_scroll = false;
-					if(state->material->techniqueSet && state->material->techniqueSet->techniques[5])
+					bool has_flag = false;
+
+					if (state->material->techniqueSet && state->material->techniqueSet->techniques[5])
 					{
 						has_scroll = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "scroll");
-					}
-	
-					if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_scroll_dtex" : "radiant_fakesun_dtex", 1); // fakesun_normal_dtex
-									tech)
-					{
-						state->technique = tech;
 
-						// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
-						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
-										image && image->texture.data)
+						if (!has_scroll)
 						{
-							game::R_SetSampler(0, state, 1, (char)114, image);
+							has_flag = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "flag");
+						}
+					}
+
+					if (!has_flag)
+					{
+						if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_scroll_dtex" : "radiant_fakesun_dtex", 1); // fakesun_normal_dtex
+							tech)
+						{
+							state->technique = tech;
+
+							// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
+							if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+								image && image->texture.data)
+							{
+								game::R_SetSampler(0, state, 1, (char)114, image);
+							}
 						}
 					}
 				}
 				else if (!has_spec && has_normal)
 				{
 					bool has_scroll = false;
+					bool has_flag = false;
+
 					if (state->material->techniqueSet && state->material->techniqueSet->techniques[5])
 					{
 						has_scroll = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "scroll");
+
+						if (!has_scroll)
+						{
+							has_flag = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "flag");
+						}
 					}
 
-					if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_no_spec_scroll_dtex" : "radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
-									tech)
+					if (!has_flag)
 					{
-						state->technique = tech;
-
-						// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
-						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
-										image && image->texture.data)
+						if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_no_spec_scroll_dtex" : "radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
+							tech)
 						{
-							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
-							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
-								(0x538D70)(0, state, 1, 114, image);
+							state->technique = tech;
+
+							// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
+							if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+								image && image->texture.data)
+							{
+								// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
+								utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
+									(0x538D70)(0, state, 1, 114, image);
+							}
 						}
 					}
 				}
