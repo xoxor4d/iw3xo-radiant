@@ -292,6 +292,7 @@ namespace dvars
 		ggui::vertex_edit_dialog::register_dvars();
 		ggui::camera_settings_dialog::register_dvars();
 		ggui::prefab_preview_dialog::register_dvars();
+		ggui::toolbox_dialog::register_dvars();
 
 		fx_system::register_dvars();
 

@@ -2,6 +2,8 @@
 
 namespace components
 {
+	patches* patches::p_this = nullptr;
+
 	void cefn_undo_addbrushlist()
 	{
 		if (!game::CreateEntityFromName_DisableUndo)
@@ -113,6 +115,8 @@ namespace components
 
 	patches::patches()
 	{
+		patches::p_this = this;
+
 		// add ability to disable undo_add/endbrushlist in 'CreateEntityFromName' by using helper bool 'CreateEntityFromName_DisableUndo'
 		utils::hook(0x465D3E, create_entity_from_name_stub01, HOOK_JUMP).install()->quick();
 		utils::hook(0x466275, create_entity_from_name_stub02, HOOK_JUMP).install()->quick();
@@ -153,7 +157,7 @@ namespace components
 					game::DeleteKey(w->firstActive->epairs, "origin");
 				}
 			}
-		}, 5000ms);
+		}, 30000ms);
 	}
 
 	patches::~patches()

@@ -22,7 +22,7 @@ namespace components
 		utils::replace(mapname, "/", "\\");
 		mapname = mapname.substr(mapname.find_last_of("\\") + 1);
 
-		if(!time_init || !is_editing_prefab && last_map_name != mapname)
+		if (!time_init || !is_editing_prefab && last_map_name != mapname)
 		{
 			time_init = true;
 			last_map_name = mapname;
@@ -44,6 +44,16 @@ namespace components
 		else if (is_editing_prefab)
 		{
 			discord_presence.state = utils::va("Editing prefab: %s", mapname.c_str());
+		}
+		else
+		{
+			const auto& tw = components::time_wasted::get();
+
+			if (const auto& entry = tw->get_entry(tw->get_map_string());
+				entry)
+			{
+				discord_presence.state = utils::va("Total time: %dh : %dm", entry->time / 60, entry->time % 60);
+			}
 		}
 
 		discord_presence.details = last_map_name.c_str();

@@ -70,6 +70,7 @@ namespace game
 		extern float debug_sundir_length;
 
 		extern bool is_loading_map;
+		extern bool in_shutdown;
 
 		// update check
 		extern std::string gh_update_releases_json;

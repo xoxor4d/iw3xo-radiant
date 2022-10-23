@@ -1904,7 +1904,7 @@ namespace ggui
 	}
 
 
-	void toolbox_dialog::hooks()
+	void toolbox_dialog::register_dvars()
 	{
 		dvars::gui_props_toolbox = dvars::register_bool(
 			/* name		*/ "gui_props_toolbox",

@@ -1959,10 +1959,13 @@ namespace ggui
 			}*/
 
 			const auto process = components::process::get();
+			const bool active_proc = process->is_active();
 
-			if(process->is_active())
+			const auto menubar_height = ImGui::GetItemRectSize().y;
+			float proc_str_width = 0.0f;
+
+			if (active_proc)
 			{
-				const auto menubar_height = ImGui::GetItemRectSize().y;
 				const auto tb = GET_GUI(ggui::toolbar_dialog);
 
 				ImVec4 toolbar_button_background_active = ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector);
@@ -1976,11 +1979,11 @@ namespace ggui
 							const float progress_width = 200.0f;
 
 							const char* proc_str = process->m_indicator_str.empty() ? "Spawning Process" : process->m_indicator_str.c_str();
-							const float proc_str_width = ImGui::CalcTextSize(proc_str).x;
+							proc_str_width = ImGui::CalcTextSize(proc_str).x + progress_width;
 
 							// not using a group to calculate the widget size because it flickers upon text change (frame delay)
 
-							ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height - progress_width);
+							ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height);
 
 							static bool hov_active_proc;
 							if (tb->image_button_label(proc_str
@@ -2013,11 +2016,11 @@ namespace ggui
 							ImVec4 spinner_color = ImVec4(0.49f, 0.2f, 0.2f, 1.0f);
 
 							const char* proc_str = process->m_indicator_str.empty() ? "Spawning Process" : process->m_indicator_str.c_str();
-							const float proc_str_width = ImGui::CalcTextSize(proc_str).x;
+							proc_str_width = ImGui::CalcTextSize(proc_str).x + 32.0f;
 
 							// not using a group to calculate the widget size because it flickers upon text change (frame delay)
 
-							ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height - 32.0f);
+							ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height);
 
 							static bool hov_active_proc;
 							if (tb->image_button_label(proc_str
@@ -2040,7 +2043,23 @@ namespace ggui
 				}
 			}
 
-			ImGui::EndMenuBar();
+			if (!game::glob::is_loading_map)
+			{
+				const auto& tw = components::time_wasted::get();
+
+				if (const auto& entry = tw->get_entry(tw->get_map_string());
+					entry)
+				{
+					const char* timer_str = utils::va("Time wasted: %dh : %dm", entry->time / 60, entry->time % 60);
+					const float str_width = imgui::CalcTextSize(timer_str).x;
+					imgui::SameLine(imgui::GetWindowWidth() - proc_str_width - str_width - menubar_height - (proc_str_width != 0.0f ? 20.0f : 0.0f));
+
+					imgui::SetCursorPosY(imgui::GetCursorPosY() - 3.0f);
+					imgui::TextUnformatted(timer_str);
+				}
+			}
+
+			imgui::EndMenuBar();
 		}
 
 		ggui::context_menu_style_end();

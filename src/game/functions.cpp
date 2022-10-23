@@ -25,6 +25,7 @@ namespace game
 		float debug_sundir_length = 500.0f;
 
 		bool is_loading_map = false;
+		bool in_shutdown = false;
 
 
 		// update check

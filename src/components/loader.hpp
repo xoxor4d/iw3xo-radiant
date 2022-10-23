@@ -45,3 +45,4 @@ namespace components
 #include "modules/reflectionprobes.hpp"
 #include "modules/renderer.hpp"
 #include "modules/remote_net.hpp"
+#include "modules/time_wasted.hpp"

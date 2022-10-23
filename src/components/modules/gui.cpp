@@ -936,7 +936,6 @@ namespace components
 		ggui::layer_dialog::hooks();
 		ggui::preferences_dialog::hooks();
 		ggui::surface_dialog::hooks();
-		ggui::toolbox_dialog::hooks();
 		ggui::vertex_edit_dialog::hooks();
 
 		command::register_command("demo"s, [](std::vector<std::string> args)

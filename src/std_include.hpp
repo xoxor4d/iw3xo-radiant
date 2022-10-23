@@ -121,6 +121,7 @@
 #include "utils/function.hpp"
 #include "utils/vector.hpp"
 #include "utils/spawnvars.hpp"
+#include "utils/filesystem.hpp"
 
 #include "common/afx.hpp"
 #include "game/functions.hpp"

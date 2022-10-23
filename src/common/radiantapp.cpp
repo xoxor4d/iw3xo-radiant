@@ -69,6 +69,8 @@ void radiantapp::on_create_client()
 // called from cmainframe::on_destroy
 void radiantapp::on_shutdown()
 {
+	game::glob::in_shutdown = true;
+
 	// restore states filter states
 	if (components::gameview::p_this->get_all_geo_state())		components::gameview::p_this->toggle_all_geo(false);
 	if (components::gameview::p_this->get_all_ents_state())		components::gameview::p_this->toggle_all_entities(false);

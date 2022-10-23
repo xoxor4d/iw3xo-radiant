@@ -58,7 +58,7 @@ namespace ggui
 		static void center_horz_begin(const float group_width, float indent = 4.0f);
 		static void center_horz_end(float& group_width);
 
-		static void hooks();
+		static void register_dvars();
 
 	private:
 		void  register_child(const std::string& _child_name, const std::function<void()>& _callback);
