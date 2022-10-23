@@ -43,7 +43,7 @@ If you want to buy me a coffee:
 
 ![image](readme/feat_ui.gif)
 
-![](https://xoxor4d.github.io/assets/img/iw3xo-radiant/gif/feat_mesh_painter.gif)
+![image](readme/feat_mesh_painter.gif)
 
 ![](https://xoxor4d.github.io/assets/img/iw3xo-radiant/physx/prefab_physics_preview.gif)
 
@@ -212,10 +212,10 @@ ___
 ![image](https://user-images.githubusercontent.com/45299104/146609445-e11ae289-641e-4979-915b-bbb0c6b4942b.jpg)
 
 ### Effect Browser and Playback
-![image](https://xoxor4d.github.io/assets/img/iw3xo-radiant/gif/feat_effect_browser.gif)
+![image](readme/feat_effect_browser.gif)
 
 ### In-Editor cod4 based movement with bouncing :>
-![image](https://xoxor4d.github.io/assets/img/iw3xo-radiant/gif/feat_movement.gif)
+![image](readme/feat_movement.gif)
 <br>
 
 ### Effects Editor
