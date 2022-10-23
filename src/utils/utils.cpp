@@ -72,6 +72,11 @@ namespace utils
 
 		return (char)pack;
 	}
+
+	float unpack_float(const char from)
+	{
+		return static_cast<float>( static_cast<std::uint8_t>(from) ) * 0.0039215689f;
+	}
 	
 	// ----------------
 	

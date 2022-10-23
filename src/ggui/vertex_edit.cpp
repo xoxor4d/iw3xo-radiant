@@ -71,19 +71,33 @@ namespace ggui
 			"Select vertices to enable feature");
 
 		static float vertex_edit_color[4] = {};
+		static bool vertex_overwrite_color = true;
+
 		const bool enable_vert_color_edit = game::g_qeglobals->d_num_move_points > 0;
 
 		ImGui::BeginDisabled(!enable_vert_color_edit);
 		{
+			//imgui::Checkbox("Overwrite Vertex Color", &vertex_overwrite_color);
 			if (ImGui::ColorPicker4("Vertex Color", vertex_edit_color, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_DisplayRGB))
 			{
 				for (auto pt = 0; pt < game::g_qeglobals->d_num_move_points; pt++)
 				{
 					const auto vert = game::g_qeglobals->d_move_points[pt];
-					vert->vert_color.r = utils::pack_float(vertex_edit_color[0]);
-					vert->vert_color.g = utils::pack_float(vertex_edit_color[1]);
-					vert->vert_color.b = utils::pack_float(vertex_edit_color[2]);
-					vert->vert_color.a = utils::pack_float(vertex_edit_color[3]);
+
+					if (vertex_overwrite_color)
+					{
+						vert->vert_color.r = utils::pack_float(vertex_edit_color[0]);
+						vert->vert_color.g = utils::pack_float(vertex_edit_color[1]);
+						vert->vert_color.b = utils::pack_float(vertex_edit_color[2]);
+						vert->vert_color.a = utils::pack_float(vertex_edit_color[3]);
+					}
+					else
+					{
+						vert->vert_color.r = utils::pack_float(vertex_edit_color[0]);
+						vert->vert_color.g = utils::pack_float(vertex_edit_color[1]);
+						vert->vert_color.b = utils::pack_float(vertex_edit_color[2]);
+						vert->vert_color.a = utils::pack_float(vertex_edit_color[3]);
+					}
 				}
 
 				FOR_ALL_SELECTED_BRUSHES(sb)
