@@ -347,7 +347,14 @@ void set_scene_params(const float* origin, float* axis, game::GfxMatrix* project
 
 	memcpy(&view_parms->projectionMatrix, projection, sizeof(view_parms->projectionMatrix));
 	view_parms->depthHackNearClip = projection->m[3][2];
-	
+
+
+	const auto fov_y = static_cast<float>(tan(60.0 * 0.01745329238474369 * 0.5) * 0.75);
+	const auto fov_x = static_cast<float>(static_cast<double>(fov_y) * (static_cast<double>(cfxwnd::get()->m_width) / static_cast<double>(cfxwnd::get()->m_height)));
+
+	// R_SetupProjection
+	utils::hook::call<void(__cdecl)(game::GfxMatrix*, float, float, float)>(0x4A78E0)(&view_parms->projectionMatrix, fov_x, fov_y, 4.0f);
+
 	game::MatrixMultiply44(view_parms, &view_parms->projectionMatrix, &view_parms->viewProjectionMatrix);
 	game::MatrixInverse44(&view_parms->viewProjectionMatrix, &view_parms->inverseViewProjectionMatrix);
 
@@ -366,8 +373,6 @@ void set_scene_params(const float* origin, float* axis, game::GfxMatrix* project
 		const float white[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 		game::R_Clear(6, white, 1.0f, false);
 	}
-
-
 
 	// a bit of R_RenderScene
 
@@ -392,6 +397,24 @@ void set_scene_params(const float* origin, float* axis, game::GfxMatrix* project
 
 	// needed for debug plumes (3D text in space)
 	game::rg->debugViewParms = view_parms;
+
+	if (components::d3dbsp::Com_IsBspLoaded())
+	{
+		// R_SetupWorldSurfacesDpvs
+		utils::hook::call<void(__cdecl)(game::GfxViewParms*)>(0x528470)(view_parms);
+
+		// R_SetViewFrustumPlanes
+		utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x527C90)(viewInfo);
+
+		// R_CellForPoint
+		const int cell_index = utils::hook::call<int(__cdecl)(game::GfxViewParms*)>(0x522FE0)(view_parms);
+
+		// R_InitialEntityCulling
+		utils::hook::call<void(__cdecl)(int)>(0x525410)(cell_index);
+
+		// R_AddWorldSurfacesDpvs
+		utils::hook::call<void(__cdecl)(game::GfxViewParms*, int)>(0x527DB0)(view_parms, cell_index);
+	}
 
 	// R_DrawAllSceneEnt - add/draw effect xmodels 
 	utils::hook::call<void(__cdecl)(game::GfxViewInfo*)>(0x523E50)(viewInfo);

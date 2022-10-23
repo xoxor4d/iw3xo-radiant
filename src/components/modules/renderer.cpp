@@ -2844,7 +2844,7 @@ namespace components
 			}			
 
 			// impl. RB_DrawSun? :p
-			if (dvars::r_draw_bsp->current.enabled)
+			if (!renderer::is_rendering_effectswnd() && dvars::r_draw_bsp->current.enabled)
 			{
 				R_DrawLights(&cmdBuf, viewInfo); // fx lights
 			}
