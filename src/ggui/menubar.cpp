@@ -1547,6 +1547,8 @@ namespace ggui
 					GET_GUI(ggui::mesh_painter_dialog)->toggle();
 				}
 
+				SEPERATORV(0);
+
 				if (ImGui::MenuItem("PhysX Movement", ggui::hotkey_dialog::get_hotkey_for_command("physx_movement").c_str())) {
 					components::physx_impl::spawn_character();
 				}
