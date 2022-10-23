@@ -717,7 +717,7 @@ namespace components
 		{
 			// #
 			// 2D: set required shader constants for backend passes
-			if(renderer::is_rendering_camerawnd() && source->viewMode == game::VIEW_MODE_2D)
+			if (renderer::is_rendering_camerawnd() && source->viewMode == game::VIEW_MODE_2D)
 			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
@@ -943,7 +943,7 @@ namespace components
 			}
 
 			// camera - fake sun shader - bsp
-			if (renderer::is_rendering_camerawnd())
+			if (renderer::is_rendering_camerawnd() || renderer::is_rendering_effectswnd())
 			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
