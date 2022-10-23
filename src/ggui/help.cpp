@@ -21,6 +21,7 @@ namespace ggui
 				BULLET_LINK("Prefab from selection and stamping", "https://xoxor4d.github.io/tutorials/iw3xradiant-prefab/");
 				BULLET_LINK("Live Link", "https://xoxor4d.github.io/tutorials/iw3xradiant-livelink/");
 				BULLET_LINK("Extend/Extrude Brushes to nearby faces", "https://xoxor4d.github.io/tutorials/iw3xradiant-brush-face-extending/");
+				BULLET_LINK("Mesh Painting", "https://xoxor4d.github.io/tutorials/iw3xradiant-mesh-painting/");
 
 				ImGui::TreePop();
 			}
@@ -50,10 +51,10 @@ namespace ggui
 			{
 				BULLET_LINK("Effects with enabled physics and debug data", "https://xoxor4d.github.io/tutorials/iw3xradiant-physx-effects/");
 				BULLET_LINK("Enable physics on prefabs", "https://xoxor4d.github.io/tutorials/iw3xradiant-physx-prefabs/");
+				BULLET_LINK("Character Movement", "https://xoxor4d.github.io/tutorials/iw3xradiant-physx-movement/");
 				ImGui::TreePop();
 			}
 
-			
 			SPACING(0.0f, 8.0f);
 
 			ImGui::End();
