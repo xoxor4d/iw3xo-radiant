@@ -48,6 +48,7 @@ namespace components
 				random_rotation = true;
 				align_to_ground = true;
 				enabled = true;
+				//is_prefab = false;
 			}
 
 			list_object(const std::string& name_)
@@ -67,6 +68,7 @@ namespace components
 			bool random_rotation;
 			bool align_to_ground;
 			bool enabled;
+			//bool is_prefab;
 		};
 
 		std::vector<list_object>  m_objects;

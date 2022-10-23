@@ -47,7 +47,7 @@ namespace ggui
 		SPACING(0.0f, 4.0f);
 
 		imgui::PushFontFromIndex(REGULAR_14PX);
-		imgui::TextUnformatted("Listbox supports Drag & Drop (from Model Browser)");
+		imgui::TextUnformatted("Listbox supports Drag & Drop (from Model/Prefab Browser)");
 		imgui::PopFont();
 
 
@@ -191,13 +191,29 @@ namespace ggui
 
 		if (imgui::BeginDragDropTarget())
 		{
+			const auto m_selector = GET_GUI(ggui::modelselector_dialog);
+
 			if (imgui::AcceptDragDropPayload("MODEL_SELECTOR_ITEM"))
 			{
-				const auto m_selector = GET_GUI(ggui::modelselector_dialog);
-
 				if (!painter->list_object_exists(m_selector->m_preview_model_name))
 				{
 					painter->m_objects.emplace_back(m_selector->m_preview_model_name);
+				}
+				else
+				{
+					imgui::Toast(ImGuiToastType_Info, "Mesh Painter", "Object is already part of the list!");
+				}
+			}
+
+			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
+			{
+				const auto payload = imgui::GetDragDropPayload();
+				const std::string prefab_path = std::string(static_cast<const char*>(payload->Data), payload->DataSize);
+
+				if (!painter->list_object_exists(prefab_path))
+				{
+					painter->m_objects.emplace_back(prefab_path);
+					//painter->m_objects.back().is_prefab = true;
 				}
 				else
 				{
@@ -230,15 +246,27 @@ namespace ggui
 				{
 					const auto dlg = GET_GUI(ggui::file_dialog);
 
-					const std::string replace_path = "raw\\xmodel\\";
+					const std::string xmodel_path = "raw\\xmodel\\";
+					const std::string mapsource_path = "map_source\\";
 
-					if (dlg->get_path_result().contains(replace_path))
+					std::string loc_filepath;
+
+					if (dlg->get_path_result().contains(xmodel_path))
 					{
-						std::string loc_filepath = dlg->get_path_result().substr(
-							dlg->get_path_result().find(replace_path) + replace_path.length());
+						loc_filepath = dlg->get_path_result().substr(
+							dlg->get_path_result().find(xmodel_path) + xmodel_path.length());
 
 						utils::replace(loc_filepath, "\\", "/");
 
+					}
+					else if (dlg->get_path_result().contains(mapsource_path))
+					{
+						loc_filepath = dlg->get_path_result().substr(
+							dlg->get_path_result().find(mapsource_path) + mapsource_path.length());
+					}
+
+					if (!loc_filepath.empty())
+					{
 						const auto& painter = components::mesh_painter::get();
 
 						if (!painter->list_object_exists(loc_filepath))
@@ -304,7 +332,7 @@ namespace ggui
 
 		if (painter->m_objects.empty())
 		{
-			const char* str = "Drop Model Browser elements here\n  or add them using the file dialog.";
+			const char* str = "Drop Model/Prefab Browser elements here\n          or add them using the file dialog.";
 
 			imgui::SetCursorPosY(post_listbox_cursor.y + listbox_height * 0.4f);
 			imgui::SetCursorPosX(imgui::GetWindowContentRegionWidth() * 0.5f - imgui::CalcTextSize(str).x * 0.5f - 16.0f);
@@ -319,6 +347,7 @@ namespace ggui
 		if (!painter->m_objects.empty())
 		{
 			auto& obj = painter->m_objects[m_object_list_selected_index];
+			const bool is_prefab = obj.name.starts_with("prefabs\\");
 
 			imgui::PushFontFromIndex(BOLD_18PX);
 			imgui::TextUnformatted("Per Object Settings:");
@@ -335,11 +364,16 @@ namespace ggui
 
 			SPACING(0.0f, 4.0f);
 
-			imgui::Checkbox("Random Size", &obj.random_size);
-			imgui::BeginDisabled(!obj.random_size);
+			imgui::BeginDisabled(is_prefab);
 			{
-				imgui::SetNextItemWidth(per_object_settings_width);
-				imgui::DragFloat2("Size Range", obj.size_range, 0.005f, 0.1f, 100.0f, "%.2f"); TT("min <-> max size of object");
+				imgui::Checkbox("Random Size", &obj.random_size);
+				imgui::BeginDisabled(!obj.random_size);
+				{
+					imgui::SetNextItemWidth(per_object_settings_width);
+					imgui::DragFloat2("Size Range", obj.size_range, 0.005f, 0.1f, 100.0f, "%.2f"); TT("min <-> max size of object");
+					imgui::EndDisabled();
+				}
+
 				imgui::EndDisabled();
 			}
 
