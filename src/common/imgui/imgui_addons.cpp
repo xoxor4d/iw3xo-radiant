@@ -1276,7 +1276,7 @@ namespace ImGui
 		ImGui::EndGroup();
 	}
 
-	bool InputScalarDir(const char* label, ImGuiDataType data_type, void* p_data, int* dir, void* p_step, const void* p_step_fast, bool display_p_step, const char* format, ImGuiInputTextFlags flags)
+	bool InputScalarDir(const char* label, ImGuiDataType data_type, void* p_data, int* dir, void* p_step, const void* p_step_fast, bool display_p_step, const char* format, ImGuiInputTextFlags flags, bool disable_input_text)
 	{
 		if (GetCurrentWindow()->SkipItems)
 		{
@@ -1311,12 +1311,15 @@ namespace ImGui
 			BeginGroup(); // The only purpose of the group here is to allow the caller to query item data e.g. IsItemActive()
 			PushID(label);
 
-			SetNextItemWidth(ImMax(68.0f, CalcItemWidth() - (button_size + style.ItemInnerSpacing.x) * 2 - dragfloat_size + style.ItemInnerSpacing.x));
-			
-			if (InputText("", buf, IM_ARRAYSIZE(buf), flags)) // PushId(label) + "" gives us the expected ID from outside point of view
+			if (!disable_input_text)
 			{
-				//value_changed = DataTypeApplyOpFromText(buf, g.InputTextState.InitialTextA.Data, data_type, p_data, format);
-				value_changed = DataTypeApplyFromText(buf, data_type, p_data, format);
+				SetNextItemWidth(ImMax(68.0f, CalcItemWidth() - (button_size + style.ItemInnerSpacing.x) * 2 - dragfloat_size + style.ItemInnerSpacing.x));
+
+				if (InputText("", buf, IM_ARRAYSIZE(buf), flags)) // PushId(label) + "" gives us the expected ID from outside point of view
+				{
+					//value_changed = DataTypeApplyOpFromText(buf, g.InputTextState.InitialTextA.Data, data_type, p_data, format);
+					value_changed = DataTypeApplyFromText(buf, data_type, p_data, format);
+				}
 			}
 
 			// Step buttons
@@ -1324,7 +1327,11 @@ namespace ImGui
 			style.FramePadding.x = style.FramePadding.y;
 			ImGuiButtonFlags button_flags = ImGuiButtonFlags_Repeat | ImGuiButtonFlags_DontClosePopups;
 
-			SameLine(0, style.ItemInnerSpacing.x);
+			if (!disable_input_text)
+			{
+				SameLine(0, style.ItemInnerSpacing.x);
+			}
+			
 			if (ButtonEx("-", ImVec2(button_size, button_size), button_flags))
 			{
 				DataTypeApplyOp(data_type, '-', p_data, p_data, g.IO.KeyCtrl && p_step_fast ? p_step_fast : p_step);
@@ -1347,7 +1354,7 @@ namespace ImGui
 				}
 			}
 
-			if(display_p_step)
+			if (display_p_step)
 			{
 				SameLine(0, style.ItemInnerSpacing.x);
 
