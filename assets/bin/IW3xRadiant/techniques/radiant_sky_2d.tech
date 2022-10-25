@@ -1,0 +1,15 @@
+{
+	stateMap "default";
+
+	vertexShader 3.0 "radiant_sky_2d"
+	{
+	}
+
+	pixelShader 3.0 "radiant_sky_2d"
+	{
+		skyMapSampler = material.colorMap;
+	}
+
+	vertex.position = code.position;
+	vertex.texcoord[0] = code.texcoord[0];
+}

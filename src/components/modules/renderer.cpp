@@ -1460,7 +1460,7 @@ namespace components
 	{
 		bool is_filmtweak_tech = false;
 
-		if(renderer::is_rendering_camerawnd())
+		if (renderer::is_rendering_camerawnd())
 		{
 			// filmtweaks :: using pixelCostColorCodeMaterial as a proxy
 			if (utils::string_equals(state->material->info.name, "pixel_cost_color_code"))
@@ -1469,9 +1469,23 @@ namespace components
 				if (const auto	tech = Material_RegisterTechnique("radiant_filmtweaks", 1);
 								tech)
 				{
-					// allows us to reload the shader using the reload_shaders command
+					// technique and shader can be reloaded with using the reload_shaders command
 					state->technique = tech;
 					is_filmtweak_tech = true;
+				}
+			}
+		}
+
+		if (renderer::is_rendering_texturewnd())
+		{
+			if (state->technique->name == "sky"s)
+			{
+				// properly display sky materials
+				if (const auto	tech = Material_RegisterTechnique("radiant_sky_2d", 1);
+								tech)
+				{
+					// technique and shader can be reloaded with using the reload_shaders command
+					state->technique = tech;
 				}
 			}
 		}
