@@ -1162,6 +1162,12 @@ namespace ggui
 					ImGui::EndMenu(); // Scale
 				}
 
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Guizmo - World-Local", ggui::hotkey_dialog::get_hotkey_for_command("guizmo_world_local").c_str(), ggui::camera_guizmo::g_guizmo_local))
+				{
+					ggui::camera_guizmo::g_guizmo_local = !ggui::camera_guizmo::g_guizmo_local;
+				}
 
 				if (ImGui::MenuItem("Maya Export")) {
 					cdeclcall(void, 0x4263C0); // CMainFrame::OnExportToMaya

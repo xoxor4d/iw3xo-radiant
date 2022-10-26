@@ -4,6 +4,7 @@ namespace ggui::camera_guizmo
 {
 	bool overwrite_activation = false;
 	bool guizmo_visible = false;
+	bool g_guizmo_local = false;
 
 	void get_matrices_for_guizmo(game::GfxMatrix* view, game::GfxMatrix* projection)
 	{
@@ -116,6 +117,7 @@ namespace ggui::camera_guizmo
 		if (dvars::guizmo_enable->current.enabled)
 		{
 			const auto camerawnd = GET_GUI(ggui::camera_dialog);
+			bool return_early_key_blacklist = false;
 			guizmo_visible = false;
 
 			if (camerawnd->rtt_is_hovered())
@@ -125,7 +127,8 @@ namespace ggui::camera_guizmo
 					|| (io.KeyMods & ImGuiKeyModFlags_Shift) 
 					|| GetKeyState(VK_MENU) < 0)
 				{
-					return;
+					//return;
+					return_early_key_blacklist = true;
 				}
 			}
 
@@ -158,9 +161,21 @@ namespace ggui::camera_guizmo
 						guizmo_needs_activation = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 					}
 				}
+
+				// handle guizmo activation even tho it wont show until all blacklisted keys are up
+				if (return_early_key_blacklist)
+				{
+					return;
+				}
 			}
 			else
 			{
+				// handle guizmo activation even tho it wont show until all blacklisted keys are up
+				if (return_early_key_blacklist)
+				{
+					return;
+				}
+
 				// no brush selected
 				if (added_undo)
 				{
@@ -209,6 +224,33 @@ namespace ggui::camera_guizmo
 			float angles[3] = { 0.0f, 0.0f, 0.0f };
 			float snap[3] = { 0.0f, 0.0f, 0.0f };
 
+
+			// #
+			// local guizmo logic
+
+			if (const auto sb = game::g_selected_brushes();
+				g_guizmo_local && sb && sb->owner && sb->owner->firstActive)
+			{
+				// no local mode if last selection is a brush
+				if (sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype == 0)
+				{
+					g_guizmo_local = false;
+				}
+				else
+				{
+					game::vec3_t temp_angles;
+					GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(sb->owner->firstActive, temp_angles, "angles");
+
+					angles[0] = temp_angles[2];
+					angles[1] = temp_angles[0];
+					angles[2] = temp_angles[1];
+				}
+			}
+
+
+			// #
+			// guizmo snapping
+
 			if (dvars::guizmo_snapping->current.enabled)
 			{
 				// default case
@@ -250,7 +292,7 @@ namespace ggui::camera_guizmo
 					bool in_vertex_mode = false;
 
 					// check for vertex edit mode
-					if(selection_mode == game::sel_curvepoint || selection_mode == game::sel_area)
+					if (selection_mode == game::sel_curvepoint || selection_mode == game::sel_area)
 					{
 						// this can result in the guizmo not being disabled correctly, thus using IsUsing() can return the wrong value
 						/*if(!num_move_points)
@@ -310,7 +352,7 @@ namespace ggui::camera_guizmo
 
 					guizmo_visible = true;
 					
-					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap))
+					if (ImGuizmo::Manipulate(&view.m[0][0], &projection.m[0][0], guizmo_mode, g_guizmo_local ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD, tmp_matrix, delta_matrix, snap))
 #endif
 					{
 						/*if (guizmo_mode == ImGuizmo::OPERATION::BOUNDS)

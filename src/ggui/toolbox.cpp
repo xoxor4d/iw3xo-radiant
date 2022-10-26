@@ -1393,7 +1393,28 @@ namespace ggui
 			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
 
 			// #
-			
+
+			if (dvars::guizmo_enable->current.enabled)
+			{
+				mins = ImGui::GetCursorScreenPos();
+
+				static bool hov_guizmo_local_world;
+				if (tb->image_togglebutton("guizmo_world_local"
+					, hov_guizmo_local_world
+					, ggui::camera_guizmo::g_guizmo_local
+					, std::string("Guizmo: Toggle between local and world mode\nConsiders angle of last selection when used to manipulate multiple objects\n" + ggui::hotkey_dialog::get_hotkey_for_command("guizmo_world_local")).c_str()
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					ggui::camera_guizmo::g_guizmo_local = !ggui::camera_guizmo::g_guizmo_local;
+				}
+
+				maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+				ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+			}
+
 			/*if (dvars::guizmo_enable->current.enabled)
 			{
 				mins = ImGui::GetCursorScreenPos();

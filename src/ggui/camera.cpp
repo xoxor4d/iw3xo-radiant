@@ -144,6 +144,23 @@ namespace ggui
 						dvars::set_bool(dvars::guizmo_enable, !dvars::guizmo_enable->current.enabled);
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
+					if (dvars::guizmo_enable->current.enabled)
+					{
+						static bool hov_guizmo_local_world;
+
+						if (tb->image_togglebutton("guizmo_world_local"
+							, hov_guizmo_local_world
+							, ggui::camera_guizmo::g_guizmo_local
+							, "Guizmo: Toggle between local and world mode\nConsiders angle of last selection when used to manipulate multiple objects."
+							, &toolbar_button_background
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &toolbar_button_size))
+						{
+							ggui::camera_guizmo::g_guizmo_local = !ggui::camera_guizmo::g_guizmo_local;
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+					}
+
 					//if (dvars::guizmo_enable->current.enabled)
 					//{
 					//	static bool hov_guizmo_grid_snapping;
@@ -1522,6 +1539,11 @@ namespace ggui
 		{
 			m_toolbar_state = true;
 		}
+
+		components::command::register_command_with_hotkey("guizmo_world_local"s, [](auto)
+		{
+			ggui::camera_guizmo::g_guizmo_local = !ggui::camera_guizmo::g_guizmo_local;
+		});
 	}
 
 	void camera_dialog::on_open()
