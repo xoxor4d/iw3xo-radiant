@@ -499,6 +499,22 @@ namespace game
 		}
 	}
 
+	// not sure about the name or what it does (use brush_select to select groups)
+	void Select_FuncGroup(float* trace_dir /*ecx*/, float* trace_start /*edx*/, int contents /*eax*/)
+	{
+		const static uint32_t func_addr = 0x48E340;
+		__asm
+		{
+			pushad;
+
+			mov		eax, contents;
+			mov		edx, trace_start;
+			mov		ecx, trace_dir;
+			call	func_addr;
+			popad;
+		}
+	}
+
 	void Select_RotateFixedSize(game::entity_s* owner, brush_t_with_custom_def* def, float(*mid_point)[3])
 	{
 		if (!def->owner)
@@ -964,9 +980,15 @@ namespace game
 		}
 	}
 
-	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection)
+	/**
+	 * @param b							brush to select
+	 * @param select_connected			select connected brushes (func_group, brush-model etc) 
+	 * @param update_status				legacy, not needed
+	 * @param center_grid_on_selection	move grid view to center of selection
+	 */
+	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool select_connected, bool update_status, bool center_grid_on_selection)
 	{
-		const int overwrite = some_overwrite;
+		const int overwrite = select_connected;
 		const int status = update_status;
 		const int center_grid = center_grid_on_selection;
 

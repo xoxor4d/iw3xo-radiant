@@ -221,11 +221,13 @@ namespace ggui
 
 				if (game::is_any_brush_selected())
 				{
+					const auto sb = game::g_selected_brushes();
+
 					ggui::context::xyzcam_general_selection();
+					ggui::context::grouping_menu(game::g_selected_brushes());
 
 					SEPERATORV(0.0f);
 
-					const auto sb = game::g_selected_brushes();
 					bool do_prefab_separator = false;
 					
 					if (sb && sb->def && sb->def->owner)
@@ -249,7 +251,7 @@ namespace ggui
 						}
 					}
 
-					if(do_prefab_separator)
+					if (do_prefab_separator)
 					{
 						SEPERATORV(0.0f);
 					}

@@ -71,12 +71,6 @@ namespace ggui::context
 
 			SEPERATORV(0.0f);
 
-			if (ImGui::MenuItem("Ungroup Entity"))
-			{
-				// CMainFrame::OnSelectionUngroupentity
-				cdeclcall(void, 0x426380);
-			} TT("eg: dismember a script_brushmodel to individual/normal brushes");
-
 			if (ImGui::MenuItem("Add Selection To Active Layer"))
 			{
 				// CXYWnd::OnSelectionAddToActiveLayer
@@ -84,6 +78,52 @@ namespace ggui::context
 			}
 
 			ImGui::EndMenu();
+		}
+	}
+
+	void grouping_menu(game::selbrush_def_t* sb)
+	{
+		if (sb && sb->def && sb->def->owner)
+		{
+			if (imgui::BeginMenu("Group"))
+			{
+				const auto ents = GET_GUI(ggui::entity_dialog);
+
+				bool selection_is_group = false;
+				if (const auto val = ents->get_value_for_key_from_epairs(sb->def->owner->epairs, "classname");
+					val == "func_group"s || val == "func_cullgroup"s || val == "script_brushmodel"s)
+				{
+					selection_is_group = true;
+				}
+
+				imgui::BeginDisabled(!selection_is_group);
+				{
+					if (imgui::MenuItem("Select Brush Group"))
+					{
+						game::Brush_Select(sb, true, false, false);
+					}
+
+					imgui::EndDisabled();
+				} TT("Select every member of the group (brushmodel, func_group)");
+
+				imgui::BeginDisabled(!game::is_any_brush_selected());
+				{
+					if (imgui::MenuItem("Group Selected Brushes"))
+					{
+						game::CreateEntityFromClassname(cmainframe::activewnd->m_pXYWnd, "func_group", 0, 0);
+					} TT("Creates a func_group");
+
+					if (imgui::MenuItem("Ungroup"))
+					{
+						// CMainFrame::OnSelectionUngroupentity
+						cdeclcall(void, 0x426380);
+					} TT("dismember a group (brushmodel, func_group)");
+
+					imgui::EndDisabled();
+				}
+
+				imgui::EndMenu();
+			}
 		}
 	}
 }

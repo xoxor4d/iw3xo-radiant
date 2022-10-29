@@ -920,7 +920,7 @@ namespace ggui
 				//};
 
 				// this is stupid but imgui creates a little empty square otherwise
-				if (cam_trace[0].brush || game::g_prefab_stack_level || game::is_any_brush_selected())
+				if (cam_trace[0].brush || game::g_prefab_stack_level /*|| game::is_any_brush_selected()*/)
 				{
 					if (!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##camera"))
 					{
@@ -1152,8 +1152,23 @@ namespace ggui
 						{
 							ggui::context::xyzcam_general_selection();
 
+							if (cam_trace[0].brush)
+							{
+								ggui::context::grouping_menu(cam_trace[0].brush);
+							}
+							else
+							{
+								ggui::context::grouping_menu(game::g_selected_brushes());
+							}
+							
+
 							SEPERATORV(0.0f);
 							convert_selection_to_prefab_imgui_menu();
+						}
+
+						else if (cam_trace[0].brush)
+						{
+							ggui::context::grouping_menu(cam_trace[0].brush);
 						}
 
 						ImGui::EndPopup();
