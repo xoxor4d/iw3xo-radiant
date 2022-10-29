@@ -717,6 +717,7 @@ namespace ggui
 					memset(game::com_fileDataHashTable, 0, sizeof(uintptr_t) * 1024);
 				}
 
+#if 0			// material reload tests
 				if (ImGui::MenuItem("Sort World Surfaces"))
 				{
 					game::R_SortWorldSurfaces();
@@ -785,6 +786,7 @@ namespace ggui
 
 					//game::Material_RegisterHandle("css_portal", 3);
 				}
+#endif
 
 				SEPERATORV(0.0f);
 
@@ -1372,13 +1374,13 @@ namespace ggui
 
 			if (ImGui::BeginMenu("Textures"))
 			{
-				if (ImGui::MenuItem("Show All", ggui::hotkey_dialog::get_hotkey_for_command("ShowAllTextures").c_str())) {
-					cdeclcall(void, 0x42B440); // CMainFrame::OnTexturesShowall
-				}
+				//if (ImGui::MenuItem("Show All", ggui::hotkey_dialog::get_hotkey_for_command("ShowAllTextures").c_str())) {
+				//	cdeclcall(void, 0x42B440); // CMainFrame::OnTexturesShowall
+				//}
 
-				if (ImGui::MenuItem("Show In Use", ggui::hotkey_dialog::get_hotkey_for_command("ShowTexturesInUse").c_str())) {
-					mainframe_thiscall(void, 0x424B20); // CMainFrame::OnTexturesShowinuse
-				}
+				//if (ImGui::MenuItem("Show In Use", ggui::hotkey_dialog::get_hotkey_for_command("ShowTexturesInUse").c_str())) {
+				//	mainframe_thiscall(void, 0x424B20); // CMainFrame::OnTexturesShowinuse
+				//}
 
 				if (ImGui::MenuItem("Surface Inspector", ggui::hotkey_dialog::get_hotkey_for_command("SurfaceInspector").c_str())) {
 					cdeclcall(void, 0x424B60); // CMainFrame::OnTexturesInspector
@@ -1390,30 +1392,30 @@ namespace ggui
 					cdeclcall(void, 0x428B40); // CMainFrame::OnTextureReplaceall
 				}
 
-				if (ImGui::BeginMenu("Texture Window Scale"))
-				{
-					if (ImGui::MenuItem("200%", 0, prefs->m_nTextureWindowScale == 200)) {
-						mainframe_thiscall(void, 0x42B020); // CMainFrame::OnTexturesTexturewindowscale200
-					}
+				//if (ImGui::BeginMenu("Texture Window Scale"))
+				//{
+				//	if (ImGui::MenuItem("200%", 0, prefs->m_nTextureWindowScale == 200)) {
+				//		mainframe_thiscall(void, 0x42B020); // CMainFrame::OnTexturesTexturewindowscale200
+				//	}
 
-					if (ImGui::MenuItem("100%", 0, prefs->m_nTextureWindowScale == 100)) {
-						mainframe_thiscall(void, 0x42B000); // CMainFrame::OnTexturesTexturewindowscale100
-					}
+				//	if (ImGui::MenuItem("100%", 0, prefs->m_nTextureWindowScale == 100)) {
+				//		mainframe_thiscall(void, 0x42B000); // CMainFrame::OnTexturesTexturewindowscale100
+				//	}
 
-					if (ImGui::MenuItem("50%", 0, prefs->m_nTextureWindowScale == 50)) {
-						mainframe_thiscall(void, 0x42B060); // CMainFrame::OnTexturesTexturewindowscale50
-					}
+				//	if (ImGui::MenuItem("50%", 0, prefs->m_nTextureWindowScale == 50)) {
+				//		mainframe_thiscall(void, 0x42B060); // CMainFrame::OnTexturesTexturewindowscale50
+				//	}
 
-					if (ImGui::MenuItem("25%", 0, prefs->m_nTextureWindowScale == 25)) {
-						mainframe_thiscall(void, 0x42B040); // CMainFrame::OnTexturesTexturewindowscale25
-					}
+				//	if (ImGui::MenuItem("25%", 0, prefs->m_nTextureWindowScale == 25)) {
+				//		mainframe_thiscall(void, 0x42B040); // CMainFrame::OnTexturesTexturewindowscale25
+				//	}
 
-					if (ImGui::MenuItem("10%", 0, prefs->m_nTextureWindowScale == 10)) {
-						mainframe_thiscall(void, 0x42AFE0); // CMainFrame::OnTexturesTexturewindowscale10
-					}
+				//	if (ImGui::MenuItem("10%", 0, prefs->m_nTextureWindowScale == 10)) {
+				//		mainframe_thiscall(void, 0x42AFE0); // CMainFrame::OnTexturesTexturewindowscale10
+				//	}
 
-					ImGui::EndMenu(); // Texture Window Scale
-				}
+				//	ImGui::EndMenu(); // Texture Window Scale
+				//}
 
 				if (ImGui::BeginMenu("Texture Lock"))
 				{
@@ -1471,6 +1473,7 @@ namespace ggui
 					ImGui::EndMenu(); // Edit Layer
 				}
 
+#if 0
 				if (ImGui::BeginMenu("Usage Filter"))
 				{
 					for (std::uint8_t i = 0; i < game::texWndGlob_usageCount; i++)
@@ -1535,6 +1538,7 @@ namespace ggui
 
 					ImGui::EndMenu(); // Surface Type Filter
 				}
+#endif
 
 				ImGui::EndMenu(); // Textures
 			}
@@ -1580,9 +1584,9 @@ namespace ggui
 					cdeclcall(void, 0x424BE0); // CMainFrame::OnMiscPreviousleakspot
 				}
 
-				if (ImGui::MenuItem("Print XY View")) {
-					cdeclcall(void, 0x424C00); // CMainFrame::OnMiscPrintxy
-				}
+				//if (ImGui::MenuItem("Print XY View")) {
+				//	cdeclcall(void, 0x424C00); // CMainFrame::OnMiscPrintxy
+				//}
 
 				if (ImGui::MenuItem("Entity Color Dialog", ggui::hotkey_dialog::get_hotkey_for_command("EntityColor").c_str())) {
 					cdeclcall(void, 0x424C10); // CMainFrame::OnMiscSelectentitycolor
