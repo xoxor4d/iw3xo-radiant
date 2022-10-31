@@ -90,6 +90,25 @@ namespace components
 		}
 	}
 
+	// #
+
+	void DECLSPEC_NORETURN on_invalid_hwnd_assert()
+	{
+		game::Com_Error("Failed to initialize renderer. This might indicate that you have not installed the cod4 modtools or are missing parts of it.\n");
+		exit(0);
+	}
+
+	void __declspec(naked) on_invalid_hwnd_assert_stub()
+	{
+		__asm
+		{
+			pushad;
+			call	on_invalid_hwnd_assert;
+			popad;
+		}
+	}
+
+	// #
 
 	void assert_mtlraw_sortkey(int sort_key, int sort_max)
 	{
@@ -126,6 +145,9 @@ namespace components
 
 		// stop effects on asserts
 		utils::hook(0x49CEA6, on_assert_stub, HOOK_JUMP).install()->quick();
+
+		// custom "invalid hwnd" assert msg with hint to check correct installation of modtools
+		utils::hook(0x501B18, on_invalid_hwnd_assert_stub, HOOK_JUMP).install()->quick();
 
 		// return nullptr on assert: mtlRaw->info.sortKey doesn't index 1 << MTL_SORT_PRIMARY_SORT_KEY_BITS %i not in [0, 64]
 		utils::hook(0x51B0E8, assert_mtlraw_sortkey_stub, HOOK_JUMP).install()->quick();
