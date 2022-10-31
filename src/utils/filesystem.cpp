@@ -69,4 +69,13 @@ namespace utils::fs
 
 		return false;
 	}
+
+	/**
+	 * @return	cod4 root path
+	 */
+	std::string get_basepath()
+	{
+		const auto egui = GET_GUI(ggui::entity_dialog);
+		return egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+	}
 }
