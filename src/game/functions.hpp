@@ -258,6 +258,7 @@ namespace game
 	void SetSpawnFlags(int flag);
 	void SetMaterial(const char* name /*edi*/, game::patchMesh_material* def /*esi*/);
 	void UpdateSel(int wParam, game::eclass_t* e_class);
+	bool FilterBrush(game::selbrush_def_t* sb /*esi*/, int always_null);
 
 	void Patch_SelectRow(int row /*eax*/, game::patchMesh_t* p /*edi*/, int multi);
 	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, int always_true);
@@ -291,6 +292,7 @@ namespace game
 	void Entity_LinkBrush(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world /*edi*/);
 	game::brush_t_with_custom_def* Brush_AddToList(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world);
 	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/);
+	void Brush_RemoveFromList(game::selbrush_def_t* brush /*eax*/);
 	void Brush_Deselect(game::brush_t* b /*esi*/);
 	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool select_connected, bool update_status, bool center_grid_on_selection);
 	inline auto QE_SingleBrush = reinterpret_cast<bool (*)()>(0x48C8B0); // use is_single_brush_selected when used in loops

@@ -606,6 +606,24 @@ namespace game
 		}
 	}
 
+	bool FilterBrush(game::selbrush_def_t* sb /*esi*/, int always_null)
+	{
+		const static uint32_t func_addr = 0x46A1F0;
+		auto return_value = false;
+		__asm
+		{
+			pushad;
+			push	always_null;
+			mov		esi, sb;
+			call	func_addr;
+			add		esp, 4;
+			mov		return_value, al;
+			popad;
+		}
+
+		return return_value;
+	}
+
 	// select a complete row of a selected patch
 	void Patch_SelectRow(int row /*eax*/, game::patchMesh_t* p /*edi*/, int multi)
 	{
@@ -960,10 +978,20 @@ namespace game
 		__asm
 		{
 			pushad;
-
 			mov		eax, brush;
 			call	func_addr;
+			popad;
+		}
+	}
 
+	void Brush_RemoveFromList(game::selbrush_def_t* brush /*eax*/)
+	{
+		const static uint32_t func_addr = 0x476680;
+		__asm
+		{
+			pushad;
+			mov		eax, brush;
+			call	func_addr;
 			popad;
 		}
 	}

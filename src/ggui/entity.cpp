@@ -278,6 +278,26 @@ namespace ggui
 		return true;
 	}
 
+	bool entity_dialog::has_key_with_value(game::entity_s_def* ent, const char* key, const char* value)
+	{
+		game::epair_t* ep = ent->epairs;
+		if (!ep)
+		{
+			return false;
+		}
+
+		while (strcmp(ep->key, key))
+		{
+			ep = ep->next;
+			if (!ep)
+			{
+				return false;
+			}
+		}
+
+		return strcmp(ep->value, value) == 0;
+	}
+
 
 	// adds grey horizontal separator
 	void entity_dialog::separator_for_treenode()
@@ -885,6 +905,9 @@ namespace ggui
 
 	void entity_dialog::gui_entprop_effect_fileprompt(const epair_wrapper& epw, [[maybe_unused]] int row)
 	{
+		ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_FrameBg));
+		imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+
 		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
 		{
 			// logic :: ggui::file_dialog_frame
@@ -936,11 +959,17 @@ namespace ggui
 				}
 			}
 		}
+
+		imgui::PopStyleColor();
+		imgui::PopStyleVar();
 	}
 
 	// both misc_model and misc_prefab
 	void entity_dialog::gui_entprop_model_fileprompt(const epair_wrapper& epw, [[maybe_unused]] int row)
 	{
+		ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_FrameBg));
+		imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+
 		if (ImGui::Button("..##filepromt", ImVec2(28, ImGui::GetFrameHeight())))
 		{
 			// logic :: ggui::file_dialog_frame
@@ -997,6 +1026,9 @@ namespace ggui
 				}
 			}
 		}
+
+		imgui::PopStyleColor();
+		imgui::PopStyleVar();
 	}
 
 	void entity_dialog::gui_entprop_add_value_slider(const epair_wrapper& epw)
@@ -1605,27 +1637,120 @@ namespace ggui
 									gui_entprop_model_fileprompt(ep, row);
 								}
 
-								else if (ep.type != EPAIR_VALUETYPE::ORIGIN && !is_classname)
+								else if (ep.type != EPAIR_VALUETYPE::ORIGIN /*&& !is_classname*/)
 								{
 									const auto bg_color = imgui::ColorConvertU32ToFloat4(imgui::GetColorU32(ImGuiCol_Button));
 
-									ImGui::PushFontFromIndex(ggui::E_FONT::BOLD_18PX);
-									ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
-									imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
-									//ImGui::PushStyleColor(ImGuiCol_Button, bg_color);
-									ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bg_color - ImVec4(0.1f, 0.1f, 0.1f, 0.0f));
-									ImGui::PushStyleColor(ImGuiCol_ButtonActive, bg_color + ImVec4(0.1f, 0.1f, 0.1f, 0.0f));
-									ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
-									ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_FrameBg));
+									bool show_delete_only = is_worldspawn && !is_classname;
 
-									if (ImGui::Button("x", ImVec2(28, ImGui::GetFrameHeight())))
+									if (show_delete_only)
 									{
-										del_prop(ep.epair->key);
-									}
+										ImGui::PushFontFromIndex(ggui::E_FONT::BOLD_18PX);
+										ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
+										imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+										//ImGui::PushStyleColor(ImGuiCol_Button, bg_color);
+										ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bg_color - ImVec4(0.1f, 0.1f, 0.1f, 0.0f));
+										ImGui::PushStyleColor(ImGuiCol_ButtonActive, bg_color + ImVec4(0.1f, 0.1f, 0.1f, 0.0f));
+										ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.55f, 0.55f, 0.55f, 1.0f));
+										ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_FrameBg));
 
-									ImGui::PopStyleColor(4);
-									ImGui::PopStyleVar(2);
-									ImGui::PopFont();
+										if (ImGui::Button("x", ImVec2(28, ImGui::GetFrameHeight())))
+										{
+											del_prop(ep.epair->key);
+										}
+
+										ImGui::PopStyleColor(4);
+										ImGui::PopStyleVar(2);
+										ImGui::PopFont();
+									}
+									/*else if (ImGui::Button("v", ImVec2(28, ImGui::GetFrameHeight())))
+									{
+										ImGui::OpenPopup("kvp_popup");
+									}*/
+
+									else
+									{
+										ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.2f));
+										ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(1.0f, 1.0f, 1.0f, 0.3f));
+										ggui::context_menu_style_begin();
+
+										if (ImGui::BeginCombo("##kvp_popup", nullptr, ImGuiComboFlags_NoPreview | ImGuiComboFlags_PopupAlignLeft))
+										{
+											imgui::BeginDisabled(is_classname);
+											{
+												if (ImGui::Selectable("Delete KVP"))
+												{
+													del_prop(ep.epair->key);
+												}
+
+												imgui::EndDisabled();
+											}
+
+											imgui::BeginDisabled(is_worldspawn);
+											{
+												// part of CMainFrame::OnSelectionKeyValue
+												if (ImGui::Selectable("Select all by KVP"))
+												{
+													// # checks if only a single ent is selected
+													// const auto sb_next = game::g_selected_brushes_next();
+													// const auto sb_next_next = sb_next->next;
+													// if (reinterpret_cast<DWORD>(sb_next) != 0x23F1864 /*game::currSelectedBrushes*/ && reinterpret_cast<DWORD>(sb_next_next) == 0x23F1864)
+
+													game::Select_Deselect(true);
+
+													auto b = game::g_active_brushes_next();
+													game::selbrush_def_t** saved;
+
+													if (reinterpret_cast<DWORD>(b) != *game::active_brushes_ptr)
+													{
+														do
+														{
+															saved = &b->next->prev;
+															if (!game::FilterBrush(b, 0) && (b->brushflags & 2) == 0 && (b->brushflags & 0x20) == 0)
+															{
+																if (!b->owner)
+																{
+																	AssertS("!b->owner");
+																}
+
+																if (b->owner != game::g_world_entity())
+																{
+																	if (b->owner->firstActive != b->def->owner)
+																	{
+																		AssertS("b->owner->firstActive != b->def->owner");
+																	}
+
+																	if (has_key_with_value(reinterpret_cast<game::entity_s_def*>(b->owner->firstActive), ep.epair->key, ep.epair->value))
+																	{
+																		game::Brush_RemoveFromList(b);
+																		game::Brush_AddToList2((game::brush_t_with_custom_def*)b); // these structs are a pain
+																	}
+																}
+															}
+
+															b = (game::selbrush_def_t*)saved;
+
+														} while (reinterpret_cast<DWORD>(saved) != *game::active_brushes_ptr);
+													}
+												}
+
+												imgui::EndDisabled();
+											}
+
+											if (ep.epair->key == "targetname"s || ep.epair->key == "target"s)
+											{
+												if (ImGui::Selectable("Select Connected"))
+												{
+													cdeclcall(void, 0x425550); // CMainFrame::OnSelectConneted
+												}
+											}
+
+											ImGui::EndCombo();
+										}
+
+										imgui::PopStyleColor(2);
+										ggui::context_menu_style_end();
+									}
 								}
 							}
 
