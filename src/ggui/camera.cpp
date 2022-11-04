@@ -927,6 +927,8 @@ namespace ggui
 						cam_context_menu_open = true;
 						cam_context_menu_pending_open = false;
 
+						bool entering_or_leaving_prefab = false;
+
 						if (cam_trace[0].brush)
 						{
 							bool any_selected = false;
@@ -1039,6 +1041,7 @@ namespace ggui
 												}
 
 												game::Prefab_Enter();
+												entering_or_leaving_prefab = true;
 											}
 
 											if (game::g_prefab_stack_level)
@@ -1046,6 +1049,7 @@ namespace ggui
 												if (ImGui::MenuItem("Leave Prefab"))
 												{
 													game::Prefab_Leave();
+													entering_or_leaving_prefab = true;
 												}
 											}
 
@@ -1059,6 +1063,7 @@ namespace ggui
 											if (ImGui::MenuItem("Leave Prefab"))
 											{
 												game::Prefab_Leave();
+												entering_or_leaving_prefab = true;
 											}
 										}
 									}
@@ -1081,6 +1086,7 @@ namespace ggui
 									if (ImGui::MenuItem("Leave Prefab"))
 									{
 										game::Prefab_Leave();
+										entering_or_leaving_prefab = true;
 									}
 								}
 
@@ -1145,30 +1151,34 @@ namespace ggui
 							if (ImGui::MenuItem("Leave Prefab"))
 							{
 								game::Prefab_Leave();
+								entering_or_leaving_prefab = true;
 							}
 						}
 
-						if (game::is_any_brush_selected())
+						// NEVER try to access brush data after entering or leaving a prefab (within the same frame)
+						if (!entering_or_leaving_prefab)
 						{
-							ggui::context::xyzcam_general_selection();
+							if (game::is_any_brush_selected())
+							{
+								ggui::context::xyzcam_general_selection();
 
-							if (cam_trace[0].brush)
+								if (cam_trace[0].brush)
+								{
+									ggui::context::grouping_menu(cam_trace[0].brush);
+								}
+								else
+								{
+									ggui::context::grouping_menu(game::g_selected_brushes());
+								}
+
+
+								SEPERATORV(0.0f);
+								convert_selection_to_prefab_imgui_menu();
+							}
+							else if (cam_trace[0].brush)
 							{
 								ggui::context::grouping_menu(cam_trace[0].brush);
 							}
-							else
-							{
-								ggui::context::grouping_menu(game::g_selected_brushes());
-							}
-							
-
-							SEPERATORV(0.0f);
-							convert_selection_to_prefab_imgui_menu();
-						}
-
-						else if (cam_trace[0].brush)
-						{
-							ggui::context::grouping_menu(cam_trace[0].brush);
 						}
 
 						ImGui::EndPopup();
@@ -1504,8 +1514,11 @@ namespace ggui
 
 				// --------------------
 
-				// right click context menu
-				camera_dialog::context_menu();
+				if (!game::glob::is_loading_map)
+				{
+					// right click context menu
+					camera_dialog::context_menu();
+				}
 
 				// drag-drop target (modelpreview)
 				camera_dialog::drag_drop_target(accepted_dragdrop);

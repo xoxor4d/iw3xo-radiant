@@ -205,13 +205,13 @@ namespace ggui
 
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !is_alt_key_pressed && !ImGui::IsKeyDown(ImGuiKey_ModCtrl))
 		{
-			if(cxywnd->m_ptDrag.x == cxywnd->m_ptDown.x && cxywnd->m_ptDrag.y == cxywnd->m_ptDown.y)
+			if (cxywnd->m_ptDrag.x == cxywnd->m_ptDown.x && cxywnd->m_ptDrag.y == cxywnd->m_ptDown.y)
 			{
 				grid_context_pending_open = true;
 			}
 		}
 
-		if(grid_context_open || grid_context_pending_open)
+		if (grid_context_open || grid_context_pending_open)
 		{
 			ggui::context_menu_style_begin();
 
@@ -286,7 +286,7 @@ namespace ggui
 						for (const auto& str : group.ents)
 						{
 							const char* c_str = str.ent_str.c_str();
-							if(ImGui::MenuItem(c_str))
+							if (ImGui::MenuItem(c_str))
 							{
 								game::CreateEntityFromClassname(cxywnd, c_str, cxywnd->m_ptDrag.x, cxywnd->m_ptDrag.y);
 								grid_context_last_spawned_entity = str.ent_str;
@@ -343,11 +343,11 @@ namespace ggui
 						}
 					}
 
-					if(!eclass_context_ents.empty())
+					if (!eclass_context_ents.empty())
 					{
 						for (const auto& str : eclass_context_ents)
 						{
-							if(str.ent_str == "worldspawn")
+							if (str.ent_str == "worldspawn")
 							{
 								continue;
 							}
@@ -366,7 +366,7 @@ namespace ggui
 					ImGui::EndMenu();
 				}
 
-				if(!grid_context_last_spawned_entity.empty())
+				if (!grid_context_last_spawned_entity.empty())
 				{
 					SEPERATORV(0.0f);
 
@@ -585,7 +585,7 @@ namespace ggui
 				this->rtt_set_hovered_state(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
 
 				// right click context menu
-				if(dvars::gui_use_new_context_menu->current.enabled)
+				if (dvars::gui_use_new_context_menu->current.enabled && !game::glob::is_loading_map)
 				{
 					context_menu();
 				}
