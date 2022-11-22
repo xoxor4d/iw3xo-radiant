@@ -31,7 +31,7 @@ namespace components
 		static void reset_editor_effect();
 		static void radiant_init_fx();
 
-		static void generate_createfx();
+		static void generate_createfx(bool copy_to_raw = false);
 		static void set_initial_state();
 
 		static void play();

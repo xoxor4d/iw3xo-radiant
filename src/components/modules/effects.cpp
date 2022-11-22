@@ -685,7 +685,7 @@ namespace components
 
 
 
-	void effects::generate_createfx()
+	void effects::generate_createfx(bool copy_to_raw)
 	{
 		// reset global vars
 		createfx_loaded_fx_defs.clear();
@@ -695,12 +695,25 @@ namespace components
 
 		std::ofstream def;
 		std::ofstream createfx;
-		dvars::fs_homepath = game::Dvar_FindVar("fs_homepath");
 
-		if (dvars::fs_homepath)
+		dvars::fs_homepath = game::Dvar_FindVar("fs_homepath");
+		const auto& fs_basepath = game::Dvar_FindVar("fs_basepath");
+
+		if (dvars::fs_homepath && fs_basepath)
 		{
-			std::string filepath = dvars::fs_homepath->current.string;
-						filepath += "\\IW3xRadiant\\createfx\\"s;
+			std::string filepath;
+
+			if (copy_to_raw)
+			{
+				filepath = fs_basepath->current.string;
+				filepath += "\\raw\\maps\\"s;
+			}
+			else
+			{
+				filepath = dvars::fs_homepath->current.string;
+				filepath += "\\IW3xRadiant\\createfx\\"s;
+			}
+			
 
 			std::filesystem::create_directories(filepath + "createfx\\");
 
@@ -711,7 +724,7 @@ namespace components
 				utils::erase_substring(mapname, ".map");
 			}
 
-			const std::string fx_def_path = filepath + mapname + "_fx.gsc"s;
+			const std::string fx_def_path = filepath + (copy_to_raw ? "mp\\" : "") + mapname + "_fx.gsc"s;
 			const std::string createfx_path = filepath + "createfx\\" + mapname + "_fx.gsc"s;
 
 			def.open(fx_def_path);
@@ -800,9 +813,23 @@ namespace components
 			def.close();
 			createfx.close();
 
-			game::printf_to_console("[Generate Createfx] for [%d] effects", effect_count);
+			game::printf_to_console("\n[!][Generate CreateFX] for [%d] effects", effect_count);
 			game::printf_to_console("|> createfx def file :: [%s]", fx_def_path.c_str());
 			game::printf_to_console("|> createfx file :: [%s]", createfx_path.c_str());
+
+			game::printf_to_console("\n---------- Add to Zonefile -----------");
+			game::printf_to_console("rawfile,maps/mp/mp_%s_fx.gsc", mapname.c_str());
+			game::printf_to_console("rawfile,maps/createfx/mp_%s_fx.gsc", mapname.c_str());
+
+			game::printf_to_console("\n---------- Add to Map GSC -----------");
+			game::printf_to_console(
+				"main()"
+				"\n{"
+				"\n\t/* ... */"
+				"\n\tmaps\\mp\\_load::main();"
+				"\n\tmaps\\mp\\mp_%s_fx::main();   // <----"
+				"\n\t/* ... */"
+				"\n}", mapname.c_str());
 		}
 	}
 

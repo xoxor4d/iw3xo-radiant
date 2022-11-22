@@ -748,7 +748,7 @@ namespace components
 	 * @brief			run batch to compile bsp
 	 * @param bsp_name	plain map name with no extension or pathing
 	 */
-	void d3dbsp::compile_bsp(const std::string& bsp_name)
+	void d3dbsp::compile_bsp(const std::string& bsp_name, bool generate_createfx)
 	{
 		game::printf_to_console("[BSP] Compiling bsp for map: %s ...", bsp_name.c_str());
 		
@@ -809,7 +809,7 @@ namespace components
 		process->set_indicator(process::INDICATOR_TYPE_SPINNER);
 		process->set_output(true);
 		process->set_arguments(args);
-		process->set_post_process_callback([bsp_path]
+		process->set_post_process_callback([bsp_path, generate_createfx]
 		{
 			if (d3dbsp::radiant_load_bsp(bsp_path.c_str(), true))
 			{
@@ -817,6 +817,11 @@ namespace components
 				{
 					dvars::set_bool(dvars::r_reflectionprobe_generate, true);
 				}
+			}
+
+			if (generate_createfx)
+			{
+				components::effects::generate_createfx(true);
 			}
 		});
 
