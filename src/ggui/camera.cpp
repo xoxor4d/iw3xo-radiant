@@ -836,7 +836,7 @@ namespace ggui
 							game::BrushPt_t points[1024];
 
 							// test if extending results in a valid brush or if it gets degenerated
-							if(game::CM_ForEachBrushPlaneIntersection(selbrush->def, points) < 4)
+							if (game::CM_ForEachBrushPlaneIntersection(selbrush->def, points) < 4)
 							{
 								game::printf_to_console("invalid face");
 
@@ -959,7 +959,7 @@ namespace ggui
 												vis_name = prefab_str;
 											}
 										}
-										else if(tb->def->owner->eclass && tb->def->owner->eclass->name != "worldspawn"s)
+										else if (tb->def->owner->eclass && tb->def->owner->eclass->name != "worldspawn"s)
 										{
 											vis_name = tb->def->owner->eclass->name;
 										}

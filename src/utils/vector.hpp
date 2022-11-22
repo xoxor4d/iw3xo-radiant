@@ -33,8 +33,15 @@ namespace utils
 		void	rotate_point(float* point, const float *mat);
 		void	rotate_point(const float* v, const float* q, float* out);
 		void	vec3_rotate_transpose(const float* in, const float* matrix, float* out);
+		void	orientation_dir_to_world_dir(game::orientation_t* orient, const float* dir, float* out);
+		void	orientation_pos_to_world_pos(game::orientation_t* orient, const float* pos, float* out);
+		void	scaled_orientation_pos_to_world_pos(game::orientation_t* orient, float scale, const float* pos, float* out);
+		void	orientation_concatenate(game::orientation_t* orFirst, game::orientation_t* orSecond, game::orientation_t* out);
 		void	angle_vectors(const game::vec3_t angles, game::vec3_t forward, game::vec3_t right, game::vec3_t up);
 		void	vectoangles(const vec3_t value1, vec3_t angles);
+		void	vectosignedangles(const float* in, float* out);
+		float	vectosignedpitch(float* vec);
+		void	axis4_to_angles(const float(*axis)[4], float* angles);
 		
 		int		compare(const vec3_t v1, const vec3_t v2);
 		void	clamp_vec3(const vec3_t a, const vec3_t b, vec3_t o1, vec3_t o2);

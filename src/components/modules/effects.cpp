@@ -550,8 +550,114 @@ namespace components
 		}
 	}
 
+
+	// world orientations per prefab level
+	std::vector<game::orientation_t> createfx_prefab_stack_orientations;
+
+	// current prefab stack level
+	int createfx_prefab_stack_level = 0;
+
+	/**
+	 * @brief				writes createfx definitions for all fx_origins within the given prefab and sub-prefabs (RECURSIVE!)
+	 * @param sb			prefab entity
+	 * @param effect_count	written effect count (in-out)
+	 * @param def			fx definition ostream
+	 * @param createfx		createfx definition ostream
+	 */
+	void write_fx_def_for_prefab(game::selbrush_def_t* sb, int* effect_count, std::ofstream& def, std::ofstream& createfx)
+	{
+		const auto entity_gui = GET_GUI(ggui::entity_dialog);
+
+		const float prefab_world_origin[3] = { sb->def->owner->origin[0], sb->def->owner->origin[1], sb->def->owner->origin[2] };
+		float		prefab_world_angles[3] = {};
+		entity_gui->get_vec3_for_key_from_entity(sb->def->owner, prefab_world_angles, "angles");
+
+
+		// world orientation for current prefab level
+		game::orientation_t world_orient = {};
+		world_orient.origin[0] = prefab_world_origin[0];
+		world_orient.origin[1] = prefab_world_origin[1];
+		world_orient.origin[2] = prefab_world_origin[2];
+		game::AnglesToAxis(prefab_world_angles, &world_orient.axis[0][0]);
+
+		// add orientation to the stack
+		createfx_prefab_stack_orientations.emplace_back(world_orient);
+
+
+		FOR_ALL_BRUSHES(prefab, sb->owner->prefab->active_brushlist, sb->owner->prefab->active_brushlist_next)
+		{
+			if (prefab && prefab->def && prefab->def->owner)
+			{
+				const auto owner = reinterpret_cast<game::entity_s_def*>(prefab->def->owner);
+				if (utils::string_equals(owner->eclass->name, "fx_origin"))
+				{
+					// prefab fx_origin orientation
+					float fx_angles[3] = {};
+					entity_gui->get_vec3_for_key_from_entity(reinterpret_cast<game::entity_s*>(owner), fx_angles, "angles");
+
+					game::orientation_t fx_orient = {};
+					fx_orient.origin[0] = owner->origin[0];
+					fx_orient.origin[1] = owner->origin[1];
+					fx_orient.origin[2] = owner->origin[2];
+					game::AnglesToAxis(fx_angles, &fx_orient.axis[0][0]);
+
+
+					// calculate origin and angles in root level (stack 0)
+					game::orientation_t out_orient = {};
+					utils::vector::orientation_concatenate(&fx_orient, &createfx_prefab_stack_orientations[createfx_prefab_stack_level], &out_orient);
+
+					// calc orientation from current stack level down to the root level (stack 0)
+					for (auto i = createfx_prefab_stack_level - 1; i >= 0; i--)
+					{
+						game::orientation_t temp_orient = {};
+						memcpy(&temp_orient, &out_orient, sizeof(game::orientation_t));
+						utils::vector::orientation_concatenate(&temp_orient, &createfx_prefab_stack_orientations[i], &out_orient);
+					}
+
+
+					game::vec3_t out_angles = {};
+					game::AxisToAngles(out_orient.axis, out_angles);
+
+
+					// write def
+					std::string fx_path = entity_gui->get_value_for_key_from_epairs(owner->epairs, "fx");
+					utils::replace(fx_path, "\\", "/");
+
+					def << "\tlevel._effect[ \"effect_" << *effect_count << "\" ] = loadfx( \"" << fx_path << "\" );" << std::endl;
+
+					createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << *effect_count << "\" );" << std::endl;
+					createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << out_orient.origin[0] << ", " << out_orient.origin[1] << ", " << out_orient.origin[2] << " );" << std::endl;
+					createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << out_angles[0] << ", " << out_angles[1] << ", " << out_angles[2] << " );" << std::endl;
+					createfx << "\tent.v[ \"fxid\" ] = \"effect_" << *effect_count << "\";" << std::endl;
+					createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+
+					*effect_count += 1;
+				}
+				else if (prefab && prefab->owner && prefab->owner->prefab && prefab->owner->firstActive && prefab->owner->firstActive->eclass && prefab->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
+				{
+					createfx_prefab_stack_level++;
+					write_fx_def_for_prefab(prefab, effect_count, def, createfx);
+					createfx_prefab_stack_level--;
+
+					if (!createfx_prefab_stack_orientations.empty())
+					{
+						createfx_prefab_stack_orientations.pop_back();
+					}
+				}
+			}
+		}
+	}
+
+
+
+
 	void effects::generate_createfx()
 	{
+		// reset global vars
+		createfx_prefab_stack_level = 0;
+		createfx_prefab_stack_orientations.clear();
+		createfx_prefab_stack_orientations.reserve(8);
+
 		std::ofstream def;
 		std::ofstream createfx;
 		dvars::fs_homepath = game::Dvar_FindVar("fs_homepath");
@@ -588,54 +694,16 @@ namespace components
 			createfx << "//_createfx generated. Do not touch!!" << std::endl; // kek
 			createfx << "main()" << std::endl << "{" << std::endl;
 
-
-			for (auto sb = game::g_selected_brushes_next(); ; sb = sb->next)
-			{
-				if(sb && sb->def && sb->def->owner)
-				{
-					const auto owner = reinterpret_cast<game::entity_s_def*>(sb->def->owner);
-					if (utils::string_equals(owner->eclass->name, "fx_origin"))
-					{
-						const auto entity_gui = GET_GUI(ggui::entity_dialog);
-
-						float fx_angles[3] = {};
-						entity_gui->get_vec3_for_key_from_entity(reinterpret_cast<game::entity_s*>(owner), fx_angles, "angles");
-
-						float temp_rotation_matrix[3][3] = {};
-						utils::vector::angle_vectors(fx_angles, temp_rotation_matrix[2], temp_rotation_matrix[1], temp_rotation_matrix[0]);
-
-						float world_angles[3] = {};
-						game::AxisToAngles(temp_rotation_matrix, world_angles);
-
-						std::string fx_path = entity_gui->get_value_for_key_from_epairs(owner->epairs, "fx");
-						utils::replace(fx_path, "\\", "/");
-
-						def << "\tlevel._effect[ \"effect_" << effect_count << "\" ] = loadfx( \"" << fx_path << "\" );" << std::endl;
-
-						createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_count << "\" );" << std::endl;
-						createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << owner->origin[0] << ", " << owner->origin[1] << ", " << owner->origin[2] << " );" << std::endl;
-						createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << world_angles[0] << ", " << world_angles[1] << ", " << world_angles[2] << " );" << std::endl;
-						createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_count << "\";" << std::endl;
-						createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
-
-						effect_count++;
-					}
-
-					if(sb == game::g_selected_brushes())
-					{
-						break;
-					}
-				}
-				else
-				{
-					break;
-				}
-			}
-
+			game::Select_Deselect(false);
 
 			for (auto sb = game::g_active_brushes_next(); ; sb = sb->next)
 			{
-				if (sb && sb->def && sb->def->owner)
+				// handle fx_origins within prefabs and prefabs within prefabs (recursive)
+				if (sb && sb->owner && sb->owner->prefab && sb->owner->firstActive && sb->owner->firstActive->eclass && sb->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
+				{
+					write_fx_def_for_prefab(sb, &effect_count, def, createfx);
+				}
+				else if (sb && sb->def && sb->def->owner)
 				{
 					const auto owner = reinterpret_cast<game::entity_s_def*>(sb->def->owner);
 					if (utils::string_equals(owner->eclass->name, "fx_origin"))
@@ -665,7 +733,7 @@ namespace components
 						effect_count++;
 					}
 
-					if(sb == game::g_active_brushes())
+					if (sb == game::g_active_brushes())
 					{
 						break;
 					}
