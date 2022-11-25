@@ -745,8 +745,9 @@ namespace components
 	}
 
 	/**
-	 * @brief			run batch to compile bsp
-	 * @param bsp_name	plain map name with no extension or pathing
+	 * @brief					run batch to compile bsp
+	 * @param bsp_name			plain map name with no extension or pathing
+	 * @param generate_createfx	automatically generate createfx files + place into raw instead of bin/IW3xRadiant
 	 */
 	void d3dbsp::compile_bsp(const std::string& bsp_name, bool generate_createfx)
 	{
@@ -811,6 +812,8 @@ namespace components
 		process->set_arguments(args);
 		process->set_post_process_callback([bsp_path, generate_createfx]
 		{
+			game::printf_to_console("^2[PROCESS] Post-Process Callback");
+
 			if (d3dbsp::radiant_load_bsp(bsp_path.c_str(), true))
 			{
 				if (dvars::bsp_gen_reflections_on_compile->current.enabled)
@@ -821,6 +824,7 @@ namespace components
 
 			if (generate_createfx)
 			{
+				game::printf_to_console("Generating CreateFX files ...");
 				components::effects::generate_createfx(true);
 			}
 		});

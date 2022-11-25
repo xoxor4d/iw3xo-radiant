@@ -561,12 +561,17 @@ namespace ggui
 		imgui::title_with_seperator("Compiling", true, 0, 2, 6.0f);
 
 
-		const bool can_compile = true; //components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
+		const bool can_compile = !game::g_prefab_stack_level; //components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
 		imgui::BeginDisabled(!can_compile);
 		{
 			//const std::string d3dbsp_name = components::d3dbsp::loaded_bsp_path.substr(components::d3dbsp::loaded_bsp_path.find_last_of("\\") + 1);
-			std::string d3dbsp_name = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
-			utils::erase_substring(d3dbsp_name, ".map");
+			std::string d3dbsp_name;
+
+			if (can_compile)
+			{
+				d3dbsp_name = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
+				utils::erase_substring(d3dbsp_name, ".map");
+			}
 
 			const std::string button_str = can_compile ? ("Compile " + d3dbsp_name) : "Compile BSP";
 

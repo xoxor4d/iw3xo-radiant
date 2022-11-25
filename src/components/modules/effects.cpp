@@ -622,6 +622,12 @@ namespace components
 					game::AxisToAngles(out_orient.axis, out_angles);
 
 
+					float temp_rotation_matrix[3][3] = {};
+					utils::vector::angle_vectors(out_angles, temp_rotation_matrix[2], temp_rotation_matrix[1], temp_rotation_matrix[0]);
+
+					game::AxisToAngles(temp_rotation_matrix, out_angles);
+
+
 					// write def
 					std::string fx_path = entity_gui->get_value_for_key_from_epairs(owner->epairs, "fx");
 					utils::replace(fx_path, "\\", "/");
@@ -673,12 +679,17 @@ namespace components
 					write_fx_def_for_prefab(prefab, effect_count, def, createfx);
 					createfx_prefab_stack_level--;
 
-					if (!createfx_prefab_stack_orientations.empty())
+					/*if (!createfx_prefab_stack_orientations.empty())
 					{
 						createfx_prefab_stack_orientations.pop_back();
-					}
+					}*/
 				}
 			}
+		}
+
+		if (!createfx_prefab_stack_orientations.empty())
+		{
+			createfx_prefab_stack_orientations.pop_back();
 		}
 	}
 
@@ -718,7 +729,7 @@ namespace components
 			std::filesystem::create_directories(filepath + "createfx\\");
 
 			std::string mapname = "unnamed_map";
-			if(game::current_map_filepath)
+			if (game::current_map_filepath)
 			{
 				mapname = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
 				utils::erase_substring(mapname, ".map");
@@ -818,8 +829,8 @@ namespace components
 			game::printf_to_console("|> createfx file :: [%s]", createfx_path.c_str());
 
 			game::printf_to_console("\n---------- Add to Zonefile -----------");
-			game::printf_to_console("rawfile,maps/mp/mp_%s_fx.gsc", mapname.c_str());
-			game::printf_to_console("rawfile,maps/createfx/mp_%s_fx.gsc", mapname.c_str());
+			game::printf_to_console("rawfile,maps/mp/%s_fx.gsc", mapname.c_str());
+			game::printf_to_console("rawfile,maps/createfx/%s_fx.gsc", mapname.c_str());
 
 			game::printf_to_console("\n---------- Add to Map GSC -----------");
 			game::printf_to_console(
@@ -827,9 +838,13 @@ namespace components
 				"\n{"
 				"\n\t/* ... */"
 				"\n\tmaps\\mp\\_load::main();"
-				"\n\tmaps\\mp\\mp_%s_fx::main();   // <----"
+				"\n\tmaps\\mp\\%s_fx::main();   // <----"
 				"\n\t/* ... */"
 				"\n}", mapname.c_str());
+		}
+		else
+		{
+			game::printf_to_console("[!] failed to find home or basepath");
 		}
 	}
 
