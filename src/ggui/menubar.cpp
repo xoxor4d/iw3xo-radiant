@@ -1016,11 +1016,17 @@ namespace ggui
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Compile current map", ggui::hotkey_dialog::get_hotkey_for_command("bsp_compile").c_str()))
+				const bool can_compile = !game::g_prefab_stack_level;
+				imgui::BeginDisabled(!can_compile);
 				{
-					components::d3dbsp::compile_current_map();
+					if (ImGui::MenuItem("Compile current map", ggui::hotkey_dialog::get_hotkey_for_command("bsp_compile").c_str()))
+					{
+						components::d3dbsp::compile_current_map();
 
-				} TT("Compile currently loaded .map with setting specified within 'Compile Settings'.\nAutomatically reloads the bsp when finished.");
+					} TT("Compile currently loaded .map with settings specified within 'Compile Settings'.\nAutomatically reloads the bsp when finished.");
+
+					imgui::EndDisabled();
+				}
 
 				if (ImGui::MenuItem("Compile Settings .."))
 				{

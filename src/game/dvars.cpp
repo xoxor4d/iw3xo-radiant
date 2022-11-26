@@ -65,6 +65,7 @@ namespace dvars
 
 	game::dvar_s* bsp_load_entities = nullptr;
 	game::dvar_s* bsp_gen_reflections_on_compile = nullptr;
+	game::dvar_s* bsp_gen_createfx_on_compile = nullptr;
 
 	game::dvar_s* bsp_compile_bsp = nullptr;
 	game::dvar_s* bsp_compile_onlyents = nullptr;

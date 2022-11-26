@@ -751,6 +751,7 @@ namespace components
 	 */
 	void d3dbsp::compile_bsp(const std::string& bsp_name, bool generate_createfx)
 	{
+		//game::printf_to_console("^1generate_createfx is %s", generate_createfx ? "true" : "false");
 		game::printf_to_console("[BSP] Compiling bsp for map: %s ...", bsp_name.c_str());
 		
 		const auto egui = GET_GUI(ggui::entity_dialog);
@@ -813,6 +814,7 @@ namespace components
 		process->set_post_process_callback([bsp_path, generate_createfx]
 		{
 			game::printf_to_console("^2[PROCESS] Post-Process Callback");
+			//game::printf_to_console("^1generate_createfx is %s", generate_createfx ? "true" : "false");
 
 			if (d3dbsp::radiant_load_bsp(bsp_path.c_str(), true))
 			{
@@ -840,7 +842,7 @@ namespace components
 		std::string d3dbsp_name = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
 		utils::erase_substring(d3dbsp_name, ".map");
 
-		components::d3dbsp::compile_bsp(d3dbsp_name);
+		components::d3dbsp::compile_bsp(d3dbsp_name, dvars::bsp_gen_createfx_on_compile->current.enabled);
 	}
 
 
@@ -918,6 +920,12 @@ namespace components
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "automatically build reflections when compiling the bsp");
+
+		dvars::bsp_gen_createfx_on_compile = dvars::register_bool(
+			/* name		*/ "bsp_gen_createfx_on_compile",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "automatically generate CreateFX files when compiling the bsp");
 
 		dvars::r_draw_bsp = dvars::register_bool(
 			/* name		*/ "r_draw_bsp",

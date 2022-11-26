@@ -65,6 +65,7 @@ namespace dvars
 
 	extern game::dvar_s* bsp_load_entities;
 	extern game::dvar_s* bsp_gen_reflections_on_compile;
+	extern game::dvar_s* bsp_gen_createfx_on_compile;
 
 	extern game::dvar_s* bsp_compile_bsp;
 	extern game::dvar_s* bsp_compile_onlyents;

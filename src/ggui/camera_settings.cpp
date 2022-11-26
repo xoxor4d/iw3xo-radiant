@@ -551,8 +551,7 @@ namespace ggui
 			dvars::set_bool(dvars::r_reflectionprobe_generate, true);
 		} TT("Probes within the loaded bsp will be used to take screenshots ..\nso make sure your bsp is up-to-date.");*/
 
-		static bool generate_createfx = true;
-		imgui::Checkbox("Generate CreateFX", &generate_createfx);
+		imgui::Checkbox("Generate CreateFX", &dvars::bsp_gen_createfx_on_compile->current.enabled);
 		TT(	"Automatically generate CreateFX files for the current map when compiling bsp.\n"
 			"This will copy the files to the correct location in raw/maps/...");
 
@@ -577,7 +576,7 @@ namespace ggui
 
 			if (imgui::Button(button_str.c_str(), ImVec2(-style.FramePadding.x, imgui::GetFrameHeight())))
 			{
-				components::d3dbsp::compile_bsp(d3dbsp_name, generate_createfx);
+				components::d3dbsp::compile_bsp(d3dbsp_name, dvars::bsp_gen_createfx_on_compile->current.enabled);
 			}
 
 			imgui::EndDisabled();
