@@ -2146,6 +2146,12 @@ namespace components
 
 			reflectionprobes::generate_reflections_for_bsp();
 			dvars::set_bool(dvars::r_reflectionprobe_generate, false);
+
+			if (!dvars::bsp_show_bsp_after_compile->current.enabled)
+			{
+				command::execute("toggle_bsp_radiant");
+				dvars::set_bool(dvars::r_draw_bsp, dvars::bsp_show_bsp_after_compile->current.enabled);
+			}
 		}
 
 		static int skip_frame = 0;

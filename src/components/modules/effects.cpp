@@ -824,23 +824,25 @@ namespace components
 			def.close();
 			createfx.close();
 
-			game::printf_to_console("\n[!][Generate CreateFX] for [%d] effects", effect_count);
+			game::printf_to_console("\n[Generate CreateFX] for [%d] effects", effect_count);
 			game::printf_to_console("|> createfx def file :: [%s]", fx_def_path.c_str());
 			game::printf_to_console("|> createfx file :: [%s]", createfx_path.c_str());
 
 			game::printf_to_console("\n---------- Add to Zonefile -----------");
-			game::printf_to_console("rawfile,maps/mp/%s_fx.gsc", mapname.c_str());
-			game::printf_to_console("rawfile,maps/createfx/%s_fx.gsc", mapname.c_str());
+			game::printf_to_console("^3rawfile,maps/mp/%s_fx.gsc", mapname.c_str());
+			game::printf_to_console("^3rawfile,maps/createfx/%s_fx.gsc", mapname.c_str());
 
 			game::printf_to_console("\n---------- Add to Map GSC -----------");
 			game::printf_to_console(
-				"main()"
-				"\n{"
-				"\n\t/* ... */"
-				"\n\tmaps\\mp\\_load::main();"
-				"\n\tmaps\\mp\\%s_fx::main();   // <----"
-				"\n\t/* ... */"
-				"\n}", mapname.c_str());
+				"^3main()"
+				"\n^3###{"
+				"\n^3###\t /* ... */"
+				"\n^3###\t maps\\mp\\_load::main();"
+				"\n^3###\t maps\\mp\\%s_fx::main();   // <----"
+				"\n^3###\t /* ... */"
+				"\n^3###}", mapname.c_str());
+
+			game::printf_to_console("\n");
 		}
 		else
 		{

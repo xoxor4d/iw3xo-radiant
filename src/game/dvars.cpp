@@ -64,6 +64,7 @@ namespace dvars
 	game::dvar_s* grid_draw_edge_coordinates = nullptr;
 
 	game::dvar_s* bsp_load_entities = nullptr;
+	game::dvar_s* bsp_show_bsp_after_compile = nullptr;
 	game::dvar_s* bsp_gen_reflections_on_compile = nullptr;
 	game::dvar_s* bsp_gen_createfx_on_compile = nullptr;
 

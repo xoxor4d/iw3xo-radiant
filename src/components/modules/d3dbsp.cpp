@@ -814,13 +814,21 @@ namespace components
 		process->set_post_process_callback([bsp_path, generate_createfx]
 		{
 			game::printf_to_console("^2[PROCESS] Post-Process Callback");
-			//game::printf_to_console("^1generate_createfx is %s", generate_createfx ? "true" : "false");
 
 			if (d3dbsp::radiant_load_bsp(bsp_path.c_str(), true))
 			{
 				if (dvars::bsp_gen_reflections_on_compile->current.enabled)
 				{
+					//components::renderer::on_cam_paint_post_rendercommands
 					dvars::set_bool(dvars::r_reflectionprobe_generate, true);
+				}
+				else
+				{
+					if (dvars::bsp_show_bsp_after_compile->current.enabled)
+					{
+						command::execute("toggle_bsp_radiant");
+						dvars::set_bool(dvars::r_draw_bsp, dvars::bsp_show_bsp_after_compile->current.enabled);
+					}
 				}
 			}
 
@@ -829,7 +837,7 @@ namespace components
 				game::printf_to_console("Generating CreateFX files ...");
 				components::effects::generate_createfx(true);
 			}
-		});
+		}, true );
 
 		process->create_process();
 	}
@@ -914,6 +922,12 @@ namespace components
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "enable to load entities when loading a bsp (static_models only)");
+
+		dvars::bsp_show_bsp_after_compile = dvars::register_bool(
+			/* name		*/ "bsp_show_bsp_after_compile",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "automatically turn on bsp view after compiling");
 
 		dvars::bsp_gen_reflections_on_compile = dvars::register_bool(
 			/* name		*/ "bsp_gen_reflections_on_compile",

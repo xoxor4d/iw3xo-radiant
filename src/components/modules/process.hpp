@@ -21,6 +21,7 @@ namespace components
 		bool m_is_running;
 		bool m_kill_thread;
 		bool m_disable_callback;
+		bool m_disable_callback_on_cancel;
 
 		// prefs
 		bool m_output_to_console;
@@ -75,6 +76,7 @@ namespace components
 			m_is_running = false;
 			m_kill_thread = false;
 			m_disable_callback = false;
+			m_disable_callback_on_cancel = false;
 			m_output_to_console = false;
 		}
 		
@@ -140,11 +142,12 @@ namespace components
 		}
 
 		// callback function after process finished
-		void set_post_process_callback(const std::function<void()>& _callback)
+		void set_post_process_callback(const std::function<void()>& _callback, bool dismiss_on_cancel = false)
 		{
 			if (!this->is_active())
 			{
 				this->m_post_process_callback = _callback;
+				this->m_disable_callback_on_cancel = dismiss_on_cancel;
 			}
 		}
 
@@ -163,8 +166,8 @@ namespace components
 		{
 			if (this->is_active())
 			{
-				m_kill_thread = true;
-				m_disable_callback = disable_callback;
+				this->m_kill_thread = true;
+				this->m_disable_callback = disable_callback || this->m_disable_callback_on_cancel;
 			}
 		}
 

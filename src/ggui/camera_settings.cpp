@@ -542,9 +542,10 @@ namespace ggui
 		}
 
 		// -----------------
-		imgui::title_with_seperator("Reflections", true, 0, 2, 6.0f);
+		imgui::title_with_seperator("Compiling", true, 0, 2, 6.0f);
 
 		imgui::Checkbox("Automatically compile reflections when building bsp", &dvars::bsp_gen_reflections_on_compile->current.enabled); TT(dvars::bsp_gen_reflections_on_compile->description);
+		imgui::Checkbox("Automatically turn on bsp-view after compiling", &dvars::bsp_show_bsp_after_compile->current.enabled); TT(dvars::bsp_show_bsp_after_compile->description);
 
 		/*if (imgui::Button("Generate Reflections", ImVec2(-style.FramePadding.x, imgui::GetFrameHeight())))
 		{
@@ -555,9 +556,10 @@ namespace ggui
 		TT(	"Automatically generate CreateFX files for the current map when compiling bsp.\n"
 			"This will copy the files to the correct location in raw/maps/...");
 
+		SPACING(0, 0);
 
 		// -----------------
-		imgui::title_with_seperator("Compiling", true, 0, 2, 6.0f);
+		//imgui::title_with_seperator("Compiling", true, 0, 2, 6.0f);
 
 
 		const bool can_compile = !game::g_prefab_stack_level; //components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();

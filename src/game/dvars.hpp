@@ -64,6 +64,7 @@ namespace dvars
 	extern game::dvar_s* grid_draw_edge_coordinates;
 
 	extern game::dvar_s* bsp_load_entities;
+	extern game::dvar_s* bsp_show_bsp_after_compile;
 	extern game::dvar_s* bsp_gen_reflections_on_compile;
 	extern game::dvar_s* bsp_gen_createfx_on_compile;
 
