@@ -3199,7 +3199,7 @@ namespace components
 
 	void draw_additional_debug()
 	{
-		if(game::glob::debug_sundir)
+		if (game::glob::debug_sundir)
 		{
 			if (const auto	world_ent = game::g_world_entity();
 							world_ent && world_ent->firstActive)
@@ -3538,7 +3538,7 @@ namespace components
 
 	int R_CalcReflectionProbeIndex(const float* lightingOrigin)
 	{
-		if(game::rgp->world)
+		if (game::rgp->world)
 		{
 			return utils::hook::call<int (__cdecl)(const float*)>(0x5235E0)(lightingOrigin);
 		}

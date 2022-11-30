@@ -230,7 +230,11 @@ namespace ggui
 
 			ImGui::title_with_seperator("General", false);
 			ImGui::SliderInt("Camera mode", &prefs->camera_mode, 0, 2);
-			ImGui::DragFloat("Field of view", &prefs->camera_fov, 0.1f, 1.0f, 180.0f, "%.1f");
+
+			if (ImGui::DragFloat("Field of view", &prefs->camera_fov, 0.1f, 10.0f, 160.0f, "%.1f"))
+			{
+				prefs->camera_fov = ImClamp(prefs->camera_fov, 10.0f, 160.0f);
+			}
 
 
 			// -----------------
