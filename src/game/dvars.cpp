@@ -62,6 +62,7 @@ namespace dvars
 
 	game::dvar_s* grid_zoom_to_cursor = nullptr;
 	game::dvar_s* grid_draw_edge_coordinates = nullptr;
+	game::dvar_s* grid_new_patch_drag = nullptr;
 
 	game::dvar_s* bsp_load_entities = nullptr;
 	game::dvar_s* bsp_show_bsp_after_compile = nullptr;

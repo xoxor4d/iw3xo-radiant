@@ -62,6 +62,7 @@ namespace dvars
 
 	extern game::dvar_s* grid_zoom_to_cursor;
 	extern game::dvar_s* grid_draw_edge_coordinates;
+	extern game::dvar_s* grid_new_patch_drag;
 
 	extern game::dvar_s* bsp_load_entities;
 	extern game::dvar_s* bsp_show_bsp_after_compile;

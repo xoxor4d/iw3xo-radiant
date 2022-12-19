@@ -314,9 +314,9 @@ void __declspec(naked) camwnd_set_detatched_child_window_style()
 
 bool should_move_selection()
 {
-	if(dvars::guizmo_enable->current.enabled)
+	if (dvars::guizmo_enable->current.enabled)
 	{
-		if(ImGuizmo::IsOver() || ImGuizmo::IsUsing())
+		if (ImGuizmo::IsOver() || ImGuizmo::IsUsing())
 		{
 			return false;
 		}

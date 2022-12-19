@@ -1034,6 +1034,44 @@ namespace game
 		}
 	}
 
+	// https://github.com/id-Software/Quake-III-Arena/blob/dbe4ddb10315479fc00086f08e25d968b4b43c49/q3radiant/PMESH.CPP#L3002
+	bool Patch_DragScale(game::patchMesh_t* pm, const float* bounds /*eax*/, const float* dist_vec)
+	{
+		bool return_value = false;
+		const static uint32_t func_addr = 0x442B90;
+
+		__asm
+		{
+			pushad;
+			push	dist_vec;
+			mov		eax, bounds;
+			push	pm;
+			call	func_addr;
+			add		esp, 8;
+			mov		return_value, al;
+			popad;
+		}
+
+		return return_value;
+	}
+
+	// used to select brush faces (vertices) that are going to be extruded when dragging next to a selected brush (g_qeglobals.d_num_move_points)
+	void Brush_SideSelect(game::brush_t_with_custom_def* def, const float* trace_start /*eax*/, const float* trace_dir, int shear)
+	{
+		const static uint32_t func_addr = 0x4777D0;
+		__asm
+		{
+			pushad;
+			push	shear;
+			push	trace_dir;
+			mov		eax, trace_start;
+			push	def;
+			call	func_addr;
+			add		esp, 12;
+			popad;
+		}
+	}
+
 	int CM_ForEachBrushPlaneIntersection(game::brush_t_with_custom_def* b /*esi*/, game::BrushPt_t* brush_pts)
 	{
 		const static uint32_t func_addr = 0x470880;

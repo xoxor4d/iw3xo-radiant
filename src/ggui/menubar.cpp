@@ -1375,6 +1375,12 @@ namespace ggui
 					dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
 				}
 
+				SEPERATORV(0.0f);
+
+				if (imgui::MenuItem("New-Patch-Dragging", ggui::hotkey_dialog::get_hotkey_for_command("new_patch_drag").c_str(), dvars::grid_new_patch_drag->current.enabled)) {
+					dvars::set_bool(dvars::grid_new_patch_drag, !dvars::grid_new_patch_drag->current.enabled);
+				} TT(dvars::grid_new_patch_drag->description);
+
 				ImGui::EndMenu(); // Grid
 			}
 

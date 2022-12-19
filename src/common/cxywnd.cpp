@@ -318,8 +318,13 @@ BOOL __stdcall cxywnd::on_scroll(UINT nFlags, std::int16_t zDelta, [[maybe_unuse
 }
 
 
-void xy_to_point(cxywnd* wnd, float* origin_out, CPoint point)
+void xy_to_point(cxywnd* wnd, float* origin_out, CPoint point, float* dir_out = nullptr)
 {
+	if (dir_out)
+	{
+		utils::vector::set_vec3(dir_out, 0.0f);
+	}
+
 	const auto zoom_center_x = ((float)point.x - (float)wnd->m_nWidth * 0.5f) / wnd->m_fScale;
 	const auto zoom_center_y = ((float)point.y - (float)wnd->m_nHeight * 0.5f) / wnd->m_fScale;
 	
@@ -329,18 +334,33 @@ void xy_to_point(cxywnd* wnd, float* origin_out, CPoint point)
 		origin_out[0] = (zoom_center_x + wnd->m_vOrigin[0]);
 		origin_out[1] = (zoom_center_y + wnd->m_vOrigin[1]);
 		origin_out[2] = 131072.0;
+
+		if (dir_out)
+		{
+			dir_out[2] = -1.0f;
+		}
 		break;
 		
 	case XZ:
 		origin_out[0] = (zoom_center_x + wnd->m_vOrigin[0]);
 		origin_out[1] = 131072.0;
 		origin_out[2] = (zoom_center_y + wnd->m_vOrigin[2]);
+
+		if (dir_out)
+		{
+			dir_out[1] = -1.0f;
+		}
 		break;
 
 	case YZ:
 		origin_out[0] = 131072.0;
 		origin_out[1] = (zoom_center_x + wnd->m_vOrigin[1]);
 		origin_out[2] = (zoom_center_y + wnd->m_vOrigin[2]);
+
+		if (dir_out)
+		{
+			dir_out[0] = -1.0f;
+		}
 		break;
 	}
 }
@@ -510,6 +530,119 @@ __declspec(naked) void on_view_zoomout_stub()
 
 
 // *
+// | ----------------- new-patch-dragging logic ---------------------
+// *
+
+/**
+ * @brief determine if 'CXYWnd::NewBrushDrag' creates brushes or patches
+ */
+void new_brush_or_patch_drag()
+{
+	if (dvars::grid_new_patch_drag && dvars::grid_new_patch_drag->current.enabled)
+	{
+		const auto p = game::Create_Terrain(2, 2, cmainframe::activewnd->m_pActiveXY->m_nViewType);
+		game::Patch_Lightmap_Texturing_dirty(p->def->patch);
+	}
+}
+
+void __declspec(naked) new_brush_or_patch_drag_stub()
+{
+	const static uint32_t Brush_AddToList2_func = 0x4765A0;
+	const static uint32_t retn_addr = 0x4681AE;
+	__asm
+	{
+		call	Brush_AddToList2_func;
+
+		pushad;
+		call	new_brush_or_patch_drag;
+		popad;
+
+		jmp		retn_addr;
+	}
+}
+
+/**
+ * @brief			only called when 'CXYWnd::NewBrushDrag' is creating patches instead of a brushes (new_brush_or_patch_drag() <-> build_brush_or_patch_check())
+ * @param sb		og entity (could be replaced with selected_brushes_next)
+ * @param new_mins	og brush mins resulting from the dragging operation
+ * @param new_maxs  og brush maxs resulting from the dragging operation
+ */
+void brush_build_patch_size_logic(game::selbrush_def_t* sb, float* new_mins, float* new_maxs)
+{
+	game::Brush_Create(new_maxs, new_mins, sb->def, (DWORD)sb->def->owner->eclass);
+	game::Brush_BuildWindings(sb->def, true);
+	++sb->def->version;
+
+	const auto p = game::Create_Terrain(2, 2, cmainframe::activewnd->m_pActiveXY->m_nViewType);
+	game::Patch_Lightmap_Texturing_dirty(p->def->patch);
+}
+
+// 'brush_build_stub' helper func
+bool build_brush_or_patch_check(game::selbrush_def_t* sb)
+{
+	if (sb && sb->patch && sb->patch->def)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+// global helpers
+game::selbrush_def_t* g_bbs_selbrush = nullptr;
+float* g_bbs_mins = nullptr;
+float* g_bbs_maxs = nullptr;
+
+// hook on 'Brush_Build' call in 'CXYWnd::NewBrushDrag' to check if we are dragging a patch or a brush
+void __declspec(naked) brush_build_stub()
+{
+	const static uint32_t brush_build_func = 0x4786D0;
+	const static uint32_t retn_addr = 0x4681AE;
+
+	__asm
+	{
+		mov		g_bbs_selbrush, eax;	// save sb pointer
+
+		lea     ecx, [ebp - 0x18];		// load maxs
+		mov		g_bbs_maxs, ecx;		// save
+
+		lea     edx, [ebp - 0x24];		// load mins
+		mov		g_bbs_mins, edx;		// save
+
+
+		push	g_bbs_selbrush;
+		call	build_brush_or_patch_check;
+		add		esp, 4;
+		test	al, al;
+		jnz		IS_PATCH;				// jump if true (jump if patch)
+
+
+		mov		eax, g_bbs_selbrush;
+		mov		esi, [eax + 0x14];		// sb->def
+		push	g_bbs_maxs;
+		push	g_bbs_mins;
+		call	brush_build_func;		// og Brush_Build
+		add		esp, 8;
+		jmp		RETURN_TO;
+
+
+	IS_PATCH:
+		pushad;
+		push	g_bbs_maxs;
+		push	g_bbs_mins;
+		push	g_bbs_selbrush;
+		call	brush_build_patch_size_logic;
+		add		esp, 12;
+		popad;
+
+
+	RETURN_TO:
+		jmp		retn_addr;
+	}
+}
+
+
+// *
 // | ----------------- Windowproc ---------------------
 // *
 
@@ -593,6 +726,12 @@ void cxywnd::register_dvars()
 		/* flags	*/ game::dvar_flags::saved,
 		/* desc		*/ "grid-view: draw edge and grid block coordinates");
 
+	dvars::grid_new_patch_drag = dvars::register_bool(
+		/* name		*/ "grid_new_patch_drag",
+		/* default	*/ false,
+		/* flags	*/ game::dvar_flags::none,
+		/* desc		*/ "grid-view: dragging on the grid will create patches instead of brushes when enabled");
+
 }
 
 void cxywnd::hooks()
@@ -618,6 +757,22 @@ void cxywnd::hooks()
 	// use alpha value on selected brush when using textured mode
 	utils::hook::nop(0x46D8E3, 8);
 		 utils::hook(0x46D8E3, fix_selection_alpha_textured_mode, HOOK_JUMP).install()->quick();
+
+	// *
+
+	// implement new-patch dragging logic in 'CXYWnd::NewBrushDrag'
+	utils::hook(0x4681A9, new_brush_or_patch_drag_stub, HOOK_JUMP).install()->quick();
+
+	// hook on 'Brush_Build' call in 'CXYWnd::NewBrushDrag' to check if we are dragging a patch or a brush -> create patch
+	utils::hook::nop(0x468110, 6);
+		 utils::hook(0x468110, brush_build_stub, HOOK_JUMP).install()->quick();
+
+	components::command::register_command_with_hotkey("new_patch_drag"s, [](auto)
+	{
+			dvars::set_bool(dvars::grid_new_patch_drag, !dvars::grid_new_patch_drag->current.enabled);
+	});
+
+	// *
 
 #if 1
 	// cxywnd::precreatewindow -> change window style for child windows (split view, not detatched)

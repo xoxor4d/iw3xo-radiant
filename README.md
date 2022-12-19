@@ -1,12 +1,13 @@
 
 
 
-<h1 align="center">IW3xRadiant - A Call of Duty 4 Radiant Modification using ImGui</h3>
+<h2 align="center">iw3xo-radiant // a radiant modification for Call of Duty 4</h1>
 
-<p align="center">
-This project is aimed at developers and includes various modifications/additions and was initially built to be used with IW3xo.
-Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You can, however, just use it as a direct replacement for stock radiant.
-</p>
+<div align="center" markdown="1">
+
+This project aims to fix existing bugs, extend functionalities across the board and to replace   
+the dated MFC/Windows UI with a more modern and flexible UI powered by Dear ImGui.
+</div>
 
 <br>
 <div align="center" markdown="1">
@@ -24,10 +25,11 @@ https://xoxor4d.github.io/projects/iw3xo-radiant
 <br>
 
 ### nightly builds - develop branch
-( download and install the [latest release](https://github.com/xoxor4d/iw3xo-radiant/releases) before using nightly's )
+(download and install the [latest release](https://github.com/xoxor4d/iw3xo-radiant/releases) before using nightly's)   
+(nightly's may require additional assets so make sure to check pinned messages in the __#nightly-builds__ channel on the [iw3xo discord](https://discord.gg/t5jRGbj))  
 
-[![build-develop](https://img.shields.io/github/workflow/status/xoxor4d/iw3xo-radiant/Build-Debug/develop?logo=github&label=nightly-develop)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-debug/develop/Debug%20binaries.zip)&ensp;
-[![build-release](https://img.shields.io/github/workflow/status/xoxor4d/iw3xo-radiant/Build-Release/develop?logo=github&label=nightly-release)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-release/develop/Release%20binaries.zip)&ensp;
+[![build-develop](https://img.shields.io/github/actions/workflow/status/xoxor4d/iw3xo-radiant/build-debug.yml?branch=develop&label=nightly-debug&logo=github)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-debug/develop/Debug%20binaries.zip)&ensp;
+[![build-release](https://img.shields.io/github/actions/workflow/status/xoxor4d/iw3xo-radiant/build-release.yml?branch=develop&label=nightly-release&logo=github)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-release/develop/Release%20binaries.zip)&ensp;
 
 
 
@@ -58,15 +60,7 @@ If you want to buy me a coffee:
 <br>
 
 ___
-## Features
-
-
-
 <br>
-
-### Goals:
-- replace most if not all of the MFC/Windows UI with Dear ImGui
-- extend functionalities across the board
 
 ### New features not found within the original cod4 radiant:
 + completely revamped user interface with docking, tabs, saved layouts and more (Dear ImGui)
@@ -122,7 +116,8 @@ ___
 3. Copy the contents into your cod4 root directory
 4. Start `bin/IW3xRadiant.exe`
 
-- [NIGHTLY]&ensp; &ensp; install latest release, download nightly, unpack and replace `iw3r.dll` within the `bin` folder
+- [NIGHTLY]&ensp; &ensp; install latest release, download nightly, unpack and replace `iw3r.dll` within the `bin` folder  
+  &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; -> check for additional assets in the __#nightly-builds__ channel (📍) on the [iw3xo discord](https://discord.gg/t5jRGbj)
 - [OPTIONAL]&ensp; __bo3-tool-textures.zip__ (unpack and place `.iwi's` into `bin\IW3xRadiant\images`)
 
 <br>
