@@ -222,18 +222,19 @@ namespace ggui
 					center_horz_end(manipulation_l1_width);
 				}
 
-				SPACING(0.0f, 0.0f);
+				imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+				imgui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, 0.5f));
 
 				static float manipulation_l2_width = 100.0f;
 				center_horz_begin(manipulation_l2_width);
 				{
-					if (ImGui::Button("Hollow Brush", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Hollow Brush", ImVec2(max_widget_width * 0.5f - 6.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x425570); // CMainFrame::OnSelectionMakehollow
 					} TT("Hollows the selected brush. Uses current grid size as wall size");
 
 					ImGui::SameLine(0.0f, 4.0f);
-					if (ImGui::Button("Auto Caulk", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Auto Caulk", ImVec2(max_widget_width * 0.5f - 6.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x425600); // CMainFrame::OnSelectionAutoCaulk
 					} TT(std::string("Automatically caulk invisible faces\n" + ggui::hotkey_dialog::get_hotkey_for_command("AutoCaulk", true)).c_str());
@@ -241,21 +242,46 @@ namespace ggui
 					center_horz_end(manipulation_l2_width);
 				}
 
+
+				static float manipulation_l3_width = 100.0f;
+				center_horz_begin(manipulation_l3_width);
+				{
+					if (ImGui::Button("Toggle New Patch Dragging", ImVec2(max_widget_width - 8.0f, 32.0f)))
+					{
+						dvars::set_bool(dvars::grid_new_patch_drag, !dvars::grid_new_patch_drag->current.enabled);
+					} TT(dvars::grid_new_patch_drag->description);
+
+					if (dvars::grid_new_patch_drag->current.enabled)
+					{
+						imgui::SameLine();
+						imgui::SetCursorPos(ImVec2(imgui::GetCursorPos().x - 34.0f, imgui::GetCursorPos().y + 7.0f));
+						imgui::RenderCheckMark(imgui::GetWindowDrawList(), imgui::GetCursorScreenPos(), imgui::GetColorU32(ImGuiCol_Text), 16.0f);
+					}
+
+					center_horz_end(manipulation_l3_width);
+				}
+
+				imgui::PopStyleColor();
+				imgui::PopStyleVar();
+
 				treenode_end(style_colors, style_vars);
 			}
 
-			if(treenode_begin("Brush Contents", true, style_colors, style_vars))
+			if (treenode_begin("Brush Contents", true, style_colors, style_vars))
 			{
+				imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+				imgui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, 0.5f));
+
 				static float brush_contents_l1_width = 100.0f;
 				center_horz_begin(brush_contents_l1_width);
 				{
-					if (ImGui::Button("Detail", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Detail", ImVec2(max_widget_width * 0.5f - 2.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x4261C0); // CMainFrame::OnSelectionMakeDetail
 					}
 
 					ImGui::SameLine(0.0f, 4.0f);
-					if (ImGui::Button("Non-Colliding", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Non-Colliding", ImVec2(max_widget_width * 0.5f - 2.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x426280); // CMainFrame::OnSelectionMakeNonColliding
 					}
@@ -265,18 +291,21 @@ namespace ggui
 				static float brush_contents_l2_width = 100.0f;
 				center_horz_begin(brush_contents_l2_width);
 				{
-					if (ImGui::Button("Structural", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Structural", ImVec2(max_widget_width * 0.5f - 2.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x426200); // CMainFrame::OnSelectionMakeStructural
 					}
 
 					ImGui::SameLine(0.0f, 4.0f);
-					if (ImGui::Button("Weapon Clip", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Weapon Clip", ImVec2(max_widget_width * 0.5f - 2.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x426240); // CMainFrame::OnSelectionMakeWeaponclip
 					}
 				}
 				center_horz_end(brush_contents_l2_width);
+
+				imgui::PopStyleColor();
+				imgui::PopStyleVar();
 
 				treenode_end(style_colors, style_vars);
 			}
@@ -510,14 +539,46 @@ namespace ggui
 						cdeclcall(void, 0x42A270); // CMainFrame::OnRedistPatchPoints
 					}
 
+					imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+					imgui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, 0.5f));
+
 					ImGui::SameLine();
 					if (ImGui::Button("Adv. Edit Dialog", ImVec2(116.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x42BC90); // CMainFrame::OnAdvancedEditDlg
 					} TT(std::string("Toggle the advanced vertex edit dialog\n" + ggui::hotkey_dialog::get_hotkey_for_command("AdvancedCurveEdit", true)).c_str());
-					
+
+					imgui::PopStyleColor();
+					imgui::PopStyleVar();
 
 					center_horz_end(manipulation_l2_width);
+
+
+
+					imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+					imgui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, 0.5f));
+
+					static float manipulation_l3_width = 100.0f;
+					center_horz_begin(manipulation_l3_width);
+					{
+						if (ImGui::Button("Toggle New Patch Dragging", ImVec2(max_widget_width - 8.0f, 32.0f)))
+						{
+							dvars::set_bool(dvars::grid_new_patch_drag, !dvars::grid_new_patch_drag->current.enabled);
+						} TT(dvars::grid_new_patch_drag->description);
+
+						if (dvars::grid_new_patch_drag->current.enabled)
+						{
+							imgui::SameLine();
+							imgui::SetCursorPos(ImVec2(imgui::GetCursorPos().x - 34.0f, imgui::GetCursorPos().y + 7.0f));
+							imgui::RenderCheckMark(imgui::GetWindowDrawList(), imgui::GetCursorScreenPos(), imgui::GetColorU32(ImGuiCol_Text), 16.0f);
+						}
+
+						center_horz_end(manipulation_l3_width);
+					}
+
+					imgui::PopStyleColor();
+					imgui::PopStyleVar();
+
 				}
 
 				treenode_end(style_colors, style_vars);
