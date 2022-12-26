@@ -249,7 +249,10 @@ namespace ggui
 					if (ImGui::Button("Toggle New Patch Dragging", ImVec2(max_widget_width - 8.0f, 32.0f)))
 					{
 						dvars::set_bool(dvars::grid_new_patch_drag, !dvars::grid_new_patch_drag->current.enabled);
-					} TT(dvars::grid_new_patch_drag->description);
+					}
+
+					const std::string dvar_desc = dvars::grid_new_patch_drag->description + " "s + ggui::hotkey_dialog::get_hotkey_for_command("new_patch_drag", true);
+					TT(dvar_desc.c_str());
 
 					if (dvars::grid_new_patch_drag->current.enabled)
 					{
@@ -564,7 +567,11 @@ namespace ggui
 						if (ImGui::Button("Toggle New Patch Dragging", ImVec2(max_widget_width - 8.0f, 32.0f)))
 						{
 							dvars::set_bool(dvars::grid_new_patch_drag, !dvars::grid_new_patch_drag->current.enabled);
-						} TT(dvars::grid_new_patch_drag->description);
+						}
+
+						const std::string dvar_desc = dvars::grid_new_patch_drag->description + " "s + ggui::hotkey_dialog::get_hotkey_for_command("new_patch_drag", true);
+						TT(dvar_desc.c_str());
+
 
 						if (dvars::grid_new_patch_drag->current.enabled)
 						{
