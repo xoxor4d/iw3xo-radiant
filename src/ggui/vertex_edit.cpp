@@ -17,7 +17,15 @@ namespace ggui
 
 		ImGui::BeginDisabled(!enable_noise);
 		{
-			ImGui::DragFloat3("XYZ Noise Scale", noise_scale, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+			static int noise_mode = 0;
+			const char* noise_modes_str[4] = { "Height", "Alpha" };
+			ImGui::SliderInt("Mode", &noise_mode, 0, 1, noise_modes_str[noise_mode]);
+
+			ImGui::BeginDisabled(noise_mode);
+			{
+				ImGui::DragFloat3("XYZ Height Scale", noise_scale, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+				ImGui::EndDisabled();
+			}
 
 			if (ImGui::Button("Add Noise", ImVec2(ImGui::GetItemRectSize().x, ImGui::GetFrameHeight())))
 			{
@@ -34,9 +42,16 @@ namespace ggui
 					const float rand1 = distr(gen) * 0.01f;
 					const float rand2 = distr(gen) * 0.01f;
 
-					vert->xyz[0] += (rand1 * noise_scale[0]);
-					vert->xyz[1] += (rand2 * noise_scale[1]);
-					vert->xyz[2] += (rand1 * noise_scale[2]);
+					if (noise_mode == 0)
+					{
+						vert->xyz[0] += (rand1 * noise_scale[0]);
+						vert->xyz[1] += (rand2 * noise_scale[1]);
+						vert->xyz[2] += (rand1 * noise_scale[2]);
+					}
+					else if (noise_mode == 1)
+					{
+						vert->vert_color.a = utils::pack_float(fabs(rand1));
+					}
 				}
 
 				if (patch && patch->def)

@@ -708,9 +708,13 @@ namespace ggui
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Reload Textures", ggui::hotkey_dialog::get_hotkey_for_command("RefreshTextures").c_str())) {
+				if (ImGui::MenuItem("Reload All Images", ggui::hotkey_dialog::get_hotkey_for_command("RefreshTextures").c_str())) {
 					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
-				}
+				} TT("This only reloads the iwi's\nReload individual materials from the context menu (texture browser)");
+
+				if (ImGui::MenuItem("Load New Materials")) {
+					utils::hook::call<void(__cdecl)()>(0x45AE40)();
+				} TT("This only loads materials that were not present at the start of radiant\nReload individual materials from the context menu (texture browser)");
 
 				if (ImGui::MenuItem("Reload XModels")) 
 				{
@@ -1461,6 +1465,16 @@ namespace ggui
 
 				//	ImGui::EndMenu(); // Layered Materials
 				//}
+
+				if (ImGui::MenuItem("Reload All Images", ggui::hotkey_dialog::get_hotkey_for_command("RefreshTextures").c_str())) {
+					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
+				} TT("This only reloads the iwi's\nReload individual materials from the context menu (texture browser)");
+
+				if (ImGui::MenuItem("Load New Materials")) {
+					utils::hook::call<void(__cdecl)()>(0x45AE40)();
+				} TT("This only loads materials that were not present at the start of radiant\nReload individual materials from the context menu (texture browser)");
+
+				SEPERATORV(0.0f);
 
 				if (ImGui::BeginMenu("Edit Layer"))
 				{

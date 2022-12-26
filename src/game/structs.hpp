@@ -440,7 +440,7 @@ namespace game
 
 	struct qtexture_s
 	{
-		qtexture_s* next; // not qtexture_s
+		Material* next; // not qtexture_s
 		const char* name;
 		bool is_in_use;
 		__int8 unk1;
@@ -1655,6 +1655,37 @@ namespace game
 		MaterialConstantDef* constantTable;
 		GfxStateBits* stateBitsTable;
 	}; STATIC_ASSERT_SIZE(Material, 0x70);
+
+	struct MaterialInfoRaw
+	{
+		unsigned int nameOffset;
+		unsigned int refImageNameOffset;
+		char gameFlags;
+		char sortKey;
+		char textureAtlasRowCount;
+		char textureAtlasColumnCount;
+		float maxDeformMove;
+		char deformFlags;
+		char usage;
+		unsigned __int16 toolFlags;
+		unsigned int locale;
+		unsigned __int16 autoTexScaleWidth;
+		unsigned __int16 autoTexScaleHeight;
+		float tessSize;
+		int surfaceFlags;
+		int contents;
+	}; STATIC_ASSERT_SIZE(MaterialInfoRaw, 0x28);
+
+	struct MaterialRaw
+	{
+		MaterialInfoRaw info;
+		unsigned int refStateBits[2];
+		unsigned __int16 textureCount;
+		unsigned __int16 constantCount;
+		unsigned int techSetNameOffset;
+		unsigned int textureTableOffset;
+		unsigned int constantTableOffset;
+	}; STATIC_ASSERT_SIZE(MaterialRaw, 0x40);
 
 	struct Glyph
 	{

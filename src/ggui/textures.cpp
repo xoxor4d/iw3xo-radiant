@@ -340,6 +340,94 @@ namespace ggui
 		ImGui::PopStyleVar(2);
 	}
 
+	void reload_images_for_selected_material()
+	{
+		const auto editor_material = reinterpret_cast<game::MaterialDef*>(&game::g_qeglobals->random_texture_stuff[2100 * game::g_qeglobals->current_edit_layer]);
+		if (editor_material && editor_material->radMtl && editor_material->radMtl->name)
+		{
+			const auto smat = editor_material->radMtl->next;
+			for (auto t = 0u; t < static_cast<std::uint8_t>(smat->textureCount); t++)
+			{
+				auto itr = 0;
+				auto hash_index = game::R_HashAssetName(smat->textureTable[t].u.image->name) & 0x7FFF;
+				game::GfxImage* img = nullptr;
+
+				for (img = game::imageGlobals[hash_index]; img; img = game::imageGlobals[hash_index])
+				{
+					if (!strcmp(smat->textureTable[t].u.image->name, img->name))
+					{
+						break;
+					}
+
+					if (++itr >= 1024)
+					{
+						game::printf_to_console("[ERR] Failed to reload images");
+						return;
+					}
+
+					hash_index = static_cast<std::uint8_t>(hash_index) + 1 & 0x7FF;
+					itr++;
+				}
+
+				if (img && static_cast<std::uint8_t>(img->category) == 3)
+				{
+					game::R_ReloadImage(img);
+				}
+			}
+		}
+	}
+
+	void reload_single_material(const char* material_name)
+	{
+		int file_handle;
+
+		const auto* material_path = utils::va("materials/%s", material_name);
+		game::FS_FOpenFileRead(material_path, &file_handle);
+
+		if (file_handle)
+		{
+			game::MaterialInfoRaw mtl_info_raw = {};
+			const auto size = game::FS_Read(&mtl_info_raw, sizeof(game::MaterialInfoRaw), file_handle);
+			game::FS_FCloseFile(file_handle);
+
+			if (size == sizeof(game::MaterialInfoRaw))
+			{
+				if (mtl_info_raw.usage && mtl_info_raw.locale && mtl_info_raw.autoTexScaleWidth && mtl_info_raw.autoTexScaleHeight)
+				{
+					// no support for _editor variants
+					// does not free old / unused images, techsets, techniques etc.
+
+					const auto editor_material = reinterpret_cast<game::MaterialDef*>(&game::g_qeglobals->random_texture_stuff[2100 * game::g_qeglobals->current_edit_layer]);
+					if (editor_material && editor_material->radMtl && editor_material->radMtl->name)
+					{
+						// cba to fix structures
+						const auto mtl = editor_material->radMtl;
+						mtl->usage_index = mtl_info_raw.usage;
+						mtl->tex_num = static_cast<int>(mtl_info_raw.locale);
+						mtl->unk_flags2 = mtl_info_raw.toolFlags;
+						mtl->unk1 = mtl_info_raw.gameFlags;
+						mtl->width = mtl_info_raw.autoTexScaleWidth;
+						mtl->height = mtl_info_raw.autoTexScaleHeight;
+						mtl->color = mtl_info_raw.surfaceFlags;
+						mtl->in_use = mtl_info_raw.contents;
+
+						game::Material* original_material = editor_material->radMtl->next;
+						game::Material* material = game::Material_Load(editor_material->radMtl->next->info.name, 1);
+						//editor_material->radMtl->next = material;
+
+						// kek - but it works surprisingly well
+						memcpy_s(original_material, sizeof(game::Material), material, sizeof(game::Material));
+
+
+						// Material_Sort (rgp->sortedMaterials)
+						//utils::hook::call<void(__cdecl)()>(0x51C020)();
+
+						game::rgp->needSortMaterials = 1;
+					}
+				}
+			}
+		}
+	}
 	
 
 	// right click context menu
@@ -445,6 +533,18 @@ namespace ggui
 				{
 					m_open_new_favourite_popup = true;
 				}
+
+				imgui::Separator();
+
+				if (ImGui::MenuItem("Reload Material Properties (WIP)"))
+				{
+					reload_single_material(mat_name);
+				} TT("Reload material properties for this material");
+
+				if (ImGui::MenuItem("Reload Used Images"))
+				{
+					reload_images_for_selected_material();
+				} TT("Reload all images used by this material");
 
 				imgui::Separator();
 
