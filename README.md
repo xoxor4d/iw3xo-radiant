@@ -75,6 +75,7 @@ ___
 + a prefab browser with the ability to generate thumbnails + drag and drop prefabs into the scene
 + a model browser to preview xmodels + drag and drop models into the scene
 + an effect browser to preview effects + drag and drop effects into the scene
++ materials can now be reloaded (individually) without restarting radiant
 + custom lighting shader with normal-mapping, specular highlights, reflections and fog
 + ability to limit shadow drawing distance when using stock sunpreview (++FPS)
 + filmtweak support
@@ -82,9 +83,8 @@ ___
 + increased asset limits to allow high poly models
 + realtime viewports
 + context aware grid and camera context menus with QoL features
-+ better surface / property editor
-+ better vertex edit dialog
-+ better layer dialog
++ better surface-inspector, property editor, layer dialog etc.
++ vertex edit dialog with random noise generator
 + display missing materials using a proper invalid_texture material
 + zoom to cursor
 + toast notifications
@@ -92,6 +92,7 @@ ___
 + new file dialogs with working default paths
 + texture window toolbar for quick filtering
 + custom texture favourite lists (like customizable texture filters)
++ preview sky materials within the texture browser (no longer invisible)
 + rope/wire generator
 + sun direction visualizer
 + a proper console with dvar support (incl. dvar suggestions and autocomplete)
