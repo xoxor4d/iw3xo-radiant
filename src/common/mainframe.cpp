@@ -156,9 +156,9 @@ void on_createclient()
 	}
 
 	// hide original windows and show the z-view (rendering canvas for imgui)
-	if(cmainframe::activewnd)
+	if (cmainframe::activewnd)
 	{
-		if(cmainframe::activewnd->m_pXYWnd)
+		if (cmainframe::activewnd->m_pXYWnd)
 		{
 			ShowWindow(cmainframe::activewnd->m_pXYWnd->GetWindow(), SW_HIDE);
 		}
@@ -184,6 +184,8 @@ void on_createclient()
 		}
 
 		ShowWindow(cmainframe::activewnd->m_wndStatusBar.m_hWnd, SW_HIDE);
+
+		//ShowWindow(components::renderer::get_window(components::renderer::CFXWND)->hwnd, SW_SHOW);
 	}
 }
 
@@ -608,8 +610,15 @@ void __fastcall cmainframe::on_keydown(cmainframe* pThis, [[maybe_unused]] void*
 	game::printf_to_console("mainframe keydown: %s", ggui::hotkey_dialog::cmdbinds_ascii_to_keystr(nChar).c_str());
 #endif
 
+	// fixes KP_ENTER getting stuck when mouse was outside the application
+	// by setting the default focus to the camera window
+	if (GetFocus() == pThis->GetWindow())
+	{
+		SetFocus(pThis->m_pCamWnd->GetWindow());
+	}
+
 	// there is one "bad" keydown on the first frame ..'O'
-	if(nChar == 79 && !nRepCnt && !nFlags)
+	if (nChar == 79 && !nRepCnt && !nFlags)
 	{
 		return;
 	}

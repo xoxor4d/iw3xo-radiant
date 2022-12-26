@@ -32,7 +32,7 @@ namespace ggui
 		window_title += !this->get_file_ext().empty() ? this->get_file_ext() + " " : "";
 		window_title += this->get_file_op_type() == FileDialogType::SelectFolder ? "folder" : "file";
 
-		if(this->is_blocking())
+		if (this->is_blocking())
 		{
 			ImGui::OpenPopup(window_title.c_str());
 			if (!ImGui::BeginPopupModal(window_title.c_str(), this->get_p_open(), ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking))
@@ -84,8 +84,16 @@ namespace ggui
 
 		// calc. child sizes to allow window resizing
 		const auto content_size = ImGui::GetWindowSize();
-		const auto left_child_size = ImClamp(ImVec2(content_size.x * 0.25f, content_size.y - 112.0f), ImVec2(100, 0), ImVec2(250.0f, 99999.0f));
+		auto left_child_size = ImClamp(ImVec2(content_size.x * 0.25f, content_size.y - 112.0f), ImVec2(100, 0), ImVec2(250.0f, 99999.0f));
 		const auto right_child_size = ImVec2(content_size.x - left_child_size.x - 20.0f, left_child_size.y);
+
+		left_child_size.y -= content_size.y * 0.25f;
+		if (left_child_size.y < 0.0f)
+		{
+			left_child_size.y = 0.0f;
+		}
+
+		const auto link_child_size = content_size.y - 112.0f - left_child_size.y - 10.0f;
 
 		if (ImGui::Button("<"))
 		{
@@ -114,9 +122,21 @@ namespace ggui
 		// #
 		// directories child
 
+		const auto update_folder_path = [this](const std::string& path) -> void
+		{
+			this->m_current_path = path;
+			this->m_folder_select_index = 0;
+			this->m_file_select_index = 0;
+			ImGui::SetScrollHereY(0.0f);
+			this->m_current_folder = "";
+			this->m_update_files_and_folders = true;
+		};
+
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(11.0f, 5.0f));
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(10.0f, 10.0f));
-		ImGui::BeginChild("Directories##1", left_child_size, true, ImGuiWindowFlags_HorizontalScrollbar);
+
+		imgui::BeginGroup();
+		imgui::BeginChild("Directories##1", left_child_size, true, ImGuiWindowFlags_HorizontalScrollbar);
 		{
 			if (!this->m_current_path.empty())
 			{
@@ -135,7 +155,6 @@ namespace ggui
 				ImGui::TextUnformatted("...");
 			}
 
-
 			for (size_t i = 0u; i < folders.size(); ++i)
 			{
 				if (ImGui::Selectable(utils::va("| %s", folders[i].path().stem().string().c_str()), static_cast<int>(i) == this->m_folder_select_index, ImGuiSelectableFlags_AllowDoubleClick, ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
@@ -143,13 +162,7 @@ namespace ggui
 					this->m_current_file = "";
 					if (ImGui::IsMouseDoubleClicked(0))
 					{
-						this->m_current_path = folders[i].path().string();
-						this->m_folder_select_index = 0;
-						this->m_file_select_index = 0;
-						ImGui::SetScrollHereY(0.0f);
-						this->m_current_folder = "";
-
-						this->m_update_files_and_folders = true;
+						update_folder_path(folders[i].path().string());
 					}
 					else
 					{
@@ -158,16 +171,65 @@ namespace ggui
 					}
 				}
 			}
+
+			ImGui::EndChild();
 		}
-		ImGui::EndChild();
+
+		ImGui::BeginChild("Links##1", ImVec2(left_child_size.x, link_child_size), true, ImGuiWindowFlags_HorizontalScrollbar);
+		{
+			if (ImGui::Selectable("xmodel", false, ImGuiSelectableFlags_AllowDoubleClick))
+			{
+				if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+				{
+					const auto path = utils::fs::get_basepath() + "\\raw\\xmodel";
+					if (std::filesystem::is_directory(path))
+					{
+						update_folder_path(path);
+					}
+				}
+			}
+
+			if (ImGui::Selectable("materials", false, ImGuiSelectableFlags_AllowDoubleClick))
+			{
+				if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+				{
+					const auto path = utils::fs::get_basepath() + "\\raw\\materials";
+					if (std::filesystem::is_directory(path))
+					{
+						update_folder_path(path);
+					}
+				}
+			}
+
+			if (ImGui::Selectable("fx", false, ImGuiSelectableFlags_AllowDoubleClick))
+			{
+				if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+				{
+					const auto path = utils::fs::get_basepath() + "\\raw\\fx";
+					if (std::filesystem::is_directory(path))
+					{
+						update_folder_path(path);
+					}
+				}
+			}
+
+			if (ImGui::Selectable("map_source", false, ImGuiSelectableFlags_AllowDoubleClick))
+			{
+				if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+				{
+					const auto path = utils::fs::get_basepath() + "\\map_source";
+					if (std::filesystem::is_directory(path))
+					{
+						update_folder_path(path);
+					}
+				}
+			}
+
+			ImGui::EndChild();
+		}
+
+		imgui::EndGroup();
 		ImGui::PopStyleVar(2);
-
-
-
-
-		
-
-
 
 
 		// early out upon selecting a valid file or folder
@@ -725,7 +787,7 @@ namespace ggui
 	{
 		m_filter.Clear();
 
-		if(!this->m_fix_on_close)
+		if (!this->m_fix_on_close)
 		{
 			if (!this->m_track_result)
 			{

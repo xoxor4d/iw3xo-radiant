@@ -754,7 +754,7 @@ namespace ggui
 			/* mins		*/ 0,
 			/* maxs		*/ 2,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "incorporate surface inspector window into entity properties (1) or toolbox (2)");
+			/* desc		*/ "integrate surface inspector window into entity properties (1) or toolbox (2)");
 
 		dvars::gui_use_new_surfinspector = dvars::register_bool(
 			/* name		*/ "gui_use_new_surfinspector",

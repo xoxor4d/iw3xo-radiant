@@ -309,6 +309,11 @@ namespace fx_system
 		const float maxDistPerEmit = baseDistPerEmit + elemDef->emitDistVariance.amplitude;
 		float distNextEmit = -((static_cast<float>(static_cast<std::uint8_t>(emitResidual)) * maxDistPerEmit) * 0.00390625f);
 
+		if (distNextEmit == 0.0f)
+		{
+			return emitResidual;
+		}
+
 		while (true)
 		{
 			distLastEmit = distNextEmit;

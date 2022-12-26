@@ -69,6 +69,8 @@ void radiantapp::on_create_client()
 // called from cmainframe::on_destroy
 void radiantapp::on_shutdown()
 {
+	game::glob::in_shutdown = true;
+
 	// restore states filter states
 	if (components::gameview::p_this->get_all_geo_state())		components::gameview::p_this->toggle_all_geo(false);
 	if (components::gameview::p_this->get_all_ents_state())		components::gameview::p_this->toggle_all_entities(false);
@@ -111,14 +113,18 @@ void registery_load()
 	const auto state = afx::get_module_state();
 	ggui::mainframe_menubar_enabled = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "iw3x_mainframe_menubar_enabled", 0);
 
-	// put the undo levels variable to use (g_undoMaxSize always defaults to 64 otherwise)
-	game::g_undoMaxSize = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "UndoLevels", 0);
-
 	// always bothered me ..
 	game::g_qeglobals->preview_at_max_intensity = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "lights_max_intensity", 0);
 
 	if(const auto prefs = game::g_PrefsDlg(); prefs)
 	{
+		// enable snapshots by default because not alot of people know about it (and we have enought hdd space nowadays)
+		prefs->m_bSnapShots = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "Snapshots", 1);
+
+		// put the undo levels variable to use (g_undoMaxSize always defaults to 64 otherwise)
+		prefs->m_nUndoLevels = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "UndoLevels", 512);
+		game::g_undoMaxSize = prefs->m_nUndoLevels;
+
 		prefs->m_bForceZeroDropHeight = CWinApp_GetProfileIntA(state->m_pCurrentWinApp, "Prefs", "force_zero_dropheight", 1);
 	}
 
@@ -314,16 +320,17 @@ __declspec(naked) void registery_save_stub()
 
 __declspec(naked) void registery_load_stub()
 {
-	const static uint32_t AfxGetModuleState_addr = 0x59390E;
-	const static uint32_t retn_pt = 0x44E391;
+	const static uint32_t retn_addr = 0x44F240;
 	__asm
 	{
 		pushad;
 		call	registery_load;
 		popad;
 
-		call	AfxGetModuleState_addr;
-		jmp		retn_pt;
+		cmp		[esi + 0x1D8], ebx; // og
+		mov		[esi + 0x294], eax; // og
+
+		jmp		retn_addr;
 	}
 }
 
@@ -398,8 +405,9 @@ void radiantapp::hooks()
 	// remove m_nAutoSave overwrite with its c-string variant right before saving the pref
 	utils::hook::nop(0x44F4B7, 6);
 
-	// registery loading stub :: CPrefsDlg::LoadPrefs
-	utils::hook(0x44E38C, registery_load_stub, HOOK_JUMP).install()->quick();
+	// registery loading stub :: CPrefsDlg::LoadPrefs (end hook so we can overwrite defaults)
+	utils::hook::nop(0x44F234, 6);
+		 utils::hook(0x44F234, registery_load_stub, HOOK_JUMP).install()->quick();
 
 	// default savedinfo values, mainly colors (CMainFrame::OnCreate)
 	utils::hook(0x420A39, MFCCreate, HOOK_CALL).install()->quick();

@@ -26,30 +26,47 @@ namespace components
 		static void		R_AddCmdSetCustomShaderConstant(game::ShaderCodeConstants constant, float x, float y, float z, float w);
 		static void		R_ConvertColorToBytes(float* from, game::GfxColor* gfx_col);
 		static void		R_AddCmdDrawTextAtPosition(const char* text, game::Font_s* font, float* origin, float* pixel_step_x, float* pixel_step_y, float* color);
-		static void		copy_scene_to_texture(ggui::e_gfxwindow wnd, IDirect3DTexture9*& dest, bool no_release = false);
+
+		static void		R_InitDrawSurfListInfo(game::GfxDrawSurfListInfo* list);
 
 		static void		R_AddPointCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts);
 		static void		R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts);
 
 		static inline int effect_drawsurf_count_ = 0;
 
-		static bool is_rendering_camerawnd()
+		// ------
+
+		static uint8_t constexpr  GFX_TARGETWINDOW_COUNT = 10;
+		static inline game::GfxWindowTarget windows[GFX_TARGETWINDOW_COUNT] = {};
+
+		enum GFXWND_ : int
 		{
-			return game::dx->targetWindowIndex == ggui::CCAMERAWND;
-		}
-		static bool is_rendering_gridwnd()
+			CCAMERAWND = 0,
+			CXYWND = 1,
+			CZWND = 2,
+			CTEXWND = 3,
+			LAYERED = 4,
+			CFXWND = 5,
+		};
+
+		static void	copy_scene_to_texture(GFXWND_ GFXWND, IDirect3DTexture9*& dest, bool no_release = false);
+
+		static game::GfxWindowTarget* get_window(const GFXWND_ GFXWND)
 		{
-			return game::dx->targetWindowIndex == ggui::CXYWND;
+			if (!renderer::windows[GFXWND].hwnd)
+			{
+				AssertS(utils::va("Invalid window [%d]", GFXWND));
+			}
+
+			return &renderer::windows[GFXWND];
 		}
-		static bool is_rendering_texturewnd()
-		{
-			return game::dx->targetWindowIndex == ggui::CTEXWND;
-		}
-		
-		static bool is_rendering_layeredwnd()
-		{
-			return game::dx->targetWindowIndex == ggui::LAYERED;
-		}
+
+		static bool is_rendering_camerawnd()	{ return game::dx->targetWindowIndex == CCAMERAWND; }
+		static bool is_rendering_gridwnd()		{ return game::dx->targetWindowIndex == CXYWND; }
+		static bool is_rendering_zwnd()			{ return game::dx->targetWindowIndex == CZWND; }
+		static bool is_rendering_texturewnd()	{ return game::dx->targetWindowIndex == CTEXWND; }
+		static bool is_rendering_layeredwnd()	{ return game::dx->targetWindowIndex == LAYERED; }
+		static bool is_rendering_effectswnd()	{ return game::dx->targetWindowIndex == CFXWND; }
 
 		class postfx
 		{

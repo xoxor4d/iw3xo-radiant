@@ -315,11 +315,13 @@ namespace components
 		}
 	}
 
-	void renderer::copy_scene_to_texture(ggui::e_gfxwindow wnd, IDirect3DTexture9*& dest, bool no_release)
+	void renderer::copy_scene_to_texture(GFXWND_ GFXWND, IDirect3DTexture9*& dest, bool no_release)
 	{
+		const auto gfx_window = components::renderer::get_window(GFXWND);
+
 		// get the backbuffer surface
 		IDirect3DSurface9* surf_backbuffer = nullptr;
-		game::dx->windows[wnd].swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &surf_backbuffer);
+		gfx_window->swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &surf_backbuffer);
 
 		// write surface to file (test)
 		//D3DXSaveSurfaceToFileA("surface_to_file.png", D3DXIFF_PNG, surf_backbuffer, NULL, NULL);
@@ -332,7 +334,7 @@ namespace components
 
 			if(!no_release)
 			{
-				if (desc.Width != static_cast<unsigned int>(game::dx->windows[wnd].width) || desc.Height != static_cast<unsigned int>(game::dx->windows[wnd].height))
+				if (desc.Width != static_cast<unsigned int>(gfx_window->width) || desc.Height != static_cast<unsigned int>(gfx_window->height))
 				{
 					dest->Release();
 					dest = nullptr;
@@ -343,7 +345,7 @@ namespace components
 		// create or re-create ^ the texture surface
 		if (!dest)
 		{
-			D3DXCreateTexture(game::dx->device, game::dx->windows[wnd].width, game::dx->windows[wnd].height, D3DX_DEFAULT, D3DUSAGE_RENDERTARGET, D3DFMT_R8G8B8, D3DPOOL_DEFAULT, &dest);
+			D3DXCreateTexture(game::dx->device, gfx_window->width, gfx_window->height, D3DX_DEFAULT, D3DUSAGE_RENDERTARGET, D3DFMT_R8G8B8, D3DPOOL_DEFAULT, &dest);
 		}
 
 		// "bind" texture to surface
@@ -355,7 +357,7 @@ namespace components
 
 		// release the backbuffer surface or we'll leak memory
 		surf_backbuffer->Release();
-
+		surf_texture->Release();
 		// write texture to file (test)
 		//D3DXSaveTextureToFileA("texture_to_file.png", D3DXIFF_PNG, dest, NULL);
 	}
@@ -715,7 +717,7 @@ namespace components
 		{
 			// #
 			// 2D: set required shader constants for backend passes
-			if(renderer::is_rendering_camerawnd() && source->viewMode == game::VIEW_MODE_2D)
+			if (renderer::is_rendering_camerawnd() && source->viewMode == game::VIEW_MODE_2D)
 			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
@@ -941,7 +943,7 @@ namespace components
 			}
 
 			// camera - fake sun shader - bsp
-			if (renderer::is_rendering_camerawnd())
+			if (renderer::is_rendering_camerawnd() || renderer::is_rendering_effectswnd())
 			{
 				for (auto arg = 0; arg < state->pass->perObjArgCount + state->pass->perPrimArgCount + state->pass->stableArgCount; arg++)
 				{
@@ -1294,44 +1296,64 @@ namespace components
 				if (has_spec && has_normal)
 				{
 					bool has_scroll = false;
-					if(state->material->techniqueSet && state->material->techniqueSet->techniques[5])
+					bool has_flag = false;
+
+					if (state->material->techniqueSet && state->material->techniqueSet->techniques[5])
 					{
 						has_scroll = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "scroll");
-					}
-	
-					if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_scroll_dtex" : "radiant_fakesun_dtex", 1); // fakesun_normal_dtex
-									tech)
-					{
-						state->technique = tech;
 
-						// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
-						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
-										image && image->texture.data)
+						if (!has_scroll)
 						{
-							game::R_SetSampler(0, state, 1, (char)114, image);
+							has_flag = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "flag");
+						}
+					}
+
+					if (!has_flag)
+					{
+						if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_scroll_dtex" : "radiant_fakesun_dtex", 1); // fakesun_normal_dtex
+							tech)
+						{
+							state->technique = tech;
+
+							// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
+							if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+								image && image->texture.data)
+							{
+								game::R_SetSampler(0, state, 1, (char)114, image);
+							}
 						}
 					}
 				}
 				else if (!has_spec && has_normal)
 				{
 					bool has_scroll = false;
+					bool has_flag = false;
+
 					if (state->material->techniqueSet && state->material->techniqueSet->techniques[5])
 					{
 						has_scroll = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "scroll");
+
+						if (!has_scroll)
+						{
+							has_flag = utils::string_contains(state->material->techniqueSet->techniques[5]->name, "flag");
+						}
 					}
 
-					if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_no_spec_scroll_dtex" : "radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
-									tech)
+					if (!has_flag)
 					{
-						state->technique = tech;
-
-						// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
-						if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
-										image && image->texture.data)
+						if (const auto	tech = Material_RegisterTechnique(has_scroll ? "radiant_fakesun_no_spec_scroll_dtex" : "radiant_fakesun_no_spec_dtex", 1); // fakesun_normal_no_spec_img_dtex
+							tech)
 						{
-							// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
-							utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
-								(0x538D70)(0, state, 1, 114, image);
+							state->technique = tech;
+
+							// set reflection probe sampler (index needs to be the same as the index defined in shader_vars.h)
+							if (const auto	image = game::Image_RegisterHandle("_default_cubemap");
+								image && image->texture.data)
+							{
+								// R_SetSampler(int a1, GfxCmdBufState *state, int sampler, char sampler_state, GfxImage *img)
+								utils::hook::call<void(__cdecl)(int unused, game::GfxCmdBufState* _state, int _sampler, char _sampler_state, game::GfxImage* _img)>
+									(0x538D70)(0, state, 1, 114, image);
+							}
 						}
 					}
 				}
@@ -1438,7 +1460,7 @@ namespace components
 	{
 		bool is_filmtweak_tech = false;
 
-		if(renderer::is_rendering_camerawnd())
+		if (renderer::is_rendering_camerawnd())
 		{
 			// filmtweaks :: using pixelCostColorCodeMaterial as a proxy
 			if (utils::string_equals(state->material->info.name, "pixel_cost_color_code"))
@@ -1447,9 +1469,23 @@ namespace components
 				if (const auto	tech = Material_RegisterTechnique("radiant_filmtweaks", 1);
 								tech)
 				{
-					// allows us to reload the shader using the reload_shaders command
+					// technique and shader can be reloaded with using the reload_shaders command
 					state->technique = tech;
 					is_filmtweak_tech = true;
+				}
+			}
+		}
+
+		if (renderer::is_rendering_texturewnd())
+		{
+			if (state->technique->name == "sky"s)
+			{
+				// properly display sky materials
+				if (const auto	tech = Material_RegisterTechnique("radiant_sky_2d", 1);
+								tech)
+				{
+					// technique and shader can be reloaded with using the reload_shaders command
+					state->technique = tech;
 				}
 			}
 		}
@@ -1481,9 +1517,11 @@ namespace components
 			state->viewport.x = 1;
 		}
 
-		if (effects::effect_is_playing())
+		//const auto effect_browser = GET_GUI(ggui::effects_browser);
+		
+		if (effects::effect_is_playing() && (!d3dbsp::Com_IsBspLoaded() || (d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled)) 
+			|| renderer::is_rendering_effectswnd()) /*(effect_browser->is_active() && !effect_browser->is_inactive_tab() || cfxwnd::get()->m_effect_is_playing))*/
 		{
-			if (!d3dbsp::Com_IsBspLoaded() || (d3dbsp::Com_IsBspLoaded() && !dvars::r_draw_bsp->current.enabled))
 			{
 				std::string tech_name = state->technique->name;
 				if (utils::erase_substring(tech_name, "_outdoor"))
@@ -1843,7 +1881,7 @@ namespace components
 		if(renderer::postfx::is_any_active())
 		{
 			// get scene without postfx -> used for colorMapPostSunSampler
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
+			renderer::copy_scene_to_texture(renderer::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 		}
 
 		// register_material
@@ -1856,7 +1894,7 @@ namespace components
 			utils::hook::call<void(__cdecl)(game::Material* _material)>(0x531450)(game::rgp->pixelCostColorCodeMaterial);
 
 			// get scene with postfx -> render with imgui
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
+			renderer::copy_scene_to_texture(renderer::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 		}
 	}
 
@@ -1864,7 +1902,7 @@ namespace components
 	// called before rendering the command queue
 	void pre_scene_command_rendering()
 	{
-		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		if (game::dx->targetWindowIndex == renderer::CCAMERAWND)
 		{
 			// clear framebuffer (color)
 			renderer::R_SetAndClearSceneTarget(true);
@@ -1876,11 +1914,15 @@ namespace components
 	// called after rendering the command queue
 	void post_scene_command_rendering()
 	{
-		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		if (game::dx->targetWindowIndex == renderer::CCAMERAWND
+			|| game::dx->targetWindowIndex == renderer::CFXWND)
 		{
 			// render emissive surfs (effects)
 			renderer::RB_Draw3D();
+		}
 
+		if (game::dx->targetWindowIndex == renderer::CCAMERAWND)
+		{
 			// post effects logic (filmtweaks)
 			camera_postfx();
 		}
@@ -1979,7 +2021,7 @@ namespace components
 		game::GfxRenderCommandExecState execState = {};
 		execState.cmd = cmds;
 
-		bool log = g_log_rendercommands && game::dx->targetWindowIndex == ggui::CCAMERAWND;
+		bool log = g_log_rendercommands && game::dx->targetWindowIndex == renderer::CCAMERAWND;
 		std::ofstream log_file;
 		std::uint32_t log_last_id = 0;
 		std::uint32_t log_last_id_count = 1;
@@ -2104,6 +2146,12 @@ namespace components
 
 			reflectionprobes::generate_reflections_for_bsp();
 			dvars::set_bool(dvars::r_reflectionprobe_generate, false);
+
+			if (!dvars::bsp_show_bsp_after_compile->current.enabled)
+			{
+				command::execute("toggle_bsp_radiant");
+				dvars::set_bool(dvars::r_draw_bsp, dvars::bsp_show_bsp_after_compile->current.enabled);
+			}
 		}
 
 		static int skip_frame = 0;
@@ -2155,7 +2203,7 @@ namespace components
 	// part of R_RenderScene
 	// setup viewInfo and drawlists so that RB_Draw3D::RB_StandardDrawCommands actually renders something (unused in radiant and would normally render the bsp and effects)
 
-	void R_InitDrawSurfListInfo(game::GfxDrawSurfListInfo* list)
+	void renderer::R_InitDrawSurfListInfo(game::GfxDrawSurfListInfo* list)
 	{
 		list->drawSurfs = nullptr;
 		list->drawSurfCount = 0;
@@ -2171,7 +2219,7 @@ namespace components
 
 	void setup_viewinfo(game::GfxViewParms* viewParms)
 	{
-		if (game::dx->targetWindowIndex != ggui::CCAMERAWND)
+		if (game::dx->targetWindowIndex != renderer::CCAMERAWND)
 		{
 			return;
 		}
@@ -2217,8 +2265,8 @@ namespace components
 			utils::vector::copy(viewParms->axis[1], refdef.viewaxis[1]);
 			utils::vector::copy(viewParms->axis[2], refdef.viewaxis[2]);
 
-			refdef.width = game::dx->windows[ggui::CCAMERAWND].width;
-			refdef.height = game::dx->windows[ggui::CCAMERAWND].height;
+			refdef.width = components::renderer::get_window(components::renderer::CCAMERAWND)->width;
+			refdef.height = components::renderer::get_window(components::renderer::CCAMERAWND)->height;
 
 			const auto cam = &cmainframe::activewnd->m_pCamWnd->camera;
 			refdef.tanHalfFovY = tanf(game::g_PrefsDlg()->camera_fov * 0.01745329238474369f * 0.5f) * 0.75f;
@@ -2227,8 +2275,8 @@ namespace components
 			refdef.zNear = game::Dvar_FindVar("r_zNear")->current.value;
 			refdef.time = static_cast<int>(timeGetTime());
 
-			refdef.scissorViewport.width = game::dx->windows[ggui::CCAMERAWND].width;
-			refdef.scissorViewport.height = game::dx->windows[ggui::CCAMERAWND].height;
+			refdef.scissorViewport.width = components::renderer::get_window(components::renderer::CCAMERAWND)->width;
+			refdef.scissorViewport.height = components::renderer::get_window(components::renderer::CCAMERAWND)->height;
 
 			memcpy(&refdef.primaryLights, &d3dbsp::scene_lights, sizeof(d3dbsp::scene_lights));
 
@@ -2252,8 +2300,8 @@ namespace components
 			memcpy(&viewInfo->viewParms, viewParms, sizeof(game::GfxViewParms));
 			viewInfo->viewParms.zNear = game::Dvar_FindVar("r_zNear")->current.value;
 
-			const auto window = game::dx->windows[ggui::CCAMERAWND];
-			const game::GfxViewport viewport = { 0, 0, window.width, window.height };
+			const auto gfx_window = components::renderer::get_window(components::renderer::CCAMERAWND);
+			const game::GfxViewport viewport = { 0, 0, gfx_window->width, gfx_window->height };
 
 			viewInfo->sceneViewport = viewport;
 			viewInfo->displayViewport = viewport;
@@ -2275,7 +2323,7 @@ namespace components
 			// *
 			// lit drawlist (effect xmodels)
 
-			R_InitDrawSurfListInfo(&viewInfo->litInfo);
+			renderer::R_InitDrawSurfListInfo(&viewInfo->litInfo);
 
 			viewInfo->litInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL;
 			viewInfo->litInfo.viewInfo = viewInfo;
@@ -2298,7 +2346,7 @@ namespace components
 			// R_SortDrawSurfs
 			utils::hook::call<void(__cdecl)(game::GfxDrawSurf*, signed int)>(0x54D750)(game::scene->drawSurfs[6], game::scene->drawSurfCount[6]);
 
-			R_InitDrawSurfListInfo(&viewInfo->decalInfo);
+			renderer::R_InitDrawSurfListInfo(&viewInfo->decalInfo);
 			viewInfo->decalInfo.baseTechType = game::TECHNIQUE_FAKELIGHT_NORMAL;
 			viewInfo->decalInfo.viewInfo = viewInfo;
 			viewInfo->decalInfo.viewOrigin[0] = viewParms->origin[0];
@@ -2322,7 +2370,7 @@ namespace components
 			// emissive drawlist (effects)
 
 			const auto emissiveList = &viewInfo->emissiveInfo;
-			R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
+			renderer::R_InitDrawSurfListInfo(&viewInfo->emissiveInfo);
 
 			viewInfo->emissiveInfo.baseTechType = game::TECHNIQUE_EMISSIVE;
 			viewInfo->emissiveInfo.viewInfo = viewInfo;
@@ -2756,14 +2804,23 @@ namespace components
 	{
 		game::GfxCmdBuf cmdBuf = { game::dx->device };
 
-		if (game::dx->device && (effects::effect_is_playing() 
-				|| (fx_system::ed_is_paused && !effects::effect_is_playing())
-				|| (dvars::r_draw_bsp && dvars::r_draw_bsp->current.enabled)))
+		if (game::dx->device && (renderer::is_rendering_camerawnd() && 
+			(effects::effect_is_playing() || fx_system::ed_is_paused && !effects::effect_is_playing() || dvars::r_draw_bsp && dvars::r_draw_bsp->current.enabled)
+				|| renderer::is_rendering_effectswnd()))
 		{
+			// setup resolvedPostSun sampler (effect distortion)
 			game::GfxRenderTarget* targets = reinterpret_cast<game::GfxRenderTarget*>(0x174F4A8);
 			game::GfxRenderTarget* resolved_post_sun = &targets[game::R_RENDERTARGET_RESOLVED_POST_SUN];
 
-			renderer::copy_scene_to_texture(ggui::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			if (dvars::fx_browser_use_camera_for_distortion && dvars::fx_browser_use_camera_for_distortion->current.enabled)
+			{
+				renderer::copy_scene_to_texture(renderer::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			}
+			else
+			{
+				renderer::copy_scene_to_texture(renderer::is_rendering_effectswnd() ? renderer::CFXWND : renderer::CCAMERAWND, reinterpret_cast<IDirect3DTexture9*&>(resolved_post_sun->image->texture.data));
+			}
+			
 			game::gfxCmdBufSourceState->input.codeImages[10] = resolved_post_sun->image;
 
 			// ------
@@ -2774,18 +2831,21 @@ namespace components
 			const auto r_fullbright = game::Dvar_FindVar("r_fullbright");
 			const auto r_debugshader = game::Dvar_FindVar("r_debugshader");
 
-			if (!(r_fullbright && r_fullbright->current.enabled) && !(r_debugshader && r_debugshader->current.enabled))
+			if (!renderer::is_rendering_effectswnd())
 			{
-				if (dvars::r_draw_bsp->current.enabled)
+				if (!(r_fullbright && r_fullbright->current.enabled) && !(r_debugshader && r_debugshader->current.enabled))
 				{
-					if (dyn_shadow_type == game::SHADOW_MAP)
+					if (dvars::r_draw_bsp->current.enabled)
 					{
-						if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+						if (dyn_shadow_type == game::SHADOW_MAP)
 						{
-							game::RB_SunShadowMaps(backend, viewInfo);
-						}
+							if (game::Com_BitCheckAssert(backend->shadowableLightHasShadowMap, game::rgp->world->sunPrimaryLightIndex, 32))
+							{
+								game::RB_SunShadowMaps(backend, viewInfo);
+							}
 
-						game::RB_SpotShadowMaps(backend, viewInfo);
+							game::RB_SpotShadowMaps(backend, viewInfo);
+						}
 					}
 				}
 			}
@@ -2804,7 +2864,7 @@ namespace components
 			}			
 
 			// impl. RB_DrawSun? :p
-			if (dvars::r_draw_bsp->current.enabled)
+			if (!renderer::is_rendering_effectswnd() && dvars::r_draw_bsp->current.enabled)
 			{
 				R_DrawLights(&cmdBuf, viewInfo); // fx lights
 			}
@@ -2822,12 +2882,12 @@ namespace components
 	{
 		const auto backend = game::get_backenddata();
 
-		if(backend->viewInfo->displayViewport.width == 0)
+		if (backend->viewInfo->displayViewport.width == 0)
 		{
 			return;
 		}
 
-		if(backend->viewInfoCount)
+		if (backend->viewInfoCount)
 		{
 			RB_StandardDrawCommands(&backend->viewInfo[0]);
 		}
@@ -3143,9 +3203,9 @@ namespace components
 		}
 	}
 
-	void debug_sundirection()
+	void draw_additional_debug()
 	{
-		if(game::glob::debug_sundir)
+		if (game::glob::debug_sundir)
 		{
 			if (const auto	world_ent = game::g_world_entity();
 							world_ent && world_ent->firstActive)
@@ -3188,6 +3248,8 @@ namespace components
 				}
 			}
 		}
+
+		mesh_painter::on_frame();
 	}
 
 	// *
@@ -3255,7 +3317,7 @@ namespace components
 
 			pushad;
 			call	draw_target_connection_lines_func;
-			call	debug_sundirection;
+			call	draw_additional_debug;
 			popad;
 
 			jmp		retn_addr;
@@ -3343,27 +3405,27 @@ namespace components
 	}
 
 	// called from QE_LoadProject
-	void renderer_init_internal()
-	{
-		g_invalid_material = game::Material_RegisterHandle("invalid_material", 0);
-	}
+	//void renderer_init_internal()
+	//{
+	//	g_invalid_material = game::Material_RegisterHandle("invalid_material", 0);
+	//}
 
-	void __declspec(naked) r_begin_registration_internal_stub()
-	{
-		const static uint32_t func_addr = 0x5011D0; // overwritten call
-		const static uint32_t retn_addr = 0x4166D4;
-		__asm
-		{
-			call	func_addr;
-			add		esp, 4;
+	//void __declspec(naked) r_begin_registration_internal_stub()
+	//{
+	//	const static uint32_t func_addr = 0x5011D0; // overwritten call
+	//	const static uint32_t retn_addr = 0x4166D4;
+	//	__asm
+	//	{
+	//		call	func_addr;
+	//		add		esp, 4;
 
-			pushad;
-			call	renderer_init_internal;
-			popad;
+	//		pushad;
+	//		call	renderer_init_internal;
+	//		popad;
 
-			jmp		retn_addr;
-		}
-	}
+	//		jmp		retn_addr;
+	//	}
+	//}
 
 
 	// *
@@ -3482,7 +3544,7 @@ namespace components
 
 	int R_CalcReflectionProbeIndex(const float* lightingOrigin)
 	{
-		if(game::rgp->world)
+		if (game::rgp->world)
 		{
 			return utils::hook::call<int (__cdecl)(const float*)>(0x5235E0)(lightingOrigin);
 		}
@@ -3536,6 +3598,30 @@ namespace components
 
 		SKIP:
 			mov		eax, 0;
+			jmp		retn_addr;
+		}
+	}
+
+	void begin_registration_internal_additional()
+	{
+		g_invalid_material = game::Material_RegisterHandle("invalid_material", 0);
+
+		new cfxwnd();
+		game::R_InitRendererForWindow(renderer::get_window(renderer::CFXWND)->hwnd);
+	}
+
+	void __declspec(naked) begin_registration_internal_stub()
+	{
+		const static uint32_t retn_addr = 0x4166D6;
+		__asm
+		{
+			add     esp, 4; // overwritten
+
+			pushad;
+			call	begin_registration_internal_additional;
+			popad;
+
+			push    7; // overwritten
 			jmp		retn_addr;
 		}
 	}
@@ -3745,6 +3831,64 @@ namespace components
 		utils::hook::set<DWORD>(0x533484 + 2, TESS_INDICES_AMOUNT);
 		utils::hook::set<DWORD>(0x534F1B + 2, TESS_INDICES_AMOUNT);
 
+		// ------------------------------------------------------------------------------------------------
+
+		// realoc dx.windows[5] to add more d3d windows
+
+		// base address (hwnd)
+		uintptr_t dxwnd_base_patches[] =
+		{
+			// FC 82 36 01
+			0x4FFB88 + 2, 0x500692 + 2, 0x5012B3 + 1, 0x501414 + 2,
+			0x501441 + 2, 0x5015F6 + 1, 0x501AE6 + 1,
+
+		}; relocate_struct_ref(dxwnd_base_patches, renderer::windows, ARRAYSIZE(dxwnd_base_patches), 0x0);
+
+
+		// + 0x4 address (swapchain)
+		uintptr_t dxwnd_swapchain_patches[] =
+		{
+			// 00 83 36 01
+			0x4FFB57 + 2, 0x500625 + 2, 0x500EA1 + 1, 0x5012F7 + 2,
+			0x501740 + 2, 0x501748 + 2, 0x52BBE0 + 2, 0x52CA63 + 1,
+			0x53578E + 2,
+
+		}; relocate_struct_ref(dxwnd_swapchain_patches, renderer::windows, ARRAYSIZE(dxwnd_swapchain_patches), 0x4);
+
+
+		// + 0x8 address (width)
+		uintptr_t dxwnd_width_patches[] =
+		{
+			// 04 83 36 01
+			0x4FFB99 + 2, 0x5013D4 + 2, 0x50160A + 1, 0x5017C6 + 1,
+			0x501B2A + 2, 0x50648E + 2, 0x50653B + 2, 0x52BBA1 + 2,
+
+		}; relocate_struct_ref(dxwnd_width_patches, renderer::windows, ARRAYSIZE(dxwnd_width_patches), 0x8);
+
+
+		// + 0xC address (height)
+		uintptr_t dxwnd_height_patches[] =
+		{
+			// 08 83 36 01
+			0x4FFBAB + 2, 0x5013DA + 2, 0x5015FB + 2, 0x501B33 + 2,
+			0x506488 + 2, 0x506522 + 2, 0x52BBA7 + 2,
+
+		}; relocate_struct_ref(dxwnd_height_patches, renderer::windows, ARRAYSIZE(dxwnd_height_patches), 0xC);
+
+
+		// patch dx.windowCount checks (inc. to GFX_TARGETWINDOW_COUNT)
+		utils::hook::set<BYTE>(0x4FFB29 + 2, GFX_TARGETWINDOW_COUNT);
+		utils::hook::set<BYTE>(0x50057F + 2, GFX_TARGETWINDOW_COUNT);
+		utils::hook::set<BYTE>(0x5005F0 + 6, GFX_TARGETWINDOW_COUNT);
+		utils::hook::set<BYTE>(0x5005F9 + 1, GFX_TARGETWINDOW_COUNT);
+
+
+		// stub to register new gfxwindows
+		utils::hook(0x4166D1, begin_registration_internal_stub, HOOK_JUMP).install()->quick();
+
+
+		// ------------------------------------------------------------------------------------------------
+
 		// rewrite, working fine but no need (only debug)
 		// utils::hook::detour(0x4FE750, RB_DrawEditorSkinnedCached, HK_JUMP);
 
@@ -3848,7 +3992,7 @@ namespace components
 		utils::hook(0x5011B8, post_render_init, HOOK_CALL).install()->quick();
 
 		// stub within R_BeginRegistrationInternal (on call to init layermatwnd)
-		utils::hook(0x4166CC, r_begin_registration_internal_stub, HOOK_JUMP).install()->quick();
+		//utils::hook(0x4166CC, r_begin_registration_internal_stub, HOOK_JUMP).install()->quick();
 
 		// hk 'R_SortMaterials' call after 'R_IssueRenderCommands' in 'CCamWnd::OnPaint'
 		utils::hook(0x40306B, on_cam_paint_post_rendercommands_stub, HOOK_JUMP).install()->quick();
@@ -3874,6 +4018,7 @@ namespace components
 
 		// silence assert 'localDrawSurf->fields.prepass == MTL_PREPASS_NONE'
 		utils::hook::nop(0x52EE39, 5);
+		utils::hook::nop(0x52F2FA, 5);
 
 		// silence assert 'drawSurf.fields.primaryLightIndex doesn't index info->viewInfo->shadowableLightCount'
 		utils::hook::nop(0x55A3A3, 5);

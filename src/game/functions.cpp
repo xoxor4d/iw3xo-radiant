@@ -25,6 +25,7 @@ namespace game
 		float debug_sundir_length = 500.0f;
 
 		bool is_loading_map = false;
+		bool in_shutdown = false;
 
 
 		// update check
@@ -424,6 +425,24 @@ namespace game
 		}
 	}
 
+	void Select_ApplyMatrix_SelectedBrushes(bool snap /*ebx*/, float* rotate_axis, float degree, int unk)
+	{
+		const static uint32_t func_addr = 0x48FD10;
+		__asm
+		{
+			pushad;
+
+			push	unk;
+			push	degree;
+			push	rotate_axis;
+			mov     bl, snap;
+			call	func_addr;
+			add		esp, 12;
+
+			popad;
+		}
+	}
+
 	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/)
 	{
 		const static uint32_t func_addr = 0x47CDE0;
@@ -463,6 +482,35 @@ namespace game
 
 			call	func_addr;
 			add		esp, 8;
+			popad;
+		}
+	}
+
+	// turn on g_PrefsDlg->m_bNoClamp before calling to calc. midpoint without snapping
+	void Select_GetMid(float* midpoint /*esi*/)
+	{
+		const static uint32_t func_addr = 0x48FC70;
+		__asm
+		{
+			pushad;
+			mov		esi, midpoint;
+			call	func_addr;
+			popad;
+		}
+	}
+
+	// not sure about the name or what it does (use brush_select to select groups)
+	void Select_FuncGroup(float* trace_dir /*ecx*/, float* trace_start /*edx*/, int contents /*eax*/)
+	{
+		const static uint32_t func_addr = 0x48E340;
+		__asm
+		{
+			pushad;
+
+			mov		eax, contents;
+			mov		edx, trace_start;
+			mov		ecx, trace_dir;
+			call	func_addr;
 			popad;
 		}
 	}
@@ -556,6 +604,24 @@ namespace game
 			call	func_addr;
 			popad;
 		}
+	}
+
+	bool FilterBrush(game::selbrush_def_t* sb /*esi*/, int always_null)
+	{
+		const static uint32_t func_addr = 0x46A1F0;
+		auto return_value = false;
+		__asm
+		{
+			pushad;
+			push	always_null;
+			mov		esi, sb;
+			call	func_addr;
+			add		esp, 4;
+			mov		return_value, al;
+			popad;
+		}
+
+		return return_value;
 	}
 
 	// select a complete row of a selected patch
@@ -661,6 +727,21 @@ namespace game
 					}
 				}
 			}
+		}
+	}
+
+	void Select_GetBounds(float* mins, float* maxs)
+	{
+		mins[0] = 131072.0f;
+		mins[1] = 131072.0f;
+		mins[2] = 131072.0f;
+		maxs[0] = -131072.0f;
+		maxs[1] = -131072.0f;
+		maxs[2] = -131072.0f;
+
+		FOR_ALL_SELECTED_BRUSHES(sb)
+		{
+			utils::vector::clamp_vec3(sb->def->mins, sb->def->maxs, mins, maxs);
 		}
 	}
 
@@ -897,10 +978,20 @@ namespace game
 		__asm
 		{
 			pushad;
-
 			mov		eax, brush;
 			call	func_addr;
+			popad;
+		}
+	}
 
+	void Brush_RemoveFromList(game::selbrush_def_t* brush /*eax*/)
+	{
+		const static uint32_t func_addr = 0x476680;
+		__asm
+		{
+			pushad;
+			mov		eax, brush;
+			call	func_addr;
 			popad;
 		}
 	}
@@ -917,9 +1008,15 @@ namespace game
 		}
 	}
 
-	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection)
+	/**
+	 * @param b							brush to select
+	 * @param select_connected			select connected brushes (func_group, brush-model etc) 
+	 * @param update_status				legacy, not needed
+	 * @param center_grid_on_selection	move grid view to center of selection
+	 */
+	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool select_connected, bool update_status, bool center_grid_on_selection)
 	{
-		const int overwrite = some_overwrite;
+		const int overwrite = select_connected;
 		const int status = update_status;
 		const int center_grid = center_grid_on_selection;
 
@@ -931,6 +1028,44 @@ namespace game
 			push	center_grid;
 			push	status;
 			push	overwrite;
+			call	func_addr;
+			add		esp, 12;
+			popad;
+		}
+	}
+
+	// https://github.com/id-Software/Quake-III-Arena/blob/dbe4ddb10315479fc00086f08e25d968b4b43c49/q3radiant/PMESH.CPP#L3002
+	bool Patch_DragScale(game::patchMesh_t* pm, const float* bounds /*eax*/, const float* dist_vec)
+	{
+		bool return_value = false;
+		const static uint32_t func_addr = 0x442B90;
+
+		__asm
+		{
+			pushad;
+			push	dist_vec;
+			mov		eax, bounds;
+			push	pm;
+			call	func_addr;
+			add		esp, 8;
+			mov		return_value, al;
+			popad;
+		}
+
+		return return_value;
+	}
+
+	// used to select brush faces (vertices) that are going to be extruded when dragging next to a selected brush (g_qeglobals.d_num_move_points)
+	void Brush_SideSelect(game::brush_t_with_custom_def* def, const float* trace_start /*eax*/, const float* trace_dir, int shear)
+	{
+		const static uint32_t func_addr = 0x4777D0;
+		__asm
+		{
+			pushad;
+			push	shear;
+			push	trace_dir;
+			mov		eax, trace_start;
+			push	def;
 			call	func_addr;
 			add		esp, 12;
 			popad;
@@ -1099,6 +1234,31 @@ namespace game
 		}
 	}
 
+	void R_AddCmdSetViewportValues(int x, int y, int width, int height)
+	{
+		if (width <= 0) {
+			game::Com_Error("R_AddCmdSetViewportValues :: width");
+		}
+
+		if (height <= 0) {
+			game::Com_Error("R_AddCmdSetViewportValues :: height");
+		}
+
+		// RC_SET_VIEWPORT
+		if (auto cmd = reinterpret_cast<game::GfxCmdSetViewport*>(game::R_GetCommandBuffer(20, 7));
+			cmd)
+		{
+			cmd->viewport.height = height;
+			cmd->viewport.x = x;
+			cmd->viewport.y = y;
+			cmd->viewport.width = width;
+		}
+		else
+		{
+			game::Com_Error("R_AddCmdSetViewportValues :: cmd");
+		}
+	}
+
 	void R_SetD3DPresentParameters(_D3DPRESENT_PARAMETERS_* d3dpp, game::GfxWindowParms* wnd, [[maybe_unused]] int window_count)
 	{
 		ASSERT_MSG(d3dpp, "invalid D3DPRESENT_PARAMETERS d3dpp");
@@ -1144,7 +1304,7 @@ namespace game
 			if (game::dx->windowCount > 0)
 			{
 				int wnd_count = 0;
-				for (auto i = game::dx->windows; i->hwnd != hwnd; ++i)
+				for (auto i = components::renderer::windows; i->hwnd != hwnd; ++i)
 				{
 					if (++wnd_count >= game::dx->windowCount)
 					{
@@ -1162,8 +1322,12 @@ namespace game
 
 				R_SetD3DPresentParameters(&d3dpp, &wnd, game::dx->windowCount);
 
-				auto swapchain = &game::dx->windows[wnd_count].swapChain;
+				const auto gfx_window = components::renderer::get_window(static_cast<components::renderer::GFXWND_>(wnd_count));
+
+				//auto swapchain = &game::dx->windows[wnd_count].swapChain;
+				auto swapchain = &gfx_window->swapChain;
 				auto old_swapchain = *swapchain;
+
 				if (*swapchain == nullptr)
 				{
 					ASSERT_MSG(1, "var");
@@ -1183,8 +1347,8 @@ namespace game
 					ASSERT_MSG(0, "CreateAdditionalSwapChain failed ...");
 				}
 
-				game::dx->windows[wnd_count].width = display_width;
-				game::dx->windows[wnd_count].height = display_height;
+				gfx_window->width = display_width;
+				gfx_window->height = display_height;
 			}
 		}
 	}

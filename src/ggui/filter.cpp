@@ -86,7 +86,7 @@ namespace ggui
 	void filter_dialog::handle_radiant_filter(CCheckListBox* checklist, game::filter_entry_s* filter, int index)
 	{
 		const int checked = afx::CCheckListBox__GetCheck(checklist, index);
-		if (ImGui::RadioButton(filter->name, checked))
+		if (imgui::RadioButton(filter->name, checked))
 		{
 			if (checked)
 			{
@@ -217,344 +217,384 @@ namespace ggui
 		return return_val;
 	}
 
+	void filter_dialog::geometry_filters(float max_width)
+	{
+		static float geo_child_height = 200.0f;
+
+		const float column_width = 140.0f;
+		int column_count = static_cast<int>(max_width / column_width);
+		column_count = column_count < 2 ? 2 : column_count;
+		column_count = column_count > 6 ? 6 : column_count;
+
+		imgui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
+		imgui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
+
+		auto min = imgui::GetCursorScreenPos();
+		min.y += imgui::GetFrameHeight();
+
+		const auto max = ImVec2(min.x + max_width, min.y + geo_child_height - imgui::GetFrameHeight());
+		imgui::GetWindowDrawList()->AddRectFilled(min, max, imgui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
+
+		//imgui::BeginChild("##geo_child", ImVec2(0.0f, geo_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
+		{
+			imgui::BeginGroup();
+			{
+				if (imgui::ButtonEx("Toggle All Geo", ImVec2(max_width, imgui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
+				{
+					components::gameview::p_this->toggle_all_geo(!components::gameview::p_this->get_all_geo_state());
+				}
+
+				imgui::Indent(6.0f);
+
+				if (imgui::BeginTable("##geofilter_table", column_count, ImGuiTableFlags_SizingStretchSame))
+				{
+					for (size_t i = 0; i < _geofilters.size(); i++)
+					{
+						if (const auto	filter = _geofilters[i];
+							filter->name)
+						{
+							if (imgui_filter.IsActive())
+							{
+								if (!imgui_filter.PassFilter(filter->name))
+								{
+									continue;
+								}
+							}
+
+							imgui::TableNextColumn();
+
+							imgui::PushStyleCompact();
+							imgui::PushID("geofilter");
+
+							handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->geometry_filters, filter, i);
+
+							imgui::PopID();
+							imgui::PopStyleCompact();
+						}
+					}
+
+					imgui::EndTable();
+				}
+
+				imgui::EndGroup();
+				geo_child_height = imgui::GetItemRectSize().y + 8.0f;
+			}
+		}
+		//imgui::EndChild();
+		imgui::PopStyleColor();
+		imgui::PopStyleVar();
+	}
+
+	void filter_dialog::entity_filters(float max_width)
+	{
+		static float ent_child_height = 200.0f;
+
+		const float column_width = 140.0f;
+		int column_count = static_cast<int>(max_width / column_width);
+		column_count = column_count < 2 ? 2 : column_count;
+		column_count = column_count > 6 ? 6 : column_count;
+
+		imgui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
+		imgui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
+
+		auto min = imgui::GetCursorScreenPos();
+		min.y += imgui::GetFrameHeight();
+
+		const auto max = ImVec2(min.x + max_width, min.y + ent_child_height - imgui::GetFrameHeight());
+		imgui::GetWindowDrawList()->AddRectFilled(min, max, imgui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
+
+		//imgui::BeginChild("##geo_child", ImVec2(0.0f, ent_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
+		{
+			imgui::BeginGroup();
+			{
+				if (imgui::ButtonEx("Toggle All Entities", ImVec2(max_width, imgui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
+				{
+					components::gameview::p_this->toggle_all_entities(!components::gameview::p_this->get_all_ents_state());
+				}
+
+				imgui::Indent(6.0f);
+
+				if (imgui::BeginTable("##entityfilter_table", column_count, ImGuiTableFlags_SizingStretchSame))
+				{
+					for (size_t i = 0; i < _entityfilters.size(); i++)
+					{
+						if (const auto	filter = _entityfilters[i];
+							filter->name)
+						{
+							if (imgui_filter.IsActive())
+							{
+								if (!imgui_filter.PassFilter(filter->name))
+								{
+									continue;
+								}
+							}
+
+							imgui::TableNextColumn();
+
+							imgui::PushStyleCompact();
+							imgui::PushID("entityfilter");
+
+							handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->entity_filters, filter, i);
+
+							imgui::PopID();
+							imgui::PopStyleCompact();
+						}
+					}
+					imgui::EndTable();
+				}
+				imgui::EndGroup();
+				ent_child_height = imgui::GetItemRectSize().y + 8.0f;
+			}
+		}
+		//imgui::EndChild();
+		imgui::PopStyleColor();
+		imgui::PopStyleVar();
+	}
+
+	void filter_dialog::trigger_filters(float max_width)
+	{
+		static float trigger_child_height = 200.0f;
+
+		const float column_width = 140.0f;
+		int column_count = static_cast<int>(max_width / column_width);
+		column_count = column_count < 2 ? 2 : column_count;
+		column_count = column_count > 6 ? 6 : column_count;
+
+		imgui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
+		imgui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
+
+		auto min = imgui::GetCursorScreenPos();
+		min.y += imgui::GetFrameHeight();
+
+		const auto max = ImVec2(min.x + max_width, min.y + trigger_child_height - imgui::GetFrameHeight());
+		imgui::GetWindowDrawList()->AddRectFilled(min, max, imgui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
+
+		//imgui::BeginChild("##geo_child", ImVec2(0.0f, trigger_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
+		{
+			imgui::BeginGroup();
+			{
+				if (imgui::ButtonEx("Toggle All Triggers", ImVec2(max_width, imgui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
+				{
+					components::gameview::p_this->toggle_all_triggers(!components::gameview::p_this->get_all_triggers_state());
+				}
+
+				imgui::Indent(6.0f);
+
+				if (imgui::BeginTable("##triggerfilter_table", column_count, ImGuiTableFlags_SizingStretchSame))
+				{
+					for (size_t i = 0; i < _triggerfilters.size(); i++)
+					{
+						if (const auto	filter = _triggerfilters[i];
+							filter->name)
+						{
+							if (imgui_filter.IsActive())
+							{
+								if (!imgui_filter.PassFilter(filter->name))
+								{
+									continue;
+								}
+							}
+
+							imgui::TableNextColumn();
+
+							imgui::PushStyleCompact();
+							imgui::PushID("triggerfilter");
+
+							handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->trigger_filters, filter, i);
+
+							imgui::PopID();
+							imgui::PopStyleCompact();
+						}
+					}
+					imgui::EndTable();
+				}
+				imgui::EndGroup();
+				trigger_child_height = imgui::GetItemRectSize().y + 8.0f;
+			}
+		}
+		//imgui::EndChild();
+		imgui::PopStyleColor();
+		imgui::PopStyleVar();
+	}
+
+	void filter_dialog::other_filters(float max_width)
+	{
+		static float other_child_height = 200.0f;
+
+		const float column_width = 140.0f;
+		int column_count = static_cast<int>(max_width / column_width);
+		column_count = column_count < 2 ? 2 : column_count;
+		column_count = column_count > 6 ? 6 : column_count;
+
+		imgui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
+		imgui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
+
+		auto min = imgui::GetCursorScreenPos();
+		min.y += imgui::GetFrameHeight();
+
+		const auto max = ImVec2(min.x + max_width, min.y + other_child_height - imgui::GetFrameHeight());
+		imgui::GetWindowDrawList()->AddRectFilled(min, max, imgui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
+
+		//imgui::BeginChild("##geo_child", ImVec2(0.0f, other_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
+		{
+			imgui::BeginGroup();
+			{
+				if (imgui::ButtonEx("Toggle All Others", ImVec2(max_width, imgui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
+				{
+					components::gameview::p_this->toggle_all_others(!components::gameview::p_this->get_all_others_state());
+				}
+
+				imgui::Indent(6.0f);
+
+				if (imgui::BeginTable("##otherfilter_table", column_count, ImGuiTableFlags_SizingStretchSame))
+				{
+					for (size_t i = 0; i < _otherfilters.size(); i++)
+					{
+						if (const auto	filter = _otherfilters[i];
+							filter->name)
+						{
+							if (imgui_filter.IsActive())
+							{
+								if (!imgui_filter.PassFilter(filter->name))
+								{
+									continue;
+								}
+							}
+
+							imgui::TableNextColumn();
+
+							imgui::PushStyleCompact();
+							imgui::PushID("otherfilter");
+
+							handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->other_filters, filter, i);
+
+							imgui::PopID();
+							imgui::PopStyleCompact();
+						}
+					}
+					imgui::EndTable();
+				}
+				imgui::EndGroup();
+				other_child_height = imgui::GetItemRectSize().y + 8.0f;
+			}
+		}
+		//imgui::EndChild();
+		imgui::PopStyleColor();
+		imgui::PopStyleVar();
+	}
+
 	bool filter_dialog::gui()
 	{
-		build_radiant_filterlists();
+		if (dvars::gui_toolbox_integrate_filter && dvars::gui_toolbox_integrate_filter->current.enabled)
+		{
+			return false;
+		}
 
 		const auto MIN_WINDOW_SIZE = ImVec2(360.0f, 200.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(400.0f, 800.0f);
 
-		ImGui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
-		ImGui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+		imgui::SetNextWindowSizeConstraints(MIN_WINDOW_SIZE, ImVec2(FLT_MAX, FLT_MAX));
+		imgui::SetNextWindowSize(INITIAL_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+		imgui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
 
-		if (!ImGui::Begin("Filters##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
+		if (!imgui::Begin("Filters##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse))
 		{
-			ImGui::End();
+			imgui::End();
 			return false;
 		}
 
-		window_hovered = ImGui::IsWindowHovered();
+		window_hovered = imgui::IsWindowHovered();
 
-		const auto pre_filter_pos = ImGui::GetCursorScreenPos();
+		const auto pre_filter_pos = imgui::GetCursorScreenPos();
 
-		imgui_filter.Draw("#filter_filter", ImGui::GetContentRegionAvail().x);
-		input_focused = ImGui::IsItemFocused();
+		imgui_filter.Draw("#filter_filter", imgui::GetContentRegionAvail().x);
+		input_focused = imgui::IsItemFocused();
 
-		/*if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0) && !ImGui::IsWindowAppearing())
-		{
-			if (needs_window_hovered_once && window_hovered)
-			{
-				needs_window_hovered_once = false;
-			}
-			else if (window_hovered && !needs_window_hovered_once)
-			{
-				ImGui::SetKeyboardFocusHere(-1);
-			}
-		}*/
-
-		const auto post_filter_pos = ImGui::GetCursorScreenPos();
+		const auto post_filter_pos = imgui::GetCursorScreenPos();
 
 		if (!imgui_filter.IsActive())
 		{
-			ImGui::SetCursorScreenPos(ImVec2(pre_filter_pos.x + (ImGui::GetContentRegionAvail().x * 0.48f), pre_filter_pos.y + 4.0f));
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
-			ImGui::TextUnformatted("Filter");
-			ImGui::PopStyleColor();
-			ImGui::SetCursorScreenPos(post_filter_pos);
+			imgui::SetCursorScreenPos(ImVec2(pre_filter_pos.x + (imgui::GetContentRegionAvail().x * 0.48f), pre_filter_pos.y + 4.0f));
+			imgui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 0.6f));
+			imgui::TextUnformatted("Filter");
+			imgui::PopStyleColor();
+			imgui::SetCursorScreenPos(post_filter_pos);
 		}
-
-		static ImGuiTableFlags flags = ImGuiTableFlags_SizingStretchSame /*| ImGuiTableFlags_BordersOuter*/;
-
-		const float column_width = 140.0f;
-		int column_count = static_cast<int>(ImGui::GetWindowContentRegionMax().x / column_width);
-		column_count = column_count < 2 ? 2 : column_count;
-		column_count = column_count > 6 ? 6 : column_count;
 
 		SPACING(0.0f, 4.0f);
 
 		int sflags = 0;
-		ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); sflags++;
-		ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 12.0f); sflags++;
+		imgui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 0.0f); sflags++;
+		imgui::PushStyleVar(ImGuiStyleVar_ChildRounding, 12.0f); sflags++;
 
-		const auto button_width = ImGui::GetContentRegionAvail().x;
+		const auto button_width = imgui::GetContentRegionAvail().x;
 
-		if (ImGui::TreeNodeEx("Geometry Filters", ImGuiTreeNodeFlags_DefaultOpen))
+		if (imgui::TreeNodeEx("Geometry Filters", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			static float geo_child_height = 200.0f;
-
-			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
-
-			auto min = ImGui::GetCursorScreenPos();
-				 min.y += ImGui::GetFrameHeight();
-
-			const auto max = ImVec2(min.x + ImGui::GetContentRegionAvail().x, min.y + geo_child_height - ImGui::GetFrameHeight());
-			ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
-
-			//ImGui::BeginChild("##geo_child", ImVec2(0.0f, geo_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
-			{
-				ImGui::BeginGroup();
-				{
-					if (ImGui::ButtonEx("Toggle All Geo", ImVec2(button_width, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
-					{
-						components::gameview::p_this->toggle_all_geo(!components::gameview::p_this->get_all_geo_state());
-					}
-
-					ImGui::Indent(6.0f);
-
-					if (ImGui::BeginTable("##geofilter_table", column_count, flags))
-					{
-						for (size_t i = 0; i < _geofilters.size(); i++)
-						{
-							if (const auto	filter = _geofilters[i];
-											filter->name)
-							{
-								if (imgui_filter.IsActive())
-								{
-									if (!imgui_filter.PassFilter(filter->name))
-									{
-										continue;
-									}
-								}
-
-								ImGui::TableNextColumn();
-
-								ImGui::PushStyleCompact();
-								ImGui::PushID("geofilter");
-
-								handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->geometry_filters, filter, i);
-
-								ImGui::PopID();
-								ImGui::PopStyleCompact();
-							}
-						}
-
-						ImGui::EndTable();
-					}
-
-					ImGui::EndGroup();
-					geo_child_height = ImGui::GetItemRectSize().y + 8.0f;
-				}
-			}
-			//ImGui::EndChild();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleVar();
-			ImGui::TreePop();
+			filter_dialog::geometry_filters(button_width);
+			imgui::TreePop();
 		}
 
 		SPACING(0.0f, 4.0f);
 
-		if (ImGui::TreeNodeEx("Entity Filters", ImGuiTreeNodeFlags_DefaultOpen))
+		if (imgui::TreeNodeEx("Entity Filters", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			static float ent_child_height = 200.0f;
-			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
-
-			auto min = ImGui::GetCursorScreenPos();
-				 min.y += ImGui::GetFrameHeight();
-
-			const auto max = ImVec2(min.x + ImGui::GetContentRegionAvail().x, min.y + ent_child_height - ImGui::GetFrameHeight());
-			ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
-
-			//ImGui::BeginChild("##geo_child", ImVec2(0.0f, ent_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
-			{
-				ImGui::BeginGroup();
-				{
-					if (ImGui::ButtonEx("Toggle All Entities", ImVec2(button_width, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
-					{
-						components::gameview::p_this->toggle_all_entities(!components::gameview::p_this->get_all_ents_state());
-					}
-
-					ImGui::Indent(6.0f);
-
-					if (ImGui::BeginTable("##entityfilter_table", column_count, flags))
-					{
-						for (size_t i = 0; i < _entityfilters.size(); i++)
-						{
-							if (const auto	filter = _entityfilters[i];
-											filter->name)
-							{
-								if (imgui_filter.IsActive())
-								{
-									if (!imgui_filter.PassFilter(filter->name)) 
-									{
-										continue;
-									}
-								}
-
-								ImGui::TableNextColumn();
-
-								ImGui::PushStyleCompact();
-								ImGui::PushID("entityfilter");
-
-								handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->entity_filters, filter, i);
-
-								ImGui::PopID();
-								ImGui::PopStyleCompact();
-							}
-						}
-						ImGui::EndTable();
-					}
-					ImGui::EndGroup();
-					ent_child_height = ImGui::GetItemRectSize().y + 8.0f;
-				}
-			}
-			//ImGui::EndChild();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleVar();
-			ImGui::TreePop();
+			filter_dialog::entity_filters(button_width);
+			imgui::TreePop();
 		}
 
 		SPACING(0.0f, 4.0f);
 
-		if (ImGui::TreeNodeEx("Trigger Filters", ImGuiTreeNodeFlags_DefaultOpen))
+		if (imgui::TreeNodeEx("Trigger Filters", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			static float trigger_child_height = 200.0f;
-			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
-
-			auto min = ImGui::GetCursorScreenPos();
-				 min.y += ImGui::GetFrameHeight();
-
-			const auto max = ImVec2(min.x + ImGui::GetContentRegionAvail().x, min.y + trigger_child_height - ImGui::GetFrameHeight());
-			ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
-
-			//ImGui::BeginChild("##geo_child", ImVec2(0.0f, trigger_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
-			{
-				ImGui::BeginGroup();
-				{
-					if (ImGui::ButtonEx("Toggle All Triggers", ImVec2(button_width, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
-					{
-						components::gameview::p_this->toggle_all_triggers(!components::gameview::p_this->get_all_triggers_state());
-					}
-
-					ImGui::Indent(6.0f);
-
-					if (ImGui::BeginTable("##triggerfilter_table", column_count, flags))
-					{
-						for (size_t i = 0; i < _triggerfilters.size(); i++)
-						{
-							if (const auto	filter = _triggerfilters[i];
-											filter->name)
-							{
-								if (imgui_filter.IsActive())
-								{
-									if (!imgui_filter.PassFilter(filter->name)) 
-									{
-										continue;
-									}
-								}
-
-								ImGui::TableNextColumn();
-
-								ImGui::PushStyleCompact();
-								ImGui::PushID("triggerfilter");
-
-								handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->trigger_filters, filter, i);
-
-								ImGui::PopID();
-								ImGui::PopStyleCompact();
-							}
-						}
-						ImGui::EndTable();
-					}
-					ImGui::EndGroup();
-					trigger_child_height = ImGui::GetItemRectSize().y + 8.0f;
-				}
-			}
-			//ImGui::EndChild();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleVar();
-			ImGui::TreePop();
+			filter_dialog::trigger_filters(button_width);
+			imgui::TreePop();
 		}
 
 		SPACING(0.0f, 4.0f);
 
-		if (ImGui::TreeNodeEx("Other Filters", ImGuiTreeNodeFlags_DefaultOpen))
+		if (imgui::TreeNodeEx("Other Filters", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			static float other_child_height = 200.0f;
-			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(4.0f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.1f, 0.1f, 0.1f, 0.3f));
-
-			auto min = ImGui::GetCursorScreenPos();
-				 min.y += ImGui::GetFrameHeight();
-
-			const auto max = ImVec2(min.x + ImGui::GetContentRegionAvail().x, min.y + other_child_height - ImGui::GetFrameHeight());
-			ImGui::GetWindowDrawList()->AddRectFilled(min, max, ImGui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 0.3f)), 12.0f, ImDrawFlags_RoundCornersBottom);
-
-			//ImGui::BeginChild("##geo_child", ImVec2(0.0f, other_child_height), false, ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar);
-			{
-				ImGui::BeginGroup();
-				{
-					if (ImGui::ButtonEx("Toggle All Others", ImVec2(button_width, ImGui::GetFrameHeight()), ImGuiButtonFlags_AlignTextBaseLine))
-					{
-						components::gameview::p_this->toggle_all_others(!components::gameview::p_this->get_all_others_state());
-					}
-
-					ImGui::Indent(6.0f);
-
-					if (ImGui::BeginTable("##otherfilter_table", column_count, flags))
-					{
-						for (size_t i = 0; i < _otherfilters.size(); i++)
-						{
-							if (const auto	filter = _otherfilters[i];
-											filter->name)
-							{
-								if (imgui_filter.IsActive())
-								{
-									if (!imgui_filter.PassFilter(filter->name)) 
-									{
-										continue;
-									}
-								}
-
-								ImGui::TableNextColumn();
-
-								ImGui::PushStyleCompact();
-								ImGui::PushID("otherfilter");
-
-								handle_radiant_filter(&cmainframe::activewnd->m_pFilterWnd->other_filters, filter, i);
-
-								ImGui::PopID();
-								ImGui::PopStyleCompact();
-							}
-						}
-						ImGui::EndTable();
-					}
-					ImGui::EndGroup();
-					other_child_height = ImGui::GetItemRectSize().y + 8.0f;
-				}
-			}
-			//ImGui::EndChild();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleVar();
-			ImGui::TreePop();
+			filter_dialog::other_filters(button_width);
+			imgui::TreePop();
 		}
 
 		SPACING(0.0f, 4.0f);
 
-		ImGui::PopStyleVar(sflags);
-		ImGui::End();
+		imgui::PopStyleVar(sflags);
+		imgui::End();
 		return true;
 	}
-
-	// *
-	// asm
 
 	// CMainFrame::OnFilterDlg
 	void filter_dialog::on_filterdialog_command()
 	{
-		const auto gui = GET_GUI(ggui::filter_dialog);
-		gui->needs_window_hovered_once = true;
-
-		if(gui->is_inactive_tab() && gui->is_active())
+		if (dvars::gui_toolbox_integrate_filter && dvars::gui_toolbox_integrate_filter->current.enabled)
 		{
-			gui->set_bring_to_front(true);
-			return;
-		}
+			const auto tb = GET_GUI(ggui::toolbox_dialog);
 
-		gui->toggle();
+			tb->set_bring_to_front(true);
+			tb->focus_child(toolbox_dialog::TB_CHILD::FILTER);
+			tb->open();
+		}
+		else
+		{
+			const auto gui = GET_GUI(ggui::filter_dialog);
+			gui->needs_window_hovered_once = true;
+
+			if (gui->is_inactive_tab() && gui->is_active())
+			{
+				gui->set_bring_to_front(true);
+				return;
+			}
+
+			gui->toggle();
+		}
+	}
+
+	void filter_dialog::on_init()
+	{
+		build_radiant_filterlists();
 	}
 
 	void filter_dialog::hooks()

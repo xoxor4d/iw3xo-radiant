@@ -272,7 +272,7 @@ namespace components
 	// main rendering loop (d3d9ex::d3d9device::EndScene())
 	void gui::render_loop()
 	{
-		if(dvars::r_reflectionprobe_generate->current.enabled)
+		if (dvars::r_reflectionprobe_generate->current.enabled)
 		{
 			return;
 		}
@@ -288,14 +288,14 @@ namespace components
 		 // | -------------------- Camera Window ------------------------
 		 // *
 
-		if (game::dx->targetWindowIndex == ggui::CCAMERAWND)
+		if (game::dx->targetWindowIndex == renderer::CCAMERAWND)
 		{
 			// copy scene to texture
 			// done in renderer::camera_postfx() if post effects are active
 
 			if (!renderer::postfx::is_any_active())
 			{
-				renderer::copy_scene_to_texture(ggui::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
+				renderer::copy_scene_to_texture(renderer::CCAMERAWND, GET_GUI(ggui::camera_dialog)->rtt_get_texture());
 			}
 		}
 
@@ -304,9 +304,9 @@ namespace components
 		// | -------------------- Grid Window ------------------------
 		// *
 		
-		if (game::dx->targetWindowIndex == ggui::CXYWND)
+		if (game::dx->targetWindowIndex == renderer::CXYWND)
 		{
-			renderer::copy_scene_to_texture(ggui::CXYWND, GET_GUI(ggui::grid_dialog)->rtt_get_texture());
+			renderer::copy_scene_to_texture(renderer::CXYWND, GET_GUI(ggui::grid_dialog)->rtt_get_texture());
 		}
 
 		
@@ -314,9 +314,9 @@ namespace components
 		// | -------------------- Texture Window ------------------------
 		// *
 
-		if(game::dx->targetWindowIndex == ggui::CTEXWND)
+		if (game::dx->targetWindowIndex == renderer::CTEXWND)
 		{
-			renderer::copy_scene_to_texture(ggui::CTEXWND, GET_GUI(ggui::texture_dialog)->rtt_get_texture());
+			renderer::copy_scene_to_texture(renderer::CTEXWND, GET_GUI(ggui::texture_dialog)->rtt_get_texture());
 		}
 
 
@@ -324,9 +324,18 @@ namespace components
 		// | ------------- Layered Materials Window (Model Preview) -----------------
 		// *
 		
-		if (game::dx->targetWindowIndex == ggui::LAYERED)
+		if (game::dx->targetWindowIndex == renderer::LAYERED)
 		{
 			// so empty
+		}
+
+		// *
+		// | ------------- Fx Window (Effects Browser) -----------------
+		// *
+
+		if (game::dx->targetWindowIndex == renderer::CFXWND)
+		{
+			renderer::copy_scene_to_texture(renderer::CFXWND, GET_GUI(ggui::effects_browser)->rtt_get_texture());
 		}
 
 		
@@ -334,11 +343,24 @@ namespace components
 		// | --------------------- Z Window (Dear ImGui Canvas) ------------------------
 		// *
 		
-		if (game::dx->targetWindowIndex == ggui::CZWND)
+		if (game::dx->targetWindowIndex == renderer::CZWND)
 		{
 			if (!ggui::m_ggui_initialized)
 			{
 				imgui_init_czwnd();
+
+				// optional init function for each module
+				for (const auto& module : ggui::loader::get_modules())
+				{
+					if (module && !module->is_gui_initiated())
+					{
+						module->on_init();
+						module->set_gui_initiated();
+					}
+				}
+
+				// load command map after gui init because gui's might add hotkeys
+				ggui::hotkey_dialog::load_commandmap();
 
 				// allow 1 frame to pass
 				return;
@@ -373,7 +395,7 @@ namespace components
 			GET_GUI(ggui::grid_dialog)->grid_gui();
 			GET_GUI(ggui::camera_dialog)->camera_gui();
 
-			if(ggui::m_demo_menu_state)
+			if (ggui::m_demo_menu_state)
 			{
 				// demo menu
 				ImGui::ShowDemoWindow(&ggui::m_demo_menu_state);
@@ -382,7 +404,7 @@ namespace components
 			// draw/handle gui classes
 			for (const auto& module : ggui::loader::get_modules())
 			{
-				if(module)
+				if (module)
 				{
 					module->frame();
 				}
@@ -537,6 +559,7 @@ namespace components
 		HANDLE_SAVED_STATE_INT(ggui::console_dialog, dvars::gui_saved_state_console, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::filter_dialog, dvars::gui_saved_state_filter, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::entity_dialog, dvars::gui_saved_state_entity, ggui::m_init_saved_states);
+		HANDLE_SAVED_STATE_INT(ggui::effects_browser, dvars::gui_saved_state_effects_browser, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::texture_dialog, dvars::gui_saved_state_textures, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::modelselector_dialog, dvars::gui_saved_state_modelselector, ggui::m_init_saved_states);
 		HANDLE_SAVED_STATE_INT(ggui::prefab_preview_dialog, dvars::gui_saved_state_prefab_browser, ggui::m_init_saved_states);
@@ -836,6 +859,14 @@ namespace components
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "saved closed/opened/active state of window");
 
+		dvars::gui_saved_state_effects_browser = dvars::register_int(
+			/* name		*/ "gui_saved_state_effects_browser",
+			/* default	*/ 0,
+			/* mins		*/ 0,
+			/* maxs		*/ 2,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "saved closed/opened/active state of window");
+
 		dvars::gui_saved_state_textures = dvars::register_int(
 			/* name		*/ "gui_saved_state_textures",
 			/* default	*/ 0,
@@ -880,7 +911,7 @@ namespace components
 			/* name		*/ "gui_saved_state_toolbox_child",
 			/* default	*/ 0,
 			/* mins		*/ 0,
-			/* maxs		*/ 3,
+			/* maxs		*/ 4,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "saved closed/opened/active state of window");
 	}
@@ -906,10 +937,6 @@ namespace components
 		ggui::preferences_dialog::hooks();
 		ggui::surface_dialog::hooks();
 		ggui::vertex_edit_dialog::hooks();
-
-		GET_GUI(ggui::prefab_preview_dialog)->init();
-		GET_GUI(ggui::toolbox_dialog)->init();
-		GET_GUI(ggui::modelselector_dialog)->init();
 
 		command::register_command("demo"s, [](std::vector<std::string> args)
 		{

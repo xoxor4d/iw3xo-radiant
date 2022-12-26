@@ -121,6 +121,7 @@
 #include "utils/function.hpp"
 #include "utils/vector.hpp"
 #include "utils/spawnvars.hpp"
+#include "utils/filesystem.hpp"
 
 #include "common/afx.hpp"
 #include "game/functions.hpp"
@@ -152,6 +153,7 @@
 #include "ggui/camera_settings.hpp"
 #include "ggui/colors.hpp"
 #include "ggui/console.hpp"
+#include "ggui/effects_browser.hpp"
 #include "ggui/effects_editor_gui.hpp"
 #include "ggui/entity.hpp"
 #include "ggui/filter.hpp"
@@ -161,6 +163,7 @@
 #include "ggui/layers.hpp"
 #include "ggui/l2d_file_dialog.hpp"
 #include "ggui/menubar.hpp"
+#include "ggui/mesh_painter_gui.hpp"
 #include "ggui/modelselector.hpp"
 #include "ggui/patch.hpp"
 #include "ggui/prefab_preview.hpp"
@@ -174,6 +177,7 @@
 
 #include "common/mainframe.hpp"
 #include "common/camwnd.hpp"
+#include "common/fxwnd.hpp"
 #include "common/layermatwnd.hpp"
 #include "common/radiantapp.hpp"
 #include "common/zwnd.hpp"

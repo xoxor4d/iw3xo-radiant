@@ -33,6 +33,7 @@ namespace dvars
 	extern game::dvar_s* gui_props_surfinspector;
 	extern game::dvar_s* gui_props_toolbox;
 	extern game::dvar_s* gui_toolbox_integrate_cam_toolbar;
+	extern game::dvar_s* gui_toolbox_integrate_filter;
 	extern game::dvar_s* gui_use_new_surfinspector;
 	extern game::dvar_s* gui_use_new_vertedit_dialog;
 	extern game::dvar_s* gui_use_new_context_menu;
@@ -46,6 +47,7 @@ namespace dvars
 	extern game::dvar_s* gui_saved_state_console;
 	extern game::dvar_s* gui_saved_state_filter;
 	extern game::dvar_s* gui_saved_state_entity;
+	extern game::dvar_s* gui_saved_state_effects_browser;
 	extern game::dvar_s* gui_saved_state_textures;
 	extern game::dvar_s* gui_saved_state_modelselector;
 	extern game::dvar_s* gui_saved_state_prefab_browser;
@@ -60,9 +62,12 @@ namespace dvars
 
 	extern game::dvar_s* grid_zoom_to_cursor;
 	extern game::dvar_s* grid_draw_edge_coordinates;
+	extern game::dvar_s* grid_new_patch_drag;
 
 	extern game::dvar_s* bsp_load_entities;
+	extern game::dvar_s* bsp_show_bsp_after_compile;
 	extern game::dvar_s* bsp_gen_reflections_on_compile;
+	extern game::dvar_s* bsp_gen_createfx_on_compile;
 
 	extern game::dvar_s* bsp_compile_bsp;
 	extern game::dvar_s* bsp_compile_onlyents;
@@ -105,6 +110,14 @@ namespace dvars
 
 	extern game::dvar_s* r_reflectionprobe_generate;
 	extern game::dvar_s* r_reflectionprobe_export_tga;
+
+	extern game::dvar_s* fx_browser_grid_sections;
+	extern game::dvar_s* fx_browser_grid_scale;
+	extern game::dvar_s* fx_browser_grid_color;
+	extern game::dvar_s* fx_browser_grid_line_width;
+	extern game::dvar_s* fx_browser_grid_font_scale;
+	extern game::dvar_s* fx_browser_grid_font_color;
+	extern game::dvar_s* fx_browser_use_camera_for_distortion;
 
 	extern game::dvar_s* guizmo_enable;
 	extern game::dvar_s* guizmo_snapping;

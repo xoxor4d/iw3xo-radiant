@@ -298,102 +298,78 @@ namespace ggui
 	bool hotkey_dialog::cmdbinds_load_from_file(std::string file)
 	{
 		cmd_hotkeys.clear();
-		std::string home_path;
-
-		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath"); 
-						fs_homepath)
-		{
-			home_path = fs_homepath->current.string;
-		}
-		else
-		{
-			char buffer[512];
-			if (!GetModuleFileNameA(nullptr, buffer, 512))
-			{
-				game::printf_to_console("[ERR][Hotkeys] could not get the base directory.\n");
-				return false;
-			}
-
-			std::string path = buffer;
-			home_path = path.substr(0, path.find_last_of("\\/"));
-		}
-
-		std::string ini_path = home_path;
-					ini_path += "\\IW3xRadiant\\" + file;
 
 		std::ifstream ini;
-		ini.open(ini_path.c_str());
-
-		if (!ini.is_open())
+		if (utils::fs::open_file_homepath("IW3xRadiant", file, false, ini))
 		{
-			game::printf_to_console("[ERR][Hotkeys] Failed to find 'hotkeys.ini' ('%s')\n", ini_path.c_str());
-			game::printf_to_console("[ERR] ^ created upon closing radiant but will only have default bindings. Please consider using the ini file that came with iw3xo-radiant.\n");
+			std::string input;
+			std::vector<std::string> args;
 
-			return false;
-		}
-
-		std::string input;
-		std::vector<std::string> args;
-
-		// read line by line
-		while (std::getline(ini, input))
-		{
-			if (input.find("[Commands]") != std::string::npos)
+			// read line by line
+			while (std::getline(ini, input))
 			{
-				//printf("[Hotkeys] Ignored '%s'\n", input.c_str());
-				continue;
-			}
-
-			// ignore comments
-			if (input.find(';') != std::string::npos)
-			{
-				game::printf_to_console("[Hotkeys] Ignored '%s'\n", input.c_str());
-				continue;
-			}
-
-			// ignore lines not containing '='
-			if (input.find(" =") == std::string::npos)
-			{
-				game::printf_to_console("[Hotkeys] Ignored '%s' => missing '='\n", input.c_str());
-				continue;
-			}
-
-			// split the string on = (gets us 2 args)
-			args = utils::split(input, '=');
-
-			// remove the leftover space on the command name
-			utils::rtrim(args[0]);
-
-			// trim leading tabs and spaces on the key-bind
-			utils::ltrim(args[1]);
-
-			// split keys on space
-			std::vector<std::string> keys;
-
-			if (args[1].find(' ') != std::string::npos)
-			{
-				// multiple keys
-				keys = utils::split(args[1], ' ');
-			}
-			else
-			{
-				// single key
-				keys.push_back(args[1]);
-			}
-
-			cmd_hotkeys.push_back(
-				commandbinds
+				if (input.find("[Commands]") != std::string::npos)
 				{
-					args[0],
-					args[1],
-					input.find("+alt") != std::string::npos,
-					input.find("+ctrl") != std::string::npos,
-					input.find("+shift") != std::string::npos,
-					keys[keys.size() - 1]
-				});
+					//printf("[Hotkeys] Ignored '%s'\n", input.c_str());
+					continue;
+				}
+
+				// ignore comments
+				if (input.find(';') != std::string::npos)
+				{
+					game::printf_to_console("[Hotkeys] Ignored '%s'\n", input.c_str());
+					continue;
+				}
+
+				// ignore lines not containing '='
+				if (input.find(" =") == std::string::npos)
+				{
+					game::printf_to_console("[Hotkeys] Ignored '%s' => missing '='\n", input.c_str());
+					continue;
+				}
+
+				// split the string on = (gets us 2 args)
+				args = utils::split(input, '=');
+
+				// remove the leftover space on the command name
+				utils::rtrim(args[0]);
+
+				// trim leading tabs and spaces on the key-bind
+				utils::ltrim(args[1]);
+
+				// split keys on space
+				std::vector<std::string> keys;
+
+				if (args[1].find(' ') != std::string::npos)
+				{
+					// multiple keys
+					keys = utils::split(args[1], ' ');
+				}
+				else
+				{
+					// single key
+					keys.push_back(args[1]);
+				}
+
+				cmd_hotkeys.push_back(
+					commandbinds
+					{
+						args[0],
+						args[1],
+						input.find("+alt") != std::string::npos,
+						input.find("+ctrl") != std::string::npos,
+						input.find("+shift") != std::string::npos,
+						keys[keys.size() - 1]
+					});
+			}
+
+			ini.close();
+			return true;
 		}
 
-		return true;
+		game::printf_to_console("[ERR][Hotkeys] Failed to find 'hotkeys.ini'\n");
+		game::printf_to_console("[ERR] ^ will be created upon closing radiant with default bindings. Please consider using the ini file that came with iw3xo-radiant.\n");
+		return false;
 	}
 
 	// g_commandmap m_nModifiers
@@ -637,7 +613,11 @@ namespace ggui
 
 						if (ImGui::Selectable(radiant_keybind_array[n], is_selected))
 						{
-							bind.modifier_key = radiant_keybind_array[n];
+							if (!utils::starts_with(radiant_keybind_array[n], "##"))
+							{
+								bind.modifier_key = radiant_keybind_array[n];
+							}
+							
 							if (is_selected)
 							{
 								ImGui::SetItemDefaultFocus();   // You may set the initial focus when opening the combo (scrolling + for keyboard navigation support)
@@ -773,21 +753,9 @@ namespace ggui
 			return;
 		}
 
-		if (const auto& fs_homepath = game::Dvar_FindVar("fs_homepath");
-						fs_homepath)
+		std::ofstream ini;
+		if (utils::fs::write_file_homepath("IW3xRadiant", "hotkeys.ini", false, ini))
 		{
-			std::ofstream ini;
-			std::string ini_path = fs_homepath->current.string;
-						ini_path +=  R"(\IW3xRadiant\hotkeys.ini)";
-
-			ini.open(ini_path.c_str());
-
-			if (!ini.is_open())
-			{
-				game::printf_to_console("[ERR][Hotkeys] Could not write to 'hotkeys.ini' ('%s')\n", ini_path.c_str());
-				return;
-			}
-
 			ini << "[Commands]" << std::endl;
 
 			for (commandbinds& bind : cmd_hotkeys)
@@ -795,21 +763,25 @@ namespace ggui
 				ini << std::left << std::setw(26) << bind.cmd_name << " = ";
 
 				ini << (bind.modifier_shift == 0 ? "" : "+shift ");
-				ini << (bind.modifier_alt == 0 ? "" : "+alt ");
-				ini << (bind.modifier_ctrl == 0 ? "" : "+ctrl ");
-				ini <<  bind.modifier_key << std::endl;
+				ini << (bind.modifier_alt   == 0 ? "" : "+alt ");
+				ini << (bind.modifier_ctrl  == 0 ? "" : "+ctrl ");
+				ini << bind.modifier_key << std::endl;
 			}
 
 			ini.close();
-
 			hotkey_dialog::load_commandmap();
+		}
+		else
+		{
+			game::printf_to_console("[ERR][Hotkeys] Could not write to 'hotkeys.ini'\n");
 		}
 	}
 
 	void hotkey_dialog::hooks()
 	{
 		// replace hardcoded hotkeys with our own (ini)
-		utils::hook(0x420A4F, hotkey_dialog::load_commandmap, HOOK_CALL).install()->quick();
+		// load_commandmap now called from gui::render_loop() after all gui's are initiated
+		utils::hook::nop(0x420A4F, 5); //utils::hook(0x420A4F, hotkey_dialog::load_commandmap, HOOK_CALL).install()->quick();
 
 		// load/skip the original commandmap (depends if iw3r_hotkeys.ini exists or not)
 		utils::hook(0x4210BF, hotkey_dialog::load_default_commandmap, HOOK_CALL).install()->quick();

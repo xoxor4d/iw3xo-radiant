@@ -24,12 +24,24 @@ namespace utils
 		#define VectorSet(v, x, y, z)	((v)[0]=(x), (v)[1]=(y), (v)[2]=(z))
 		#define Vector4Copy(a,b)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
 
+		float	rad_to_deg(const float radians);
+		float	deg_to_rad(const float degrees);
+		void	to_euler_angles(const vec4_t* matrix, vec3_t out);
+		void	to_euler_angles_deg(const vec4_t* matrix, vec3_t out);
+
 		float	cos_of_sum_of_arc_cos(float cos0, float cos1);
 		void	rotate_point(float* point, const float *mat);
 		void	rotate_point(const float* v, const float* q, float* out);
 		void	vec3_rotate_transpose(const float* in, const float* matrix, float* out);
+		void	orientation_dir_to_world_dir(game::orientation_t* orient, const float* dir, float* out);
+		void	orientation_pos_to_world_pos(game::orientation_t* orient, const float* pos, float* out);
+		void	scaled_orientation_pos_to_world_pos(game::orientation_t* orient, float scale, const float* pos, float* out);
+		void	orientation_concatenate(game::orientation_t* orFirst, game::orientation_t* orSecond, game::orientation_t* out);
 		void	angle_vectors(const game::vec3_t angles, game::vec3_t forward, game::vec3_t right, game::vec3_t up);
 		void	vectoangles(const vec3_t value1, vec3_t angles);
+		void	vectosignedangles(const float* in, float* out);
+		float	vectosignedpitch(float* vec);
+		void	axis4_to_angles(const float(*axis)[4], float* angles);
 		
 		int		compare(const vec3_t v1, const vec3_t v2);
 		void	clamp_vec3(const vec3_t a, const vec3_t b, vec3_t o1, vec3_t o2);
@@ -49,6 +61,7 @@ namespace utils
 		void	subtract(const vec3_t veca, const vec3_t vecb, vec3_t out);
 		void	add(const vec3_t veca, const vec3_t vecb, vec3_t out);
 		void	copy(const float* in, float* out, const int size = 3);
+		void	multiply(const vec3_t veca, const vec3_t vecb, vec3_t out);
 		void	scale(const vec3_t in, float scale, vec3_t out);
 		void	ma(const vec3_t veca, float scale, const vec3_t vecb, vec3_t out);
 		void	inverse(vec3_t v);

@@ -120,7 +120,7 @@ DWORD WINAPI discord_rpc(LPVOID)
 	{
 		Sleep(5000);
 
-		if(components::discord::g_enable_discord_rpc)
+		if (components::discord::g_enable_discord_rpc)
 		{
 			components::discord::init();
 			components::discord::update_discord();
@@ -148,6 +148,11 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 	
 	while (true)
 	{
+		if (game::glob::in_shutdown)
+		{
+			break;
+		}
+
 		if (game::glob::d3d9_device)
 		{
 			const float maxfps_grid = 1000.0f / (float)dvars::radiant_maxfps_grid->current.integer;
@@ -208,6 +213,13 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 				{
 					SendMessageA(hwnd, WM_PAINT, 0, 0);
 				}
+
+				if (const auto hwnd = components::renderer::get_window(components::renderer::CFXWND)->hwnd;
+					hwnd != nullptr)
+				{
+					SendMessageA(hwnd, WM_PAINT, 0, 0);
+				}
+
 				timer_camera += maxfps_camera;
 			}
 
@@ -232,6 +244,7 @@ DWORD WINAPI paint_msg_loop(LPVOID)
 				{
 					SendMessageA(hwnd, WM_PAINT, 0, 0);
 				}
+
 				timer_modelselector += maxfps_modelselector;
 			}
 			

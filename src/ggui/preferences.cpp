@@ -1,11 +1,5 @@
 #include "std_include.hpp"
 
-namespace ggui::preferences
-{
-	
-
-}
-
 namespace ggui
 {
 	void preferences_dialog::register_child(const std::string& _child_name, const std::function<void()>& _callback)
@@ -110,6 +104,7 @@ namespace ggui
 
 			ImGui::Checkbox("Integrate camera toolbar into toolbox", &dvars::gui_toolbox_integrate_cam_toolbar->current.enabled); TT(dvars::gui_toolbox_integrate_cam_toolbar->description);
 			ImGui::Checkbox("Integrate entity-properties into toolbox", &dvars::gui_props_toolbox->current.enabled); TT(dvars::gui_props_toolbox->description);
+			ImGui::Checkbox("Integrate filter window into toolbox", &dvars::gui_toolbox_integrate_filter->current.enabled); TT(dvars::gui_toolbox_integrate_filter->description);
 
 			const char* incorp_surf_inspector_strings[4] = { "None", "Entity Properties", "Toolbox" };
 			if (ImGui::SliderInt("Integrate surface-inspector into", &dvars::gui_props_surfinspector->current.integer, 0, 2, incorp_surf_inspector_strings[dvars::gui_props_surfinspector->current.integer]))
@@ -168,6 +163,7 @@ namespace ggui
 
 			if (ImGui::SliderInt("Undo levels", &prefs->m_nUndoLevels, 16, 512))
 			{
+				prefs->m_nUndoLevels = ImClamp(prefs->m_nUndoLevels, 16, 512);
 				game::g_undoMaxSize = prefs->m_nUndoLevels;
 			}
 
@@ -234,7 +230,11 @@ namespace ggui
 
 			ImGui::title_with_seperator("General", false);
 			ImGui::SliderInt("Camera mode", &prefs->camera_mode, 0, 2);
-			ImGui::DragFloat("Field of view", &prefs->camera_fov, 0.1f, 1.0f, 180.0f, "%.1f");
+
+			if (ImGui::DragFloat("Field of view", &prefs->camera_fov, 0.1f, 10.0f, 160.0f, "%.1f"))
+			{
+				prefs->camera_fov = ImClamp(prefs->camera_fov, 10.0f, 160.0f);
+			}
 
 
 			// -----------------
@@ -243,7 +243,7 @@ namespace ggui
 			ImGui::SliderInt("Camera angle speed", &prefs->m_nAngleSpeed, 1, 1000);
 			if (imgui::SliderFloat("Camera angle speed (physx movement)", &dvars::physx_camera_sensitivity->current.value, 10.0f, 1000.0f, "%.0f"))
 			{
-				ImClamp(dvars::physx_camera_sensitivity->current.value, 10.0f, 1000.0f);
+				dvars::physx_camera_sensitivity->current.value = ImClamp(dvars::physx_camera_sensitivity->current.value, 10.0f, 1000.0f);
 			}
 
 
@@ -265,6 +265,56 @@ namespace ggui
 
 		});
 	}
+
+	void preferences_dialog::child_effects_browser()
+	{
+		static float height = 0.0f;
+		height = pref_child_lambda(CAT_EFFECTS_BROWSER, height, m_child_bg_col, dvars::gui_border_color->current.vector, [this]
+		{
+			game::dvar_s* dvar = nullptr;
+			imgui::title_with_seperator("Grid", false);
+			
+			dvar = dvars::fx_browser_grid_sections;
+			if (imgui::DragInt("Grid Sections", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
+			{
+				dvar->current.integer = ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
+			}
+
+			dvar = dvars::fx_browser_grid_scale;
+			if (imgui::DragInt("Grid Scale", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
+			{
+				dvar->current.integer = ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
+			}
+
+			imgui::ColorEdit4("Grid Color", dvars::fx_browser_grid_color->current.vector, ImGuiColorEditFlags_Float);
+
+			dvar = dvars::fx_browser_grid_line_width;
+			if (imgui::DragInt("Line Width", &dvar->current.integer, 0.1f, dvar->domain.integer.min, dvar->domain.integer.max))
+			{
+				dvar->current.integer = ImClamp(dvar->current.integer, dvar->domain.integer.min, dvar->domain.integer.max);
+			}
+
+			dvar = dvars::fx_browser_grid_font_scale;
+			if (imgui::DragFloat("Font Scale", &dvar->current.value, 0.01f, dvar->domain.value.min, dvar->domain.value.max))
+			{
+				dvar->current.value = ImClamp(dvar->current.value, dvar->domain.value.min, dvar->domain.value.max);
+			}
+
+			imgui::ColorEdit4("Font Color", dvars::fx_browser_grid_font_color->current.vector, ImGuiColorEditFlags_Float);
+
+			if (imgui::Button("Regenerate Grid"))
+			{
+				cfxwnd::get()->m_grid_generated = false;
+			}
+
+			imgui::title_with_seperator("Rendering");
+
+			dvar = dvars::fx_browser_use_camera_for_distortion;
+			imgui::Checkbox("Use Camera Image for Distortion", &dvar->current.enabled);
+			TT(dvar->description);
+		});
+	}
+
 
 	void preferences_dialog::child_textures()
 	{
@@ -558,20 +608,6 @@ namespace ggui
 
 	bool preferences_dialog::gui()
 	{
-		if (!this->is_initiated())
-		{
-			register_child(CAT_GENERAL, std::bind(&preferences_dialog::child_general, this));
-			register_child(CAT_GUI, std::bind(&preferences_dialog::child_gui, this));
-			register_child(CAT_GRID, std::bind(&preferences_dialog::child_grid, this));
-			register_child(CAT_CAMERA, std::bind(&preferences_dialog::child_camera, this));
-			register_child(CAT_TEXTURES, std::bind(&preferences_dialog::child_textures, this));
-			register_child(CAT_RENDERER, std::bind(&preferences_dialog::child_renderer_bsp, this));
-			register_child(CAT_LIVELINK, std::bind(&preferences_dialog::child_livelink, this));
-			register_child(CAT_DEVELOPER, std::bind(&preferences_dialog::child_developer, this));
-
-			this->set_initiated();
-		}
-
 		const auto MIN_WINDOW_SIZE = ImVec2(800.0f, 400.0f);
 		const auto INITIAL_WINDOW_SIZE = ImVec2(800.0f, 600.0f);
 		ggui::set_next_window_initial_pos_and_constraints(MIN_WINDOW_SIZE, INITIAL_WINDOW_SIZE);
@@ -709,6 +745,21 @@ namespace ggui
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "Enable: merge 'hide/show bsp/radiant' buttons to toggle between bsp and radiant with a single click.\nDisable: split buttons");
 	}
+
+	void preferences_dialog::on_init()
+	{
+		register_child(CAT_GENERAL, std::bind(&preferences_dialog::child_general, this));
+		register_child(CAT_GUI, std::bind(&preferences_dialog::child_gui, this));
+		register_child(CAT_GRID, std::bind(&preferences_dialog::child_grid, this));
+		register_child(CAT_CAMERA, std::bind(&preferences_dialog::child_camera, this));
+		register_child(CAT_EFFECTS_BROWSER, std::bind(&preferences_dialog::child_effects_browser, this));
+		register_child(CAT_TEXTURES, std::bind(&preferences_dialog::child_textures, this));
+		register_child(CAT_RENDERER, std::bind(&preferences_dialog::child_renderer_bsp, this));
+		register_child(CAT_LIVELINK, std::bind(&preferences_dialog::child_livelink, this));
+		register_child(CAT_DEVELOPER, std::bind(&preferences_dialog::child_developer, this));
+
+	}
+
 
 	REGISTER_GUI(preferences_dialog);
 }

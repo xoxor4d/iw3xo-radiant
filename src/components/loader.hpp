@@ -37,6 +37,7 @@ namespace components
 #include "modules/generate_previews.hpp"
 #include "modules/gui.hpp"
 #include "modules/main_module.hpp"
+#include "modules/mesh_painter.hpp"
 #include "modules/patches.hpp"
 #include "modules/physx_impl.hpp"
 #include "modules/pmesh.hpp"
@@ -44,3 +45,4 @@ namespace components
 #include "modules/reflectionprobes.hpp"
 #include "modules/renderer.hpp"
 #include "modules/remote_net.hpp"
+#include "modules/time_wasted.hpp"

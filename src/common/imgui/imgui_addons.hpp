@@ -72,7 +72,7 @@ namespace ImGui
 	void	title_with_seperator(const char* title_text, bool pre_spacing = true, float width = 0.0f, float height = 2.0f, float post_spacing = 0.0f);
 	void	title_inside_seperator(const char* title_text, bool pre_spacing, float width, float post_spacing, float thickness = 1.0f);
 	void	title_with_seperator_helpmark(const char* title_text, bool pre_spacing, float width, float height, float post_spacing, const char* helper_text);
-	bool    InputScalarDir(const char* label, ImGuiDataType data_type, void* p_data, int* dir, void* p_step = nullptr, const void* p_step_fast = nullptr, bool display_p_step = false, const char* format = nullptr, ImGuiInputTextFlags flags = 0);
+	bool    InputScalarDir(const char* label, ImGuiDataType data_type, void* p_data, int* dir, void* p_step = nullptr, const void* p_step_fast = nullptr, bool display_p_step = false, const char* format = nullptr, ImGuiInputTextFlags flags = 0, bool disable_input_text = false);
 
 	void	debug_table_entry_vec3(const char* label, const float* vec3);
 	void	debug_table_entry_float(const char* label, const float* val);

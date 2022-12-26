@@ -11,7 +11,5 @@ namespace components
 
 		static void		load_dvars();
 		static void		write_dvars();
-
-	private:
 	};
 }

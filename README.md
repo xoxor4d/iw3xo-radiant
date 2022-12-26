@@ -1,12 +1,13 @@
 
 
 
-<h1 align="center">IW3xRadiant - A Call of Duty 4 Radiant Modification using ImGui</h3>
+<h2 align="center">iw3xo-radiant // a radiant modification for Call of Duty 4</h1>
 
-<p align="center">
-This project is aimed at developers and includes various modifications/additions and was initially built to be used with IW3xo.
-Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You can, however, just use it as a direct replacement for stock radiant.
-</p>
+<div align="center" markdown="1">
+
+This project aims to fix existing bugs, extend functionalities across the board and to replace   
+the dated MFC/Windows UI with a more modern and flexible UI powered by Dear ImGui.
+</div>
 
 <br>
 <div align="center" markdown="1">
@@ -19,15 +20,16 @@ Running IW3xRadiant and IW3xo enables a live-link between CoD4 and Radiant. You 
 <br>
 
 ### Project Page (Guide / In-Depth)
-https://xoxor4d.github.io/projects/iw3xo-radiant
+https://xoxor4d.github.io/projects/iw3xo-radiant  
 
 <br>
 
 ### nightly builds - develop branch
-( download and install the [latest release](https://github.com/xoxor4d/iw3xo-radiant/releases) before using nightly's )
+(download and install the [latest release](https://github.com/xoxor4d/iw3xo-radiant/releases) before using nightly's)   
+(nightly's may require additional assets so make sure to check pinned messages in the __#nightly-builds__ channel on the [iw3xo discord](https://discord.gg/t5jRGbj))  
 
-[![build-develop](https://img.shields.io/github/workflow/status/xoxor4d/iw3xo-radiant/Build-Debug/develop?logo=github&label=nightly-develop)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-debug/develop/Debug%20binaries.zip)&ensp;
-[![build-release](https://img.shields.io/github/workflow/status/xoxor4d/iw3xo-radiant/Build-Release/develop?logo=github&label=nightly-release)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-release/develop/Release%20binaries.zip)&ensp;
+[![build-develop](https://img.shields.io/github/actions/workflow/status/xoxor4d/iw3xo-radiant/build-debug.yml?branch=develop&label=nightly-debug&logo=github)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-debug/develop/Debug%20binaries.zip)&ensp;
+[![build-release](https://img.shields.io/github/actions/workflow/status/xoxor4d/iw3xo-radiant/build-release.yml?branch=develop&label=nightly-release&logo=github)](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-release/develop/Release%20binaries.zip)&ensp;
 
 
 
@@ -41,36 +43,39 @@ If you want to buy me a coffee:
 
 <br>
 
-![image](https://user-images.githubusercontent.com/45299104/143088571-8a392c17-ed21-4639-9afb-f4fa492e3fca.jpg)
-
-![](readme/effects.gif)
-
 ![image](readme/feat_ui.gif)
-<div align="center" markdown="1">
 
-^ build the layout you've always wanted  
-[https://www.youtube.com/watch?v=YSIGsSZZkco](https://www.youtube.com/watch?v=YSIGsSZZkco)
-</div>
+![image](readme/feat_mesh_painter.gif)
 
-___
-## Features
+![](https://xoxor4d.github.io/assets/img/iw3xo-radiant/physx/prefab_physics_preview.gif)
 
 <br>
 
-### Goals:
-- replace most if not all of the MFC/Windows UI with Dear ImGui
-- extend functionalities across the board
+<div align="center" markdown="1">
+
+[Build the layout you've always wanted](https://www.youtube.com/watch?v=YSIGsSZZkco) [YouTube]  
+[Feature Footage](https://www.youtube.com/watch?v=B3TNEikRptE) [YouTube]
+</div>
+
+<br>
+
+___
+<br>
 
 ### New features not found within the original cod4 radiant:
- + completely revamped user interface with docking, tabs, saved layouts and more (Dear ImGui)
++ completely revamped user interface with docking, tabs, saved layouts and more (Dear ImGui)
 + [play](https://xoxor4d.github.io/tutorials/iw3xradiant-using-effects/) && [edit / create](https://xoxor4d.github.io/tutorials/iw3xradiant-effects-editor/) && [export effects as CreateFX](https://xoxor4d.github.io/tutorials/iw3xradiant-createfx/) files right from within radiant (__makes effectsEd completely obsolete__)
-+ Nvidia PhysX (used for effects - with functionality to convert dynamic actors to misc_models)
-+ [d3dbsp loading](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp/) and bsp/light compilation from within radiant
-+ [automatically generate reflections](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp-reflections/) within radiant when compiling the maps bsp
-+ [live link](https://xoxor4d.github.io/tutorials/iw3xradiant-livelink/) (sync. brushes (with collision), camera and worldspawn settings between cod4 and radiant)   
++ Nvidia PhysX integration for [dynamic placement of prefabs](https://xoxor4d.github.io/tutorials/iw3xradiant-physx-prefabs) or [physics-enabled effects](https://xoxor4d.github.io/tutorials/iw3xradiant-physx-effects) (can be turned into misc_models)
++ Nvidia PhysX enabled character movement with cod4 movement mechanics (bouncing) [character movement](https://xoxor4d.github.io/tutorials/iw3xradiant-physx-movement)
++ [d3dbsp loading](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp) and bsp/light compilation from within radiant
++ [automatically generate reflections](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp-reflections) within radiant when compiling the maps bsp
++ [live link](https://xoxor4d.github.io/tutorials/iw3xradiant-livelink) (sync. brushes (with collision), camera and worldspawn settings between cod4 and radiant)
++ [mesh painting](https://xoxor4d.github.io/tutorials/iw3xradiant-mesh-painting) (xmodels/prefabs) with per object settings, random size, angles, weight etc.
 + 3D guizmo to precisely manipulate entities and brushes from the camera window (ImGuizmo)
-+ preview xmodels and drag them directly into the scene using the model browser
-+ a prefab browser with the ability to generate thumbnails (no more guess work + prefabs can be dragged into the scene)
++ a prefab browser with the ability to generate thumbnails + drag and drop prefabs into the scene
++ a model browser to preview xmodels + drag and drop models into the scene
++ an effect browser to preview effects + drag and drop effects into the scene
++ materials can now be reloaded (individually) without restarting radiant
 + custom lighting shader with normal-mapping, specular highlights, reflections and fog
 + ability to limit shadow drawing distance when using stock sunpreview (++FPS)
 + filmtweak support
@@ -78,28 +83,27 @@ ___
 + increased asset limits to allow high poly models
 + realtime viewports
 + context aware grid and camera context menus with QoL features
-+ a toolbox featuring all related functions for brushes/patches and more
-+ better surface / property editor (can be integrated into the ^ toolbox)
-+ better vertex edit dialog
-+ better layer dialog
++ better surface-inspector, property editor, layer dialog etc.
++ vertex edit dialog with random noise generator
++ display missing materials using a proper invalid_texture material
 + zoom to cursor
 + toast notifications
 + editable toolbars, hotkeys, colors
 + new file dialogs with working default paths
 + texture window toolbar for quick filtering
-+ custom texture favourite lists that can be created from within radiant (add/remove selected texture to/from the list)
++ custom texture favourite lists (like customizable texture filters)
++ preview sky materials within the texture browser (no longer invisible)
 + rope/wire generator
 + sun direction visualizer
 + a proper console with dvar support (incl. dvar suggestions and autocomplete)
 + increased undo limit
-+ missing materials are now using a proper invalid_texture material and are no longer invisible
 + print parsed entity and brush num on map load making it easier to find issues in map files (off by default)
 + bo3 tool textures (optional)
-+ [stamp prefabs](https://xoxor4d.github.io/tutorials/iw3xradiant-prefab/) 
-+ [create prefab from selection](https://xoxor4d.github.io/tutorials/iw3xradiant-prefab/) 
 + terrain patch thickening
-+ [extrude selected brush to other brush faces](https://xoxor4d.github.io/tutorials/iw3xradiant-brush-face-extending/) 
-+ ++ alot more QoL features
++ [stamp prefabs](https://xoxor4d.github.io/tutorials/iw3xradiant-prefab) 
++ [create prefab from selection](https://xoxor4d.github.io/tutorials/iw3xradiant-prefab) 
++ [extrude selected brush to other brush faces](https://xoxor4d.github.io/tutorials/iw3xradiant-brush-face-extending) 
++ alot more QoL features
 
 <br>
 
@@ -108,11 +112,13 @@ ___
 
 <br>
 
-1. Download the latest [release](https://github.com/xoxor4d/iw3xo-radiant/releases)
-2. Copy the `bin` and `map_source` folders into your cod4 root directory
-3. Start __IW3xRadiant.exe__
+1. Install the CoD4 Modtools
+2. Download the latest [release](https://github.com/xoxor4d/iw3xo-radiant/releases)
+3. Copy the contents into your cod4 root directory
+4. Start `bin/IW3xRadiant.exe`
 
-- [NIGHTLY]&ensp; &ensp; unpack and replace `iw3r.dll` within the `bin` folder
+- [NIGHTLY]&ensp; &ensp; install latest release, download nightly, unpack and replace `iw3r.dll` within the `bin` folder  
+  &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; &ensp; -> check for additional assets in the __#nightly-builds__ channel (📍) on the [iw3xo discord](https://discord.gg/t5jRGbj)
 - [OPTIONAL]&ensp; __bo3-tool-textures.zip__ (unpack and place `.iwi's` into `bin\IW3xRadiant\images`)
 
 <br>
@@ -131,7 +137,7 @@ ___
 > - General &ensp; &ensp; &ensp; output directory path -> `path-to-cod4-root\bin\`
 > - Debugging &ensp; command -> `path-to-cod4-root\bin\IW3xRadiant.exe`
 > - Debugging &ensp; working directory -> `path-to-cod4-root\bin\`
-> + Alternatively: Create a new environment variable called `COD4_ROOT` that points to your cod4 directory and re-generate the project files.  
+> + Preferred: Create a new environment variable called `COD4_ROOT` that points to your cod4 directory and re-generate the project files.  
 6. Build -> Build Solution or run with debugger  
 
 <br>
@@ -194,16 +200,18 @@ ___
 
 <br>
 
-### Model Selector / Preview:
+### Model Browser:
 ![image](https://user-images.githubusercontent.com/45299104/146609277-803b9203-4a64-4355-99fc-32cfb7ad6d82.jpg)
 
 ### Custom Lighting Shader On/Off:
 ![image](https://user-images.githubusercontent.com/45299104/146609441-50255d3c-0dc0-4f9a-894e-373abf4eafc6.jpg)
 ![image](https://user-images.githubusercontent.com/45299104/146609445-e11ae289-641e-4979-915b-bbb0c6b4942b.jpg)
 
-### Effect Playback
-![image](https://xoxor4d.github.io/assets/img/iw3xo-radiant/gif/radiant_effect_leaves.gif)
+### Effect Browser and Playback
+![image](readme/feat_effect_browser.gif)
 
+### In-Editor cod4 based movement with bouncing :>
+![image](readme/feat_movement.gif)
 <br>
 
 ### Effects Editor

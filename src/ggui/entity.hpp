@@ -122,6 +122,7 @@ namespace ggui
 		bool	get_value_for_key_from_entity(game::entity_s* ent, float* value, const char* keyname);
 		bool	get_vec3_for_key_from_entity(game::entity_s* ent, float* vec3, const char* keyname);
 		bool	has_key_value_pair(game::entity_s_def* ent, const char* key);
+		bool	has_key_with_value(game::entity_s_def* ent, const char* key, const char* value);
 
 		void	draw_classlist();
 		void	draw_comments(const float start_indent = 0.0f);

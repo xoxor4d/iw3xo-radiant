@@ -222,18 +222,19 @@ namespace ggui
 					center_horz_end(manipulation_l1_width);
 				}
 
-				SPACING(0.0f, 0.0f);
+				imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+				imgui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, 0.5f));
 
 				static float manipulation_l2_width = 100.0f;
 				center_horz_begin(manipulation_l2_width);
 				{
-					if (ImGui::Button("Hollow Brush", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Hollow Brush", ImVec2(max_widget_width * 0.5f - 6.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x425570); // CMainFrame::OnSelectionMakehollow
 					} TT("Hollows the selected brush. Uses current grid size as wall size");
 
 					ImGui::SameLine(0.0f, 4.0f);
-					if (ImGui::Button("Auto Caulk", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Auto Caulk", ImVec2(max_widget_width * 0.5f - 6.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x425600); // CMainFrame::OnSelectionAutoCaulk
 					} TT(std::string("Automatically caulk invisible faces\n" + ggui::hotkey_dialog::get_hotkey_for_command("AutoCaulk", true)).c_str());
@@ -241,21 +242,49 @@ namespace ggui
 					center_horz_end(manipulation_l2_width);
 				}
 
+
+				static float manipulation_l3_width = 100.0f;
+				center_horz_begin(manipulation_l3_width);
+				{
+					if (ImGui::Button("Toggle New Patch Dragging", ImVec2(max_widget_width - 8.0f, 32.0f)))
+					{
+						dvars::set_bool(dvars::grid_new_patch_drag, !dvars::grid_new_patch_drag->current.enabled);
+					}
+
+					const std::string dvar_desc = dvars::grid_new_patch_drag->description + " "s + ggui::hotkey_dialog::get_hotkey_for_command("new_patch_drag", true);
+					TT(dvar_desc.c_str());
+
+					if (dvars::grid_new_patch_drag->current.enabled)
+					{
+						imgui::SameLine();
+						imgui::SetCursorPos(ImVec2(imgui::GetCursorPos().x - 34.0f, imgui::GetCursorPos().y + 7.0f));
+						imgui::RenderCheckMark(imgui::GetWindowDrawList(), imgui::GetCursorScreenPos(), imgui::GetColorU32(ImGuiCol_Text), 16.0f);
+					}
+
+					center_horz_end(manipulation_l3_width);
+				}
+
+				imgui::PopStyleColor();
+				imgui::PopStyleVar();
+
 				treenode_end(style_colors, style_vars);
 			}
 
-			if(treenode_begin("Brush Contents", true, style_colors, style_vars))
+			if (treenode_begin("Brush Contents", true, style_colors, style_vars))
 			{
+				imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+				imgui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, 0.5f));
+
 				static float brush_contents_l1_width = 100.0f;
 				center_horz_begin(brush_contents_l1_width);
 				{
-					if (ImGui::Button("Detail", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Detail", ImVec2(max_widget_width * 0.5f - 2.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x4261C0); // CMainFrame::OnSelectionMakeDetail
 					}
 
 					ImGui::SameLine(0.0f, 4.0f);
-					if (ImGui::Button("Non-Colliding", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Non-Colliding", ImVec2(max_widget_width * 0.5f - 2.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x426280); // CMainFrame::OnSelectionMakeNonColliding
 					}
@@ -265,18 +294,21 @@ namespace ggui
 				static float brush_contents_l2_width = 100.0f;
 				center_horz_begin(brush_contents_l2_width);
 				{
-					if (ImGui::Button("Structural", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Structural", ImVec2(max_widget_width * 0.5f - 2.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x426200); // CMainFrame::OnSelectionMakeStructural
 					}
 
 					ImGui::SameLine(0.0f, 4.0f);
-					if (ImGui::Button("Weapon Clip", ImVec2(max_widget_width * 0.5f - 2.0f, 0.0f)))
+					if (ImGui::Button("Weapon Clip", ImVec2(max_widget_width * 0.5f - 2.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x426240); // CMainFrame::OnSelectionMakeWeaponclip
 					}
 				}
 				center_horz_end(brush_contents_l2_width);
+
+				imgui::PopStyleColor();
+				imgui::PopStyleVar();
 
 				treenode_end(style_colors, style_vars);
 			}
@@ -510,14 +542,50 @@ namespace ggui
 						cdeclcall(void, 0x42A270); // CMainFrame::OnRedistPatchPoints
 					}
 
+					imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+					imgui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, 0.5f));
+
 					ImGui::SameLine();
 					if (ImGui::Button("Adv. Edit Dialog", ImVec2(116.0f, 32.0f)))
 					{
 						cdeclcall(void, 0x42BC90); // CMainFrame::OnAdvancedEditDlg
 					} TT(std::string("Toggle the advanced vertex edit dialog\n" + ggui::hotkey_dialog::get_hotkey_for_command("AdvancedCurveEdit", true)).c_str());
-					
+
+					imgui::PopStyleColor();
+					imgui::PopStyleVar();
 
 					center_horz_end(manipulation_l2_width);
+
+
+
+					imgui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+					imgui::PushStyleColor(ImGuiCol_Border, ImVec4(0.1f, 0.1f, 0.1f, 0.5f));
+
+					static float manipulation_l3_width = 100.0f;
+					center_horz_begin(manipulation_l3_width);
+					{
+						if (ImGui::Button("Toggle New Patch Dragging", ImVec2(max_widget_width - 8.0f, 32.0f)))
+						{
+							dvars::set_bool(dvars::grid_new_patch_drag, !dvars::grid_new_patch_drag->current.enabled);
+						}
+
+						const std::string dvar_desc = dvars::grid_new_patch_drag->description + " "s + ggui::hotkey_dialog::get_hotkey_for_command("new_patch_drag", true);
+						TT(dvar_desc.c_str());
+
+
+						if (dvars::grid_new_patch_drag->current.enabled)
+						{
+							imgui::SameLine();
+							imgui::SetCursorPos(ImVec2(imgui::GetCursorPos().x - 34.0f, imgui::GetCursorPos().y + 7.0f));
+							imgui::RenderCheckMark(imgui::GetWindowDrawList(), imgui::GetCursorScreenPos(), imgui::GetColorU32(ImGuiCol_Text), 16.0f);
+						}
+
+						center_horz_end(manipulation_l3_width);
+					}
+
+					imgui::PopStyleColor();
+					imgui::PopStyleVar();
+
 				}
 
 				treenode_end(style_colors, style_vars);
@@ -1165,23 +1233,47 @@ namespace ggui
 		ImGui::PopID();
 	}
 
+	void toolbox_dialog::child_filter()
+	{
+		int style_colors = 0;
+		int style_vars = 0;
+
+		ImGui::PushID("filter");
+		setup_child();
+		{
+			const auto gui = GET_GUI(ggui::filter_dialog);
+
+			if (treenode_begin("Geometry Filters", true, style_colors, style_vars))
+			{
+				gui->geometry_filters(ImGui::GetContentRegionAvail().x - 12.0f);
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+			if (treenode_begin("Entity Filters", true, style_colors, style_vars))
+			{
+				gui->entity_filters(ImGui::GetContentRegionAvail().x - 12.0f);
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+			if (treenode_begin("Trigger Filters", true, style_colors, style_vars))
+			{
+				gui->trigger_filters(ImGui::GetContentRegionAvail().x - 12.0f);
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+			if (treenode_begin("Other Filters", true, style_colors, style_vars))
+			{
+				gui->other_filters(ImGui::GetContentRegionAvail().x - 12.0f);
+				treenode_end(style_colors, style_vars);
+			} // manipulation node
+
+			SPACING(0.0f, 4.0f);
+		}
+		ImGui::PopID();
+	}
+
 	bool toolbox_dialog::gui()
 	{
-		if (!this->is_initiated())
-		{
-			register_child(CAT_BRUSH, std::bind(&toolbox_dialog::child_brush, this));
-			register_child(CAT_PATCH, std::bind(&toolbox_dialog::child_patch, this));
-			register_child(CAT_SURF_INSP, std::bind(&toolbox_dialog::child_surface_inspector, this));
-			register_child(CAT_ENTITY_PROPS, std::bind(&toolbox_dialog::child_entity_properties, this));
-
-			if (dvars::gui_saved_state_toolbox_child)
-			{
-				m_child_current = dvars::gui_saved_state_toolbox_child->current.integer;
-			}
-
-			this->set_initiated();
-		}
-
 		const auto indent_offset = 8.0f;
 
 		const auto MIN_WINDOW_SIZE = ImVec2(334.0f, 400.0f); 
@@ -1316,6 +1408,30 @@ namespace ggui
 
 		// #
 
+		mins = ImGui::GetCursorScreenPos();
+
+		if (dvars::gui_toolbox_integrate_filter && dvars::gui_toolbox_integrate_filter->current.enabled)
+		{
+			static bool hov_filter;
+			if (tb->image_togglebutton("filter"
+				, hov_filter
+				, m_child_current == static_cast<int>(_toolbox_childs[CAT_FILTER].index)
+				, "Filter"
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &toolbar_button_background_active
+				, &toolbar_button_size))
+			{
+				m_child_current = static_cast<int>(_toolbox_childs[CAT_FILTER].index);
+				m_update_scroll = true;
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+		}
+
+		// #
+
 		if(dvars::gui_toolbox_integrate_cam_toolbar && dvars::gui_toolbox_integrate_cam_toolbar->current.enabled)
 		{
 			auto cam_toolbar_active_bg = ImVec4(0.25f, 0.25f, 0.3f, 1.0f);
@@ -1345,7 +1461,28 @@ namespace ggui
 			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
 
 			// #
-			
+
+			if (dvars::guizmo_enable->current.enabled)
+			{
+				mins = ImGui::GetCursorScreenPos();
+
+				static bool hov_guizmo_local_world;
+				if (tb->image_togglebutton("guizmo_world_local"
+					, hov_guizmo_local_world
+					, ggui::camera_guizmo::g_guizmo_local
+					, std::string("Guizmo: Toggle between local and world mode\nConsiders angle of last selection when used to manipulate multiple objects\n" + ggui::hotkey_dialog::get_hotkey_for_command("guizmo_world_local")).c_str()
+					, &toolbar_button_background
+					, &toolbar_button_background_hovered
+					, &toolbar_button_background_active
+					, &toolbar_button_size))
+				{
+					ggui::camera_guizmo::g_guizmo_local = !ggui::camera_guizmo::g_guizmo_local;
+				}
+
+				maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+				ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+			}
+
 			/*if (dvars::guizmo_enable->current.enabled)
 			{
 				mins = ImGui::GetCursorScreenPos();
@@ -1791,7 +1928,8 @@ namespace ggui
 			{
 				// switch to other child when user no longer has surface inspector / entity properties incorporated
 				if (   (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer != 2 && child.first == CAT_SURF_INSP) 
-					|| (dvars::gui_props_toolbox && !dvars::gui_props_toolbox->current.enabled && child.first == CAT_ENTITY_PROPS))
+					|| (dvars::gui_props_toolbox && !dvars::gui_props_toolbox->current.enabled && child.first == CAT_ENTITY_PROPS)
+					|| (dvars::gui_toolbox_integrate_filter && !dvars::gui_toolbox_integrate_filter->current.enabled && child.first == CAT_FILTER))
 				{
 					focus_child(toolbox_dialog::TB_CHILD::BRUSH);
 					break;
@@ -1825,8 +1963,21 @@ namespace ggui
 		return true;
 	}
 
-	void toolbox_dialog::init()
+	void toolbox_dialog::on_init()
 	{
+		register_child(CAT_BRUSH, std::bind(&toolbox_dialog::child_brush, this));
+		register_child(CAT_PATCH, std::bind(&toolbox_dialog::child_patch, this));
+		register_child(CAT_SURF_INSP, std::bind(&toolbox_dialog::child_surface_inspector, this));
+		register_child(CAT_ENTITY_PROPS, std::bind(&toolbox_dialog::child_entity_properties, this));
+		register_child(CAT_FILTER, std::bind(&toolbox_dialog::child_filter, this));
+
+		if (dvars::gui_saved_state_toolbox_child)
+		{
+			m_child_current = dvars::gui_saved_state_toolbox_child->current.integer;
+		}
+
+		// #
+
 		components::command::register_command_with_hotkey("toggle_toolbox"s, [this](auto)
 		{
 			const auto gui = GET_GUI(ggui::toolbox_dialog);
@@ -1839,6 +1990,22 @@ namespace ggui
 
 			gui->toggle();
 		});
+	}
+
+
+	void toolbox_dialog::register_dvars()
+	{
+		dvars::gui_props_toolbox = dvars::register_bool(
+			/* name		*/ "gui_props_toolbox",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "integrate entity window into toolbox");
+
+		dvars::gui_toolbox_integrate_filter = dvars::register_bool(
+			/* name		*/ "gui_toolbox_integrate_filter",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "integrate filter window into toolbox");
 	}
 
 

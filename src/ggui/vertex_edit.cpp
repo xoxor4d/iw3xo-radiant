@@ -17,7 +17,15 @@ namespace ggui
 
 		ImGui::BeginDisabled(!enable_noise);
 		{
-			ImGui::DragFloat3("XYZ Noise Scale", noise_scale, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+			static int noise_mode = 0;
+			const char* noise_modes_str[4] = { "Height", "Alpha" };
+			ImGui::SliderInt("Mode", &noise_mode, 0, 1, noise_modes_str[noise_mode]);
+
+			ImGui::BeginDisabled(noise_mode);
+			{
+				ImGui::DragFloat3("XYZ Height Scale", noise_scale, 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+				ImGui::EndDisabled();
+			}
 
 			if (ImGui::Button("Add Noise", ImVec2(ImGui::GetItemRectSize().x, ImGui::GetFrameHeight())))
 			{
@@ -34,9 +42,16 @@ namespace ggui
 					const float rand1 = distr(gen) * 0.01f;
 					const float rand2 = distr(gen) * 0.01f;
 
-					vert->xyz[0] += (rand1 * noise_scale[0]);
-					vert->xyz[1] += (rand2 * noise_scale[1]);
-					vert->xyz[2] += (rand1 * noise_scale[2]);
+					if (noise_mode == 0)
+					{
+						vert->xyz[0] += (rand1 * noise_scale[0]);
+						vert->xyz[1] += (rand2 * noise_scale[1]);
+						vert->xyz[2] += (rand1 * noise_scale[2]);
+					}
+					else if (noise_mode == 1)
+					{
+						vert->vert_color.a = utils::pack_float(fabs(rand1));
+					}
 				}
 
 				if (patch && patch->def)
@@ -73,17 +88,82 @@ namespace ggui
 		static float vertex_edit_color[4] = {};
 		const bool enable_vert_color_edit = game::g_qeglobals->d_num_move_points > 0;
 
+		bool		 manual_edit = false;
+		float		 manual_edit_steps[4] = {};
+		int			 manual_edit_dir[4] = { 1, 1, 1, 1 };
+		static float manual_edit_amount[4] = { 0.1f, 0.1f, 0.1f, 0.1f };
+
+		if (ImGui::TreeNodeEx("Manual Offsets", ImGuiTreeNodeFlags_SpanFullWidth))
+		{
+			ImGui::BeginDisabled(!enable_vert_color_edit);
+			{
+				imgui::Spacing();
+				imgui::Indent(-28.0f);
+				if (ImGui::InputScalarDir("Red", ImGuiDataType_Float, &manual_edit_steps[0], &manual_edit_dir[0], &manual_edit_amount[0], nullptr, true, "", ImGuiInputTextFlags_None, true))
+				{
+					manual_edit = true;
+				}
+
+				if (ImGui::InputScalarDir("Green", ImGuiDataType_Float, &manual_edit_steps[1], &manual_edit_dir[1], &manual_edit_amount[1], nullptr, true, "", ImGuiInputTextFlags_None, true))
+				{
+					manual_edit = true;
+				}
+
+				const auto pre_text_cursor_pos = imgui::GetCursorPos();
+
+				if (ImGui::InputScalarDir("Blue", ImGuiDataType_Float, &manual_edit_steps[2], &manual_edit_dir[2], &manual_edit_amount[2], nullptr, true, "", ImGuiInputTextFlags_None, true))
+				{
+					manual_edit = true;
+				}
+
+				if (ImGui::InputScalarDir("Alpha", ImGuiDataType_Float, &manual_edit_steps[3], &manual_edit_dir[3], &manual_edit_amount[3], nullptr, true, "", ImGuiInputTextFlags_None, true))
+				{
+					manual_edit = true;
+				}
+
+				ImGui::EndDisabled();
+
+				const auto post_widget_cursor_pos = imgui::GetCursorPos();
+
+				imgui::SetCursorPos(ImVec2(pre_text_cursor_pos.x + 200.0f, pre_text_cursor_pos.y - 60.0f));
+				imgui::TextUnformatted("  Used to Add / Subtract\n      vertex color-values\ninstead of replacing them\n   with the widget below\n\n        (You can hold +/-)");
+
+				imgui::SetCursorPos(post_widget_cursor_pos);
+
+				imgui::Spacing();
+				imgui::Separator();
+				imgui::Spacing();
+
+				imgui::Indent(28.0f);
+			}
+
+			ImGui::TreePop();
+		}
+
+		imgui::Spacing();
+
 		ImGui::BeginDisabled(!enable_vert_color_edit);
 		{
-			if (ImGui::ColorPicker4("Vertex Color", vertex_edit_color, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_DisplayRGB))
+			if (ImGui::ColorPicker4("Vertex Color", vertex_edit_color, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_DisplayRGB) || manual_edit)
 			{
 				for (auto pt = 0; pt < game::g_qeglobals->d_num_move_points; pt++)
 				{
 					const auto vert = game::g_qeglobals->d_move_points[pt];
-					vert->vert_color.r = utils::pack_float(vertex_edit_color[0]);
-					vert->vert_color.g = utils::pack_float(vertex_edit_color[1]);
-					vert->vert_color.b = utils::pack_float(vertex_edit_color[2]);
-					vert->vert_color.a = utils::pack_float(vertex_edit_color[3]);
+
+					if (manual_edit)
+					{
+						vert->vert_color.r = utils::pack_float(utils::unpack_float(vert->vert_color.r) + manual_edit_steps[0]);
+						vert->vert_color.g = utils::pack_float(utils::unpack_float(vert->vert_color.g) + manual_edit_steps[1]);
+						vert->vert_color.b = utils::pack_float(utils::unpack_float(vert->vert_color.b) + manual_edit_steps[2]);
+						vert->vert_color.a = utils::pack_float(utils::unpack_float(vert->vert_color.a) + manual_edit_steps[3]);
+					}
+					else
+					{
+						vert->vert_color.r = utils::pack_float(vertex_edit_color[0]);
+						vert->vert_color.g = utils::pack_float(vertex_edit_color[1]);
+						vert->vert_color.b = utils::pack_float(vertex_edit_color[2]);
+						vert->vert_color.a = utils::pack_float(vertex_edit_color[3]);
+					}
 				}
 
 				FOR_ALL_SELECTED_BRUSHES(sb)

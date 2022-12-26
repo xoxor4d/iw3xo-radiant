@@ -52,6 +52,7 @@ namespace ggui
 		FX_EDITOR_MATERIAL = 12,
 		FX_EDITOR_MODEL = 13,
 		D3DBSP_LOAD = 20,
+		CUSTOM = 100,
 	};
 	
 	//#define mainframe_thiscall(return_val, addr)	\
@@ -96,14 +97,14 @@ namespace ggui
 	// | -------------------- Structs ------------------------
 	// *
 
-    enum e_gfxwindow
+   /* enum e_gfxwindow
 	{
 		CCAMERAWND = 0,
 		CXYWND = 1,
     	CZWND = 2,
     	CTEXWND = 3,
     	LAYERED = 4,
-	};
+	};*/
 
 #define GUI_CHECK_RTT	ASSERT_MSG(GUI_TYPE == GUI_TYPE_RTT, "GUI Class not of type RTT")
 
@@ -122,6 +123,7 @@ namespace ggui
 			bool _one_time_init;
 			bool _inactive_tab;
 			bool _bring_tab_to_front;
+			bool _gui_init;
 			float _position[2];
 			float _size[2];
 		};
@@ -133,6 +135,7 @@ namespace ggui
 			bool _one_time_init;
 			bool _inactive_tab;
 			bool _bring_tab_to_front;
+			bool _gui_init;
 
 			ImVec2 _scene_pos_imgui;
 			ImVec2 _scene_size_imgui;
@@ -159,6 +162,7 @@ namespace ggui
 		ggui_module() = default;
 		virtual ~ggui_module() = default;
 		virtual bool gui() { return false; }
+		virtual void on_init() {} // called from gui::render_loop() after imgui init
 		virtual void on_open() {}
 		virtual void on_close() {}
 
@@ -178,7 +182,7 @@ namespace ggui
 					ImGui::SetNextWindowFocus();
 				}
 
-				if(!was_active())
+				if (!was_active())
 				{
 					on_open();
 				} 
@@ -309,6 +313,29 @@ namespace ggui
 			{
 			case GUI_TYPE_DEF: vars.def._one_time_init = reset ? false : true; break;
 			case GUI_TYPE_RTT: vars.rtt._one_time_init = reset ? false : true; break;
+			}
+		}
+
+		// *
+		// internal on-init bool
+		[[nodiscard]] bool is_gui_initiated() const
+		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: return vars.def._gui_init;
+			case GUI_TYPE_RTT: return vars.rtt._gui_init;
+			}
+
+			return false;
+		}
+
+		// 
+		void set_gui_initiated(bool reset = false)
+		{
+			switch (GUI_TYPE)
+			{
+			case GUI_TYPE_DEF: vars.def._gui_init = reset ? false : true; break;
+			case GUI_TYPE_RTT: vars.rtt._gui_init = reset ? false : true; break;
 			}
 		}
 

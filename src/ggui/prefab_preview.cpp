@@ -453,6 +453,20 @@ namespace ggui
 		return true;
 	}
 
+	void prefab_preview_dialog::on_init()
+	{
+		components::command::register_command_with_hotkey("prefab_browser"s, [this](auto)
+		{
+			if (this->is_inactive_tab() && this->is_active())
+			{
+				this->set_bring_to_front(true);
+				return;
+			}
+
+			this->toggle();
+		});
+	}
+
 	void prefab_preview_dialog::on_open()
 	{
 		const auto egui = GET_GUI(entity_dialog);
@@ -468,20 +482,6 @@ namespace ggui
 
 	void prefab_preview_dialog::on_close()
 	{ }
-
-	void prefab_preview_dialog::init()
-	{
-		components::command::register_command_with_hotkey("prefab_browser"s, [this](auto)
-		{
-			if (this->is_inactive_tab() && this->is_active())
-			{
-				this->set_bring_to_front(true);
-				return;
-			}
-
-			this->toggle();
-		});
-	}
 
 	void prefab_preview_dialog::register_dvars()
 	{

@@ -70,6 +70,7 @@ namespace game
 		extern float debug_sundir_length;
 
 		extern bool is_loading_map;
+		extern bool in_shutdown;
 
 		// update check
 		extern std::string gh_update_releases_json;
@@ -212,12 +213,43 @@ namespace game
 	void Checkkey_Color(entity_s* ent /*eax*/, const char* key /*ebx*/);
 
 	void selection_rotate_axis(int axis, int deg);
+	void Select_ApplyMatrix_SelectedBrushes(bool snap /*ebx*/, float* rotate_axis, float degree, int unk);
 	void Select_ApplyMatrix(float* rotate_axis /*eax*/, void* brush, int snap, float degree, int unk /*bool*/);
 	void Select_RotateAxis(int axis /*eax*/, float degree, float* rotate_axis);
+	void Select_GetMid(float* midpoint /*esi*/);
+	void Select_FuncGroup(float* trace_dir /*ecx*/, float* trace_start /*edx*/, int contents /*eax*/);
 	void Select_RotateFixedSize(game::entity_s* owner, brush_t_with_custom_def* def, float(*mid_point)[3]);
 
 	inline void Selection_Copy() { mainframe_thiscall(void, 0x4286B0); } // CMainFrame::OnEditCopybrush
 	inline void Selection_Paste() { mainframe_thiscall(void, 0x4286D0); } // CMainFrame::OnEditPastebrush
+
+	inline void clipboard_clear(cxywnd* gridwnd)
+	{
+
+		// unknown_libname_310 @ 0x593B2D
+		DWORD* g_Clipboard = reinterpret_cast<DWORD*>(0x25EB210);
+
+		// actually a thiscall but we can call it using fastcall if we pass a second unused argument ;)
+		utils::hook::call<void(__fastcall)(DWORD* pthis, void* unused, unsigned int a2, int a3)>(0x593B2D)(g_Clipboard, nullptr, 0, 0);
+
+		const auto clipformat = RegisterClipboardFormatA("RadiantClippings");
+
+		if (clipformat)
+		{
+			if (OpenClipboard(gridwnd->GetWindow()))
+			{
+				EmptyClipboard();
+
+				if (void* handle = GlobalAlloc(0x2042u, 0); handle)
+				{
+					SetClipboardData(clipformat, handle);
+					CloseClipboard();
+				}
+			}
+		}
+	}
+
+
 	inline auto Select_Deselect = reinterpret_cast<void (*)(bool)>(0x48E800);
 	inline auto Select_Delete = reinterpret_cast<void (*)()>(0x48E760);
 	inline auto Select_Invert = reinterpret_cast<void (*)()>(0x493F10);
@@ -226,6 +258,7 @@ namespace game
 	void SetSpawnFlags(int flag);
 	void SetMaterial(const char* name /*edi*/, game::patchMesh_material* def /*esi*/);
 	void UpdateSel(int wParam, game::eclass_t* e_class);
+	bool FilterBrush(game::selbrush_def_t* sb /*esi*/, int always_null);
 
 	void Patch_SelectRow(int row /*eax*/, game::patchMesh_t* p /*edi*/, int multi);
 	void Patch_UpdateSelected(game::patchMesh_t* p /*esi*/, int always_true);
@@ -236,6 +269,7 @@ namespace game
 	inline auto Patch_NaturalizeSelected = reinterpret_cast<void (*)(bool unk, bool cap, float x, float y)>(0x447FD0);
 	inline auto Patch_SetTexturing = reinterpret_cast<void (*)(float x, float y, int mode)>(0x446B60);
 	void Patch_CalcBounds(game::patchMesh_t* p, game::vec3_t& vMin, game::vec3_t& vMax);
+	void Select_GetBounds(float* mins, float* maxs);
 	void Patch_Adjust(game::patchMesh_t* p, bool insert, bool column, bool flag);
 	game::patchMesh_t* Patch_Duplicate(game::patchMesh_t* p /*edi*/);
 	game::selbrush_def_t* Patch_Cap(patchMesh_t* pm /*ecx*/, int bByColumn, int bFirst);
@@ -258,8 +292,11 @@ namespace game
 	void Entity_LinkBrush(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world /*edi*/);
 	game::brush_t_with_custom_def* Brush_AddToList(game::brush_t_with_custom_def* brush /*eax*/, game::entity_s* world);
 	void Brush_AddToList2(game::brush_t_with_custom_def* brush /*eax*/);
+	void Brush_RemoveFromList(game::selbrush_def_t* brush /*eax*/);
 	void Brush_Deselect(game::brush_t* b /*esi*/);
-	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool some_overwrite, bool update_status, bool center_grid_on_selection);
+	void Brush_Select(game::selbrush_def_t* b /*ecx*/, bool select_connected, bool update_status, bool center_grid_on_selection);
+	bool Patch_DragScale(game::patchMesh_t* pm, const float* bounds /*eax*/, const float* dist_vec);
+	void Brush_SideSelect(game::brush_t_with_custom_def* def, const float* trace_start /*eax*/, const float* trace_dir, int shear);
 	inline auto QE_SingleBrush = reinterpret_cast<bool (*)()>(0x48C8B0); // use is_single_brush_selected when used in loops
 	inline auto Brush_MakeFacePlanes = reinterpret_cast<void (*)(game::brush_t_with_custom_def* b)>(0x470A50); // calculate normal and dist from planepts
 	inline auto Brush_MakeSidedCone = reinterpret_cast<void (*)(int num_sides)>(0x47BC10);
@@ -274,7 +311,13 @@ namespace game
 	inline auto CreateEntity = reinterpret_cast<void (*)()>(0x497300);
 	game::eclass_t* Eclass_ForName(const char* name /*ecx*/, int has_brushes);
 	void CreateEntityFromClassname(void* cxywnd /*edi*/, const char* name /*esi*/, int x, int y);
-	inline auto CreateEntityFromName = reinterpret_cast<void (*)(const char* name)>(0x465CC0); // does not add an undo
+
+
+	inline bool CreateEntityFromName_DisableUndo = false;
+	// encupsule in game::CreateEntityFromName_DisableUndo true/false to disable AddBrushList/EndBrushList
+	inline auto CreateEntityFromName = reinterpret_cast<void (*)(const char* name)>(0x465CC0);
+
+
 	void CreateEntityBrush(int height /*eax*/, int x /*ecx*/, void* cxywnd);
 	game::entity_s* Entity_Create(eclass_t* eclass /*eax*/);
 
@@ -306,6 +349,7 @@ namespace game
 	inline auto R_SetupRendertarget = reinterpret_cast<bool (*)(game::GfxCmdBufSourceState*, game::GfxRenderTargetId)>(0x539670);
 	inline auto R_SetRenderTarget = reinterpret_cast<bool (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxRenderTargetId)>(0x5397A0);
 	inline auto R_SetupRendertarget_CheckDevice = reinterpret_cast<bool (*)(HWND)>(0x501A70);
+	inline auto R_InitRendererForWindow = reinterpret_cast<void (*)(HWND)>(0x5011D0);
 	inline auto R_CheckTargetWindow = reinterpret_cast<bool (*)(HWND)>(0x500660);
 	inline auto R_AddDebugBox = reinterpret_cast<void (*)(game::DebugGlobals * debugGlobalsEntry, const float* mins, const float* maxs, const float* color)>(0x528710);
 	inline auto R_CmdBufSet3D = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*)>(0x53CFB0);
@@ -328,6 +372,7 @@ namespace game
 	inline auto RB_SpotShadowMaps = reinterpret_cast<void (*)(game::GfxBackEndData * backend, const game::GfxViewInfo * viewinfo)>(0x56E100);
 
 	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/);
+	void R_AddCmdSetViewportValues(int x, int y, int width, int height);
 	void R_Hwnd_Resize(HWND__* hwnd, int display_width, int display_height);
 
 	inline auto MatrixForViewer = reinterpret_cast<void (*)(float(*mtx)[4], const float* origin, const float* axis)>(0x4A7A70);
@@ -336,10 +381,15 @@ namespace game
 
 	inline auto CopyAxis = reinterpret_cast<void (*)(float* src, float* dest)>(0x4A8860);
 	inline auto AnglesToAxis = reinterpret_cast<void (*)(float* angles, float* axis)>(0x4ABEB0);
+	inline auto AnglesToQuat = reinterpret_cast<void (*)(const float* angles, float* quat)>(0x4AC050);
+
 	void AxisToAngles(const float(*axis)[3], float* angles);
 	void vectoangles(float* vec /*esi*/, float* angles /*edi*/);
 	inline auto AngleVectors = reinterpret_cast<void (*)(float* _angles, float* _vpn, float* _right, float* _up)>(0x4ABD70);
+	inline auto PerpendicularVector = reinterpret_cast<void (*)(float* src, float* dst)>(0x4A5340);
 	inline auto OrientationConcatenate = reinterpret_cast<void (*)(const game::orientation_t * orFirst, const game::orientation_t * orSecond, game::orientation_t * out)>(0x4BA7D0);
+
+	inline auto AlignEntityToFace = reinterpret_cast<void (*)(game::entity_s_def * ent, float* normal)>(0x485AD0);
 
 
 	// no error but doesnt reload everything
@@ -423,6 +473,8 @@ namespace game
 	inline auto Material_RegisterHandle = reinterpret_cast<game::Material* (*)(const char* name, int)>(0x511BE0);
 	inline auto R_RegisterModel = reinterpret_cast<game::XModel* (*)(const char* name)>(0x51D450);
 	inline auto R_RegisterLightDef = reinterpret_cast<game::GfxLightDef* (*)(const char* name)>(0x53D510);
+	inline auto R_RegisterFont = reinterpret_cast<game::Font_s* (*)(const char* name, int one)>(0x511ED0);
+	inline auto R_HashAssetName = reinterpret_cast<int (*)(const char* name)>(0x528D50);
 
 	PhysPreset* FX_RegisterPhysPreset(const char* name);
 	void DObjCreate(game::DObjModel_s* dobjModels /*edi*/, game::DObj_s* obj /*esi*/, size_t numModels, game::XAnimTree_s* tree, int entnum);

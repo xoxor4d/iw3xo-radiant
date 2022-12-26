@@ -440,7 +440,7 @@ namespace game
 
 	struct qtexture_s
 	{
-		qtexture_s* next; // not qtexture_s
+		Material* next; // not qtexture_s
 		const char* name;
 		bool is_in_use;
 		__int8 unk1;
@@ -996,16 +996,35 @@ namespace game
 
 	struct GfxViewInfo;
 
+	struct GfxDrawSurfFields
+	{
+		unsigned __int64 objectId : 16;
+		unsigned __int64 reflectionProbeIndex : 8;
+		unsigned __int64 customIndex : 5;
+		unsigned __int64 materialSortedIndex : 11;
+		unsigned __int64 prepass : 2;
+		unsigned __int64 primaryLightIndex : 8;
+		unsigned __int64 surfType : 4;
+		unsigned __int64 primarySortKey : 6;
+		unsigned __int64 unused : 4;
+	};
+
+	union GfxDrawSurf
+	{
+		GfxDrawSurfFields fields;
+		unsigned __int64 packed;
+	};
+
 	struct GfxDrawSurfListInfo
 	{
-		void *drawSurfs; // GfxDrawSurf
+		game::GfxDrawSurf* drawSurfs; //void *drawSurfs; // GfxDrawSurf
 		unsigned int drawSurfCount;
 		MaterialTechniqueType baseTechType;
 		GfxViewInfo *viewInfo;
 		float viewOrigin[4];
 		GfxLight *light;
 		int cameraView;
-	};
+	}; STATIC_ASSERT_OFFSET(GfxDrawSurfListInfo, drawSurfCount, 4);
 
 	//struct __declspec(align(16)) ShadowCookie
 	//{
@@ -1526,24 +1545,7 @@ namespace game
 		int numFixedSize;
 	};
 
-	struct GfxDrawSurfFields
-	{
-		unsigned __int64 objectId : 16;
-		unsigned __int64 reflectionProbeIndex : 8;
-		unsigned __int64 customIndex : 5;
-		unsigned __int64 materialSortedIndex : 11;
-		unsigned __int64 prepass : 2;
-		unsigned __int64 primaryLightIndex : 8;
-		unsigned __int64 surfType : 4;
-		unsigned __int64 primarySortKey : 6;
-		unsigned __int64 unused : 4;
-	};
-
-	union GfxDrawSurf
-	{
-		GfxDrawSurfFields fields;
-		unsigned __int64 packed;
-	};
+	
 
 	// #ENV_DEPENDENT
 	struct MaterialInfo
@@ -1653,6 +1655,37 @@ namespace game
 		MaterialConstantDef* constantTable;
 		GfxStateBits* stateBitsTable;
 	}; STATIC_ASSERT_SIZE(Material, 0x70);
+
+	struct MaterialInfoRaw
+	{
+		unsigned int nameOffset;
+		unsigned int refImageNameOffset;
+		char gameFlags;
+		char sortKey;
+		char textureAtlasRowCount;
+		char textureAtlasColumnCount;
+		float maxDeformMove;
+		char deformFlags;
+		char usage;
+		unsigned __int16 toolFlags;
+		unsigned int locale;
+		unsigned __int16 autoTexScaleWidth;
+		unsigned __int16 autoTexScaleHeight;
+		float tessSize;
+		int surfaceFlags;
+		int contents;
+	}; STATIC_ASSERT_SIZE(MaterialInfoRaw, 0x28);
+
+	struct MaterialRaw
+	{
+		MaterialInfoRaw info;
+		unsigned int refStateBits[2];
+		unsigned __int16 textureCount;
+		unsigned __int16 constantCount;
+		unsigned int techSetNameOffset;
+		unsigned int textureTableOffset;
+		unsigned int constantTableOffset;
+	}; STATIC_ASSERT_SIZE(MaterialRaw, 0x40);
 
 	struct Glyph
 	{

@@ -40,7 +40,7 @@ namespace fx_system
 	{
 		FX_WriteElemField(buff, "\t%s", name);
 
-		for(const auto& flag : s_allFlagDefs)
+		for (const auto& flag : s_allFlagDefs)
 		{
 			if (flag.flagType == flag_type && (flag.mask & flags) == flag.value)
 			{
@@ -62,12 +62,7 @@ namespace fx_system
 		FX_WriteElemField(buff, "\t%s %i;\n", args, integer);
 	}
 
-	void FX_WriteElemField_IntRange(FxIntRange* ramge, std::ofstream& buff, const char* args)
-	{
-		FX_WriteElemField(buff, "\t%s %i %i;\n", args, ramge->base, ramge->amplitude);
-	}
-
-	void FX_WriteElemField_IntRange2(FxIntRange* range, std::ofstream& buff, const char* args)
+	void FX_WriteElemField_IntRange(FxIntRange* range, std::ofstream& buff, const char* args)
 	{
 		FX_WriteElemField(buff, "\t%s %i %i;\n", args, range->base, range->amplitude);
 	}
@@ -150,7 +145,7 @@ namespace fx_system
 
 		if (trail->vertCount > 0)
 		{
-			for(int vert = 0; vert < trail->vertCount; vert++)
+			for (int vert = 0; vert < trail->vertCount; vert++)
 			{
 				FX_WriteElemField(buff, "\t\t%g %g %g\n", trail->verts[vert].pos[0], trail->verts[vert].pos[1], trail->verts[vert].texCoord);
 			}
@@ -160,7 +155,7 @@ namespace fx_system
 
 		if (trail->indCount > 0)
 		{
-			for(int i = 0; i < trail->indCount; i++)
+			for (int i = 0; i < trail->indCount; i++)
 			{
 				FX_WriteElemField(buff, "\t\t%i\n", trail->inds[i]);
 			}
@@ -235,7 +230,7 @@ namespace fx_system
 			FX_WriteElemField(buff, "\t%s\n", s_elemTypes[elem->elemType]);
 			FX_WriteElemField(buff, "\t{\n");
 
-			for(auto vis = 0; vis < elem->visualCount; vis++)
+			for (auto vis = 0; vis < elem->visualCount; vis++)
 			{
 				if (elem->elemType == FX_ELEM_TYPE_DECAL)
 				{
@@ -267,9 +262,9 @@ namespace fx_system
 
 		FX_WriteElemField_IntRange(reinterpret_cast<FxIntRange*>(&elem->spawnLooping), buff, "spawnLooping");
 
-		FX_WriteElemField_IntRange2(&elem->spawnOneShot.count, buff, "spawnOneShot");
-		FX_WriteElemField_IntRange2(&elem->spawnDelayMsec, buff, "spawnDelayMsec");
-		FX_WriteElemField_IntRange2(&elem->lifeSpanMsec, buff, "lifeSpanMsec");
+		FX_WriteElemField_IntRange(&elem->spawnOneShot.count, buff, "spawnOneShot");
+		FX_WriteElemField_IntRange(&elem->spawnDelayMsec, buff, "spawnDelayMsec");
+		FX_WriteElemField_IntRange(&elem->lifeSpanMsec, buff, "lifeSpanMsec");
 
 		FX_WriteElemField_FloatRange(elem->spawnOrigin, buff, "spawnOrgX");
 		FX_WriteElemField_FloatRange(&elem->spawnOrigin[1], buff, "spawnOrgY");
@@ -364,7 +359,7 @@ namespace fx_system
 	{
 		const auto editor_effect = get_editor_effect();
 
-		if(save_as_path)
+		if (save_as_path)
 		{
 			effect_file_buffer.open(save_as_path);
 		}

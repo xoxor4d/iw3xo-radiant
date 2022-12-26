@@ -168,9 +168,35 @@ namespace fx_system
 				// R_AddParticleCloudToScene(visuals);
 				game::GfxParticleCloud* cloud = utils::hook::call<game::GfxParticleCloud* (__cdecl)(game::Material*)>(0x49FDC0)(visuals.material);
 #else
-				game::GfxParticleCloud* cloud = utils::hook::call<game::GfxParticleCloud* (__cdecl)(game::Material*)>(0x5022D0)(visuals.material);
-#endif
+				game::GfxParticleCloud* cloud = nullptr;
 
+				// R_AddParticleCloudToScene
+				//cloud = utils::hook::call<game::GfxParticleCloud* (__cdecl)(game::Material*)>(0x5022D0)(visuals.material);
+
+
+				if (game::rgp->sortedMaterials[(visuals.material->info.drawSurf.packed >> 29) & 0x7FF] != visuals.material)
+				{
+					__debugbreak();
+					game::printf_to_console("[ERR] FX_DrawElem_Cloud - game::rgp->sortedMaterials[(visuals.material->info.drawSurf.packed >> 29) & 0x7FF] != visuals.material");
+				}
+				else
+				{
+					
+
+					const auto frontend = game::get_frontenddata();
+
+					if (frontend->cloudCount < 256)
+					{
+						++frontend->cloudCount;
+
+						//if (R_AddParticleCloudDrawSurf(frontend->cloudCount, material))
+						if (utils::hook::call<bool (__cdecl)(unsigned int, game::Material*)>(0x52F190)(frontend->cloudCount - 1, visuals.material))
+						{
+							cloud = &frontend->clouds[frontend->cloudCount - 1];
+						}
+					}
+				}
+#endif
 				if (cloud)
 				{
 					FX_EvaluateVisualState(&draw->preVisState, draw->msecLifeSpan, &draw->visState);
@@ -311,7 +337,7 @@ namespace fx_system
 
 		if (system->activeSpotLightElemCount > 0)
 		{
-			if (system->activeSpotLightEffectCount != 1 /*|| system->activeSpotLightElemCount != 1*/)
+			if (system->activeSpotLightEffectCount != 1 || system->activeSpotLightElemCount != 1)
 			{
 				Assert();
 			}
@@ -1317,19 +1343,22 @@ namespace fx_system
 
 		if (elemHandle != UINT16_MAX)
 		{
-			while (elemHandle != UINT16_MAX)
+			//while (elemHandle != UINT16_MAX)
+			do
 			{
 				FxElem* elem = FX_ElemFromHandle(system, elemHandle);
 				FxElemDef* elemDef = &effect->def->elemDefs[static_cast<std::uint8_t>(elem->defIndex)];
 
 				if (elemDef->elemType <= FX_ELEM_TYPE_LAST_SPRITE)
 				{
-					Assert();
+					//Assert();
+					return;
 				}
 
 				FX_DrawElement(elemDef, elem, &drawState);
 				elemHandle = elem->nextElemHandleInEffect;
-			}
+
+			} while (elemHandle != 0xFFFF);
 		}
 	}
 

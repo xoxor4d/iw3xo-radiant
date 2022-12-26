@@ -18,6 +18,7 @@ namespace components
 
 		task.last_exec = now;
 		task.func();
+		task.was_executed = true;
 
 		return true;
 	}
@@ -29,12 +30,20 @@ namespace components
 			do_task(callback);
 		}
 
+		int i = 0;
 		for (auto& callback : m_gui_single_callbacks)
 		{
 			do_task(callback);
+
+			if (callback.was_executed)
+			{
+				m_gui_single_callbacks.erase(m_gui_single_callbacks.begin() + i);
+			}
+
+			i++;
 		}
 
-		m_gui_single_callbacks.clear();
+		//m_gui_single_callbacks.clear();
 	}
 
 	exec::exec()

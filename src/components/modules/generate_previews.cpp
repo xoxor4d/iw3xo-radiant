@@ -122,7 +122,8 @@ namespace components
 				file_path += thumbnail_str;
 
 				IDirect3DSurface9* surf_backbuffer = nullptr;
-				game::dx->windows[ggui::CCAMERAWND].swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &surf_backbuffer);
+				
+				components::renderer::get_window(components::renderer::CCAMERAWND)->swapChain->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &surf_backbuffer);
 				D3DXSaveSurfaceToFileA(file_path.c_str(), D3DXIFF_JPG, surf_backbuffer, nullptr, nullptr);
 
 				surf_backbuffer->Release();

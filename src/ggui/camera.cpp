@@ -144,6 +144,23 @@ namespace ggui
 						dvars::set_bool(dvars::guizmo_enable, !dvars::guizmo_enable->current.enabled);
 					} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 
+					if (dvars::guizmo_enable->current.enabled)
+					{
+						static bool hov_guizmo_local_world;
+
+						if (tb->image_togglebutton("guizmo_world_local"
+							, hov_guizmo_local_world
+							, ggui::camera_guizmo::g_guizmo_local
+							, "Guizmo: Toggle between local and world mode\nConsiders angle of last selection when used to manipulate multiple objects."
+							, &toolbar_button_background
+							, &toolbar_button_background_hovered
+							, &toolbar_button_background_active
+							, &toolbar_button_size))
+						{
+							ggui::camera_guizmo::g_guizmo_local = !ggui::camera_guizmo::g_guizmo_local;
+						} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
+					}
+
 					//if (dvars::guizmo_enable->current.enabled)
 					//{
 					//	static bool hov_guizmo_grid_snapping;
@@ -533,18 +550,95 @@ namespace ggui
 		}
 	}
 
+	void rotate_stamped_prefab(const float* angles)
+	{
+		float rotate_axis[4][3];
+
+		if (angles[2] != 0.0f)
+		{
+			const float angle = -angles[2];
+			if (angle != 0.0f)
+			{
+				game::Select_GetMid(&rotate_axis[0][0]);
+				game::Select_RotateAxis(0, angle, &rotate_axis[0][0]);
+				game::Select_ApplyMatrix_SelectedBrushes(false, &rotate_axis[0][0], angle, false);
+			}
+		}
+
+		if (angles[0] != 0.0f)
+		{
+			const float angle = -angles[0];
+			if (angle != 0.0f)
+			{
+				game::Select_GetMid(&rotate_axis[0][0]);
+				game::Select_RotateAxis(1, angle, &rotate_axis[0][0]);
+				game::Select_ApplyMatrix_SelectedBrushes(false, &rotate_axis[0][0], angle, false);
+			}
+		}
+
+		if (angles[1] != 0.0f)
+		{
+			const float angle = -angles[1];
+			if (angle != 0.0f)
+			{
+				game::Select_GetMid(&rotate_axis[0][0]);
+				game::Select_RotateAxis(2, angle, &rotate_axis[0][0]);
+				game::Select_ApplyMatrix_SelectedBrushes(false, &rotate_axis[0][0], angle, false);
+			}
+		}
+	}
+
+#if 0 // T5
+	void GetRotatedBounds(const float(*baseBounds)[3], const float* origin, const float(*axis)[3], float(*rotatedBounds)[3])
+	{
+		int axisIndex; // [esp+10h] [ebp-8h]
+		int offset; // [esp+14h] [ebp-4h]
+		int offseta; // [esp+14h] [ebp-4h]
+		int offsetb; // [esp+14h] [ebp-4h]
+
+		for (axisIndex = 0;
+			axisIndex < 3;
+			++axisIndex)
+		{
+			(*rotatedBounds)[axisIndex] = origin[axisIndex];
+			(*rotatedBounds)[axisIndex + 3] = origin[axisIndex];
+			offset = (*axis)[axisIndex] >= 0.0 ? 0 : 0xC;
+			(*rotatedBounds)[axisIndex] = (float)(*(float*)((char*)*baseBounds + offset) * (float)(*axis)[axisIndex]) + (*rotatedBounds)[axisIndex];
+			(*rotatedBounds)[axisIndex + 3] = (float)(*(float*)((char*)&(*baseBounds)[3] - offset) * (float)(*axis)[axisIndex]) + (*rotatedBounds)[axisIndex + 3];
+			offseta = (*axis)[axisIndex + 3] >= 0.0 ? 0 : 0xC;
+			(*rotatedBounds)[axisIndex] = (float)(*(float*)((char*)&(*baseBounds)[1] + offseta) * (float)(*axis)[axisIndex + 3]) + (*rotatedBounds)[axisIndex];
+			(*rotatedBounds)[axisIndex + 3] = (float)(*(float*)((char*)&(*baseBounds)[4] - offseta) * (float)(*axis)[axisIndex + 3]) + (*rotatedBounds)[axisIndex + 3];
+			offsetb = (*axis)[axisIndex + 6] >= 0.0 ? 0 : 0xC;
+			(*rotatedBounds)[axisIndex] = (float)(*(float*)((char*)&(*baseBounds)[2] + offsetb) * (float)(*axis)[axisIndex + 6]) + (*rotatedBounds)[axisIndex];
+			(*rotatedBounds)[axisIndex + 3] = (float)(*(float*)((char*)&(*baseBounds)[5] - offsetb) * (float)(*axis)[axisIndex + 6]) + (*rotatedBounds)[axisIndex + 3];
+		}
+	}
+#endif
+
 	void camera_dialog::stamp_prefab_imgui_imgui_menu(game::selbrush_def_t* sb)
 	{
 		if (ImGui::MenuItem("Stamp Prefab"))
 		{
 			const auto egui = GET_GUI(ggui::entity_dialog);
 
-			// select prefab 
+			// disable snappping for all comming operations
+			// Prefab_Leave does brush snapping we dont want
+			const auto saved_snapping = game::g_PrefsDlg()->m_bNoClamp;
+			game::g_PrefsDlg()->m_bNoClamp = true;
+
+
+			// deselect everything
+			// => only select prefab 
 			if (sb)
 			{
 				game::Select_Deselect(false);
 				game::Brush_Select(sb, true, false, false);
 			}
+
+			// calculate mid-point of prefab (center might not match the original non-rotated center, thus final position might be off)
+			game::vec3_t prefab_midpoint = {};
+			game::Select_GetMid(prefab_midpoint);
+
 
 			// save prefab ptr
 			game::selbrush_def_t* og_prefab = game::g_selected_brushes();
@@ -555,25 +649,63 @@ namespace ggui
 				return;
 			}
 
-			// idea: access brushes via owner->prefab->active_brushlist->def .. ->onext .. 
+			// get prefab angles
+			game::vec3_t prefab_angles = {};
+			egui->get_vec3_for_key_from_entity(og_prefab->def->owner, prefab_angles, "angles");
+
+			// get prefab origin
+			//game::vec3_t prefab_origin = {};
+			//egui->get_vec3_for_key_from_entity(og_prefab->def->owner, prefab_origin, "origin");
+
+
+#if 0		// perfect rotations for Y-Axis rotated prefabs, fails for everything else
+			// get bounds rotated
+
+			float org_bounds[2][3];
+			org_bounds[0][0] = 131072.0f;
+			org_bounds[0][1] = 131072.0f;
+			org_bounds[0][2] = 131072.0f;
+			org_bounds[1][0] = -131072.0f;
+			org_bounds[1][1] = -131072.0f;
+			org_bounds[1][2] = -131072.0f;
+
+			FOR_ALL_BRUSHES(prefab, sb->owner->prefab->active_brushlist, sb->owner->prefab->active_brushlist_next)
+			{
+				utils::vector::clamp_vec3(prefab->def->mins, prefab->def->maxs, org_bounds[0], org_bounds[1]);
+			}
+
+			game::vec3_t rotated_mid;
+			utils::vector::add(org_bounds[0], org_bounds[1], rotated_mid);
+			utils::vector::scale(rotated_mid, 0.5f, rotated_mid);
+
+			float axis[3][3];
+			game::AnglesToAxis(prefab_angles, &axis[0][0]);
+
+			float rot_bounds[2][3];
+			GetRotatedBounds(org_bounds, prefab_origin, axis, rot_bounds);
+
+			game::vec3_t asd;
+			utils::vector::add(rot_bounds[0], rot_bounds[1], asd);
+			utils::vector::scale(asd, 0.5f, asd);
+#endif
+
 
 			// enter prefab and select everything -> copy
 			// !! entering / leaving a prefab clears the entire undo stack !!
 			game::Prefab_Enter();
 			game::Select_Deselect(false);
 			game::Select_Invert();
+
 			game::Selection_Copy();
 
 			// leave prefab -> undo, delete prefab
 			game::Prefab_Leave();
 
+
 			// deselect all, then select the original prefab
 			game::Select_Deselect(false);
 			game::Brush_Select(og_prefab, false, false, false);
 
-			// get prefab origin
-			game::vec3_t prefab_origin = {};
-			egui->get_vec3_for_key_from_entity(og_prefab->def->owner, prefab_origin, "origin");
 
 			// create undo and delete the original prefab
 			game::Undo_ClearRedo();
@@ -587,11 +719,38 @@ namespace ggui
 
 			// paste the copied brushes
 			game::Selection_Paste();
+			//game::clipboard_clear(cmainframe::activewnd->m_pXYWnd); // buggy
 
-			// offset all stamped brushes by the prefab origin
+
+			// calculate mid-point of stamped brushes
+			game::vec3_t stamped_midpoint = {};
+			game::Select_GetMid(stamped_midpoint);
+
+
+			game::vec3_t origin_offset = {};
+			utils::vector::subtract(prefab_midpoint, stamped_midpoint, origin_offset);
+			//utils::vector::subtract(asd, stamped_midpoint, origin_offset);
+
+
+			// offset all stamped brushes
 			FOR_ALL_SELECTED_BRUSHES(stamped)
 			{
-				game::Brush_Move(prefab_origin, stamped->def, true);
+				game::Brush_Move(origin_offset, stamped->def, 0);
+			}
+
+			if (prefab_angles[0] == 0.0f && prefab_angles[1] == 0.0f && prefab_angles[2] == 0.0f)
+			{
+				game::g_PrefsDlg()->m_bNoClamp = saved_snapping;
+			}
+			else
+			{
+				// delay rotation (waw radiant does that by sending a window message to execute the rotation command)
+				components::exec::on_gui_once([prefab_angles, saved_snapping]
+				{
+					rotate_stamped_prefab(prefab_angles);
+					game::g_PrefsDlg()->m_bNoClamp = saved_snapping;
+
+				}, 1ms);
 			}
 		}
 	}
@@ -677,7 +836,7 @@ namespace ggui
 							game::BrushPt_t points[1024];
 
 							// test if extending results in a valid brush or if it gets degenerated
-							if(game::CM_ForEachBrushPlaneIntersection(selbrush->def, points) < 4)
+							if (game::CM_ForEachBrushPlaneIntersection(selbrush->def, points) < 4)
 							{
 								game::printf_to_console("invalid face");
 
@@ -761,12 +920,14 @@ namespace ggui
 				//};
 
 				// this is stupid but imgui creates a little empty square otherwise
-				if (cam_trace[0].brush || game::g_prefab_stack_level || game::is_any_brush_selected())
+				if (cam_trace[0].brush || game::g_prefab_stack_level /*|| game::is_any_brush_selected()*/)
 				{
 					if (!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##camera"))
 					{
 						cam_context_menu_open = true;
 						cam_context_menu_pending_open = false;
+
+						bool entering_or_leaving_prefab = false;
 
 						if (cam_trace[0].brush)
 						{
@@ -798,7 +959,7 @@ namespace ggui
 												vis_name = prefab_str;
 											}
 										}
-										else if(tb->def->owner->eclass && tb->def->owner->eclass->name != "worldspawn"s)
+										else if (tb->def->owner->eclass && tb->def->owner->eclass->name != "worldspawn"s)
 										{
 											vis_name = tb->def->owner->eclass->name;
 										}
@@ -880,6 +1041,7 @@ namespace ggui
 												}
 
 												game::Prefab_Enter();
+												entering_or_leaving_prefab = true;
 											}
 
 											if (game::g_prefab_stack_level)
@@ -887,6 +1049,7 @@ namespace ggui
 												if (ImGui::MenuItem("Leave Prefab"))
 												{
 													game::Prefab_Leave();
+													entering_or_leaving_prefab = true;
 												}
 											}
 
@@ -900,6 +1063,7 @@ namespace ggui
 											if (ImGui::MenuItem("Leave Prefab"))
 											{
 												game::Prefab_Leave();
+												entering_or_leaving_prefab = true;
 											}
 										}
 									}
@@ -922,6 +1086,7 @@ namespace ggui
 									if (ImGui::MenuItem("Leave Prefab"))
 									{
 										game::Prefab_Leave();
+										entering_or_leaving_prefab = true;
 									}
 								}
 
@@ -986,15 +1151,34 @@ namespace ggui
 							if (ImGui::MenuItem("Leave Prefab"))
 							{
 								game::Prefab_Leave();
+								entering_or_leaving_prefab = true;
 							}
 						}
 
-						if (game::is_any_brush_selected())
+						// NEVER try to access brush data after entering or leaving a prefab (within the same frame)
+						if (!entering_or_leaving_prefab)
 						{
-							ggui::context::xyzcam_general_selection();
+							if (game::is_any_brush_selected())
+							{
+								ggui::context::xyzcam_general_selection();
 
-							SEPERATORV(0.0f);
-							convert_selection_to_prefab_imgui_menu();
+								if (cam_trace[0].brush)
+								{
+									ggui::context::grouping_menu(cam_trace[0].brush);
+								}
+								else
+								{
+									ggui::context::grouping_menu(game::g_selected_brushes());
+								}
+
+
+								SEPERATORV(0.0f);
+								convert_selection_to_prefab_imgui_menu();
+							}
+							else if (cam_trace[0].brush)
+							{
+								ggui::context::grouping_menu(cam_trace[0].brush);
+							}
 						}
 
 						ImGui::EndPopup();
@@ -1130,8 +1314,9 @@ namespace ggui
 			}
 
 			// -----------------------
+			// -----------------------
 
-			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
+			const auto spawn_entity = [this, &accepted_dragdrop](const char* entity_class, const char* kv) -> void
 			{
 				const auto payload = imgui::GetDragDropPayload();
 				const std::string prefab_path = /*"prefabs/"s +*/ std::string(static_cast<const char*>(payload->Data), payload->DataSize);
@@ -1155,11 +1340,11 @@ namespace ggui
 
 				// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
 				g_block_radiant_modeldialog = true;
-				game::CreateEntityFromName("misc_prefab");
+				game::CreateEntityFromName(entity_class);
 				g_block_radiant_modeldialog = false;
 
-				entity_gui->add_prop("model", prefab_path.c_str(), &no_undo);
-				
+				entity_gui->add_prop(kv, prefab_path.c_str(), &no_undo);
+
 				float dir[3];
 				ccamwnd::calculate_ray_direction(
 					this->rtt_get_cursor_pos_cpoint().x,
@@ -1201,6 +1386,20 @@ namespace ggui
 				}
 
 				accepted_dragdrop = true;
+			};
+
+			// #
+
+			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
+			{
+				spawn_entity("misc_prefab", "model");
+			}
+
+			// #
+
+			if (imgui::AcceptDragDropPayload("EFFECT_BROWSER_ITEM"))
+			{
+				spawn_entity("fx_origin", "fx");
 			}
 
 			ImGui::EndDragDropTarget();
@@ -1315,11 +1514,21 @@ namespace ggui
 
 				// --------------------
 
-				// right click context menu
-				camera_dialog::context_menu();
+				if (!game::glob::is_loading_map)
+				{
+					// right click context menu
+					camera_dialog::context_menu();
+				}
 
 				// drag-drop target (modelpreview)
 				camera_dialog::drag_drop_target(accepted_dragdrop);
+
+				// mesh painting
+				components::mesh_painter::get()->paint_frame();
+
+
+				// #
+
 
 				// pop ItemSpacing
 				ImGui::PopStyleVar(); p_styles--;
@@ -1352,18 +1561,21 @@ namespace ggui
 		return false;
 	}
 
-	void camera_dialog::on_open()
+	void camera_dialog::on_init()
 	{
-		if(!this->is_initiated())
+		if (dvars::gui_camera_toolbar_defaultopen && dvars::gui_camera_toolbar_defaultopen->current.enabled)
 		{
-			if (dvars::gui_camera_toolbar_defaultopen && dvars::gui_camera_toolbar_defaultopen->current.enabled)
-			{
-				m_toolbar_state = true;
-			}
-
-			this->set_initiated();
+			m_toolbar_state = true;
 		}
+
+		components::command::register_command_with_hotkey("guizmo_world_local"s, [](auto)
+		{
+			ggui::camera_guizmo::g_guizmo_local = !ggui::camera_guizmo::g_guizmo_local;
+		});
 	}
+
+	void camera_dialog::on_open()
+	{ }
 
 	void camera_dialog::on_close()
 	{ }

@@ -214,6 +214,16 @@ namespace ggui
 
 			utils::ltrim(msg);
 		}
+		else if (utils::starts_with(msg, "^3", true))
+		{
+			msg_color = ImVec4(0.67f, 0.44f, 0.58f, 1.0f);
+			msg_has_color = true;
+
+			if (!utils::starts_with(msg, "###", true))
+			{
+				utils::ltrim(msg);
+			}
+		}
 		else if (  utils::starts_with(msg, "[WARN]", true)
 				|| utils::starts_with(msg, "^3WARNING:", true)
 				|| utils::starts_with(msg, "^3", true)

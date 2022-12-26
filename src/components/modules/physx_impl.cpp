@@ -1,7 +1,7 @@
 #include "std_include.hpp"
 //#include "characterkinematic/PxControllerManager.h"
 
-constexpr bool USE_PVD = true; // PhysX Visual Debugger
+constexpr bool USE_PVD = false; // PhysX Visual Debugger
 constexpr bool USE_CONTACT_CALLBACK = false; // can be used to implement effect spawning on impact
 
 // fx_system impacts:
@@ -67,8 +67,8 @@ namespace components
 	}
 
 	/**
-	 * @brief	simulate and fetch results
-	 * @param	seconds amount to advance simulation by 
+	 * @brief				simulate and fetch results
+	 * @param	seconds		amount to advance simulation by 
 	 */
 	void physx_impl::run_frame(float seconds)
 	{
@@ -80,6 +80,74 @@ namespace components
 
 		mScene->simulate(seconds);
 		mScene->fetchResults(true);
+	}
+
+	/**
+	 * @brief			effect browser scene sim
+	 * @param tick		current phys tick
+	 */
+	void physx_impl::fx_browser_frame([[maybe_unused]] int tick)
+	{
+		if (game::glob::is_loading_map)
+		{
+			return;
+		}
+
+
+		const auto time_now = static_cast<uint32_t>(tick);
+		if (m_phys_time_last_update_fx_browser < time_now)
+		{
+			auto max_iter = 2u;
+			for (auto i = 2u; ; max_iter = i)
+			{
+				if (!max_iter)
+				{
+					AssertS("!max_iter");
+				}
+
+				const auto delta = (time_now - m_phys_time_last_update_fx_browser) / static_cast<int>(max_iter);
+				auto step = m_phys_fx_browser_msec_step;
+
+				if (step < delta)
+				{
+					step = delta;
+				}
+
+				--i;
+
+				mSceneEffectBrowser->simulate(static_cast<float>(step) * 0.001f);
+				m_phys_time_last_update_fx_browser += step;
+
+				mSceneEffectBrowser->fetchResults(true);
+				mSceneEffectBrowser->getActiveActors(m_phys_active_actor_fx_browser_count);
+
+				constexpr float REDUCE_MSEC_BEGIN_AT_COUNT = 64.0f; // object count needed to start increasing m_phys_msec_step # og: 32
+				constexpr float REDUCE_MSEC_RANGE_TO_MAX = 64.0f;   // range - how many objects are needed to hit g_phys_maxMsecStep (begin + range) # og: 18
+
+				const auto step_for_count = (static_cast<float>(m_phys_active_actor_fx_browser_count) - REDUCE_MSEC_BEGIN_AT_COUNT) / REDUCE_MSEC_RANGE_TO_MAX;
+				const auto s0 = step_for_count - 1.0f < 0.0f ? step_for_count : 1.0f;
+				const auto s1 = 0.0f - step_for_count < 0.0f ? s0 : 0.0f;
+
+				m_phys_fx_browser_msec_step = m_phys_min_msec_step + static_cast<int>((static_cast<float>((m_phys_max_msec_step - m_phys_min_msec_step)) * s1));
+
+				if (m_phys_time_last_update_fx_browser >= time_now)
+				{
+					break;
+				}
+			}
+		}
+
+		/*auto step = (tick - m_phys_time_last_update_fx_browser);
+
+		step = step < 3 ? 3 : step > 11 ? 11 : step;
+
+		m_phys_fx_browser_msec_step = step;
+
+		mSceneEffectBrowser->simulate(static_cast<float>(step) * 0.001f);
+		m_phys_time_last_update_fx_browser += step;
+
+		mSceneEffectBrowser->fetchResults(true);
+		mSceneEffectBrowser->getActiveActors(m_phys_active_actor_fx_browser_count);*/
 	}
 
 	/**
@@ -206,13 +274,10 @@ namespace components
 				{
 					AssertS("m_phys_time_last_update != m_phys_time_last_snapshot");
 				}
-
-				m_time_now_lerp_frac = 1.0f;
 			}
 			else
 			{
 				const auto delta = static_cast<float>((m_phys_sim_tick - m_phys_time_last_snapshot)) / static_cast<float>((m_phys_time_last_update - m_phys_time_last_snapshot));
-				m_time_now_lerp_frac = delta;
 
 				if (delta < 0.0f || delta > 1.0f)
 				{
@@ -400,13 +465,10 @@ namespace components
 				{
 					AssertS("m_fx_time_last_update != m_fx_time_last_snapshot");
 				}
-
-				m_time_now_lerp_frac = 1.0f;
 			}
 			else
 			{
 				const auto delta = static_cast<float>((time_now - m_fx_time_last_snapshot)) / static_cast<float>((m_fx_time_last_update - m_fx_time_last_snapshot));
-				m_time_now_lerp_frac = delta;
 
 				if (delta < 0.0f || delta > 1.0f)
 				{
@@ -1568,7 +1630,7 @@ namespace components
 	 * @param angular_velocity	initial angular velocity
 	 * @return					a handle to the actor (PxRigidDynamic)
 	 */
-	int physx_impl::create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity, const float* angular_velocity)
+	int physx_impl::create_physx_object(game::XModel* model, const float* world_pos, const float* quat, const float* velocity, const float* angular_velocity, fx_system::FX_SYSTEM_ scene)
 	{
 		const auto material = create_material(model->physPreset);
 
@@ -1643,8 +1705,18 @@ namespace components
 
 		physx::PxRigidBodyExt::updateMassAndInertia(*actor, model->physPreset->mass /*, &center_of_mass*/);
 
-		mScene->addActor(*actor);
-	
+		switch (scene)
+		{
+		default:
+		case fx_system::FX_SYSTEM_CAMERA:
+			mScene->addActor(*actor);
+			break;
+
+		case fx_system::FX_SYSTEM_BROWSER:
+			mSceneEffectBrowser->addActor(*actor);
+			break;
+		}
+
 		if (velocity)
 		{
 			actor->setLinearVelocity(physx::PxVec3(velocity[0], velocity[1], velocity[2]));
@@ -1827,6 +1899,8 @@ namespace components
 			AssertS("PxInitExtensions failed!");
 		}*/
 
+		m_static_collision_material = mPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+
 		physx::PxSceneDesc scene_desc(mPhysics->getTolerancesScale());
 		scene_desc.gravity = physx::PxVec3(0.0f, 0.0f, -800.0f); // default: -9.81 // scale of 80
 		scene_desc.bounceThresholdVelocity = 1400.0f; // default: 20
@@ -1844,6 +1918,11 @@ namespace components
 
 		scene_desc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 		mScene = mPhysics->createScene(scene_desc);
+		mSceneEffectBrowser = mPhysics->createScene(scene_desc);
+
+		// add ground plane for effects browser
+		PxRigidStatic* effects_browser_plane = PxCreatePlane(*mPhysics, PxPlane(PxVec3(0.0f, 0.0f, 1.0f), 0), *m_static_collision_material);
+		mSceneEffectBrowser->addActor(*effects_browser_plane);
 
 		if (USE_PVD)
 		{
@@ -1855,8 +1934,6 @@ namespace components
 				pvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 			}
 		}
-
-		m_static_collision_material = mPhysics->createMaterial(0.5f, 0.5f, 0.6f);
 
 		// *
 		// character controller

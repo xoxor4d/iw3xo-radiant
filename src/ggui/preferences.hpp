@@ -48,6 +48,7 @@ namespace ggui
 		// public member functions
 
 		bool gui() override;
+		void on_init() override;
 
 		// *
 		// asm related
@@ -66,6 +67,7 @@ namespace ggui
 		const std::string CAT_GUI = "Gui";
 		const std::string CAT_GRID = "Grid";
 		const std::string CAT_CAMERA = "Camera";
+		const std::string CAT_EFFECTS_BROWSER = "Effects Browser";
 		const std::string CAT_TEXTURES = "Textures";
 		const std::string CAT_RENDERER = "Renderer / BSP";
 		const std::string CAT_LIVELINK = "Live Link";
@@ -81,6 +83,7 @@ namespace ggui
 		void child_gui();
 		void child_grid();
 		void child_camera();
+		void child_effects_browser();
 		void child_textures();
 		void child_renderer_bsp();
 		void child_livelink();

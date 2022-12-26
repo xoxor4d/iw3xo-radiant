@@ -305,6 +305,14 @@ namespace ggui
 						GET_GUI(ggui::entity_dialog)->toggle();
 					}
 
+					if (ImGui::MenuItem("Mesh Painter")) {
+						GET_GUI(ggui::mesh_painter_dialog)->toggle();
+					}
+
+					if (ImGui::MenuItem("Effects Browser")) {
+						GET_GUI(ggui::effects_browser)->toggle();
+					}
+
 					if (ImGui::MenuItem("Surface Inspector", ggui::hotkey_dialog::get_hotkey_for_command("SurfaceInspector").c_str()))
 					{
 						if (dvars::gui_use_new_surfinspector && dvars::gui_use_new_surfinspector->current.enabled)
@@ -700,15 +708,20 @@ namespace ggui
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Reload Textures", ggui::hotkey_dialog::get_hotkey_for_command("RefreshTextures").c_str())) {
+				if (ImGui::MenuItem("Reload All Images", ggui::hotkey_dialog::get_hotkey_for_command("RefreshTextures").c_str())) {
 					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
-				}
+				} TT("This only reloads the iwi's\nReload individual materials from the context menu (texture browser)");
+
+				if (ImGui::MenuItem("Load New Materials")) {
+					utils::hook::call<void(__cdecl)()>(0x45AE40)();
+				} TT("This only loads materials that were not present at the start of radiant\nReload individual materials from the context menu (texture browser)");
 
 				if (ImGui::MenuItem("Reload XModels")) 
 				{
 					memset(game::com_fileDataHashTable, 0, sizeof(uintptr_t) * 1024);
 				}
 
+#if 0			// material reload tests
 				if (ImGui::MenuItem("Sort World Surfaces"))
 				{
 					game::R_SortWorldSurfaces();
@@ -777,6 +790,7 @@ namespace ggui
 
 					//game::Material_RegisterHandle("css_portal", 3);
 				}
+#endif
 
 				SEPERATORV(0.0f);
 
@@ -921,6 +935,11 @@ namespace ggui
 					cs->focus_tab(camera_settings_dialog::tab_state_effects);
 				}
 
+				if (ImGui::MenuItem("Effects Browser")) 
+				{
+					GET_GUI(ggui::effects_browser)->toggle();
+				}
+
 				if (ImGui::MenuItem("Edit Current Effect", 0, nullptr, components::effects::effect_can_play()))
 				{
 					components::effects::edit();
@@ -1001,11 +1020,17 @@ namespace ggui
 
 				SEPERATORV(0.0f);
 
-				if (ImGui::MenuItem("Compile current map", ggui::hotkey_dialog::get_hotkey_for_command("bsp_compile").c_str()))
+				const bool can_compile = !game::g_prefab_stack_level;
+				imgui::BeginDisabled(!can_compile);
 				{
-					components::d3dbsp::compile_current_map();
+					if (ImGui::MenuItem("Compile current map", ggui::hotkey_dialog::get_hotkey_for_command("bsp_compile").c_str()))
+					{
+						components::d3dbsp::compile_current_map();
 
-				} TT("Compile currently loaded .map with setting specified within 'Compile Settings'.\nAutomatically reloads the bsp when finished.");
+					} TT("Compile currently loaded .map with settings specified within 'Compile Settings'.\nAutomatically reloads the bsp when finished.");
+
+					imgui::EndDisabled();
+				}
 
 				if (ImGui::MenuItem("Compile Settings .."))
 				{
@@ -1149,6 +1174,12 @@ namespace ggui
 					ImGui::EndMenu(); // Scale
 				}
 
+				SEPERATORV(0.0f);
+
+				if (ImGui::MenuItem("Guizmo - World-Local", ggui::hotkey_dialog::get_hotkey_for_command("guizmo_world_local").c_str(), ggui::camera_guizmo::g_guizmo_local))
+				{
+					ggui::camera_guizmo::g_guizmo_local = !ggui::camera_guizmo::g_guizmo_local;
+				}
 
 				if (ImGui::MenuItem("Maya Export")) {
 					cdeclcall(void, 0x4263C0); // CMainFrame::OnExportToMaya
@@ -1348,18 +1379,24 @@ namespace ggui
 					dvars::set_bool(dvars::guizmo_snapping, !dvars::guizmo_snapping->current.enabled);
 				}
 
+				SEPERATORV(0.0f);
+
+				if (imgui::MenuItem("New-Patch-Dragging", ggui::hotkey_dialog::get_hotkey_for_command("new_patch_drag").c_str(), dvars::grid_new_patch_drag->current.enabled)) {
+					dvars::set_bool(dvars::grid_new_patch_drag, !dvars::grid_new_patch_drag->current.enabled);
+				} TT(dvars::grid_new_patch_drag->description);
+
 				ImGui::EndMenu(); // Grid
 			}
 
 			if (ImGui::BeginMenu("Textures"))
 			{
-				if (ImGui::MenuItem("Show All", ggui::hotkey_dialog::get_hotkey_for_command("ShowAllTextures").c_str())) {
-					cdeclcall(void, 0x42B440); // CMainFrame::OnTexturesShowall
-				}
+				//if (ImGui::MenuItem("Show All", ggui::hotkey_dialog::get_hotkey_for_command("ShowAllTextures").c_str())) {
+				//	cdeclcall(void, 0x42B440); // CMainFrame::OnTexturesShowall
+				//}
 
-				if (ImGui::MenuItem("Show In Use", ggui::hotkey_dialog::get_hotkey_for_command("ShowTexturesInUse").c_str())) {
-					mainframe_thiscall(void, 0x424B20); // CMainFrame::OnTexturesShowinuse
-				}
+				//if (ImGui::MenuItem("Show In Use", ggui::hotkey_dialog::get_hotkey_for_command("ShowTexturesInUse").c_str())) {
+				//	mainframe_thiscall(void, 0x424B20); // CMainFrame::OnTexturesShowinuse
+				//}
 
 				if (ImGui::MenuItem("Surface Inspector", ggui::hotkey_dialog::get_hotkey_for_command("SurfaceInspector").c_str())) {
 					cdeclcall(void, 0x424B60); // CMainFrame::OnTexturesInspector
@@ -1371,30 +1408,30 @@ namespace ggui
 					cdeclcall(void, 0x428B40); // CMainFrame::OnTextureReplaceall
 				}
 
-				if (ImGui::BeginMenu("Texture Window Scale"))
-				{
-					if (ImGui::MenuItem("200%", 0, prefs->m_nTextureWindowScale == 200)) {
-						mainframe_thiscall(void, 0x42B020); // CMainFrame::OnTexturesTexturewindowscale200
-					}
+				//if (ImGui::BeginMenu("Texture Window Scale"))
+				//{
+				//	if (ImGui::MenuItem("200%", 0, prefs->m_nTextureWindowScale == 200)) {
+				//		mainframe_thiscall(void, 0x42B020); // CMainFrame::OnTexturesTexturewindowscale200
+				//	}
 
-					if (ImGui::MenuItem("100%", 0, prefs->m_nTextureWindowScale == 100)) {
-						mainframe_thiscall(void, 0x42B000); // CMainFrame::OnTexturesTexturewindowscale100
-					}
+				//	if (ImGui::MenuItem("100%", 0, prefs->m_nTextureWindowScale == 100)) {
+				//		mainframe_thiscall(void, 0x42B000); // CMainFrame::OnTexturesTexturewindowscale100
+				//	}
 
-					if (ImGui::MenuItem("50%", 0, prefs->m_nTextureWindowScale == 50)) {
-						mainframe_thiscall(void, 0x42B060); // CMainFrame::OnTexturesTexturewindowscale50
-					}
+				//	if (ImGui::MenuItem("50%", 0, prefs->m_nTextureWindowScale == 50)) {
+				//		mainframe_thiscall(void, 0x42B060); // CMainFrame::OnTexturesTexturewindowscale50
+				//	}
 
-					if (ImGui::MenuItem("25%", 0, prefs->m_nTextureWindowScale == 25)) {
-						mainframe_thiscall(void, 0x42B040); // CMainFrame::OnTexturesTexturewindowscale25
-					}
+				//	if (ImGui::MenuItem("25%", 0, prefs->m_nTextureWindowScale == 25)) {
+				//		mainframe_thiscall(void, 0x42B040); // CMainFrame::OnTexturesTexturewindowscale25
+				//	}
 
-					if (ImGui::MenuItem("10%", 0, prefs->m_nTextureWindowScale == 10)) {
-						mainframe_thiscall(void, 0x42AFE0); // CMainFrame::OnTexturesTexturewindowscale10
-					}
+				//	if (ImGui::MenuItem("10%", 0, prefs->m_nTextureWindowScale == 10)) {
+				//		mainframe_thiscall(void, 0x42AFE0); // CMainFrame::OnTexturesTexturewindowscale10
+				//	}
 
-					ImGui::EndMenu(); // Texture Window Scale
-				}
+				//	ImGui::EndMenu(); // Texture Window Scale
+				//}
 
 				if (ImGui::BeginMenu("Texture Lock"))
 				{
@@ -1429,6 +1466,16 @@ namespace ggui
 				//	ImGui::EndMenu(); // Layered Materials
 				//}
 
+				if (ImGui::MenuItem("Reload All Images", ggui::hotkey_dialog::get_hotkey_for_command("RefreshTextures").c_str())) {
+					cdeclcall(void, 0x428B50); // CMainFrame::OnTextureRefresh
+				} TT("This only reloads the iwi's\nReload individual materials from the context menu (texture browser)");
+
+				if (ImGui::MenuItem("Load New Materials")) {
+					utils::hook::call<void(__cdecl)()>(0x45AE40)();
+				} TT("This only loads materials that were not present at the start of radiant\nReload individual materials from the context menu (texture browser)");
+
+				SEPERATORV(0.0f);
+
 				if (ImGui::BeginMenu("Edit Layer"))
 				{
 					if (ImGui::MenuItem("Cycle", ggui::hotkey_dialog::get_hotkey_for_command("TexLayerCycle").c_str())) {
@@ -1452,6 +1499,7 @@ namespace ggui
 					ImGui::EndMenu(); // Edit Layer
 				}
 
+#if 0
 				if (ImGui::BeginMenu("Usage Filter"))
 				{
 					for (std::uint8_t i = 0; i < game::texWndGlob_usageCount; i++)
@@ -1516,6 +1564,7 @@ namespace ggui
 
 					ImGui::EndMenu(); // Surface Type Filter
 				}
+#endif
 
 				ImGui::EndMenu(); // Textures
 			}
@@ -1528,6 +1577,16 @@ namespace ggui
 
 				if (ImGui::MenuItem("Noise Generator")) {
 					GET_GUI(ggui::vertex_edit_dialog)->toggle();
+				}
+
+				if (ImGui::MenuItem("Mesh Painter")) {
+					GET_GUI(ggui::mesh_painter_dialog)->toggle();
+				}
+
+				SEPERATORV(0);
+
+				if (ImGui::MenuItem("PhysX Movement", ggui::hotkey_dialog::get_hotkey_for_command("physx_movement").c_str())) {
+					components::physx_impl::spawn_character();
 				}
 
 				ImGui::EndMenu(); // Tools
@@ -1551,9 +1610,9 @@ namespace ggui
 					cdeclcall(void, 0x424BE0); // CMainFrame::OnMiscPreviousleakspot
 				}
 
-				if (ImGui::MenuItem("Print XY View")) {
-					cdeclcall(void, 0x424C00); // CMainFrame::OnMiscPrintxy
-				}
+				//if (ImGui::MenuItem("Print XY View")) {
+				//	cdeclcall(void, 0x424C00); // CMainFrame::OnMiscPrintxy
+				//}
 
 				if (ImGui::MenuItem("Entity Color Dialog", ggui::hotkey_dialog::get_hotkey_for_command("EntityColor").c_str())) {
 					cdeclcall(void, 0x424C10); // CMainFrame::OnMiscSelectentitycolor
@@ -1942,10 +2001,13 @@ namespace ggui
 			}*/
 
 			const auto process = components::process::get();
+			const bool active_proc = process->is_active();
 
-			if(process->is_active())
+			const auto menubar_height = ImGui::GetItemRectSize().y;
+			float proc_str_width = 0.0f;
+
+			if (active_proc)
 			{
-				const auto menubar_height = ImGui::GetItemRectSize().y;
 				const auto tb = GET_GUI(ggui::toolbar_dialog);
 
 				ImVec4 toolbar_button_background_active = ImGui::ToImVec4(dvars::gui_menubar_bg_color->current.vector);
@@ -1959,11 +2021,11 @@ namespace ggui
 							const float progress_width = 200.0f;
 
 							const char* proc_str = process->m_indicator_str.empty() ? "Spawning Process" : process->m_indicator_str.c_str();
-							const float proc_str_width = ImGui::CalcTextSize(proc_str).x;
+							proc_str_width = ImGui::CalcTextSize(proc_str).x + progress_width;
 
 							// not using a group to calculate the widget size because it flickers upon text change (frame delay)
 
-							ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height - progress_width);
+							ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height);
 
 							static bool hov_active_proc;
 							if (tb->image_button_label(proc_str
@@ -1996,11 +2058,11 @@ namespace ggui
 							ImVec4 spinner_color = ImVec4(0.49f, 0.2f, 0.2f, 1.0f);
 
 							const char* proc_str = process->m_indicator_str.empty() ? "Spawning Process" : process->m_indicator_str.c_str();
-							const float proc_str_width = ImGui::CalcTextSize(proc_str).x;
+							proc_str_width = ImGui::CalcTextSize(proc_str).x + 32.0f;
 
 							// not using a group to calculate the widget size because it flickers upon text change (frame delay)
 
-							ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height - 32.0f);
+							ImGui::SameLine(ImGui::GetWindowWidth() - proc_str_width - menubar_height);
 
 							static bool hov_active_proc;
 							if (tb->image_button_label(proc_str
@@ -2023,7 +2085,23 @@ namespace ggui
 				}
 			}
 
-			ImGui::EndMenuBar();
+			if (!game::glob::is_loading_map)
+			{
+				const auto& tw = components::time_wasted::get();
+
+				if (const auto& entry = tw->get_entry(tw->get_map_string());
+					entry)
+				{
+					const char* timer_str = utils::va("Time wasted: %dh : %dm", entry->time / 60, entry->time % 60);
+					const float str_width = imgui::CalcTextSize(timer_str).x;
+					imgui::SameLine(imgui::GetWindowWidth() - proc_str_width - str_width - menubar_height - (proc_str_width != 0.0f ? 20.0f : 0.0f));
+
+					imgui::SetCursorPosY(imgui::GetCursorPosY() - 3.0f);
+					imgui::TextUnformatted(timer_str);
+				}
+			}
+
+			imgui::EndMenuBar();
 		}
 
 		ggui::context_menu_style_end();

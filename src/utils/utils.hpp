@@ -65,6 +65,7 @@ namespace utils
 	void mtx4x4_mul(game::GfxMatrix* mtx_out, game::GfxMatrix* a, game::GfxMatrix* b);
 	void normalize_color3(float* src, float* dest);
 	char pack_float(const float from);
+	float unpack_float(const char from);
 
 	// -----------
 	

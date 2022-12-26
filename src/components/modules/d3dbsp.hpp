@@ -125,7 +125,6 @@ namespace components
 		static char* Com_ValidateBspLumpData(LumpType type, unsigned int offset, unsigned int length, unsigned int elemSize, unsigned int* count);
 
 		static void Com_SaveLump(LumpType type, const void* newLump, unsigned int size);
-		static void Com_SaveLump_t5(LumpType type, const void* newLump, unsigned int size);
 
 		static const void* Com_GetBspLump(LumpType type, unsigned int elemSize, unsigned int* count);
 		static bool Com_GetBspLumpBool(LumpType type);
@@ -136,7 +135,7 @@ namespace components
 		static bool radiant_load_bsp(const char* bsppath, bool reload = false);
 		static void reload_bsp();
 
-		static void compile_bsp(const std::string& bsp_name);
+		static void compile_bsp(const std::string& bsp_name, bool generate_createfx = false);
 		static void compile_current_map();
 		
 		static void force_dvars();

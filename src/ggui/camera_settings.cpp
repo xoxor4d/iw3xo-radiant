@@ -496,7 +496,7 @@ namespace ggui
 		{
 			std::string temp_string = dvars::bsp_compile_custom_cmd->current.string;
 			imgui::SetNextItemWidth(-8);
-			if(imgui::InputText("##bsp_commandline", &temp_string, ImGuiInputTextFlags_None))
+			if (imgui::InputText("##bsp_commandline", &temp_string, ImGuiInputTextFlags_None))
 			{
 				dvars::set_string(dvars::bsp_compile_custom_cmd, temp_string.c_str());
 			}
@@ -534,7 +534,7 @@ namespace ggui
 			std::string temp_string = dvars::bsp_compile_light_custom_cmd->current.string;
 			imgui::SetNextItemWidth(-style.FramePadding.x);
 
-			if(imgui::InputText("##light_commandline", &temp_string, ImGuiInputTextFlags_None))
+			if (imgui::InputText("##light_commandline", &temp_string, ImGuiInputTextFlags_None))
 			{
 				dvars::set_string(dvars::bsp_compile_light_custom_cmd, temp_string.c_str());
 			}
@@ -542,32 +542,43 @@ namespace ggui
 		}
 
 		// -----------------
-		imgui::title_with_seperator("Reflections", true, 0, 2, 6.0f);
-
-		imgui::Checkbox("Automatically compile reflections when building bsp", &dvars::bsp_gen_reflections_on_compile->current.enabled); TT(dvars::bsp_gen_reflections_on_compile->description);
-
-		if (imgui::Button("Generate Reflections", ImVec2(-style.FramePadding.x, imgui::GetFrameHeight())))
-		{
-			dvars::set_bool(dvars::r_reflectionprobe_generate, true);
-		} TT("Probes within the loaded bsp will be used to take screenshots ..\nso make sure your bsp is up-to-date.");
-
-
-		// -----------------
 		imgui::title_with_seperator("Compiling", true, 0, 2, 6.0f);
 
+		imgui::Checkbox("Automatically compile reflections when building bsp", &dvars::bsp_gen_reflections_on_compile->current.enabled); TT(dvars::bsp_gen_reflections_on_compile->description);
+		imgui::Checkbox("Automatically turn on bsp-view after compiling", &dvars::bsp_show_bsp_after_compile->current.enabled); TT(dvars::bsp_show_bsp_after_compile->description);
 
-		const bool can_compile = true; //components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
+		/*if (imgui::Button("Generate Reflections", ImVec2(-style.FramePadding.x, imgui::GetFrameHeight())))
+		{
+			dvars::set_bool(dvars::r_reflectionprobe_generate, true);
+		} TT("Probes within the loaded bsp will be used to take screenshots ..\nso make sure your bsp is up-to-date.");*/
+
+		imgui::Checkbox("Generate CreateFX", &dvars::bsp_gen_createfx_on_compile->current.enabled);
+		TT(	"Automatically generate CreateFX files for the current map when compiling bsp.\n"
+			"This will copy the files to the correct location in raw/maps/...");
+
+		SPACING(0, 0);
+
+		// -----------------
+		//imgui::title_with_seperator("Compiling", true, 0, 2, 6.0f);
+
+
+		const bool can_compile = !game::g_prefab_stack_level; //components::d3dbsp::Com_IsBspLoaded() && !components::d3dbsp::loaded_bsp_path.empty();
 		imgui::BeginDisabled(!can_compile);
 		{
 			//const std::string d3dbsp_name = components::d3dbsp::loaded_bsp_path.substr(components::d3dbsp::loaded_bsp_path.find_last_of("\\") + 1);
-			std::string d3dbsp_name = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
-			utils::erase_substring(d3dbsp_name, ".map");
+			std::string d3dbsp_name;
+
+			if (can_compile)
+			{
+				d3dbsp_name = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
+				utils::erase_substring(d3dbsp_name, ".map");
+			}
 
 			const std::string button_str = can_compile ? ("Compile " + d3dbsp_name) : "Compile BSP";
 
-			if(imgui::Button(button_str.c_str(), ImVec2(-style.FramePadding.x, imgui::GetFrameHeight())))
+			if (imgui::Button(button_str.c_str(), ImVec2(-style.FramePadding.x, imgui::GetFrameHeight())))
 			{
-				components::d3dbsp::compile_bsp(d3dbsp_name);
+				components::d3dbsp::compile_bsp(d3dbsp_name, dvars::bsp_gen_createfx_on_compile->current.enabled);
 			}
 
 			imgui::EndDisabled();

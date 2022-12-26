@@ -36,16 +36,10 @@ namespace ggui
 
 
 		bool gui() override;
+		void on_init() override;
 		void on_open() override;
 		void on_close() override;
 
-		// *
-		// asm related
-
-		// *
-		// init
-
-		void init();
 		static void register_dvars();
 
 	};

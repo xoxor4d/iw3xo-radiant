@@ -55,6 +55,7 @@ void ctexwnd::write_favourite_list(int list_id)
 		std::string dir_path = dvars::fs_homepath->current.string;
 					dir_path += R"(\IW3xRadiant\texture_favourites\)";
 
+		std::filesystem::create_directories(dir_path);
 		if (std::filesystem::exists(dir_path))
 		{
 			bool found_list = false;
@@ -89,7 +90,7 @@ void ctexwnd::write_favourite_list(int list_id)
 								continue;
 							}
 
-							if(input == texwnd_vector_of_favourites[list_id][0])
+							if (input == texwnd_vector_of_favourites[list_id][0])
 							{
 								found_list = true;
 								list_path = entry.path();
@@ -101,7 +102,7 @@ void ctexwnd::write_favourite_list(int list_id)
 					}
 				}
 
-				if(found_list)
+				if (found_list)
 				{
 					break;
 				}

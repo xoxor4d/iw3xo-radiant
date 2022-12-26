@@ -205,13 +205,13 @@ namespace ggui
 
 		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !is_alt_key_pressed && !ImGui::IsKeyDown(ImGuiKey_ModCtrl))
 		{
-			if(cxywnd->m_ptDrag.x == cxywnd->m_ptDown.x && cxywnd->m_ptDrag.y == cxywnd->m_ptDown.y)
+			if (cxywnd->m_ptDrag.x == cxywnd->m_ptDown.x && cxywnd->m_ptDrag.y == cxywnd->m_ptDown.y)
 			{
 				grid_context_pending_open = true;
 			}
 		}
 
-		if(grid_context_open || grid_context_pending_open)
+		if (grid_context_open || grid_context_pending_open)
 		{
 			ggui::context_menu_style_begin();
 
@@ -221,11 +221,13 @@ namespace ggui
 
 				if (game::is_any_brush_selected())
 				{
+					const auto sb = game::g_selected_brushes();
+
 					ggui::context::xyzcam_general_selection();
+					ggui::context::grouping_menu(game::g_selected_brushes());
 
 					SEPERATORV(0.0f);
 
-					const auto sb = game::g_selected_brushes();
 					bool do_prefab_separator = false;
 					
 					if (sb && sb->def && sb->def->owner)
@@ -249,7 +251,7 @@ namespace ggui
 						}
 					}
 
-					if(do_prefab_separator)
+					if (do_prefab_separator)
 					{
 						SEPERATORV(0.0f);
 					}
@@ -284,7 +286,7 @@ namespace ggui
 						for (const auto& str : group.ents)
 						{
 							const char* c_str = str.ent_str.c_str();
-							if(ImGui::MenuItem(c_str))
+							if (ImGui::MenuItem(c_str))
 							{
 								game::CreateEntityFromClassname(cxywnd, c_str, cxywnd->m_ptDrag.x, cxywnd->m_ptDrag.y);
 								grid_context_last_spawned_entity = str.ent_str;
@@ -341,11 +343,11 @@ namespace ggui
 						}
 					}
 
-					if(!eclass_context_ents.empty())
+					if (!eclass_context_ents.empty())
 					{
 						for (const auto& str : eclass_context_ents)
 						{
-							if(str.ent_str == "worldspawn")
+							if (str.ent_str == "worldspawn")
 							{
 								continue;
 							}
@@ -364,7 +366,7 @@ namespace ggui
 					ImGui::EndMenu();
 				}
 
-				if(!grid_context_last_spawned_entity.empty())
+				if (!grid_context_last_spawned_entity.empty())
 				{
 					SEPERATORV(0.0f);
 
@@ -454,8 +456,9 @@ namespace ggui
 			}
 
 			// -------------------------------
+			// -------------------------------
 
-			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
+			const auto spawn_entity = [this](const char* entity_class, const char* kv) -> void
 			{
 				const auto payload = imgui::GetDragDropPayload();
 				const std::string prefab_path = /*"prefabs/"s +*/ std::string(static_cast<const char*>(payload->Data), payload->DataSize);
@@ -481,15 +484,31 @@ namespace ggui
 
 				// do not open the original modeldialog for this use-case, see: create_entity_from_name_intercept()
 				g_block_radiant_modeldialog = true;
-				game::CreateEntityFromName("misc_prefab");
+				game::CreateEntityFromName(entity_class);
 				g_block_radiant_modeldialog = false;
 
-				entity_gui->add_prop("model", prefab_path.c_str(), &no_undo);
+				entity_gui->add_prop(kv, prefab_path.c_str(), &no_undo);
 				game::Undo_End();
 
 				// CMainFrame::OnDropSelected
 				//cdeclcall(void, 0x425BE0);
+			};
+
+			// #
+
+			if (imgui::AcceptDragDropPayload("PREFAB_BROWSER_ITEM"))
+			{
+				spawn_entity("misc_prefab", "model");
 			}
+
+			// #
+
+			if (imgui::AcceptDragDropPayload("EFFECT_BROWSER_ITEM"))
+			{
+				spawn_entity("fx_origin", "fx");
+			}
+
+			ImGui::EndDragDropTarget();
 		}
 	}
 
@@ -566,7 +585,7 @@ namespace ggui
 				this->rtt_set_hovered_state(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup));
 
 				// right click context menu
-				if(dvars::gui_use_new_context_menu->current.enabled)
+				if (dvars::gui_use_new_context_menu->current.enabled && !game::glob::is_loading_map)
 				{
 					context_menu();
 				}

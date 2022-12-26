@@ -21,6 +21,7 @@ namespace components
 		loader::_register(new generate_previews());
 		loader::_register(new gui());
 		loader::_register(new main_module());
+		loader::_register(new mesh_painter());
 		loader::_register(new patches());
 		loader::_register(new physx_impl());
 		loader::_register(new pmesh());
@@ -28,23 +29,19 @@ namespace components
 		loader::_register(new reflectionprobes());
 		loader::_register(new renderer());
 		loader::_register(new remote_net());
+		loader::_register(new time_wasted());
 
 		if(const auto	con = GET_GUI(ggui::console_dialog);
 						con)
 		{
-			// print to external and internal console
-			printf("[Modules] ---------------------\n");
-			con->addline_no_format("[Modules] ---------------------\n");
+			game::printf_to_console("[Modules] ---------------------\n");
 
 			for (const auto& str : game::glob::loadedModules)
 			{
-				printf(str.c_str());
-				con->addline_no_format(str.c_str());
+				game::printf_to_console(str.c_str());
 			}
 
-			// print to external and internal console
-			printf("\n");
-			con->addline_no_format("\n");
+			game::printf_to_console("\n");
 		}
 	}
 

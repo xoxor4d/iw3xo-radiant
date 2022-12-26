@@ -911,6 +911,23 @@ namespace ggui
 				ImGui::EndDisabled();
 			});
 
+		register_element("guizmo_world_local"s, false, []()
+			{
+				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);
+				{
+					static bool hov_guizmo_brush_mode;
+					if (image_togglebutton(
+						"guizmo_world_local",
+						hov_guizmo_brush_mode,
+						ggui::camera_guizmo::g_guizmo_local,
+						std::string("Guizmo: Toggle between local and world mode\nConsiders angle of last selection when used to manipulate multiple objects\n" + ggui::hotkey_dialog::get_hotkey_for_command("guizmo_world_local")).c_str()))
+					{
+						ggui::camera_guizmo::g_guizmo_local = !ggui::camera_guizmo::g_guizmo_local;
+					}
+				}
+				ImGui::EndDisabled();
+			});
+
 		/*register_element("guizmo_brush_mode"s, false, []()
 			{
 				ImGui::BeginDisabled(!dvars::guizmo_enable->current.enabled);

@@ -33,6 +33,7 @@ namespace dvars
 	game::dvar_s* gui_props_surfinspector = nullptr;
 	game::dvar_s* gui_props_toolbox = nullptr;
 	game::dvar_s* gui_toolbox_integrate_cam_toolbar = nullptr;
+	game::dvar_s* gui_toolbox_integrate_filter = nullptr;
 	game::dvar_s* gui_use_new_surfinspector = nullptr;
 	game::dvar_s* gui_use_new_vertedit_dialog = nullptr;
 	game::dvar_s* gui_use_new_context_menu = nullptr;
@@ -46,6 +47,7 @@ namespace dvars
 	game::dvar_s* gui_saved_state_console = nullptr;
 	game::dvar_s* gui_saved_state_filter = nullptr;
 	game::dvar_s* gui_saved_state_entity = nullptr;
+	game::dvar_s* gui_saved_state_effects_browser = nullptr;
 	game::dvar_s* gui_saved_state_textures = nullptr;
 	game::dvar_s* gui_saved_state_modelselector = nullptr;
 	game::dvar_s* gui_saved_state_prefab_browser = nullptr;
@@ -60,9 +62,12 @@ namespace dvars
 
 	game::dvar_s* grid_zoom_to_cursor = nullptr;
 	game::dvar_s* grid_draw_edge_coordinates = nullptr;
+	game::dvar_s* grid_new_patch_drag = nullptr;
 
 	game::dvar_s* bsp_load_entities = nullptr;
+	game::dvar_s* bsp_show_bsp_after_compile = nullptr;
 	game::dvar_s* bsp_gen_reflections_on_compile = nullptr;
+	game::dvar_s* bsp_gen_createfx_on_compile = nullptr;
 
 	game::dvar_s* bsp_compile_bsp = nullptr;
 	game::dvar_s* bsp_compile_onlyents = nullptr;
@@ -105,6 +110,14 @@ namespace dvars
 
 	game::dvar_s* r_reflectionprobe_generate = nullptr;
 	game::dvar_s* r_reflectionprobe_export_tga = nullptr;
+
+	game::dvar_s* fx_browser_grid_sections = nullptr;
+	game::dvar_s* fx_browser_grid_scale = nullptr;
+	game::dvar_s* fx_browser_grid_color = nullptr;
+	game::dvar_s* fx_browser_grid_line_width = nullptr;
+	game::dvar_s* fx_browser_grid_font_scale = nullptr;
+	game::dvar_s* fx_browser_grid_font_color = nullptr;
+	game::dvar_s* fx_browser_use_camera_for_distortion = nullptr;
 
 	game::dvar_s* guizmo_enable = nullptr;
 	game::dvar_s* guizmo_snapping = nullptr;
@@ -274,6 +287,7 @@ namespace dvars
 		cxywnd::register_dvars();
 		ccamwnd::register_dvars();
 		ctexwnd::register_dvars();
+		cfxwnd::register_dvars();
 
 		ggui::entity_dialog::register_dvars();
 		ggui::preferences_dialog::register_dvars();
@@ -281,6 +295,7 @@ namespace dvars
 		ggui::vertex_edit_dialog::register_dvars();
 		ggui::camera_settings_dialog::register_dvars();
 		ggui::prefab_preview_dialog::register_dvars();
+		ggui::toolbox_dialog::register_dvars();
 
 		fx_system::register_dvars();
 
