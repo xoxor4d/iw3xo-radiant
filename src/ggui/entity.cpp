@@ -48,6 +48,12 @@ namespace ggui
 		{ "targetname", "my_targetname" },
 	};
 
+	const entity_dialog::template_kvp eclass_fx_templates[] =
+	{
+		{ "loopfx", "1" },
+		{ "loop_wait", "5" },
+	};
+
 	const entity_dialog::template_kvp eclass_generic_templates[] =
 	{
 		{ "target", "my_target" },
@@ -80,6 +86,11 @@ namespace ggui
 		{
 			tkvp = eclass_misc_templates;
 			*size_out = IM_ARRAYSIZE(eclass_misc_templates);
+		}
+		else if (utils::string_equals(eent->eclass->name, "fx_origin"))
+		{
+			tkvp = eclass_fx_templates;
+			*size_out = IM_ARRAYSIZE(eclass_fx_templates);
 		}
 		else
 		{

@@ -1,5 +1,6 @@
 #include "std_include.hpp"
 #include <WinHttpClient.h>
+#include <codecvt>
 
 bool get_html(const std::string& url, std::wstring& header, std::wstring& hmtl)
 {
@@ -43,15 +44,27 @@ DWORD WINAPI update_check(LPVOID)
 	std::wstring header, html;
 	get_html(url, header, html);
 
-	std::ranges::transform(html.begin(), html.end(), std::back_inserter(game::glob::gh_update_releases_json), [](wchar_t c)
+	/*std::ranges::transform(html.begin(), html.end(), std::back_inserter(game::glob::gh_update_releases_json), [](wchar_t c)
 	{
 		return (char)c;
-	});
+	});*/
+
+	// chatgpt is awesome
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+	game::glob::gh_update_releases_json = converter.to_bytes(html);
 
 	if (!game::glob::gh_update_releases_json.empty())
 	{
 		rapidjson::Document doc;
-		doc.Parse(game::glob::gh_update_releases_json.c_str());
+
+		if (doc.Parse(game::glob::gh_update_releases_json.c_str()).HasParseError())
+		{
+#if DEBUG
+			auto err = doc.GetParseError();
+			__debugbreak();
+#endif
+			return TRUE;
+		}
 
 		if (!doc.Empty())
 		{

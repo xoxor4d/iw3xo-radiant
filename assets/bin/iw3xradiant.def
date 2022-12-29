@@ -144,7 +144,12 @@ NO_STATIC_SHADOWS - the opaque surfaces will not cast static light map shadows
 */
 
 /*QUAKED fx_origin (0.45 0.3 0.2) (-2 -2 -2) (2 2 2)
-default:"fx" "iw3xradiant_def"
+used for createFX generation and general effect handling.
+default: "fx" "iw3xradiant_def"
+
+fx - effect definition
+fxloop - make createFX gen. use loopfx instead of createOneshotEffect
+loop_wait - time to wait until re-triggering
 */
 
 
