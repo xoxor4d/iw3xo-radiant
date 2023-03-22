@@ -529,11 +529,19 @@ namespace ggui
 
 				ImGui::InsertNotification(toast);
 			}
-			
+
 			ImGui::SameLine();
 			if (ImGui::Button("Print Error"))
 			{
 				game::printf_to_console("[ERR] This is an error message!");
+			}
+
+			static bool frequent_toast_test = false;
+			imgui::Checkbox("Frequent Toast Test", &frequent_toast_test);
+
+			if (frequent_toast_test)
+			{
+				game::printf_to_console("[ERR] Test Toast");
 			}
 
 			//if (imgui::Button("Mesh Test"))

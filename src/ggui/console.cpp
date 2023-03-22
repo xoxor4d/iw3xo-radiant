@@ -40,10 +40,35 @@ namespace ggui
 			{
 				utils::ltrim(t_line);
 
-				ImGuiToast toast(ImGuiToastType_Error, 3000);
-				toast.set_title("Error");
-				toast.set_content(t_line.c_str());
-				ImGui::InsertNotification(toast);
+				const auto& notifications = imgui::notifications;
+				const auto tick = GetTickCount64();
+
+				// check for very frequent error notifications
+				if (!notifications.empty())
+				{
+					const auto last_msg = &notifications.back();
+
+					if (last_msg->type == ImGuiToastType_Error)
+					{
+						if (tick - 100 < last_msg->creation_time)
+						{
+							m_error_timeout_tick = last_msg->creation_time;
+							return;
+						}
+					}
+				}
+
+				if (tick > m_error_timeout_tick + 1500)
+				{
+					const auto was_timeout_error = m_error_timeout_tick != 0;
+
+					ImGuiToast toast(ImGuiToastType_Error, 1500);
+					toast.set_title(was_timeout_error ? "Very frequent Error (Every Frame)" : "Error");
+					toast.set_content(t_line.c_str());
+					ImGui::InsertNotification(toast);
+
+					m_error_timeout_tick = 0;
+				}
 			}
 		}
 	}

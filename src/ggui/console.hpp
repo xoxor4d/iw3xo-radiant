@@ -20,6 +20,7 @@ namespace ggui
 		bool					m_scroll_to_bottom;
 		ImVec2					m_post_inputbox_cursor;
 		bool					m_input_focused;
+		ULONGLONG				m_error_timeout_tick;
 
 		console_dialog()
 		{
@@ -38,6 +39,7 @@ namespace ggui
 			m_scroll_to_bottom = true;
 			m_post_inputbox_cursor = ImVec2(0.0f, 0.0f);
 			m_input_focused = false;
+			m_error_timeout_tick = 0;
 		}
 
 		~console_dialog() override;

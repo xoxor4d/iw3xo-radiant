@@ -63,10 +63,11 @@ enum ImGuiToastPos_
 class ImGuiToast
 {
 private:
-	ImGuiToastType	type = ImGuiToastType_None;
 	char			title[NOTIFY_MAX_MSG_LENGTH];
 	char			content[NOTIFY_MAX_MSG_LENGTH];
 	int				dismiss_time = NOTIFY_DEFAULT_DISMISS;
+public:
+	ImGuiToastType	type = ImGuiToastType_None;
 	uint64_t		creation_time = 0;
 
 private:
