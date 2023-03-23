@@ -52,6 +52,8 @@ namespace ggui
 	{
 		{ "loopfx", "1" },
 		{ "loop_wait", "5" },
+		{ "is_sound", "1" },
+		{ "soundalias", "emt_metal_rattle_ring" },
 	};
 
 	const entity_dialog::template_kvp eclass_generic_templates[] =

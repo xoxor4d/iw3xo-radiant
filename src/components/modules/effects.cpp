@@ -659,21 +659,48 @@ namespace components
 						effect_num = itr->second;
 					}
 
+					// is sound
+					if (entity_gui->has_key_with_value(owner, "is_sound", "1"))
+					{
+						std::string soundalias_name = "UNSET";
 
-					// check if fx_origin is set to looping and save for later
-					if (const char* timeout_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "loop_wait"); 
-						timeout_str && entity_gui->has_key_with_value(owner, "loopfx", "1"))
-					{
-						createfx_looping_fx_defs.emplace_back(effect_num, 
-							utils::va("%.2f, %.2f, %.2f, %s", out_orient.origin[0], out_orient.origin[1], out_orient.origin[2], timeout_str));
-					}
-					else
-					{
-						createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_num << "\" );" << std::endl;
+						if (const char* soundalias_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "soundalias"); soundalias_str)
+						{
+							soundalias_name = soundalias_str;
+						}
+
+						createfx << "\tent = maps\\mp\\_utility::createLoopSound();" << std::endl;
 						createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << out_orient.origin[0] << ", " << out_orient.origin[1] << ", " << out_orient.origin[2] << " );" << std::endl;
 						createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << out_angles[0] << ", " << out_angles[1] << ", " << out_angles[2] << " );" << std::endl;
-						createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_num << "\";" << std::endl;
-						createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+						createfx << "\tent.v[ \"soundalias\" ] = \"" << soundalias_name.c_str() << "\";" << std::endl << std::endl;
+					}
+
+					// is fx
+					else
+					{
+						std::string loopfx_timeout = "100";
+
+						if (const char* timeout_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "loop_wait"); timeout_str)
+						{
+							loopfx_timeout = timeout_str;
+						}
+
+						// is looping (make oneshot looping by re-triggering them)
+						if (entity_gui->has_key_with_value(owner, "loopfx", "1"))
+						{
+							createfx_looping_fx_defs.emplace_back(effect_num,
+								utils::va("%.2f, %.2f, %.2f, %s", out_orient.origin[0], out_orient.origin[1], out_orient.origin[2], loopfx_timeout.c_str()));
+						}
+
+						// is oneshot (either real oneshot or indefinitely looping)
+						else
+						{
+							createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_num << "\" );" << std::endl;
+							createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << out_orient.origin[0] << ", " << out_orient.origin[1] << ", " << out_orient.origin[2] << " );" << std::endl;
+							createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << out_angles[0] << ", " << out_angles[1] << ", " << out_angles[2] << " );" << std::endl;
+							createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_num << "\";" << std::endl;
+							createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+						}
 					}
 				}
 				else if (prefab && prefab->owner && prefab->owner->prefab && prefab->owner->firstActive && prefab->owner->firstActive->eclass && prefab->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
@@ -803,20 +830,48 @@ namespace components
 						}
 
 
-						// check if fx_origin is set to looping and save for later
-						if (const char* timeout_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "loop_wait");
-							timeout_str && entity_gui->has_key_with_value(owner, "loopfx", "1"))
+						// is sound
+						if (entity_gui->has_key_with_value(owner, "is_sound", "1"))
 						{
-							createfx_looping_fx_defs.emplace_back(effect_num,
-								utils::va("%.2f, %.2f, %.2f, %s", owner->origin[0], owner->origin[1], owner->origin[2], timeout_str));
-						}
-						else
-						{
-							createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_num << "\" );" << std::endl;
+							std::string soundalias_name = "UNSET";
+
+							if (const char* soundalias_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "soundalias"); soundalias_str)
+							{
+								soundalias_name = soundalias_str;
+							}
+
+							createfx << "\tent = maps\\mp\\_utility::createLoopSound();" << std::endl;
 							createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << owner->origin[0] << ", " << owner->origin[1] << ", " << owner->origin[2] << " );" << std::endl;
 							createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << world_angles[0] << ", " << world_angles[1] << ", " << world_angles[2] << " );" << std::endl;
-							createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_num << "\";" << std::endl;
-							createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+							createfx << "\tent.v[ \"soundalias\" ] = \"" << soundalias_name.c_str() << "\";" << std::endl << std::endl;
+						}
+
+						// is fx
+						else
+						{
+							std::string loopfx_timeout = "100";
+
+							if (const char* timeout_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "loop_wait"); timeout_str)
+							{
+								loopfx_timeout = timeout_str;
+							}
+
+							// is looping (make oneshot looping by re-triggering them)
+							if (entity_gui->has_key_with_value(owner, "loopfx", "1"))
+							{
+								createfx_looping_fx_defs.emplace_back(effect_num,
+									utils::va("%.2f, %.2f, %.2f, %s", owner->origin[0], owner->origin[1], owner->origin[2], loopfx_timeout.c_str()));
+							}
+
+							// is oneshot (either real oneshot or indefinitely looping)
+							else
+							{
+								createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_num << "\" );" << std::endl;
+								createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << owner->origin[0] << ", " << owner->origin[1] << ", " << owner->origin[2] << " );" << std::endl;
+								createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << world_angles[0] << ", " << world_angles[1] << ", " << world_angles[2] << " );" << std::endl;
+								createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_num << "\";" << std::endl;
+								createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+							}
 						}
 					}
 
