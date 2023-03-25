@@ -669,7 +669,7 @@ namespace components
 							soundalias_name = soundalias_str;
 						}
 
-						createfx << "\tent = maps\\mp\\_utility::createLoopSound();" << std::endl;
+						createfx << "\tent = maps\\mp\\_createfx::createLoopSound();" << std::endl;
 						createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << out_orient.origin[0] << ", " << out_orient.origin[1] << ", " << out_orient.origin[2] << " );" << std::endl;
 						createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << out_angles[0] << ", " << out_angles[1] << ", " << out_angles[2] << " );" << std::endl;
 						createfx << "\tent.v[ \"soundalias\" ] = \"" << soundalias_name.c_str() << "\";" << std::endl << std::endl;
@@ -840,7 +840,7 @@ namespace components
 								soundalias_name = soundalias_str;
 							}
 
-							createfx << "\tent = maps\\mp\\_utility::createLoopSound();" << std::endl;
+							createfx << "\tent = maps\\mp\\_createfx::createLoopSound();" << std::endl;
 							createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << owner->origin[0] << ", " << owner->origin[1] << ", " << owner->origin[2] << " );" << std::endl;
 							createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << world_angles[0] << ", " << world_angles[1] << ", " << world_angles[2] << " );" << std::endl;
 							createfx << "\tent.v[ \"soundalias\" ] = \"" << soundalias_name.c_str() << "\";" << std::endl << std::endl;
