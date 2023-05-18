@@ -22,6 +22,7 @@ namespace ggui
 		const std::string CAT_SURF_INSP = "surface_inspector";
 		const std::string CAT_ENTITY_PROPS = "entity_properties";
 		const std::string CAT_FILTER = "Filter";
+		const std::string CAT_LAYERS = "Layers";
 
 	public:
 		enum class TB_CHILD : int
@@ -30,7 +31,8 @@ namespace ggui
 			PATCH,
 			SURFACE_INSP,
 			ENTITY_PROPS,
-			FILTER
+			FILTER,
+			LAYERS
 		};
 
 		toolbox_dialog()
@@ -68,5 +70,6 @@ namespace ggui
 		void child_surface_inspector();
 		void child_entity_properties();
 		void child_filter();
+		void child_layers();
 	};
 }

@@ -20,13 +20,13 @@ namespace ggui
 	const clayer_s* context_layer = nullptr;
 	const clayer_s* context_layer_last_hovered = nullptr;
 
-	void do_context_menu()
+	void layer_dialog::do_context_menu()
 	{
-		if(layer_context_open || layer_context_pending)
+		if (layer_context_open || layer_context_pending)
 		{
 			ggui::context_menu_style_begin();
 
-			if(!ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::BeginPopupContextItem("context_menu##camera"))
+			if (!imgui::IsKeyPressed(ImGuiKey_Escape) && imgui::BeginPopupContextItem("context_menu##layerdlg"))
 			{
 				// select layer in og layerwindow
 				TreeView_SelectItem(game::layer_dlg->tree.m_hWnd, context_layer);
@@ -34,56 +34,56 @@ namespace ggui
 				layer_context_open = true;
 				layer_context_pending = false;
 
-				if (ImGui::MenuItem("Add new layer as child"))
+				if (imgui::MenuItem("Add new layer as child"))
 				{
 					// CLayers::NewLayer
 					utils::hook::call<void(__fastcall)(CLayerDlg*)>(0x41C690)(game::layer_dlg);
 				}
 
-				if (ImGui::MenuItem("Set as active layer"))
+				if (imgui::MenuItem("Set as active layer"))
 				{
 					// CLayers::SetActiveLayer
 					utils::hook::call<void(__fastcall)(CLayerDlg*)>(0x41C610)(game::layer_dlg);
 				}
 
-				ImGui::Separator();
+				imgui::Separator();
 
 				// same logic as CXYWnd::OnSelectionAddToActiveLayer (grid context menu)
-				if (ImGui::MenuItem("Add selection to layer"))
+				if (imgui::MenuItem("Add selection to layer"))
 				{
 					// CLayersDlg::AsignSelectionToLayer
 					utils::hook::call<void(__fastcall)(CLayerDlg*)>(0x41C850)(game::layer_dlg);
 				}
 
-				if (ImGui::MenuItem("Select everything within layer"))
+				if (imgui::MenuItem("Select everything within layer"))
 				{
 					// CLayersDlg::SelectAllBrushesInLayer
 					utils::hook::call<void(__fastcall)(CLayerDlg*)>(0x41C960)(game::layer_dlg);
 				}
 
-				ImGui::Separator();
+				imgui::Separator();
 
-				if (ImGui::MenuItem("Reset layer and children"))
+				if (imgui::MenuItem("Reset layer and children"))
 				{
 					// CLayersDlg::OnShowLayerAndChildren
 					utils::hook::call<void(__fastcall)(CLayerDlg*)>(0x41CAF0)(game::layer_dlg);
 				}
 
-				ImGui::Separator();
+				imgui::Separator();
 
-				if (ImGui::MenuItem("Rename layer"))
+				if (imgui::MenuItem("Rename layer"))
 				{
 					// CLayersDlg::RenameLayer
 					utils::hook::call<void(__fastcall)(CLayerDlg*)>(0x41CC60)(game::layer_dlg);
 				}
 
-				if (ImGui::MenuItem("Delete layer"))
+				if (imgui::MenuItem("Delete layer"))
 				{
 					// CLayersDlg::DeleteLayer
 					utils::hook::call<void(__fastcall)(CLayerDlg*)>(0x41CBE0)(game::layer_dlg);
 				}
 
-				ImGui::EndPopup();
+				imgui::EndPopup();
 			}
 			else
 			{
@@ -99,7 +99,7 @@ namespace ggui
 	{
 		context_layer_last_hovered = layer;
 
-		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !layer_context_pending)
+		if (imgui::IsMouseReleased(ImGuiMouseButton_Right) && !layer_context_pending)
 		{
 			layer_context_pending = true;
 			context_layer = layer;
@@ -108,32 +108,32 @@ namespace ggui
 
 	void do_layer(const clayer_s* layer, bool is_sibling = false)
 	{
-		if(!layer)
+		if (!layer)
 		{
 			return;
 		}
 
-		ImGui::TableNextRow();
-		ImGui::TableSetColumnIndex(0);
-		ImGui::AlignTextToFramePadding(); // adds height to rows
+		imgui::TableNextRow();
+		imgui::TableSetColumnIndex(0);
+		imgui::AlignTextToFramePadding(); // adds height to rows
 
 		int pushed_colors = 0;
 		const bool is_active_layer = layer == game::layer_dlg->active_layer;
 		const bool is_hidden = layer->enabled == 32;
 		const bool is_frozen = layer->enabled == 48;
 
-		if(is_active_layer)
+		if (is_active_layer)
 		{
-			//ImGui::PushFontFromIndex(E_FONT::BOLD_18PX);
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.6f, 1.0f)); pushed_colors++;
+			//imgui::PushFontFromIndex(E_FONT::BOLD_18PX);
+			imgui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 1.0f, 0.6f, 1.0f)); pushed_colors++;
 		}
 		else if (is_hidden)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); pushed_colors++;
+			imgui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f)); pushed_colors++;
 		}
 		else if (is_frozen)
 		{
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.8f, 1.0f, 1.0f)); pushed_colors++;
+			imgui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.8f, 1.0f, 1.0f)); pushed_colors++;
 		}
 
 		const std::string layer_string_std = get_layer_name(layer->layer_string);
@@ -151,19 +151,19 @@ namespace ggui
 		{
 			if (is_active_layer)
 			{
-				ImGui::PopStyleColor(pushed_colors);
+				imgui::PopStyleColor(pushed_colors);
 				pushed_colors = 0;
 			}
 
 			// ----
 
-			ImGui::TableSetColumnIndex(1);
-			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 12.0f);
+			imgui::TableSetColumnIndex(1);
+			imgui::SetCursorPosX(imgui::GetCursorPosX() + 12.0f);
 
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
-			const ImVec2 btn_size = ImVec2(ImGui::GetFrameHeight() + 6.0f, ImGui::GetFrameHeight());
+			imgui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 5.0f));
+			const ImVec2 btn_size = ImVec2(imgui::GetFrameHeight() + 6.0f, imgui::GetFrameHeight());
 
-			if (ImGui::Button(is_hidden ? ICON_FA_EYE_SLASH : ICON_FA_EYE, btn_size))
+			if (imgui::Button(is_hidden ? ICON_FA_EYE_SLASH : ICON_FA_EYE, btn_size))
 			{
 				if (is_hidden)
 				{
@@ -190,9 +190,14 @@ namespace ggui
 				}
 			}
 
-			ImGui::SameLine(0.0f, 6.0f);
+			if (imgui::IsItemHovered(ImGuiHoveredFlags_None))
+			{
+				handle_context_menu(layer);
+			}
 
-			if (ImGui::Button(ICON_FA_SNOWFLAKE, btn_size))
+			imgui::SameLine(0.0f, 6.0f);
+
+			if (imgui::Button(ICON_FA_SNOWFLAKE, btn_size))
 			{
 				if (is_frozen)
 				{
@@ -218,29 +223,34 @@ namespace ggui
 				}
 			}
 
-			ImGui::PopStyleVar(); // ImGuiStyleVar_FramePadding
+			if (imgui::IsItemHovered(ImGuiHoveredFlags_None))
+			{
+				handle_context_menu(layer);
+			}
+
+			imgui::PopStyleVar(); // ImGuiStyleVar_FramePadding
 
 			if (pushed_colors)
 			{
-				ImGui::PopStyleColor(pushed_colors);
+				imgui::PopStyleColor(pushed_colors);
 				pushed_colors = 0;
 			}
 		};
 
 		// current layer (custom TreeNodeEx that returns hovered and pressed state - for context menu and bridging to og layerwindow)
-		if (ImGui::TreeNodeEx(layer_string, &is_hovered, &is_pressed, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | (is_last_node ? (ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet) : 0)))
+		if (imgui::TreeNodeEx(layer_string, &is_hovered, &is_pressed, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | (is_last_node ? (ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet) : 0)))
 		{
 			do_hide_and_freeze();
 
 			// ----
 
 			// do all its child layers child siblings
-			if(layer->child_layers)
+			if (layer->child_layers)
 			{
 				do_layer(layer->child_layers, false);
 			}
 
-			ImGui::TreePop();
+			imgui::TreePop();
 		}
 		else // if node is collapsed
 		{
@@ -249,7 +259,7 @@ namespace ggui
 
 		if (pushed_colors)
 		{
-			ImGui::PopStyleColor(pushed_colors);
+			imgui::PopStyleColor(pushed_colors);
 			pushed_colors = 0;
 		}
 
@@ -265,7 +275,7 @@ namespace ggui
 			handle_context_menu(layer);
 			//game::printf_to_console("Hovered %s", get_layer_name(layer->layer_string).c_str());
 
-			if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			if (imgui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			{
 				TreeView_SelectItem(game::layer_dlg->tree.m_hWnd, layer);
 
@@ -275,7 +285,7 @@ namespace ggui
 		}
 		
 		// do all siblings for a child
-		if(!is_sibling)
+		if (!is_sibling)
 		{
 			for (auto sibling = layer->sibling_layer_same_level; sibling; sibling = sibling->sibling_layer_same_level)
 			{
@@ -284,60 +294,82 @@ namespace ggui
 		}
 	}
 
-	bool layer_dialog::gui()
+	void layer_dialog::do_table()
 	{
-		ImGui::SetNextWindowSize(ImVec2(400.0f, 600.0f), ImGuiCond_FirstUseEver);
-		ImGui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
-
-		if (ImGui::Begin("Layers##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_HorizontalScrollbar))
+		if (imgui::BeginTable("split", 2, ImGuiTableFlags_ScrollX | ImGuiTableFlags_NoSavedSettings /*| ImGuiTableFlags_Borders*/))
 		{
-			SPACING(0.0f, 2.0f);
+			imgui::TableSetupColumn("##cell_layer_desc", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide, 240.0f);
+			imgui::TableSetupColumn("##cell_buttons", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHide, 90.0f);
 
-			if (ImGui::BeginTable("split", 2, ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollX))
+			imgui::TableNextRow();
+			imgui::TableSetColumnIndex(0);
+			//imgui::AlignTextToFramePadding();
+
+			//if (imgui::TreeNodeEx(get_layer_name(game::layer_dlg->root_node_the_map->layer_string).c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_SpanFullWidth))
 			{
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-				ImGui::AlignTextToFramePadding();
-
-				ImGui::PushFontFromIndex(BOLD_18PX);
-				ImGui::Text("    The Map");
-				ImGui::PopFont();
-
-				//if (ImGui::TreeNodeEx(get_layer_name(game::layer_dlg->root_node_the_map->layer_string).c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_SpanFullWidth))
+				// do all siblings of the first child (same level as the first use-able layer)
+				for (auto child = game::layer_dlg->root_node_the_map->child_layers; child; child = child->sibling_layer_same_level)
 				{
-					// do all siblings of the first child (same level as the first use-able layer)
-					for (auto child = game::layer_dlg->root_node_the_map->child_layers; child; child = child->sibling_layer_same_level)
-					{
-						do_layer(child, true);
-					}
-
-					//ImGui::TreePop();
+					do_layer(child, true);
 				}
-				
-				ImGui::EndTable();
+
+				//imgui::TreePop();
 			}
 
-			do_context_menu();
+			imgui::EndTable();
+		}
+	}
 
-			ImGui::End();
-			return true;
+	bool layer_dialog::gui()
+	{
+		if (dvars::gui_toolbox_integrate_layers && dvars::gui_toolbox_integrate_layers->current.enabled)
+		{
+			return false;
 		}
 
-		return false;
+		imgui::SetNextWindowSize(ImVec2(400.0f, 600.0f), ImGuiCond_FirstUseEver);
+		imgui::SetNextWindowPos(ggui::get_initial_window_pos(), ImGuiCond_FirstUseEver);
+		//imgui::PushStyleColor(ImGuiCol_TableBorderStrong, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+
+		if (!imgui::Begin("Layers##window", this->get_p_open(), ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_HorizontalScrollbar))
+		{
+			//imgui::PopStyleColor();
+			imgui::End();
+			return false;
+		}
+
+		SPACING(0.0f, 2.0f);
+
+		do_table();
+		do_context_menu();
+
+		//imgui::PopStyleColor();
+		imgui::End();
+		return true;
 	}
 
 	// CMainFrame::OnLayersDlg
 	void layer_dialog::on_layerdialog_command()
 	{
-		const auto gui = GET_GUI(ggui::layer_dialog);
-
-		if (gui->is_inactive_tab() && gui->is_active())
+		if (dvars::gui_toolbox_integrate_layers && dvars::gui_toolbox_integrate_layers->current.enabled)
 		{
-			gui->set_bring_to_front(true);
-			return;
-		}
+			const auto tb = GET_GUI(ggui::toolbox_dialog);
 
-		gui->toggle();
+			tb->set_bring_to_front(true);
+			tb->focus_child(toolbox_dialog::TB_CHILD::LAYERS);
+			tb->open();
+		}
+		else
+		{
+			const auto gui = GET_GUI(ggui::layer_dialog);
+			if (gui->is_inactive_tab() && gui->is_active())
+			{
+				gui->set_bring_to_front(true);
+				return;
+			}
+
+			gui->toggle();
+		}
 	}
 
 	void layer_dialog::on_open()

@@ -1195,19 +1195,14 @@ namespace ggui
 		int style_colors = 0;
 		int style_vars = 0;
 
-		ImGui::PushID("entity_properties");
+		imgui::PushID("entity_properties");
 		setup_child();
 		{
-			const ImVec4 toolbar_button_background_active = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);
-			const ImVec4 toolbar_button_background_hovered = ImVec4(0.225f, 0.225f, 0.225f, 1.0f);
-			const ImVec2 toolbar_button_size = ImVec2(32.0f, 32.0f);
-
 			const auto ent = GET_GUI(ggui::entity_dialog);
-			static float max_widget_width = 251.0f; // assumed first value - depends on total width of curve patch creation widget
-
+			
 			if (treenode_begin("Properties", true, style_colors, style_vars))
 			{
-				ImGui::SetNextItemWidth(-1);
+				imgui::SetNextItemWidth(-1);
 				ent->draw_entprops(ImGui::CalcItemWidth() - 8.0f, 8.0f);
 
 				treenode_end(style_colors, style_vars);
@@ -1222,7 +1217,7 @@ namespace ggui
 
 			if (treenode_begin("Comments", false, style_colors, style_vars))
 			{
-				ImGui::SetNextItemWidth(-1);
+				imgui::SetNextItemWidth(-1);
 				ent->draw_comments(8.0f);
 
 				treenode_end(style_colors, style_vars);
@@ -1230,7 +1225,7 @@ namespace ggui
 
 			SPACING(0.0f, 4.0f);
 		}
-		ImGui::PopID();
+		imgui::PopID();
 	}
 
 	void toolbox_dialog::child_filter()
@@ -1238,7 +1233,7 @@ namespace ggui
 		int style_colors = 0;
 		int style_vars = 0;
 
-		ImGui::PushID("filter");
+		imgui::PushID("filter");
 		setup_child();
 		{
 			const auto gui = GET_GUI(ggui::filter_dialog);
@@ -1269,7 +1264,32 @@ namespace ggui
 
 			SPACING(0.0f, 4.0f);
 		}
-		ImGui::PopID();
+		imgui::PopID();
+	}
+
+	void toolbox_dialog::child_layers()
+	{
+		imgui::PushID("layers");
+		imgui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.125f));
+
+		{
+			const auto window = imgui::GetCurrentWindow();
+
+			const auto child_size = imgui::GetContentRegionAvail();
+			const float window_height = window->ContentSize.y > window->SizeFull.y ? window->ContentSize.y : window->SizeFull.y;
+
+			const auto min = imgui::GetCursorScreenPos();
+			const auto max = ImVec2(min.x + child_size.x, min.y + window_height);
+			imgui::GetWindowDrawList()->AddRect(min, max, imgui::ColorConvertFloat4ToU32(ImVec4(0.1f, 0.1f, 0.1f, 1.0f)), 0.0f, ImDrawFlags_RoundCornersBottom);
+			imgui::Indent(4.0f);
+		}
+
+		const auto gui = GET_GUI(ggui::layer_dialog);
+		gui->do_table();
+		gui->do_context_menu();
+
+		imgui::PopStyleColor();
+		imgui::PopID();
 	}
 
 	bool toolbox_dialog::gui()
@@ -1342,7 +1362,7 @@ namespace ggui
 		mins = ImGui::GetCursorScreenPos();
 
 		static bool hov_patch;
-		if(tb->image_togglebutton("toolbox_patch"
+		if (tb->image_togglebutton("toolbox_patch"
 			, hov_patch
 			, m_child_current == static_cast<int>(_toolbox_childs[CAT_PATCH].index)
 			, "Patches"
@@ -1432,7 +1452,34 @@ namespace ggui
 
 		// #
 
-		if(dvars::gui_toolbox_integrate_cam_toolbar && dvars::gui_toolbox_integrate_cam_toolbar->current.enabled)
+		mins = ImGui::GetCursorScreenPos();
+
+		if (dvars::gui_toolbox_integrate_layers && dvars::gui_toolbox_integrate_layers->current.enabled)
+		{
+			static bool hov_layers;
+			if (tb->image_togglebutton("layers"
+				, hov_layers
+				, m_child_current == static_cast<int>(_toolbox_childs[CAT_LAYERS].index)
+				, "Layers"
+				, &toolbar_button_background
+				, &toolbar_button_background_hovered
+				, &toolbar_button_background_active
+				, &toolbar_button_size))
+			{
+				m_child_current = static_cast<int>(_toolbox_childs[CAT_LAYERS].index);
+				m_update_scroll = true;
+			}
+
+			maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
+			ImGui::GetWindowDrawList()->AddRect(mins, maxs, ImGui::ColorConvertFloat4ToU32(button_border_color));
+		}
+
+
+		// ------------------------------------------------------
+
+		// #
+
+		if (dvars::gui_toolbox_integrate_cam_toolbar && dvars::gui_toolbox_integrate_cam_toolbar->current.enabled)
 		{
 			auto cam_toolbar_active_bg = ImVec4(0.25f, 0.25f, 0.3f, 1.0f);
 
@@ -1929,7 +1976,8 @@ namespace ggui
 				// switch to other child when user no longer has surface inspector / entity properties incorporated
 				if (   (dvars::gui_props_surfinspector && dvars::gui_props_surfinspector->current.integer != 2 && child.first == CAT_SURF_INSP) 
 					|| (dvars::gui_props_toolbox && !dvars::gui_props_toolbox->current.enabled && child.first == CAT_ENTITY_PROPS)
-					|| (dvars::gui_toolbox_integrate_filter && !dvars::gui_toolbox_integrate_filter->current.enabled && child.first == CAT_FILTER))
+					|| (dvars::gui_toolbox_integrate_filter && !dvars::gui_toolbox_integrate_filter->current.enabled && child.first == CAT_FILTER)
+					|| (dvars::gui_toolbox_integrate_layers && !dvars::gui_toolbox_integrate_layers->current.enabled && child.first == CAT_LAYERS))
 				{
 					focus_child(toolbox_dialog::TB_CHILD::BRUSH);
 					break;
@@ -1970,6 +2018,7 @@ namespace ggui
 		register_child(CAT_SURF_INSP, std::bind(&toolbox_dialog::child_surface_inspector, this));
 		register_child(CAT_ENTITY_PROPS, std::bind(&toolbox_dialog::child_entity_properties, this));
 		register_child(CAT_FILTER, std::bind(&toolbox_dialog::child_filter, this));
+		register_child(CAT_LAYERS, std::bind(&toolbox_dialog::child_layers, this));
 
 		if (dvars::gui_saved_state_toolbox_child)
 		{
@@ -2006,6 +2055,12 @@ namespace ggui
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "integrate filter window into toolbox");
+
+		dvars::gui_toolbox_integrate_layers = dvars::register_bool(
+			/* name		*/ "gui_toolbox_integrate_layers",
+			/* default	*/ true,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "integrate layer window into toolbox");
 	}
 
 
