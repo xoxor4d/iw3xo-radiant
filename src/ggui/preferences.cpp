@@ -105,6 +105,7 @@ namespace ggui
 			ImGui::Checkbox("Integrate camera toolbar into toolbox", &dvars::gui_toolbox_integrate_cam_toolbar->current.enabled); TT(dvars::gui_toolbox_integrate_cam_toolbar->description);
 			ImGui::Checkbox("Integrate entity-properties into toolbox", &dvars::gui_props_toolbox->current.enabled); TT(dvars::gui_props_toolbox->description);
 			ImGui::Checkbox("Integrate filter window into toolbox", &dvars::gui_toolbox_integrate_filter->current.enabled); TT(dvars::gui_toolbox_integrate_filter->description);
+			ImGui::Checkbox("Integrate layer window into toolbox", &dvars::gui_toolbox_integrate_layers->current.enabled); TT(dvars::gui_toolbox_integrate_layers->description);
 
 			const char* incorp_surf_inspector_strings[4] = { "None", "Entity Properties", "Toolbox" };
 			if (ImGui::SliderInt("Integrate surface-inspector into", &dvars::gui_props_surfinspector->current.integer, 0, 2, incorp_surf_inspector_strings[dvars::gui_props_surfinspector->current.integer]))
@@ -491,7 +492,7 @@ namespace ggui
 				ctexwnd::load_favourites();
 			}
 
-			if(ImGui::Button("Texture filter test"))
+			if (ImGui::Button("Texture filter test"))
 			{
 				// hide all
 				game::qtexture_s* tex = texwndglob_textures;
@@ -503,7 +504,7 @@ namespace ggui
 				tex = texwndglob_textures;
 				for (; tex; tex = tex->prev)
 				{
-					for(auto m = 0; m < IM_ARRAYSIZE(mat_names); m++)
+					for (auto m = 0; m < IM_ARRAYSIZE(mat_names); m++)
 					{
 						if (utils::string_equals(tex->name, mat_names[m]))
 						{
@@ -515,7 +516,7 @@ namespace ggui
 
 			SPACING(0.0f, 4.0f);
 
-			if(ImGui::Button("Toast Success"))
+			if (ImGui::Button("Toast Success"))
 			{
 				ImGui::InsertNotification(
 					{ ImGuiToastType_Success, 2000, "Hello World! This is a success! %s", ICON_FA_APPLE_ALT});
@@ -529,11 +530,19 @@ namespace ggui
 
 				ImGui::InsertNotification(toast);
 			}
-			
+
 			ImGui::SameLine();
 			if (ImGui::Button("Print Error"))
 			{
 				game::printf_to_console("[ERR] This is an error message!");
+			}
+
+			static bool frequent_toast_test = false;
+			imgui::Checkbox("Frequent Toast Test", &frequent_toast_test);
+
+			if (frequent_toast_test)
+			{
+				game::printf_to_console("[ERR] Test Toast");
 			}
 
 			//if (imgui::Button("Mesh Test"))
@@ -603,9 +612,10 @@ namespace ggui
 			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 			ImGui::ColorEdit4("Color 02", dev_color_02, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 			ImGui::ColorEdit4("Color 03", dev_color_03, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+
 		});
 	}
-
+	
 	bool preferences_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(800.0f, 400.0f);

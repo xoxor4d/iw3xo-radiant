@@ -17,162 +17,251 @@
 
 namespace ggui
 {
-	void surface_dialog::edit_texture_info(game::texdef_sub_t* texdef, bool set_specific, TEXMODE mode, int dir)
+	void surface_dialog::edit_texture_info(game::texdef_sub_t* texdef, texedit_helper* helper, TEXMODE mode, int dir)
 	{
 		const float PATCH_SCALAR = 0.005f;
 		//auto& g_patch_texdef = *reinterpret_cast<patch_texdef_t*>(0x23F15F8);
 
-		FOR_ALL_SELECTED_BRUSHES(sb)
+		//bool is_dirty = false;
+
+		//bool use_additive_logic = false;
+
+		if (!helper->original_logic)
 		{
-			// selection is patch
-			if (sb->patch)
+			FOR_ALL_SELECTED_BRUSHES(sb)
 			{
-				if (set_specific)
+				// selection is patch
+				if (sb->patch)
 				{
-					game::printf_to_console("[!] specific texture edits are not supported for patches. skipping patch ...");
-					continue;
+					if (helper->specific_mode)
+					{
+						game::printf_to_console("[!] specific texture edits are not supported for patches. skipping patch ...");
+						continue;
+					}
+
+					//texdef->shift[0] *= PATCH_SCALAR;
+					//texdef->shift[1] *= PATCH_SCALAR;
+
+					if (dir != 0)
+					{
+						if ((mode & TEXMODE_SHIFT_HORZ) != 0)
+						{
+							texdef->shift[0] = -texdef->shift[0] * PATCH_SCALAR;
+						}
+
+						if ((mode & TEXMODE_SHIFT_VERT) != 0)
+						{
+							texdef->shift[1] = -texdef->shift[1] * PATCH_SCALAR;
+						}
+
+						if ((mode & TEXMODE_SIZE_HORZ) != 0)
+						{
+							texdef->size[0] = 1.0f - (texdef->size[0] * PATCH_SCALAR);
+						}
+
+						if ((mode & TEXMODE_SIZE_VERT) != 0)
+						{
+							texdef->size[1] = 1.0f - (texdef->size[1] * PATCH_SCALAR);
+						}
+					}
+					else
+					{
+						texdef->size[0] *= PATCH_SCALAR;
+						texdef->size[1] *= PATCH_SCALAR;
+						texdef->shift[0] *= PATCH_SCALAR;
+						texdef->shift[1] *= PATCH_SCALAR;
+					}
+
+					//texdef->rotate	 *= PATCH_SCALAR;
+
+					// increases version itself
+					Patch_SetTextureInfo(texdef);
 				}
 
-				//texdef->shift[0] *= PATCH_SCALAR;
-				//texdef->shift[1] *= PATCH_SCALAR;
-
-				if (dir != 0)
-				{
-					if ((mode & TEXMODE_SHIFT_HORZ) != 0)
-					{
-						texdef->shift[0] = -texdef->shift[0] * PATCH_SCALAR;
-					}
-
-					if ((mode & TEXMODE_SHIFT_VERT) != 0)
-					{
-						texdef->shift[1] = -texdef->shift[1] * PATCH_SCALAR;
-					}
-
-					if ((mode & TEXMODE_SIZE_HORZ) != 0)
-					{
-						texdef->size[0] = 1.0f - (texdef->size[0] * PATCH_SCALAR);
-					}
-
-					if ((mode & TEXMODE_SIZE_VERT) != 0)
-					{
-						texdef->size[1] = 1.0f - (texdef->size[1] * PATCH_SCALAR);
-					}
-				}
+				// not patch
 				else
 				{
-					texdef->size[0] *= PATCH_SCALAR;
-					texdef->size[1] *= PATCH_SCALAR;
-					texdef->shift[0] *= PATCH_SCALAR;
-					texdef->shift[1] *= PATCH_SCALAR;
-				}
-
-				//texdef->rotate	 *= PATCH_SCALAR;
-
-				// increases version itself
-				Patch_SetTextureInfo(texdef);
-			}
-			else
-			{
-				// entire brush selected (not single faces)
-				// offset texture for each face, ++version to update visuals
-				if (sb->def && sb->def->brush_faces)
-				{
-					for (auto f = 0; f < sb->def->facecount; f++)
+					// entire brush selected (not single faces)
+					// offset texture for each face, ++version to update visuals
+					if (sb->def && sb->def->brush_faces)
 					{
-						const auto mat_def = &sb->def->brush_faces[f].mtldef[game::g_qeglobals->current_edit_layer];
-
-						if (set_specific)
+						for (auto f = 0; f < sb->def->facecount; f++)
 						{
-							if ((mode & TEXMODE_SIZE_HORZ) != 0)
+							const auto mat_def = &sb->def->brush_faces[f].mtldef[game::g_qeglobals->current_edit_layer];
+
+							if (helper->specific_mode)
 							{
-								mat_def->mat_texDef->size[0] = texdef->size[0];
+								if ((mode & TEXMODE_SIZE_HORZ) != 0)
+								{
+									mat_def->mat_texDef->size[0] = texdef->size[0];
+								}
+
+								if ((mode & TEXMODE_SIZE_VERT) != 0)
+								{
+									mat_def->mat_texDef->size[1] = texdef->size[1];
+								}
+
+								if ((mode & TEXMODE_SHIFT_HORZ) != 0)
+								{
+									mat_def->mat_texDef->shift[0] = texdef->shift[0];
+								}
+
+								if ((mode & TEXMODE_SHIFT_VERT) != 0)
+								{
+									mat_def->mat_texDef->shift[1] = texdef->shift[1];
+								}
+
+								if ((mode & TEXMODE_ROTATE) != 0)
+								{
+									mat_def->mat_texDef->rotate = texdef->rotate;
+								}
+							}
+							else
+							{
+								mat_def->mat_texDef->shift[0] += texdef->shift[0];
+								mat_def->mat_texDef->shift[1] += texdef->shift[1];
+								mat_def->mat_texDef->size[0] += texdef->size[0];
+								mat_def->mat_texDef->size[1] += texdef->size[1];
+								mat_def->mat_texDef->rotate += texdef->rotate;
 							}
 
-							if ((mode & TEXMODE_SIZE_VERT) != 0)
-							{
-								mat_def->mat_texDef->size[1] = texdef->size[1];
-							}
-
-							if ((mode & TEXMODE_SHIFT_HORZ) != 0)
-							{
-								mat_def->mat_texDef->shift[0] = texdef->shift[0];
-							}
-
-							if ((mode & TEXMODE_SHIFT_VERT) != 0)
-							{
-								mat_def->mat_texDef->shift[1] = texdef->shift[1];
-							}
-
-							if ((mode & TEXMODE_ROTATE) != 0)
-							{
-								mat_def->mat_texDef->rotate = texdef->rotate;
-							}
+							++sb->def->version;
+							//utils::hook::call<void(__cdecl)(game::MaterialDef* _def, int _unk)>(0x48F170)(mat_def, 0);
+							//is_dirty = true;
 						}
-						else
-						{
-							mat_def->mat_texDef->shift[0] += texdef->shift[0];
-							mat_def->mat_texDef->shift[1] += texdef->shift[1];
-							mat_def->mat_texDef->size[0] += texdef->size[0];
-							mat_def->mat_texDef->size[1] += texdef->size[1];
-							mat_def->mat_texDef->rotate += texdef->rotate;
-						}
-
-						++sb->def->version;
 					}
+				}
+			}
+
+			// single faces
+
+			const int  selected_faces_count = *reinterpret_cast<int*>(0x73C714);
+			const auto selected_faces = game::g_selected_faces();
+
+			if (selected_faces_count > 0)
+			{
+				for (auto f = 0; f < selected_faces_count; f++)
+				{
+					const auto face_index = selected_faces[f].index;
+					const auto face_brush = selected_faces[f].brush->def;
+
+					const auto mat_def = &face_brush->brush_faces[face_index].mtldef[game::g_qeglobals->current_edit_layer];
+
+					if (helper->specific_mode)
+					{
+						if ((mode & TEXMODE_SIZE_HORZ) != 0)
+						{
+							mat_def->mat_texDef->size[0] = texdef->size[0];
+						}
+
+						if ((mode & TEXMODE_SIZE_VERT) != 0)
+						{
+							mat_def->mat_texDef->size[1] = texdef->size[1];
+						}
+
+						if ((mode & TEXMODE_SHIFT_HORZ) != 0)
+						{
+							mat_def->mat_texDef->shift[0] = texdef->shift[0];
+						}
+
+						if ((mode & TEXMODE_SHIFT_VERT) != 0)
+						{
+							mat_def->mat_texDef->shift[1] = texdef->shift[1];
+						}
+
+						if ((mode & TEXMODE_ROTATE) != 0)
+						{
+							mat_def->mat_texDef->rotate = texdef->rotate;
+						}
+					}
+					else
+					{
+						mat_def->mat_texDef->shift[0] += texdef->shift[0];
+						mat_def->mat_texDef->shift[1] += texdef->shift[1];
+						mat_def->mat_texDef->size[0] += texdef->size[0];
+						mat_def->mat_texDef->size[1] += texdef->size[1];
+						mat_def->mat_texDef->rotate += texdef->rotate;
+					}
+
+					//utils::hook::call<void(__cdecl)(game::MaterialDef* _def, int _unk)>(0x48F170)(mat_def, 0);
+					++face_brush->version;
+					//is_dirty = true;
 				}
 			}
 		}
 
-		const int  selected_faces_count = *reinterpret_cast<int*>(0x73C714);
-		const auto selected_faces = game::g_selected_faces();
+		
 
-		if (selected_faces_count > 0)
+
+		// original surface inspector logic which uses texdef settings of the first face
+		// and applies these onto all other selected surfaces / brushes
+		else 
 		{
-			for (auto f = 0; f < selected_faces_count; f++)
+			game::MaterialDef* mtl_def = nullptr;
+
+			const int  selected_faces_count = *reinterpret_cast<int*>(0x73C714);
+			const auto selected_faces = game::g_selected_faces();
+
+			// Part of 'Brush_GetMaterialDef'
+			if (selected_faces_count > 0)
 			{
-				const auto face_index = selected_faces[f].index;
-				const auto face_brush = selected_faces[f].brush->def;
+				const auto b = selected_faces[0].brush;
+				const auto i = selected_faces[0].index;
 
-				const auto mat_def = &face_brush->brush_faces[face_index].mtldef[game::g_qeglobals->current_edit_layer];
-
-				if (set_specific)
+				if (selected_faces[0].face != &selected_faces[0].brush->faces[i])
 				{
-					if ((mode & TEXMODE_SIZE_HORZ) != 0)
-					{
-						mat_def->mat_texDef->size[0] = texdef->size[0];
-					}
-
-					if ((mode & TEXMODE_SIZE_VERT) != 0)
-					{
-						mat_def->mat_texDef->size[1] = texdef->size[1];
-					}
-
-					if ((mode & TEXMODE_SHIFT_HORZ) != 0)
-					{
-						mat_def->mat_texDef->shift[0] = texdef->shift[0];
-					}
-
-					if ((mode & TEXMODE_SHIFT_VERT) != 0)
-					{
-						mat_def->mat_texDef->shift[1] = texdef->shift[1];
-					}
-
-					if ((mode & TEXMODE_ROTATE) != 0)
-					{
-						mat_def->mat_texDef->rotate = texdef->rotate;
-					}
+					AssertS("selFace.face == &selFace.brush->faces[selFace.index]");
 				}
-				else
+				if (b->version != b->def->version)
 				{
-					mat_def->mat_texDef->shift[0] += texdef->shift[0];
-					mat_def->mat_texDef->shift[1] += texdef->shift[1];
-					mat_def->mat_texDef->size[0] += texdef->size[0];
-					mat_def->mat_texDef->size[1] += texdef->size[1];
-					mat_def->mat_texDef->rotate += texdef->rotate;
+					AssertS("selFace.brush->version == selFace.brush->def->version");
 				}
-
-				++face_brush->version;
+				// pt = &selected_face->texdef;
+				mtl_def = &b->def->brush_faces[i].mtldef[game::g_qeglobals->current_edit_layer];
 			}
+			else
+			{
+				// pt = &g_qeglobals.d_texturewin.texdef;
+				mtl_def = (game::MaterialDef*)&game::g_qeglobals->random_texture_stuff[2100 * game::g_qeglobals->current_edit_layer];
+			}
+
+			if (helper->specific_mode)
+			{
+				if ((mode & TEXMODE_SIZE_HORZ) != 0)
+				{
+					mtl_def->mat_texDef->size[0] = texdef->size[0];
+				}
+
+				if ((mode & TEXMODE_SIZE_VERT) != 0)
+				{
+					mtl_def->mat_texDef->size[1] = texdef->size[1];
+				}
+
+				if ((mode & TEXMODE_SHIFT_HORZ) != 0)
+				{
+					mtl_def->mat_texDef->shift[0] = texdef->shift[0];
+				}
+
+				if ((mode & TEXMODE_SHIFT_VERT) != 0)
+				{
+					mtl_def->mat_texDef->shift[1] = texdef->shift[1];
+				}
+
+				if ((mode & TEXMODE_ROTATE) != 0)
+				{
+					mtl_def->mat_texDef->rotate = texdef->rotate;
+				}
+			}
+			else
+			{
+				mtl_def->mat_texDef->shift[0] += texdef->shift[0];
+				mtl_def->mat_texDef->shift[1] += texdef->shift[1];
+				mtl_def->mat_texDef->size[0] += texdef->size[0];
+				mtl_def->mat_texDef->size[1] += texdef->size[1];
+				mtl_def->mat_texDef->rotate += texdef->rotate;
+			}
+
+			utils::hook::call<void(__cdecl)(game::MaterialDef* _def, int _unk)>(0x48F170)(mtl_def, 0);
 		}
 	}
 
@@ -262,7 +351,7 @@ namespace ggui
 			{
 				const auto mat_def = &selected_faces->brush->def->brush_faces[selected_faces->index].mtldef[game::g_qeglobals->current_edit_layer];
 
-				if(mat_def->radMtl)
+				if (mat_def->radMtl)
 				{
 					last_texture_name = mat_def->radMtl->name;
 					last_texture_width = mat_def->radMtl->width;
@@ -274,8 +363,8 @@ namespace ggui
 
 				texhelp.size_horz = mat_def->mat_texDef->size[0] * tex_scalar_width;
 				texhelp.size_vert = mat_def->mat_texDef->size[1] * tex_scalar_height;
-				texhelp.shift_horz = mat_def->mat_texDef->shift[0] * tex_scalar_width;
-				texhelp.shift_vert = mat_def->mat_texDef->shift[1] * tex_scalar_height;
+				texhelp.shift_horz = mat_def->mat_texDef->shift[0] /** tex_scalar_width*/;
+				texhelp.shift_vert = mat_def->mat_texDef->shift[1] /** tex_scalar_height*/;
 				texhelp.rotation = mat_def->mat_texDef->rotate;
 			}
 		}
@@ -311,8 +400,8 @@ namespace ggui
 
 				texhelp.size_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[0] * tex_scalar_width;
 				texhelp.size_vert = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->size[1] * tex_scalar_height;
-				texhelp.shift_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[0] * tex_scalar_width;
-				texhelp.shift_vert = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[1] * tex_scalar_height;
+				texhelp.shift_horz = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[0] /** tex_scalar_width*/;
+				texhelp.shift_vert = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->shift[1] /** tex_scalar_height*/;
 				texhelp.rotation = sb->def->brush_faces->mtldef[game::g_qeglobals->current_edit_layer].mat_texDef->rotate;
 			}
 		}
@@ -338,9 +427,9 @@ namespace ggui
 					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 				game::texdef_sub_t texdef_edit = {};
-				texdef_edit.shift[0] = edit_amount / tex_scalar_width;
+				texdef_edit.shift[0] = edit_amount /*/ tex_scalar_width*/;
 
-				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SHIFT_HORZ, texhelp.scalar_direction);
+				edit_texture_info(&texdef_edit, &texhelp, TEXMODE_SHIFT_HORZ, texhelp.scalar_direction);
 			}
 
 			if (is_toolbox)
@@ -358,9 +447,9 @@ namespace ggui
 					: texhelp.scalar_direction == 1 ? amount_inc : 0.0f;
 
 				game::texdef_sub_t texdef_edit = {};
-				texdef_edit.shift[1] = edit_amount / tex_scalar_height;
+				texdef_edit.shift[1] = edit_amount /*/ tex_scalar_height*/;
 
-				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SHIFT_VERT, texhelp.scalar_direction);
+				edit_texture_info(&texdef_edit, &texhelp, TEXMODE_SHIFT_VERT, texhelp.scalar_direction);
 			}
 
 			SPACING(0.0f, 4.0f);
@@ -382,7 +471,7 @@ namespace ggui
 				game::texdef_sub_t texdef_edit = {};
 				texdef_edit.size[0] = edit_amount / tex_scalar_width;
 
-				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SIZE_HORZ, texhelp.scalar_direction);
+				edit_texture_info(&texdef_edit, &texhelp, TEXMODE_SIZE_HORZ, texhelp.scalar_direction);
 			}
 
 			if (is_toolbox)
@@ -402,7 +491,7 @@ namespace ggui
 				game::texdef_sub_t texdef_edit = {};
 				texdef_edit.size[1] = edit_amount / tex_scalar_height;
 
-				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_SIZE_VERT, texhelp.scalar_direction);
+				edit_texture_info(&texdef_edit, &texhelp, TEXMODE_SIZE_VERT, texhelp.scalar_direction);
 			}
 
 			SPACING(0.0f, 4.0f);
@@ -424,7 +513,7 @@ namespace ggui
 				game::texdef_sub_t texdef_edit = {};
 				texdef_edit.rotate = edit_amount;
 
-				edit_texture_info(&texdef_edit, texhelp.specific_mode, TEXMODE_ROTATE);
+				edit_texture_info(&texdef_edit, &texhelp, TEXMODE_ROTATE);
 			}
 
 			if (is_toolbox)
@@ -471,8 +560,33 @@ namespace ggui
 				"- Set all selected faces/brushes to the specified value.\n\n"
 				"Off: (Inc/Dec Mode)\n"
 				"- Texture edits are only possible via the + and - buttons\n"
-				"- Inc/Dec values per face/brush (eg: brush1 value @ 0.0f + offset, brush2 value @ 45.0f + offset\n\n"
+				"- Inc/Dec values per face/brush\n  (eg: brush1 value @ 0.0f + offset, brush2 value @ 45.0f + offset)\n\n"
 				"Displayed values are always from the first face that was selected.");
+
+			// ------
+
+			ImGui::BeginGroup();
+			{
+				ImGui::Checkbox(" Use Original Logic", &texhelp.original_logic);
+				ImGui::EndGroup();
+			}
+
+			// original surface inspector logic which uses texdef settings of the first face
+		// and applies these onto all other selected surfaces / brushes
+
+			group_width = ImGui::GetItemRectSize().x;
+			ImGui::SameLine();
+			ImGui::HelpMarker(
+				"On: (Original Logic)\n"
+				"- Uses settings of the first face and applies\n"
+				"  these onto all other selected surfaces / brushes.\n"
+				"- Supports UNDO/REDO.\n\n"
+				"Off: (Additive - per Face)\n"
+				"- Inc/Dec values per face/brush\n"
+				"  (eg: brush1 value @ 0.0f + offset, brush2 value @ 45.0f + offset)\n\n"
+				"Displayed values are always from the first face that was selected.");
+
+			// ------
 
 			if (!is_toolbox)
 			{
@@ -487,12 +601,12 @@ namespace ggui
 		// #
 		// end and begin next node
 
-		if(treenode_state)
+		if (treenode_state)
 		{
 			toolbox_dialog::treenode_end(style_colors, style_vars);
 		}
 
-		if(is_toolbox)
+		if (is_toolbox)
 		{
 			treenode_state = toolbox_dialog::treenode_begin("Texture Operations", true, style_colors, style_vars);
 		}
@@ -584,8 +698,10 @@ namespace ggui
 
 			const char* set_mode_items[] = { "2D", "2D - Auto Set", "3D", "3D - Auto Set", "Patch Curve", "Patch Curve - Auto Set" };
 			static int set_mode_current = 1;
-			
+
+			imgui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.125f));
 			ImGui::Combo(" Mode", &set_mode_current, set_mode_items, IM_ARRAYSIZE(set_mode_items));
+			imgui::PopStyleColor();
 
 			if (is_toolbox)
 			{

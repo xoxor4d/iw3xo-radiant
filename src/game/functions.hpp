@@ -23,6 +23,7 @@
 
 #define FOR_ALL_SELECTED_BRUSHES(B) for (auto (B) = game::g_selected_brushes_next(); (DWORD*)(B) != game::currSelectedBrushes; (B) = (B)->next)
 #define FOR_ALL_ACTIVE_BRUSHES(B) for (auto (B) = game::g_active_brushes_next(); (DWORD*)(B) != game::active_brushes_ptr; (B) = (B)->next)
+#define FOR_ALL_ENTITY_INSTS(E) for (auto (E) = game::get_entity_insts_next(); (DWORD*)(E) != game::entity_insts_ptr; (E) = (E)->next)
 
 // custom brush iter (eg. prefab brushes) - (is_single_brush :: a prefab with a single brush will reference itself)
 //#define FOR_ALL_BRUSHES(B, B_CURR, B_NEXT) \
@@ -99,6 +100,7 @@ namespace game
 	static DWORD* currSelectedBrushes = (DWORD*)(0x23F1864); // (selected_brushes array pointer)
 	static DWORD* worldEntity_ptr = (DWORD*)(0x25D5B30); // holds pointer to worldEntity
 	static DWORD* g_pParentWnd_ptr = (DWORD*)(0x25D5A70);
+	static DWORD* entity_insts_ptr = (DWORD*)(0x23F1748); // (entity instances array pointer)
 
 	extern game::vec3_t vec3_origin;
 	extern game::vec4_t color_white;
@@ -168,6 +170,9 @@ namespace game
 	extern game::selbrush_def_t* g_active_brushes_next();
 	extern game::selbrush_def_t* g_selected_brushes();
 	extern game::selbrush_def_t* g_selected_brushes_next();
+
+	extern game::entity_s* get_entity_insts();
+	extern game::entity_inst_s* get_entity_insts_next();
 
 	extern const int& g_selected_faces_count;
 	extern game::selface_t* g_selected_faces();
@@ -360,9 +365,13 @@ namespace game
 	inline auto CL_RenderScene = reinterpret_cast<void (*)(game::refdef_s * refdef)>(0x506030);
 	inline auto R_GenerateReflectionImages = reinterpret_cast<void (*)(GfxReflectionProbe * probes, DiskGfxReflectionProbe * probeRawGeneratedData, unsigned int probeCount, int mip)>(0x550F00);
 
+	// verts - 4 vertices defining a quad
+	void R_DrawSelectionbox(const float* verts);
+
 	// sampler_index = the index used in shader_vars.h
 	inline auto R_SetSampler = reinterpret_cast<void (*)(int unused, game::GfxCmdBufState * state, int sampler_index, char sampler_state, game::GfxImage * img)>(0x538D70);
 	inline auto R_AddCmdDrawFullScreenColoredQuad = reinterpret_cast<bool (*)(float s0, float t0, float s1, float t1, float* color, game::Material * mtl)>(0x4FC260);
+	inline auto R_SetMaterialColor = reinterpret_cast<void (*)(const float* color)>(0x4FC2C0);
 	inline auto R_DrawSurfs = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x5324E0);
 	inline auto R_ShowTris = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x55B100);
 	inline auto R_InitCmdBufSourceState = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput * input, int)>(0x53CB20);

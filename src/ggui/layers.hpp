@@ -11,6 +11,9 @@ namespace ggui
 		// *
 		// public member functions
 
+		void do_table();
+		void do_context_menu();
+
 		bool gui() override;
 		void on_open() override;
 		void on_close() override;

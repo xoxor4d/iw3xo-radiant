@@ -34,6 +34,7 @@ namespace dvars
 	extern game::dvar_s* gui_props_toolbox;
 	extern game::dvar_s* gui_toolbox_integrate_cam_toolbar;
 	extern game::dvar_s* gui_toolbox_integrate_filter;
+	extern game::dvar_s* gui_toolbox_integrate_layers;
 	extern game::dvar_s* gui_use_new_surfinspector;
 	extern game::dvar_s* gui_use_new_vertedit_dialog;
 	extern game::dvar_s* gui_use_new_context_menu;

@@ -554,6 +554,16 @@ namespace components
 	// map of fx defs present on the map (used so we do not load the same def multiple times)
 	std::unordered_map<std::string, std::string> createfx_loaded_fx_defs;
 
+	// list of loopfx (fx_origins marked as looping), contains <def name> <x, y, z, timeout>
+	//std::unordered_map<std::string, std::string> createfx_looping_fx_defs;
+	struct loopfx_def_s
+	{
+		std::string def_num;
+		std::string pos_and_timeout;
+	};
+
+	std::vector<loopfx_def_s> createfx_looping_fx_defs;
+
 	// world orientations per prefab level
 	std::vector<game::orientation_t> createfx_prefab_stack_orientations;
 
@@ -649,29 +659,49 @@ namespace components
 						effect_num = itr->second;
 					}
 
-					createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_num << "\" );" << std::endl;
-					createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << out_orient.origin[0] << ", " << out_orient.origin[1] << ", " << out_orient.origin[2] << " );" << std::endl;
-					createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << out_angles[0] << ", " << out_angles[1] << ", " << out_angles[2] << " );" << std::endl;
-					createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_num << "\";" << std::endl;
-					createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+					// is sound
+					if (entity_gui->has_key_with_value(owner, "is_sound", "1"))
+					{
+						std::string soundalias_name = "UNSET";
 
+						if (const char* soundalias_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "soundalias"); soundalias_str)
+						{
+							soundalias_name = soundalias_str;
+						}
 
+						createfx << "\tent = maps\\mp\\_createfx::createLoopSound();" << std::endl;
+						createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << out_orient.origin[0] << ", " << out_orient.origin[1] << ", " << out_orient.origin[2] << " );" << std::endl;
+						createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << out_angles[0] << ", " << out_angles[1] << ", " << out_angles[2] << " );" << std::endl;
+						createfx << "\tent.v[ \"soundalias\" ] = \"" << soundalias_name.c_str() << "\";" << std::endl << std::endl;
+					}
 
+					// is fx
+					else
+					{
+						std::string loopfx_timeout = "100";
 
+						if (const char* timeout_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "loop_wait"); timeout_str)
+						{
+							loopfx_timeout = timeout_str;
+						}
 
+						// is looping (make oneshot looping by re-triggering them)
+						if (entity_gui->has_key_with_value(owner, "loopfx", "1"))
+						{
+							createfx_looping_fx_defs.emplace_back(effect_num,
+								utils::va("%.2f, %.2f, %.2f, %s", out_orient.origin[0], out_orient.origin[1], out_orient.origin[2], loopfx_timeout.c_str()));
+						}
 
-
-
-
-					/*def << "\tlevel._effect[ \"effect_" << *effect_count << "\" ] = loadfx( \"" << fx_path << "\" );" << std::endl;
-
-					createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << *effect_count << "\" );" << std::endl;
-					createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << out_orient.origin[0] << ", " << out_orient.origin[1] << ", " << out_orient.origin[2] << " );" << std::endl;
-					createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << out_angles[0] << ", " << out_angles[1] << ", " << out_angles[2] << " );" << std::endl;
-					createfx << "\tent.v[ \"fxid\" ] = \"effect_" << *effect_count << "\";" << std::endl;
-					createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
-
-					*effect_count += 1;*/
+						// is oneshot (either real oneshot or indefinitely looping)
+						else
+						{
+							createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_num << "\" );" << std::endl;
+							createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << out_orient.origin[0] << ", " << out_orient.origin[1] << ", " << out_orient.origin[2] << " );" << std::endl;
+							createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << out_angles[0] << ", " << out_angles[1] << ", " << out_angles[2] << " );" << std::endl;
+							createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_num << "\";" << std::endl;
+							createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+						}
+					}
 				}
 				else if (prefab && prefab->owner && prefab->owner->prefab && prefab->owner->firstActive && prefab->owner->firstActive->eclass && prefab->owner->firstActive->eclass->classtype & game::ECLASS_PREFAB)
 				{
@@ -700,6 +730,7 @@ namespace components
 	{
 		// reset global vars
 		createfx_loaded_fx_defs.clear();
+		createfx_looping_fx_defs.clear();
 		createfx_prefab_stack_level = 0;
 		createfx_prefab_stack_orientations.clear();
 		createfx_prefab_stack_orientations.reserve(8);
@@ -798,13 +829,50 @@ namespace components
 							effect_num = itr->second;
 						}
 
-						createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_num << "\" );" << std::endl;
-						createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << owner->origin[0] << ", " << owner->origin[1] << ", " << owner->origin[2] << " );" << std::endl;
-						createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << world_angles[0] << ", " << world_angles[1] << ", " << world_angles[2] << " );" << std::endl;
-						createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_num << "\";" << std::endl;
-						createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
 
-						
+						// is sound
+						if (entity_gui->has_key_with_value(owner, "is_sound", "1"))
+						{
+							std::string soundalias_name = "UNSET";
+
+							if (const char* soundalias_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "soundalias"); soundalias_str)
+							{
+								soundalias_name = soundalias_str;
+							}
+
+							createfx << "\tent = maps\\mp\\_createfx::createLoopSound();" << std::endl;
+							createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << owner->origin[0] << ", " << owner->origin[1] << ", " << owner->origin[2] << " );" << std::endl;
+							createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << world_angles[0] << ", " << world_angles[1] << ", " << world_angles[2] << " );" << std::endl;
+							createfx << "\tent.v[ \"soundalias\" ] = \"" << soundalias_name.c_str() << "\";" << std::endl << std::endl;
+						}
+
+						// is fx
+						else
+						{
+							std::string loopfx_timeout = "100";
+
+							if (const char* timeout_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "loop_wait"); timeout_str)
+							{
+								loopfx_timeout = timeout_str;
+							}
+
+							// is looping (make oneshot looping by re-triggering them)
+							if (entity_gui->has_key_with_value(owner, "loopfx", "1"))
+							{
+								createfx_looping_fx_defs.emplace_back(effect_num,
+									utils::va("%.2f, %.2f, %.2f, %s", owner->origin[0], owner->origin[1], owner->origin[2], loopfx_timeout.c_str()));
+							}
+
+							// is oneshot (either real oneshot or indefinitely looping)
+							else
+							{
+								createfx << "\tent = maps\\mp\\_utility::createOneshotEffect( \"effect_" << effect_num << "\" );" << std::endl;
+								createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << owner->origin[0] << ", " << owner->origin[1] << ", " << owner->origin[2] << " );" << std::endl;
+								createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << world_angles[0] << ", " << world_angles[1] << ", " << world_angles[2] << " );" << std::endl;
+								createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_num << "\";" << std::endl;
+								createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+							}
+						}
 					}
 
 					if (sb == game::g_active_brushes())
@@ -815,6 +883,17 @@ namespace components
 				else
 				{
 					break;
+				}
+			}
+
+			if (!createfx_looping_fx_defs.empty())
+			{
+				def << std::endl;
+
+				for (const auto& loop : createfx_looping_fx_defs)
+				{
+					const auto split = utils::split(loop.pos_and_timeout, ',');
+					def << "\tmaps\\mp\\_fx::loopfx(\"effect_" << loop.def_num << "\", (" << split[0] << ", " << split[1] << ", " << split[2] << "), " << split[3] << ");" << std::endl;
 				}
 			}
 

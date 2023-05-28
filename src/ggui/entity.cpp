@@ -48,6 +48,14 @@ namespace ggui
 		{ "targetname", "my_targetname" },
 	};
 
+	const entity_dialog::template_kvp eclass_fx_templates[] =
+	{
+		{ "loopfx", "1" },
+		{ "loop_wait", "5" },
+		{ "is_sound", "1" },
+		{ "soundalias", "emt_metal_rattle_ring" },
+	};
+
 	const entity_dialog::template_kvp eclass_generic_templates[] =
 	{
 		{ "target", "my_target" },
@@ -80,6 +88,11 @@ namespace ggui
 		{
 			tkvp = eclass_misc_templates;
 			*size_out = IM_ARRAYSIZE(eclass_misc_templates);
+		}
+		else if (utils::string_equals(eent->eclass->name, "fx_origin"))
+		{
+			tkvp = eclass_fx_templates;
+			*size_out = IM_ARRAYSIZE(eclass_fx_templates);
 		}
 		else
 		{
@@ -371,7 +384,6 @@ namespace ggui
 	void entity_dialog::on_mapload_intercept()
 	{
 		const auto gui = GET_GUI(ggui::entity_dialog);
-
 		gui->m_sel_list_ent = nullptr;
 		gui->m_edit_entity_class = nullptr;
 		gui->m_edit_entity_changed = false;
@@ -381,6 +393,12 @@ namespace ggui
 	// UpdateSelection
 	void entity_dialog::on_update_selection_intercept()
 	{
+		const auto prefs = GET_GUI(entity_info);
+		prefs->update_entity_list();
+		prefs->m_update_on_unselect = true;
+
+		// #
+
 		if (const auto	g_edit_ent = game::g_edit_entity();
 						g_edit_ent)
 		{

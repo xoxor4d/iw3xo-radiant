@@ -251,7 +251,8 @@ namespace ggui
 				}
 
 				if (ImGui::MenuItem("Entity Info")) {
-					cdeclcall(void, 0x426D40); //cmainframe::OnEditEntityinfo
+					//cdeclcall(void, 0x426D40); //cmainframe::OnEditEntityinfo
+					GET_GUI(ggui::entity_info)->toggle();
 				}
 
 				SEPERATORV(0.0f);
@@ -1941,7 +1942,7 @@ namespace ggui
 				ImGui::EndMenu(); // Patch
 			}
 
-			SPACING(4.0f, 0.0f);
+			imgui::TextUnformatted("|");
 
 			if (ImGui::MenuItem("Help"))
 			{

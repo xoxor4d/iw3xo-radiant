@@ -156,6 +156,7 @@
 #include "ggui/effects_browser.hpp"
 #include "ggui/effects_editor_gui.hpp"
 #include "ggui/entity.hpp"
+#include "ggui/entity_info.hpp"
 #include "ggui/filter.hpp"
 #include "ggui/grid.hpp"
 #include "ggui/help.hpp"

@@ -34,6 +34,7 @@ namespace dvars
 	game::dvar_s* gui_props_toolbox = nullptr;
 	game::dvar_s* gui_toolbox_integrate_cam_toolbar = nullptr;
 	game::dvar_s* gui_toolbox_integrate_filter = nullptr;
+	game::dvar_s* gui_toolbox_integrate_layers = nullptr;
 	game::dvar_s* gui_use_new_surfinspector = nullptr;
 	game::dvar_s* gui_use_new_vertedit_dialog = nullptr;
 	game::dvar_s* gui_use_new_context_menu = nullptr;

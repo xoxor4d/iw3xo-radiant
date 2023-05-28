@@ -1414,8 +1414,7 @@ namespace components
 				p->setAngularVelocity(null_vec);
 
 				// check
-		
-				if (user_data->entity->firstActive->firstBrush->owner && user_data->entity->firstActive->firstBrush->owner->eclass)
+				if (user_data->entity->firstActive->brushes.oprev->owner && user_data->entity->firstActive->brushes.oprev->owner->eclass)
 				{
 					// reset prefab entity
 

@@ -911,7 +911,7 @@ namespace components
 			/* name		*/ "gui_saved_state_toolbox_child",
 			/* default	*/ 0,
 			/* mins		*/ 0,
-			/* maxs		*/ 4,
+			/* maxs		*/ 5,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "saved closed/opened/active state of window");
 	}

@@ -20,7 +20,10 @@ the dated MFC/Windows UI with a more modern and flexible UI powered by Dear ImGu
 <br>
 
 ### Project Page (Guide / In-Depth)
-https://xoxor4d.github.io/projects/iw3xo-radiant  
+xoxor4d.github.io/projects/iw3xo-radiant  
+
+#### Changelog
+github.com/xoxor4d/iw3xo-radiant/wiki/Changelog
 
 <br>
 

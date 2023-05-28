@@ -80,6 +80,7 @@ namespace ggui
 
 			int	 scalar_direction = 0;
 			bool specific_mode = false;
+			bool original_logic = false;
 
 			texedit_helper() = default;
 
@@ -128,6 +129,6 @@ namespace ggui
 			TEXMODE_ROTATE = 1 << 4
 		};
 
-		void edit_texture_info(game::texdef_sub_t* texdef, bool set_specific = false, TEXMODE mode = TEXMODE_NONE, int dir = 0);
+		void edit_texture_info(game::texdef_sub_t* texdef, texedit_helper* helper, TEXMODE mode = TEXMODE_NONE, int dir = 0);
 	};
 }

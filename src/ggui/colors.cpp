@@ -41,7 +41,8 @@ namespace ggui
 		ImGui::ColorEdit4("Grid Major", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDMAJOR], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Grid Block", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDBLOCK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Grid Text", game::g_qeglobals->d_savedinfo.colors[game::COLOR_GRIDTEXT], ImGuiColorEditFlags_Float);
-		ImGui::ColorEdit4("Grid Entity Classname", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float);
+		//ImGui::ColorEdit4("Grid Entity Classname", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float); // this holds the latest color used in the windows color dialog (K)
+		ImGui::ColorEdit4("Grid Entity Classname", game::g_qeglobals->d_savedinfo.colors[game::COLOR_VIEWNAME], ImGuiColorEditFlags_Float);
 
 		SEPERATORV(0.0f);
 
@@ -66,11 +67,9 @@ namespace ggui
 
 		SEPERATORV(0.0f);
 
-		ImGui::ColorEdit4("Viewname", game::g_qeglobals->d_savedinfo.colors[game::COLOR_VIEWNAME], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Func Group", game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_GROUP], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Func Cull Group", game::g_qeglobals->d_savedinfo.colors[game::COLOR_FUNC_CULLGROUP], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Entity", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITY], ImGuiColorEditFlags_Float);
-		//ImGui::ColorEdit4("Entity Unkown", game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Togglesurfs", game::g_qeglobals->d_savedinfo.colors[game::COLOR_DRAW_TOGGLESUFS], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Unkown##1", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN2], ImGuiColorEditFlags_Float);
 		ImGui::ColorEdit4("Unkown##2", game::g_qeglobals->d_savedinfo.colors[game::COLOR_UNKOWN3], ImGuiColorEditFlags_Float);

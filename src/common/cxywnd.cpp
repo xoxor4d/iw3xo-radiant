@@ -133,7 +133,7 @@ void __declspec(naked) draw_grid_block_text_stub()
 // fix entity name drawing
 void draw_entity_names_hk(const char* text, game::Font_s* font, float* origin, float* pixel_step_x, float* pixel_step_y, [[maybe_unused]] float* color)
 {
-	components::renderer::R_AddCmdDrawTextAtPosition(text, font, origin, pixel_step_x, pixel_step_y, game::g_qeglobals->d_savedinfo.colors[game::COLOR_ENTITYUNK]);
+	components::renderer::R_AddCmdDrawTextAtPosition(text, font, origin, pixel_step_x, pixel_step_y, game::g_qeglobals->d_savedinfo.colors[game::COLOR_VIEWNAME]); // game::COLOR_ENTITYUNK (changes when using the colordialog tool)
 }
 
 bool g_block_radiant_modeldialog = false;

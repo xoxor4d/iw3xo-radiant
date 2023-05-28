@@ -136,7 +136,7 @@ namespace components
 	bool g_log_rendercommands = false;
 	game::Material* g_invalid_material = nullptr;
 
-	bool g_line_depth_testing = true;
+	//bool g_line_depth_testing = true;
 
 	// * ----------------------------------------------------------
 
@@ -211,7 +211,6 @@ namespace components
 			jmp		retn_pt;
 		}
 	}
-
 
 	// *
 	// do not cull entities with the custom no-cull flag (used phys prefabs)
@@ -1906,7 +1905,7 @@ namespace components
 		{
 			// clear framebuffer (color)
 			renderer::R_SetAndClearSceneTarget(true);
-			g_line_depth_testing = true;
+			renderer::get()->set_line_depthtesting(true);
 		}
 	}
 
@@ -3191,18 +3190,6 @@ namespace components
 	}
 #endif
 
-	// spot where a depthbuffer clear command would be added
-	void __declspec(naked) disable_line_depth_testing()
-	{
-		// disable depth testing for outlines
-		const static uint32_t retn_addr = 0x4084D7;
-		__asm
-		{
-			mov		g_line_depth_testing, 0;
-			jmp		retn_addr;
-		}
-	}
-
 	void draw_additional_debug()
 	{
 		if (game::glob::debug_sundir)
@@ -3250,6 +3237,240 @@ namespace components
 		}
 
 		mesh_painter::on_frame();
+		GET_GUI(ggui::entity_info)->render_hovered();
+	}
+
+	// *
+
+	const int debug_box_edge_pairs[12][2] =
+	{
+		{0, 1}, {0, 2}, {0, 4}, {1, 3},
+		{1, 5}, {2, 3}, {2, 6}, {3, 7},
+		{4, 5}, {4, 6}, {5, 7}, {6, 7},
+	};
+
+	const int debug_box_edges[23] =
+	{
+		1, 0, 2, 0, 4, 1, 3, 1, 5, 2, 3, 2, 6, 3, 7, 4, 5, 4, 6, 5, 7, 6, 7,
+	};
+
+	void renderer::add_debug_box(const float* origin, const float* mins, const float* maxs, float yaw, float size_offset, bool depth_test_override, bool depth_test_value)
+	{
+		float v[8][3];
+
+		const float fCos = cosf(yaw * 0.017453292f);
+		const float fSin = sinf(yaw * 0.017453292f);
+
+		for (auto i = 0u; i < 8; ++i)
+		{
+			for (auto j = 0u; j < 3; ++j)
+			{
+				float val;
+				if ((i & (1 << j)) != 0)
+				{
+					val = maxs[j] + size_offset;
+				}
+				else
+				{
+					val = mins[j] - size_offset;
+				}
+				v[i][j] = val;
+			}
+
+			v[i][0] = (v[i][0] * fCos) - (v[i][1] * fSin) + origin[0];
+			v[i][1] = (v[i][0] * fSin) + (v[i][1] * fCos) + origin[1];
+			v[i][2] += origin[2];
+		}
+
+		const bool old_depth_value = components::renderer::get()->get_line_depthtesting();
+		if (depth_test_override)
+		{
+			components::renderer::get()->set_line_depthtesting(depth_test_value);
+		}
+
+		for (auto ia = 0u; ia < 12; ++ia)
+		{
+			game::GfxPointVertex vert[2];
+			vert[0].xyz[0] = v[debug_box_edge_pairs[ia][0]][0];
+			vert[0].xyz[1] = v[debug_box_edge_pairs[ia][0]][1];
+			vert[0].xyz[2] = v[debug_box_edge_pairs[ia][0]][2];
+			vert[0].color.packed = (unsigned)physx::PxDebugColor::eARGB_RED;
+
+			vert[1].xyz[0] = v[debug_box_edges[2 * ia]][0];
+			vert[1].xyz[1] = v[debug_box_edges[2 * ia]][1];
+			vert[1].xyz[2] = v[debug_box_edges[2 * ia]][2];
+			vert[1].color.packed = (unsigned)physx::PxDebugColor::eARGB_RED;
+
+			components::renderer::R_AddLineCmd(1, 2, 3, vert);
+		}
+
+		if (depth_test_override)
+		{
+			components::renderer::get()->set_line_depthtesting(old_depth_value);
+		}
+	}
+
+	// *
+
+	void set_line_depth_testing_helper_hack(bool val)
+	{
+		renderer::get()->set_line_depthtesting(val);
+
+		// # HACK
+		// constantly add a RC_DRAW_TRIANGLES cmd to fix depth-testing on selection outlines
+		// (fails when static meshes + a light entity or trigger radius .. is in view)
+
+		const float verts[4][4] =
+		{
+			{ 0.0f, 0.0f, 10000.0f, 1.0f },
+			{ 0.0f, 1.0f, 10000.0f, 1.0f },
+			{ 1.0f, 1.0f, 10000.0f, 1.0f },
+			{ 1.0f, 0.0f, 10000.0f, 1.0f },
+		};
+
+		game::R_DrawSelectionbox(verts[0]);
+	}
+
+	// spot where a depthbuffer clear command would be added
+	void __declspec(naked) set_line_depth_testing()
+	{
+		// disable depth testing for outlines
+		const static uint32_t retn_addr = 0x4084D7;
+		__asm
+		{
+			pushad;
+			push	0;
+			call	set_line_depth_testing_helper_hack;
+			add		esp, 4;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
+
+	void set_line_depth_testing_helper(bool val)
+	{
+		renderer::get()->set_line_depthtesting(val);
+	}
+
+	void __declspec(naked) set_line_depth_testing_2()
+	{
+		// enable depth testing for connection lines
+		const static uint32_t draw_target_connection_lines_func = 0x46A2C0;
+		const static uint32_t retn_addr = 0x40CC26;
+		__asm
+		{
+			pushad;
+			push	1;
+			call	set_line_depth_testing_helper;
+			add		esp, 4;
+			popad;
+
+			pushad;
+			call	draw_target_connection_lines_func;
+			call	draw_additional_debug;
+			popad;
+
+			jmp		retn_addr;
+		}
+	}
+
+	// *
+
+	void light_selection_tint()
+	{
+		game::R_SetMaterialColor(game::g_qeglobals->d_savedinfo.colors[11]);
+	}
+
+	void __declspec(naked) light_selection_tint_stub()
+	{
+		// enable depth testing for connection lines
+		const static uint32_t func_addr = 0x4FD910;
+		const static uint32_t retn_addr = 0x408302;
+		__asm
+		{
+			call	func_addr;
+			pushad;
+			call	light_selection_tint;
+			popad;
+			jmp		retn_addr;
+		}
+	}
+
+	void light_selection_tint_reset()
+	{
+		game::R_SetMaterialColor(nullptr);
+	}
+
+	void __declspec(naked) light_selection_tint_reset_stub()
+	{
+		const static uint32_t func_addr = 0x4FD910;
+		const static uint32_t retn_addr = 0x4083BE;
+		__asm
+		{
+			call	func_addr;
+			pushad;
+			call	light_selection_tint_reset;
+			popad;
+			jmp		retn_addr;
+		}
+	}
+
+	// *
+
+	// add depth_test
+	struct GfxCmdDrawLines
+	{
+		game::GfxCmdHeader header;
+		std::uint16_t lineCount;	// 0x4
+		char width;					// 0x6
+		char dimensions;			// 0x7
+		bool depth_test;			// 0x8
+		char pad[3];
+		game::GfxPointVertex verts[2];	// 0xC (12)
+	};
+
+	// rewrite to add depth_test functionality (set 'g_line_depth_testing')
+	void renderer::R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts)
+	{
+		if (count <= 0)
+		{
+			Assert();
+		}
+
+		const game::GfxCmdArray* s_cmdList = reinterpret_cast<game::GfxCmdArray*>(*(DWORD*)0x73D4A0);
+		const auto merged_cmd = reinterpret_cast<GfxCmdDrawLines*>(s_cmdList->lastCmd);
+
+		if (merged_cmd && merged_cmd->header.id == game::RC_DRAW_LINES
+			&& (count * sizeof(game::GfxPointVertex) * 2) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF 
+			&& merged_cmd->width == width 
+			&& merged_cmd->dimensions == dimension 
+			&& count + merged_cmd->lineCount <= 0x7FFF)
+		{
+			// unsure about the name, lets call it R_AddMultipleRendercommands
+			void* cmds = utils::hook::call<void* (__cdecl)(int)>(0x4FB0D0)(count * sizeof(game::GfxPointVertex) * 2);
+			
+			if (cmds)
+			{
+				memcpy(cmds, verts, count * sizeof(game::GfxPointVertex) * 2);
+				merged_cmd->lineCount += count;
+			}
+		}
+		else
+		{
+			const size_t vert_mem_size = count * sizeof(game::GfxPointVertex) * 2;
+			const auto line = reinterpret_cast<GfxCmdDrawLines*>( game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawLines, verts), game::RC_DRAW_LINES));
+
+			if (line)
+			{
+				line->lineCount = count;
+				line->width = width;
+				line->dimensions = dimension;
+				line->depth_test = renderer::get()->g_line_depth_testing;
+
+				memcpy(line->verts, verts, vert_mem_size);
+			}
+		}
 	}
 
 	// *
@@ -3262,7 +3483,6 @@ namespace components
 		char dimensions;
 		game::GfxPointVertex point; // + 0x8 
 	};
-
 
 	void renderer::R_AddPointCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* points)
 	{
@@ -3305,78 +3525,6 @@ namespace components
 	}
 
 	// *
-
-	void __declspec(naked) disable_line_depth_testing2()
-	{
-		// enable depth testing for connection lines
-		const static uint32_t draw_target_connection_lines_func = 0x46A2C0;
-		const static uint32_t retn_addr = 0x40CC26;
-		__asm
-		{
-			mov		g_line_depth_testing, 1;
-
-			pushad;
-			call	draw_target_connection_lines_func;
-			call	draw_additional_debug;
-			popad;
-
-			jmp		retn_addr;
-		}
-	}
-
-	// add depth_test
-	struct GfxCmdDrawLines
-	{
-		game::GfxCmdHeader header;
-		std::uint16_t lineCount;	// 0x4
-		char width;					// 0x6
-		char dimensions;			// 0x7
-		bool depth_test;			// 0x8
-		char pad[3];
-		game::GfxPointVertex verts[2];	// 0xC (12)
-	};
-
-	// rewrite to add depth_test functionality
-	void renderer::R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts)
-	{
-		if (count <= 0)
-		{
-			Assert();
-		}
-
-		const game::GfxCmdArray* s_cmdList = reinterpret_cast<game::GfxCmdArray*>(*(DWORD*)0x73D4A0);
-		const auto merged_cmd = reinterpret_cast<GfxCmdDrawLines*>(s_cmdList->lastCmd);
-
-		if (merged_cmd && merged_cmd->header.id == game::RC_DRAW_LINES
-			&& (count * sizeof(game::GfxPointVertex) * 2) + (unsigned int)merged_cmd->header.byteCount <= 0xFFFF 
-			&& merged_cmd->width == width 
-			&& merged_cmd->dimensions == dimension 
-			&& count + merged_cmd->lineCount <= 0x7FFF)
-		{
-			// unsure about the name, lets call it R_AddMultipleRendercommands
-			void* cmds = utils::hook::call<void* (__cdecl)(int)>(0x4FB0D0)(count * sizeof(game::GfxPointVertex) * 2);
-			
-			if (cmds)
-			{
-				memcpy(cmds, verts, count * sizeof(game::GfxPointVertex) * 2);
-				merged_cmd->lineCount += count;
-			}
-		}
-		else
-		{
-			const size_t vert_mem_size = count * sizeof(game::GfxPointVertex) * 2;
-			const auto line = reinterpret_cast<GfxCmdDrawLines*>( game::R_GetCommandBuffer(vert_mem_size + offsetof(GfxCmdDrawLines, verts), game::RC_DRAW_LINES));
-
-			if (line)
-			{
-				line->lineCount = count;
-				line->width = width;
-				line->dimensions = dimension;
-				line->depth_test = g_line_depth_testing;
-				memcpy(line->verts, verts, vert_mem_size);
-			}
-		}
-	}
 
 	// use cmd's depth_test var instead of the hardcoded 1
 	void __declspec(naked) rb_drawlinescmd_stub()
@@ -3882,14 +4030,12 @@ namespace components
 		utils::hook::set<BYTE>(0x5005F0 + 6, GFX_TARGETWINDOW_COUNT);
 		utils::hook::set<BYTE>(0x5005F9 + 1, GFX_TARGETWINDOW_COUNT);
 
-
 		// stub to register new gfxwindows
 		utils::hook(0x4166D1, begin_registration_internal_stub, HOOK_JUMP).install()->quick();
 
-
 		// ------------------------------------------------------------------------------------------------
 
-		// rewrite, working fine but no need (only debug)
+		// rewrite, working fine but not needed (debug)
 		// utils::hook::detour(0x4FE750, RB_DrawEditorSkinnedCached, HK_JUMP);
 
 		// ------------------------------------------------------------------------------------------------
@@ -3962,15 +4108,16 @@ namespace components
 		// !! spot used to implement effect controlling logic (effects::camera_onpaint_stub)
 		//utils::hook::nop(0x40304D, 5);
 
-		// do not add a clearscreen command before adding lines to the scene (would leave no depth info for effects)
-		utils::hook(0x4084D2, disable_line_depth_testing, HOOK_JUMP).install()->quick(); // disable depth testing for lines (same result as clearing the depthbuffer)
+		// disable depth testing for outlines on selected brushes
+		// ^ spot would normally clear the depthbuffer to achieve that but we need depth info for effects later down the line
+		utils::hook(0x4084D2, set_line_depth_testing, HOOK_JUMP).install()->quick(); 
 
-		// ^ nop call that adds connection lines (target->targetname) (after disabled depth testing) and call it before disabling depth testing
-		//utils::hook::nop(0x408645, 5);
+		// enable depth testing for lines + stub that draws additional debug lines (sun direction, mesh painter ...)
+		utils::hook(0x40CC21, set_line_depth_testing_2, HOOK_JUMP).install()->quick();
 
-		// disable depth testing for lines (same result as clearing the depthbuffer)
-		// + stub that draws the sundirection debug line
-		utils::hook(0x40CC21, disable_line_depth_testing2, HOOK_JUMP).install()->quick(); 
+		// tint selected light entities
+		utils::hook(0x4082FD, light_selection_tint_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x4083B9, light_selection_tint_reset_stub, HOOK_JUMP).install()->quick();
 
 		// * ------
 
@@ -4023,7 +4170,7 @@ namespace components
 		// silence assert 'drawSurf.fields.primaryLightIndex doesn't index info->viewInfo->shadowableLightCount'
 		utils::hook::nop(0x55A3A3, 5);
 
-		// silence assert  '((region == DRAW_SURF_FX_CAMERA_EMISSIVE) || (drawSurf == scene.drawSurfs[region]) || (drawSurf->fields.primarySortKey >= (drawSurf - 1)->fields.primarySortKey))'
+		// silence assert '((region == DRAW_SURF_FX_CAMERA_EMISSIVE) || (drawSurf == scene.drawSurfs[region]) || (drawSurf->fields.primarySortKey >= (drawSurf - 1)->fields.primarySortKey))'
 		utils::hook::nop(0x52EE95, 5);
 
 		// * ------
@@ -4068,7 +4215,7 @@ namespace components
 
 
 		// write a logfile showing all rendercommands for a single frame
-		command::register_command("g_log_rendercommands"s, [this](auto)
+		command::register_command("log_rendercommands"s, [this](auto)
 		{
 			g_log_rendercommands = true;
 		});
