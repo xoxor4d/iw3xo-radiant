@@ -3331,8 +3331,6 @@ namespace components
 		game::R_DrawSelectionbox(verts[0]);
 	}
 
-	
-
 	// spot where a depthbuffer clear command would be added
 	void __declspec(naked) set_line_depth_testing()
 	{
@@ -3376,6 +3374,49 @@ namespace components
 			jmp		retn_addr;
 		}
 	}
+
+	// *
+
+	void light_selection_tint()
+	{
+		game::R_SetMaterialColor(game::g_qeglobals->d_savedinfo.colors[11]);
+	}
+
+	void __declspec(naked) light_selection_tint_stub()
+	{
+		// enable depth testing for connection lines
+		const static uint32_t func_addr = 0x4FD910;
+		const static uint32_t retn_addr = 0x408302;
+		__asm
+		{
+			call	func_addr;
+			pushad;
+			call	light_selection_tint;
+			popad;
+			jmp		retn_addr;
+		}
+	}
+
+	void light_selection_tint_reset()
+	{
+		game::R_SetMaterialColor(nullptr);
+	}
+
+	void __declspec(naked) light_selection_tint_reset_stub()
+	{
+		const static uint32_t func_addr = 0x4FD910;
+		const static uint32_t retn_addr = 0x4083BE;
+		__asm
+		{
+			call	func_addr;
+			pushad;
+			call	light_selection_tint_reset;
+			popad;
+			jmp		retn_addr;
+		}
+	}
+
+	// *
 
 	// add depth_test
 	struct GfxCmdDrawLines
@@ -4073,6 +4114,10 @@ namespace components
 
 		// enable depth testing for lines + stub that draws additional debug lines (sun direction, mesh painter ...)
 		utils::hook(0x40CC21, set_line_depth_testing_2, HOOK_JUMP).install()->quick();
+
+		// tint selected light entities
+		utils::hook(0x4082FD, light_selection_tint_stub, HOOK_JUMP).install()->quick();
+		utils::hook(0x4083B9, light_selection_tint_reset_stub, HOOK_JUMP).install()->quick();
 
 		// * ------
 

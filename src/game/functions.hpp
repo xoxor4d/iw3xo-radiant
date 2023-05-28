@@ -371,6 +371,7 @@ namespace game
 	// sampler_index = the index used in shader_vars.h
 	inline auto R_SetSampler = reinterpret_cast<void (*)(int unused, game::GfxCmdBufState * state, int sampler_index, char sampler_state, game::GfxImage * img)>(0x538D70);
 	inline auto R_AddCmdDrawFullScreenColoredQuad = reinterpret_cast<bool (*)(float s0, float t0, float s1, float t1, float* color, game::Material * mtl)>(0x4FC260);
+	inline auto R_SetMaterialColor = reinterpret_cast<void (*)(const float* color)>(0x4FC2C0);
 	inline auto R_DrawSurfs = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x5324E0);
 	inline auto R_ShowTris = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufState*, game::GfxDrawSurfListInfo*)>(0x55B100);
 	inline auto R_InitCmdBufSourceState = reinterpret_cast<void (*)(game::GfxCmdBufSourceState*, game::GfxCmdBufInput * input, int)>(0x53CB20);
