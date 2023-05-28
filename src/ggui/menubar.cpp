@@ -1942,7 +1942,7 @@ namespace ggui
 				ImGui::EndMenu(); // Patch
 			}
 
-			SPACING(4.0f, 0.0f);
+			imgui::TextUnformatted("|");
 
 			if (ImGui::MenuItem("Help"))
 			{
