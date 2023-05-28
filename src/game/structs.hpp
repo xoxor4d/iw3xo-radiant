@@ -573,7 +573,7 @@ namespace game
 		brush_t *prev;
 		brush_t *next;
 		entity_s *owner;
-		char pad_0x000C[4];
+		entity_s* ownerNext;
 		int editAmount;
 		char pad_0x0014[12];
 		vec3_t mins;
@@ -598,14 +598,26 @@ namespace game
 		selbrush_def_t* active_brushlist_next;
 	};
 
+	struct entity_brushes_s
+	{
+		brush_t* oprev;
+		brush_t* onext;
+		selbrush_def_t* owner;
+		selbrush_def_t* ownerNext;
+		selbrush_def_t* ownerPrev;
+		brush_t* def;
+		int unk1;
+		int refCount;
+		vec3_t mins;
+		vec3_t maxs;
+	}; STATIC_ASSERT_SIZE(entity_brushes_s, 0x38);
 
 	struct entity_s
 	{
 		entity_s *prev;
 		entity_s *next;
 		entity_s* firstActive;
-		brush_t *firstBrush; // <- brush substruct, no ptr
-		char pad_0x0010[52];
+		entity_brushes_s brushes;
 		void* modelInst;
 		prefab_s* prefab;
 		//int version;
@@ -819,14 +831,15 @@ namespace game
 		selbrush_def_t* prev; // prev selected brush @prev->def
 		selbrush_def_t* next; // next always empty i guess
 		entity_s* owner;
-		brush_t* ownerNext;
-		int xx0;		
+		selbrush_def_t* ownerNext;
+		selbrush_def_t* ownerPrev;
 		brush_t_with_custom_def* def;
 		int facecount;
 		game::faceVis_s* faces;
 		patch_t* patch;
 		std::int16_t version;
-		std::int16_t unk;
+		bool cullFlag;
+		bool unk_bool;
 		int xx1;
 		int xx2;
 		int xx3;
@@ -834,6 +847,14 @@ namespace game
 	};
 	STATIC_ASSERT_OFFSET(selbrush_def_t, def, 0x14);
 	STATIC_ASSERT_OFFSET(selbrush_def_t, version, 0x24);
+
+	struct entity_inst_s
+	{
+		entity_inst_s* prev;
+		entity_inst_s* next;
+		entity_s* ent;
+		selbrush_def_t def;
+	};
 
 	struct selbrush_ptr
 	{

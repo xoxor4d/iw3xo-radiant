@@ -384,7 +384,6 @@ namespace ggui
 	void entity_dialog::on_mapload_intercept()
 	{
 		const auto gui = GET_GUI(ggui::entity_dialog);
-
 		gui->m_sel_list_ent = nullptr;
 		gui->m_edit_entity_class = nullptr;
 		gui->m_edit_entity_changed = false;
@@ -394,6 +393,12 @@ namespace ggui
 	// UpdateSelection
 	void entity_dialog::on_update_selection_intercept()
 	{
+		const auto prefs = GET_GUI(entity_info);
+		prefs->update_entity_list();
+		prefs->m_update_on_unselect = true;
+
+		// #
+
 		if (const auto	g_edit_ent = game::g_edit_entity();
 						g_edit_ent)
 		{

@@ -29,10 +29,15 @@ namespace components
 
 		static void		R_InitDrawSurfListInfo(game::GfxDrawSurfListInfo* list);
 
-		static void		R_AddPointCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts);
+		static void		add_debug_box(const float* origin, const float* mins, const float* maxs, float yaw, float size_offset, bool depth_test_override = false, bool depth_test_value = false);
 		static void		R_AddLineCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts);
+		static void		R_AddPointCmd(const std::uint16_t count, const char width, const char dimension, const game::GfxPointVertex* verts);
 
 		static inline int effect_drawsurf_count_ = 0;
+
+		void set_line_depthtesting(const bool state) { g_line_depth_testing = state; }
+		bool get_line_depthtesting() { return g_line_depth_testing; }
+		bool g_line_depth_testing = true;
 
 		// ------
 

@@ -158,6 +158,18 @@ namespace game
 		return brush;
 	}
 
+	game::entity_s* get_entity_insts()
+	{
+		const auto entity = reinterpret_cast<game::entity_s*>(*(DWORD*)0x23F1748);
+		return entity;
+	}
+
+	game::entity_inst_s* get_entity_insts_next()
+	{
+		const auto entity = reinterpret_cast<game::entity_inst_s*>(*(DWORD*)0x23F174C);
+		return entity;
+	}
+
 	const int& g_selected_faces_count = *reinterpret_cast<const int*>(0x73C714);
 
 	// g_selected_faces is a CArray
@@ -1222,6 +1234,18 @@ namespace game
 
 	// *
 	// * --------------------- renderer ------------------------------
+
+	void R_DrawSelectionbox(const float* verts)
+	{
+		const static uint32_t func_addr = 0x40CC50;
+		__asm
+		{
+			pushad;
+			mov		esi, verts;
+			call	func_addr;
+			popad;
+		}
+	}
 
 	game::GfxCmdHeader* R_GetCommandBuffer(std::uint32_t bytes /*ebx*/, int render_cmd /*edi*/)
 	{

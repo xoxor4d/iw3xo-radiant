@@ -492,7 +492,7 @@ namespace ggui
 				ctexwnd::load_favourites();
 			}
 
-			if(ImGui::Button("Texture filter test"))
+			if (ImGui::Button("Texture filter test"))
 			{
 				// hide all
 				game::qtexture_s* tex = texwndglob_textures;
@@ -504,7 +504,7 @@ namespace ggui
 				tex = texwndglob_textures;
 				for (; tex; tex = tex->prev)
 				{
-					for(auto m = 0; m < IM_ARRAYSIZE(mat_names); m++)
+					for (auto m = 0; m < IM_ARRAYSIZE(mat_names); m++)
 					{
 						if (utils::string_equals(tex->name, mat_names[m]))
 						{
@@ -516,7 +516,7 @@ namespace ggui
 
 			SPACING(0.0f, 4.0f);
 
-			if(ImGui::Button("Toast Success"))
+			if (ImGui::Button("Toast Success"))
 			{
 				ImGui::InsertNotification(
 					{ ImGuiToastType_Success, 2000, "Hello World! This is a success! %s", ICON_FA_APPLE_ALT});
@@ -612,9 +612,10 @@ namespace ggui
 			ImGui::ColorEdit4("Color 01", dev_color_01, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 			ImGui::ColorEdit4("Color 02", dev_color_02, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
 			ImGui::ColorEdit4("Color 03", dev_color_03, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+
 		});
 	}
-
+	
 	bool preferences_dialog::gui()
 	{
 		const auto MIN_WINDOW_SIZE = ImVec2(800.0f, 400.0f);
