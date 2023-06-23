@@ -20,7 +20,7 @@ namespace ggui
 		// public member functions
 
 		static void convert_selection_to_prefab_imgui_menu();
-		static void stamp_prefab_imgui_imgui_menu(game::selbrush_def_t* sb = nullptr);
+		static bool stamp_prefab_imgui_imgui_menu(game::selbrush_def_t* sb = nullptr);
 
 		void camera_gui();
 

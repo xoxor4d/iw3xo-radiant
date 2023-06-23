@@ -615,7 +615,7 @@ namespace ggui
 	}
 #endif
 
-	void camera_dialog::stamp_prefab_imgui_imgui_menu(game::selbrush_def_t* sb)
+	bool camera_dialog::stamp_prefab_imgui_imgui_menu(game::selbrush_def_t* sb)
 	{
 		if (ImGui::MenuItem("Stamp Prefab"))
 		{
@@ -646,7 +646,7 @@ namespace ggui
 			if (!og_prefab || !og_prefab->def)
 			{
 				game::printf_to_console("[ERR] something went wrong while stamping prefab");
-				return;
+				return false;
 			}
 
 			// get prefab angles
@@ -752,7 +752,11 @@ namespace ggui
 
 				}, 1ms);
 			}
+
+			return true;
 		}
+
+		return false;
 	}
 
 	// right click context menu
@@ -1053,7 +1057,10 @@ namespace ggui
 												}
 											}
 
-											stamp_prefab_imgui_imgui_menu(cam_trace[0].brush);
+											if (stamp_prefab_imgui_imgui_menu(cam_trace[0].brush))
+											{
+												entering_or_leaving_prefab = true;
+											}
 										}
 										else if (game::g_prefab_stack_level)
 										{
