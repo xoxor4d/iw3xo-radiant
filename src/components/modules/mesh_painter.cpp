@@ -479,7 +479,8 @@ namespace components
 				game::vec3_t model_spawn_point = {};
 
 				{
-					game::Test_Ray(random_point.xyz, game::vec3_t(0.0f, 0.0f, 1.0f), trace_contents, &cam_trace, 1);
+					game::vec3_t v = { 0.0f, 0.0f, 1.0f };
+					game::Test_Ray(random_point.xyz, v, trace_contents, &cam_trace, 1);
 
 					auto& p_upper = random_point_trace_to_upper;
 
@@ -489,7 +490,8 @@ namespace components
 
 					// upwards trace point
 					const float max_dist = cam_trace.dist > upward_trace_dist ? upward_trace_dist : cam_trace.dist;
-					utils::vector::scale(game::vec3_t(0.0f, 0.0f, 1.0f), max_dist, p_upper.vert[1].xyz);
+
+					utils::vector::scale(v, max_dist, p_upper.vert[1].xyz);
 					utils::vector::add(random_point.xyz, p_upper.vert[1].xyz, p_upper.vert[1].xyz);
 					p_upper.vert[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_RED);
 
@@ -499,7 +501,8 @@ namespace components
 						p_upper.vert[0].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
 						p_upper.vert[1].color.packed = static_cast<unsigned>(PxDebugColor::eARGB_GREEN);
 
-						utils::vector::add(random_point.xyz, game::vec3_t(0.0f, 0.0f, upward_trace_dist), p_upper.vert[1].xyz);
+						const game::vec3_t vx = { 0.0f, 0.0f, upward_trace_dist };
+						utils::vector::add(random_point.xyz, vx, p_upper.vert[1].xyz);
 
 						trace_two_valid = true;
 
@@ -527,8 +530,8 @@ namespace components
 
 						game::Select_Deselect(true);
 
-
-						game::Test_Ray(model_spawn_point, game::vec3_t(0.0f, 0.0f, -1.0f), trace_contents, &cam_trace, 1);
+						game::vec3_t v = { 0.0f, 0.0f, -1.0f };
+						game::Test_Ray(model_spawn_point, v, trace_contents, &cam_trace, 1);
 
 						if ((cam_trace.brush || cam_trace.face)
 							&& cam_trace.dist <= face_trace_dist + upward_trace_dist * 2.0f
@@ -537,7 +540,7 @@ namespace components
 							game::vec3_t spawn_org = {};
 
 							// calculate hit origin
-							utils::vector::scale(game::vec3_t(0.0f, 0.0f, -1.0f), cam_trace.dist, spawn_org);
+							utils::vector::scale(v, cam_trace.dist, spawn_org);
 							utils::vector::add(spawn_org, model_spawn_point, spawn_org);
 
 

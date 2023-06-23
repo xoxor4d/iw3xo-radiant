@@ -909,7 +909,8 @@ namespace components
 								if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_specular, "suncolor"))
 								{
 									// worldspawn suncolor
-									utils::vector::ma(game::vec3_t(1.0f, 1.0f, 1.0f), 2.0f, sun_specular, sun_specular);
+									const game::vec3_t v = { 1.0f, 1.0f, 1.0f };
+									utils::vector::ma(v, 2.0f, sun_specular, sun_specular);
 									worldspawn_valid = true;
 								}
 							}
@@ -1079,7 +1080,8 @@ namespace components
 									if (world_ent && world_ent->firstActive && GET_GUI(ggui::entity_dialog)->get_vec3_for_key_from_entity(world_ent->firstActive, sun_specular, "suncolor"))
 									{
 										// worldspawn suncolor
-										utils::vector::ma(game::vec3_t(1.0f, 1.0f, 1.0f), 2.0f, sun_specular, sun_specular);
+										const game::vec3_t v = { 1.0f, 1.0f, 1.0f };
+										utils::vector::ma(v, 2.0f, sun_specular, sun_specular);
 										worldspawn_valid = true;
 									}
 								}
