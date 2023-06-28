@@ -15,6 +15,14 @@ namespace ggui
 			FX = 6
 		};
 
+		struct epair_override_type
+		{
+			EPAIR_VALUETYPE type;
+			std::string key;
+		};
+
+		std::vector<epair_override_type> overriden_valuetypes;
+
 		struct epair_wrapper
 		{
 			game::entity_s_def* entity;

@@ -1359,6 +1359,27 @@ namespace ggui
 					if (const auto	edit_entity = game::g_edit_entity(); 
 									edit_entity && edit_entity->epairs)
 					{
+
+						// #
+						// #
+
+						auto is_custom_type = [&](const std::string key, EPAIR_VALUETYPE& out_type) -> bool
+						{
+							for (auto& i : overriden_valuetypes)
+							{
+								if (i.key == key)
+								{
+									out_type = i.type;
+									return true;
+								}
+							}
+
+							return false;
+						};
+
+						// #
+						// #
+
 						// add all epairs to our vector
 						for (auto epair = edit_entity->epairs; epair; epair = epair->next)
 						{
@@ -1368,7 +1389,17 @@ namespace ggui
 							eprop.entity = edit_entity;
 							eprop.eclass = edit_entity->eclass;
 							eprop.epair = epair;
-							eprop.type = EPAIR_VALUETYPE::TEXT;
+
+							EPAIR_VALUETYPE temp_type;
+							if (is_custom_type(key, temp_type))
+							{
+								eprop.type = temp_type;
+							}
+							else
+							{
+								eprop.type = EPAIR_VALUETYPE::TEXT;
+							}
+							
 							eprop.v_speed = 1.0f;
 							eprop.v_min = -FLT_MAX;
 							eprop.v_max = FLT_MAX;
@@ -1593,7 +1624,7 @@ namespace ggui
 
 
 						// for each entry in our sorted vector
-						for (auto ep : eprop_sorted)
+						for (auto& ep : eprop_sorted)
 						{
 							const bool is_classname = !_stricmp(ep.epair->key, "classname");
 
@@ -1760,6 +1791,72 @@ namespace ggui
 												if (ImGui::Selectable("Select Connected"))
 												{
 													cdeclcall(void, 0x425550); // CMainFrame::OnSelectConneted
+												}
+											}
+
+											// #
+
+											auto assign_custom_type = [&](EPAIR_VALUETYPE type, std::string key) -> void
+											{
+												auto exists = false;
+												for (auto& i : overriden_valuetypes)
+												{
+													if (i.key == key)
+													{
+														i.type = type;
+														exists = true;
+														break;
+													}
+												}
+
+												if (!exists)
+												{
+													overriden_valuetypes.emplace_back(type, key);
+												}
+											};
+
+											// #
+
+											if (!is_classname)
+											{
+												SEPERATORV(0.0f);
+												if (imgui::BeginMenu("Change Type"))
+												{
+													EPAIR_VALUETYPE temp_type;
+													if (!is_classname && ep.type == TEXT || is_custom_type(ep.epair->key, temp_type))
+													{
+														if (ImGui::Selectable("Force Type Vec3"))
+														{
+															assign_custom_type(ANGLES, ep.epair->key);
+														}
+
+														if (ImGui::Selectable("Force Type Float"))
+														{
+															assign_custom_type(FLOAT, ep.epair->key);
+														}
+
+														if (ImGui::Selectable("Force Type Color"))
+														{
+															assign_custom_type(COLOR, ep.epair->key);
+														}
+
+														/*if (ImGui::Selectable("Force Type Model"))
+														{
+															assign_custom_type(MODEL, ep.epair->key);
+														}
+
+														if (ImGui::Selectable("Force Type Fx"))
+														{
+															assign_custom_type(FX, ep.epair->key);
+														}*/
+
+														if (ImGui::Selectable("Force Type Text"))
+														{
+															assign_custom_type(TEXT, ep.epair->key);
+														}
+													}
+
+													imgui::EndMenu();
 												}
 											}
 
