@@ -699,7 +699,21 @@ namespace components
 							createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << out_orient.origin[0] << ", " << out_orient.origin[1] << ", " << out_orient.origin[2] << " );" << std::endl;
 							createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << out_angles[0] << ", " << out_angles[1] << ", " << out_angles[2] << " );" << std::endl;
 							createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_num << "\";" << std::endl;
-							createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+							createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl;
+
+							if (entity_gui->has_key_value_pair(owner, "soundalias"))
+							{
+								std::string soundalias_name = "";
+
+								if (const char* soundalias_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "soundalias"); soundalias_str)
+								{
+									soundalias_name = soundalias_str;
+								}
+
+								createfx << "\tent.v[ \"soundalias\" ] = \"" << soundalias_name.c_str() << "\";" << std::endl;
+							}
+
+							createfx << std::endl;
 						}
 					}
 				}
@@ -870,7 +884,21 @@ namespace components
 								createfx << "\tent.v[ \"origin\" ] = ( " << std::fixed << std::setprecision(2) << owner->origin[0] << ", " << owner->origin[1] << ", " << owner->origin[2] << " );" << std::endl;
 								createfx << "\tent.v[ \"angles\" ] = ( " << std::fixed << std::setprecision(2) << world_angles[0] << ", " << world_angles[1] << ", " << world_angles[2] << " );" << std::endl;
 								createfx << "\tent.v[ \"fxid\" ] = \"effect_" << effect_num << "\";" << std::endl;
-								createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl << std::endl;
+								createfx << "\tent.v[ \"delay\" ] = -15;" << std::endl;
+
+								if (entity_gui->has_key_value_pair(owner, "soundalias"))
+								{
+									std::string soundalias_name = "";
+
+									if (const char* soundalias_str = entity_gui->get_value_for_key_from_epairs(owner->epairs, "soundalias"); soundalias_str)
+									{
+										soundalias_name = soundalias_str;
+									}
+
+									createfx << "\tent.v[ \"soundalias\" ] = \"" << soundalias_name.c_str() << "\";" << std::endl;
+								}
+
+								createfx << std::endl;
 							}
 						}
 					}
