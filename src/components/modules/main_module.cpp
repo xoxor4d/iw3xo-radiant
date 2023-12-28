@@ -59,10 +59,10 @@ DWORD WINAPI update_check(LPVOID)
 
 		if (doc.Parse(game::glob::gh_update_releases_json.c_str()).HasParseError())
 		{
-#if DEBUG
-			auto err = doc.GetParseError();
-			__debugbreak();
-#endif
+//#if DEBUG
+//			auto err = doc.GetParseError();
+//			__debugbreak();
+//#endif
 			return TRUE;
 		}
 

@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - "develop"
+    paths:
+      - 'src/**'
 
 jobs:
   build:
@@ -40,26 +42,30 @@ jobs:
       - name: Set up problem matching
         uses: ammaraskar/msvc-problem-matcher@master
 
-      - name: Build ${{matrix.configuration}} binaries
+      - name: Build ${{matrix.configuration}}-binaries
         run: msbuild /m /v:minimal /p:Configuration=${{matrix.configuration}} /p:Platform=Win32 build/iw3xo-radiant.sln
 
-      - name: Upload ${{matrix.configuration}} binaries
+      - name: Move build files 
+        run: |
+          move build/bin/${{matrix.configuration}}/iw3r.dll ./assets/bin
+          move build/bin/${{matrix.configuration}}/iw3r.pdb ./assets/bin
+          move build/bin/${{matrix.configuration}}/PhysX_32.dll ./assets/bin
+          move build/bin/${{matrix.configuration}}/PhysXCommon_32.dll ./assets/bin
+          move build/bin/${{matrix.configuration}}/PhysXCooking_32.dll ./assets/bin
+          move build/bin/${{matrix.configuration}}/PhysXFoundation_32.dll ./assets/bin
+
+      - name: Upload ${{matrix.configuration}}-binaries
         uses: actions/upload-artifact@v2
         with:
-          name: ${{matrix.configuration}} binaries
+          name: ${{matrix.configuration}}-binaries
           path: |
-            build/bin/${{matrix.configuration}}/iw3r.dll
-            build/bin/${{matrix.configuration}}/iw3r.pdb
-            build/bin/${{matrix.configuration}}/PhysX_32.dll
-            build/bin/${{matrix.configuration}}/PhysXCommon_32.dll
-            build/bin/${{matrix.configuration}}/PhysXCooking_32.dll
-            build/bin/${{matrix.configuration}}/PhysXFoundation_32.dll
+            ./assets/*
   
   webbook:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Tag String
@@ -79,5 +85,5 @@ jobs:
           embed-author-name: "iw3xo-radiant"
           embed-author-url: "https://github.com/xoxor4d/iw3xo-radiant"
           embed-title: "Successful build (debug)"
-          embed-color: 0xc680ff
-          embed-description: "${{ env.GIT_TAG }} [nightly link](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-debug/develop/Debug%20binaries.zip)"
+          embed-color: 0xef5443
+          embed-description: "${{ env.GIT_TAG }} [nightly link](https://nightly.link/xoxor4d/iw3xo-radiant/workflows/build-debug/develop/Debug-binaries.zip)"

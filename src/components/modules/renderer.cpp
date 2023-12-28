@@ -2148,10 +2148,22 @@ namespace components
 			reflectionprobes::generate_reflections_for_bsp();
 			dvars::set_bool(dvars::r_reflectionprobe_generate, false);
 
-			if (!dvars::bsp_show_bsp_after_compile->current.enabled)
+			if (dvars::bsp_show_bsp_after_compile->current.enabled)
 			{
 				command::execute("toggle_bsp_radiant");
 				dvars::set_bool(dvars::r_draw_bsp, dvars::bsp_show_bsp_after_compile->current.enabled);
+			}
+
+			if (dvars::bsp_gen_fastfile_on_compile->current.enabled)
+			{
+				// slightly delay process generation
+				exec::on_gui_once([]
+				{
+					if (dvars::bsp_gen_fastfile_on_compile->current.enabled && !d3dbsp::last_compiled_map.empty())
+					{
+						d3dbsp::compile_fastfile(d3dbsp::last_compiled_map);
+					}
+				});
 			}
 		}
 

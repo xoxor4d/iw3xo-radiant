@@ -145,7 +145,7 @@ namespace components
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 
-		if (!process->m_disable_callback)
+		if (process->m_post_process_callback && !process->m_disable_callback)
 		{
 			// execute callback on main thread
 			exec::on_gui_once([]

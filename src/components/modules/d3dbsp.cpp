@@ -744,6 +744,44 @@ namespace components
 		}
 	}
 
+	void d3dbsp::compile_fastfile(const std::string& bsp_name)
+	{
+		game::printf_to_console("[BSP] Compiling fastfile for map: %s ... \n", bsp_name.c_str());
+
+		const auto egui = GET_GUI(ggui::entity_dialog);
+
+		const char* base_path = egui->get_value_for_key_from_epairs(game::g_qeglobals->d_project_entity->epairs, "basepath");
+
+		std::string args;
+
+		// batch
+		args += R"(")"s + base_path + R"(\bin\IW3xRadiant\batch\compile_ff.bat")"s + " ";
+
+		// args
+		args += R"(english )"s + bsp_name;
+
+		const auto process = components::process::get();
+
+		process->set_process_type(process::PROC_TYPE_BATCH);
+		process->set_indicator(process::INDICATOR_TYPE_SPINNER);
+		process->set_output(true);
+		process->set_arguments(args);
+
+		if (game::glob::live_connected)
+		{
+			process->set_post_process_callback([bsp_name]
+				{
+					game::printf_to_console("[!] Sending devmap cmd to game\n");
+					remote_net::Cmd_SendDvar(utils::va("{\n\"dvarname\" \"%s\"\n\"value\" \"%s\"\n}",
+						"devmap",
+						bsp_name.c_str()));
+
+				}, true);
+		}
+
+		process->create_process();
+	}
+
 	/**
 	 * @brief					run batch to compile bsp
 	 * @param bsp_name			plain map name with no extension or pathing
@@ -811,7 +849,7 @@ namespace components
 		process->set_indicator(process::INDICATOR_TYPE_SPINNER);
 		process->set_output(true);
 		process->set_arguments(args);
-		process->set_post_process_callback([bsp_path, generate_createfx]
+		process->set_post_process_callback([bsp_name, bsp_path, generate_createfx]
 		{
 			game::printf_to_console("^2[PROCESS] Post-Process Callback");
 
@@ -829,6 +867,15 @@ namespace components
 						command::execute("toggle_bsp_radiant");
 						dvars::set_bool(dvars::r_draw_bsp, dvars::bsp_show_bsp_after_compile->current.enabled);
 					}
+
+					// slightly delay process generation
+					exec::on_gui_once([bsp_name]
+					{
+						if (dvars::bsp_gen_fastfile_on_compile->current.enabled)
+						{
+							d3dbsp::compile_fastfile(bsp_name);
+						}
+					});
 				}
 			}
 
@@ -849,6 +896,7 @@ namespace components
 	{
 		std::string d3dbsp_name = std::string(game::current_map_filepath).substr(std::string(game::current_map_filepath).find_last_of("\\") + 1);
 		utils::erase_substring(d3dbsp_name, ".map");
+		d3dbsp::last_compiled_map = d3dbsp_name;
 
 		components::d3dbsp::compile_bsp(d3dbsp_name, dvars::bsp_gen_createfx_on_compile->current.enabled);
 	}
@@ -934,6 +982,12 @@ namespace components
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "automatically build reflections when compiling the bsp");
+
+		dvars::bsp_gen_fastfile_on_compile = dvars::register_bool(
+			/* name		*/ "bsp_gen_fastfile_on_compile",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "automatically build the maps fastfile after compiling the bsp\n+ reload map (devmap) in-game if livelink is established");
 
 		dvars::bsp_gen_createfx_on_compile = dvars::register_bool(
 			/* name		*/ "bsp_gen_createfx_on_compile",

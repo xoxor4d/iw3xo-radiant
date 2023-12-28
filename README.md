@@ -70,7 +70,7 @@ ___
 + [play](https://xoxor4d.github.io/tutorials/iw3xradiant-using-effects/) && [edit / create](https://xoxor4d.github.io/tutorials/iw3xradiant-effects-editor/) && [export effects as CreateFX](https://xoxor4d.github.io/tutorials/iw3xradiant-createfx/) files right from within radiant (__makes effectsEd completely obsolete__)
 + Nvidia PhysX integration for [dynamic placement of prefabs](https://xoxor4d.github.io/tutorials/iw3xradiant-physx-prefabs) or [physics-enabled effects](https://xoxor4d.github.io/tutorials/iw3xradiant-physx-effects) (can be turned into misc_models)
 + Nvidia PhysX enabled character movement with cod4 movement mechanics (bouncing) [character movement](https://xoxor4d.github.io/tutorials/iw3xradiant-physx-movement)
-+ [d3dbsp loading](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp) and bsp/light compilation from within radiant
++ [d3dbsp loading](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp) and bsp/light compilation from within radiant (+ option to compile fastfile)
 + [automatically generate reflections](https://xoxor4d.github.io/tutorials/iw3xradiant-d3dbsp-reflections) within radiant when compiling the maps bsp
 + [live link](https://xoxor4d.github.io/tutorials/iw3xradiant-livelink) (sync. brushes (with collision), camera and worldspawn settings between cod4 and radiant)
 + [mesh painting](https://xoxor4d.github.io/tutorials/iw3xradiant-mesh-painting) (xmodels/prefabs) with per object settings, random size, angles, weight etc.

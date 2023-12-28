@@ -546,6 +546,7 @@ namespace ggui
 
 		imgui::Checkbox("Automatically compile reflections when building bsp", &dvars::bsp_gen_reflections_on_compile->current.enabled); TT(dvars::bsp_gen_reflections_on_compile->description);
 		imgui::Checkbox("Automatically turn on bsp-view after compiling", &dvars::bsp_show_bsp_after_compile->current.enabled); TT(dvars::bsp_show_bsp_after_compile->description);
+		imgui::Checkbox("Automatically compile fastfile after bulding the bsp", &dvars::bsp_gen_fastfile_on_compile->current.enabled); TT(dvars::bsp_gen_fastfile_on_compile->description);
 
 		/*if (imgui::Button("Generate Reflections", ImVec2(-style.FramePadding.x, imgui::GetFrameHeight())))
 		{
@@ -578,6 +579,7 @@ namespace ggui
 
 			if (imgui::Button(button_str.c_str(), ImVec2(-style.FramePadding.x, imgui::GetFrameHeight())))
 			{
+				components::d3dbsp::last_compiled_map = d3dbsp_name;
 				components::d3dbsp::compile_bsp(d3dbsp_name, dvars::bsp_gen_createfx_on_compile->current.enabled);
 			}
 

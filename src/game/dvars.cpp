@@ -69,6 +69,7 @@ namespace dvars
 	game::dvar_s* bsp_show_bsp_after_compile = nullptr;
 	game::dvar_s* bsp_gen_reflections_on_compile = nullptr;
 	game::dvar_s* bsp_gen_createfx_on_compile = nullptr;
+	game::dvar_s* bsp_gen_fastfile_on_compile = nullptr;
 
 	game::dvar_s* bsp_compile_bsp = nullptr;
 	game::dvar_s* bsp_compile_onlyents = nullptr;

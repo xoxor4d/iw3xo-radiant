@@ -111,6 +111,7 @@ namespace components
 		};
 
 		static std::string loaded_bsp_path;
+		static inline std::string last_compiled_map;
 		static bspGlob_s comBspGlob;
 		static game::clipMap_t cm;
 		static game::GfxLight scene_lights[255];
@@ -135,6 +136,7 @@ namespace components
 		static bool radiant_load_bsp(const char* bsppath, bool reload = false);
 		static void reload_bsp();
 
+		static void compile_fastfile(const std::string& bsp_name);
 		static void compile_bsp(const std::string& bsp_name, bool generate_createfx = false);
 		static void compile_current_map();
 		
