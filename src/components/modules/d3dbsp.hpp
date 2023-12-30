@@ -136,6 +136,8 @@ namespace components
 		static bool radiant_load_bsp(const char* bsppath, bool reload = false);
 		static void reload_bsp();
 
+		static void toggle_radiant_bsp_view(bool show_bsp);
+
 		static void compile_fastfile(const std::string& bsp_name);
 		static void compile_bsp(const std::string& bsp_name, bool generate_createfx = false);
 		static void compile_current_map();

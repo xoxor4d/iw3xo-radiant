@@ -1006,14 +1006,14 @@ namespace ggui
 						dvars::set_bool(dvars::r_draw_bsp, !dvars::r_draw_bsp->current.enabled);
 					}
 
-					if (ImGui::MenuItem("Toggle d3dbsp/radiant", ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp_radiant").c_str()))
+					if (ImGui::MenuItem("Toggle d3dbsp/radiant", ggui::hotkey_dialog::get_hotkey_for_command("toggle_bsp_radiant").c_str(), dvars::r_draw_bsp->current.enabled))
 					{
-						components::command::execute("toggle_bsp_radiant");
+						components::d3dbsp::toggle_radiant_bsp_view(!dvars::r_draw_bsp->current.enabled);
 					}
 					
 					if (ImGui::MenuItem("Draw Radiant World", ggui::hotkey_dialog::get_hotkey_for_command("toggle_filter_all").c_str(), !tstate))
 					{
-						components::command::execute("toggle_filter_all");
+						gameview->toggle_all_filters();
 					}
 
 					ImGui::EndDisabled();

@@ -262,8 +262,6 @@ namespace ggui
 			ImGui::title_with_seperator("Toolbar");
 			ImGui::Checkbox("Draw FPS within the camera window", &dvars::gui_draw_fps->current.enabled);
 			ImGui::Checkbox("Default Open - Toolbar", &dvars::gui_camera_toolbar_defaultopen->current.enabled);
-			ImGui::Checkbox("Merge BSP/Radiant buttons", &dvars::gui_camera_toolbar_merge_bsp_buttons->current.enabled); TT(dvars::gui_camera_toolbar_merge_bsp_buttons->description);
-
 		});
 	}
 
@@ -399,6 +397,9 @@ namespace ggui
 			ImGui::DvarInt_External("Display aabb Trees", "r_showaabbtrees");
 			ImGui::DvarInt_External("Display portals", "r_showportals");
 
+			// -----------------
+			ImGui::title_with_seperator("Gui");
+			ImGui::Checkbox("Merge BSP/Radiant buttons (camera toolbar)", &dvars::gui_camera_toolbar_merge_bsp_buttons->current.enabled); TT(dvars::gui_camera_toolbar_merge_bsp_buttons->description);
 
 			// -----------------
 			ImGui::title_with_seperator("BSP Only");

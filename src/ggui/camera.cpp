@@ -262,7 +262,7 @@ namespace ggui
 								, &toolbar_button_background_active
 								, &toolbar_button_size))
 							{
-								components::command::execute("toggle_bsp_radiant");
+								components::d3dbsp::toggle_radiant_bsp_view(!show_bsp_icon);
 
 							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 						}
@@ -285,7 +285,7 @@ namespace ggui
 
 							static bool hov_toggle_world;
 
-							const auto gameview = components::gameview::p_this;
+							const auto gameview = components::gameview::get();
 							const bool tstate = gameview->get_all_geo_state() || gameview->get_all_ents_state() || gameview->get_all_triggers_state() || gameview->get_all_others_state();
 
 							if (tb->image_togglebutton("toggle_radiant_world"
@@ -297,7 +297,7 @@ namespace ggui
 								, &toolbar_button_background_active
 								, &toolbar_button_size))
 							{
-								components::command::execute("toggle_filter_all");
+								gameview->toggle_all_filters(!tstate);
 
 							} ggui::rtt_handle_windowfocus_overlaywidget(this->rtt_get_hovered_state());
 						}

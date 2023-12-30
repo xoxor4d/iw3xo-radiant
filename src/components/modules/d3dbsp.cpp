@@ -9,7 +9,6 @@ namespace components
 	int						d3dbsp::radiant_dobj_count = 0;
 	d3dbsp::radiant_dobj_s	d3dbsp::radiant_dobj[512] = {};
 
-
 	void d3dbsp::dobj_clear_list()
 	{
 		memset(d3dbsp::radiant_dobj, 0, sizeof(d3dbsp::radiant_dobj));
@@ -744,6 +743,22 @@ namespace components
 		}
 	}
 
+	void d3dbsp::toggle_radiant_bsp_view(bool show_bsp)
+	{
+		if (d3dbsp::Com_IsBspLoaded())
+		{
+			const bool gameview_was_enabled = dvars::radiant_gameview->current.enabled;
+
+			dvars::set_bool(dvars::r_draw_bsp, show_bsp);
+			gameview::get()->toggle_all_filters(show_bsp);
+
+			if (gameview_was_enabled)
+			{
+				components::gameview::p_this->set_state(gameview_was_enabled);
+			}
+		}
+	}
+
 	void d3dbsp::compile_fastfile(const std::string& bsp_name)
 	{
 		game::printf_to_console("[BSP] Compiling fastfile for map: %s ... \n", bsp_name.c_str());
@@ -864,8 +879,7 @@ namespace components
 				{
 					if (dvars::bsp_show_bsp_after_compile->current.enabled)
 					{
-						command::execute("toggle_bsp_radiant");
-						dvars::set_bool(dvars::r_draw_bsp, dvars::bsp_show_bsp_after_compile->current.enabled);
+						toggle_radiant_bsp_view(true);
 					}
 
 					// slightly delay process generation
@@ -1019,6 +1033,8 @@ namespace components
 			/* flags	*/ game::dvar_flags::none,
 			/* desc		*/ "enable to overwrite bsp sunspecular with fakesun settings");
 	}
+
+	
 
 	d3dbsp::d3dbsp()
 	{

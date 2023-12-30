@@ -1634,8 +1634,7 @@ namespace ggui
 						, &cam_toolbar_active_bg
 						, &toolbar_button_size))
 					{
-						components::command::execute("toggle_bsp_radiant");
-
+						components::d3dbsp::toggle_radiant_bsp_view(!dvars::r_draw_bsp->current.enabled);
 					}
 
 					maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);
@@ -1678,7 +1677,7 @@ namespace ggui
 						, &cam_toolbar_active_bg
 						, &toolbar_button_size))
 					{
-						components::command::execute("toggle_filter_all");
+						gameview->toggle_all_filters(!tstate);
 					}
 
 					maxs = ImVec2(mins.x + actual_button_size.x, mins.y + actual_button_size.y);

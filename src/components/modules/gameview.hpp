@@ -10,6 +10,7 @@ namespace components
 		const char* get_name() override { return "gameview"; };
 		
 		static gameview* p_this;
+		static gameview* get();
 
 		[[nodiscard]] bool get_all_geo_state() const
 		{
@@ -36,7 +37,9 @@ namespace components
 		void 			toggle_all_triggers(bool state);
 		void 			toggle_all_others(bool state);
 		void			toggle_all_filters();
-		
+		void			toggle_all_filters(bool state);
+		bool			toggle_all_get_state();
+
 		void 			set_state(bool state);
 		static void		register_dvars();
 

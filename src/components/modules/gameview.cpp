@@ -4,6 +4,11 @@ namespace components
 {
 	gameview* gameview::p_this = nullptr;
 
+	gameview* gameview::get()
+	{
+		return p_this;
+	}
+
 	void gameview::toggle_all_geo(bool state)
 	{
 		if (!gameview::p_this)
@@ -268,6 +273,29 @@ namespace components
 
 		gameview::all_off = !gameview::all_off;
 	}
+
+	void gameview::toggle_all_filters(bool state)
+	{
+		// restore states if was toggled manually
+		if (gameview::get_all_geo_state())		gameview::toggle_all_geo(false);
+		if (gameview::get_all_ents_state())		gameview::toggle_all_entities(false);
+		if (gameview::get_all_triggers_state()) gameview::toggle_all_triggers(false);
+		if (gameview::get_all_others_state())	gameview::toggle_all_others(false);
+
+		// toggle global
+		gameview::toggle_all_geo(state);
+		gameview::toggle_all_entities(state);
+		gameview::toggle_all_triggers(state);
+		gameview::toggle_all_others(state);
+
+		gameview::all_off = state;
+	}
+
+	bool gameview::toggle_all_get_state()
+	{
+		return all_off;
+	}
+
 
 	void gameview::set_state(bool state)
 	{
