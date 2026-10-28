@@ -66,6 +66,7 @@ namespace dvars
 	game::dvar_s* grid_new_patch_drag = nullptr;
 
 	game::dvar_s* bsp_load_entities = nullptr;
+	game::dvar_s* bsp_load_dyn_models = nullptr;
 	game::dvar_s* bsp_show_bsp_after_compile = nullptr;
 	game::dvar_s* bsp_gen_reflections_on_compile = nullptr;
 	game::dvar_s* bsp_gen_createfx_on_compile = nullptr;

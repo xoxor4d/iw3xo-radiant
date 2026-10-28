@@ -15,9 +15,10 @@ namespace utils
 			std::string  model_name;
 			game::vec3_t origin;
 			game::vec3_t angles;
+			bool is_dyn_model;
 		};
 
-		void get_script_models_for_dobj(std::vector<spawnvars::script_model_for_dobj_s>& dobjs);
+		void get_script_models_for_dobj(std::vector<spawnvars::script_model_for_dobj_s>& dobjs, bool include_dyn_models = false);
 	
 	private:
 		enum

@@ -79,6 +79,11 @@ namespace components
 	{
 		for (auto i = 0; i < radiant_dobj_count; i++)
 		{
+			if (radiant_dobj[i].is_dyn_model && !dvars::bsp_load_dyn_models->current.enabled)
+			{
+				continue;
+			}
+
 			game::vec3_t lighting_origin = {};
 			dobj_get_lighting_origin(&radiant_dobj[i].pose, lighting_origin);
 			dobj_add_to_scene(&radiant_dobj[i].obj, &radiant_dobj[i].pose, 0, lighting_origin);
@@ -629,7 +634,7 @@ namespace components
 
 
 			// *
-			// entities (script_models only for now)
+			// script models and dynamic models
 
 			// spawn:
 			/* "classname" "script_model"
@@ -648,27 +653,45 @@ namespace components
 				// create a spawnvar for each map entity
 				utils::spawnvars script_models(d3dbsp::cm.mapEnts->entityString);
 
-				// get name, origin and angles for script_models (see spawn/exclude note)
+				// get model names, origins and angles (see exclusions above)
 				std::vector<utils::spawnvars::script_model_for_dobj_s> dobjs;
-				script_models.get_script_models_for_dobj(dobjs);
+				// Load dynamic models even when hidden so they can be enabled without reloading the BSP.
+				script_models.get_script_models_for_dobj(dobjs, true);
+
+				// Load script models first so dynamic models do not use their slots at the 512-entity limit.
+				std::stable_partition(dobjs.begin(), dobjs.end(), [](const auto& obj) { return !obj.is_dyn_model; });
 
 				if (!dobjs.empty())
 				{
-					for(radiant_dobj_count = 0; radiant_dobj_count < static_cast<int>(dobjs.size()) && radiant_dobj_count < 512; radiant_dobj_count++)
+					radiant_dobj_count = 0;
+					for (auto i = 0u; i < dobjs.size() && radiant_dobj_count < 512; i++)
 					{
 						game::DObjModel_s dobjModels = {};
-						dobjModels.model = game::R_RegisterModel(dobjs[radiant_dobj_count].model_name.c_str());
+						dobjModels.model = game::R_RegisterModel(dobjs[i].model_name.c_str());
+						if (!dobjModels.model || dobjModels.model->bad)
+						{
+							game::printf_to_console("[BSP] Skipping missing model '%s'\n", dobjs[i].model_name.c_str());
+							continue;
+						}
+
 						dobjModels.boneName = 0;
 						dobjModels.ignoreCollision = true;
 
 						game::DObjCreate(&dobjModels, &radiant_dobj[radiant_dobj_count].obj, 1, nullptr, 0);
 
-						utils::vector::copy(dobjs[radiant_dobj_count].origin, radiant_dobj[radiant_dobj_count].pose.origin);
-						utils::vector::copy(dobjs[radiant_dobj_count].angles, radiant_dobj[radiant_dobj_count].pose.angles);
+						utils::vector::copy(dobjs[i].origin, radiant_dobj[radiant_dobj_count].pose.origin);
+						utils::vector::copy(dobjs[i].angles, radiant_dobj[radiant_dobj_count].pose.angles);
+						radiant_dobj[radiant_dobj_count].is_dyn_model = dobjs[i].is_dyn_model;
+						radiant_dobj_count++;
+					}
+
+					if (dobjs.size() > 512)
+					{
+						game::printf_to_console("[BSP] Found %zu model entities; load limit is 512\n", dobjs.size());
 					}
 				}
 
-				if (!reload) game::printf_to_console("[BSP] loaded %d entities\n", radiant_dobj_count);
+				game::printf_to_console("[BSP] loaded %d entities\n", radiant_dobj_count);
 			}
 
 
@@ -983,7 +1006,13 @@ namespace components
 			/* name		*/ "bsp_load_entities",
 			/* default	*/ true,
 			/* flags	*/ game::dvar_flags::saved,
-			/* desc		*/ "enable to load entities when loading a bsp (static_models only)");
+			/* desc		*/ "load model entities when loading a BSP");
+
+		dvars::bsp_load_dyn_models = dvars::register_bool(
+			/* name		*/ "bsp_load_dyn_models",
+			/* default	*/ false,
+			/* flags	*/ game::dvar_flags::saved,
+			/* desc		*/ "draw dynamic models in BSP view (requires bsp_load_entities)");
 
 		dvars::bsp_show_bsp_after_compile = dvars::register_bool(
 			/* name		*/ "bsp_show_bsp_after_compile",
