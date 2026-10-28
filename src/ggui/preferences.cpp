@@ -405,6 +405,7 @@ namespace ggui
 			ImGui::title_with_seperator("BSP Only");
 
 			ImGui::DvarBool_External("Load and draw BSP entities", "bsp_load_entities");
+			ImGui::DvarBool_External("Draw dynamic models", "bsp_load_dyn_models");
 			ImGui::Checkbox("Export reflections as tga files", &dvars::r_reflectionprobe_export_tga->current.enabled); TT(dvars::r_reflectionprobe_export_tga->description);
 			ImGui::Checkbox("Automatically compile reflections when building bsp", &dvars::bsp_gen_reflections_on_compile->current.enabled); TT(dvars::bsp_gen_reflections_on_compile->description);
 

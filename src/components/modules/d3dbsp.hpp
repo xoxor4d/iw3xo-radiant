@@ -14,6 +14,7 @@ namespace components
 		{
 			game::DObj_s obj;
 			game::cpose_t pose;
+			bool is_dyn_model;
 		};
 
 		static int radiant_dobj_count;

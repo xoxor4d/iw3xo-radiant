@@ -2,23 +2,25 @@
 
 namespace utils
 {
-	void spawnvars::get_script_models_for_dobj(std::vector<spawnvars::script_model_for_dobj_s>& dobjs)
+	void spawnvars::get_script_models_for_dobj(std::vector<spawnvars::script_model_for_dobj_s>& dobjs, bool include_dyn_models)
 	{
 		dobjs.reserve(32);
 
 		for (auto& entity : this->spawnvars_)
 		{
-			std::string classname = entity["classname"];
+			const std::string& classname = entity["classname"];
+			const bool is_dyn_model = classname == "dyn_model";
 
-			if (   !entity["classname"].empty() &&  utils::string_contains(entity["classname"], "script_model")
+			if (   (utils::string_contains(classname, "script_model") || (include_dyn_models && is_dyn_model))
 				&&  entity.contains("model")
 				&& !entity.contains("script_exploder") // exclude script_exploder
 				&& !entity.contains("script_gameobjectname")) // exclude script_gameobjectname
 			{
-				if (!entity["model"].empty())
+				if (!entity["model"].empty() && entity["model"][0] != '*')
 				{
 					spawnvars::script_model_for_dobj_s obj = {};
 					obj.model_name = entity["model"];
+					obj.is_dyn_model = is_dyn_model;
 
 					if(!entity["origin"].empty())
 					{
