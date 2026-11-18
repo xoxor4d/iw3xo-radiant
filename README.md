@@ -1,8 +1,59 @@
 > **This is the `codol-1.1.1.13` branch: iw3xo-radiant for Call of Duty Online 1.1.1.13.**
 > It adds a CoDOL menu with a script workbench (GSC, animtrees, `playeranim.script`, scripted-animation tables,
 > animation validation), map entity import / export for shipped maps, hot reload through rcon and a docked game window.
-> Read **[docs/CODOL.md](docs/CODOL.md)** for what works, what does not exist yet (there is no CoDOL bsp compiler and
-> CoDOL assets are not loaded), setup and usage. Everything below is the upstream readme.
+> It also has a standalone editor, `CoDOLRadiant.exe`, with a map compiler ( `codol_bsp` ), a shipped-map patcher
+> ( `codol_mapc` ), an asset compiler ( `codol_assetc` ) and a fastfile linker ( `codol_linker` ).
+> Read **[docs/CODOL.md](docs/CODOL.md)** for what works, what does not exist yet, setup and usage.
+> [Using it with the CoD Online offline build](#using-it-with-the-cod-online-offline-build) says how it connects
+> to the current offline client. Everything after that section is the upstream readme.
+
+## Using it with the CoD Online offline build
+
+The offline build is `codoMP_client_shipRetail.exe` with `Kernel33.dll` from
+[cod-offline-1.1.1.13](https://github.com/nucleur16/cod-offline-1.1.1.13). Kernel33 runs the lobby emulator and the
+match server ( sh1x ) **inside the game process**. You don't run a separate dedicated server, `codol_dedrun` or a lobby.
+The server starts when a match starts. Its files are:
+
+| What | Where in the game folder |
+|---|---|
+| map zones ( `.ff` ) | `client_shipRetail\chinese\` |
+| server scripts ( loose `.gsc`, level scripts ) | `main\sh1x_rawfiles\` |
+| archives ( `.iwd`, sounds included ) | `main\`, which the client and the server share |
+| rcon password | `p2p\offline\native_server_rcon.txt`, written the first time you host |
+| rcon port | UDP `127.0.0.1:17760`. If that port is in use, a free port is chosen. To pin one, put `host_port=<port>` in `k33_offline.ini` next to the exe |
+
+### Setup
+
+1. **`C1.exe`**. The game doesn't need it any more, because Kernel33 carries C1. The tools still read the archive and
+   fastfile keys from `<install>\C1.exe`, though. Copy `C1.exe` from a full 1.1.1.13 install into the game folder;
+   the client ignores it. You can also set the tools' install folder to a full install that has it.
+2. **File > Settings** ( standalone editor ) or **CoDOL > Script Workbench > Setup** ( radiant plugin ):
+
+| Setting | Value for the offline build |
+|---|---|
+| CoDOL install folder ( `codol_install_path` ) | the game folder |
+| Script folder ( `codol_script_root` ), and the server script folder for *Install the built map* | `<game>\main\sh1x_rawfiles` |
+| Start command ( `codol_launch_cmd` ) | `<game>\codoMP_client_shipRetail.exe` |
+| Client process names ( `codol_client_exe` ) | the default ( `codoMP_client_shipRetail.exe;C1.exe` ) |
+| Port ( `codol_rcon_port` ) | `17760`. The tools default to 17733, which was the old dedicated server's port |
+| Password file ( `codol_rcon_password_file` ) | `<game>\p2p\offline\native_server_rcon.txt`. This one is not in the tools' automatic search list, so set it here |
+
+### Build, install, play
+
+1. Build the map ( **File > Build map** ), then install it with
+   `map_install game=<game> zones=<game>\client_shipRetail\chinese scripts=<game>\main\sh1x_rawfiles`.
+   The zone has to go into `client_shipRetail\chinese`, because the lobby doesn't look in `usermaps\`.
+2. Start the game and open the console. `devmap <map> [gametype]` loads the map with cheats on, and `map <map> [gametype]`
+   loads it with cheats off. The gametype defaults to `war` for `mp_`, `zm` for `zm_` and `coop` for `coop_` maps.
+   The command makes a room, sets the map and presses Ready for you, so there's no menu to go through. During a match
+   on your own server, `devmap` / `map` change the level on that server.
+3. With the match running, **Reload in game** / `codol_reload` and the Map Entities export reach the server over rcon.
+   They work only while a match is running, because before a match there is no server to talk to.
+
+`CODOL_FORCE_MAP` in older docs was for the standalone lobby and doesn't apply to Kernel33; use `devmap` instead.
+**Not tested yet:** `devmap` was checked with shipped maps only. A map built with `codol_bsp` has not been started this
+way, and neither has the tools' rcon reload against the in-process server. The commands and packet format are the
+same, so both are expected to work.
 
 
 
