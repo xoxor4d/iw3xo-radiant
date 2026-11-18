@@ -537,11 +537,7 @@ namespace editor::ui
 			}
 		}
 
-		std::filesystem::path exe = install / "C1.exe";
-		if (!std::filesystem::is_regular_file(exe, ec))
-		{
-			exe = install / "codoMP_client_shipRetail.exe";
-		}
+		const std::filesystem::path exe = install / "codoMP_client_shipRetail.exe";
 
 		std::string problem;
 		if (!std::filesystem::is_regular_file(tool, ec)) { problem = "codol_mapc.exe is not next to the editor."; }
@@ -915,11 +911,7 @@ namespace editor::ui
 		const auto tool = base_dir / "codol_bsp.exe";
 		std::error_code ec;
 
-		std::filesystem::path exe = install / "C1.exe";
-		if (!std::filesystem::is_regular_file(exe, ec))
-		{
-			exe = install / "codoMP_client_shipRetail.exe";
-		}
+		const std::filesystem::path exe = install / "codoMP_client_shipRetail.exe";
 
 		std::string problem;
 		if (!std::filesystem::is_regular_file(tool, ec)) { problem = "codol_bsp.exe is not next to the editor."; }
@@ -961,7 +953,7 @@ namespace editor::ui
 		// of the create-room list and INSTALL.txt, in compiled\<map>\. Without the script: the two zones alone.
 		const auto script = base_dir / "tools" / "package_map.ps1";
 		const auto assetc = base_dir / "codol_assetc.exe";
-		const bool package = std::filesystem::is_regular_file(script, ec) && std::filesystem::is_regular_file(assetc, ec) && exe.filename() == "C1.exe";
+		const bool package = std::filesystem::is_regular_file(script, ec) && std::filesystem::is_regular_file(assetc, ec);
 		const auto assets_zone = assets::zone_file();
 		const bool with_assets = std::filesystem::is_regular_file(assets_zone, ec);
 

@@ -42,7 +42,7 @@ namespace codol::view
 
 		if (opts.client_exe.empty())
 		{
-			opts.client_exe = opts.game_root / "C1.exe";
+			opts.client_exe = opts.game_root / "codoMP_client_shipRetail.exe";
 		}
 		if (opts.zone_directories.empty())
 		{

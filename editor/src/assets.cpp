@@ -2845,7 +2845,7 @@ namespace editor::assets
 		build_job job;
 		job.dir = project_dir();
 		job.install = fs::u8path(install);
-		job.exe = job.install / "C1.exe";
+		job.exe = job.install / "codoMP_client_shipRetail.exe";
 		job.matlib = mod_dir() / "codol_matlib.txt";
 		job.fxatlas = mod_dir() / "codol_fxatlas.txt";
 		job.out = zone_file();

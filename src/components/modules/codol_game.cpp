@@ -929,7 +929,7 @@ namespace components
 
 		dvars::codol_client_exe = dvars::register_string(
 			/* name		*/ "codol_client_exe",
-			/* default	*/ "codoMP_client_shipRetail.exe;C1.exe",
+			/* default	*/ "codoMP_client_shipRetail.exe",
 			/* flags	*/ game::dvar_flags::saved,
 			/* desc		*/ "process names of the game client ( ; separated ), used to find its window for the Game view");
 

@@ -1,10 +1,10 @@
 // codol_mapc: compiles an edited map into the fast file it was imported from.
 //
-//   codol_mapc --base <map.ff> --exe <C1.exe> --map <edited.map> [--baseline <map.codol_base.map>] --out <new.ff>
+//   codol_mapc --base <map.ff> --exe <codoMP_client_shipRetail.exe> --map <edited.map> [--baseline <map.codol_base.map>] --out <new.ff>
 //              [--report <file>] [--zone-out <file>] [--donor <zone.ff>]... [--level 0..9]
 //              [--assets <project zone.ff>[,<type> ..]]... [--rawfile <name>=<file>]... [--append-rawfile <name>=<file>]...
 //              [--no-entities] [--no-models] [--no-brushes] [--no-surfaces]
-//   codol_mapc --check <map.ff> --exe <C1.exe>
+//   codol_mapc --check <map.ff> --exe <codoMP_client_shipRetail.exe>
 //
 // --check: reads the collision data of a fast file the way a dedicated server does ( codol_mapc/server_check.hpp )
 // and says whether the server would take it.
@@ -121,11 +121,11 @@ int main(const int argc, char** argv)
 	if (opts.base.empty() || opts.exe.empty() || opts.map.empty() || opts.out.empty())
 	{
 		std::fprintf(stderr,
-			"codol_mapc --base <map.ff> --exe <C1.exe> --map <edited.map> [--baseline <map.codol_base.map>] --out <new.ff>\n"
+			"codol_mapc --base <map.ff> --exe <codoMP_client_shipRetail.exe> --map <edited.map> [--baseline <map.codol_base.map>] --out <new.ff>\n"
 			"           [--report <file>] [--zone-out <file>] [--donor <zone.ff>]... [--level 0..9]\n"
 			"           [--assets <project zone.ff>[,<type> ..]]... [--rawfile <name>=<file>]... [--append-rawfile <name>=<file>]...\n"
 			"           [--no-entities] [--no-models] [--no-brushes] [--no-surfaces]\n"
-			"codol_mapc --check <map.ff> --exe <C1.exe>\n");
+			"codol_mapc --check <map.ff> --exe <codoMP_client_shipRetail.exe>\n");
 		return 2;
 	}
 	codol::mapc::report report;

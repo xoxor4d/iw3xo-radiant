@@ -1778,7 +1778,7 @@ namespace ggui
 		field("Start command", "path to the script / exe that starts the client", m_cfg_launch, "Used by the Launch button of the Game window. Runs in its own folder.");
 		field("Asset tool ( optional )", "D:\\...\\CodolSoundDumper.exe", m_cfg_asset_tool,
 			"CodolSoundDumper.exe of CODOL-AssetExplorer. Used by CoDOL > Map Entities to decrypt a map zone ( .ff ).");
-		field("Client process names", "codoMP_client_shipRetail.exe;C1.exe", m_cfg_client_exe, "Used to find the window of the running game ( ; separated ).");
+		field("Client process names", "codoMP_client_shipRetail.exe", m_cfg_client_exe, "Used to find the window of the running game ( ; separated ).");
 
 		ImGui::Dummy(ImVec2(0.0f, 6.0f));
 		ImGui::TextColored(COL_SECTION, "Local server ( rcon )");

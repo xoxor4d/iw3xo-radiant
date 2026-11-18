@@ -1,7 +1,7 @@
 // codol_assetc: source assets -> a fast file with native 1.1.1.13 assets. Asset Manager + converter + linker_pc.
 //
 //   codol_assetc --install <dir> --out <zone.ff> [options] [assets]
-//     --exe <C1.exe>                 default <install>/C1.exe
+//     --exe <client exe>             default <install>/codoMP_client_shipRetail.exe
 //     --base <zone.ff>               add to an existing zone instead of making a new one
 //     --name <zone name>             name of a new zone ( default: the output file name )
 //     --matlib <file>                material library cache ( default <out dir>/codol_matlib.txt; made on first use, 20 s )
@@ -33,7 +33,7 @@
 //                                    --verify prints them ( xanim, sound, sndcurve, loaded_sound, fx, xmodel, material ..,
 //                                    all ). What the zone already has is kept. A project zone -> the zone of a map
 //
-//   codol_assetc --verify <zone.ff> --install <dir> [--exe <C1.exe>]
+//   codol_assetc --verify <zone.ff> --install <dir> [--exe <client exe>]
 //     loads the file with the game's loaders, writes it again ( must be identical ), lists what is in it
 
 #include "codol_assets/fx.hpp"
@@ -168,7 +168,7 @@ namespace
 
 	int verify(const fs::path& file, const fs::path& install, fs::path exe)
 	{
-		exe = exe.empty() ? install / "C1.exe" : exe;
+		exe = exe.empty() ? install / "codoMP_client_shipRetail.exe" : exe;
 		z::ClientKey key;
 		if (const z::Status s = key.load_from_exe(exe); !s)
 		{
@@ -410,7 +410,7 @@ int main(const int argc, char** argv)
 		codol::render::iwd_key key{};
 		const bool encrypted = iwd_needs_key(iwd);
 		std::string why;
-		if (encrypted && !codol::render::derive_iwd_key(link.exe.empty() ? link.install / "C1.exe" : link.exe, key, &why))
+		if (encrypted && !codol::render::derive_iwd_key(link.exe.empty() ? link.install / "codoMP_client_shipRetail.exe" : link.exe, key, &why))
 		{
 			return fail("--iwd " + iwd.filename().string() + " has a name the game decrypts, and the key could not be read from the client: " + why);
 		}
@@ -671,7 +671,7 @@ int main(const int argc, char** argv)
 		if (encrypted)
 		{
 			std::string why;
-			if (!codol::render::derive_iwd_key(link.exe.empty() ? link.install / "C1.exe" : link.exe, key, &why))
+			if (!codol::render::derive_iwd_key(link.exe.empty() ? link.install / "codoMP_client_shipRetail.exe" : link.exe, key, &why))
 			{
 				return fail("--iwd " + iwd.filename().string() + " has a name the game decrypts, and the key could not be read from the client: " + why);
 			}

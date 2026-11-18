@@ -220,7 +220,7 @@ namespace codol::assets
 	Status AssetLinker::begin(const LinkOptions& options)
 	{
 		impl_->options = options;
-		const fs::path exe = options.exe.empty() ? options.install / "C1.exe" : options.exe;
+		const fs::path exe = options.exe.empty() ? options.install / "codoMP_client_shipRetail.exe" : options.exe;
 		if (const Status s = impl_->key.load_from_exe(exe); !s)
 		{
 			return s;

@@ -322,11 +322,11 @@ namespace editor
 		if (!std::filesystem::is_regular_file(zone, ec))
 		{
 			const auto tool = base / "codol_bsp.exe";
-			const auto exe = install / "C1.exe";
+			const auto exe = install / "codoMP_client_shipRetail.exe";
 
 			if (!std::filesystem::is_regular_file(tool, ec) || !std::filesystem::is_regular_file(exe, ec))
 			{
-				error = "the 3D view of a map of your own needs codol_bsp.exe next to the editor and C1.exe in the install ( File > Settings )";
+				error = "the 3D view of a map of your own needs codol_bsp.exe next to the editor and codoMP_client_shipRetail.exe in the install ( File > Settings )";
 				return false;
 			}
 
@@ -702,7 +702,7 @@ namespace editor
 
 		const auto t1 = std::chrono::steady_clock::now();
 
-		if (!doc.import_fastfile(fastfile, root / "C1.exe", error, map))
+		if (!doc.import_fastfile(fastfile, root / "codoMP_client_shipRetail.exe", error, map))
 		{
 			error = "Could not import " + map + ": " + error;
 			renderer.unload();

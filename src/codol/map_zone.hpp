@@ -16,6 +16,6 @@ namespace codol::mapgeo
 		std::string world_name;		// "maps/mp/<map>.d3dbsp"
 	};
 
-	// `client_exe`: C1.exe or codoMP_client_shipRetail.exe of the install ( the fastfile key is read from it )
+	// `client_exe`: codoMP_client_shipRetail.exe of the install ( the fastfile key is read from it )
 	bool read_zone_map(const std::filesystem::path& fastfile, const std::filesystem::path& client_exe, zone_map& out, std::string& error);
 }

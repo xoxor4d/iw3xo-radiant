@@ -46,7 +46,7 @@ New-Item -ItemType Directory -Force $zone, $work, $presence, "$Out\scripts", "$w
 if ($Project -and -not (Test-Path $Project -PathType Container)) { throw "-Project $Project is not a folder" }
 
 # 1. the map
-$a = @('--map', $Map, '--exe', "$Game\C1.exe", '--install', $Game, '--out', "$zone\$Name.ff", '--name', $Name, '--cache', $Cache,
+$a = @('--map', $Map, '--exe', "$Game\codoMP_client_shipRetail.exe", '--install', $Game, '--out', "$zone\$Name.ff", '--name', $Name, '--cache', $Cache,
        '--report', "$work\$Name.report.txt", '--minimap', "$work\compass_map_$Name.tga", '--scripts', "$work\scripts")
 foreach ($z in $Assets) { $a += @('--assets', $z) }
 if ($Fast) { $a += '--fast' }

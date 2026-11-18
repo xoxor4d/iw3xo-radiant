@@ -1,10 +1,10 @@
 // codol_bsp: compiles a .map into a map fast file of Call of Duty Online 1.1.1.13.
 //
-//   codol_bsp --map <file.map> --exe <C1.exe> --install <install dir> --out <mapname.ff> [--name <mapname>]
+//   codol_bsp --map <file.map> --exe <codoMP_client_shipRetail.exe> --install <install dir> --out <mapname.ff> [--name <mapname>]
 //             [--report <file>] [--zone-out <file>] [--cache <dir>] [--donor <zone.ff>]... [--rawfile <name>=<file>]...
 //             [--fast | --quality n] [--no-light] [--no-vis] [--no-load] [--level 0..9]
 //             [--minimap <picture.tga>] [--scripts <folder for the generated .gsc files>]
-//   codol_bsp --check <map.ff> --exe <C1.exe>
+//   codol_bsp --check <map.ff> --exe <codoMP_client_shipRetail.exe>
 //
 // Exit code 0: written; 1: failed, nothing written ( message on stderr ); 2: usage.
 
@@ -90,12 +90,12 @@ int main(const int argc, char** argv)
 	if (opts.map.empty() || opts.exe.empty() || opts.install.empty() || opts.out.empty())
 	{
 		std::fprintf(stderr,
-			"codol_bsp --map <file.map> --exe <C1.exe> --install <install dir> --out <mapname.ff> [--name <mapname>]\n"
+			"codol_bsp --map <file.map> --exe <codoMP_client_shipRetail.exe> --install <install dir> --out <mapname.ff> [--name <mapname>]\n"
 			"          [--report <file>] [--zone-out <file>] [--cache <dir>] [--donor <zone.ff>]... [--rawfile <name>=<file>]...\n"
 			"          [--assets <project zone.ff>]... [--minimap <picture.tga>] [--scripts <folder>] [--vision <file>] [--sun <file>]\n"
 			"          [--fast | --quality n] [--no-light] [--no-vis] [--no-load] [--level 0..9] [--exact-size <bytes>]\n"
 			"          [--prefabs <folder that holds prefabs\\..>]...\n"
-			"codol_bsp --check <map.ff> --exe <C1.exe>\n");
+			"codol_bsp --check <map.ff> --exe <codoMP_client_shipRetail.exe>\n");
 		return 2;
 	}
 	codol::bsp::report rep;

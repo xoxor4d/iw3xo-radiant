@@ -9,32 +9,32 @@
 
 ## Using it with the CoD Online offline build
 
-The offline build is `codoMP_client_shipRetail.exe` with `Kernel33.dll` from
-[cod-offline-1.1.1.13](https://github.com/nucleur16/cod-offline-1.1.1.13). Kernel33 runs the lobby emulator and the
-match server ( sh1x ) **inside the game process**. You don't run a separate dedicated server, `codol_dedrun` or a lobby.
-The server starts when a match starts. Its files are:
+**Just want the tools?** Download the release zip ( `CoDOL-ModTools-*.zip` ) and follow its `INSTALL.txt`.
+
+The offline build is `codoMP_client_shipRetail.exe` with `Kernel33.dll` ( the CoD Online 1.1.1.13 offline release ).
+Kernel33 runs the lobby emulator and the match server **inside the game process**. You don't run a separate
+dedicated server or a lobby. The server starts when a match starts. Its files are:
 
 | What | Where in the game folder |
 |---|---|
 | map zones ( `.ff` ) | `client_shipRetail\chinese\` |
-| server scripts ( loose `.gsc`, level scripts ) | `main\sh1x_rawfiles\` |
+| server scripts | packed in `main\sh1x_svr_scripts.iwd`; loose `.gsc` files in `main\sh1x_rawfiles\` ( level scripts of your maps, edited scripts ) override the packed ones file by file |
 | archives ( `.iwd`, sounds included ) | `main\`, which the client and the server share |
 | rcon password | `p2p\offline\native_server_rcon.txt`, written the first time you host |
 | rcon port | UDP `127.0.0.1:17760`. If that port is in use, a free port is chosen. To pin one, put `host_port=<port>` in `k33_offline.ini` next to the exe |
 
 ### Setup
 
-1. **`C1.exe`**. The game doesn't need it any more, because Kernel33 carries C1. The tools still read the archive and
-   fastfile keys from `<install>\C1.exe`, though. Copy `C1.exe` from a full 1.1.1.13 install into the game folder;
-   the client ignores it. You can also set the tools' install folder to a full install that has it.
-2. **File > Settings** ( standalone editor ) or **CoDOL > Script Workbench > Setup** ( radiant plugin ):
+The tools read the fastfile and archive keys and the image tables from the game's own
+`codoMP_client_shipRetail.exe` ( patched for Kernel33 or not ); nothing else is needed. In **File > Settings**
+( standalone editor ) or **CoDOL > Script Workbench > Setup** ( radiant plugin ):
 
 | Setting | Value for the offline build |
 |---|---|
 | CoDOL install folder ( `codol_install_path` ) | the game folder |
 | Script folder ( `codol_script_root` ), and the server script folder for *Install the built map* | `<game>\main\sh1x_rawfiles` |
 | Start command ( `codol_launch_cmd` ) | `<game>\codoMP_client_shipRetail.exe` |
-| Client process names ( `codol_client_exe` ) | the default ( `codoMP_client_shipRetail.exe;C1.exe` ) |
+| Client process names ( `codol_client_exe` ) | the default ( `codoMP_client_shipRetail.exe` ) |
 | Port ( `codol_rcon_port` ) | `17760`. The tools default to 17733, which was the old dedicated server's port |
 | Password file ( `codol_rcon_password_file` ) | `<game>\p2p\offline\native_server_rcon.txt`. This one is not in the tools' automatic search list, so set it here |
 
@@ -51,9 +51,6 @@ The server starts when a match starts. Its files are:
    They work only while a match is running, because before a match there is no server to talk to.
 
 `CODOL_FORCE_MAP` in older docs was for the standalone lobby and doesn't apply to Kernel33; use `devmap` instead.
-**Not tested yet:** `devmap` was checked with shipped maps only. A map built with `codol_bsp` has not been started this
-way, and neither has the tools' rcon reload against the in-process server. The commands and packet format are the
-same, so both are expected to work.
 
 
 

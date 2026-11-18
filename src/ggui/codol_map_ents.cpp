@@ -264,7 +264,7 @@ namespace ggui
 
 		// the key of the fastfiles is read from the client executable
 		std::string exe;
-		for (const char* name : { "\\C1.exe", "\\codoMP_client_shipRetail.exe" })
+		for (const char* name : { "\\codoMP_client_shipRetail.exe" })
 		{
 			const auto candidate = components::codol_game::install_path() + name;
 			if (std::filesystem::exists(std::filesystem::u8path(candidate), ec))
@@ -276,7 +276,7 @@ namespace ggui
 
 		if (exe.empty())
 		{
-			log("the client executable ( C1.exe / codoMP_client_shipRetail.exe ) was not found: set the CoDOL install folder in Script Workbench > Setup", true);
+			log("the client executable ( codoMP_client_shipRetail.exe ) was not found: set the CoDOL install folder in Script Workbench > Setup", true);
 			return;
 		}
 

@@ -138,7 +138,7 @@ namespace editor::fx
 			else
 			{
 				cz::ClientKey key;
-				const auto status = key.load_from_exe(fs::u8path(components::codol_game::install_path()) / "C1.exe");
+				const auto status = key.load_from_exe(fs::u8path(components::codol_game::install_path()) / "codoMP_client_shipRetail.exe");
 				out.note = status ? "no effect " + name + " in the project, the zone of the map or the common zones" : status.message;
 
 				for (const auto& zone_name : status ? effect_zones() : std::vector<std::string>{})
@@ -201,7 +201,7 @@ namespace editor::fx
 				std::vector<std::pair<std::string, std::string>> found;
 				cz::ClientKey key;
 
-				if (key.load_from_exe(install / "C1.exe"))
+				if (key.load_from_exe(install / "codoMP_client_shipRetail.exe"))
 				{
 					for (const auto& name : zones)
 					{

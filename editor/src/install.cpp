@@ -343,7 +343,7 @@ namespace editor::ui
 		{
 			std::error_code ec;
 
-			for (const fs::path& exe : { game / "C1.exe", game / "codoMP_client_shipRetail.exe", fs::u8path(components::codol_game::install_path()) / "C1.exe" })
+			for (const fs::path& exe : { game / "codoMP_client_shipRetail.exe", fs::u8path(components::codol_game::install_path()) / "codoMP_client_shipRetail.exe" })
 			{
 				if (fs::is_regular_file(exe, ec) && key.load_from_exe(exe))
 				{
@@ -919,7 +919,7 @@ namespace editor::ui
 			std::string why;
 			bool have_key = false;
 
-			for (const fs::path& exe : { game / "C1.exe", fs::u8path(components::codol_game::install_path()) / "C1.exe" })
+			for (const fs::path& exe : { game / "codoMP_client_shipRetail.exe", fs::u8path(components::codol_game::install_path()) / "codoMP_client_shipRetail.exe" })
 			{
 				if (!have_key && fs::is_regular_file(exe, ec) && cr::derive_iwd_key(exe, key, &why))
 				{
@@ -930,7 +930,7 @@ namespace editor::ui
 			if (!have_key)
 			{
 				n.failed++;
-				say("^1", "streamed sounds: the archive key could not be read from C1.exe of " + to_utf8(game) + " ( " + why + " )");
+				say("^1", "streamed sounds: the archive key could not be read from codoMP_client_shipRetail.exe of " + to_utf8(game) + " ( " + why + " )");
 				return;
 			}
 

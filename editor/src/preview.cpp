@@ -449,7 +449,7 @@ namespace editor::preview
 			cz::ClientKey key;
 			const auto install = fs::u8path(components::codol_game::install_path());
 
-			if (const auto status = key.load_from_exe(install / "C1.exe"); !status)
+			if (const auto status = key.load_from_exe(install / "codoMP_client_shipRetail.exe"); !status)
 			{
 				why = status.message;
 				return false;
@@ -1051,7 +1051,7 @@ namespace editor::preview
 			}
 
 			cz::ClientKey key;
-			if (const auto status = key.load_from_exe(install / "C1.exe"); !status)
+			if (const auto status = key.load_from_exe(install / "codoMP_client_shipRetail.exe"); !status)
 			{
 				message = status.message;
 				return false;
@@ -1279,7 +1279,7 @@ namespace editor::preview
 		bool fx_from_zone(const fs::path& file, const std::string& name, std::string& why)
 		{
 			cz::ClientKey key;
-			if (const auto status = key.load_from_exe(fs::u8path(components::codol_game::install_path()) / "C1.exe"); !status)
+			if (const auto status = key.load_from_exe(fs::u8path(components::codol_game::install_path()) / "codoMP_client_shipRetail.exe"); !status)
 			{
 				why = status.message;
 				return false;

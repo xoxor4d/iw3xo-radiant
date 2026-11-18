@@ -247,7 +247,7 @@ namespace editor::render_modes
 				std::string note;
 				cz::ClientKey key;
 
-				if (const auto status = key.load_from_exe(install / "C1.exe"); !status)
+				if (const auto status = key.load_from_exe(install / "codoMP_client_shipRetail.exe"); !status)
 				{
 					note = status.message;
 				}
