@@ -32,7 +32,7 @@ The tools read the fastfile and archive keys and the image tables from the game'
 | Setting | Value for the offline build |
 |---|---|
 | CoDOL install folder ( `codol_install_path` ) | the game folder |
-| Script folder ( `codol_script_root` ), and the server script folder for *Install the built map* | `<game>\main\sh1x_rawfiles` |
+| Script folder ( `codol_script_root` ), and the server script folder for *Install the built map* | `<game>\main\sh1x_rawfiles`. Set and created by the editor when it is empty and the install folder is set |
 | Start command ( `codol_launch_cmd` ) | `<game>\codoMP_client_shipRetail.exe` |
 | Client process names ( `codol_client_exe` ) | the default ( `codoMP_client_shipRetail.exe` ) |
 | Port ( `codol_rcon_port` ) | `17760`. The tools default to 17733, which was the old dedicated server's port |
@@ -41,7 +41,7 @@ The tools read the fastfile and archive keys and the image tables from the game'
 ### Build, install, play
 
 1. Build the map ( **File > Build map** ), then install it with
-   `map_install game=<game> zones=<game>\client_shipRetail\chinese scripts=<game>\main\sh1x_rawfiles`.
+   `map_install game=<game> zones=<game>\client_shipRetail\chinese` ( `scripts=` defaults to `<game>\main\sh1x_rawfiles` ).
    The zone has to go into `client_shipRetail\chinese`, because the lobby doesn't look in `usermaps\`.
 2. Start the game and open the console. `devmap <map> [gametype]` loads the map with cheats on, and `map <map> [gametype]`
    loads it with cheats off. The gametype defaults to `war` for `mp_`, `zm` for `zm_` and `coop` for `coop_` maps.

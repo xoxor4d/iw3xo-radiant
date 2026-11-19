@@ -8,6 +8,7 @@
 
 #ifdef CODOL_STANDALONE
 #include "host.hpp"
+#include "codol/packed_scripts.hpp"
 #endif
 
 namespace components
@@ -353,6 +354,20 @@ namespace components
 
 		add(dvar_string(dvars::codol_script_root));
 		add(dvar_string(dvars::codol_script_ref_root));
+
+#ifdef CODOL_STANDALONE
+		// the offline release packs the server scripts in main\sh1x_svr_scripts.iwd: without settings the script
+		// folder is <game>\main\sh1x_rawfiles and the reference tree the editor's unpacked copy of the archive
+		if (dvar_string(dvars::codol_script_root).empty())
+		{
+			add(editor::to_utf8(codol::packed_scripts::default_script_root()));
+		}
+
+		if (dvar_string(dvars::codol_script_ref_root).empty())
+		{
+			add(editor::to_utf8(codol::packed_scripts::reference_root()));
+		}
+#endif
 
 		if (roots.empty())
 		{

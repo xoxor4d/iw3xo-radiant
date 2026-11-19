@@ -5,6 +5,7 @@
 #undef max
 
 #include "host.hpp"
+#include "codol/packed_scripts.hpp"
 #include "menu_ext.hpp"
 #include "assets.hpp"
 
@@ -1751,6 +1752,21 @@ namespace editor::ui
 		}
 
 		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Brushes of the file's worldspawn join this worldspawn, its entities are added. One undo step."); }
+
+		if (editor::menu::item("Unpack the game's scripts again", nullptr, false, !codol::packed_scripts::archive_path().empty()))
+		{
+			std::string error;
+			const int n = codol::packed_scripts::extract_all({}, &error);
+			if (n < 0) { ImGui::Toast(ImGuiToastType_Error, "Scripts", error.c_str(), 6000); }
+			else { ImGui::Toast(ImGuiToastType_Success, "Scripts", (std::to_string(n) + " scripts unpacked to " + to_utf8(codol::packed_scripts::reference_root())).c_str(), 5000); }
+		}
+
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("The scripts of <game>\\main\\sh1x_svr_scripts.iwd, unpacked to packed_scripts\\ next to the editor: a read-only reference\n"
+				"( the Script Workbench shows it ). This is done by itself when the archive changes. A script saved from it goes to the\n"
+				"script folder ( main\\sh1x_rawfiles ), which the server lays over the archive. Console: scripts_extract [folder], scripts_unpack <path>.");
+		}
 
 		if (editor::menu::begin("Generate File", open))
 		{

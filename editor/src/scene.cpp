@@ -5,6 +5,7 @@
 #undef max
 
 #include "host.hpp"
+#include "codol/packed_scripts.hpp"
 #include "assets.hpp"
 #include "preview.hpp"
 #include "scene.hpp"
@@ -862,10 +863,10 @@ namespace editor
 			return false;
 		}
 
-		const std::string root = dvars::codol_script_root && dvars::codol_script_root->current.string ? dvars::codol_script_root->current.string : "";
+		const std::string root = to_utf8(codol::packed_scripts::script_root());
 		if (root.empty())
 		{
-			summary = "Set the script folder of the server first ( File > Settings, codol_script_root ).";
+			summary = "Set the CoDOL install folder first ( File > Settings ): the export goes to <game>\\main\\sh1x_rawfiles.";
 			return false;
 		}
 

@@ -171,7 +171,7 @@ $projectNote = ''
 if ($mine.Count) {
   $projectNote += "   From the asset project ( in front of the generated files of the same path, and rawfiles of $Name.ff as well ):`r`n"
   $projectNote += (($mine.Keys | ForEach-Object { "     scripts\$_" }) -join "`r`n") + "`r`n"
-  $projectNote += "   Copy the whole scripts\ folder into <server>\bin\home\codol_rawfiles\ ( the paths below it are the script paths ).`r`n"
+  $projectNote += "   Copy the whole scripts\ folder into <game>\main\sh1x_rawfiles\ ( the paths below it are the script paths ).`r`n"
 }
 if ($archives.Count) {
   $projectNote += "`r`n2a. streamed sounds`r`n"
@@ -195,7 +195,7 @@ CoDOL Radiant does all of this for a game folder and a script folder you name: F
    The client has to be started as codoMP_client_shipRetail.exe with the install's Kernel33.dll ( unsigned zones ).
 
 2. the level script
-     scripts\maps\mp\$Name.gsc            ->  <server>\bin\home\codol_rawfiles\maps\mp\
+     scripts\maps\mp\$Name.gsc            ->  <game>\main\sh1x_rawfiles\maps\mp\
      scripts\maps\mp\${Name}_fx.gsc, scripts\maps\createfx\${Name}_fx.gsc go next to it only when the server should
      run the effects itself; the client takes both from the zone ( they are rawfiles of $Name.ff ).
    Without the level script the map still runs ( "no level script" ), without minimap setup.

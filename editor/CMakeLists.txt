@@ -69,6 +69,7 @@ add_executable(CoDOLRadiant WIN32
 	src/grid_view.cpp
 	src/host.hpp
 	src/install.cpp
+	src/packed_scripts.cpp
 	src/lights.cpp
 	src/maps_dialog.cpp
 	src/menu_brush_patch.cpp

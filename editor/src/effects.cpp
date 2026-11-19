@@ -5,6 +5,7 @@
 #undef max
 
 #include "host.hpp"
+#include "codol/packed_scripts.hpp"
 #include "ui.hpp"
 #include "assets.hpp"
 #include "preview.hpp"
@@ -248,23 +249,16 @@ namespace editor::fx
 
 			if (s.map_name.empty()) { return; }
 
-			std::vector<fs::path> roots;
-			for (const auto* dvar : { dvars::codol_script_root, dvars::codol_script_ref_root })
+			// the script folder, the reference folder, then sh1x_svr_scripts.iwd of the install
+			std::string placement_text, placement;
+
+			if (codol::packed_scripts::read("maps/createfx/" + s.map_name + "_fx.gsc", placement_text, &placement))
 			{
-				if (dvar && dvar->current.string && *dvar->current.string) { roots.push_back(fs::u8path(dvar->current.string)); }
-			}
-
-			std::error_code ec;
-
-			for (const auto& root : roots)
-			{
-				const fs::path placement = root / "maps" / "createfx" / (s.map_name + "_fx.gsc");
-				if (!fs::is_regular_file(placement, ec)) { continue; }
-
 				// level._effect[ "id" ] = loadfx( "path" );
 				std::map<std::string, std::string> ids;
 				{
-					const std::string text = read_text(root / "maps" / "mp" / (s.map_name + "_fx.gsc"));
+					std::string text;
+					codol::packed_scripts::read("maps/mp/" + s.map_name + "_fx.gsc", text);
 					static const std::regex effect(R"re(_effect\s*\[\s*"([^"]+)"\s*\]\s*=\s*loadfx\s*\(\s*"([^"]+)"\s*\))re", std::regex::icase);
 
 					for (std::sregex_iterator it(text.begin(), text.end(), effect), end; it != end; ++it)
@@ -274,7 +268,7 @@ namespace editor::fx
 				}
 
 				// ent = createOneshotEffect( "id" ); ent.v[ "origin" ] = ( x, y, z ); .. ent.v[ "delay" ] = n;
-				const std::string text = read_text(placement);
+				const std::string& text = placement_text;
 				static const std::regex create(R"re(create(?:Oneshot|Loop)Effect\s*\(\s*"([^"]+)"\s*\))re", std::regex::icase);
 				static const std::regex origin(R"re(\[\s*"origin"\s*\]\s*=\s*\(\s*([-0-9.eE]+)\s*,\s*([-0-9.eE]+)\s*,\s*([-0-9.eE]+)\s*\))re");
 				static const std::regex delay(R"re(\[\s*"delay"\s*\]\s*=\s*([-0-9.eE]+))re");
@@ -299,12 +293,12 @@ namespace editor::fx
 					g_script_instances.push_back(std::move(inst));
 				}
 
-				g_script_note = to_utf8(placement) + ": " + std::to_string(g_script_instances.size()) + " effects, " + std::to_string(ids.size()) + " names";
+				g_script_note = placement + ": " + std::to_string(g_script_instances.size()) + " effects, " + std::to_string(ids.size()) + " names";
 				game::printf_to_console("[fx] %s\n", g_script_note.c_str());
 				return;
 			}
 
-			g_script_note = "no maps\\createfx\\" + s.map_name + "_fx.gsc under the script folders of File > Settings";
+			g_script_note = "no maps\\createfx\\" + s.map_name + "_fx.gsc in the script folders of File > Settings or in sh1x_svr_scripts.iwd";
 		}
 
 		void collect_instances()

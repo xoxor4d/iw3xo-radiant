@@ -5,6 +5,7 @@
 #undef max
 
 #include "host.hpp"
+#include "codol/packed_scripts.hpp"
 #include "ui.hpp"
 #include "assets.hpp"
 
@@ -2613,6 +2614,23 @@ namespace editor::assets
 
 		if (fs::exists(file, ec))
 		{
+			return true;
+		}
+
+		// a map of the game: its own level script ( the script folder's override, else sh1x_svr_scripts.iwd ), to start from
+		const std::string game_path = "maps/mp/" + map + ".gsc";
+		std::string shipped, shipped_from;
+
+		if (codol::packed_scripts::packed(game_path) && codol::packed_scripts::read(game_path, shipped, &shipped_from))
+		{
+			if (!write_text(file, shipped))
+			{
+				error = "cannot write " + to_utf8(file);
+				return false;
+			}
+
+			game::printf_to_console("[assets] level script: %s ( from %s )\n", to_utf8(file).c_str(), shipped_from.c_str());
+			rescan();
 			return true;
 		}
 

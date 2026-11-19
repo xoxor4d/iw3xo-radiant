@@ -5,6 +5,7 @@
 #undef max
 
 #include "host.hpp"
+#include "codol/packed_scripts.hpp"
 #include "ui.hpp"
 #include "assets.hpp"
 #include "preview.hpp"
@@ -532,6 +533,7 @@ namespace editor
 			first_layout(dockspace);
 
 			components::codol_game::frame();
+			codol::packed_scripts::ensure_defaults();		// a changed install folder
 
 			// the renderer follows the document, before any view draws
 			get_scene().sync();
@@ -821,6 +823,9 @@ int WINAPI wWinMain(const HINSTANCE instance, HINSTANCE, PWSTR, int)
 			log("^1The CoDOL install folder is not set: File > Settings ( codol_install_path ).");
 			g_show_settings = true;
 		}
+
+		// the script folder ( <game>\main\sh1x_rawfiles ) and the reference copy of the packed scripts
+		codol::packed_scripts::ensure_defaults();
 
 		GET_GUI(ggui::codol_viewport_dialog)->open();
 		GET_GUI(ggui::codol_map_ents_dialog)->open();

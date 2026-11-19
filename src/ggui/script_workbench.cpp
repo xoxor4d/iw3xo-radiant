@@ -452,6 +452,37 @@ namespace ggui
 			out.swap(crlf);
 		}
 
+		// A file of a reference tree ( eg. the unpacked copy of sh1x_svr_scripts.iwd ): the game reads only the script
+		// folder, the first root. The edit is saved there as a file of its own, the override of the packed one; a copy
+		// the script folder has already is never overwritten.
+		bool moved = false;
+
+		for (std::size_t r = 1; r < m_roots.size(); r++)
+		{
+			const auto rel = relative_slash_path(m_roots[r], doc.path);
+			if (rel.empty() || rel.starts_with("..") || rel == doc.path)
+			{
+				continue;
+			}
+
+			const auto target = std::filesystem::u8path(m_roots[0]) / std::filesystem::u8path(rel).make_preferred();
+			std::error_code ec;
+
+			if (std::filesystem::exists(target, ec))
+			{
+				game::printf_to_console("^1[CoDOL] not saved: the script folder has its own %s ( open that one )\n", rel.c_str());
+				ImGui::Toast(ImGuiToastType_Error, "Script Workbench", ("Not saved: the script folder has its own " + rel + " - open that one.").c_str());
+				return false;
+			}
+
+			std::filesystem::create_directories(target.parent_path(), ec);
+			const auto u8 = target.u8string();
+			doc.path.assign(u8.begin(), u8.end());
+			doc.rel = rel;
+			moved = true;
+			break;
+		}
+
 		{
 			std::ofstream file(std::filesystem::u8path(doc.path), std::ios::binary | std::ios::trunc);
 			if (!file.is_open())
@@ -474,6 +505,12 @@ namespace ggui
 		m_index_generation++;
 
 		game::printf_to_console("[CoDOL] saved %s\n", doc.rel.c_str());
+
+		if (moved)
+		{
+			game::printf_to_console("[CoDOL] %s is now a file of the script folder ( %s ): it overrides the packed / reference copy\n", doc.rel.c_str(), doc.path.c_str());
+			rescan();
+		}
 
 		if (dvars::codol_reload_on_save && dvars::codol_reload_on_save->current.enabled && doc.lang != lang::plain)
 		{

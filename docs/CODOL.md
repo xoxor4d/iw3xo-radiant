@@ -116,8 +116,8 @@ device ).
 From an empty editor to a map you walk around in. Every step is a menu entry and a console command; what was seen
 of each step in the game, and where, is said with it - the details and the pictures are in `codol_bsp/README.md`.
 
-**0. Once: settings.** File > Settings: the CoDOL install folder ( the one with `C1.exe`, `main\` and
-`client_shipRetail\` ) and, for the install step, the dedicated server's script folder. The first build scans the
+**0. Once: settings.** File > Settings: the CoDOL install folder ( the one with `main\` and `client_shipRetail\` ).
+The script folder ( `<game>\main\sh1x_rawfiles` ) is set and created by itself ( [The game's scripts](#the-games-scripts) ). The first build scans the
 install's zones ( about 16 s ) and the first asset build its materials ( 20 s ); both are kept.
 
 **1. File > New map**, a name like `mp_mymap` ( `a-z 0-9 _` ). It is saved as `map_source\mp_mymap.map`; its
@@ -560,6 +560,28 @@ with a filter for the kind of file. The picker starts at the path in the box; th
 only fills it in. A command with arguments ( Pre-reload check ) gets the program from the picker, the arguments are
 typed after it.
 
+### The game's scripts
+
+The offline release ships no loose scripts: the server's GSC is packed in `<game>\main\sh1x_svr_scripts.iwd`
+( a plain zip; `scripts/maps/mp/<map>.gsc`, `scripts/maps/createfx/..`, waypoints, `mp/botclasstable.csv` ). A loose
+`<game>\main\sh1x_rawfiles\<path>` overrides the packed file of the same path ( the server's script overlay ), so that
+is where edited scripts and the level scripts of built maps go. Nothing has to be set up by hand:
+
+* **Script folder.** While `codol_script_root` is empty and the install folder is set, the editor sets it to
+  `<game>\main\sh1x_rawfiles` and creates the folder. *Install the built map* and `map_install` use it when no
+  `scripts=` is given, the Map Entities export writes `maps\mp\<map>.d3dbsp.ents` there.
+* **Reference copy.** At start ( and when the install folder changes ) every script of the archive is unpacked to
+  `packed_scripts\` next to the editor, again only when the archive changed ( `packed_scripts\.packed_from` ). It is
+  read only: a file there changes nothing in the game. While `codol_script_ref_root` is empty it is the reference
+  tree of the Script Workbench. **File > Unpack the game's scripts again** and `scripts_extract [folder]` make it
+  again or unpack into another folder ( never into the script folder: every file there would override the archive ).
+* **Reading.** The createfx placements of the 3D view ( `maps\createfx\<map>_fx.gsc` ) and the level script the
+  Assets window starts from are looked up in the script folder, the reference folder of the settings, then the
+  archive.
+* **Editing.** A script opened from the reference tree is saved to the script folder as a file of its own ( only that
+  file ), so the edit becomes the override; a copy the script folder has already is never overwritten.
+  `scripts_unpack <maps/mp/<map>.gsc>` copies one packed script into the script folder to edit it elsewhere.
+
 * **Autosave**: every `ed_autosave_minutes` ( 5 ) a changed map is written to
   `map_source\autosave\<map>.autosave.1.map`; the older copies move to `.2`, `.3` .. up to `ed_autosave_keep`
   ( 5 ), the oldest goes. The map itself and its "modified" mark are not touched. `autosave_now` does it at once.
@@ -770,7 +792,7 @@ curves ), effect and model of the project goes into the edited map's zone; the p
 is put behind the map's own animlist, its animtrees and the files of `scripts\` become rawfiles. The project's
 scripts are also copied to `compiled\<map>.scripts\` - the dedicated server reads level scripts from its script
 folder, so a `scripts\maps\mp\<map>.gsc` of the project *replaces* the shipped map's level script there and has
-to hold what that one does ( copy it from the server's script folder and add to it ). Streamed sounds need their
+to hold what that one does ( Assets > level script starts from the shipped one, out of `sh1x_svr_scripts.iwd` ). Streamed sounds need their
 archive as for a built map; the console prints the command.
 
 Loaded ( sixth round, `codol_bsp/README.md` ): shipped mp_rust, opened in the editor, with a project of one
