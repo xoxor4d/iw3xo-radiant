@@ -9,7 +9,7 @@
 #include "assets.hpp"
 #include "preview.hpp"
 
-#include <commdlg.h>
+#include "codol/path_picker.hpp"
 
 // The Assets window and the windows that make assets: New material, Import model, Import animation, GDT materials.
 // They only collect what the functions of assets.hpp need - the console commands call the same functions.
@@ -35,38 +35,22 @@ namespace editor::assets
 			return text;
 		}
 
-		// the system's "open file" window; `filter` as OPENFILENAME wants it
-		bool browse(const wchar_t* filter, std::string& out)
+		// Explorer's "open file" window, started at the file of the field; `filter` as codol::ui::pick_path wants it
+		bool browse(const char* filter, std::string& out)
 		{
-			wchar_t file[MAX_PATH * 4] = {};
-
-			OPENFILENAMEW ofn = {};
-			ofn.lStructSize = sizeof(ofn);
-			ofn.hwndOwner = main_window();
-			ofn.lpstrFilter = filter;
-			ofn.lpstrFile = file;
-			ofn.nMaxFile = static_cast<DWORD>(std::size(file));
-			ofn.Flags = OFN_NOCHANGEDIR | OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-			if (!GetOpenFileNameW(&ofn))
-			{
-				return false;
-			}
-
-			out = to_utf8(fs::path(file));
-			return true;
+			return codol::ui::pick_path(codol::ui::path_kind::open_file, out, filter, "Select a file", main_window());
 		}
 
-		constexpr const wchar_t* image_filter = L"Images ( *.png, *.tga, *.dds )\0*.png;*.tga;*.dds\0All files\0*.*\0";
-		constexpr const wchar_t* export_filter = L"xmodel_export\0*.xmodel_export\0All files\0*.*\0";
-		constexpr const wchar_t* gdt_filter = L"GDT ( *.gdt )\0*.gdt\0All files\0*.*\0";
-		constexpr const wchar_t* anim_filter = L"xanim_export\0*.xanim_export\0All files\0*.*\0";
-		constexpr const wchar_t* skeleton_filter = L"xmodel_export ( the model of the animation )\0*.xmodel_export\0All files\0*.*\0";
-		constexpr const wchar_t* csv_filter = L"Sound aliases ( *.csv )\0*.csv\0All files\0*.*\0";
-		constexpr const wchar_t* efx_filter = L"Effects ( *.efx )\0*.efx\0All files\0*.*\0";
+		constexpr const char* image_filter = "Images ( *.png, *.tga, *.dds )|*.png;*.tga;*.dds|All files|*.*";
+		constexpr const char* export_filter = "xmodel_export|*.xmodel_export|All files|*.*";
+		constexpr const char* gdt_filter = "GDT ( *.gdt )|*.gdt|All files|*.*";
+		constexpr const char* anim_filter = "xanim_export|*.xanim_export|All files|*.*";
+		constexpr const char* skeleton_filter = "xmodel_export ( the model of the animation )|*.xmodel_export|All files|*.*";
+		constexpr const char* csv_filter = "Sound aliases ( *.csv )|*.csv|All files|*.*";
+		constexpr const char* efx_filter = "Effects ( *.efx )|*.efx|All files|*.*";
 
 		// one line: label, path, ".."
-		bool path_row(const char* label, const char* id, std::string& path, const wchar_t* filter, const float label_width = 110.0f)
+		bool path_row(const char* label, const char* id, std::string& path, const char* filter, const float label_width = 110.0f)
 		{
 			bool changed = false;
 			ImGui::PushID(id);
@@ -717,8 +701,7 @@ namespace editor::assets
 				ImGui::AlignTextToFramePadding();
 				ImGui::TextUnformatted("Sound folder");
 				ImGui::SameLine(130.0f);
-				ImGui::SetNextItemWidth(-44.0f);
-				ImGui::InputTextWithHint("##root", "the folder that holds sound\\ and soundaliases\\ ( empty: above the csv's soundaliases\\ )", &d.root);
+				codol::ui::path_input("##root", d.root, codol::ui::path_kind::folder, nullptr, "the folder that holds sound\\ and soundaliases\\ ( empty: above the csv's soundaliases\\ )", -8.0f, "Sound folder");
 
 				ImGui::PushTextWrapPos(640.0f);
 				ImGui::TextColored(dim, "The columns of the CoD4 mod tools. The .wav / .mp3 files the file column names are copied from sound\\, curves ( .vfcurve ) and "
@@ -879,8 +862,7 @@ namespace editor::assets
 				ImGui::AlignTextToFramePadding();
 				ImGui::TextUnformatted("Image folder");
 				ImGui::SameLine(120.0f);
-				ImGui::SetNextItemWidth(-1.0f);
-				ImGui::InputTextWithHint("##root", "where the image paths of the GDT start; empty: the folder of the GDT and the two above it", &d.root);
+				codol::ui::path_input("##root", d.root, codol::ui::path_kind::folder, nullptr, "where the image paths of the GDT start; empty: the folder of the GDT and the two above it", -1.0f, "Image folder");
 
 				if (const std::string key = d.file + "|" + d.root; key != d.read_for)
 				{

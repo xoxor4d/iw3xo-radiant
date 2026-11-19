@@ -552,6 +552,14 @@ General ( text size `ed_ui_scale`, toolbar, undo levels `ed_undo_levels` ), Path
 can be set on the console by its name. The camera popup of the 3D view and the grid of the views change the same
 values.
 
+Every setting and dialog field that holds a path has a **Browse `..`** button next to its text box: folders ( the CoDOL
+install folder, the script folders, the working folder of the pre-reload check, the game and script folders of
+*Install the built map*, the sound and image folders of the Assets windows ) open Explorer's folder picker, files
+( Start command, Password file, the xanim list, the asset tool, the files of the Assets windows ) its open dialog
+with a filter for the kind of file. The picker starts at the path in the box; the box stays editable, the picker
+only fills it in. A command with arguments ( Pre-reload check ) gets the program from the picker, the arguments are
+typed after it.
+
 * **Autosave**: every `ed_autosave_minutes` ( 5 ) a changed map is written to
   `map_source\autosave\<map>.autosave.1.map`; the older copies move to `.2`, `.3` .. up to `ed_autosave_keep`
   ( 5 ), the oldest goes. The map itself and its "modified" mark are not touched. `autosave_now` does it at once.

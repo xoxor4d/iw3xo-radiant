@@ -1,4 +1,5 @@
 #include "std_include.hpp"
+#include "codol/path_picker.hpp"
 
 // windows.h macros
 #undef min
@@ -1763,21 +1764,37 @@ namespace ggui
 			}
 		};
 
-		ImGui::TextColored(COL_SECTION, "Scripts");
-		field("Script folder", "D:\\...\\codol_rawfiles", m_cfg_script_root,
-			"The script tree you edit: the folder the server loads loose scripts from.\nContains maps\\, animscripts\\, animtrees\\, mp\\playeranim.script ...");
-		field("Reference script folder ( optional )", "rawfiles exported from the zones", m_cfg_ref_root,
-			"A second, read-mostly tree. Files of the script folder shadow it, animtrees of both are merged\n( the game also merges the tree from its zones with loose files ).");
+		// a path: the text box and a ".." button with Explorer's folder picker / file dialog
+		const auto path_field = [](const char* label, const char* hint, std::string& value, const char* tooltip,
+			const codol::ui::path_kind kind, const char* filter = nullptr)
+		{
+			ImGui::TextUnformatted(label);
 
-		field("Game xanim list ( optional )", "D:\\...\\docs\\zone_assets\\ALL_xanim.txt", m_cfg_xanim_list,
-			"Text file with the animations the game ships, one name per line ( anything after the name is ignored ).\nScripts that use an animation that is not in it get a warning.");
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("%s", tooltip);
+			}
+
+			codol::ui::path_input((std::string("##") + label).c_str(), value, kind, filter, hint, -1.0f, label);
+		};
+
+		using codol::ui::path_kind;
+
+		ImGui::TextColored(COL_SECTION, "Scripts");
+		path_field("Script folder", "D:\\...\\codol_rawfiles", m_cfg_script_root,
+			"The script tree you edit: the folder the server loads loose scripts from.\nContains maps\\, animscripts\\, animtrees\\, mp\\playeranim.script ...", path_kind::folder);
+		path_field("Reference script folder ( optional )", "rawfiles exported from the zones", m_cfg_ref_root,
+			"A second, read-mostly tree. Files of the script folder shadow it, animtrees of both are merged\n( the game also merges the tree from its zones with loose files ).", path_kind::folder);
+
+		path_field("Game xanim list ( optional )", "D:\\...\\docs\\zone_assets\\ALL_xanim.txt", m_cfg_xanim_list,
+			"Text file with the animations the game ships, one name per line ( anything after the name is ignored ).\nScripts that use an animation that is not in it get a warning.", path_kind::open_file, codol::ui::filter_text);
 
 		ImGui::Dummy(ImVec2(0.0f, 6.0f));
 		ImGui::TextColored(COL_SECTION, "Game");
-		field("CoDOL install folder", "D:\\...\\Call of Duty Online 1.1.1.13", m_cfg_install, "Folder that contains main\\ and client_shipRetail\\.");
-		field("Start command", "path to the script / exe that starts the client", m_cfg_launch, "Used by the Launch button of the Game window. Runs in its own folder.");
-		field("Asset tool ( optional )", "D:\\...\\CodolSoundDumper.exe", m_cfg_asset_tool,
-			"CodolSoundDumper.exe of CODOL-AssetExplorer. Used by CoDOL > Map Entities to decrypt a map zone ( .ff ).");
+		path_field("CoDOL install folder", "D:\\...\\Call of Duty Online 1.1.1.13", m_cfg_install, "Folder that contains main\\ and client_shipRetail\\.", path_kind::folder);
+		path_field("Start command", "path to the script / exe that starts the client", m_cfg_launch, "Used by the Launch button of the Game window. Runs in its own folder.", path_kind::open_file, codol::ui::filter_programs);
+		path_field("Asset tool ( optional )", "D:\\...\\CodolSoundDumper.exe", m_cfg_asset_tool,
+			"CodolSoundDumper.exe of CODOL-AssetExplorer. Used by CoDOL > Map Entities to decrypt a map zone ( .ff ).", path_kind::open_file, codol::ui::filter_exe);
 		field("Client process names", "codoMP_client_shipRetail.exe", m_cfg_client_exe, "Used to find the window of the running game ( ; separated ).");
 
 		ImGui::Dummy(ImVec2(0.0f, 6.0f));
@@ -1785,11 +1802,11 @@ namespace ggui
 		ImGui::TextUnformatted("Port");
 		ImGui::SetNextItemWidth(140.0f);
 		ImGui::InputInt("##rcon_port", &m_cfg_port, 0, 0);
-		field("Password file", "native_server_rcon.txt ( leave empty to look in the install folder )", m_cfg_pw_file,
-			"File that holds the rcon password of the local server.\nIf empty: <install>\\main\\k33_rcon.txt, <install>\\p2p\\state\\native_server_rcon.txt, %CODOL_STATE_DIR%.");
-		field("Pre-reload check ( optional )", "python tools/codol_script_resolve.py --category mp --gametype war --map mp_killhouse_sh", m_cfg_precheck,
-			"Command that has to succeed ( exit code 0 ) before the game is reloaded.\nA script the server can not compile makes the map load fail, so check first.");
-		field("Pre-reload check working folder", "D:\\...\\CoD4x_Server", m_cfg_precheck_cwd, "Working directory of the pre-reload check.");
+		path_field("Password file", "native_server_rcon.txt ( leave empty to look in the install folder )", m_cfg_pw_file,
+			"File that holds the rcon password of the local server.\nIf empty: <install>\\main\\k33_rcon.txt, <install>\\p2p\\state\\native_server_rcon.txt, %CODOL_STATE_DIR%.", path_kind::open_file, codol::ui::filter_text);
+		path_field("Pre-reload check ( optional )", "python tools/codol_script_resolve.py --category mp --gametype war --map mp_killhouse_sh", m_cfg_precheck,
+			"Command that has to succeed ( exit code 0 ) before the game is reloaded.\nA script the server can not compile makes the map load fail, so check first.", path_kind::open_file, codol::ui::filter_programs);
+		path_field("Pre-reload check working folder", "D:\\...\\CoD4x_Server", m_cfg_precheck_cwd, "Working directory of the pre-reload check.", path_kind::folder);
 
 		ImGui::Dummy(ImVec2(0.0f, 10.0f));
 

@@ -9,6 +9,8 @@
 #include "ext.hpp"
 #include "menu_ext.hpp"
 
+#include "codol/path_picker.hpp"
+
 // Preferences ( grouped settings instead of the raw list ), the colours of the views with presets, autosave with
 // rotating backups and the list of recent maps. Every value is a saved dvar of codol_editor.cfg, so the console sets
 // it by name ( ed_cam_fov 90 ) and unattended runs can ask for a state.
@@ -95,6 +97,26 @@ namespace editor::prefs
 			}
 		}
 
+		// the settings that hold a path get a ".." button ( Explorer's folder picker or file dialog )
+		bool path_setting(const game::dvar_s* dvar, codol::ui::path_kind& kind, const char*& filter)
+		{
+			using codol::ui::path_kind;
+			filter = nullptr;
+
+			if (dvar == dvars::codol_install_path || dvar == dvars::codol_script_root || dvar == dvars::codol_script_ref_root
+				|| dvar == dvars::codol_reload_precheck_cwd)
+			{
+				kind = path_kind::folder;
+				return true;
+			}
+
+			kind = path_kind::open_file;
+			if (dvar == dvars::codol_rcon_password_file || dvar == dvars::codol_xanim_list) { filter = codol::ui::filter_text; return true; }
+			if (dvar == dvars::codol_launch_cmd || dvar == dvars::codol_reload_precheck_cmd) { filter = codol::ui::filter_programs; return true; }
+			if (dvar == dvars::codol_asset_tool) { filter = codol::ui::filter_exe; return true; }
+			return false;
+		}
+
 		void dvar_row(game::dvar_s* dvar, const char* label = nullptr)
 		{
 			ImGui::PushID(dvar->name);
@@ -132,7 +154,14 @@ namespace editor::prefs
 			default:
 			{
 				std::string value = dvar->current.string ? dvar->current.string : "";
-				if (ImGui::InputText("##value", &value)) { dvars::set_string(dvar, value.c_str()); }
+				codol::ui::path_kind kind;
+				const char* filter = nullptr;
+
+				if (path_setting(dvar, kind, filter))
+				{
+					if (codol::ui::path_input("##value", value, kind, filter, nullptr, -1.0f, label ? label : dvar->name)) { dvars::set_string(dvar, value.c_str()); }
+				}
+				else if (ImGui::InputText("##value", &value)) { dvars::set_string(dvar, value.c_str()); }
 				break;
 			}
 			}

@@ -6,6 +6,7 @@
 
 #include "host.hpp"
 #include "ui.hpp"
+#include "codol/path_picker.hpp"
 
 #include <codol_zone/zone_editor.hpp>
 #include <codol_zone/assets.hpp>
@@ -1351,14 +1352,12 @@ namespace editor::ui
 			ImGui::AlignTextToFramePadding();
 			ImGui::TextUnformatted("Game folder");
 			ImGui::SameLine(130.0f);
-			ImGui::SetNextItemWidth(540.0f);
-			ImGui::InputTextWithHint("##game", "the Call of Duty Online 1.1.1.13 folder", &w.game);
+			codol::ui::path_input("##game", w.game, codol::ui::path_kind::folder, nullptr, "the Call of Duty Online 1.1.1.13 folder", 540.0f);
 
 			ImGui::AlignTextToFramePadding();
 			ImGui::TextUnformatted("Script folder");
 			ImGui::SameLine(130.0f);
-			ImGui::SetNextItemWidth(540.0f);
-			ImGui::InputTextWithHint("##scripts", "the server's script folder ( bin\\home\\codol_rawfiles ); empty: no scripts", &w.scripts);
+			codol::ui::path_input("##scripts", w.scripts, codol::ui::path_kind::folder, nullptr, "the server's script folder ( bin\\home\\codol_rawfiles ); empty: no scripts", 540.0f);
 
 			ImGui::Checkbox("Add to the create-room list", &w.list);
 
