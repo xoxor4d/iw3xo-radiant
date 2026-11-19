@@ -150,6 +150,7 @@ namespace editor::ui
 	namespace
 	{
 		bool g_inject_mouse = false;
+		bool g_inject_buttons = false;		// ui_mouse down / up / wheel since the last "off"
 		ImVec2 g_inject_pos = {};
 
 		ImGuiKey key_by_name(const std::string& name)
@@ -171,6 +172,11 @@ namespace editor::ui
 
 			return ImGuiKey_None;
 		}
+	}
+
+	bool mouse_injected()
+	{
+		return g_inject_mouse || g_inject_buttons;
 	}
 
 	void apply_injected_input()
@@ -1915,15 +1921,18 @@ namespace editor::ui
 
 			if (what == "down" || what == "up")
 			{
+				g_inject_buttons = true;
 				io.AddMouseButtonEvent(args.size() > 2 ? std::atoi(args[2].c_str()) : 0, what == "down");
 			}
 			else if (what == "wheel")
 			{
+				g_inject_buttons = true;
 				io.AddMouseWheelEvent(0.0f, static_cast<float>(number(args, 2, 1.0)));
 			}
 			else if (what == "off")
 			{
 				g_inject_mouse = false;
+				g_inject_buttons = false;
 			}
 			else if (args.size() > 2)
 			{

@@ -175,6 +175,10 @@ namespace editor::ui
 	// between the platform backend's new frame and ImGui::NewFrame().
 	void apply_injected_input();
 
+	// whether ui_mouse fed the mouse ( a position or a button ) since the last "ui_mouse off": the views then never
+	// capture the real cursor
+	bool mouse_injected();
+
 	// the 2D views ( grid_view.cpp )
 	void grid_view_command(const std::vector<std::string>& args);
 	void draw_grid_views();

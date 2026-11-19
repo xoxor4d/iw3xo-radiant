@@ -5,6 +5,7 @@
 #undef max
 
 #include "host.hpp"
+#include "mouse_capture.hpp"
 #include "ui.hpp"
 #include "assets.hpp"
 #include "preview.hpp"
@@ -1229,11 +1230,18 @@ namespace editor::preview
 			ImGui::SetCursorScreenPos(at);
 			ImGui::InvisibleButton("##preview_orbit", ImVec2(static_cast<float>(w), static_cast<float>(h)));
 
-			if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f))
 			{
-				const auto& io = ImGui::GetIO();
-				g.yaw -= io.MouseDelta.x * 0.5f;
-				g.pitch = std::clamp(g.pitch + io.MouseDelta.y * 0.5f, -5.0f, 89.0f);
+				// a drag holds the mouse ( hidden, kept in the preview, back where it started: mouse_capture.hpp )
+				static const char owner = 0;
+				const bool turning = ImGui::IsItemActive() && ImGui::IsMouseDown(ImGuiMouseButton_Left)
+					&& (editor::mouse_capture::held_by(&owner) || ImGui::IsMouseDragging(ImGuiMouseButton_Left));
+				const ImVec2 motion = editor::mouse_capture::update(&owner, turning, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+
+				if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f))
+				{
+					g.yaw -= motion.x * 0.5f;
+					g.pitch = std::clamp(g.pitch + motion.y * 0.5f, -5.0f, 89.0f);
+				}
 			}
 
 			if (ImGui::IsItemHovered())
@@ -1644,11 +1652,18 @@ namespace editor::preview
 			// turn with the left button, zoom with the wheel
 			ImGui::InvisibleButton("##preview_fx_orbit", ImVec2(static_cast<float>(w), static_cast<float>(h)));
 
-			if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f))
 			{
-				const auto& io = ImGui::GetIO();
-				g.yaw -= io.MouseDelta.x * 0.5f;
-				g.pitch = std::clamp(g.pitch + io.MouseDelta.y * 0.5f, -5.0f, 89.0f);
+				// a drag holds the mouse ( hidden, kept in the preview, back where it started: mouse_capture.hpp )
+				static const char owner = 0;
+				const bool turning = ImGui::IsItemActive() && ImGui::IsMouseDown(ImGuiMouseButton_Left)
+					&& (editor::mouse_capture::held_by(&owner) || ImGui::IsMouseDragging(ImGuiMouseButton_Left));
+				const ImVec2 motion = editor::mouse_capture::update(&owner, turning, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+
+				if (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left, 0.0f))
+				{
+					g.yaw -= motion.x * 0.5f;
+					g.pitch = std::clamp(g.pitch + motion.y * 0.5f, -5.0f, 89.0f);
+				}
 			}
 
 			if (ImGui::IsItemHovered())

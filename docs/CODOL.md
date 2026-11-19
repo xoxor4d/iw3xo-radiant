@@ -67,6 +67,12 @@ face, Move vertices, Move edges, Clip, Create box .. ), snaps to the grid ( `[` 
 texture lock ( Shift+T ) and shows in the 2D views while it happens. Esc during a drag takes it back. The two or
 three lines at the bottom of the view say what the mouse and the keys do in the tool that is on.
 
+A camera drag of the 3D view ( look / fly, pan, drive ) and of the model and effect previews ( turn ) holds the
+mouse: the cursor is hidden, kept inside the view and put back to its middle every frame, so the motion never stops
+at the edge of the view or the screen, and when the button is let go the cursor is back where the drag started.
+Escape, Alt-Tab or anything else that takes the editor out of the foreground lets the cursor go at once. Input fed
+with `ui_mouse` ( unattended runs ) never moves the real cursor.
+
 | Tool | Key | Left button |
 |---|---|---|
 | **Select** | Esc | Click selects ( Ctrl or Shift adds / removes ). **Drag on the selection**: it moves, on the world plane that faces the camera most ( look down: on the floor; look along: up and sideways ). **Drag next to a selected brush**: the faces on that side follow the mouse - Radiant's resize; they are outlined while the mouse is there, and a drag that starts past a corner takes both faces. **Squares on the selection's box**: that side of every selected brush. **Ctrl+Shift click** selects a face ( again: deselects it ); **drag a selected face**: it moves along its normal, with every other selected face. **Shift drag**: everything in the rectangle is added to the selection. **Alt click**: the object behind the selected one under the mouse ( Alt+Shift click adds it ) - through walls and into stacks. With nothing selected a left drag drives the camera, as before. |

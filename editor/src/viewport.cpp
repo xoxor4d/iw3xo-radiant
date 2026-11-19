@@ -5,6 +5,7 @@
 #undef max
 
 #include "host.hpp"
+#include "mouse_capture.hpp"
 #include "assets.hpp"
 #include "preview.hpp"
 #include "ui.hpp"
@@ -155,6 +156,7 @@ namespace ggui
 
 		ImVec2 press_pos = {};
 		bool press_valid = false;
+		bool press_dragged = false;		// the left press moved more than a few pixels ( stays so: the captured cursor sits still )
 		ImVec2 right_press_pos = {};
 		bool right_press_valid = false;
 
@@ -1769,13 +1771,13 @@ namespace ggui
 			const bool lmb = active && ImGui::IsMouseDown(ImGuiMouseButton_Left);
 			const bool rmb = active && ImGui::IsMouseDown(ImGuiMouseButton_Right);
 			const bool mmb = active && ImGui::IsMouseDown(ImGuiMouseButton_Middle);
-			const float dx = io.MouseDelta.x, dy = io.MouseDelta.y;
 			const float drag = m->fly_speed * boost / 200.0f;
 
 			if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 			{
 				m->press_pos = io.MousePos;
 				m->press_valid = !gizmo_busy && !tool_busy;
+				m->press_dragged = false;
 			}
 
 			if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -1784,13 +1786,20 @@ namespace ggui
 				m->right_press_valid = true;
 			}
 
-			const bool dragged = std::fabs(io.MousePos.x - m->press_pos.x) + std::fabs(io.MousePos.y - m->press_pos.y) > 4.0f;
+			const bool dragged = m->press_dragged || std::fabs(io.MousePos.x - m->press_pos.x) + std::fabs(io.MousePos.y - m->press_pos.y) > 4.0f;
+			if (m->press_valid && dragged) { m->press_dragged = true; }
 			const bool right_dragged = std::fabs(io.MousePos.x - m->right_press_pos.x) + std::fabs(io.MousePos.y - m->right_press_pos.y) > 4.0f;
 
 			if (m->right_press_valid && right_dragged)
 			{
 				m->right_press_valid = false; // looking around, not a click
 			}
+
+			// A camera drag holds the mouse: hidden, kept in the view and put back to its middle every frame ( the motion
+			// never runs out at an edge ), back where the drag started when it ends ( mouse_capture.hpp ).
+			const bool steering = !tool_busy && ((mmb || (lmb && rmb)) || (rmb && !m->right_press_valid) || (lmb && m->press_valid && dragged && !m->gizmo_active));
+			const ImVec2 motion = editor::mouse_capture::update(m.get(), steering, image_pos, ImVec2(image_pos.x + static_cast<float>(width), image_pos.y + static_cast<float>(height)));
+			const float dx = motion.x, dy = motion.y;
 
 			if (tool_busy)
 			{

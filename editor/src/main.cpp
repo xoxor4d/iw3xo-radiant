@@ -5,6 +5,7 @@
 #undef max
 
 #include "host.hpp"
+#include "mouse_capture.hpp"
 #include "codol/packed_scripts.hpp"
 #include "ui.hpp"
 #include "assets.hpp"
@@ -123,6 +124,15 @@ namespace editor
 				}
 
 				return 0;
+
+			case WM_ACTIVATEAPP:
+				// Alt-Tab and the like: a camera drag never keeps the cursor hidden and clipped
+				if (!wparam) { mouse_capture::release(); }
+				break;
+
+			case WM_KILLFOCUS:
+				mouse_capture::release();
+				break;
 
 			case WM_SYSCOMMAND:
 				// no ALT application menu: ALT is a modifier in the views
@@ -582,6 +592,7 @@ namespace editor
 			}
 
 			ImGui::RenderToasts();
+			mouse_capture::end_frame();		// a camera drag no view asked for this frame lets the cursor go
 			ImGui::EndFrame();
 
 			g_device->SetRenderState(D3DRS_ZENABLE, FALSE);
@@ -902,6 +913,7 @@ int WINAPI wWinMain(const HINSTANCE instance, HINSTANCE, PWSTR, int)
 	ggui::loader::destroy_modules();
 
 	ImGui_ImplDX9_Shutdown();
+	mouse_capture::release();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
 
